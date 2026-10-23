@@ -23,6 +23,7 @@ const {
   createParkLawnMaterial,
   createTerrainMaterial,
   createPlotGroundMaterial,
+  createForecourtMaterial,
   createRenderedWallMaterial
 } = window.CITY;
 
@@ -551,7 +552,8 @@ function buildCityGrid(scene) {
   const isPaved = (b) => {
     if (b.cx > -1150 && b.cx < 1500 && b.cz > -2750 && b.cz < 650) return true;
     const s = blockBuilt.get(b);
-    return !!s && (s.top >= 20 || s.area / s.n >= 600 || s.area / b.area >= 0.45);
+    // (the massing merges a row of houses into one long footprint: only height tells them from a block of offices)
+    return !!s && (s.top >= 20 || (s.top >= 14 && s.area / s.n >= 1500));
   };
   const extrude = (shape, y0, h) => {
     const g = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false, curveSegments: 1 });
@@ -615,7 +617,7 @@ function buildCityGrid(scene) {
   mergeInto(geos.walk, sidewalkMat, false, 'Walkways');
   mergeInto(geos.lawn, lawnMat, false, 'Lawns');
   mergeInto(geos.plot, plotMat, false, 'Yards');
-  mergeInto(geos.paved, sidewalkMat, false, 'Forecourts');
+  mergeInto(geos.paved, createForecourtMaterial(), false, 'Forecourts');
   mergeInto(geos.wild, wildMat, false, 'OpenLand');
 
   // ===================================================================================================================

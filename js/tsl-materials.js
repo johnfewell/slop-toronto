@@ -2293,6 +2293,25 @@ function createTerrainMaterial() {
  * Compound yards & open plots inside the blocks: laterite (red earth) worn bare where people walk and park, patchy
  * lawns & tall grass, concrete paving & interlocking pavers in front of the buildings
  */
+// Downtown forecourts & plazas: poured concrete in 1.5 m flags, a few slabs a shade off, the joints only up close. Plain
+// on purpose: it covers whole blocks, where the sidewalk's wet-weather shading cost frames for no visible gain
+let _forecourtMat = null;
+function createForecourtMaterial() {
+  if (_forecourtMat) return _forecourtMat;
+  const mat = new THREE.MeshStandardNodeMaterial({ metalness: 0.0, roughness: 0.86 });
+  mat.colorNode = Fn(() => {
+    const p = positionWorld.xz;
+    const tone = mix(color(0x8e8d86), color(0xa6a49c), noise2D(p.mul(0.09)));
+    const slab = noise2D(floor(p.div(1.5)).mul(0.37)).sub(0.5).mul(0.06);
+    const near = smoothstep(60.0, 10.0, length(positionWorld.sub(cameraPosition)));
+    const j = fract(p.div(1.5));
+    const joint = max(smoothstep(0.025, 0.0, j.x), smoothstep(0.025, 0.0, j.y)).mul(near).mul(0.28);
+    return tone.add(slab).mul(float(1.0).sub(joint));
+  })();
+  _forecourtMat = mat;
+  return mat;
+}
+
 let _plotGroundMat = null;
 function createPlotGroundMaterial() {
   if (_plotGroundMat) return _plotGroundMat;
@@ -2346,5 +2365,5 @@ function createRenderedWallMaterial() {
   return mat;
 }
 
-Object.assign(window.CITY, { cityUniforms, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial });
+Object.assign(window.CITY, { cityUniforms, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial });
 })();
