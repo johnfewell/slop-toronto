@@ -1,0 +1,80 @@
+[
+ {
+  "name": "t00-hud",
+  "time": "golden",
+  "js": "document.getElementById('btn-toggle-hud').click()",
+  "wait": 3000
+ },
+ {
+  "name": "hero",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.cnTower; a.cameraSystem.cinema = () => ({ pos: [s.x - 1300, 220, s.z + 1400], look: [s.x + 300, 60, s.z - 200], fov: 46 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "cn-tower",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.cnTower; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + -210, s.z + 165, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + -420, 45, s.z + 330], look: [s.x, 230, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "rogers-centre",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.rogersCentre; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + -100, s.z + 165, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + -200, 220, s.z + 330], look: [s.x, 30, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "union-station",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.unionStation; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + 75, s.z + 130, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + 150, 160, s.z + 260], look: [s.x, 5, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "city-hall",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.cityHall; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + 20, s.z + 165, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + 40, 120, s.z + 330], look: [s.x, 40, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "rom",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.rom; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + 30, s.z + 100, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + 60, 120, s.z + 200], look: [s.x, 10, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "st-lawrence",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.stLawrence; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + -30, s.z + 110, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + -60, 90, s.z + 220], look: [s.x, 8, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "distillery",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.distillery; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + 75, s.z + -75, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + 150, 110, s.z + -150], look: [s.x, 0, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "harbourfront",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.harbourfront; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + -85, s.z + 115, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + -170, 55, s.z + 230], look: [s.x, 5, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "cinesphere",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.cinesphere; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + -115, s.z + 85, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + -230, 45, s.z + 170], look: [s.x, 10, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "queens-park",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; const s = window.CITY.LANDMARK_SITES.legislature; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(s.x + -45, s.z + 140, 0); a.cameraSystem.cinema = () => ({ pos: [s.x + -90, 40, s.z + 280], look: [s.x, 20, s.z], fov: 50 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "ride",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); document.getElementById('tp-humberArch').click(); a.cameraSystem.zoomMultiplier = 1.5; a.cameraSystem.orbitPitchOffset = 0.22; })()",
+  "wait": 7000
+ }
+]

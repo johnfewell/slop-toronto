@@ -1,12 +1,12 @@
 {
-  "name": "Abuja Tour",
-  "short_name": "Abuja Tour",
-  "description": "Nigeria's capital at true 1:1 scale: search, directions and a 3D city to walk, drive, cycle or fly through.",
+  "name": "Slop Toronto",
+  "short_name": "Slop Toronto",
+  "description": "Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly from the Humber Bay Arch Bridge to the Distillery District.",
   "start_url": "../explore.html",
   "scope": "../",
   "display": "standalone",
-  "background_color": "#06120d",
-  "theme_color": "#006b3d",
+  "background_color": "#07111d",
+  "theme_color": "#07111d",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
