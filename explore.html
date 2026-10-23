@@ -7,26 +7,26 @@
   <link rel="icon" href="./assets/logo-mark.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-180.png" />
   <link rel="manifest" href="./assets/manifest.webmanifest" />
-  <meta name="theme-color" content="#006b3d" />
-  <meta name="description" content="Slop Toronto: Nigeria's capital at true 1:1 scale. Search any place, get turn-by-turn directions and walk, drive an FCT green taxi, cycle or fly through the real streets, from Jabi Lake to Aso Rock." />
-  <!-- social: link previews, written by tools/social.mjs -->
+  <meta name="theme-color" content="#07111d" />
+  <meta name="description" content="Slop Toronto: downtown Toronto and the waterfront in 3D, in your browser. Walk, cycle, drive or fly from the Humber Bay Arch Bridge along the lake to Sugar Beach, the CN Tower and the Distillery District." />
+  <!-- social: link previews -->
   <link rel="canonical" href="./explore.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Slop Toronto" />
-  <meta property="og:locale" content="en_NG" />
+  <meta property="og:locale" content="en_CA" />
   <meta property="og:url" content="./explore.html" />
   <meta property="og:title" content="Explore Toronto in 3D · Slop Toronto" />
-  <meta property="og:description" content="Nigeria’s capital in 3D: 37,000 buildings, every street, real traffic lights. Search, get directions and tour the city on foot, by taxi, bicycle or helicopter." />
-  <meta property="og:image" content="./assets/og-image.jpg" />
+  <meta property="og:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
+  <meta property="og:image" content="./assets/og-toronto.jpg" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Slop Toronto: the logo over a 3D render of Abuja, with “Nigeria’s capital, street by street, in 3D”" />
+  <meta property="og:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Explore Toronto in 3D · Slop Toronto" />
-  <meta name="twitter:description" content="Nigeria’s capital in 3D: 37,000 buildings, every street, real traffic lights. Search, get directions and tour the city on foot, by taxi, bicycle or helicopter." />
-  <meta name="twitter:image" content="./assets/og-image.jpg" />
-  <meta name="twitter:image:alt" content="Slop Toronto: the logo over a 3D render of Abuja, with “Nigeria’s capital, street by street, in 3D”" />
+  <meta name="twitter:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
+  <meta name="twitter:image" content="./assets/og-toronto.jpg" />
+  <meta name="twitter:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <!-- /social -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <script>
@@ -345,7 +345,7 @@
   <!-- Bottom-Left: Street-Name Signs & Live GPS Radar Minimap -->
   <div class="hud hud-bottom-left">
     <div id="hud-location" class="location" aria-live="off"></div>
-    <aside id="minimap-card" class="panel radar" aria-label="Live street radar minimap" title="Open the full Abuja street map [M]">
+    <aside id="minimap-card" class="panel radar" aria-label="Live street radar minimap" title="Open the full Toronto street map [M]">
       <canvas id="minimap-canvas"></canvas>
       <span class="radar-north" aria-hidden="true">N</span>
       <kbd class="radar-key">M</kbd>
@@ -360,7 +360,7 @@
       <button id="mode-person" class="mode-btn" data-mode="person" type="button" title="Person [1]">
         <svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg><span class="mode-label">Walk</span><kbd>1</kbd>
       </button>
-      <button id="mode-car" class="mode-btn active" data-mode="car" type="button" title="Car · FCT green taxi [2]">
+      <button id="mode-car" class="mode-btn active" data-mode="car" type="button" title="Car [2]">
         <svg class="icon" aria-hidden="true"><use href="#i-car"/></svg><span class="mode-label">Drive</span><kbd>2</kbd>
       </button>
       <button id="mode-cyclist" class="mode-btn" data-mode="cyclist" type="button" title="Cyclist [3]">
@@ -377,7 +377,7 @@
     <section id="hud-cluster" class="panel cluster" aria-label="Vehicle telemetry and camera">
       <div class="gauge">
         <div class="gauge-top">
-          <span id="hud-active-mode" class="gauge-label">FCT Green Taxi</span>
+          <span id="hud-active-mode" class="gauge-label">Cyclist</span>
           <span class="gauge-alt"><span class="gauge-alt-label">Alt</span> <span id="hud-altitude">0</span> m</span>
         </div>
         <div class="gauge-speed"><span id="hud-speed">0</span><span class="gauge-unit">km/h</span></div>
@@ -441,7 +441,7 @@
   </div>
 
   <!-- Full-Screen Interactive Toronto Street Map ([M]) -->
-  <section id="fullmap-modal" class="fullmap-modal hidden" role="dialog" aria-modal="true" aria-label="Full interactive Abuja street map">
+  <section id="fullmap-modal" class="fullmap-modal hidden" role="dialog" aria-modal="true" aria-label="Full interactive Toronto street map">
     <div id="fullmap-canvas-wrap" class="fullmap-canvas-wrap">
       <canvas id="fullmap-canvas"></canvas>
     </div>
@@ -450,13 +450,13 @@
       <div class="panel fullmap-title">
         <img class="map-logo" src="./assets/logo-mark.svg" alt="" width="36" height="36" />
         <div>
-          <h2>Toronto<span> Slop</span> Map</h2>
-          <p id="fullmap-player-info" class="fullmap-subtitle">You are by Eagle Square</p>
+          <h2>Slop<span> Toronto</span> Map</h2>
+          <p id="fullmap-player-info" class="fullmap-subtitle">You are by Union Station</p>
         </div>
       </div>
       <label class="panel fullmap-search-wrap">
         <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
-        <input id="fullmap-search" class="fullmap-search" type="text" placeholder="Search places, streets &amp; districts: Ahmadu Bello Way, Wuse, hotel…" aria-label="Search places, streets and districts" autocomplete="off" spellcheck="false" />
+        <input id="fullmap-search" class="fullmap-search" type="text" placeholder="Search places, streets &amp; districts: Queens Quay, CN Tower, café…" aria-label="Search places, streets and districts" autocomplete="off" spellcheck="false" />
         <div id="fullmap-search-results" class="panel ac-list" hidden></div>
       </label>
       <button id="close-fullmap-btn" class="panel tool-btn fullmap-close" type="button" title="Close map [M / Esc]">
@@ -465,7 +465,7 @@
     </div>
 
     <div class="map-controls">
-      <div class="panel map-compass" title="True north · the map is drawn along the Central Business District's street grid, 32° west of it">
+      <div class="panel map-compass" title="True north · the map is drawn along downtown Toronto's street grid, about 17° west of it">
         <svg viewBox="0 0 44 44" aria-hidden="true">
           <g id="map-compass-needle">
             <path d="M22 9.5 25.6 22h-7.2z" fill="#f05a4f"/>
@@ -481,7 +481,7 @@
       <div class="panel map-zoom">
         <button id="map-real-location" class="icon-btn" type="button" title="Where I really am" aria-label="Show my real location"><svg class="icon" aria-hidden="true"><use href="#i-gps"/></svg></button>
         <button id="map-center-player" class="icon-btn" type="button" title="Street view around your character" aria-label="Center on player"><svg class="icon" aria-hidden="true"><use href="#i-locate"/></svg></button>
-        <button id="map-view-all" class="icon-btn" type="button" title="The whole city (Jabi Lake to Aso Rock)" aria-label="Fit the whole city"><svg class="icon" aria-hidden="true"><use href="#i-fit"/></svg></button>
+        <button id="map-view-all" class="icon-btn" type="button" title="The whole city (Humber Bay to the Distillery District)" aria-label="Fit the whole city"><svg class="icon" aria-hidden="true"><use href="#i-fit"/></svg></button>
       </div>
     </div>
 
@@ -562,7 +562,7 @@
           <ul><li>Drag to orbit · scroll to zoom</li><li><kbd>V</kbd> Next camera · <kbd>5</kbd>–<kbd>0</kbd> Cameras &amp; sights</li><li><kbd>H</kbd> Clean view · <kbd>?</kbd> This help</li></ul>
         </section>
       </div>
-      <p class="help-foot">Streets, buildings, places, signals and district boundaries: © OpenStreetMap contributors. Heights of most buildings are estimated. Name boards show each place's name, not its trademarked logo. <span class="help-fps">three.js WebGPU · <span id="hud-fps" class="fps-ok">60</span> fps</span></p>
+      <p class="help-foot">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) and City of Toronto Open Data (Open Government Licence – Toronto). Built on <a href="https://github.com/mrdoob/slop-newyork" target="_blank" rel="noopener noreferrer">Slop New York</a> by mrdoob and Abuja Tour (MIT). <a href="./index.html#credits">All credits</a>. Name boards show each place's name, not its trademarked logo. <span class="help-fps">three.js WebGPU · <span id="hud-fps" class="fps-ok">60</span> fps</span></p>
     </div>
   </div>
 

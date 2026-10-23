@@ -2,15 +2,17 @@
 // usage: GPU2_OUT=out node tools/capture.mjs [shot.json]   (serves this folder itself: vite would rewrite the import map)
 // A shot is { name, mode?, time?, camera?, x?, z?, heading?, wait?, js? } (js: a page expression run before the shot) (world metres, see the geodata frame); the
 // default list is one overview per time of day.
+// CAPTURE_ROOT=dist serves another folder (the built site); CAPTURE_STATIC=1 with CAPTURE_PAGE=index.html screenshots a
+// plain page (full page, desktop and phone width) instead of waiting for the city.
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const ROOT = process.env.CAPTURE_ROOT ? path.resolve(process.env.CAPTURE_ROOT) + path.sep : fileURLToPath(new URL('..', import.meta.url));
 const PORT = Number(process.env.CAPTURE_PORT || 8768);
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webmanifest': 'application/manifest+json' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer((req, res) => {
   const file = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
   if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return res.writeHead(404).end();
@@ -32,10 +34,30 @@ const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
 const log = [];
 page.on('console', (m) => log.push(`[${m.type()}] ${m.text()}`));
 page.on('pageerror', (e) => log.push(`[pageerror] ${e.message}`));
+page.on('response', (r) => { if (r.status() >= 400) log.push(`[http ${r.status()} error] ${r.url()}`); });
 
 const t0 = Date.now();
 await page.goto(`${BASE}/${process.env.CAPTURE_PAGE || 'explore.html'}${process.env.CAPTURE_QUERY || ''}`, { waitUntil: 'load' });
 const flush = () => fs.writeFileSync(path.join(OUT, 'console.log'), log.join('\n') + '\n');
+if (process.env.CAPTURE_STATIC) {
+  const name = path.basename(process.env.CAPTURE_PAGE || 'page', '.html');
+  await page.waitForTimeout(2500);
+  await page.evaluate(async () => { // scroll through so lazy images load, then show every section
+    for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 120)); }
+    window.scrollTo(0, 0);
+    document.querySelectorAll('.reveal').forEach((el) => el.classList.add('in'));
+  });
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: path.join(OUT, `${name}-desktop.png`), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: path.join(OUT, `${name}-phone.png`), fullPage: true });
+  flush();
+  console.log(log.filter((l) => l.includes('error') || l.includes('404')).join('\n') || `[capture] ${name} ok`);
+  await browser.close();
+  server.close();
+  process.exit(0);
+}
 try {
   await page.waitForFunction(() => window.__CITY_APP?.ready, null, { timeout: 240000 });
 } catch (e) {

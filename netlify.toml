@@ -1,0 +1,58 @@
+# Netlify: production deploys from the `release` branch (set as the production branch in the site's settings),
+# Deploy Previews for pull requests. The site is static: tools/build-site.mjs copies what the pages load into dist/.
+# CLI used to set this up: netlify-cli@27.14.2 (npx netlify-cli@27.14.2 ...).
+
+[build]
+  command = "node tools/build-site.mjs"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # the build needs no packages; skip the dev tooling (playwright, vite, esbuild...) Netlify would otherwise install
+  NPM_FLAGS = "--omit=dev --no-audit --no-fund"
+
+# Netlify compresses text responses (HTML, JS, CSS, JSON, SVG) with brotli/gzip on its own (checked on a draft
+# deploy: toronto-geodata.js goes out brotli). It does not compress .glb or .bin: rom.glb ships at its 6.3 MB.
+# Pages and code: revalidate on every visit (ETag, a 304 when unchanged), so a deploy is live at once.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Static media that only changes with a deliberate re-export: a day fresh, then served while it revalidates.
+[[headers]]
+  for = "/assets/water/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/assets/props/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/assets/landmarks/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+# glTF binaries: the right type (Netlify would send application/octet-stream)
+[[headers]]
+  for = "/*.glb"
+  [headers.values]
+    Content-Type = "model/gltf-binary"
+
+[[headers]]
+  for = "/assets/site/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/assets/*.bin"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/assets/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"

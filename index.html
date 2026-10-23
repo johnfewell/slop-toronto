@@ -3,36 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Abuja Tour · Nigeria's capital, street by street</title>
-  <meta name="description" content="Abuja Tour: explore Nigeria's capital at true 1:1 scale in your browser. Search any place, get turn-by-turn directions, and walk, drive an FCT green taxi, cycle or fly from Jabi Lake to Aso Rock." />
-  <!-- social: link previews, written by tools/social.mjs -->
+  <title>Slop Toronto · the city and the waterfront in 3D</title>
+  <meta name="description" content="Slop Toronto: downtown Toronto and the waterfront in 3D, in your browser. Cycle the lake from the Humber Bay Arch Bridge to Sugar Beach, or walk, drive and fly past the CN Tower and through downtown." />
+  <!-- social: link previews -->
   <link rel="canonical" href="./" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Abuja Tour" />
-  <meta property="og:locale" content="en_NG" />
+  <meta property="og:site_name" content="Slop Toronto" />
+  <meta property="og:locale" content="en_CA" />
   <meta property="og:url" content="./" />
-  <meta property="og:title" content="Abuja Tour · Nigeria’s capital, street by street" />
-  <meta property="og:description" content="Explore Abuja at true 1:1 scale in your browser: search any place, get turn-by-turn directions, then walk, drive an FCT green taxi, cycle or fly from Jabi Lake to Aso Rock." />
-  <meta property="og:image" content="./assets/og-image.jpg" />
+  <meta property="og:title" content="Slop Toronto · the city and the waterfront in 3D" />
+  <meta property="og:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
+  <meta property="og:image" content="./assets/og-toronto.jpg" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Abuja Tour: the logo over a 3D render of Abuja, with “Nigeria’s capital, street by street, in 3D”" />
+  <meta property="og:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Abuja Tour · Nigeria’s capital, street by street" />
-  <meta name="twitter:description" content="Explore Abuja at true 1:1 scale in your browser: search any place, get turn-by-turn directions, then walk, drive an FCT green taxi, cycle or fly from Jabi Lake to Aso Rock." />
-  <meta name="twitter:image" content="./assets/og-image.jpg" />
-  <meta name="twitter:image:alt" content="Abuja Tour: the logo over a 3D render of Abuja, with “Nigeria’s capital, street by street, in 3D”" />
+  <meta name="twitter:title" content="Slop Toronto · the city and the waterfront in 3D" />
+  <meta name="twitter:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
+  <meta name="twitter:image" content="./assets/og-toronto.jpg" />
+  <meta name="twitter:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <!-- /social -->
-  <meta name="theme-color" content="#06120d" />
+  <meta name="theme-color" content="#07111d" />
   <link rel="icon" href="./assets/logo-mark.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-180.png" />
   <link rel="manifest" href="./assets/manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&amp;display=swap" />
-  <link rel="preload" as="image" href="./assets/landing/hero-skyline.jpg" />
-  <link rel="stylesheet" href="./css/landing.css?v=20261022-tour2" />
+  <link rel="preload" as="image" href="./assets/site/hero.webp" />
+  <link rel="stylesheet" href="./css/landing.css?v=20261023-toronto1" />
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -54,14 +54,15 @@
   </svg>
 
   <header class="topbar">
-    <a class="logo" href="./index.html" aria-label="Abuja Tour home">
+    <a class="logo" href="./index.html" aria-label="Slop Toronto home">
       <img class="logo-mark" src="./assets/logo-mark.svg" alt="" width="40" height="40" />
-      <span class="logo-text">Abuja<span> Tour</span></span>
+      <span class="logo-text">Slop<span> Toronto</span></span>
     </a>
     <nav class="toplinks" aria-label="Sections">
       <a href="#sights">Sights</a>
       <a href="#how">How it works</a>
       <a href="#real">What's real</a>
+      <a href="#credits">Credits</a>
     </nav>
     <a class="btn btn-explore btn-small" href="./explore.html">Explore <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
   </header>
@@ -71,21 +72,20 @@
     <section class="hero">
       <div class="hero-bg" aria-hidden="true"></div>
       <div class="hero-inner">
-        <p class="eyebrow"><span class="flag" aria-hidden="true"><i></i><i></i><i></i></span> Federal Capital Territory, Nigeria</p>
-        <h1>Abuja,<br />street by street.</h1>
-        <p class="lede">Nigeria's capital at true 1:1 scale, in your browser. Find any place, get directions, then walk, drive an FCT green taxi, cycle or fly there, from Jabi Lake to Aso Rock.</p>
+        <p class="eyebrow"><span class="dot" aria-hidden="true"></span> Toronto, on Lake Ontario</p>
+        <h1>Toronto,<br />by the lake.</h1>
+        <p class="lede">Downtown Toronto and the waterfront in 3D, in your browser. Cycle the lake from the Humber Bay Arch Bridge to Sugar Beach, or walk, drive and fly past the CN Tower and through the downtown streets.</p>
         <form class="hero-search" action="./explore.html" id="hero-search" role="search">
           <svg class="i" aria-hidden="true"><use href="#l-search"/></svg>
-          <input id="hero-q" type="text" name="q" placeholder="Where to? National Mosque, Wuse Market, a hotel…" aria-label="Search a place in Abuja" autocomplete="off" />
+          <input id="hero-q" type="text" name="q" placeholder="Where to? CN Tower, Queens Quay, a café…" aria-label="Search a place in Toronto" autocomplete="off" />
           <button class="btn btn-explore" type="submit">Explore <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></button>
         </form>
-        <div class="chips" aria-label="Popular searches">
-          <a class="chip chip-locate" href="./explore.html#locate"><svg class="i" aria-hidden="true"><use href="#l-gps"/></svg>Use my location</a>
-          <a class="chip" href="./explore.html#place=Abuja%20National%20Mosque">National Mosque</a>
-          <a class="chip" href="./explore.html#place=Aso%20Rock">Aso Rock</a>
-          <a class="chip" href="./explore.html#place=Millennium%20Tower">Millennium Tower</a>
-          <a class="chip" href="./explore.html#place=Jabi%20Lake">Jabi Lake</a>
-          <a class="chip" href="./explore.html#to=Eagle%20Square">Directions to Eagle Square</a>
+        <div class="chips" aria-label="Popular places">
+          <a class="chip" href="./explore.html#mode=cycle">Ride the waterfront</a>
+          <a class="chip" href="./explore.html#place=CN%20Tower">CN Tower</a>
+          <a class="chip" href="./explore.html#place=Distillery%20District">Distillery District</a>
+          <a class="chip" href="./explore.html#place=Harbourfront%20Centre">Harbourfront</a>
+          <a class="chip" href="./explore.html#to=Union%20Station">Directions to Union Station</a>
         </div>
       </div>
       <a class="scroll-cue" href="#stats" aria-label="Scroll to learn more"><span></span></a>
@@ -93,44 +93,60 @@
 
     <!-- Numbers -->
     <section class="stats" id="stats" aria-label="The city in numbers">
-      <div class="stat reveal"><b>37,373</b><span>buildings on their real footprints</span></div>
-      <div class="stat reveal"><b>624</b><span>named streets, every one drivable</span></div>
-      <div class="stat reveal"><b>835</b><span>places to search: hotels, banks, markets…</span></div>
-      <div class="stat reveal"><b>63</b><span>signalised junctions &amp; crossings, as mapped</span></div>
-      <div class="stat reveal"><b>1&thinsp;:&thinsp;1</b><span>12.5 × 13.7 km, every metre to scale</span></div>
+      <div class="stat reveal"><b>35,266</b><span>buildings, with the City's own heights</span></div>
+      <div class="stat reveal"><b>1,383</b><span>named streets to walk, cycle or drive</span></div>
+      <div class="stat reveal"><b>57,120</b><span>street trees where the City says they stand</span></div>
+      <div class="stat reveal"><b>~6 km</b><span>of lakeshore, Humber Bay to Sugar Beach</span></div>
+      <div class="stat reveal"><b>1&thinsp;:&thinsp;1</b><span>11.6 × 6.6 km of downtown, to scale</span></div>
     </section>
 
     <!-- Sights -->
     <section class="section" id="sights">
       <div class="section-head reveal">
         <p class="kicker">Start somewhere iconic</p>
-        <h2>The sights of the capital</h2>
-        <p class="section-lede">Pick a sight and you arrive on the street in front of it, facing it. Everything around it is there too: the roads, the traffic, the people.</p>
+        <h2>The sights of the city</h2>
+        <p class="section-lede">Pick a sight and you arrive on the street in front of it, facing it. Everything around it is there too: the roads, the traffic, the people. Every picture here is the app itself.</p>
       </div>
       <div class="sights">
-        <a class="sight sight-wide reveal" href="./explore.html#place=Abuja%20National%20Mosque">
-          <img src="./assets/landing/mosque.jpg" alt="The Abuja National Mosque's golden dome and four minarets" loading="lazy" />
-          <div class="sight-text"><b>Abuja National Mosque</b><span>Central Business District</span></div>
+        <a class="sight sight-wide reveal" href="./explore.html#place=CN%20Tower">
+          <img src="./assets/site/cn-tower.webp" alt="The CN Tower over the Entertainment District, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>CN Tower</b><span>553 m over the Entertainment District</span></div>
         </a>
-        <a class="sight reveal" href="./explore.html#place=Aso%20Rock">
-          <img src="./assets/landing/aso-rock.jpg" alt="Aso Rock rising over the east of the city" loading="lazy" />
-          <div class="sight-text"><b>Aso Rock</b><span>400 m of granite over Asokoro</span></div>
+        <a class="sight reveal" href="./explore.html#place=Rogers%20Centre">
+          <img src="./assets/site/rogers-centre.webp" alt="Rogers Centre at the foot of the CN Tower, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>Rogers Centre</b><span>Blue Jays Way</span></div>
         </a>
-        <a class="sight reveal" href="./explore.html#place=Millennium%20Tower">
-          <img src="./assets/landing/millennium.jpg" alt="The Millennium Tower's white cylinders and observation disc" loading="lazy" />
-          <div class="sight-text"><b>Millennium Tower</b><span>Central Business District</span></div>
+        <a class="sight reveal" href="./explore.html#place=Union%20Station">
+          <img src="./assets/site/union-station.webp" alt="Union Station on Front Street, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>Union Station</b><span>Front St · Financial District</span></div>
         </a>
-        <a class="sight reveal" href="./explore.html#place=Eagle%20Square">
-          <img src="./assets/landing/eagle-square.jpg" alt="Eagle Square with Aso Rock beyond" loading="lazy" />
-          <div class="sight-text"><b>Eagle Square</b><span>The heart of the National Axis</span></div>
+        <a class="sight reveal" href="./explore.html#place=Toronto%20City%20Hall">
+          <img src="./assets/site/city-hall.webp" alt="Toronto City Hall and Nathan Phillips Square, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>Toronto City Hall</b><span>Nathan Phillips Square</span></div>
         </a>
-        <a class="sight reveal" href="./explore.html#place=National%20Assembly">
-          <img src="./assets/landing/three-arms.jpg" alt="The Three Arms Zone with the National Assembly" loading="lazy" />
-          <div class="sight-text"><b>Three Arms Zone</b><span>National Assembly · Presidency · Supreme Court</span></div>
+        <a class="sight reveal" href="./explore.html#place=Royal%20Ontario%20Museum">
+          <img src="./assets/site/rom.webp" alt="The Royal Ontario Museum on Bloor Street, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>Royal Ontario Museum</b><span>Bloor St W · Yorkville</span></div>
         </a>
-        <a class="sight sight-full reveal" href="./explore.html#place=Jabi%20Lake">
-          <img src="./assets/landing/jabi-lake.jpg" alt="Jabi Lake and the district around it" loading="lazy" />
-          <div class="sight-text"><b>Jabi Lake</b><span>Jabi · Utako</span></div>
+        <a class="sight reveal" href="./explore.html#place=St.%20Lawrence%20Market">
+          <img src="./assets/site/st-lawrence.webp" alt="St. Lawrence Market on Front Street East, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>St. Lawrence Market</b><span>Front St E · Old Town</span></div>
+        </a>
+        <a class="sight reveal" href="./explore.html#place=Distillery%20District">
+          <img src="./assets/site/distillery.webp" alt="The Distillery District, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>Distillery District</b><span>Mill St · Corktown</span></div>
+        </a>
+        <a class="sight reveal" href="./explore.html#place=Harbourfront%20Centre">
+          <img src="./assets/site/harbourfront.webp" alt="Harbourfront Centre on Queens Quay, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>Harbourfront Centre</b><span>Queens Quay W · on the lake</span></div>
+        </a>
+        <a class="sight sight-wide reveal" href="./explore.html#place=Cinesphere">
+          <img src="./assets/site/cinesphere.webp" alt="Ontario Place and the Cinesphere on the lake, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>Cinesphere</b><span>Ontario Place</span></div>
+        </a>
+        <a class="sight reveal" href="./explore.html#place=Ontario%20Legislative%20Building">
+          <img src="./assets/site/queens-park.webp" alt="Queen's Park and the Ontario Legislative Building, rendered in the app" loading="lazy" width="960" height="540" />
+          <div class="sight-text"><b>Queen's Park</b><span>University Ave · the Legislature</span></div>
         </a>
       </div>
     </section>
@@ -146,7 +162,7 @@
           <span class="step-n">1</span>
           <svg class="i step-i" aria-hidden="true"><use href="#l-search"/></svg>
           <h3>Search like a map app</h3>
-          <p>Type a place, a street, a district or just “pharmacy”. Suggestions appear as you type, nearest first, typos forgiven.</p>
+          <p>Type a place, a street, a neighbourhood or just “café”. Suggestions appear as you type, nearest first, typos forgiven.</p>
         </article>
         <article class="step reveal">
           <span class="step-n">2</span>
@@ -162,13 +178,13 @@
         </article>
       </div>
       <div class="modes reveal">
-        <figure class="mode-shot"><img src="./assets/landing/taxi.jpg" alt="An FCT green taxi at a signalised junction" loading="lazy" /></figure>
+        <figure class="mode-shot"><img src="./assets/site/ride.webp" alt="A cyclist on the waterfront, rendered in the app" loading="lazy" width="960" height="540" /></figure>
         <ul class="mode-list">
-          <li><svg class="i" aria-hidden="true"><use href="#l-walk"/></svg><div><b>Walk</b><span>Among the crowds on the pavements, across the zebra crossings</span></div></li>
-          <li><svg class="i" aria-hidden="true"><use href="#l-car"/></svg><div><b>Drive an FCT green taxi</b><span>In the traffic, on the right, over the flyovers</span></div></li>
-          <li><svg class="i" aria-hidden="true"><use href="#l-bike"/></svg><div><b>Cycle</b><span>The quiet crescents of Maitama and Asokoro</span></div></li>
-          <li><svg class="i" aria-hidden="true"><use href="#l-heli"/></svg><div><b>Fly</b><span>Over the National Axis to the top of Aso Rock</span></div></li>
-          <li><svg class="i" aria-hidden="true"><use href="#l-sun"/></svg><div><b>Real sunlight</b><span>Golden hour, midday, sunset and night, for today's date in Abuja</span></div></li>
+          <li><svg class="i" aria-hidden="true"><use href="#l-bike"/></svg><div><b>Cycle</b><span>The Martin Goodman Trail along the lake, from the arch bridge to Sugar Beach</span></div></li>
+          <li><svg class="i" aria-hidden="true"><use href="#l-walk"/></svg><div><b>Walk</b><span>Among the crowds on the sidewalks, across the crosswalks</span></div></li>
+          <li><svg class="i" aria-hidden="true"><use href="#l-car"/></svg><div><b>Drive</b><span>In the traffic on the downtown grid, and up onto the Gardiner</span></div></li>
+          <li><svg class="i" aria-hidden="true"><use href="#l-heli"/></svg><div><b>Fly</b><span>Over the harbour and the islands to the top of the CN Tower</span></div></li>
+          <li><svg class="i" aria-hidden="true"><use href="#l-sun"/></svg><div><b>Four kinds of light</b><span>Golden hour, midday, sunset and night</span></div></li>
         </ul>
       </div>
     </section>
@@ -177,13 +193,13 @@
     <section class="section real" id="real">
       <div class="section-head reveal">
         <p class="kicker">Built from open data</p>
-        <h2>What's real, and what's estimated</h2>
+        <h2>What's real, and what's made up</h2>
       </div>
       <div class="facts">
-        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-route"/></svg><h3>Streets &amp; flyovers</h3><p>Every road in OpenStreetMap across the city, with its lanes, direction and the interchanges' decks and ramps.</p></div>
-        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-building"/></svg><h3>Buildings &amp; places</h3><p>Each footprint where it stands; named places carry a name board. Most heights are estimates: the map rarely records them.</p></div>
-        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-signal"/></svg><h3>Signals &amp; districts</h3><p>Traffic lights where they are mapped, and the official district boundaries, from Garki to Maitama.</p></div>
-        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-pin"/></svg><h3>Terrain &amp; sun</h3><p>The hills from SRTM elevation data, Aso Rock's summit at its surveyed 936 m, and the sun where it is today.</p></div>
+        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-building"/></svg><h3>Buildings</h3><p>Every footprint and height from the City of Toronto's 3D Massing. The façades are the engine's own: no photographs.</p></div>
+        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-route"/></svg><h3>Streets</h3><p>OpenStreetMap's roads with their lanes and one-way streets, laid on the City's edge-of-roadway map, signals where they are mapped.</p></div>
+        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-pin"/></svg><h3>Trees &amp; street furniture</h3><p>Street trees, fire hydrants and bike rings where the City's open data puts them.</p></div>
+        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-sun"/></svg><h3>Water &amp; light</h3><p>The lake, the harbour and the shoreline from OpenStreetMap; the terrain from SRTM. The sky and the water are art, not a forecast.</p></div>
       </div>
     </section>
 
@@ -191,17 +207,19 @@
     <section class="cta">
       <div class="cta-inner reveal">
         <img class="cta-mark" src="./assets/logo-mark.svg" alt="" width="84" height="84" />
-        <h2>Abuja is waiting.</h2>
-        <p>Runs in your browser with WebGPU: a recent Chrome or Edge on a laptop or desktop works best.</p>
-        <a class="btn btn-explore btn-big" href="./explore.html">Explore Abuja <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
+        <h2>The lake is waiting.</h2>
+        <p>Slop Toronto runs in your browser and needs WebGPU: a recent Chrome or Edge on a laptop or desktop works best.</p>
+        <a class="btn btn-explore btn-big" href="./explore.html">Explore Toronto <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
         <p id="webgpu-note" class="webgpu-note" hidden>Your browser doesn't seem to support WebGPU yet. Try the latest Chrome or Edge.</p>
       </div>
     </section>
   </main>
 
-  <footer class="footer">
-    <p>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) · Terrain: AWS Terrain Tiles (SRTM) · Built with <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">three.js</a> on the engine of <a href="https://github.com/mrdoob/slop-newyork" target="_blank" rel="noopener noreferrer">Slop New York</a> · MIT License</p>
-    <p class="footer-small">Name boards show places' names, not their trademarked logos. Building heights without mapped data are estimated.</p>
+  <footer class="footer" id="credits">
+    <p>Built with <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">three.js</a> (MIT) on the engine of <a href="https://github.com/mrdoob/slop-newyork" target="_blank" rel="noopener noreferrer">Slop New York</a> by mrdoob (MIT), by way of <a href="https://abujatour.site/" target="_blank" rel="noopener noreferrer">Abuja Tour</a> (MIT).</p>
+    <p>Data: <a href="https://open.toronto.ca/" target="_blank" rel="noopener noreferrer">City of Toronto Open Data</a> under the <a href="https://open.toronto.ca/open-data-license/" target="_blank" rel="noopener noreferrer">Open Government Licence – Toronto</a> (3D Massing, Edge of Roadway, Street Tree Data, Water Hydrants, Bicycle Parking) · Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) · Terrain: AWS Terrain Tiles (SRTM).</p>
+    <p>Stylized water: port of Uber Stylized Water (MIT, © MatrixRex / norio) · Trees: <a href="https://github.com/dgreenheck/ez-tree" target="_blank" rel="noopener noreferrer">EZ-Tree</a> by Dan Greenheck (MIT) · Textures: <a href="https://polyhaven.com/" target="_blank" rel="noopener noreferrer">Poly Haven</a> (CC0) · Street props by John Fewell · <a href="./CREDITS.md">All credits</a></p>
+    <p class="footer-small">A fan project, not affiliated with the City of Toronto or the places shown. Name boards show places' names, not their trademarked logos. Pictures on this page are screenshots of the app.</p>
   </footer>
 
   <script>
