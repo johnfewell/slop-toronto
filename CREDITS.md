@@ -26,6 +26,8 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   Contains information licensed under the Open Government Licence – Toronto.
 - **OpenStreetMap**: streets, places, water and land use. © OpenStreetMap contributors, under the Open Database
   License (ODbL). https://www.openstreetmap.org/copyright
+  The city database built from it, `js/toronto-geodata.js` (by `tools/build-geodata.mjs`), is a derivative database
+  and is made available under the ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/), not the MIT License.
 - **AWS Terrain Tiles** (Mapzen "terrarium" tiles, SRTM-derived elevation). https://registry.opendata.aws/terrain-tiles/
 
 ## Models and textures
@@ -34,8 +36,8 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   surfaces in the ROM model. https://polyhaven.com/
 - **Street props** (hydrant, mailbox, bike ring: `assets/props/`) by John Fewell.
 - **Royal Ontario Museum model** (`assets/landmarks/rom.glb`): from John Fewell's rom-heist project, a SketchUp shell
-  re-textured in Blender (`tools/blender/export_rom.py`). Its provenance and licence are still being checked; it also
-  carries SketchUp library materials and a Flag of Canada image.
+  re-textured in Blender (`tools/blender/export_rom.py`), with SketchUp library materials and a Flag of Canada image.
+  It is not covered by this project's MIT License.
 - **Cloud noise textures** (`assets/shape.bin`, `assets/shape_detail.bin`, `assets/turbulence.png`,
   `assets/local_weather.png`) come with three-clouds-webgpu / takram (MIT).
 - **Water textures** (`assets/water/`) come with Uber Stylized Water (MIT, © MatrixRex / norio).

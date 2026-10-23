@@ -23,6 +23,13 @@ Netlify CLI, pinned: `npx netlify-cli@27.14.2 <command>` (e.g. `deploy --build` 
 
 ## License and data
 
-The project code is available under the [MIT License](LICENSE). Data and third-party code keep their own licences:
-see [CREDITS.md](CREDITS.md). In short: City of Toronto Open Data (Open Government Licence – Toronto),
-© [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL), AWS Terrain Tiles (SRTM).
+The project code is open source under the [MIT License](LICENSE). Data, models and third-party code keep their own
+licences: see [CREDITS.md](CREDITS.md). In short: City of Toronto Open Data (Open Government Licence – Toronto),
+© [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL; the built city database
+`js/toronto-geodata.js` is ODbL too), AWS Terrain Tiles (SRTM). The ROM model is not under the MIT License.
+
+## Rebuild the city data
+
+`node tools/build-geodata.mjs` rebuilds `js/toronto-geodata.js` from the raw downloads (`tools/fetch-*.mjs`: OSM via
+the Geofabrik Ontario extract and GDAL, the City of Toronto Open Data sets, AWS terrain tiles), with `GEO_DATA`
+pointing at the downloaded folder.
