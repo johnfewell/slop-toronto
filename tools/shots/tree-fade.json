@@ -1,0 +1,23 @@
+[
+ {
+  "name": "trees-euclid-a",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2046, -1900 + 6, Math.PI); app.cameraSystem.cinema = () => ({ pos: [-2051, 2.2, -1900], look: [-2050, 3.5, -1900 - 120], fov: 60 }); })()"
+ },
+ {
+  "name": "trees-euclid-b",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2046, -1904 + 6, Math.PI); app.cameraSystem.cinema = () => ({ pos: [-2051, 2.2, -1904], look: [-2050, 3.5, -1904 - 120], fov: 60 }); })()"
+ },
+ {
+  "name": "trees-euclid-c",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2046, -1908 + 6, Math.PI); app.cameraSystem.cinema = () => ({ pos: [-2051, 2.2, -1908], look: [-2050, 3.5, -1908 - 120], fov: 60 }); })()"
+ }
+]

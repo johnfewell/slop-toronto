@@ -7,13 +7,22 @@
 // Drawn like mrdoob's tree field (trees.js): each tree's level follows the view camera (near mesh within NEAR, mid mesh
 // within MID, beyond that mrdoob's whole-crown cards for the nearest of his species, or the mid mesh for pines), and the
 // trees of one model & level are regrouped into one instanced mesh whenever the levels change.
+// No pops: across a band round each hand-over a tree is drawn at both levels, each through a screen-door dither with
+// the same threshold and opposite roles (concept-3d's LOD crossfade), so every pixel is drawn by exactly one of them, in
+// colour and in the shadow maps; the threshold follows the tree's distance from the viewer, so a parked camera holds
+// the dissolve and a moving one runs it. The last level dissolves to nothing the same way.
 
 const { THREE } = window.CITY;
 const V3 = THREE.Vector3;
 
 const NEAR = 55; // full EZ-Tree mesh within (m)
 const MID = 320; // decimated mesh within; whole-crown cards beyond
-const HYSTERESIS = 6;
+// ?lodfade=0: the old hard swap (no masks, no bands), for A/B
+const FADE = new URLSearchParams(location.search).get('lodfade') !== '0';
+// hand-over bands, centred on the edge (m): near <-> mid, mid <-> far, the last level -> nothing
+const BAND = FADE ? [14, 50, 80] : [0, 0, 0];
+// the levels are regrouped every 4 m of camera travel: a tree joins a level this much before its band starts
+const MARGIN = FADE ? 6 : 0;
 const MAX_DIST = [3000, 1600, 950]; // by tier (0 park, 1 street, 2 yard), as trees.js
 const LOW_CUTOFF = 1150; // at street level everything further is behind the buildings
 const PINE_FAR = Number(new URLSearchParams(location.search).get('pinefar') ?? 600); // pines keep their mid mesh far out (mrdoob's species are all broadleaf)
@@ -43,6 +52,43 @@ function bakedGeometry(mesh) {
   return geo;
 }
 
+// The hand-over dissolve. Per instance: aLodOrigin, the tree's middle; aLodFade = (edge in, band in, edge out, band
+// out), the distances where this level takes over from the finer one and hands over to the coarser one (or to nothing).
+// Across a band the share t runs 0 -> 1 with the distance; the coarser level keeps the pixels whose hash is under t, the
+// finer one the rest. The distance is from `viewer` (set from the view camera before every render): in the shadow
+// passes TSL's cameraPosition is the light's.
+const viewer = (() => {
+  const { uniform } = window.CITY.TSL;
+  return uniform(new THREE.Vector3());
+})();
+const lodKeep = (() => {
+  const { attribute, screenCoordinate, fract, dot, vec2, float, clamp, distance } = window.CITY.TSL;
+  const origin = attribute('aLodOrigin', 'vec3');
+  const fade = attribute('aLodFade', 'vec4');
+  const d = distance(origin, viewer);
+  // interleaved-gradient noise on the pixel grid
+  const h = fract(float(52.9829189).mul(fract(dot(screenCoordinate.xy, vec2(0.06711056, 0.00583715)))));
+  const share = (edge, band) => clamp(d.sub(edge.sub(band.mul(0.5))).div(band), 0.0, 1.0);
+  return h.lessThan(share(fade.x, fade.y)).and(h.greaterThanEqual(share(fade.z, fade.w)));
+})();
+const ALL_IN = -1e6, ALL_OUT = 1e9;
+
+// The EZ-Tree glTF material as a node material wearing the dissolve; the cutout as nodes, as createTreeMaterial does
+// (an `alphaTest` on a shadow caster churns the shared shadow material's version)
+function fadeMaterial(src) {
+  const { texture, uv, float } = window.CITY.TSL;
+  const mat = new THREE.MeshStandardNodeMaterial({
+    map: src.map, color: src.color, roughness: src.roughness ?? 0.9, metalness: src.metalness ?? 0, side: THREE.DoubleSide
+  });
+  mat.name = `${src.name || 'tree'}_lodfade`;
+  mat.alphaTestNode = float(0.5);
+  const cutout = src.map ? texture(src.map, uv()).a.greaterThan(0.5) : null;
+  if (FADE) mat.maskNode = lodKeep;
+  if (cutout) mat.maskShadowNode = FADE ? cutout.and(lodKeep) : cutout;
+  else if (FADE) mat.maskShadowNode = lodKeep;
+  return mat;
+}
+
 /**
  * Loads the EZ-Tree models and builds the field for the City's street trees plus `generated` ({ x, y, z, scale,
  * species, tier } from street-details.js, in mrdoob's species & scales). Returns { group, update } or null when the
@@ -66,11 +112,7 @@ async function buildEzTrees(scene, generated) {
         else if (!near) near = o;
       });
       mid = mid || near;
-      const material = near.material;
-      material.alphaTest = Math.max(material.alphaTest || 0, 0.5);
-      material.transparent = false;
-      material.side = THREE.DoubleSide;
-      return { id, near: bakedGeometry(near), mid: bakedGeometry(mid), material };
+      return { id, near: bakedGeometry(near), mid: bakedGeometry(mid), material: fadeMaterial(near.material) };
     }));
   } catch (e) {
     console.warn('[ezTrees] models did not load, mrdoob\'s trees stay:', e);
@@ -80,6 +122,10 @@ async function buildEzTrees(scene, generated) {
   // mrdoob's whole-crown cards for the far level, one per species, scaled to each tree's height
   const atlas = createLeafAtlas();
   const farMaterial = createTreeMaterial(atlas.texture);
+  if (FADE) {
+    farMaterial.maskNode = lodKeep;
+    farMaterial.maskShadowNode = farMaterial.maskShadowNode ? farMaterial.maskShadowNode.and(lodKeep) : lodKeep;
+  }
   const farGeos = TREE_SPECIES.map((_, s) => buildTreeGeometries(s, 0, atlas.tileMeters)[2]);
   const farHeight = farGeos.map((g) => { g.computeBoundingBox(); return g.boundingBox.max.y - g.boundingBox.min.y; });
   // mrdoob's tree at scale 1 is as tall as his near mesh: generated trees keep the height they would have had
@@ -118,7 +164,8 @@ async function buildEzTrees(scene, generated) {
   const meshOf = new Int16Array(N * 3);
   const tier = new Uint8Array(N);
   const isPine = new Uint8Array(N);
-  const lod = new Uint8Array(N).fill(255);
+  const levels = new Uint8Array(N); // bit L: drawn at level L (both levels inside a hand-over band)
+  const fades = new Float32Array(N * 12); // per level: edge in, band in, edge out, band out
   const meshes = [];
   const make = (geo, material, name, attrs) => { meshes.push({ geo, material, name, capacity: 0, attrs }); return meshes.length - 1; };
   const idxNear = models.map((m) => make(m.near, m.material, `Trees_${m.id}_near`));
@@ -164,6 +211,8 @@ async function buildEzTrees(scene, generated) {
     geo.boundingSphere = m.geo.boundingSphere;
     const cap = Math.max(1, m.capacity);
     if (m.attrs) geo.setAttribute('aTreeData', new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4));
+    geo.setAttribute('aLodOrigin', new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3));
+    geo.setAttribute('aLodFade', new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4));
     const mesh = new THREE.InstancedMesh(geo, m.material, cap);
     if (!m.attrs) mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
     mesh.name = m.name;
@@ -179,21 +228,28 @@ async function buildEzTrees(scene, generated) {
   function rebuild() {
     counts.fill(0);
     for (let i = 0; i < N; i++) {
-      const l = lod[i];
-      if (l === 255) continue;
-      const mi = meshOf[i * 3 + l];
-      const mesh = instanced[mi];
-      const c = counts[mi]++;
-      const far = meshes[mi].attrs;
-      mesh.instanceMatrix.array.set((far ? matsFar : matsNear).subarray(i * 16, i * 16 + 16), c * 16);
-      if (far) mesh.geometry.attributes.aTreeData.array.set(farData.subarray(i * 4, i * 4 + 4), c * 4);
-      else mesh.instanceColor.array.set(tints.subarray(i * 3, i * 3 + 3), c * 3);
+      const bits = levels[i];
+      if (!bits) continue;
+      for (let l = 0; l < 3; l++) {
+        if (!(bits & (1 << l))) continue;
+        const mi = meshOf[i * 3 + l];
+        const mesh = instanced[mi];
+        const c = counts[mi]++;
+        const far = meshes[mi].attrs;
+        const a = mesh.geometry.attributes;
+        mesh.instanceMatrix.array.set((far ? matsFar : matsNear).subarray(i * 16, i * 16 + 16), c * 16);
+        if (far) a.aTreeData.array.set(farData.subarray(i * 4, i * 4 + 4), c * 4);
+        else mesh.instanceColor.array.set(tints.subarray(i * 3, i * 3 + 3), c * 3);
+        a.aLodOrigin.array.set([px[i], py[i], pz[i]], c * 3);
+        a.aLodFade.array.set(fades.subarray(i * 12 + l * 4, i * 12 + l * 4 + 4), c * 4);
+      }
     }
     instanced.forEach((mesh, mi) => {
       const n = counts[mi];
       if (n > 0) {
-        const extra = meshes[mi].attrs ? mesh.geometry.attributes.aTreeData : mesh.instanceColor;
-        for (const attr of [mesh.instanceMatrix, extra]) {
+        const a = mesh.geometry.attributes;
+        const extra = meshes[mi].attrs ? a.aTreeData : mesh.instanceColor;
+        for (const attr of [mesh.instanceMatrix, extra, a.aLodOrigin, a.aLodFade]) {
           attr.clearUpdateRanges();
           attr.addUpdateRange(0, n * attr.itemSize);
           attr.needsUpdate = true;
@@ -205,25 +261,32 @@ async function buildEzTrees(scene, generated) {
   }
   const last = new V3(Infinity, Infinity, Infinity);
   const cam = new V3();
+  let lastLow = null;
   function update(position) {
     cam.copy(position);
     if (cam.distanceToSquared(last) < 16) return false;
     last.copy(cam);
     const low = cam.y < 40;
-    let changed = false;
+    let changed = low !== lastLow; // the far edges move with the camera's height: every tree's bands change
+    lastLow = low;
     for (let i = 0; i < N; i++) {
       const dx = px[i] - cam.x, dy = py[i] - cam.y, dz = pz[i] - cam.z;
       const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
       let maxD = low ? Math.min(MAX_DIST[tier[i]], LOW_CUTOFF) : MAX_DIST[tier[i]];
       if (isPine[i]) maxD = Math.min(maxD, PINE_FAR);
-      const curL = lod[i] === 255 ? 3 : lod[i];
-      let nextL = d < NEAR ? 0 : d < MID ? 1 : d < maxD ? 2 : 3;
-      if (Math.abs(nextL - curL) === 1) {
-        const edge = [NEAR, MID, maxD][Math.min(nextL, curL)];
-        if (Math.abs(d - edge) < HYSTERESIS) nextL = curL;
+      // [edge in, band in, edge out, band out] per level; pines have no far level (their mid mesh goes out to maxD)
+      const f = fades;
+      const o = i * 12;
+      f[o] = ALL_IN; f[o + 1] = 1; f[o + 2] = NEAR; f[o + 3] = BAND[0];
+      f[o + 4] = NEAR; f[o + 5] = BAND[0];
+      if (isPine[i]) { f[o + 6] = maxD; f[o + 7] = BAND[2]; f[o + 8] = ALL_OUT; f[o + 9] = 1; f[o + 10] = ALL_OUT; f[o + 11] = 1; }
+      else { f[o + 6] = MID; f[o + 7] = BAND[1]; f[o + 8] = MID; f[o + 9] = BAND[1]; f[o + 10] = maxD; f[o + 11] = BAND[2]; }
+      let bits = 0;
+      for (let l = 0; l < 3; l++) {
+        const lo = f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, hi = f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN;
+        if (d >= lo && d < hi) bits |= 1 << l;
       }
-      const next = nextL === 3 ? 255 : nextL;
-      if (next !== lod[i]) { lod[i] = next; changed = true; }
+      if (bits !== levels[i]) { levels[i] = bits; changed = true; }
     }
     if (changed) rebuild();
     return changed;
@@ -234,7 +297,9 @@ async function buildEzTrees(scene, generated) {
   scene.onBeforeRender = function (renderer, scn, camera, target) {
     prevBeforeRender.call(this, renderer, scn, camera, target);
     if (camera.isOrthographicCamera === true || camera.isArrayCamera === true) return;
-    update(viewPos.setFromMatrixPosition(camera.matrixWorld));
+    viewPos.setFromMatrixPosition(camera.matrixWorld);
+    viewer.value.copy(viewPos);
+    update(viewPos);
   };
   // levels for the start view, so the shader warm-up sees the tree meshes
   const start = (window.CITY.TELEPORT_LOCATIONS || {}).yongeDundas || { x: 0, z: 0 };
@@ -247,6 +312,8 @@ async function buildEzTrees(scene, generated) {
     mesh.setMatrixAt(0, buried);
     if (meshes[mi].attrs) mesh.geometry.attributes.aTreeData.array.set([1, 1, 1, 0], 0);
     else mesh.instanceColor.array.set([1, 1, 1], 0);
+    mesh.geometry.attributes.aLodFade.array.set([ALL_IN, 1, ALL_OUT, 1], 0);
+    mesh.geometry.attributes.aLodFade.needsUpdate = true;
     mesh.count = 1;
     mesh.visible = true;
     mesh.instanceMatrix.needsUpdate = true;
