@@ -1,8 +1,8 @@
 (function () {
 // Scene-linear color grading and lens bloom, composed in the existing final render pass.
-const { THREE } = window.NYC;
-const { Fn, uniform, float, vec2, vec3, vec4, dot, mix, min, max, pow, smoothstep, length, screenUV, screenSize } = window.NYC.TSL;
-const { bloom } = window.NYC.PostFX;
+const { THREE } = window.CITY;
+const { Fn, uniform, float, vec2, vec3, vec4, dot, mix, min, max, pow, smoothstep, length, screenUV, screenSize } = window.CITY.TSL;
+const { bloom } = window.CITY.PostFX;
 
 // Exposure and white balance belong to the camera, independently of the physical lighting presets.
 // Keep exposure restrained for ACES; stronger bloom stays selective so midtones retain their contrast.
@@ -70,5 +70,5 @@ function createPostProcessing(renderer, sceneColor, reflections) {
   return { outputNode, bloomPass, applyPreset, exposure, contrast, saturation, balance };
 }
 
-Object.assign(window.NYC, { createPostProcessing });
+Object.assign(window.CITY, { createPostProcessing });
 })();

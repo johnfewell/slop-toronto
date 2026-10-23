@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Slop Toronto · Explore</title>
+  <link rel="icon" href="./assets/logo-mark.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon-180.png" />
+  <link rel="manifest" href="./assets/manifest.webmanifest" />
+  <meta name="theme-color" content="#006b3d" />
+  <meta name="description" content="Slop Toronto: Nigeria's capital at true 1:1 scale. Search any place, get turn-by-turn directions and walk, drive an FCT green taxi, cycle or fly through the real streets, from Jabi Lake to Aso Rock." />
+  <!-- social: link previews, written by tools/social.mjs -->
+  <link rel="canonical" href="./explore.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Slop Toronto" />
+  <meta property="og:locale" content="en_NG" />
+  <meta property="og:url" content="./explore.html" />
+  <meta property="og:title" content="Explore Toronto in 3D · Slop Toronto" />
+  <meta property="og:description" content="Nigeria’s capital in 3D: 37,000 buildings, every street, real traffic lights. Search, get directions and tour the city on foot, by taxi, bicycle or helicopter." />
+  <meta property="og:image" content="./assets/og-image.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Slop Toronto: the logo over a 3D render of Abuja, with “Nigeria’s capital, street by street, in 3D”" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Explore Toronto in 3D · Slop Toronto" />
+  <meta name="twitter:description" content="Nigeria’s capital in 3D: 37,000 buildings, every street, real traffic lights. Search, get directions and tour the city on foot, by taxi, bicycle or helicopter." />
+  <meta name="twitter:image" content="./assets/og-image.jpg" />
+  <meta name="twitter:image:alt" content="Slop Toronto: the logo over a 3D render of Abuja, with “Nigeria’s capital, street by street, in 3D”" />
+  <!-- /social -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <script>
+    // Download the city scripts while Three.js loads; execute them only after its imports are ready below.
+    const cityAppScripts = (() => {
+      const assetVersion = '20261022-tour2';
+      return [
+        './js/toronto-geodata.js',
+        './js/city-config.js',
+        './js/tsl-materials.js',
+        './js/trees.js',
+        './js/actor-models.js',
+        './js/vehicle-lights.js',
+        './js/pedestrians.js',
+        './js/lighting.js',
+        './js/city-grid.js',
+        './js/terrain.js',
+        './js/buildings.js',
+        './js/toronto-landmarks.js',
+        './js/landmarks.js',
+        './js/signage.js',
+        './js/street-details.js',
+        './js/street-props.js',
+        './js/road-network.js',
+        './js/road-paint.js',
+        './js/traffic.js',
+        './js/controllers.js',
+        './js/touch-controls.js',
+        './js/cameras.js',
+        './js/city-map.js',
+        './js/navigation.js',
+        './js/tour-guide.js',
+        './js/cinema.js',
+        './js/scene-culling.js',
+        './js/post-processing.js',
+        './js/lake-water.js',
+        './js/sky-clouds.js',
+        './js/main.js'
+      ].map((src) => `${src}?v=${assetVersion}`);
+    })();
+    for (const src of cityAppScripts) {
+      const preload = document.createElement('link');
+      preload.rel = 'preload';
+      preload.as = 'script';
+      preload.href = src;
+      document.head.appendChild(preload);
+    }
+  </script>
+  <!-- Inter (UI) & Overpass (street-name signs) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&amp;family=Overpass:wght@600;700&amp;display=swap" />
+  <link rel="stylesheet" href="./css/style.css?v=20261022-tour2" />
+  <!-- three.js dev branch pinned to commit e27dfa95ae (2026-10-23) via jsDelivr: mrdoob's engine needs dev (it crawls at 1 fps on the 0.186.1 release) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/build/three.webgpu.js",
+        "three/webgpu": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/build/three.webgpu.js",
+        "three/tsl": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/build/three.tsl.js",
+        "three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Icon sprite (24 × 24 stroke icons, drawn in currentColor) -->
+  <svg class="icon-sprite" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-walk" viewBox="0 0 24 24"><circle cx="13" cy="4.4" r="2"/><path d="M12.3 8.2 10.8 13.8M10.8 13.8 9.2 17.2 7.2 20.5M10.8 13.8l2.4 3 1.6 3.8M12.3 8.6 9.6 10.2l-.8 2.6M12.3 8.6l2.1 2.4 2.4.8"/></symbol>
+      <symbol id="i-car" viewBox="0 0 24 24"><path d="M9.6 4.8V3.4a.6.6 0 0 1 .6-.6h3.6a.6.6 0 0 1 .6.6v1.4"/><path d="m5.2 10.5 1.4-4.1A2.2 2.2 0 0 1 8.7 4.8h6.6a2.2 2.2 0 0 1 2.1 1.6l1.4 4.1"/><rect x="3" y="10.5" width="18" height="6.5" rx="2"/><path d="M6 17v2.6M18 17v2.6M6.6 13.8h1.6M15.8 13.8h1.6"/></symbol>
+      <symbol id="i-bike" viewBox="0 0 24 24"><circle cx="5.5" cy="16.5" r="3.6"/><circle cx="18.5" cy="16.5" r="3.6"/><path d="M5.5 16.5 9.3 9.6h6.3M11.6 16.5 9.3 9.6M11.6 16.5l4-6.9M5.5 16.5h6.1M15.6 9.6l2.9 6.9M15.6 9.6 14.8 7h2.4M8 8.4h2.8"/></symbol>
+      <symbol id="i-heli" viewBox="0 0 24 24"><path d="M3.5 4h15M11 4v3.2"/><path d="M6 12.2a5 5 0 0 1 5-5h1.6a4.4 4.4 0 0 1 4.4 4.4V15H8.8A2.8 2.8 0 0 1 6 12.2z"/><path d="M17 11h4.2M21.2 8.8v4.4M7 19h10.5M9.5 15v4M15 15v4"/></symbol>
+      <symbol id="i-golden" viewBox="0 0 24 24"><path d="M3 17.5h18M7 17.5a5 5 0 0 1 10 0M12 5v3M5.6 9.6l2 1.6M18.4 9.6l-2 1.6M7.5 21h9"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M5.5 18.5 7 17M17 7l1.5-1.5"/></symbol>
+      <symbol id="i-twilight" viewBox="0 0 24 24"><path d="M3 15.5h18M7.5 19h9M8 15.5a4 4 0 0 1 8 0M17.5 4v3.2M15.9 5.6h3.2M7 7.4v1.8M6.1 8.3h1.8"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.6A7.8 7.8 0 0 1 9.4 4.5a7.8 7.8 0 1 0 10.1 10.1z"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21.2s-6.6-5.7-6.6-11.2a6.6 6.6 0 0 1 13.2 0c0 5.5-6.6 11.2-6.6 11.2z"/><circle cx="12" cy="10" r="2.4"/></symbol>
+      <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4.5 3.5 6.6v13l5.5-2.1 6 2.1 5.5-2.1v-13L15 6.6 9 4.5zM9 4.5v13M15 6.6v13"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+      <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3.5 3.5l17 17M10.6 5.6c.5-.1.9-.1 1.4-.1 6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-2.4 3.2M6.6 6.6A15.6 15.6 0 0 0 2.5 12s3.5 6.5 9.5 6.5c1.6 0 3.1-.4 4.4-1.1M9.9 9.9a2.8 2.8 0 0 0 4.2 4.2"/></symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m7 9.5 5 5 5-5"/></symbol>
+      <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M14.5 6.5 9 12l5.5 5.5"/></symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9.5 6.5 5.5 5.5-5.5 5.5"/></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><rect x="2.8" y="6.5" width="12.4" height="11" rx="2.4"/><path d="m15.2 10.4 6-3.4v10l-6-3.4"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5.5 12h13"/></symbol>
+      <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.4"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><path d="M12 2.5v3.1M12 18.4v3.1M2.5 12h3.1M18.4 12h3.1"/></symbol>
+      <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m20 20-4.6-4.6"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6.5 6.5 11 11M17.5 6.5l-11 11"/></symbol>
+      <symbol id="i-directions" viewBox="0 0 24 24"><path d="M11.1 2.9a1.3 1.3 0 0 1 1.8 0l8.2 8.2a1.3 1.3 0 0 1 0 1.8l-8.2 8.2a1.3 1.3 0 0 1-1.8 0l-8.2-8.2a1.3 1.3 0 0 1 0-1.8z"/><path d="M9 14.5v-2.2a1.6 1.6 0 0 1 1.6-1.6h4.6M13.3 8.4l2.3 2.3-2.3 2.3"/></symbol>
+      <symbol id="i-swap" viewBox="0 0 24 24"><path d="M8 4.5v15M8 4.5 4.8 7.7M8 4.5l3.2 3.2M16 19.5v-15M16 19.5l-3.2-3.2M16 19.5l3.2-3.2"/></symbol>
+      <symbol id="i-straight" viewBox="0 0 24 24"><path d="M12 20.5V4M12 4 6.5 9.5M12 4l5.5 5.5"/></symbol>
+      <symbol id="i-turn-left" viewBox="0 0 24 24"><path d="M16.5 20.5v-7.5a4 4 0 0 0-4-4H5M5 9l4-4M5 9l4 4"/></symbol>
+      <symbol id="i-turn-right" viewBox="0 0 24 24"><path d="M7.5 20.5v-7.5a4 4 0 0 1 4-4H19M19 9l-4-4M19 9l-4 4"/></symbol>
+      <symbol id="i-slight-left" viewBox="0 0 24 24"><path d="M15 20.5v-6.2a3 3 0 0 0-.9-2.1L7.5 5.6M7.5 5.6v5.6M7.5 5.6h5.6"/></symbol>
+      <symbol id="i-slight-right" viewBox="0 0 24 24"><path d="M9 20.5v-6.2a3 3 0 0 1 .9-2.1l6.6-6.6M16.5 5.6v5.6M16.5 5.6h-5.6"/></symbol>
+      <symbol id="i-uturn" viewBox="0 0 24 24"><path d="M7 20.5V9.5a4.5 4.5 0 0 1 9 0V17M16 17l-3.5-3.5M16 17l3.5-3.5"/></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V4M5.5 4.5h11.2l-2.4 4 2.4 4H5.5"/></symbol>
+      <symbol id="i-steer" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2"/><path d="M3.8 10.4 9.9 11.3M14.1 11.3l6.1-.9M12 14.2v6.2"/></symbol>
+      <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.8"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6"/><circle cx="12" cy="16.9" r=".6" fill="currentColor"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></symbol>
+      <symbol id="i-district" viewBox="0 0 24 24"><path d="M4 20.5V9l5-3.5L14 9v11.5M14 12h6v8.5M2.5 20.5h19M7 11.5h4M7 15h4"/></symbol>
+      <symbol id="i-road" viewBox="0 0 24 24"><path d="M8.5 3.5 5 20.5M15.5 3.5l3.5 17M12 4.5v2.5M12 10.5V13M12 16.5v3"/></symbol>
+      <symbol id="i-bed" viewBox="0 0 24 24"><path d="M3 19V6M3 14.5h18V19M21 14.5V12a3 3 0 0 0-3-3h-7v5.5"/><circle cx="7" cy="11" r="1.8"/></symbol>
+      <symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 9.5 12 4l9 5.5M4.5 9.5h15M6 9.5v8M10 9.5v8M14 9.5v8M18 9.5v8M3.5 20h17"/></symbol>
+      <symbol id="i-food" viewBox="0 0 24 24"><path d="M7 3.5v17M4.5 3.5v4.2A2.5 2.5 0 0 0 7 10.2a2.5 2.5 0 0 0 2.5-2.5V3.5M17 20.5V3.5c-2.2 1-3.5 3.4-3.5 6.5v3.5H17"/></symbol>
+      <symbol id="i-worship" viewBox="0 0 24 24"><path d="M12 3v3M10.5 4.5h3M6 20.5V12l6-4.5 6 4.5v8.5M3.5 20.5h17M10 20.5v-4a2 2 0 0 1 4 0v4"/></symbol>
+      <symbol id="i-fuel" viewBox="0 0 24 24"><path d="M5 20.5V5a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 14 5v15.5M3.5 20.5h12M5 10h9M14 8.5l3 1.5v7.5a1.5 1.5 0 0 0 3 0V9l-3-3"/></symbol>
+      <symbol id="i-health" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8M8 12h8"/></symbol>
+      <symbol id="i-school" viewBox="0 0 24 24"><path d="m2.5 9 9.5-4.5L21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.4 2.5 3 5.5 3s5.5-1.6 5.5-3V11M21.5 9v5.5"/></symbol>
+      <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 12.5H6zM9 10.5V7a3 3 0 0 1 6 0v3.5"/></symbol>
+      <symbol id="i-gov" viewBox="0 0 24 24"><path d="M4 20.5h16M5 17.5h14M6.5 17.5v-6M10 17.5v-6M14 17.5v-6M17.5 17.5v-6M4.5 11.5h15M12 3.5c-3.5 0-6 2.5-6.5 5h13C18 6 15.5 3.5 12 3.5zM12 2v1.5"/></symbol>
+      <symbol id="i-office" viewBox="0 0 24 24"><path d="M5 20.5V4.5h9v16M14 9.5h5v11M3 20.5h18M8 8h3M8 11.5h3M8 15h3"/></symbol>
+      <symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 21v-6M12 15c-4 0-6.5-2.2-6.5-5a6.5 6.5 0 0 1 13 0c0 2.8-2.5 5-6.5 5z"/></symbol>
+      <symbol id="i-bus" viewBox="0 0 24 24"><rect x="4.5" y="3.5" width="15" height="14" rx="2.5"/><path d="M4.5 11h15M7.5 17.5v2.5M16.5 17.5v2.5M8 14.5h.01M16 14.5h.01"/></symbol>
+      <symbol id="i-gps" viewBox="0 0 24 24"><path d="M20.5 3.5 3.8 10.6l7.1 2.5 2.5 7.1z"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.8"/><path d="M3.2 12h17.6M12 3.2c2.4 2.4 3.6 5.3 3.6 8.8s-1.2 6.4-3.6 8.8c-2.4-2.4-3.6-5.3-3.6-8.8S9.6 5.6 12 3.2z"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20H4z"/><path d="M10 20v-5h4v5"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- Loading Screen -->
+  <div id="loading-overlay" role="status" aria-live="polite">
+    <div class="loader">
+      <svg class="loader-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="ld-sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#00b46c"/>
+            <stop offset="1" stop-color="#006b3d"/>
+          </linearGradient>
+          <linearGradient id="ld-rock" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#fffaf0"/>
+            <stop offset="1" stop-color="#eadcc2"/>
+          </linearGradient>
+          <clipPath id="ld-tile"><rect width="64" height="64" rx="18"/></clipPath>
+        </defs>
+        <g clip-path="url(#ld-tile)">
+          <rect width="64" height="64" fill="url(#ld-sky)"/>
+          <path d="M-2 49C6 48 10 40.5 13.5 33.5 17.5 26 24 22 32 21.5 40 21 45.5 25 48.5 31.5 51.5 38 55.5 45 66 48.5V66H-2Z" fill="url(#ld-rock)"/>
+          <g fill="none" stroke="#cdbb98" stroke-width="1.5" stroke-linecap="round">
+            <path d="M23.5 25.5C20.5 31.5 19 38 18.2 45"/>
+            <path d="M30.5 22.6C28.8 30 28 37.5 28 45.5"/>
+            <path d="M38.5 23C39.6 30 40.6 37 41.5 45"/>
+          </g>
+          <path d="M-2 51.5C14 50 40 49 66 51V66H-2Z" fill="#004a2c"/>
+          <path d="M17 66C22 59 33 54.5 50 51.5" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+          <path class="ld-dash" d="M17 66C22 59 33 54.5 50 51.5" fill="none" stroke="#004a2c" stroke-width="0.9" stroke-dasharray="2.4 2.6"/>
+          <g class="ld-pin"><path d="M44 5.5a8.6 8.6 0 0 1 8.6 8.6c0 6.4-8.6 13.9-8.6 13.9s-8.6-7.5-8.6-13.9A8.6 8.6 0 0 1 44 5.5z" fill="#f4bf4f" stroke="#006b3d" stroke-width="1.2"/>
+          <circle cx="44" cy="14.2" r="3.1" fill="#006b3d"/></g>
+        </g>
+      </svg>
+      <div class="loader-title">Toronto<span> Slop</span></div>
+      <div class="loader-track is-indeterminate" aria-hidden="true"><span id="loading-progress" class="loader-fill"></span></div>
+      <div id="loading-status">Initializing WebGPURenderer &amp; TSL Shaders...</div>
+    </div>
+  </div>
+
+  <!-- 3D WebGPU Viewport Container -->
+  <main id="canvas-container" aria-label="3D interactive Slop Toronto viewport"></main>
+
+  <!-- Top-Left: Search, place card & directions (tour-guide.js) -->
+  <header class="hud hud-top-left">
+    <section id="nav-banner" class="nav-banner" hidden aria-live="polite">
+      <div class="nav-main">
+        <span id="nav-icon" class="nav-icon" aria-hidden="true"></span>
+        <div class="nav-text">
+          <div id="nav-dist" class="nav-dist"></div>
+          <div id="nav-instr" class="nav-instr"></div>
+        </div>
+      </div>
+      <div class="panel nav-sub">
+        <div id="nav-then" class="nav-then"></div>
+        <div class="nav-meta"><span id="nav-eta"></span><span id="nav-remaining"></span></div>
+        <div class="nav-actions">
+          <button id="nav-steps" class="btn btn-sm" type="button" title="All steps">Steps</button>
+          <button id="nav-autodrive" class="btn btn-sm" type="button" aria-pressed="false" title="Let the guide drive"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-steer"/></svg><span class="label">Tour Drive</span></button>
+          <button id="nav-end" class="btn btn-sm btn-danger" type="button">End</button>
+        </div>
+      </div>
+    </section>
+    <div id="search-box" class="panel search-box" role="search">
+      <a class="brand-home" href="./index.html" title="Slop Toronto · home" aria-label="Slop Toronto home"><img src="./assets/logo-mark.svg" alt="" width="36" height="36" /></a>
+      <svg class="icon search-icon" aria-hidden="true"><use href="#i-search"/></svg>
+      <input id="place-search" class="search-input" type="text" placeholder="Search Toronto" aria-label="Search places, streets and districts in Toronto" autocomplete="off" spellcheck="false" />
+      <kbd class="search-kbd" aria-hidden="true">/</kbd>
+      <button id="search-clear" class="icon-btn search-clear" type="button" title="Clear" aria-label="Clear search"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+      <button id="btn-locate" class="icon-btn locate-btn" type="button" title="Use my real location" aria-label="Use my real location"><svg class="icon" aria-hidden="true"><use href="#i-gps"/></svg></button>
+      <span class="search-divider" aria-hidden="true"></span>
+      <button id="btn-directions" class="icon-btn directions-btn" type="button" title="Directions" aria-label="Directions"><svg class="icon" aria-hidden="true"><use href="#i-directions"/></svg></button>
+    </div>
+    <div id="search-results" class="panel ac-list" hidden></div>
+
+    <div id="locate-prompt" class="panel locate-prompt" hidden>
+      <svg class="icon" aria-hidden="true"><use href="#i-gps"/></svg>
+      <span>Are you in Toronto right now?</span>
+      <button id="locate-yes" class="btn btn-sm btn-primary" type="button">Use my location</button>
+      <button id="locate-no" class="icon-btn" type="button" aria-label="Not now"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+
+    <section id="loc-card" class="panel loc-card" hidden aria-live="polite">
+      <div class="pc-head">
+        <span id="loc-icon" class="loc-icon" aria-hidden="true"></span>
+        <div class="pc-titles">
+          <h2 id="loc-title">Your location</h2>
+          <div id="loc-sub" class="pc-sub"></div>
+          <div id="loc-acc" class="loc-acc"></div>
+        </div>
+        <button id="loc-close" class="icon-btn" type="button" aria-label="Close"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <div id="loc-actions" class="pc-actions loc-actions"></div>
+    </section>
+
+    <section id="place-card" class="panel place-card" hidden aria-live="polite">
+      <div class="pc-head">
+        <span id="pc-icon" class="pc-icon" aria-hidden="true"></span>
+        <div class="pc-titles">
+          <h2 id="pc-name">Place</h2>
+          <div id="pc-sub" class="pc-sub"></div>
+        </div>
+        <button id="pc-close" class="icon-btn" type="button" aria-label="Close"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="pc-facts">
+        <div class="pc-fact"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-pin"/></svg><span id="pc-address"></span></div>
+        <div class="pc-fact"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-locate"/></svg><span id="pc-distance"></span></div>
+      </div>
+      <div class="pc-actions">
+        <button id="pc-directions" class="btn btn-primary" type="button"><svg class="icon" aria-hidden="true"><use href="#i-directions"/></svg>Directions</button>
+        <button id="pc-go" class="btn" type="button"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>Go there</button>
+        <button id="pc-map" class="btn" type="button"><svg class="icon" aria-hidden="true"><use href="#i-map"/></svg>Map</button>
+      </div>
+    </section>
+
+    <section id="directions-panel" class="panel directions" hidden aria-label="Directions">
+      <div class="dir-head">
+        <div class="travel-modes" role="group" aria-label="Travel by">
+          <button class="travel-btn active" data-travel="car" type="button" title="Drive"><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg><span>Drive</span></button>
+          <button class="travel-btn" data-travel="walk" type="button" title="Walk"><svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg><span>Walk</span></button>
+          <button class="travel-btn" data-travel="cycle" type="button" title="Cycle"><svg class="icon" aria-hidden="true"><use href="#i-bike"/></svg><span>Cycle</span></button>
+        </div>
+        <button id="dir-close" class="icon-btn" type="button" aria-label="Close directions"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="dir-fields">
+        <div class="dir-dots" aria-hidden="true"><span class="dot-from"></span><span class="dot-line"></span><span class="dot-to"></span></div>
+        <div class="dir-inputs">
+          <div class="dir-field"><input id="dir-from" type="text" placeholder="Choose starting point" aria-label="Starting point" autocomplete="off" spellcheck="false" /><div id="dir-from-results" class="panel ac-list" hidden></div></div>
+          <div class="dir-field"><input id="dir-to" type="text" placeholder="Choose destination" aria-label="Destination" autocomplete="off" spellcheck="false" /><div id="dir-to-results" class="panel ac-list" hidden></div></div>
+        </div>
+        <button id="dir-swap" class="icon-btn" type="button" title="Swap start and destination" aria-label="Swap start and destination"><svg class="icon" aria-hidden="true"><use href="#i-swap"/></svg></button>
+      </div>
+      <div id="dir-summary" class="dir-summary" hidden>
+        <div class="dir-totals"><span id="dir-time" class="dir-time"></span><span id="dir-dist" class="dir-dist"></span></div>
+        <div id="dir-via" class="dir-via"></div>
+        <div class="dir-actions">
+          <button id="dir-start" class="btn btn-primary" type="button"><svg class="icon" aria-hidden="true"><use href="#i-directions"/></svg>Start</button>
+          <button id="dir-autodrive" class="btn" type="button" title="The guide drives you there, obeying the traffic lights"><svg class="icon" aria-hidden="true"><use href="#i-steer"/></svg>Tour Drive</button>
+        </div>
+      </div>
+      <div id="dir-status" class="dir-status">Choose a destination: a place, a street or a district</div>
+      <ol id="dir-steps" class="dir-steps"></ol>
+    </section>
+  </header>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Top-Right Toolbar: Time of Day, Teleport, Map & Clean View -->
+  <div class="hud hud-top-right">
+    <div id="hud-toolbar" class="panel toolbar">
+      <div class="time-switch" role="group" aria-label="Atmosphere &amp; time of day">
+        <button id="time-golden" class="time-btn active" data-time="golden" type="button" title="Golden Hour">
+          <svg class="icon" aria-hidden="true"><use href="#i-golden"/></svg><span class="seg-label">Golden Hour</span>
+        </button>
+        <button id="time-midday" class="time-btn" data-time="midday" type="button" title="Sunny Midday">
+          <svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg><span class="seg-label">Midday</span>
+        </button>
+        <button id="time-twilight" class="time-btn" data-time="twilight" type="button" title="Sunset">
+          <svg class="icon" aria-hidden="true"><use href="#i-twilight"/></svg><span class="seg-label">Sunset</span>
+        </button>
+        <button id="time-midnight" class="time-btn" data-time="midnight" type="button" title="Night · 23:00">
+          <svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg><span class="seg-label">Night</span>
+        </button>
+      </div>
+      <span class="toolbar-divider" aria-hidden="true"></span>
+      <button id="btn-teleport" class="tool-btn" type="button" popovertarget="teleport-popover" title="Teleport the active player">
+        <svg class="icon" aria-hidden="true"><use href="#i-star"/></svg><span class="tool-label">Sights</span><svg class="icon icon-sm" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+      </button>
+      <button id="btn-open-map" class="tool-btn" type="button" title="Full Toronto street map [M]">
+        <svg class="icon" aria-hidden="true"><use href="#i-map"/></svg><span class="tool-label">Map</span><kbd>M</kbd>
+      </button>
+      <button id="btn-help" class="tool-btn icon-only" type="button" title="Controls &amp; help [?]" aria-label="Controls and help">
+        <svg class="icon" aria-hidden="true"><use href="#i-help"/></svg>
+      </button>
+      <span class="toolbar-divider" aria-hidden="true"></span>
+      <button id="btn-toggle-hud" class="tool-btn icon-only" type="button" title="Clean view: hide the HUD [H]" aria-label="Hide HUD" aria-pressed="false">
+        <svg class="icon icon-hide" aria-hidden="true"><use href="#i-eye"/></svg><svg class="icon icon-show" aria-hidden="true"><use href="#i-eye-off"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Teleport Destinations (native popover: light-dismiss & Esc) -->
+  <div id="teleport-popover" class="popover" popover data-side="below" data-anchor="hud-toolbar" aria-label="Teleport the active player">
+    <div class="pop-title">Go to a sight</div>
+    <button id="tp-humberArch" class="pop-item tp-btn" data-teleport="humberArch" type="button"><span class="pop-name">Humber Bay Arch Bridge</span><span class="pop-sub">Martin Goodman Trail · Humber Bay</span></button>
+    <button id="tp-cnTower" class="pop-item tp-btn" data-teleport="cnTower" type="button"><span class="pop-name">CN Tower</span><span class="pop-sub">Bremner Blvd · Entertainment District</span></button>
+    <button id="tp-rogersCentre" class="pop-item tp-btn" data-teleport="rogersCentre" type="button"><span class="pop-name">Rogers Centre</span><span class="pop-sub">Blue Jays Way · Entertainment District</span></button>
+    <button id="tp-unionStation" class="pop-item tp-btn" data-teleport="unionStation" type="button"><span class="pop-name">Union Station</span><span class="pop-sub">Front St · Financial District</span></button>
+    <button id="tp-cityHall" class="pop-item tp-btn" data-teleport="cityHall" type="button"><span class="pop-name">City Hall &amp; Nathan Phillips Square</span><span class="pop-sub">Queen St W · Downtown</span></button>
+    <button id="tp-harbourfront" class="pop-item tp-btn" data-teleport="harbourfront" type="button"><span class="pop-name">Harbourfront Centre</span><span class="pop-sub">Queens Quay W · Harbourfront</span></button>
+    <button id="tp-distillery" class="pop-item tp-btn" data-teleport="distillery" type="button"><span class="pop-name">Distillery District</span><span class="pop-sub">Mill St · Corktown</span></button>
+    <button id="tp-rom" class="pop-item tp-btn" data-teleport="rom" type="button"><span class="pop-name">Royal Ontario Museum</span><span class="pop-sub">Bloor St W · Yorkville</span></button>
+    <button id="tp-legislature" class="pop-item tp-btn" data-teleport="legislature" type="button"><span class="pop-name">Queen's Park</span><span class="pop-sub">University Ave · Discovery District</span></button>
+  </div>
+
+  <!-- Bottom-Left: Street-Name Signs & Live GPS Radar Minimap -->
+  <div class="hud hud-bottom-left">
+    <div id="hud-location" class="location" aria-live="off"></div>
+    <aside id="minimap-card" class="panel radar" aria-label="Live street radar minimap" title="Open the full Abuja street map [M]">
+      <canvas id="minimap-canvas"></canvas>
+      <span class="radar-north" aria-hidden="true">N</span>
+      <kbd class="radar-key">M</kbd>
+    </aside>
+  </div>
+
+  <!-- Bottom-Center: Third-Person Mode Switcher & Controls Guide -->
+  <footer class="hud hud-bottom-center">
+    <div id="hud-controls-hint" class="controls-hint"></div>
+    <nav id="mode-switch" class="panel mode-switch" aria-label="Third-Person Navigation Mode">
+      <span class="mode-indicator" aria-hidden="true"></span>
+      <button id="mode-person" class="mode-btn" data-mode="person" type="button" title="Person [1]">
+        <svg class="icon" aria-hidden="true"><use href="#i-walk"/></svg><span class="mode-label">Walk</span><kbd>1</kbd>
+      </button>
+      <button id="mode-car" class="mode-btn active" data-mode="car" type="button" title="Car · FCT green taxi [2]">
+        <svg class="icon" aria-hidden="true"><use href="#i-car"/></svg><span class="mode-label">Drive</span><kbd>2</kbd>
+      </button>
+      <button id="mode-cyclist" class="mode-btn" data-mode="cyclist" type="button" title="Cyclist [3]">
+        <svg class="icon" aria-hidden="true"><use href="#i-bike"/></svg><span class="mode-label">Cycle</span><kbd>3</kbd>
+      </button>
+      <button id="mode-helicopter" class="mode-btn" data-mode="helicopter" type="button" title="Helicopter [4]">
+        <svg class="icon" aria-hidden="true"><use href="#i-heli"/></svg><span class="mode-label">Fly</span><kbd>4</kbd>
+      </button>
+    </nav>
+  </footer>
+
+  <!-- Bottom-Right: Speed Cluster & Camera Switcher -->
+  <div class="hud hud-bottom-right">
+    <section id="hud-cluster" class="panel cluster" aria-label="Vehicle telemetry and camera">
+      <div class="gauge">
+        <div class="gauge-top">
+          <span id="hud-active-mode" class="gauge-label">FCT Green Taxi</span>
+          <span class="gauge-alt"><span class="gauge-alt-label">Alt</span> <span id="hud-altitude">0</span> m</span>
+        </div>
+        <div class="gauge-speed"><span id="hud-speed">0</span><span class="gauge-unit">km/h</span></div>
+        <div class="gauge-meter" aria-hidden="true"><span id="hud-speed-meter"></span></div>
+      </div>
+      <div id="camera-switch" class="camera-switch">
+        <button id="cam-prev" class="icon-btn" type="button" title="Previous camera" aria-label="Previous camera">
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+        </button>
+        <button id="cam-menu-btn" class="camera-current" type="button" popovertarget="camera-popover" title="All cameras [V cycles]">
+          <svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg><span id="hud-active-camera">3rd-Person Chase</span><kbd>V</kbd>
+        </button>
+        <button id="cam-next" class="icon-btn" type="button" title="Next camera [V]" aria-label="Next camera">
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Touch input stays available in clean view; the map temporarily suspends it. -->
+  <section id="touch-controls" aria-label="Touch controls" hidden>
+    <div class="touch-movement">
+      <div id="touch-stick" role="group" aria-label="Movement joystick: drag up or down to move, left or right to turn">
+        <span class="touch-stick-axis" aria-hidden="true"></span>
+        <span id="touch-stick-knob" aria-hidden="true"></span>
+      </div>
+      <span class="touch-caption">Move &amp; steer</span>
+    </div>
+    <p class="touch-look-hint">Drag to look · Pinch to zoom</p>
+    <div class="touch-actions" role="group" aria-label="Hold to perform an action">
+      <button class="touch-action" data-touch-action="up" type="button" aria-label="Jump" aria-pressed="false" hidden>
+        <span aria-hidden="true">↑</span><span data-touch-label="up">Jump</span>
+      </button>
+      <button class="touch-action" data-touch-action="down" type="button" aria-label="Descend" aria-pressed="false" hidden>
+        <span aria-hidden="true">↓</span><span data-touch-label="down">Descend</span>
+      </button>
+      <button class="touch-action touch-boost" data-touch-action="boost" type="button" aria-label="Boost" aria-pressed="false">
+        <span aria-hidden="true">↟</span><span data-touch-label="boost">Boost</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- All Cameras: 3 Follow Cameras + Toronto's Landmark Vantage Points + Auto-Director Drone -->
+  <div id="camera-popover" class="popover" popover data-side="above" data-anchor="hud-cluster" data-align="hud-cluster" aria-label="Multiple Camera Angles">
+    <div class="pop-title">Follow</div>
+    <button id="cam-chase" class="pop-item cam-btn active" data-camera="chase" type="button"><span class="pop-name">3rd-Person Chase</span><kbd>5</kbd></button>
+    <button id="cam-action" class="pop-item cam-btn" data-camera="action" type="button"><span class="pop-name">Low-Angle Action</span><kbd>6</kbd></button>
+    <button id="cam-pov" class="pop-item cam-btn" data-camera="pov" type="button"><span class="pop-name">First-Person / Cockpit</span><kbd>7</kbd></button>
+    <div class="pop-title">Scenic</div>
+    <button id="cam-trail" class="pop-item cam-btn" data-camera="trail" type="button"><span class="pop-name">Martin Goodman Trail</span><kbd>8</kbd></button>
+    <button id="cam-islands" class="pop-item cam-btn" data-camera="islands" type="button"><span class="pop-name">Skyline from the Islands</span><kbd>9</kbd></button>
+    <button id="cam-cnTower" class="pop-item cam-btn" data-camera="cnTower" type="button"><span class="pop-name">CN Tower</span><kbd>0</kbd></button>
+    <button id="cam-cityHall" class="pop-item cam-btn" data-camera="cityHall" type="button"><span class="pop-name">City Hall</span></button>
+    <button id="cam-rom" class="pop-item cam-btn" data-camera="rom" type="button"><span class="pop-name">Royal Ontario Museum</span></button>
+    <button id="cam-unionStation" class="pop-item cam-btn" data-camera="unionStation" type="button"><span class="pop-name">Union Station</span></button>
+    <button id="cam-legislature" class="pop-item cam-btn" data-camera="legislature" type="button"><span class="pop-name">Queen's Park</span></button>
+    <button id="cam-sugarBeach" class="pop-item cam-btn" data-camera="sugarBeach" type="button"><span class="pop-name">Sugar Beach</span></button>
+    <button id="cam-humberBay" class="pop-item cam-btn" data-camera="humberBay" type="button"><span class="pop-name">Sunset over Humber Bay</span></button>
+    <button id="cam-skyline" class="pop-item cam-btn" data-camera="skyline" type="button"><span class="pop-name">Skyline from the Lake</span></button>
+    <button id="cam-drone" class="pop-item cam-btn" data-camera="drone" type="button"><span class="pop-name">Auto-Director Aerial</span></button>
+  </div>
+
+  <!-- Full-Screen Interactive Toronto Street Map ([M]) -->
+  <section id="fullmap-modal" class="fullmap-modal hidden" role="dialog" aria-modal="true" aria-label="Full interactive Abuja street map">
+    <div id="fullmap-canvas-wrap" class="fullmap-canvas-wrap">
+      <canvas id="fullmap-canvas"></canvas>
+    </div>
+
+    <div class="fullmap-header">
+      <div class="panel fullmap-title">
+        <img class="map-logo" src="./assets/logo-mark.svg" alt="" width="36" height="36" />
+        <div>
+          <h2>Toronto<span> Slop</span> Map</h2>
+          <p id="fullmap-player-info" class="fullmap-subtitle">You are by Eagle Square</p>
+        </div>
+      </div>
+      <label class="panel fullmap-search-wrap">
+        <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+        <input id="fullmap-search" class="fullmap-search" type="text" placeholder="Search places, streets &amp; districts: Ahmadu Bello Way, Wuse, hotel…" aria-label="Search places, streets and districts" autocomplete="off" spellcheck="false" />
+        <div id="fullmap-search-results" class="panel ac-list" hidden></div>
+      </label>
+      <button id="close-fullmap-btn" class="panel tool-btn fullmap-close" type="button" title="Close map [M / Esc]">
+        <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg><span class="tool-label">Close</span><kbd>Esc</kbd>
+      </button>
+    </div>
+
+    <div class="map-controls">
+      <div class="panel map-compass" title="True north · the map is drawn along the Central Business District's street grid, 32° west of it">
+        <svg viewBox="0 0 44 44" aria-hidden="true">
+          <g id="map-compass-needle">
+            <path d="M22 9.5 25.6 22h-7.2z" fill="#f05a4f"/>
+            <path d="M22 34.5 25.6 22h-7.2z" fill="rgba(255,255,255,0.72)"/>
+            <text x="22" y="8" text-anchor="middle">N</text>
+          </g>
+        </svg>
+      </div>
+      <div class="panel map-zoom">
+        <button id="map-zoom-in" class="icon-btn" type="button" title="Zoom in" aria-label="Zoom in"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+        <button id="map-zoom-out" class="icon-btn" type="button" title="Zoom out" aria-label="Zoom out"><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg></button>
+      </div>
+      <div class="panel map-zoom">
+        <button id="map-real-location" class="icon-btn" type="button" title="Where I really am" aria-label="Show my real location"><svg class="icon" aria-hidden="true"><use href="#i-gps"/></svg></button>
+        <button id="map-center-player" class="icon-btn" type="button" title="Street view around your character" aria-label="Center on player"><svg class="icon" aria-hidden="true"><use href="#i-locate"/></svg></button>
+        <button id="map-view-all" class="icon-btn" type="button" title="The whole city (Jabi Lake to Aso Rock)" aria-label="Fit the whole city"><svg class="icon" aria-hidden="true"><use href="#i-fit"/></svg></button>
+      </div>
+    </div>
+
+    <div class="fullmap-footer">
+      <div class="panel fullmap-status">
+        <span id="fullmap-hover-info">Click a place for directions · Drag to pan · Scroll to zoom</span>
+      </div>
+    </div>
+
+    <div id="map-context" class="panel map-context" hidden>
+      <div class="ctx-head">
+        <div><div id="ctx-title" class="ctx-title"></div><div id="ctx-sub" class="ctx-sub"></div></div>
+        <button id="ctx-close" class="icon-btn" type="button" aria-label="Close"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="ctx-actions">
+        <button id="ctx-dir-to" class="btn btn-primary btn-sm" type="button"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-directions"/></svg>Directions to here</button>
+        <button id="ctx-dir-from" class="btn btn-sm" type="button">From here</button>
+        <button id="ctx-teleport" class="btn btn-sm" type="button">Go there</button>
+        <button id="ctx-details" class="btn btn-sm" type="button">Details</button>
+      </div>
+    </div>
+
+    <div class="panel fullmap-legend">
+      <span class="legend-item"><span class="legend-swatch player-swatch"></span>You</span>
+      <span class="legend-item"><span class="legend-swatch real-swatch"></span>Real location</span>
+      <span class="legend-item"><span class="legend-swatch landmark-swatch"></span>Landmark</span>
+      <span class="legend-item"><span class="legend-swatch gps-swatch"></span>Route</span>
+      <span class="legend-item"><span class="legend-swatch place-swatch"></span>Named place</span>
+      <span class="legend-item"><span class="legend-swatch bridge-swatch"></span>Expressway / Flyover</span>
+      <span id="fullmap-counts" class="legend-counts"></span>
+    </div>
+  </section>
+
+  <!-- Controls & help ([?] / F1) -->
+  <div id="help-modal" class="help-modal" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="panel help-card">
+      <div class="help-head">
+        <h2 id="help-title">How to explore Toronto</h2>
+        <button id="help-close" class="icon-btn" type="button" aria-label="Close help"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <div class="help-grid">
+        <section class="help-sec">
+          <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-search"/></svg>Find &amp; go</h3>
+          <ul>
+            <li><kbd>/</kbd> Search places, streets, districts, or a kind of place: “hotel”, “bank”, “pharmacy”</li>
+            <li><svg class="icon icon-sm" aria-hidden="true"><use href="#i-directions"/></svg> Directions from anywhere to anywhere, by car, on foot or by bicycle</li>
+            <li><b>Start</b> for turn-by-turn guidance, or <b>Tour Drive</b> and the guide takes you there</li>
+            <li><kbd>M</kbd> The map: click any spot for directions, <b>Go there</b> to jump</li>
+          </ul>
+        </section>
+        <section class="help-sec help-touch">
+          <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-walk"/></svg>Touch controls</h3>
+          <ul>
+            <li>Joystick (bottom left): push up to go, down to brake or reverse, sideways to steer</li>
+            <li>Drag anywhere else to look around · pinch to zoom</li>
+            <li><b>Boost</b> to speed up · <b>Jump</b> / <b>Up</b> / <b>Down</b> appear in the modes that use them</li>
+            <li>The buttons at the bottom switch between Walk, Drive, Cycle and Fly</li>
+          </ul>
+        </section>
+        <section class="help-sec" data-help-mode="person">
+          <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-walk"/></svg>Walk <kbd>1</kbd></h3>
+          <ul><li><kbd>W</kbd><kbd>S</kbd> or <kbd>↑</kbd><kbd>↓</kbd> Walk</li><li><kbd>A</kbd><kbd>D</kbd> or <kbd>←</kbd><kbd>→</kbd> Turn</li><li><kbd>Shift</kbd> Run · <kbd>Space</kbd> Jump</li></ul>
+        </section>
+        <section class="help-sec" data-help-mode="car">
+          <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-car"/></svg>Drive <kbd>2</kbd></h3>
+          <ul><li><kbd>W</kbd> Accelerate · <kbd>S</kbd> Brake / reverse</li><li><kbd>A</kbd><kbd>D</kbd> Steer</li><li><kbd>Shift</kbd> Boost · traffic drives on the right</li></ul>
+        </section>
+        <section class="help-sec" data-help-mode="cyclist">
+          <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-bike"/></svg>Cycle <kbd>3</kbd></h3>
+          <ul><li><kbd>W</kbd> Pedal · <kbd>S</kbd> Brake</li><li><kbd>A</kbd><kbd>D</kbd> Lean &amp; turn</li><li><kbd>Shift</kbd> Sprint</li></ul>
+        </section>
+        <section class="help-sec" data-help-mode="helicopter">
+          <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-heli"/></svg>Fly <kbd>4</kbd></h3>
+          <ul><li><kbd>W</kbd><kbd>S</kbd> Pitch · <kbd>A</kbd><kbd>D</kbd> Yaw</li><li><kbd>Space</kbd>/<kbd>E</kbd> Up · <kbd>Q</kbd>/<kbd>C</kbd> Down</li><li><kbd>Shift</kbd> Boost</li></ul>
+        </section>
+        <section class="help-sec help-keys">
+          <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-camera"/></svg>Look &amp; view</h3>
+          <ul><li>Drag to orbit · scroll to zoom</li><li><kbd>V</kbd> Next camera · <kbd>5</kbd>–<kbd>0</kbd> Cameras &amp; sights</li><li><kbd>H</kbd> Clean view · <kbd>?</kbd> This help</li></ul>
+        </section>
+      </div>
+      <p class="help-foot">Streets, buildings, places, signals and district boundaries: © OpenStreetMap contributors. Heights of most buildings are estimated. Name boards show each place's name, not its trademarked logo. <span class="help-fps">three.js WebGPU · <span id="hud-fps" class="fps-ok">60</span> fps</span></p>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three/webgpu';
+    import * as TSL from 'three/tsl';
+    import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+    import { ssr } from 'three/addons/tsl/display/SSRNode.js';
+    import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+    import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
+    import { SunLight } from 'three/addons/lights/SunLight.js';
+    import { SunLightNode } from 'three/addons/lights/SunLightNode.js';
+    import { ClusteredLighting } from 'three/addons/lighting/ClusteredLighting.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+    import * as StylizedWater from './js/stylized-water.js';
+
+    window.CITY = {
+      THREE,
+      TSL,
+      PostFX: { bloom, ssr },
+      StylizedWater,
+      Addons: {
+        mergeGeometries,
+        mergeVertices,
+        SkyMesh,
+        SunLight,
+        SunLightNode,
+        ClusteredLighting,
+        GLTFLoader,
+        MeshoptDecoder
+      }
+    };
+
+    for (const src of cityAppScripts) {
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = false;
+      document.head.appendChild(s);
+    }
+  </script>
+</body>
+</html>

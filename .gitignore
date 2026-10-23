@@ -1,1 +1,10 @@
 .DS_Store
+node_modules/
+capture-out/
+gpu2-out/
+# not shipped: Abuja Tour's geodata & landing photos (the Toronto page replaces them), local debug probes
+js/abuja-geodata.js
+assets/landing/
+assets/og-image.jpg
+tools/clouds-probe2.html
+tools/clouds-probe3.html

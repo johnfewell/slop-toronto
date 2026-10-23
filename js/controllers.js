@@ -3,19 +3,19 @@
 // Sculpted, non-blocky GTA 6-style 3D models, animations, and physics controllers
 // for Third-Person Navigation:
 // 1. Person (Skinned Pedestrian: planted-footstep IK walk/run/jump, see pedestrians.js)
-// 2. Car (Aerodynamic Sculpted NYC Medallion Yellow Taxi with Sloped Windshield & Clearcoat)
+// 2. Car (Aerodynamic Sculpted FCT Green Taxi with Sloped Windshield & Clearcoat)
 // 3. Cyclist (Sculpted Road Cyclist with Drop-Bar Frame & Aero Helmet)
-// 4. Helicopter (Manhattan Sightseeing Twin-Turbine Chopper)
+// 4. Helicopter (Twin-Turbine Light Helicopter)
 
-const { THREE } = window.NYC;
-const { ISLAND_BOUNDS, CENTRAL_PARK_BOUNDS, LANDMARK_SITES, getIslandBoundsAtZ, isTypingInField, blockAt, streetZ } = window.NYC;
-// Spawn on 5th Ave at 37th St, facing south down the avenue toward the Empire State Building (34th St)
-const SPAWN_Z = streetZ(37);
+const { THREE } = window.CITY;
+const { CITY_BOUNDS, TELEPORT_LOCATIONS, isTypingInField, blockAt, waterAt, terrainHeightAt, deckHeightAt } = window.CITY;
+// Start on Shehu Shagari Way by Eagle Square, facing the square (city-config.js TELEPORT_LOCATIONS)
+const SPAWN = (TELEPORT_LOCATIONS && TELEPORT_LOCATIONS.humberArch) || { x: 0, z: 140, heading: Math.PI };
 const {
   cityUniforms,
   createCarPaintMaterial,
   createContactShadowMaterial
-} = window.NYC;
+} = window.CITY;
 const {
   BODY_SPECS,
   buildCarGeometry,
@@ -26,61 +26,43 @@ const {
   buildHelicopterMainRotorGeometry,
   buildHelicopterTailRotorGeometry,
   createLoftedHelicopterMaterial
-} = window.NYC;
-const { PersonCrowd, PersonRig } = window.NYC;
-const { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight } = window.NYC;
+} = window.CITY;
+const { PersonCrowd, PersonRig } = window.CITY;
+const { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight } = window.CITY;
 // Walking surface for the player's pedestrian (its rig samples it around its feet)
-const personGround = (controllers, x, z) => controllers.getGroundHeight(x, z, 'person');
+const personGround = (controllers, x, z) => controllers.getGroundHeight(x, z, 'person', controllers.entities ? controllers.entities.person.position.y : null);
 
-function createTaxiDoorDecalTexture() {
+// Nigerian number plate (FCT, commercial): white, the national flag top left, the state & its slogan along the top, the
+// registration (LGA code, three digits, two letters) in red as on commercial vehicles, "Federal Republic of Nigeria" at
+// the bottom
+function createNigerianPlateTexture() {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 128;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#ffbe14';
+  ctx.fillStyle = '#f4f5f2';
   ctx.fillRect(0, 0, 256, 128);
-  // Black T&LC circle emblem
-  ctx.fillStyle = '#111317';
-  ctx.beginPath();
-  ctx.arc(58, 64, 42, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#ffbe14';
-  ctx.font = '900 32px Inter, Arial, sans-serif';
+  ctx.strokeStyle = '#1a1c1e';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(3, 3, 250, 122);
+  // flag: green, white, green
+  ctx.fillStyle = '#008751';
+  ctx.fillRect(12, 12, 10, 22);
+  ctx.fillRect(32, 12, 10, 22);
+  ctx.strokeStyle = '#9aa0a0';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(12, 12, 30, 22);
+  ctx.fillStyle = '#0b6b3a';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('T', 58, 66);
-  // NYC TAXI typography & Fare Rate
-  ctx.fillStyle = '#111317';
-  ctx.textAlign = 'left';
-  ctx.font = '900 26px Inter, Arial, sans-serif';
-  ctx.fillText('NYC TAXI', 112, 42);
-  ctx.font = '700 15px JetBrains Mono, monospace';
-  ctx.fillText('7Y48 · MEDALLION', 112, 68);
-  ctx.font = '600 13px Inter, Arial, sans-serif';
-  ctx.fillText('$3.00 INITIAL FARE', 112, 90);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
-function createNYLicensePlateTexture() {
-  const c = document.createElement('canvas');
-  c.width = 256;
-  c.height = 128;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#ffb81c';
-  ctx.fillRect(0, 0, 256, 128);
-  ctx.fillStyle = '#0d2244';
-  ctx.fillRect(6, 6, 244, 24);
-  ctx.fillStyle = '#ffb81c';
   ctx.font = '800 15px Inter, Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('NEW YORK', 128, 23);
-  ctx.fillStyle = '#0d2244';
-  ctx.font = '900 48px JetBrains Mono, monospace';
-  ctx.fillText('7Y48A', 128, 82);
-  ctx.font = '700 13px Inter, Arial, sans-serif';
-  ctx.fillText('NYC T&LC', 128, 114);
+  ctx.fillText('FCT · CENTRE OF UNITY', 144, 24);
+  ctx.fillStyle = '#c8102e';
+  ctx.font = '900 44px JetBrains Mono, monospace';
+  ctx.fillText('ABJ-284TX', 128, 70);
+  ctx.fillStyle = '#0b6b3a';
+  ctx.font = '700 12px Inter, Arial, sans-serif';
+  ctx.fillText('FEDERAL REPUBLIC OF NIGERIA', 128, 110);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -250,14 +232,10 @@ class ThirdPersonControllerManager {
     const cameraBack = Math.cos(0.09) * entity.chaseDistance;
     const cameraUp = entity.chaseHeight + Math.sin(0.09) * entity.chaseDistance * 0.85;
     const clampPoint = (px, pz) => {
-      pz = Math.max(ISLAND_BOUNDS.minZ + (heli ? -6000 : 30), Math.min(ISLAND_BOUNDS.maxZ + margin, pz));
-      px = Math.max(ISLAND_BOUNDS.minX - margin, Math.min(ISLAND_BOUNDS.maxX + margin, px));
-      if (!heli && getIslandBoundsAtZ) {
-        const shore = getIslandBoundsAtZ(pz);
-        const west = shore.westX + 8, east = shore.eastX - 8;
-        if (west > east) return null;
-        px = Math.max(west, Math.min(east, px));
-      }
+      const m = heli ? margin : -8;
+      pz = Math.max(CITY_BOUNDS.minZ - m, Math.min(CITY_BOUNDS.maxZ + m, pz));
+      px = Math.max(CITY_BOUNDS.minX - m, Math.min(CITY_BOUNDS.maxX + m, px));
+      if (!heli && waterAt(px, pz)) return null; // not in a lake
       return { x: px, z: pz };
     };
     const clear = (p) => {
@@ -290,8 +268,8 @@ class ThirdPersonControllerManager {
     const origin = clampPoint(x, z);
     if (clear(origin)) return origin;
     // Four-metre rings cover nearby streets and courtyards, with bounded work even for a click inside a large block.
-    const cx = origin ? origin.x : Math.max(ISLAND_BOUNDS.minX, Math.min(ISLAND_BOUNDS.maxX, x));
-    const cz = origin ? origin.z : Math.max(ISLAND_BOUNDS.minZ + 30, Math.min(ISLAND_BOUNDS.maxZ, z));
+    const cx = origin ? origin.x : Math.max(CITY_BOUNDS.minX + 8, Math.min(CITY_BOUNDS.maxX - 8, x));
+    const cz = origin ? origin.z : Math.max(CITY_BOUNDS.minZ + 8, Math.min(CITY_BOUNDS.maxZ - 8, z));
     for (let distance = 4; distance <= 256; distance += 4) {
       for (let i = 0; i < 32; i++) {
         const angle = i * Math.PI / 16;
@@ -303,7 +281,7 @@ class ThirdPersonControllerManager {
   }
 
   // =========================================================================
-  // 1. PERSON (SKINNED NYC PEDESTRIAN WITH PLANTED-FOOTSTEP IK GAIT, see pedestrians.js)
+  // 1. PERSON (SKINNED PEDESTRIAN WITH PLANTED-FOOTSTEP IK GAIT, see pedestrians.js)
   // =========================================================================
   createPersonEntity() {
     const root = new THREE.Group();
@@ -330,8 +308,8 @@ class ThirdPersonControllerManager {
       mesh: root,
       crowd,
       rig,
-      position: new THREE.Vector3(-11.6, ISLAND_BOUNDS.sidewalkHeight, SPAWN_Z + 12),
-      heading: 0,
+      position: new THREE.Vector3(SPAWN.x - Math.cos(SPAWN.heading) * 2.4, 0.0, SPAWN.z + Math.sin(SPAWN.heading) * 2.4),
+      heading: SPAWN.heading,
       speed: 0,
       verticalVel: 0,
       cameraTargetOffset: new THREE.Vector3(0, 1.55, 0),
@@ -341,7 +319,7 @@ class ThirdPersonControllerManager {
   }
 
   // =========================================================================
-  // 2. CAR (3D LOFTED SCULPTED NYC MEDALLION YELLOW TAXI SEDAN)
+  // 2. CAR (3D LOFTED SCULPTED FCT GREEN TAXI SEDAN)
   // =========================================================================
   createCarEntity() {
     const root = new THREE.Group();
@@ -351,7 +329,7 @@ class ThirdPersonControllerManager {
     root.add(chassisPivot);
 
     const spec = BODY_SPECS.taxi;
-    const taxiLoftMat = createLoftedCarMaterial(spec, 0xffbe14);
+    const taxiLoftMat = createLoftedCarMaterial(spec, 0x0f7f3f);
 
     // 1. 3D Lofted Taxi Body + Curved Windscreens + Crowned Roof + Side Mirrors + Roof Sign
     const carBodyGeo = buildCarGeometry(spec, false);
@@ -360,30 +338,13 @@ class ThirdPersonControllerManager {
     carBodyMesh.receiveShadow = true;
     chassisPivot.add(carBodyMesh);
 
-    // 2. Authentic NYC Taxi Side Door T&LC Medallion & Fare Tariff Emblem Decals, hugging the curved front doors
-    const doorDecalTex = createTaxiDoorDecalTexture();
-    const doorDecalMat = new THREE.MeshStandardNodeMaterial({
-      map: doorDecalTex,
-      roughness: 0.24,
-      metalness: 0.34,
-      polygonOffset: true,
-      polygonOffsetFactor: -2,
-      polygonOffsetUnits: -2
-    });
-    const doorMid = (spec.doors[0] + spec.doors[1]) / 2;
-    for (const side of [-1, 1]) {
-      const decal = new THREE.Mesh(buildCarSidePatch(spec, side, doorMid - 0.36, doorMid + 0.36, 0.53, 0.81, 0.003), doorDecalMat);
-      chassisPivot.add(decal);
-    }
-
-    // 3. High-Detail NY Empire Gold License Plates on the bumpers
-    const nyPlateTex = createNYLicensePlateTexture();
-    const nyPlateMat = new THREE.MeshStandardNodeMaterial({ map: nyPlateTex, roughness: 0.28 });
-    const rearPlate = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.02), nyPlateMat);
+    // 2. Nigerian number plates on the bumpers (the FCT taxi's white side stripe is painted by the body material)
+    const plateMat = new THREE.MeshStandardNodeMaterial({ map: createNigerianPlateTexture(), roughness: 0.28 });
+    const rearPlate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.15, 0.02), plateMat);
     rearPlate.position.set(0, spec.plates[1], spec.zRear - 0.006);
     chassisPivot.add(rearPlate);
 
-    const frontPlate = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.02), nyPlateMat);
+    const frontPlate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.15, 0.02), plateMat);
     frontPlate.position.set(0, spec.plates[0], spec.zFront + 0.006);
     chassisPivot.add(frontPlate);
 
@@ -432,14 +393,14 @@ class ThirdPersonControllerManager {
 
     return {
       type: 'car',
-      label: 'NYC Yellow Taxi',
+      label: 'FCT Green Taxi',
       mesh: root,
       chassisPivot,
       carState,
       headLights,
       wheels,
-      position: new THREE.Vector3(3.6, 0.0, SPAWN_Z + 12),
-      heading: 0,
+      position: new THREE.Vector3(SPAWN.x, 0.0, SPAWN.z),
+      heading: SPAWN.heading,
       speed: 0,
       vx: 0,
       vz: 0,
@@ -593,7 +554,7 @@ class ThirdPersonControllerManager {
 
     return {
       type: 'cyclist',
-      label: 'NYC Bike Lane Cyclist',
+      label: 'Cyclist',
       mesh: root,
       leanPivot,
       frontWheel,
@@ -605,7 +566,8 @@ class ThirdPersonControllerManager {
       riderRig,
       helmet,
       headLight,
-      position: new THREE.Vector3(5.2, 0.0, SPAWN_Z - 8),
+      position: new THREE.Vector3(SPAWN.x + Math.sin(SPAWN.heading) * 9, 0.0, SPAWN.z + Math.cos(SPAWN.heading) * 9),
+      heading: SPAWN.heading,
       heading: 0,
       speed: 0,
       leanAngle: 0,
@@ -684,12 +646,12 @@ class ThirdPersonControllerManager {
 
     return {
       type: 'helicopter',
-      label: 'Sightseeing Helicopter',
+      label: 'Helicopter',
       mesh: root,
       tiltPivot,
       mainRotorPivot,
       tailRotorPivot,
-      position: new THREE.Vector3(-110, 96, SPAWN_Z - 60),
+      position: new THREE.Vector3(SPAWN.x - 120, 96, SPAWN.z + 80),
       heading: 0.62,
       speed: 0,
       verticalSpeed: 0,
@@ -701,27 +663,19 @@ class ThirdPersonControllerManager {
     };
   }
 
-  // On a raised curb island (city-config.js BLOCKS: the real blocks, malls & plazas), not in a park
+  // On a raised curb island (city-config.js BLOCKS: the real blocks, medians & verges)
   isPointOnSidewalk(x, z) {
     const b = blockAt(x, z);
-    return !!b && !(b.park > 0.6 && !b.median);
+    return !!b;
   }
 
-  getGroundHeight(x, z, mode = 'person') {
-    // Inside Central Park (5th Ave to Central Park West, 59th St to 110th St)
-    const cp = CENTRAL_PARK_BOUNDS;
-    if (x > cp.minX && x < cp.maxX && z > cp.minZ && z < cp.maxZ) {
-      return 1.24;
-    }
-    // Inside Bryant Park's Great Lawn (west of the New York Public Library, 40th-42nd St)
-    const lawn = window.NYC.bryantParkLawn;
-    if (lawn && x > lawn.minX && x < lawn.maxX && z > lawn.minZ && z < lawn.maxZ) {
-      return lawn.top;
-    }
-    if (mode === 'person') {
-      return this.isPointOnSidewalk(x, z) ? ISLAND_BOUNDS.sidewalkHeight : 0.0;
-    }
-    return 0.0;
+  // Height of what stands under (x, z): the raised curb island (walking), the hills (Aso Rock, the ridges), or a flyover
+  // deck or ramp where whoever is at height y can step or drive onto it (y unknown: at street level)
+  getGroundHeight(x, z, mode = 'person', y = null) {
+    let ground = mode === 'person' && this.isPointOnSidewalk(x, z) ? CITY_BOUNDS.sidewalkHeight : 0.0;
+    ground = Math.max(ground, terrainHeightAt(x, z));
+    const deck = deckHeightAt(x, z, y === null ? ground : y, mode === 'car' ? 0.9 : 0.6);
+    return Math.max(ground, deck);
   }
 
   // The colliders whose bounds come within `r` of (x, z), in their original order. They never move, so they are
@@ -764,21 +718,21 @@ class ThirdPersonControllerManager {
   }
 
   resolveHorizontalCollision(pos, radius, yHeight = 1.0, carEntity = null) {
-    // The detailed island (the helicopter may roam out over the harbour & the boroughs)
+    // The detailed city (the helicopter may roam out over the hills around it); no driving or walking into a lake
     const heli = this.activeMode === 'helicopter';
-    const m = heli ? 6000 : 0;
-    pos.x = Math.max(ISLAND_BOUNDS.minX - m, Math.min(ISLAND_BOUNDS.maxX + m, pos.x));
-    pos.z = Math.max(ISLAND_BOUNDS.minZ + (heli ? -6000 : 30), Math.min(ISLAND_BOUNDS.maxZ + m, pos.z));
-    if (this.activeMode !== 'helicopter' && getIslandBoundsAtZ) {
-      const shore = getIslandBoundsAtZ(pos.z);
-      const minShoreX = shore.westX + 8.0;
-      const maxShoreX = shore.eastX - 8.0;
-      if (pos.x < minShoreX) {
-        pos.x = minShoreX;
-        if (carEntity && carEntity.speed) carEntity.speed *= 0.4;
-      } else if (pos.x > maxShoreX) {
-        pos.x = maxShoreX;
-        if (carEntity && carEntity.speed) carEntity.speed *= 0.4;
+    const m = heli ? 12000 : -8;
+    const bx = Math.max(CITY_BOUNDS.minX - m, Math.min(CITY_BOUNDS.maxX + m, pos.x));
+    const bz = Math.max(CITY_BOUNDS.minZ - m, Math.min(CITY_BOUNDS.maxZ + m, pos.z));
+    if ((bx !== pos.x || bz !== pos.z) && carEntity && carEntity.speed) carEntity.speed *= 0.4;
+    pos.x = bx;
+    pos.z = bz;
+    if (!heli) {
+      if (waterAt(pos.x, pos.z) && this._dry) {
+        pos.x = this._dry.x;
+        pos.z = this._dry.z;
+        if (carEntity && carEntity.speed) carEntity.speed *= 0.3;
+      } else {
+        this._dry = { x: pos.x, z: pos.z };
       }
     }
 
@@ -904,7 +858,7 @@ class ThirdPersonControllerManager {
   // pedals, helmet on its head
   poseCharacters(dt) {
     const p = this.entities.person;
-    const air = p.position.y - this.getGroundHeight(p.position.x, p.position.z, 'person');
+    const air = p.position.y - this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
     p.rig.update(dt, p.position.x, p.position.z, p.heading, personGround, this, air > 0.02 ? air : 0);
     p.crowd.begin();
     p.crowd.add(p.rig, 0);
@@ -988,7 +942,7 @@ class ThirdPersonControllerManager {
     p.position.z += Math.cos(p.heading) * p.speed * dt;
     this.resolveHorizontalCollision(p.position, 0.48, p.position.y + 1.0);
 
-    const groundY = this.getGroundHeight(p.position.x, p.position.z, 'person');
+    const groundY = this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
     if (this.keys.up && p.position.y <= groundY + 0.02) {
       p.verticalVel = 5.2;
     }
@@ -1042,7 +996,7 @@ class ThirdPersonControllerManager {
     c.vz *= tireGripDamp;
 
     this.resolveHorizontalCollision(c.position, 1.35, 1.0, c);
-    c.position.y = this.getGroundHeight(c.position.x, c.position.z, 'car');
+    c.position.y = this.getGroundHeight(c.position.x, c.position.z, 'car', c.position.y);
 
     // 3-DOF Spring-Damper Chassis Suspension (Pitch, Roll & Vertical Heave)
     const targetPitch = -throttle * 0.026;
@@ -1103,7 +1057,7 @@ class ThirdPersonControllerManager {
     b.position.x += Math.sin(b.heading) * b.speed * dt;
     b.position.z += Math.cos(b.heading) * b.speed * dt;
     this.resolveHorizontalCollision(b.position, 0.65, 1.0);
-    b.position.y = this.getGroundHeight(b.position.x, b.position.z, 'cyclist');
+    b.position.y = this.getGroundHeight(b.position.x, b.position.z, 'cyclist', b.position.y);
 
     const targetLean = -turnInput * Math.min(1.0, Math.abs(b.speed) / 9.0) * 0.34;
     b.leanAngle += (targetLean - b.leanAngle) * Math.min(1, dt * 9);
@@ -1171,5 +1125,5 @@ class ThirdPersonControllerManager {
   }
 }
 
-Object.assign(window.NYC, { ThirdPersonControllerManager });
+Object.assign(window.CITY, { ThirdPersonControllerManager });
 })();

@@ -45,7 +45,7 @@ function harness({ coarse = true, mode = 'person' } = {}) {
   const document = { ...element(), body: element(), hidden: false };
   const media = { ...element(), matches: coarse };
   window.matchMedia = () => media;
-  window.NYC = {};
+  window.CITY = {};
   const root = element();
   const stick = element();
   const knob = element();
@@ -61,7 +61,7 @@ function harness({ coarse = true, mode = 'person' } = {}) {
     clearTouchInput() { for (const action of Object.keys(input)) input[action] = 0; }
   };
   vm.runInNewContext(source, { window, document });
-  const controls = new window.NYC.TouchControls(controller);
+  const controls = new window.CITY.TouchControls(controller);
   return { controls, window, document, media, root, stick, knob, buttons, labels, input };
 }
 

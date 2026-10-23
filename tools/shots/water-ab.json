@@ -1,0 +1,9 @@
+[
+  { "name": "ab1-humberbay-golden-OFF", "camera": "humberBay", "time": "golden", "wait": 5000, "js": "Object.assign(window.CITY.cityUniforms,{}); window.CITY.cityUniforms.uWaterGlitter.value=0; window.CITY.cityUniforms.uWaterGlow.value=0; window.CITY.cityUniforms.uWaterTilt.value=0" },
+  { "name": "ab2-humberbay-golden-0.3", "js": "window.CITY.cityUniforms.uWaterGlitter.value=0.3; window.CITY.cityUniforms.uWaterGlow.value=1; window.CITY.cityUniforms.uWaterTilt.value=1" },
+  { "name": "ab3-humberbay-golden-1.0", "js": "window.CITY.cityUniforms.uWaterGlitter.value=1.0" },
+  { "name": "ab4-skyline-golden-OFF", "camera": "skyline", "js": "window.CITY.cityUniforms.uWaterGlitter.value=0; window.CITY.cityUniforms.uWaterGlow.value=0; window.CITY.cityUniforms.uWaterTilt.value=0" },
+  { "name": "ab5-skyline-golden-ON", "js": "window.CITY.cityUniforms.uWaterGlitter.value=0.3; window.CITY.cityUniforms.uWaterGlow.value=1; window.CITY.cityUniforms.uWaterTilt.value=1" },
+  { "name": "ab6-islands-midday-OFF", "camera": "islands", "time": "midday", "js": "window.CITY.cityUniforms.uWaterGlitter.value=0; window.CITY.cityUniforms.uWaterGlow.value=0; window.CITY.cityUniforms.uWaterTilt.value=0" },
+  { "name": "ab7-islands-midday-ON", "js": "window.CITY.cityUniforms.uWaterGlitter.value=0.3; window.CITY.cityUniforms.uWaterGlow.value=1; window.CITY.cityUniforms.uWaterTilt.value=1" }
+]

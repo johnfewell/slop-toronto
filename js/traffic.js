@@ -1,15 +1,16 @@
 (function () {
 // js/traffic.js
-// Manhattan traffic and pedestrians on the road graph road-network.js derives from the city as built:
-// - 200 cars (taxis, sedans, SUVs, NYPD cruisers) and 32 MTA buses keep to their lanes and follow the vehicle
+// Abuja's traffic and pedestrians on the road graph road-network.js derives from the city as built:
+// - 200 cars (FCT green taxis, sedans, SUVs) and 32 city buses keep to their lanes and follow the vehicle
 //   ahead (Intelligent Driver Model), change lanes to overtake or to reach a turn lane, turn into other streets,
-//   stop for the signals street-details.js shows, give way to oncoming traffic when turning left, to the avenue at
-//   unsignalized corners and to pedestrians on crosswalks, and never enter an intersection they can't clear.
+//   stop for the signals street-details.js shows, give way to oncoming traffic when turning left, to the major road at
+//   unsignalized junctions & roundabouts and to pedestrians on crosswalks, and never enter a junction they can't clear.
+//   They ride the flyovers & ramps at the height of the deck (road-network.js edgeY).
 // - 340 pedestrians stroll the sidewalks and cross at signalized crosswalks on the WALK signal.
 // - Vehicles and pedestrians are only ever moved while out of the camera's view, so nothing pops in or out.
 // - The player's vehicle or character pushes and is pushed by the traffic (SAT contact, impulses, sparks).
 
-const { THREE, buildRoadNetwork, signalPhase, walkSignal } = window.NYC;
+const { THREE, buildRoadNetwork, edgeY, signalPhase, walkSignal, deckHeightAt } = window.CITY;
 const {
   cityUniforms,
   createContactShadowMaterial,
@@ -17,7 +18,7 @@ const {
   HEADLIGHTS,
   createVehicleHeadlight,
   placeVehicleHeadlight
-} = window.NYC;
+} = window.CITY;
 const {
   CAR_PARTS,
   BODY_SPECS,
@@ -33,9 +34,9 @@ const {
   buildBusWheelGeo,
   createBusWheelMaterial,
   createLoftedBusMaterial
-} = window.NYC;
-const { PersonCrowd, PersonRig } = window.NYC;
-const { mergeGeometries } = window.NYC.Addons;
+} = window.CITY;
+const { PersonCrowd, PersonRig } = window.CITY;
+const { mergeGeometries } = window.CITY.Addons;
 
 const NUM_CARS = 200;
 const NUM_BUSES = 32;
@@ -61,17 +62,12 @@ function createBusDestinationTexture() {
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#0c0f14';
   ctx.fillRect(0, 0, 256, 64);
-  ctx.fillStyle = '#0058b8';
-  ctx.fillRect(6, 8, 62, 48);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 26px Inter, Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('M1', 37, 33);
+  // amber LED destination: Area 1 (Garki) to Nyanya, a busy commuter run out along the Abuja-Keffi Expressway
   ctx.fillStyle = '#ff9d1c';
   ctx.font = '800 22px JetBrains Mono, monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText('5 AV / HARLEM', 78, 33);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('AREA 1 - NYANYA', 128, 33);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -81,7 +77,7 @@ const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 
 function createTrafficSystem(scene, sidewalks, obstacles) {
   const group = new THREE.Group();
-  group.name = 'ManhattanTrafficAndPedestrians';
+  group.name = 'TrafficAndPedestrians';
 
   const dummy = new THREE.Object3D();
   const zero = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -126,7 +122,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   };
 
   // =========================================================================
-  // 1. 3D LOFTED NYC YELLOW TAXIS, SEDANS, SUVS & NYPD CRUISERS (200 VEHICLES)
+  // 1. 3D LOFTED FCT GREEN TAXIS, SEDANS & SUVS (200 VEHICLES)
   // =========================================================================
   function createVehicle(bus, half, halfWidth, axle, driver, v0) {
     return {
@@ -141,7 +137,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     };
   }
 
-  // Build 3 distinct 3D LoftGeometry vehicle classes (Taxi, Sedan/NYPD, SUV) with separate spinning 3D wheels
+  // Build 3 distinct 3D LoftGeometry vehicle classes (Taxi, Sedan, SUV) with separate spinning 3D wheels
   const taxiGeo = buildCarGeometry(BODY_SPECS.taxi, false);
   const sedanGeo = buildCarGeometry(BODY_SPECS.sedan, false);
   const suvGeo = buildCarGeometry(BODY_SPECS.suv, false);
@@ -151,35 +147,34 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   const taxiMat = createLoftedCarMaterial(BODY_SPECS.taxi);
   const sedanMat = createLoftedCarMaterial(BODY_SPECS.sedan);
   const suvMat = createLoftedCarMaterial(BODY_SPECS.suv);
-  const carWheelMat = createLoftedCarMaterial(BODY_SPECS.sedan, 0xffbe14);
+  const carWheelMat = createLoftedCarMaterial(BODY_SPECS.sedan, 0x0f7f3f);
 
-  const taxiYellow = new THREE.Color(0xffbe14);
-  const nypdWhite = new THREE.Color(0xf6f9fc);
+  const taxiGreen = new THREE.Color(0x0f7f3f); // FCT taxi green (the white side stripe is painted by the material)
   const sedanPalette = [
-    new THREE.Color(0x1c2026), // Black Town Car / Uber
-    new THREE.Color(0xcfd6de), // Metallic Silver Sedan
-    new THREE.Color(0x1d3b6c), // Deep Navy Sedan
-    new THREE.Color(0x52575e), // Graphite Grey Sedan
-    new THREE.Color(0x6e1f24)  // Burgundy Sedan
+    new THREE.Color(0xc8ced4), // Silver
+    new THREE.Color(0x1c2026), // Black
+    new THREE.Color(0xeef0f2), // White
+    new THREE.Color(0x5a5f66), // Grey
+    new THREE.Color(0xb59a6a), // Champagne gold
+    new THREE.Color(0x1d3557), // Dark blue
+    new THREE.Color(0x6e1f24)  // Wine
   ];
   const suvPalette = [
-    new THREE.Color(0x16191e), // Executive Black Escalade/Suburban
-    new THREE.Color(0xf0f3f7), // Pearl White SUV
-    new THREE.Color(0x3a434d), // Slate Metallic SUV
-    new THREE.Color(0x28382e), // Forest Green SUV
-    new THREE.Color(0xbec6cf)  // Silver SUV
+    new THREE.Color(0x16191e), // Black
+    new THREE.Color(0xf0f3f7), // Pearl white
+    new THREE.Color(0xbec6cf), // Silver
+    new THREE.Color(0x3a434d), // Slate grey
+    new THREE.Color(0xa88d5e)  // Gold
   ];
 
   const cars = [];
   let taxiCount = 0;
   let sedanCount = 0;
   let suvCount = 0;
-  let nypdCount = 0;
 
   for (let i = 0; i < NUM_CARS; i++) {
-    const isNYPD = (i % 10) === 6;
-    const isTaxi = !isNYPD && (i % 7) < 4;
-    const isSUV = !isNYPD && !isTaxi && (i % 2 === 0);
+    const isTaxi = (i % 7) < 2;
+    const isSUV = !isTaxi && (i % 5) < 3;
 
     let bodyType = 'sedan';
     let col;
@@ -187,28 +182,27 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     if (isTaxi) {
       bodyType = 'taxi';
       taxiCount++;
-      col = taxiYellow;
+      col = taxiGreen;
     } else if (isSUV) {
       bodyType = 'suv';
       suvCount++;
       col = suvPalette[i % suvPalette.length];
     } else {
       sedanCount++;
-      col = isNYPD ? nypdWhite : sedanPalette[i % sedanPalette.length];
-      if (isNYPD) nypdCount++;
+      col = sedanPalette[i % sedanPalette.length];
     }
 
     const car = createVehicle(false, isSUV ? 2.3 : 2.25, isSUV ? 0.92 : 0.86, isSUV ? 1.4 : 1.38, CAR_DRIVER, 10 + (i % 5) * 0.9);
     // paint as float32 values, so renderCar() can tell whether an instance slot's paint changes by comparing
     const paint = [Math.fround(col.r), Math.fround(col.g), Math.fround(col.b)];
-    Object.assign(car, { isTaxi, isNYPD, isSUV, bodyType, paint });
+    Object.assign(car, { isTaxi, isSUV, bodyType, paint });
     cars.push(car);
   }
 
   // Per body type: the full model (with separately instanced spinning wheels near the camera) and, beyond
   // CAR_PROXY_DISTANCE, the ~250-triangle stand-in. Instance slots are handed out every frame to the cars the camera
-  // can see (or whose shadow it may see), see renderCar(). Per-instance paint & lamp / livery state the car material
-  // reads: brake lights, left (+x) & right (-x) turn signals, livery (1 = NYPD).
+  // can see (or whose shadow it may see), see renderCar(). Per-instance paint & lamp state the car material reads:
+  // brake lights, left (+x) & right (-x) turn signals.
   const bodies = {};
   for (const [kind, geo, count, mat] of [['taxi', taxiGeo, taxiCount, taxiMat], ['sedan', sedanGeo, sedanCount, sedanMat], ['suv', suvGeo, suvCount, suvMat]]) {
     const n = Math.max(1, count);
@@ -255,13 +249,10 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     }
   }
 
-  // NYPD roof light bars (the blue & white livery is painted by the sedan material from the instance's carState)
-  const nypdBarInst = new THREE.InstancedMesh(buildLightbarGeometry(BODY_SPECS.sedan), createLightbarMaterial(), Math.max(1, nypdCount));
   const carShadowInst = new THREE.InstancedMesh(unitPlane, contactShadowMat, NUM_CARS);
   carShadowInst.renderOrder = 998;
 
   for (const m of bodyMeshes) m.castShadow = m.receiveShadow = true;
-  nypdBarInst.castShadow = true;
   carWheelLeftInst.castShadow = carWheelLeftInst.receiveShadow = true;
   carWheelRightInst.castShadow = carWheelRightInst.receiveShadow = true;
 
@@ -269,12 +260,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     ...bodyMeshes,
     carWheelLeftInst,
     carWheelRightInst,
-    sparkInst,
-    nypdBarInst
+    sparkInst
   );
 
   // =========================================================================
-  // 2. LOFTED MTA SELECT BUS SERVICE BLUE & WHITE CITY BUSES (32 BUSES)
+  // 2. LOFTED CITY BUSES (32 BUSES)
   // =========================================================================
   const busBodyGeo = buildLoftedBusBodyGeometry();
   // Per-instance lamp state the bus material reads: brake lights, left (+x) & right (-x) turn signals (renderBus)
@@ -356,7 +346,6 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   group.add(carShadowInst, busShadowInst);
 
   const HEADLIGHT_POOL_SIZE = 96;
-  const NYPD_LIGHT_POOL_SIZE = 6;
   const MAX_LIGHT_DIST = 115;
   const MAX_LIGHT_DIST_SQ = MAX_LIGHT_DIST * MAX_LIGHT_DIST;
   const DUAL_BEAM_DIST_SQ = 96 * 96;
@@ -375,16 +364,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     headlightPool.push(spot);
   }
 
-  const nypdLightPool = [];
-  for (let i = 0; i < NYPD_LIGHT_POOL_SIZE; i++) {
-    const pt = new THREE.PointLight(0xff1828, 0, 12.0, 1.25);
-    pt.position.set(0, -1000, 0);
-    trafficLightsGroup.add(pt);
-    nypdLightPool.push(pt);
-  }
-
   // Nothing shows until it has been placed
-  const carInstances = [...bodyMeshes, carWheelLeftInst, carWheelRightInst, nypdBarInst, carShadowInst];
+  const carInstances = [...bodyMeshes, carWheelLeftInst, carWheelRightInst, carShadowInst];
   const busInstances = [busBodyInst, busHeaderInst, busWheelLeftInst, busWheelRightInst, busShadowInst];
   for (const inst of [...carInstances, ...busInstances, sparkInst]) {
     inst.frustumCulled = false;
@@ -553,7 +534,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // Where the player is relative to v: metres ahead, metres to the right, and how fast it moves v's way
   function relateToPlayer(v) {
     v.pAhead = Infinity;
-    if (!player.active) return;
+    if (!player.active || Math.abs((v.y || 0) - player.y) > 2.5) return; // a flyover above or below
     const dx = player.x - v.x;
     const dz = player.z - v.z;
     if (Math.abs(dx) > LOOKAHEAD + 10 || Math.abs(dz) > LOOKAHEAD + 10) return;
@@ -1063,6 +1044,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   function lanePoint(e, i, s, out) {
     out.x = e.sx + e.dx * s + e.rx * e.lanes[i];
     out.z = e.sz + e.dz * s + e.rz * e.lanes[i];
+    out.y = edgeY(e, s);
     out.dx = e.dx;
     out.dz = e.dz;
     return out;
@@ -1080,8 +1062,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
   // World position and heading from where v's axles are along its path: the rear axle dl to the right of it, and the
   // body turned `nose` to the right about the rear axle, into a lane change (so the rear axle never slides sideways)
-  const front = { x: 0, z: 0, dx: 0, dz: 0 };
-  const rear = { x: 0, z: 0, dx: 0, dz: 0 };
+  const front = { x: 0, y: 0, z: 0, dx: 0, dz: 0 };
+  const rear = { x: 0, y: 0, z: 0, dx: 0, dz: 0 };
   function locate(v) {
     const c = v.conn ? v.cs : v.s;
     pathPoint(v, c + v.axle, front);
@@ -1093,6 +1075,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     const off = v.dl + v.axle * Math.sin(v.nose);
     v.x = (front.x + rear.x) / 2 - v.tz * off;
     v.z = (front.z + rear.z) / 2 + v.tx * off;
+    // up on a flyover & its ramps: the road's height, and the body pitched to its grade
+    v.y = (front.y + rear.y) / 2;
+    v.grade = -Math.atan2(front.y - rear.y, l);
   }
 
   // Move v along and across its path by (dx, dz), as far as the road allows
@@ -1360,7 +1345,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // Along the sidewalk on either side of edge e, between its crosswalks. Grid edges test the strip in one box against
   // the sidewalk rectangles; centreline streets (any direction, where those rectangles only roughly fill the sidewalks)
   // every 3 m, on the curb island (city-config.js blockAt) and clear of obstacles
-  const { blockAt } = window.NYC;
+  const { blockAt } = window.CITY;
   function sidewalkTrack(e) {
     const off = (Math.random() < 0.5 ? 1 : -1) * (e.half + 1.4 + Math.random() * 2.6);
     const ax = e.sx + e.rx * off;
@@ -1527,7 +1512,6 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   let litVehicleCount = 0;
   let wheelCars = 0;
   let visibleCars = 0;
-  let nypdDrawn = 0;
   let visibleBuses = 0;
   let updates = 0;
 
@@ -1547,11 +1531,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     for (let w = 0; w < 2; w++) {
       const wz = w === 0 ? halfBase : -halfBase;
       dummy.rotation.set(v.wheelSpin + w * 0.55, rotY + (w === 0 ? v.steer : 0), roll, 'YXZ');
-      dummy.position.set(v.x - halfTrack * cosY + wz * sinY, radius, v.z + halfTrack * sinY + wz * cosY);
+      dummy.position.set(v.x - halfTrack * cosY + wz * sinY, (v.y || 0) + radius - (v.grade || 0) * wz, v.z + halfTrack * sinY + wz * cosY);
       dummy.updateMatrix();
       leftInst.setMatrixAt(i * 2 + w, dummy.matrix);
 
-      dummy.position.set(v.x + halfTrack * cosY + wz * sinY, radius, v.z - halfTrack * sinY + wz * cosY);
+      dummy.position.set(v.x + halfTrack * cosY + wz * sinY, (v.y || 0) + radius - (v.grade || 0) * wz, v.z - halfTrack * sinY + wz * cosY);
       dummy.updateMatrix();
       rightInst.setMatrixAt(i * 2 + w, dummy.matrix);
     }
@@ -1580,12 +1564,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     const bodyInst = near ? bodies[c.bodyType].near : bodies[c.bodyType].far;
     const slot = bodyInst.count++;
 
-    dummy.position.set(c.x, 0.0, c.z);
-    dummy.rotation.set(c.pitch, rotY, c.roll, 'YXZ');
+    dummy.position.set(c.x, c.y || 0, c.z);
+    dummy.rotation.set(c.pitch + (c.grade || 0), rotY, c.roll, 'YXZ');
     dummy.scale.set(1, 1, 1);
     dummy.updateMatrix();
     bodyInst.setMatrixAt(slot, dummy.matrix);
-    if (c.isNYPD) nypdBarInst.setMatrixAt(nypdDrawn++, dummy.matrix);
 
     const attrs = bodyInst.geometry.attributes;
     const paint = attrs.paintColor.array;
@@ -1602,7 +1585,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     const b0 = c.acc < -0.8 || c.speed < 0.3 ? 1 : 0;
     const b1 = blinkOn && c.blink < 0 ? 1 : 0;
     const b2 = blinkOn && c.blink > 0 ? 1 : 0;
-    const b3 = c.isNYPD ? 1 : 0;
+    const b3 = 0;
     if (state[o4] !== b0 || state[o4 + 1] !== b1 || state[o4 + 2] !== b2 || state[o4 + 3] !== b3) {
       state[o4] = b0;
       state[o4 + 1] = b1;
@@ -1613,8 +1596,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
     // Soft Under-Car Contact Shadow (AO) stays flat on the asphalt
     const visIdx = visibleCars++;
-    dummy.rotation.set(0, rotY, 0, 'YXZ');
-    dummy.position.set(c.x, 0.018, c.z);
+    dummy.rotation.set(c.grade || 0, rotY, 0, 'YXZ');
+    dummy.position.set(c.x, (c.y || 0) + 0.018, c.z);
     dummy.scale.set(2.22, 1.0, 5.05);
     dummy.updateMatrix();
     carShadowInst.setMatrixAt(visIdx, dummy.matrix);
@@ -1651,15 +1634,15 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     if (hasView && !visible(b.x, b.z, 22)) return;
 
     const i = visibleBuses++;
-    dummy.position.set(b.x, 0.018, b.z);
-    dummy.rotation.set(0, rotY, 0, 'YXZ');
+    dummy.position.set(b.x, (b.y || 0) + 0.018, b.z);
+    dummy.rotation.set(b.grade || 0, rotY, 0, 'YXZ');
     dummy.scale.set(2.92, 1.0, 12.1);
     dummy.updateMatrix();
     busShadowInst.setMatrixAt(i, dummy.matrix);
 
     // Lofted Bus Body is defined in ground-relative Y (0.36m skirt to 3.0m roof crown)
-    dummy.position.set(b.x, 0.0, b.z);
-    dummy.rotation.set(b.pitch, rotY, b.roll, 'YXZ');
+    dummy.position.set(b.x, b.y || 0, b.z);
+    dummy.rotation.set(b.pitch + (b.grade || 0), rotY, b.roll, 'YXZ');
     dummy.scale.set(1, 1, 1);
     dummy.updateMatrix();
     busBodyInst.setMatrixAt(i, dummy.matrix);
@@ -1723,7 +1706,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
         const baseInt = (v.bus ? HEADLIGHTS.busIntensity : HEADLIGHTS.intensity) * beamScale * fade;
         // Match the body instance, including suspension and impact rotation.
-        dummy.position.set(v.x, 0, v.z);
+        dummy.position.set(v.x, v.y || 0, v.z);
         dummy.rotation.set(v.pitch, v.yaw + v.yawOffset, v.roll, 'YXZ');
         dummy.scale.set(1, 1, 1);
         dummy.updateMatrix();
@@ -1741,28 +1724,6 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       spot.position.set(0, -1000, 0);
     }
 
-    // 1. NYPD emergency roof lightbar flashes (smoothly pulsing red/blue 360° PointLights on nearby patrol cruisers)
-    let nypdUsed = 0;
-    for (let i = 0; i < litVehicleCount && nypdUsed < NYPD_LIGHT_POOL_SIZE; i++) {
-      const v = litVehicles[i];
-      if (!v.isNYPD || v._effDist >= 88) continue;
-      const fade = smoothDistFade(v._effDist, 52, 88);
-      if (fade <= 0.001) continue;
-      const wave = Math.sin((clock + v.blinkPhase) * Math.PI * 6.0);
-      const redPhase = wave >= 0;
-      const pulse = 0.35 + 0.65 * Math.abs(wave);
-      const side = redPhase ? -0.36 : 0.36;
-      const pt = nypdLightPool[nypdUsed++];
-      pt.color.setHex(redPhase ? 0xff1828 : 0x1868ff);
-      pt.position.set(v.x + side * v._cosY - 0.25 * v._sinY, 1.85, v.z - side * v._sinY - 0.25 * v._cosY);
-      pt.distance = 12.0;
-      pt.intensity = 42.0 * tailScale * fade * pulse;
-    }
-    for (let i = nypdUsed; i < NYPD_LIGHT_POOL_SIZE; i++) {
-      const pt = nypdLightPool[i];
-      pt.intensity = 0;
-      pt.position.set(0, -1000, 0);
-    }
   }
 
   // Walking surface around a pedestrian: sidewalks are 0.22 m above the road, and crosswalk tracks start and end
@@ -1839,7 +1800,10 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     refreshNear();
     updateView(camera);
 
-    player.active = Boolean(playerEntity && activeMode !== 'helicopter' && playerEntity.position.y < 2.6);
+    // on the ground or on a flyover deck (not flying, not in the air above it)
+    player.active = Boolean(playerEntity && activeMode !== 'helicopter' &&
+      playerEntity.position.y - deckHeightAt(playerEntity.position.x, playerEntity.position.z, playerEntity.position.y + 0.5, 1.0) < 2.6);
+    player.y = playerEntity ? playerEntity.position.y : 0;
     if (playerEntity) {
       const heading = playerEntity.heading || 0;
       const speed = playerEntity.speed || 0;
@@ -1859,7 +1823,6 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     litVehicleCount = 0;
     wheelCars = 0;
     visibleCars = 0;
-    nypdDrawn = 0;
     visibleBuses = 0;
     let budget = jump ? Infinity : 4;
     for (let i = 0; i < vehicles.length; i++) {
@@ -1879,7 +1842,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       locate(v);
       knock(v, dt);
       pose(v, dt);
-      if (player.active) collideWithPlayer(v, v.yaw + v.yawOffset, v.bus ? 1.30 : v.isSUV ? 0.92 : 0.86, v.bus ? 5.72 : v.isSUV ? 2.22 : 2.18);
+      if (player.active && Math.abs((v.y || 0) - player.y) < 2.5) collideWithPlayer(v, v.yaw + v.yawOffset, v.bus ? 1.30 : v.isSUV ? 0.92 : 0.86, v.bus ? 5.72 : v.isSUV ? 2.22 : 2.18);
       if (v.vx * v.vx + v.vz * v.vz > 0.36) knockOn(v);
 
       if (v.bus) renderBus(v);
@@ -1920,7 +1883,6 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     };
     syncInst(carWheelLeftInst, wheelCars * 2);
     syncInst(carWheelRightInst, wheelCars * 2);
-    syncInst(nypdBarInst, nypdDrawn);
     syncInst(carShadowInst, visibleCars);
     syncInst(busBodyInst, visibleBuses);
     syncInst(busHeaderInst, visibleBuses);
@@ -1993,7 +1955,7 @@ function createHighwayTraffic(scene, lanes) {
   scene.add(group);
   const KINDS = ['taxi', 'sedan', 'suv'];
   const PALETTES = {
-    taxi: [0xffbe14],
+    taxi: [0x0f7f3f],
     sedan: [0x1c2026, 0xcfd6de, 0x1d3b6c, 0x52575e, 0x6e1f24, 0x8a8f96, 0xe9ecef],
     suv: [0x16191e, 0xf0f3f7, 0x3a434d, 0x28382e, 0xbec6cf, 0x5b2a2a]
   };
@@ -2333,5 +2295,5 @@ function createHighwayTraffic(scene, lanes) {
   return { group, update, cars, lanes };
 }
 
-Object.assign(window.NYC, { createTrafficSystem, createHighwayTraffic });
+Object.assign(window.CITY, { createTrafficSystem, createHighwayTraffic });
 })();

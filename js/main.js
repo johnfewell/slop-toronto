@@ -1,8 +1,8 @@
 (function () {
 // js/main.js
-// Main entry point for New York City (Midtown Manhattan) in Three.js WebGPURenderer & TSL (three.js dev, see index.html)
+// Main entry point for Abuja, Nigeria's Federal Capital, in Three.js WebGPURenderer & TSL (three.js dev, see index.html)
 
-const { THREE } = window.NYC;
+const { THREE } = window.CITY;
 const {
   pass,
   mrt,
@@ -13,25 +13,27 @@ const {
   roughness,
   vec2,
   smoothstep
-} = window.NYC.TSL;
-const { ssr } = window.NYC.PostFX;
-const { createPostProcessing } = window.NYC;
-const { ClusteredLighting } = window.NYC.Addons;
+} = window.CITY.TSL;
+const { ssr } = window.CITY.PostFX;
+const { createPostProcessing } = window.CITY;
+const { ClusteredLighting } = window.CITY.Addons;
 
-const { getLocationLabel, isTypingInField } = window.NYC;
-const { buildCityGrid } = window.NYC;
-const { buildBoroughs } = window.NYC;
-const { buildLandmarks } = window.NYC;
-const { buildCityBlocks } = window.NYC;
-const { buildStreetDetails } = window.NYC;
-const { createTrafficSystem, createHighwayTraffic } = window.NYC;
-const { buildRoadPaint } = window.NYC;
-const { ThirdPersonControllerManager } = window.NYC;
-const { TouchControls } = window.NYC;
-const { CameraSystem, CAMERA_PRESETS } = window.NYC;
-const { LightingSystem } = window.NYC;
-const { NYCMapSystem } = window.NYC;
-const { setupSceneCulling, updateSceneCulling } = window.NYC;
+const { getLocationLabel, isTypingInField } = window.CITY;
+const { buildCityGrid } = window.CITY;
+const { buildTerrain } = window.CITY;
+const { buildLandmarks } = window.CITY;
+const { buildCityBlocks } = window.CITY;
+const { buildStreetDetails } = window.CITY;
+const { buildSignage } = window.CITY;
+const { createTourGuide } = window.CITY;
+const { createTrafficSystem, createHighwayTraffic } = window.CITY;
+const { buildRoadPaint } = window.CITY;
+const { ThirdPersonControllerManager } = window.CITY;
+const { TouchControls } = window.CITY;
+const { CameraSystem, CAMERA_PRESETS } = window.CITY;
+const { LightingSystem } = window.CITY;
+const { CityMapSystem } = window.CITY;
+const { setupSceneCulling, updateSceneCulling } = window.CITY;
 
 async function initApp() {
   const container = document.getElementById('canvas-container');
@@ -59,7 +61,7 @@ async function initApp() {
   renderer.setPixelRatio(1.0);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
-  if (ClusteredLighting) {
+  if (ClusteredLighting && !new URLSearchParams(location.search).has('nocl')) {
     renderer.lighting = new ClusteredLighting(256, 32, 28, 48);
   }
   container.appendChild(renderer.domElement);
@@ -75,6 +77,8 @@ async function initApp() {
 
   await renderer.init();
   markInit('renderer');
+  // The clouds' atmosphere & clouds contexts go on the renderer before anything renders (sky-clouds.js)
+  const skyClouds = await window.CITY.setupClouds(renderer);
 
   // 2. Build Scene & Physical Atmospheric Sky / PMREM IBL / 4096x4096 Shadow Lighting
   const scene = new THREE.Scene();
@@ -82,22 +86,29 @@ async function initApp() {
   markInit('lighting');
 
   if (loadingStatus) {
-    loadingStatus.textContent = 'Constructing Manhattan Grid, Landmarks & Streetscape...';
+    loadingStatus.textContent = 'Building Abuja: Streets, Landmarks, Aso Rock & Streetscape...';
   }
 
-  // 3. Build Manhattan Geography, Iconic Landmarks, Blocks, Street Details & Traffic
+  // 3. Build Abuja's Ground & Terrain, Landmarks, Buildings, Street Details & Traffic
   const cityGrid = buildCityGrid(scene);
+  // Lake Ontario in John's stylized water (lake-water.js)
+  const lakeWater = window.CITY.setupLakeWater(scene, renderer, lightingSystem);
   markInit('cityGrid');
-  const boroughs = buildBoroughs(scene, { sidewalks: cityGrid.sidewalks });
-  markInit('boroughs');
+  const boroughs = buildTerrain(scene);
+  markInit('terrain');
   const { colliders: landmarkColliders } = buildLandmarks(scene);
   markInit('landmarks');
   const cityBlocks = buildCityBlocks(scene);
   markInit('blocks');
+  buildSignage(scene);
+  markInit('signage');
   const allColliders = [...landmarkColliders, ...cityBlocks.colliders, ...boroughs.colliders, ...(cityGrid.colliders || [])];
 
   const streetDetails = buildStreetDetails(scene);
   markInit('streetDetails');
+  // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
+  await window.CITY.buildStreetProps(scene);
+  markInit('streetProps');
   // Buildings turned along non-grid streets have oriented colliders whose world bounds reach past their lots: they stay
   // inside the property line anyway, so the road network (lanes & sidewalks) doesn't need them
   const trafficSystem = createTrafficSystem(scene, cityGrid.sidewalks, [
@@ -116,9 +127,9 @@ async function initApp() {
   const touchControls = new TouchControls(controllerManager);
   markInit('controllers');
 
-  // Island-wide static geometry: chunk & distance-cull the small props, shadow stand-ins for the big casters
+  // City-wide static geometry: chunk & distance-cull the small props, shadow stand-ins for the big casters
   // (scene-culling.js)
-  const cullingRoots = ['ManhattanCityGrid', 'ManhattanCityBlocks', 'ManhattanStreetDetails', 'ManhattanLandmarks', 'Boroughs']
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityLandmarks', 'Terrain']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
@@ -139,7 +150,9 @@ async function initApp() {
   // The multisampled colour attachments (output, normal, metalRough) only need resolving, never storing: discarding
   // them spares the GPU writing 3 x 4 samples per pixel to memory every frame (transient, memoryless attachments where
   // the browser supports them). The multisampled depth stays stored: SSR reads it.
-  scenePass.renderTarget.storeMultisampledColorBuffer = false;
+  // Toronto: John's stylized lake water copies the frame mid-pass (its depth & refraction), so the colour attachments
+  // must be stored for the pass to carry on after the copy
+  scenePass.renderTarget.storeMultisampledColorBuffer = !!lakeWater.water;
   const ssrFade = smoothstep(360.0, 180.0, positionView.z.negate());
   const sceneMRT = mrt({
     output: output,
@@ -168,7 +181,12 @@ async function initApp() {
   ssrPass.intensity.value = 0.50;
   ssrPass.screenEdgeFadeBlack = true;
 
-  const colorGrade = createPostProcessing(renderer, scenePassColor, ssrPass);
+  // John's volumetric clouds (sky-clouds.js): marched through the scene depth, composited over the scene colour
+  if (skyClouds) {
+    skyClouds.attach(cameraSystem.camera, lightingSystem);
+    skyClouds.pass.sceneDepth = scenePassDepth;
+  }
+  const colorGrade = createPostProcessing(renderer, skyClouds ? skyClouds.composite(scenePassColor) : scenePassColor, ssrPass);
   const { bloomPass } = colorGrade;
   const renderPipeline = new THREE.RenderPipeline(renderer, colorGrade.outputNode);
 
@@ -197,8 +215,8 @@ async function initApp() {
     cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['Drag'], 'Orbit']],
     helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']]
   };
-  // Boosted top speeds in mph (controllers.js caps them at 8.2, 36, 19 & 52 m/s): full scale of the speed meter
-  const topSpeedMph = { person: 18, car: 81, cyclist: 43, helicopter: 116 };
+  // Boosted top speeds in km/h (controllers.js caps them at 8.2, 36, 19 & 52 m/s): full scale of the speed meter
+  const topSpeedKmh = { person: 30, car: 130, cyclist: 68, helicopter: 187 };
 
   function renderControlHints(mode) {
     if (!elControlsHint) return;
@@ -219,7 +237,7 @@ async function initApp() {
     elControlsHint.replaceChildren(...items);
   }
 
-  // The taxi-yellow pill under the selected mode glides from button to button
+  // The green pill under the selected mode glides from button to button
   function placeModeIndicator() {
     const active = modeSwitch ? modeSwitch.querySelector('.mode-btn.active') : null;
     if (!active) return;
@@ -338,9 +356,9 @@ async function initApp() {
     if (btn && e.detail > 0) btn.blur();
   });
 
-  // Where you are: the place's name over its street corner, drawn as a pair of NYC street-name signs
-  const roadNames = new Set(window.NYC.ROADS.map((r) => r.name));
-  const placeNames = new Set(window.NYC.NYC_LANDMARKS.map((l) => l.name));
+  // Where you are: the place's name over its street corner, drawn as a pair of street-name signs
+  const roadNames = new Set(window.CITY.ROADS.map((r) => r.name));
+  const placeNames = new Set(window.CITY.CITY_LANDMARKS.map((l) => l.name));
   let locationText = '';
   function renderLocation(label) {
     if (!elLocation || label === locationText) return;
@@ -388,15 +406,10 @@ async function initApp() {
     touchControls.reset();
     cameraSystem.resetForTeleport();
     selectCamera('chase', true);
-    mapSystem.waypoint = {
-      x: destination.x,
-      z: destination.z,
-      name: getLocationLabel(destination.x, destination.z)
-    };
     return destination;
   }
 
-  const mapSystem = new NYCMapSystem({
+  const mapSystem = new CityMapSystem({
     controllerManager,
     cameraSystem,
     trafficSystem,
@@ -405,16 +418,36 @@ async function initApp() {
       touchControls.setEnabled(!open);
       const mapHint = document.getElementById('fullmap-hover-info');
       if (open && touchControls.available && mapHint) {
-        mapHint.textContent = 'Tap to teleport · Drag to pan · Use + / − to zoom';
+        mapHint.textContent = 'Tap a place for directions · Drag to pan · Pinch to zoom';
       }
     },
     onTeleport: teleportTo
   });
 
+  // The tour guide: search, directions, navigation & Tour Drive (tour-guide.js)
+  const tourGuide = createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode });
+
+  // Help: every control at a glance ([?] / F1)
+  const helpModal = document.getElementById('help-modal');
+  function toggleHelp(open = helpModal && helpModal.hidden) {
+    if (!helpModal) return;
+    helpModal.hidden = !open;
+    controllerManager.resetInput();
+    if (open) {
+      const card = helpModal.querySelector(`[data-help-mode="${controllerManager.activeMode}"]`);
+      helpModal.querySelectorAll('[data-help-mode]').forEach((c) => c.classList.toggle('current', c === card));
+    }
+  }
+  const helpBtn = document.getElementById('btn-help');
+  if (helpBtn) helpBtn.addEventListener('click', () => toggleHelp());
+  const helpClose = document.getElementById('help-close');
+  if (helpClose) helpClose.addEventListener('click', () => toggleHelp(false));
+  if (helpModal) helpModal.addEventListener('click', (e) => { if (e.target === helpModal) toggleHelp(false); });
+
   teleportButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const key = btn.getAttribute('data-teleport');
-      const loc = window.NYC.TELEPORT_LOCATIONS[key];
+      const loc = window.CITY.TELEPORT_LOCATIONS[key];
       if (loc) {
         teleportTo(loc.x, loc.z, loc.heading);
       }
@@ -462,19 +495,29 @@ async function initApp() {
         selectCamera('pov', true);
         break;
       case 'Digit8':
-        selectCamera('fifthAve', true);
+        selectCamera('trail', true);
         break;
       case 'Digit9':
-        selectCamera('timesSquare', true);
+        selectCamera('islands', true);
         break;
       case 'Digit0':
-        selectCamera('chryslerGCT', true);
+        selectCamera('cnTower', true);
         break;
       case 'KeyV':
         cycleCamera(e.shiftKey ? -1 : 1);
         break;
       case 'KeyH':
         if (hudToggleBtn) hudToggleBtn.click();
+        break;
+      case 'F1':
+        e.preventDefault();
+        toggleHelp();
+        break;
+      case 'Slash':
+        if (e.shiftKey) toggleHelp(); // '?'
+        break;
+      case 'Escape':
+        if (helpModal && !helpModal.hidden) toggleHelp(false);
         break;
     }
   });
@@ -489,8 +532,27 @@ async function initApp() {
     }
   });
 
+  // Links from the landing page: explore.html#place=National%20Mosque (go there), #to=... (directions to it),
+  // #mode=walk|drive|cycle|fly, #locate (find where you really are)
+  function openDeepLink() {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const mode = { walk: 'person', drive: 'car', cycle: 'cyclist', fly: 'helicopter' }[params.get('mode')];
+    if (mode) selectMode(mode);
+    const place = params.get('place');
+    const dest = params.get('to');
+    if (params.has('locate')) tourGuide.requestLocation();
+    const hit = (q) => (q ? tourGuide.search(q)[0] : null);
+    if (place && hit(place)) {
+      const p = hit(place);
+      tourGuide.teleportToPlace(p);
+      tourGuide.showPlace(p, { fly: false });
+    } else if (dest && hit(dest)) {
+      tourGuide.showDirections(hit(dest), { kind: 'mylocation', name: 'Your location' });
+    }
+  }
+
   // Initialize default selection
-  selectMode('car');
+  selectMode('cyclist');
   selectCamera('chase', true);
   selectTime('golden');
   // the web fonts change the buttons' widths once they arrive
@@ -505,7 +567,7 @@ async function initApp() {
 
   // Expose programmatic API for testing & inspection
   let currentFps = 60;
-  window.__NYC_APP = {
+  window.__CITY_APP = {
     renderer,
     scene,
     renderPipeline,
@@ -524,6 +586,8 @@ async function initApp() {
     selectCamera,
     cycleCamera,
     selectTime,
+    tourGuide,
+    teleportTo,
     getFps: () => currentFps
   };
 
@@ -532,7 +596,7 @@ async function initApp() {
   //     leaves the main thread idle about half the time while nothing else animates; several calls side by side keep
   //     it busy (warm cache: 2.1 s instead of 4.0 s). (Rendering straight away compiled ~500 pipelines one after
   //     another: ~25 s with a cold shader cache.)
-  const COMPILE_POOL = 16;
+  const COMPILE_POOL = Number(new URLSearchParams(location.search).get('pool') ?? 16);
   const nextTask = () => (globalThis.scheduler?.yield ? globalThis.scheduler.yield() : new Promise((resolve) => setTimeout(resolve, 0)));
   async function precompileShaders() {
     // An empty frame first: it sets up the post-processing chain, which configures the scene pass's render target
@@ -613,10 +677,12 @@ async function initApp() {
 
   if (elFps) elFps.textContent = '60';
 
-  renderer.setAnimationLoop((now) => {
-    const rawDt = (now - lastTime) * 0.001;
+  // One frame of the city. Film mode (below) passes a fixed step: the simulation then advances exactly 1 / fps per
+  // frame however long the frame takes to render, so recorded footage plays back perfectly smooth
+  function frame(now, fixedDt = null) {
+    const rawDt = fixedDt !== null ? fixedDt : (now - lastTime) * 0.001;
     lastTime = now;
-    const dt = Math.min(Math.max(rawDt, 0.001), 0.05);
+    const dt = fixedDt !== null ? fixedDt : Math.min(Math.max(rawDt, 0.001), 0.05);
     elapsed += dt;
 
     // Update 3rd-person controllers, camera, signals, traffic & vehicle collisions, building LODs, and dynamic shadow focus
@@ -632,12 +698,14 @@ async function initApp() {
       cameraSystem.camera
     );
     highwayTraffic.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode);
-    if (boroughs.update) boroughs.update(elapsed); // Roosevelt Island Tramway cabins
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);
     lightingSystem.update(cameraSystem.currentPos);
+    lakeWater.update(elapsed);
+    if (skyClouds) skyClouds.update(dt);
     mapSystem.update();
+    tourGuide.update(dt, elapsed);
     if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
 
     // Render frame via TSL RenderPipeline (SSR + Bloom)
@@ -669,7 +737,8 @@ async function initApp() {
         initTimings = null;
         if (loadingOverlay) loadingOverlay.classList.add('hidden');
         setLoadingProgress(1);
-        window.__NYC_APP.ready = true;
+        window.__CITY_APP.ready = true;
+        openDeepLink();
       });
     }
 
@@ -684,22 +753,47 @@ async function initApp() {
 
       const activeEnt = controllerManager.getActiveEntity();
       const mode = controllerManager.activeMode;
-      const mph = Math.round(Math.abs(activeEnt.speed) * 2.237);
-      const altFt = Math.max(0, Math.round(activeEnt.position.y * 3.281));
+      const kmh = Math.round(Math.abs(activeEnt.speed) * 3.6);
+      const altM = Math.max(0, Math.round(activeEnt.position.y));
 
       if (elFps) {
         elFps.textContent = String(currentFps);
         elFps.className = currentFps >= 50 ? 'fps-ok' : currentFps >= 30 ? 'fps-warn' : 'fps-bad';
       }
-      if (elSpeed) elSpeed.textContent = String(mph);
-      if (elSpeedMeter) elSpeedMeter.style.transform = `scaleX(${Math.min(1, mph / (topSpeedMph[mode] || 80))})`;
-      document.body.classList.toggle('is-boosting', controllerManager.keys.boost && mph > 0);
-      if (elAltitude) elAltitude.textContent = altFt.toLocaleString('en-US');
+      if (elSpeed) elSpeed.textContent = String(kmh);
+      if (elSpeedMeter) elSpeedMeter.style.transform = `scaleX(${Math.min(1, kmh / (topSpeedKmh[mode] || 130))})`;
+      document.body.classList.toggle('is-boosting', controllerManager.keys.boost && kmh > 0);
+      if (elAltitude) elAltitude.textContent = altM.toLocaleString('en-US');
       // The street corner of the player on the follow cameras, of the camera itself on the scenic ones
       const where = cameraSystem.getActivePreset().category === 'follow' ? activeEnt.position : cameraSystem.currentPos;
       renderLocation(getLocationLabel(where.x, where.z));
     }
-  });
+  }
+  renderer.setAnimationLoop(frame);
+
+  // Film mode (tools/video/record.mjs): the real-time loop stops; each step() advances the simulation by exactly
+  // 1 / fps, renders, and resolves once the GPU has finished the frame, ready to be captured
+  window.__CITY_APP.film = {
+    active: false,
+    fps: 30,
+    start(fps = 30) {
+      this.fps = fps;
+      this.active = true;
+      renderer.setAnimationLoop(null);
+    },
+    async step(frames = 1) {
+      for (let i = 0; i < frames; i++) frame(performance.now(), 1 / this.fps);
+      const device = renderer.backend.device;
+      if (device) await device.queue.onSubmittedWorkDone();
+      return elapsed;
+    },
+    stop() {
+      this.active = false;
+      cameraSystem.cinema = null;
+      lastTime = performance.now();
+      renderer.setAnimationLoop(frame);
+    }
+  };
 }
 
 initApp();

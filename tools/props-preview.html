@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Props preview</title>
+<!-- tools/props-preview.html: the street props in assets/props side by side, lit like midday (a look check, not the city) -->
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/build/three.webgpu.js", "three/webgpu": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/build/three.webgpu.js", "three/tsl": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/build/three.tsl.js", "three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/examples/jsm/" } }</script>
+<style>html,body{margin:0;background:#cfd8e0}canvas{display:block}</style></head><body>
+<script type="module">
+import * as THREE from 'three/webgpu';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+const renderer = new THREE.WebGPURenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight); document.body.appendChild(renderer.domElement); await renderer.init();
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xb9cfe3);
+scene.add(new THREE.HemisphereLight(0xdfefff, 0x8a7a66, 1.6));
+const sun = new THREE.DirectionalLight(0xfff2e0, 3.2); sun.position.set(3, 5, 4); scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0x9a9a96, roughness: 0.9 })); ground.rotation.x = -Math.PI / 2; scene.add(ground);
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+const names = ['hydrant', 'mailbox', 'bike-ring'];
+const gltfs = await Promise.all(names.map((n) => loader.loadAsync('../assets/props/' + n + '.glb')));
+gltfs.forEach((g, i) => { const o = g.scene; const b = new THREE.Box3().setFromObject(o); o.position.set((i - 1) * 1.1 - (b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2); scene.add(o); });
+const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 100); camera.position.set(0, 1.0, 4.2); camera.lookAt(0, 0.5, 0);
+renderer.setAnimationLoop(() => renderer.render(scene, camera));
+window.__CITY_APP = { ready: true, getFps: () => 0, selectMode() {}, selectTime() {}, selectCamera() {}, teleportTo() {} };
+</script></body></html>

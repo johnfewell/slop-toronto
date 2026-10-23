@@ -4,21 +4,90 @@
 // Live PMREMGenerator IBL Cubemap, Three.js r186 SunLight (2-Cascade CSM),
 // and Occlusion-Aware Urban Canyon Global Illumination for Three.js r186 WebGPURenderer
 
-const { THREE } = window.NYC;
+const { THREE } = window.CITY;
 const {
   Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select
-} = window.NYC.TSL;
-const { SkyMesh } = window.NYC.Addons;
-const { SunLight } = window.NYC.Addons;
-const { SunLightNode } = window.NYC.Addons;
-const { cityUniforms } = window.NYC;
+} = window.CITY.TSL;
+const { SkyMesh } = window.CITY.Addons;
+const { SunLight } = window.CITY.Addons;
+const { SunLightNode } = window.CITY.Addons;
+const { cityUniforms } = window.CITY;
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The sun over Toronto, from the NOAA solar position equations at Union Station (GEO.frame lat / lon) on a late-summer
+// day (22 August, the art bible's hero light), on Eastern Daylight Time (UTC-4), turned into the world frame (x grid
+// east, z grid south)
+// ---------------------------------------------------------------------------------------------------------------------
+const FRAME = window.CITY.GEO.frame;
+const WAT_OFFSET_H = -4; // EDT
+function solarPosition(date) {
+  const rad = Math.PI / 180;
+  const jd = date.getTime() / 86400000 + 2440587.5;
+  const T = (jd - 2451545.0) / 36525;
+  const L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
+  const M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
+  const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
+  const C = Math.sin(M * rad) * (1.914602 - T * (0.004817 + 0.000014 * T)) + Math.sin(2 * M * rad) * (0.019993 - 0.000101 * T) + Math.sin(3 * M * rad) * 0.000289;
+  const trueLong = L0 + C;
+  const omega = 125.04 - 1934.136 * T;
+  const lambda = trueLong - 0.00569 - 0.00478 * Math.sin(omega * rad);
+  const eps0 = 23 + (26 + (21.448 - T * (46.815 + T * (0.00059 - T * 0.001813))) / 60) / 60;
+  const eps = eps0 + 0.00256 * Math.cos(omega * rad);
+  const decl = Math.asin(Math.sin(eps * rad) * Math.sin(lambda * rad));
+  const y = Math.tan((eps / 2) * rad) ** 2;
+  const eqTime = 4 / rad * (y * Math.sin(2 * L0 * rad) - 2 * e * Math.sin(M * rad) + 4 * e * y * Math.sin(M * rad) * Math.cos(2 * L0 * rad) -
+    0.5 * y * y * Math.sin(4 * L0 * rad) - 1.25 * e * e * Math.sin(2 * M * rad)); // minutes
+  const utcMin = date.getUTCHours() * 60 + date.getUTCMinutes() + date.getUTCSeconds() / 60;
+  const tst = (utcMin + eqTime + 4 * FRAME.lon) % 1440; // true solar time (min)
+  const ha = (tst / 4 < 0 ? tst / 4 + 180 : tst / 4 - 180) * rad;
+  const lat = FRAME.lat * rad;
+  const zen = Math.acos(Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.cos(ha));
+  let az = Math.acos(((Math.sin(lat) * Math.cos(zen)) - Math.sin(decl)) / (Math.cos(lat) * Math.sin(zen))) / rad;
+  az = ha > 0 ? (az + 180) % 360 : (540 - az) % 360; // clockwise from true north
+  return { elevation: 90 - zen / rad, azimuth: az };
+}
+// World-frame unit vector toward a body at true azimuth `az` & elevation `el` (degrees)
+function worldDirection(az, el) {
+  const rad = Math.PI / 180;
+  const east = Math.cos(el * rad) * Math.sin(az * rad);
+  const north = Math.cos(el * rad) * Math.cos(az * rad);
+  const th = FRAME.bearingDeg * rad;
+  return new THREE.Vector3(east * Math.cos(th) - north * Math.sin(th), Math.sin(el * rad), -(east * Math.sin(th) + north * Math.cos(th))).normalize();
+}
+// 22 August in Toronto at an Eastern Daylight Time clock time (hours)
+const watDate = (hours) => {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), 7, 22, 0, 0, 0));
+  return new Date(d.getTime() + (hours - WAT_OFFSET_H) * 3600000);
+};
+// The afternoon time (WAT hours) the sun stands `el` degrees up
+function afternoonAt(el) {
+  let t = 19.5;
+  for (let h = 13; h <= 21; h += 1 / 60) {
+    if (solarPosition(watDate(h)).elevation <= el) { t = h; break; }
+  }
+  return t;
+}
+const clock = (h) => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h % 1) * 60) % 60).padStart(2, '0')}`;
+const SUN = (() => {
+  const golden = afternoonAt(10), sunset = afternoonAt(2), midday = 13;
+  const at = (h) => {
+    const p = solarPosition(watDate(h));
+    return { h, ...p, dir: worldDirection(p.azimuth, p.elevation) };
+  };
+  return { golden: at(golden), midday: at(midday), sunset: at(sunset) };
+})();
+// Night: moonlight from high in the east-south-east (a generic direction, not today's moon)
+const MOON_DIR = worldDirection(115, 55);
+
+console.info(`[sun] Toronto, 22 August: golden hour ${clock(SUN.golden.h)} (az ${SUN.golden.azimuth.toFixed(0)}°), 13:00 elevation ${SUN.midday.elevation.toFixed(0)}° az ${SUN.midday.azimuth.toFixed(0)}°, sunset light ${clock(SUN.sunset.h)}`);
 
 const TIME_PRESETS = {
   golden: {
     id: 'golden',
-    name: 'Golden Hour · 17:45',
-    // Crisp Manhattan canyon sun slicing across avenues & intersections so buildings, cars, trees & pedestrians cast sharp shadows
-    sunDir: new THREE.Vector3(-0.44, 0.58, -0.68).normalize(),
+    name: `Golden Hour · ${clock(SUN.golden.h)}`,
+    // The late-afternoon sun 10° up in the west, raking across the open avenues: long shadows from every wall & tree
+    sunDir: SUN.golden.dir,
     sunColor: 0xffca92,
     sunIntensity: 5.8,
     hemiSky: 0x9abbe6,
@@ -43,8 +112,9 @@ const TIME_PRESETS = {
   },
   midday: {
     id: 'midday',
-    name: 'Sunny Midday · 13:30',
-    sunDir: new THREE.Vector3(-0.34, 0.82, -0.46).normalize(),
+    name: 'Sunny Midday · 13:00',
+    // The tropical sun high overhead (Abuja is 9° north of the equator)
+    sunDir: SUN.midday.dir,
     sunColor: 0xfff5e8,
     sunIntensity: 6.6,
     hemiSky: 0xaad2ff,
@@ -69,8 +139,9 @@ const TIME_PRESETS = {
   },
   twilight: {
     id: 'twilight',
-    name: 'Blue Hour · 19:15',
-    sunDir: new THREE.Vector3(-0.52, 0.36, -0.77).normalize(),
+    name: `Sunset · ${clock(SUN.sunset.h)}`,
+    // The last light, the sun 2° above the western horizon
+    sunDir: SUN.sunset.dir,
     sunColor: 0xff9466,
     sunIntensity: 3.1,
     hemiSky: 0x4c6ca8,
@@ -95,8 +166,8 @@ const TIME_PRESETS = {
   },
   midnight: {
     id: 'midnight',
-    name: 'Manhattan Night · 23:00',
-    sunDir: new THREE.Vector3(0.42, 0.68, -0.60).normalize(),
+    name: 'Night · 23:00',
+    sunDir: MOON_DIR,
     sunColor: 0x8cb0e8,
     sunIntensity: 1.45,
     hemiSky: 0x263a62,
@@ -141,7 +212,8 @@ class LightingSystem {
     this.scene.background = null;
 
     // Physical Preetham SkyMesh + Beer-Powder Clouds (from three/addons/objects/SkyMesh.js). Its unit box must contain
-    // the camera wherever it flies over the 1:1 harbour (Manhattan alone is 13.6 km long; it renders at the far plane
+    // the camera wherever it flies over the 1:1 city and the hills around it (the detailed city alone is ~13 km across;
+    // it renders at the far plane
     // whatever its size)
     this.sky = new SkyMesh();
     this.sky.scale.setScalar(200000);
@@ -281,6 +353,7 @@ class LightingSystem {
     this.uNightFactor.value = p.nightFactor;
 
     cityUniforms.uSunColor.value.setHex(p.sunColor);
+    if (cityUniforms.uSunIntensity) cityUniforms.uSunIntensity.value = p.sunIntensity;
     cityUniforms.uSkyTopColor.value.setHex(p.skyTop);
     cityUniforms.uSkyHorizonColor.value.setHex(p.skyHorizon);
     cityUniforms.uSkySunDir.value.copy(p.sunDir);
@@ -304,5 +377,5 @@ class LightingSystem {
   }
 }
 
-Object.assign(window.NYC, { LightingSystem });
+Object.assign(window.CITY, { LightingSystem });
 })();

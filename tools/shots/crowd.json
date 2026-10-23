@@ -1,0 +1,19 @@
+[
+ {
+  "name": "c1-yonge-crowd",
+  "mode": "person",
+  "time": "midday",
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; const x = r.px + nx * off, z = r.pz + nz * off; window.__CITY_APP.teleportTo(x, z, Math.atan2(r.dx, r.dz)); window.__CITY_APP.selectCamera('chase', true); console.log('[shot] on', r.road.name); })()",
+  "wait": 10000
+ },
+ {
+  "name": "c2-queen-crowd",
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.6497, -79.396); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; const x = r.px + nx * off, z = r.pz + nz * off; window.__CITY_APP.teleportTo(x, z, Math.atan2(r.dx, r.dz)); window.__CITY_APP.selectCamera('chase', true); console.log('[shot] on', r.road.name); })()",
+  "wait": 10000
+ },
+ {
+  "name": "c3-spadina-crowd",
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.653, -79.3985); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; const x = r.px + nx * off, z = r.pz + nz * off; window.__CITY_APP.teleportTo(x, z, Math.atan2(r.dx, r.dz)); window.__CITY_APP.selectCamera('chase', true); console.log('[shot] on', r.road.name); })()",
+  "wait": 10000
+ }
+]

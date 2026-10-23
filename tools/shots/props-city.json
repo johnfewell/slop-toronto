@@ -1,0 +1,6 @@
+[
+  { "name": "p1-queen-street", "mode": "person", "time": "midday", "js": "(() => { const a = window.CITY.worldFromLatLon(43.6496, -79.3960); window.__CITY_APP.teleportTo(a.x, a.z, Math.PI / 2); window.__CITY_APP.selectCamera('chase', true); })()", "wait": 6000 },
+  { "name": "p2-king-west", "js": "(() => { const a = window.CITY.worldFromLatLon(43.6446, -79.4010); window.__CITY_APP.teleportTo(a.x, a.z, Math.PI / 2); window.__CITY_APP.selectCamera('chase', true); })()", "wait": 6000 },
+  { "name": "p3-bloor-annex", "js": "(() => { const a = window.CITY.worldFromLatLon(43.6662, -79.4040); window.__CITY_APP.teleportTo(a.x, a.z, -Math.PI / 2); window.__CITY_APP.selectCamera('chase', true); })()", "wait": 6000 },
+  { "name": "p4-cityhall", "camera": "cityHall", "wait": 5000 }
+]

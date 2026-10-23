@@ -1,0 +1,7 @@
+[
+  { "name": "l1-drone-midday", "camera": "drone", "time": "midday", "wait": 6000 },
+  { "name": "l2-skyline-golden", "camera": "skyline", "time": "golden" },
+  { "name": "l3-islands-golden", "camera": "islands" },
+  { "name": "l4-humberbay-golden", "camera": "humberBay" },
+  { "name": "l5-start-golden", "camera": "chase" }
+]

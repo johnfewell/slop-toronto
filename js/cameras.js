@@ -1,23 +1,40 @@
 (function () {
 // js/cameras.js
 // Multi-camera system supporting Third-Person Chase (with mouse/touch orbit + zoom),
-// Low-Angle Action Cam, POV/Cockpit Cam, 7 Iconic NYC Architectural Cameras, and Auto-Director Drone.
+// Low-Angle Action Cam, POV/Cockpit Cam, Toronto's vantage points, and an Auto-Director Drone.
 
-const { THREE } = window.NYC;
+const { THREE } = window.CITY;
 
 const CAMERA_PRESETS = [
-  { id: 'chase',       name: '3rd-Person Chase',         short: 'Chase',       category: 'follow', fov: 56 },
-  { id: 'action',      name: 'Low-Angle Action',         short: 'Action',      category: 'follow', fov: 60 },
-  { id: 'pov',         name: 'First-Person / Cockpit',   short: 'POV / Dash',  category: 'follow', fov: 68 },
-  { id: 'centralPark', name: 'Central Park Oasis',       short: 'Central Pk',  category: 'scenic', fov: 52 },
-  { id: 'fifthAve',    name: '5th Ave & Empire State',   short: '5th Ave',     category: 'scenic', fov: 48 },
-  { id: 'timesSquare', name: 'Times Square Crossroads',  short: 'Times Sq',    category: 'scenic', fov: 58 },
-  { id: 'chryslerGCT', name: '42nd St · Chrysler & GCT', short: 'Chrysler',    category: 'scenic', fov: 50 },
-  { id: 'observatory', name: 'Empire State 86th Deck',   short: '86th Deck',   category: 'scenic', fov: 52 },
-  { id: 'bryantPark',  name: 'Bryant Park & NYPL',       short: 'Bryant Pk',   category: 'scenic', fov: 52 },
-  { id: 'waterfront',  name: 'East River & Skyline',     short: 'Skyline',     category: 'scenic', fov: 46 },
-  { id: 'drone',       name: 'Auto-Director Aerial',     short: 'Director',    category: 'scenic', fov: 50 }
+  { id: 'chase',       name: '3rd-Person Chase',            short: 'Chase',       category: 'follow', fov: 56 },
+  { id: 'action',      name: 'Low-Angle Action',            short: 'Action',      category: 'follow', fov: 60 },
+  { id: 'pov',         name: 'First-Person / Cockpit',      short: 'POV / Dash',  category: 'follow', fov: 68 },
+  { id: 'trail',       name: 'Martin Goodman Trail',        short: 'Trail',       category: 'scenic', fov: 50 },
+  { id: 'islands',     name: 'Skyline from the Islands',    short: 'Islands',     category: 'scenic', fov: 46 },
+  { id: 'cnTower',     name: 'CN Tower',                    short: 'CN Tower',    category: 'scenic', fov: 54 },
+  { id: 'cityHall',    name: 'City Hall',                   short: 'City Hall',   category: 'scenic', fov: 52 },
+  { id: 'rom',         name: 'Royal Ontario Museum',        short: 'ROM',         category: 'scenic', fov: 54 },
+  { id: 'unionStation', name: 'Union Station',              short: 'Union',       category: 'scenic', fov: 54 },
+  { id: 'legislature', name: "Queen's Park",                short: "Queen's Park", category: 'scenic', fov: 52 },
+  { id: 'sugarBeach',  name: 'Sugar Beach',                 short: 'Sugar Beach', category: 'scenic', fov: 50 },
+  { id: 'humberBay',   name: 'Sunset over Humber Bay',      short: 'Humber Bay',  category: 'scenic', fov: 48 },
+  { id: 'skyline',     name: 'Skyline from the Lake',       short: 'Skyline',     category: 'scenic', fov: 44 },
+  { id: 'drone',       name: 'Auto-Director Aerial',        short: 'Director',    category: 'scenic', fov: 50 }
 ];
+
+// Scenic vantage points from the real geography: the teleport arrivals (a road with a clear view of the landmark,
+// city-config.js) lifted to eye height, looking at the landmark
+function landmarkView(teleportKey, siteId, eye, lookY, elapsed, out) {
+  const { TELEPORT_LOCATIONS: T, LANDMARK_SITES: S } = window.CITY;
+  const a = T[teleportKey], s = S[siteId];
+  if (!a || !s) return false;
+  const sway = Math.sin(elapsed * 0.22) * 2.0;
+  const dx = s.x - a.x, dz = s.z - a.z;
+  const L = Math.hypot(dx, dz) || 1;
+  out.pos.set(a.x - (dz / L) * sway, eye, a.z + (dx / L) * sway);
+  out.look.set(s.x, lookY, s.z);
+  return true;
+}
 
 class CameraSystem {
   constructor(domElement, controllerManager) {
@@ -38,6 +55,8 @@ class CameraSystem {
     this.isDragging = false;
     this.userOrbitTimer = 0;
 
+    // Film mode (js/cinema.js): a function of time giving { pos, look, fov } overrides every preset
+    this.cinema = null;
     this.currentPos = new THREE.Vector3(0, 10, 380);
     this.currentLookAt = new THREE.Vector3(0, 8, 440);
     this.initialized = false;
@@ -153,6 +172,21 @@ class CameraSystem {
   }
 
   update(dt, elapsed) {
+    if (this.cinema) {
+      const shot = this.cinema(elapsed);
+      if (shot) {
+        this.currentPos.set(...shot.pos);
+        this.currentLookAt.set(...shot.look);
+        if (shot.fov && shot.fov !== this.camera.fov) {
+          this.camera.fov = shot.fov;
+          this.camera.updateProjectionMatrix();
+        }
+        this.camera.position.copy(this.currentPos);
+        this.camera.lookAt(this.currentLookAt);
+        this.initialized = false;
+        return;
+      }
+    }
     const entity = this.controllerManager.getActiveEntity();
     const desiredPos = this._desiredPos;
     const desiredLook = this._desiredLook;
@@ -239,74 +273,64 @@ class CameraSystem {
         break;
       }
 
-      case 'centralPark': {
-        // Inside Central Park South looking across The Pond, Gapstow Bridge, The Mall, Sheep Meadow & UWS/UES Skylines
-        const sway = Math.sin(elapsed * 0.22) * 3.5;
-        desiredPos.set(-70.0 + sway, 14.0, -1425.0);
-        desiredLook.set(-250.0, 6.5, -1690.0);
+      case 'trail':
+      case 'islands':
+      case 'sugarBeach':
+      case 'humberBay': {
+        // Fixed eye points on the real shore (lat / lon), looking at the CN Tower or a point of their own
+        const { worldFromLatLon, GEO } = window.CITY;
+        const cn = GEO.points.cnTower;
+        const [lat, lon, eye, lookY, lookAt] = {
+          trail: [43.63075, -79.4679, 3.2, 180],     // just east of the Humber Bay Arch Bridge
+          islands: [43.6215, -79.3772, 4.0, 150],    // Centre Island's north shore, across the harbour
+          sugarBeach: [43.6421, -79.3662, 2.6, 120], // on the sand at the water, looking west along the waterfront
+          humberBay: [43.6262, -79.4232, 4.0, 8, [43.6303, -79.4705]] // Ontario Place's west shore to the arch bridge
+        }[this.activePresetId];
+        const p = worldFromLatLon(lat, lon);
+        const sway = Math.sin(elapsed * 0.2) * 2.0;
+        desiredPos.set(p.x + sway, eye, p.z);
+        const t = lookAt ? worldFromLatLon(lookAt[0], lookAt[1]) : { x: cn[0], z: cn[1] };
+        desiredLook.set(t.x, lookY, t.z);
         break;
       }
 
-      case 'fifthAve': {
-        // 5th Avenue & 42nd St looking South down the 5th Ave canyon toward the Empire State Building
-        const sway = Math.sin(elapsed * 0.25) * 1.8;
-        desiredPos.set(0.0 + sway, 6.5, -20.0);
-        desiredLook.set(-60.0, 150.0, 686.0);
+      case 'cnTower':
+      case 'cityHall':
+      case 'rom':
+      case 'unionStation':
+      case 'legislature': {
+        const [key, site, eye, lookY] = {
+          cnTower: ['cnTower', 'cnTower', 6, 260],
+          cityHall: ['cityHall', 'cityHall', 6, 40],
+          rom: ['rom', 'rom', 5, 18],
+          unionStation: ['unionStation', 'unionStation', 5, 14],
+          legislature: ['legislature', 'legislature', 5, 25]
+        }[this.activePresetId];
+        if (!landmarkView(key, site, eye, lookY, elapsed, { pos: desiredPos, look: desiredLook })) {
+          const cn = window.CITY.GEO.points.cnTower;
+          desiredPos.set(cn[0] - 300, 40, cn[1] + 300);
+          desiredLook.set(cn[0], 200, cn[1]);
+        }
         break;
       }
 
-      case 'timesSquare': {
-        // Times Square & Broadway looking across Duffy Square red steps and One Times Square billboards
-        const sway = Math.sin(elapsed * 0.3) * 3.0;
-        desiredPos.set(-603.0 + sway, 5.5, -290.0);
-        desiredLook.set(-566.0, 40.0, -40.0);
-        break;
-      }
-
-      case 'chryslerGCT': {
-        // Park Ave & 42nd St intersection looking straight at Grand Central, MetLife, and Chrysler Building Crown
-        const sway = Math.cos(elapsed * 0.22) * 2.5;
-        desiredPos.set(300.0 + sway, 9.5, 95.0);
-        desiredLook.set(470.0, 120.0, -50.0);
-        break;
-      }
-
-      case 'observatory': {
-        // Empire State Building 86th Floor Deck looking North-East across Midtown skyline
-        const pan = Math.sin(elapsed * 0.18) * 80.0;
-        desiredPos.set(-58.0, 322.0, 660.0);
-        desiredLook.set(420.0 + pan, 150.0, -200.0);
-        break;
-      }
-
-      case 'bryantPark': {
-        // Inside Bryant Park Great Lawn looking East toward NYPL portico, One Vanderbilt & Chrysler Building
-        const sway = Math.sin(elapsed * 0.25) * 1.5;
-        const lawn = window.NYC.bryantParkLawn || { minX: -260, maxX: -150, minZ: 40, maxZ: 120, top: 1.3 };
-        const lz = (lawn.minZ + lawn.maxZ) * 0.5;
-        desiredPos.set(lawn.minX + 18.0, lawn.top + 1.7, lz + sway);
-        desiredLook.set(lawn.maxX + 260.0, 70.0, lz - 60.0);
-        break;
-      }
-
-      case 'waterfront': {
-        // Over the shimmering East River looking across the FDR Drive, Queensboro Bridge & Midtown Skyline
-        const drift = Math.sin(elapsed * 0.15) * 40.0;
-        desiredPos.set(1640.0, 60.0, 60.0 + drift);
-        desiredLook.set(150.0, 150.0, -150.0);
+      case 'skyline': {
+        // Out over the lake, south of the Islands, the whole waterfront from Ontario Place to the Port Lands
+        const cn = window.CITY.GEO.points.cnTower;
+        const pan = Math.sin(elapsed * 0.12) * 300.0;
+        desiredPos.set(cn[0] + 400.0 + pan, 140.0, cn[1] + 4200.0);
+        desiredLook.set(cn[0] + 600.0, 120.0, cn[1]);
         break;
       }
 
       case 'drone': {
-        const angle = elapsed * 0.07 + 0.65;
-        const radius = 720.0 + Math.sin(elapsed * 0.23) * 140.0;
-        const alt = 330.0 + Math.cos(elapsed * 0.19) * 90.0;
-        desiredPos.set(
-          Math.cos(angle) * radius + 60.0,
-          alt,
-          Math.sin(angle) * radius + 250.0
-        );
-        desiredLook.set(60.0, 160.0, 250.0);
+        // Orbiting downtown round the CN Tower: the Financial District, the waterfront, the Islands
+        const cn = window.CITY.GEO.points.cnTower;
+        const angle = elapsed * 0.06 + 0.65;
+        const radius = 1500.0 + Math.sin(elapsed * 0.23) * 250.0;
+        const alt = 380.0 + Math.cos(elapsed * 0.19) * 110.0;
+        desiredPos.set(cn[0] + Math.cos(angle) * radius, alt, cn[1] + Math.sin(angle) * radius);
+        desiredLook.set(cn[0] + 300.0, 80.0, cn[1] - 300.0);
         break;
       }
     }
@@ -348,5 +372,5 @@ class CameraSystem {
   }
 }
 
-Object.assign(window.NYC, { CAMERA_PRESETS, CameraSystem });
+Object.assign(window.CITY, { CAMERA_PRESETS, CameraSystem });
 })();

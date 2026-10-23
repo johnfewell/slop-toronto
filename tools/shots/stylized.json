@@ -1,0 +1,8 @@
+[
+  { "name": "s1-humberbay-golden", "camera": "humberBay", "time": "golden", "wait": 6000 },
+  { "name": "s2-skyline-golden", "camera": "skyline" },
+  { "name": "s3-islands-golden", "camera": "islands" },
+  { "name": "s4-islands-midday", "camera": "islands", "time": "midday" },
+  { "name": "s5-skyline-midday", "camera": "skyline" },
+  { "name": "s6-drone-midday", "camera": "drone", "wait": 6000 }
+]

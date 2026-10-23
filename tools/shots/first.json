@@ -1,0 +1,8 @@
+[
+  { "name": "01-start-cycle-golden", "time": "golden", "wait": 6000 },
+  { "name": "02-trail-cam", "camera": "trail" },
+  { "name": "03-islands-cam", "camera": "islands" },
+  { "name": "04-skyline-lake", "camera": "skyline" },
+  { "name": "05-drone", "camera": "drone", "wait": 6000 },
+  { "name": "06-islands-midday", "camera": "islands", "time": "midday" }
+]

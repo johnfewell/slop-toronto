@@ -1,0 +1,23 @@
+[
+ {
+  "name": "q1-bikering-queen",
+  "mode": "person",
+  "time": "midday",
+  "js": "(() => { const C = window.CITY, P = C.GEO.props.bikeRing, a = C.worldFromLatLon(43.6488, -79.397); let bi = 0, bd = 1e9; for (let i = 0; i < P.length; i += 2) { const d = Math.hypot(P[i] - a.x, P[i + 1] - a.z); if (d < bd) { bd = d; bi = i; } } const x = P[bi], z = P[bi + 1]; const r = C.nearestRoads(x, z, 30)[0]; const ux = r ? r.dx : 1, uz = r ? r.dz : 0; const ex = x - ux * 3 + (r ? (r.px - x) * 0.6 : 0), ez = z - uz * 3 + (r ? (r.pz - z) * 0.6 : 0); window.__CITY_APP.teleportTo(ex, ez, Math.atan2(x - ex, z - ez)); window.__CITY_APP.selectCamera('pov', true); console.log('[shot] bikeRing at', x, z, 'from', ex.toFixed(1), ez.toFixed(1)); })()",
+  "wait": 5000
+ },
+ {
+  "name": "q2-hydrant-queen",
+  "mode": "person",
+  "time": "midday",
+  "js": "(() => { const C = window.CITY, P = C.GEO.props.hydrant, a = C.worldFromLatLon(43.6488, -79.397); let bi = 0, bd = 1e9; for (let i = 0; i < P.length; i += 2) { const d = Math.hypot(P[i] - a.x, P[i + 1] - a.z); if (d < bd) { bd = d; bi = i; } } const x = P[bi], z = P[bi + 1]; const r = C.nearestRoads(x, z, 30)[0]; const ux = r ? r.dx : 1, uz = r ? r.dz : 0; const ex = x - ux * 3 + (r ? (r.px - x) * 0.6 : 0), ez = z - uz * 3 + (r ? (r.pz - z) * 0.6 : 0); window.__CITY_APP.teleportTo(ex, ez, Math.atan2(x - ex, z - ez)); window.__CITY_APP.selectCamera('pov', true); console.log('[shot] hydrant at', x, z, 'from', ex.toFixed(1), ez.toFixed(1)); })()",
+  "wait": 5000
+ },
+ {
+  "name": "q3-postbox",
+  "mode": "person",
+  "time": "midday",
+  "js": "(() => { const C = window.CITY, P = C.GEO.props.postBox, a = C.worldFromLatLon(43.6488, -79.397); let bi = 0, bd = 1e9; for (let i = 0; i < P.length; i += 2) { const d = Math.hypot(P[i] - a.x, P[i + 1] - a.z); if (d < bd) { bd = d; bi = i; } } const x = P[bi], z = P[bi + 1]; const r = C.nearestRoads(x, z, 30)[0]; const ux = r ? r.dx : 1, uz = r ? r.dz : 0; const ex = x - ux * 3 + (r ? (r.px - x) * 0.6 : 0), ez = z - uz * 3 + (r ? (r.pz - z) * 0.6 : 0); window.__CITY_APP.teleportTo(ex, ez, Math.atan2(x - ex, z - ez)); window.__CITY_APP.selectCamera('pov', true); console.log('[shot] postBox at', x, z, 'from', ex.toFixed(1), ez.toFixed(1)); })()",
+  "wait": 5000
+ }
+]

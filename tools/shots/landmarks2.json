@@ -1,0 +1,6 @@
+[
+  { "name": "n1-rom", "camera": "rom", "time": "golden", "wait": 7000 },
+  { "name": "n2-union", "camera": "unionStation" },
+  { "name": "n3-legislature", "camera": "legislature" },
+  { "name": "n4-cityhall-golden", "camera": "cityHall" }
+]

@@ -1,18 +1,18 @@
 (function () {
 // js/trees.js
-// Procedural NYC street & park trees, planted by street-details.js (section 7):
-// - London plane, honey locust & American elm grown from seeded per-species rules: a flared trunk / leader carrying
+// Procedural street, park & compound trees of Abuja, planted by street-details.js (section 3):
+// - London plane, honey locust & elm (mrdoob's New York species, at home on Toronto's streets) grown from seeded rules: a flared trunk / leader carrying
 //   scaffold limbs, branches and twigs as tapered, curving bark tubes (uv in metres for the bark shader)
-// - Leaf sprays on alpha-tested cards hung from the twigs, cut from a generated leaf atlas (palmate plane leaves,
-//   feathery locust fronds, toothed elm leaves and a dense far-canopy clump) whose mipmaps keep their coverage, so
+// - Leaf sprays on alpha-tested cards hung from the twigs, cut from a generated leaf atlas (big broad leaves,
+//   feathery pinnate fronds, oval pointed leaves and a dense far-canopy clump) whose mipmaps keep their coverage, so
 //   distant crowns don't thin out
 // - Crown-shell normals, interior occlusion & sway weights baked per vertex (attributes: createTreeMaterial in
 //   tsl-materials.js)
 // - Three levels of detail (two variants per species up close), picked per tree from the camera distance and
 //   regrouped into one instanced mesh per species / variant / level whenever the camera has moved a few metres
 
-const { THREE } = window.NYC;
-const { createTreeMaterial } = window.NYC;
+const { THREE } = window.CITY;
+const { createTreeMaterial } = window.CITY;
 const V3 = THREE.Vector3;
 
 // Seeded PRNG (mulberry32): every species, variant and level grows the same tree on every load
@@ -35,7 +35,8 @@ const smooth = (e0, e1, x) => {
 
 // =====================================================================================================================
 // 1. LEAF ATLAS: 2x2 tiles of leaf sprays drawn in metres and fitted to their tile (tileMeters = the card's world size)
-//    0 London plane · 1 honey locust · 2 American elm · 3 dense far-canopy clump (whole-crown cards of the far level)
+//    0 broad leaves (Indian almond) · 1 pinnate fronds (neem) · 2 oval pointed leaves (mango) · 3 dense far-canopy
+//    clump (whole-crown cards of the far level)
 //    Texels: r = leaf brightness, g = per-leaf hue jitter, b = twig / stalk mask, a = coverage
 // =====================================================================================================================
 const ATLAS_SIZE = 1024;
@@ -72,7 +73,7 @@ function buildSprays(rng) {
 
   const sprays = [];
 
-  // 0. London plane: four or five twigs fanning out, big palmate leaves on long stalks, alternating along them
+  // 0. Broad leaves (Indian almond): four or five twigs fanning out, big leaves on long stalks, alternating along them
   {
     const prims = [];
     const n = 5;
@@ -97,7 +98,7 @@ function buildSprays(rng) {
     sprays.push(prims);
   }
 
-  // 1. Honey locust: slender twigs bearing feathery compound fronds of tiny paired leaflets (lacy, light-dappled)
+  // 1. Pinnate fronds (neem): slender twigs bearing feathery compound fronds of paired leaflets (lacy, light-dappled)
   {
     const prims = [];
     const n = 3;
@@ -126,7 +127,7 @@ function buildSprays(rng) {
     sprays.push(prims);
   }
 
-  // 2. American elm: zigzag twigs, drooping a little, with two ranks of oval, pointed, lopsided leaves
+  // 2. Oval pointed leaves (mango): zigzag twigs, drooping a little, with two ranks of oval, pointed leaves
   {
     const prims = [];
     const n = 5;
@@ -988,5 +989,5 @@ function createTreeField(scene, sites) {
   return { group, material, atlas, update, meshes: instanced, stats };
 }
 
-Object.assign(window.NYC, { createTreeField, createLeafAtlas, buildTreeGeometries, TREE_SPECIES: SPECIES });
+Object.assign(window.CITY, { createTreeField, createLeafAtlas, buildTreeGeometries, TREE_SPECIES: SPECIES });
 })();

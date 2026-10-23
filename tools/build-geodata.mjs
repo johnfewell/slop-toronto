@@ -1,234 +1,200 @@
-// tools/build-geodata.mjs — writes js/nyc-geodata.js (see geo-base.mjs for the frame and the data sources)
-// usage: GEO_DATA=tools/data node --max-old-space-size=8192 tools/build-geodata.mjs [out.js]
+// tools/build-geodata.mjs — writes js/toronto-geodata.js (see geo-base.mjs for the frame and the data sources)
+// usage: node --max-old-space-size=8192 tools/build-geodata.mjs [out.js]
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { geo, toWorld, rdp, rdpRing, ringArea, bbox, load, log, centroid } from './geo-base.mjs';
-import { pieces, STREETS, AVENUES } from './geo-streets.mjs';
-import { blocks, innerRing, roads, PLAZAS, CUT_Z, STRIP, SIDEWALK } from './geo-blocks.mjs';
-import { parkShapes, piers, bridges, nj, islands, manhattanSouth, manhattanNorth } from './geo-extra.mjs';
-import { buildRoadGraph } from './geo-roadgraph.mjs';
+import { geo, toWorld, toLonLat, log, load } from './geo-base.mjs';
+import { DETAIL, buildRoadGraph, deckOut, roadLines } from './geo-roads.mjs';
+import { areas, streams, walls, isWater, waterRings, islandRings, lake } from './geo-land.mjs';
+import { Raster } from './geo-base.mjs';
+import { blocks, SIDEWALK, blockRaster, blockLabels } from './geo-blocks.mjs';
+import { buildings, districts, districtBounds, landmarks } from './geo-features.mjs';
+import { buildTerrain } from './geo-terrain.mjs';
+import { props } from './geo-props.mjs';
+import { streetTrees, TREE_MODELS } from './geo-trees.mjs';
 
-const OUT = process.argv[2] || fileURLToPath(new URL('../js/nyc-geodata.js', import.meta.url));
+const inRing = (x, z, r) => {
+  let inside = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [xi, zi] = r[i], [xj, zj] = r[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+};
+const waterAt = isWater;
+const OUT = process.argv[2] || fileURLToPath(new URL('../js/toronto-geodata.js', import.meta.url));
 const q = (v) => Math.round(v * 10) / 10;
 const flat = (pts) => pts.flatMap(([x, z]) => [q(x), q(z)]);
-const inDetail = (z) => z > CUT_Z - 250;
 
-// --- Broadway as one ordered polyline (north to south) through the detailed island --------------------------------
-function broadwayLine() {
-  const segs = roads.filter((s) => s.name === 'BROADWAY').map((s) => (s.z0 < s.z1 ? [[s.x0, s.z0], [s.x1, s.z1]] : [[s.x1, s.z1], [s.x0, s.z0]]));
-  // Keep the carriageways' centre: bucket by z, average x of the pieces covering each 10 m of z
-  const zmin = Math.max(CUT_Z, Math.min(...segs.map((s) => s[0][1])));
-  const zmax = Math.max(...segs.map((s) => s[1][1]));
-  const line = [];
-  for (let z = zmin; z <= zmax; z += 10) {
-    const xs = [];
-    for (const [[xa, za], [xb, zb]] of segs) if (z >= za && z <= zb && zb > za) xs.push(xa + ((z - za) * (xb - xa)) / (zb - za));
-    if (!xs.length) continue;
-    // dual carriageways: midpoint of the cluster nearest the previous point
-    xs.sort((a, b) => a - b);
-    const prev = line.length ? line[line.length - 1][0] : xs[0];
-    const near = xs.filter((x) => Math.abs(x - prev) < 60);
-    const pick = near.length ? near : [xs.reduce((a, b) => (Math.abs(b - prev) < Math.abs(a - prev) ? b : a))];
-    line.push([(Math.min(...pick) + Math.max(...pick)) / 2, z]);
-  }
-  return rdp(line, 1.5);
-}
-const broadway = broadwayLine();
-log(`Broadway: ${broadway.length} pts from z=${Math.round(broadway[0][1])} to ${Math.round(broadway[broadway.length - 1][1])}`);
-
-// --- Roads (at-grade centreline pieces merged into polylines per street & width), for maps & the road graph ---------
-function mergeRoads() {
-  const byKey = new Map();
-  for (const p of pieces) {
-    if (p.level !== '13' || !['1', '2'].includes(p.rw)) continue;
-    if (/DRIVEWAY|PEDESTRIAN|ALLEY|CONNECTOR/.test(p.name)) continue;
-    if (!inDetail(Math.min(p.z0, p.z1))) continue;
-    const key = `${p.name}|${Math.round(p.w)}|${p.dir}|${p.lanes}|${p.rw}`;
-    if (!byKey.has(key)) byKey.set(key, []);
-    byKey.get(key).push([[p.x0, p.z0], [p.x1, p.z1]]);
-  }
-  const out = [];
-  for (const [key, segs] of byKey) {
-    const [name, w, dir, lanes, rw] = key.split('|');
-    // chain pieces end to start
-    const ends = new Map();
-    const k = (p) => `${q(p[0])},${q(p[1])}`;
-    for (const s of segs) ends.set(k(s[0]), s);
-    const used = new Set();
-    for (const s of segs) {
-      if (used.has(s)) continue;
-      // walk back to the first piece of this chain
-      let first = s;
-      const seen = new Set([s]);
-      for (;;) {
-        const prev = segs.find((t) => !seen.has(t) && !used.has(t) && k(t[1]) === k(first[0]));
-        if (!prev) break;
-        seen.add(prev);
-        first = prev;
+// a turnaround at the edge of the city may cross roadway & medians, never a plot
+const medianLabels = new Set(blocks.filter((b) => b.median).map((b) => b._lab));
+const roadGraph = buildRoadGraph((x, z) => {
+  const R = blockRaster;
+  const i = Math.floor((x - R.x0) / R.res), j = Math.floor((z - R.z0) / R.res);
+  if (i < 0 || j < 0 || i >= R.w || j >= R.h) return false;
+  const L = blockLabels[j * R.w + i];
+  return L === 0 ? R.d[j * R.w + i] === 0 && !waterAt(x, z) : medianLabels.has(L);
+});
+const terrain = buildTerrain();
+// Traffic signals as mapped (OpenStreetMap highway=traffic_signals: at junctions, or on a signalised pedestrian crossing)
+const signals = load('osm_signals.json').elements.map((e) => {
+  const [x, z] = toWorld(e.lon, e.lat);
+  return [q(x), q(z), e.tags.crossing === 'traffic_signals' && e.tags.highway !== 'traffic_signals' ? 1 : 0];
+}).filter(([x, z]) => x > DETAIL.x0 && x < DETAIL.x1 && z > DETAIL.z0 && z < DETAIL.z1);
+log(`${signals.length} traffic signals mapped (${signals.filter((s) => s[2]).length} on pedestrian crossings)`);
+// Named places (OpenStreetMap POIs & named buildings): [x, z, name, category, index of the building it's in (-1: none)]
+const CATS = [
+  ['hotel', (t) => /^(hotel|motel|guest_house|hostel|apartment)$/.test(t.tourism || '')],
+  ['bank', (t) => /^(bank|atm|bureau_de_change)$/.test(t.amenity || '')],
+  ['food', (t) => /^(restaurant|fast_food|cafe|bar|pub|ice_cream|food_court|nightclub)$/.test(t.amenity || '')],
+  ['worship', (t) => t.amenity === 'place_of_worship' || /^(mosque|church|cathedral)$/.test(t.building || '')],
+  ['fuel', (t) => t.amenity === 'fuel'],
+  ['health', (t) => /^(hospital|clinic|pharmacy|doctors|dentist)$/.test(t.amenity || '') || !!t.healthcare],
+  ['education', (t) => /^(school|university|college|kindergarten|library)$/.test(t.amenity || '')],
+  ['market', (t) => t.amenity === 'marketplace' || /^(mall|supermarket|department_store)$/.test(t.shop || '')],
+  ['shop', (t) => !!t.shop],
+  ['government', (t) => !!t.government || !!t.diplomatic || /^(townhall|courthouse|police|embassy|public_building)$/.test(t.amenity || '') || t.office === 'government'],
+  ['office', (t) => !!t.office],
+  ['leisure', (t) => !!t.leisure || /^(attraction|museum|gallery|viewpoint|zoo|theme_park)$/.test(t.tourism || '') || !!t.historic || /^(cinema|theatre|arts_centre)$/.test(t.amenity || '')],
+  ['transport', (t) => /^(bus_station|taxi|ferry_terminal)$/.test(t.amenity || '')]
+];
+const bGrid = new Map();
+buildings.forEach((b, i) => {
+  const k = `${Math.floor(b[0] / 50)},${Math.floor(b[1] / 50)}`;
+  (bGrid.get(k) || bGrid.set(k, []).get(k)).push(i);
+});
+const buildingAt = (x, z) => {
+  let best = -1, bd = 1e9;
+  for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) {
+    for (const i of bGrid.get(`${Math.floor(x / 50) + a},${Math.floor(z / 50) + c}`) || []) {
+      const [cx, cz, ang, parts] = buildings[i];
+      const cs = Math.cos(ang), sn = Math.sin(ang), dx = x - cx, dz = z - cz;
+      const u = dx * cs - dz * sn, v = dx * sn + dz * cs;
+      for (const [u0, u1, v0, v1] of parts) {
+        const d = Math.hypot(Math.max(u0 - u, 0, u - u1), Math.max(v0 - v, 0, v - v1));
+        if (d < bd) { bd = d; best = i; }
       }
-      const line = [first[0]];
-      let cur = first;
-      while (cur && !used.has(cur)) {
-        used.add(cur);
-        line.push(cur[1]);
-        cur = ends.get(k(cur[1]));
-      }
-      out.push({ name, w: +w, dir, lanes: +lanes, hw: rw === '2', pts: rdp(line, 0.8) });
     }
   }
-  return out;
-}
-const roadLines = mergeRoads();
-log(`${roadLines.length} road polylines (${roadLines.reduce((t, r) => t + r.pts.length, 0)} pts)`);
-
-// --- Central Park: features from OpenStreetMap ------------------------------------------------------------------------
-const osmCP = load('osm_centralpark.json');
-const cpPark = parkShapes.find((p) => p.name === 'Central Park');
-const cpBB = bbox(cpPark.rings.reduce((a, r) => (Math.abs(ringArea(r)) > Math.abs(ringArea(a)) ? r : a)));
-const insideCP = ([x, z]) => x > cpBB.x0 - 5 && x < cpBB.x1 + 5 && z > cpBB.z0 - 5 && z < cpBB.z1 + 5;
-const cp = { bounds: { minX: q(cpBB.x0), maxX: q(cpBB.x1), minZ: q(cpBB.z0), maxZ: q(cpBB.z1) }, outline: null, water: [], lawns: [], drives: [], paths: [], sites: [] };
-cp.outline = flat(rdpRing(cpPark.rings.reduce((a, r) => (Math.abs(ringArea(r)) > Math.abs(ringArea(a)) ? r : a)), 0.8));
-const WATER_NAMES = new Set(['Jacqueline Kennedy Onassis Reservoir', 'The Lake', 'The Pond', 'Harlem Meer', 'Turtle Pond', 'Conservatory Water', 'The Pool']);
-const LAWN_NAMES = new Set(['Sheep Meadow', 'The Great Lawn', 'North Meadow', 'Great Hill', 'Heckscher Ballfields', 'East Meadow', 'Cedar Hill', 'Pilgrim Hill', 'The Dene', 'Conservatory Garden', 'Strawberry Fields']);
-const SITE_NAMES = ['Bethesda Fountain', 'Bow Bridge', 'Belvedere Castle', 'Gapstow Bridge', "Cleopatra's Needle", 'Central Park Carousel', 'The Dairy (Visitor Center and Gift Shop)', 'Delacorte Theater', 'Kerbs Boathouse', 'The Arsenal', 'Central Park Zoo', 'Columbus Circle', 'Pulitzer Fountain', 'Charles A. Dana Discovery Center', 'Loeb Boathouse', 'Wollman Rink', 'Bethesda Terrace'];
-function elemRing(e) {
-  if (e.type === 'way') return (e.geometry || []).map((g) => toWorld(g.lon, g.lat));
-  let best = [];
-  for (const m of e.members || []) if (m.role === 'outer' && m.geometry && m.geometry.length > best.length) best = m.geometry.map((g) => toWorld(g.lon, g.lat));
-  return best;
-}
-function elemRings(e) {
-  // relations (The Lake, Turtle Pond, Harlem Meer) come as several outer ways: chain them into closed rings
-  if (e.type === 'way') return [(e.geometry || []).map((g) => toWorld(g.lon, g.lat))];
-  const parts = (e.members || []).filter((m) => m.role === 'outer' && m.geometry).map((m) => m.geometry.map((g) => toWorld(g.lon, g.lat)));
-  const rings = [];
-  const close = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 0.5;
-  while (parts.length) {
-    let ring = parts.shift();
-    for (let guard = 0; guard < 500 && !close(ring[0], ring[ring.length - 1]); guard++) {
-      const i = parts.findIndex((p) => close(p[0], ring[ring.length - 1]) || close(p[p.length - 1], ring[ring.length - 1]));
-      if (i < 0) break;
-      const p = parts.splice(i, 1)[0];
-      ring = ring.concat(close(p[0], ring[ring.length - 1]) ? p.slice(1) : p.reverse().slice(1));
-    }
-    rings.push(ring);
-  }
-  return rings;
-}
-const seenSites = new Set();
-for (const e of osmCP.elements) {
-  const t = e.tags || {};
-  const n = t.name || '';
-  const isWater = t.natural === 'water' && (WATER_NAMES.has(n) || (!n && t.water === 'pond'));
-  if (isWater) {
-    for (const r of elemRings(e)) {
-      if (r.length < 4 || !insideCP(centroid(r)) || Math.abs(ringArea(r)) < 200) continue;
-      const s = rdpRing(r.slice(0, -1), 0.6);
-      if (ringArea(s) > 0) s.reverse();
-      cp.water.push({ name: n, ring: flat(s) });
-    }
-  } else if (LAWN_NAMES.has(n) && (t.landuse === 'grass' || t.leisure)) {
-    const r = elemRing(e);
-    if (r.length > 3 && insideCP(centroid(r))) {
-      const s = rdpRing(r.slice(0, -1), 0.8);
-      if (ringArea(s) > 0) s.reverse();
-      cp.lawns.push({ name: n, ring: flat(s) });
-    }
-  } else if (e.type === 'way' && t.highway && /^(East Drive|West Drive|Center Drive|Terrace Drive)$/.test(n)) {
-    const r = elemRing(e);
-    if (r.length > 1 && insideCP(r[0])) cp.drives.push({ name: n, w: t.highway === 'service' ? 6 : 9, pts: flat(rdp(r, 0.8)) });
-  } else if (e.type === 'way' && t.highway && /Transverse/.test(n) && t.highway !== 'footway') {
-    const r = elemRing(e);
-    if (r.length > 1) cp.drives.push({ name: n, w: 10, transverse: true, pts: flat(rdp(r, 0.8)) });
-  } else if (SITE_NAMES.includes(n) && !seenSites.has(n)) {
-    const r = elemRing(e);
-    if (!r.length) continue;
-    const b = bbox(r);
-    seenSites.add(n);
-    // long axis of the outline (bridges: the span) by principal component
-    const [mx, mz] = centroid(r);
-    let sxx = 0, szz = 0, sxz = 0;
-    for (const [x, z] of r) { sxx += (x - mx) ** 2; szz += (z - mz) ** 2; sxz += (x - mx) * (z - mz); }
-    const ang = 0.5 * Math.atan2(2 * sxz, sxx - szz);
-    cp.sites.push({ name: n, x: q((b.x0 + b.x1) / 2), z: q((b.z0 + b.z1) / 2), w: q(b.x1 - b.x0), d: q(b.z1 - b.z0), ang: Math.round(ang * 1000) / 1000 });
-  }
-}
-// Transverses from the centreline (OSM marks parts of them as footways)
-for (const p of roadLines) if (/TRANSVERSE/.test(p.name)) cp.drives.push({ name: p.name, w: p.w || 10, transverse: true, pts: flat(p.pts) });
-log(`Central Park: ${cp.water.length} water bodies, ${cp.lawns.length} lawns, ${cp.drives.length} drive pieces, ${cp.sites.length} sites`);
-
-// --- Landmarks: real footprints (grid-aligned bounding boxes) from OSM ---------------------------------------------
-const osmLM = load('osm_landmarks.json');
-const landmarks = {};
-for (const e of osmLM.elements) {
-  const t = e.tags || {};
-  const r = elemRing(e);
-  if (!r.length || !t.name) continue;
-  const b = bbox(r);
-  const area = Math.abs(ringArea(r));
-  const prev = landmarks[t.name];
-  if (prev && prev.area >= area) continue;
-  landmarks[t.name] = { x: q((b.x0 + b.x1) / 2), z: q((b.z0 + b.z1) / 2), w: q(b.x1 - b.x0), d: q(b.z1 - b.z0), h: t.height ? parseFloat(t.height) : null, area: Math.round(area), ring: flat(rdpRing(r.slice(0, -1), 0.4)) };
-}
-log(`${Object.keys(landmarks).length} landmark footprints`);
-
-// --- Assemble -----------------------------------------------------------------------------------------------------------
-const streetsOut = STREETS.filter((s) => inDetail(s.z)).map((s) => ({ n: s.n, z: s.z, segs: s.segs.map(([a, b, d, w]) => [q(a), q(b), d, q(w)]) }));
-const avenuesOut = AVENUES.map((a) => ({
-  id: a.id, label: a.label, x: a.x,
-  segs: a.segs.filter((s) => s.z1 > CUT_Z - 200).map((s) => ({ z0: Math.max(s.z0, CUT_Z - 200), z1: s.z1, dir: s.dir, w: s.w, lanes: s.lanes, names: s.names }))
-})).filter((a) => a.segs.length);
-
-// --- Points of note from their real coordinates (bridge towers beyond the island, the statue, ferry terminals) --------
-const POINTS = {
-  gwbManhattanTower: [40.85012, -73.94693], gwbNJTower: [40.85361, -73.95804],
-  verrazzanoBrooklynTower: [40.60799, -74.03864], verrazzanoStatenTower: [40.60458, -74.05385],
-  statueOfLiberty: [40.68925, -74.0445], whitehallTerminal: [40.70123, -74.0131], pier17: [40.70578, -74.00185],
-  castleClinton: [40.70355, -74.01686], peterMinuitPlaza: [40.70187, -74.01334], bowlingGreen: [40.70496, -74.01352]
+  return bd < 3 ? best : -1;
 };
-const points = Object.fromEntries(Object.entries(POINTS).map(([k, [lat, lon]]) => [k, toWorld(lon, lat).map(q)]));
+const pois = [];
+for (const e of load('osm_pois.json').elements) {
+  const t = e.tags || {};
+  const lon = e.lon ?? e.center?.lon, lat = e.lat ?? e.center?.lat;
+  if (lon === undefined || !t.name) continue;
+  const [x, z] = toWorld(lon, lat);
+  if (!(x > DETAIL.x0 && x < DETAIL.x1 && z > DETAIL.z0 && z < DETAIL.z1)) continue;
+  const name = t.name.trim();
+  if (pois.some((p) => p[2] === name && Math.hypot(p[0] - x, p[1] - z) < 60)) continue;
+  const cat = (CATS.find(([, f]) => f(t)) || ['place'])[0];
+  pois.push([q(x), q(z), name, cat, buildingAt(x, z)]);
+}
+log(`${pois.length} named places (${pois.filter((p) => p[4] >= 0).length} in a mapped building)`);
+// The City of Toronto's boundary (OpenStreetMap), as [lat, lon, ...]: is a GPS fix in Toronto?
+const fct = (() => {
+  const e = load('osm_fct.json').elements[0];
+  const parts = e.members.filter((m) => m.role === 'outer' && m.geometry).map((m) => m.geometry.map((g) => [g.lat, g.lon]));
+  const same = (a, b) => Math.abs(a[0] - b[0]) < 1e-7 && Math.abs(a[1] - b[1]) < 1e-7;
+  let ring = parts.shift();
+  while (parts.length) {
+    const i = parts.findIndex((p) => same(p[0], ring[ring.length - 1]) || same(p[p.length - 1], ring[ring.length - 1]));
+    if (i < 0) break; // disjoint outer rings (a lake shore, the Islands): keep the first
+    const p = parts.splice(i, 1)[0];
+    ring = ring.concat(same(p[0], ring[ring.length - 1]) ? p.slice(1) : p.reverse().slice(1));
+  }
+  return ring.slice(0, -1).flatMap(([lat, lon]) => [Math.round(lat * 1e5) / 1e5, Math.round(lon * 1e5) / 1e5]);
+})();
+log(`City of Toronto boundary: ${fct.length / 2} points`);
+// Water mask over the detailed city (4 m cells): the street level drops its asphalt where it is set (city-grid.js),
+// so Lake Ontario & the other water show through. Row runs, alternating dry / wet starting dry, as base64 Uint16.
+const waterMask = (() => {
+  const M = new Raster(DETAIL.x0, DETAIL.z0, DETAIL.x1, DETAIL.z1, 4);
+  if (lake) M.fillRing(lake.ring, 1);
+  for (const r of islandRings) M.fillRing(r, 0);
+  for (const r of waterRings) if (!lake || r !== lake.ring) M.fillRing(r, 1);
+  const runs = [];
+  for (let j = 0; j < M.h; j++) {
+    let v = 0, n = 0;
+    for (let i = 0; i < M.w; i++) {
+      const c = M.d[j * M.w + i];
+      if (c === v) { n++; continue; }
+      runs.push(n); v = c; n = 1;
+    }
+    runs.push(n);
+    if (v === 1) runs.push(0); // every row ends dry, so the next row starts dry
+  }
+  const buf = Buffer.from(new Uint16Array(runs).buffer);
+  log(`water mask ${M.w} x ${M.h} at 4 m: ${runs.length} runs, ${(buf.length / 1024).toFixed(0)} KB`);
+  return { x0: M.x0, z0: M.z0, res: 4, w: M.w, h: M.h, runs: buf.toString('base64') };
+})();
+const [olon, olat] = toLonLat(0, 0);
+const cnTower = toWorld(-79.387057, 43.642566);
 
 const GEO = {
   version: 1,
-  frame: { bearingDeg: q((geo.THETA * 180) / Math.PI * 10) / 10, origin: '5th Ave & 42nd St (centreline)', units: 'm', cutZ: CUT_Z, strip: STRIP, sidewalk: SIDEWALK },
-  manhattan: flat(manhattanSouth),
-  upperManhattan: flat(manhattanNorth),
-  innerShore: flat(innerRing),
-  islands: Object.fromEntries(Object.entries(islands).map(([k, r]) => [k, flat(r)])),
-  boroughs: {
-    brooklyn: geo.boroughs.brooklyn.map(flat),
-    queens: geo.boroughs.queens.map(flat),
-    bronx: geo.boroughs.bronx.map(flat),
-    statenIsland: geo.boroughs.statenIsland.map(flat),
-    newJersey: [flat(nj)]
+  city: 'Toronto',
+  frame: {
+    bearingDeg: Math.round((geo.THETA * 180) / Math.PI * 100) / 100, // grid north's bearing (the avenues run 90° from it)
+    origin: 'Union Station (Front Street)',
+    lat: Math.round(olat * 1e6) / 1e6,
+    lon: Math.round(olon * 1e6) / 1e6,
+    elevation: terrain.baseAtOrigin, // street level at the origin, metres above sea level
+    units: 'm',
+    detail: DETAIL,
+    sidewalk: SIDEWALK,
+    // The exact projection (WGS84 lat / lon -> world x, z): x = u - ox, z = v - oz, with e = (lon - lon0) kx,
+    // n = (lat - lat0) ky (metres east / north on the tangent plane) and u = e cos t - n sin t, v = -(e sin t + n cos t)
+    projection: { lat0: geo.LAT0, lon0: geo.LON0, kx: geo.KX, ky: geo.KY, theta: geo.THETA, ox: geo.ORIGIN[0], oz: geo.ORIGIN[1] }
   },
-  streets: streetsOut,
-  avenues: avenuesOut,
-  broadway: flat(broadway),
-  plazas: PLAZAS.map((p) => ({ name: p.name, a: p.a.map(q), b: p.b.map(q), w: p.w })),
-  roads: roadLines.map((r) => [r.name, r.w ? q(r.w) : 0, r.dir || '', r.lanes || 0, r.hw ? 1 : 0, flat(r.pts)]),
-  // Street centreline graph south of 14th St (geo-roadgraph.mjs): nodes [x, z, ...], links [node a, node b, name
-  // index, curb-to-curb width, travel lanes, direction (1: a -> b, -1: b -> a, 0: both), inner shape points [x, z, ...]]
-  roadGraph: buildRoadGraph(),
-  // [outline, lot rects, park share, park name, rectangular, frontage frames [[θ, px, pz, lot rects in the frame], ...] | 0]
-  blocks: blocks.map((b) => [flat(b.poly), b.rects.map((r) => r.map(q)), b.park || 0, b.parkName || '', b.rect ? 1 : 0,
-    b.frames ? b.frames.map(([th, px, pz, rs]) => [Math.round(th * 1e4) / 1e4, q(px), q(pz), rs.map((r) => r.map(q))]) : 0]),
-  parks: parkShapes.map((p) => ({ name: p.name, cat: p.cat, acres: p.acres, rings: p.rings.map(flat) })),
-  centralPark: cp,
-  piers: piers.map((p) => ({ name: p.name, cx: q(p.cx), cz: q(p.cz), len: q(p.len), wid: q(p.wid), ang: Math.round(p.ang * 1e4) / 1e4, ring: flat(p.ring) })),
-  bridges: Object.fromEntries(Object.entries(bridges).map(([k, b]) => [k, { a: b.a.map(q), mid: b.mid.map(q), dir: [Math.round(b.ux * 1e5) / 1e5, Math.round(b.uz * 1e5) / 1e5] }])),
+  // [name, width, dir (1: along the points, -1: against, 0: both), lanes, rank, raised, flat x, z..., OSM class]
+  roads: roadLines,
+  // Street graph (at grade & on the flyovers): nodes [x, z, ...], raised [node, height, ...], links [a, b, name index,
+  // width, lanes, dir, inner shape [x, z...], rank, inner heights [h...] (0 when the link lies on the ground)]
+  roadGraph,
+  // Traffic signals as mapped: [x, z, 1 on a pedestrian crossing / 0 at a junction]
+  signals,
+  // Named places: [x, z, name, category, building index (-1: not in a mapped building)]
+  pois,
+  // The City of Toronto's boundary: [lat, lon, ...]
+  fct,
+  // Flyover decks & their ramps: [name, width, rank, [x, z, height, ...]]
+  decks: deckOut,
+  // Curb islands: [outline, lot rects [x0, x1, z0, z1], park share, park name, rectangular, median, wild share]
+  blocks: blocks.map((b) => [flat(b.poly), b.rects.map((r) => r.map(q)), b.park || 0, b.parkName || '', b.rect ? 1 : 0, b.median ? 1 : 0, b.wild || 0]),
+  // Land cover: [kind, name, outline, holes (Lake Ontario's islands) [outline, ...]]
+  areas: areas.filter((a) => !a.kind.startsWith('zone') || a.area > 20000).map((a) => (a.holes ? [a.kind, a.name, flat(a.ring), a.holes.map(flat)] : [a.kind, a.name, flat(a.ring)])),
+  // Streams & rivers: [name, channel width, kind, centre line]; compound walls mapped: [height, line]
+  streams: streams.map((s) => [s.name, s.w, s.kind, flat(s.pts)]),
+  walls: walls.map((w) => [w.h, flat(w.pts)]),
+  // Buildings: [cx, cz, yaw, plan rects in the building's frame [[u0, u1, v0, v1], ...], height, kind, roof, colour seed,
+  // height estimated (1) or mapped (0), name]
+  buildings,
+  districts,
+  // District boundaries as mapped: [name, outline]
+  districtBounds: districtBounds.map((d) => [d.name, flat(d.ring)]),
   landmarks,
-  points
+  // The City's street trees: [x, z, model index, height dm, ...] and the EZ-Tree models they index (tools/geo-trees.mjs)
+  streetTrees,
+  treeModels: TREE_MODELS.map(([id, h]) => [id, h]),
+  // Street props where they stand: { hydrant, bikeRing, postBox: [x, z, ...] } (tools/geo-props.mjs)
+  props,
+  // Water under the street level (see waterMask above)
+  waterMask,
+  // Relief above the local plain (decimetres, Int16 little-endian, base64), rows of z from z0, columns of x from x0
+  terrain,
+  points: {
+    cnTower: [q(cnTower[0]), q(cnTower[1]), 553.3] // the tower's centre and its height (m)
+  }
 };
 
 const json = JSON.stringify(GEO);
-const header = `// js/nyc-geodata.js — GENERATED by tools/build-geodata.mjs, do not edit by hand.
-// Real New York geography in the simulation's world frame: 1 unit = 1 m, x = Manhattan-grid east, z = grid south,
-// origin at the centreline intersection of 5th Ave & 42nd St, axes turned ${GEO.frame.bearingDeg}° from true north.
-// Polygons & polylines are flat [x0, z0, x1, z1, ...] arrays.
-// Sources: NYC DCP Borough Boundaries, NYC Street Centerline (CSCL) & NYC Parks Properties (NYC Open Data);
-// Central Park features, piers, landmark footprints & the New Jersey shore © OpenStreetMap contributors (ODbL).
+const header = `// js/toronto-geodata.js — GENERATED by tools/build-geodata.mjs, do not edit by hand.
+// Real Toronto geography in the simulation's world frame: 1 unit = 1 m, x = grid east (along Queen & King Streets),
+// z = grid south (toward the lake), origin at Union Station, axes turned ${GEO.frame.bearingDeg}° from true north (downtown's
+// street grid). Polygons & polylines are flat [x0, z0, x1, z1, ...] arrays.
+// Sources: City of Toronto Open Data, 3D Massing (Open Government Licence – Toronto): buildings and their heights;
+// © OpenStreetMap contributors (ODbL): streets, land, water, places; terrain from AWS Terrain Tiles (SRTM-derived).
 `;
-fs.writeFileSync(OUT, `${header}(function () {\nwindow.NYC = window.NYC || {};\nwindow.NYC.GEO = ${json};\n})();\n`);
+fs.writeFileSync(OUT, `${header}(function () {\nwindow.CITY = window.CITY || {};\nwindow.CITY.GEO = ${json};\n})();\n`);
 log(`wrote ${OUT} (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB)`);
 for (const [k, v] of Object.entries(GEO)) log(`  ${k}: ${(JSON.stringify(v).length / 1024).toFixed(0)} KB`);

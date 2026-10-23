@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Abuja Tour: Aso Rock's granite dome on the National Axis, a gold map pin on its summit, the road leading in -->
+  <defs>
+    <linearGradient id="abt-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#00b46c"/>
+      <stop offset="1" stop-color="#006b3d"/>
+    </linearGradient>
+    <linearGradient id="abt-rock" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="1" stop-color="#eadcc2"/>
+    </linearGradient>
+    <clipPath id="abt-tile"><rect width="64" height="64" rx="18"/></clipPath>
+  </defs>
+  <g clip-path="url(#abt-tile)">
+    <rect width="64" height="64" fill="url(#abt-sky)"/>
+    <path d="M-2 49C6 48 10 40.5 13.5 33.5 17.5 26 24 22 32 21.5 40 21 45.5 25 48.5 31.5 51.5 38 55.5 45 66 48.5V66H-2Z" fill="url(#abt-rock)"/>
+    <g fill="none" stroke="#cdbb98" stroke-width="1.5" stroke-linecap="round">
+      <path d="M23.5 25.5C20.5 31.5 19 38 18.2 45"/>
+      <path d="M30.5 22.6C28.8 30 28 37.5 28 45.5"/>
+      <path d="M38.5 23C39.6 30 40.6 37 41.5 45"/>
+    </g>
+    <path d="M-2 51.5C14 50 40 49 66 51V66H-2Z" fill="#004a2c"/>
+    <path d="M17 66C22 59 33 54.5 50 51.5" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+    <path d="M17 66C22 59 33 54.5 50 51.5" fill="none" stroke="#004a2c" stroke-width="0.9" stroke-dasharray="2.4 2.6"/>
+    <path d="M44 5.5a8.6 8.6 0 0 1 8.6 8.6c0 6.4-8.6 13.9-8.6 13.9s-8.6-7.5-8.6-13.9A8.6 8.6 0 0 1 44 5.5z" fill="#f4bf4f" stroke="#006b3d" stroke-width="1.2"/>
+    <circle cx="44" cy="14.2" r="3.1" fill="#006b3d"/>
+  </g>
+</svg>

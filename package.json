@@ -1,0 +1,26 @@
+{
+  "name": "slop-toronto",
+  "private": true,
+  "type": "module",
+  "description": "Toronto in three.js WebGPU + TSL, on the engine of Slop New York by mrdoob",
+  "scripts": {
+    "dev": "python3 -m http.server 5530 --bind 127.0.0.1",
+    "test": "node --test tests/*.cjs tests/*.mjs",
+    "capture": "node tools/capture.mjs",
+    "build:water": "node tools/build-water.mjs"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "4.5.1",
+    "earcut": "3.2.4",
+    "esbuild": "0.28.2",
+    "playwright": "1.64.1",
+    "shapefile": "0.6.6",
+    "three": "0.186.1",
+    "vite": "8.3.5"
+  },
+  "dependencies": {
+    "@takram/three-atmosphere": "0.19.1",
+    "@takram/three-geospatial": "0.9.1",
+    "three-clouds-webgpu": "file:vendor/clouds/three-clouds-webgpu-0.1.0-alpha.5.tgz"
+  }
+}

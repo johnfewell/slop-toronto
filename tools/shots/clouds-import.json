@@ -1,0 +1,3 @@
+[
+  { "name": "c0-import", "wait": 6000, "js": "import('./js/clouds.js').then(m => console.log('[clouds-import] ok', Object.keys(m.Clouds).length, Object.keys(m.Atmosphere).length, typeof m.Clouds.clouds, typeof m.Atmosphere.AtmosphereContext)).catch(e => console.log('[clouds-import] FAIL', e && e.stack))" }
+]

@@ -1,8 +1,8 @@
 (function () {
 // js/scene-culling.js
-// Spatial culling for the island-wide static geometry. Most of Manhattan's street furniture and building massing is
-// built as a handful of instanced meshes spanning the whole island (bounding spheres ~7 km across), which three.js can
-// never cull: every frame the GPU transformed every lamp post, signal and facade box of the island three times (the
+// Spatial culling for the city-wide static geometry. Most of the city's street furniture and building massing is
+// built as a handful of instanced meshes spanning the whole city (bounding spheres ~13 km across), which three.js can
+// never cull: every frame the GPU transformed every lamp post, signal and facade box of the city three times (the
 // view and both sun shadow cascades). This module, run once after the city is built (main.js):
 // 1. Splits the instanced meshes of small props into spatial chunks, each culled by the view frustum and hidden beyond
 //    the distance where its props shrink below a pixel or two (updateSceneCulling, every frame).
@@ -10,7 +10,7 @@
 //    a layer only the shadow cascade cameras render (they cull the cells outside the ~300 m the cascades cover); the
 //    originals stop casting. The stand-ins share one material per face side, so a cell costs one draw.
 
-const { THREE } = window.NYC;
+const { THREE } = window.CITY;
 
 const SHADOW_PROXY_LAYER = 3;
 // Distance at which an instance of typical size s (m) is culled: about s / d * 1100 px tall on a 1300 px viewport
@@ -155,7 +155,12 @@ function setupSceneCulling(scene, roots, shadow = null) {
     const glow = mesh.material.isMeshBasicNodeMaterial || mesh.material.type === 'MeshBasicNodeMaterial' ? 3 : 1;
     let cullDist = Math.max(CULL_MIN, instanceSize(mesh) * CULL_PER_METRE * glow);
     if (cullDist > CULL_MAX) cullDist = Infinity;
-    const cell = Number.isFinite(cullDist) ? Math.min(600, Math.max(250, cullDist * 0.5)) : 0;
+    let cell = Number.isFinite(cullDist) ? Math.min(600, Math.max(250, cullDist * 0.5)) : 0;
+    // a mesh may set its own (street-props.js: John's dense, detailed props go much sooner, in small cells)
+    if (mesh.userData.cullDistance) {
+      cullDist = mesh.userData.cullDistance;
+      cell = mesh.userData.cullCell || Math.max(40, cullDist * 0.5);
+    }
     if (!cell) continue; // big things (sidewalk slabs, light pools...) stay whole: chunking them would only add draws
     const parent = mesh.parent;
     const chunks = chunkInstancedMesh(mesh, cell);
@@ -324,5 +329,5 @@ function updateSceneCulling(cameraPosition) {
   }
 }
 
-Object.assign(window.NYC, { setupSceneCulling, updateSceneCulling, SHADOW_PROXY_LAYER });
+Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, SHADOW_PROXY_LAYER });
 })();

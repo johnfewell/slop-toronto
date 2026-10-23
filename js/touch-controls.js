@@ -166,5 +166,5 @@ class TouchControls {
   }
 }
 
-Object.assign(window.NYC, { TouchControls });
+Object.assign(window.CITY, { TouchControls });
 })();

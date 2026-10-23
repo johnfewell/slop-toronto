@@ -1,0 +1,9 @@
+[
+  { "name": "r1-skyline-golden-0.10", "camera": "skyline", "time": "golden", "wait": 5000, "js": "window.CITY.LAKE_RADIANCE.value=0.10" },
+  { "name": "r2-skyline-golden-0.17", "js": "window.CITY.LAKE_RADIANCE.value=0.17" },
+  { "name": "r3-skyline-golden-0.30", "js": "window.CITY.LAKE_RADIANCE.value=0.30" },
+  { "name": "r4-islands-midday-0.10", "camera": "islands", "time": "midday", "js": "window.CITY.LAKE_RADIANCE.value=0.10" },
+  { "name": "r5-islands-midday-0.17", "js": "window.CITY.LAKE_RADIANCE.value=0.17" },
+  { "name": "r6-islands-midday-0.30", "js": "window.CITY.LAKE_RADIANCE.value=0.30" },
+  { "name": "r7-drone-midday-0.17", "camera": "drone", "wait": 6000, "js": "window.CITY.LAKE_RADIANCE.value=0.17" }
+]

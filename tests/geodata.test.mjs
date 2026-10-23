@@ -26,8 +26,8 @@ test('geodata builds with default paths in a checkout containing spaces and non-
     assert.equal(result.status, 0, result.stderr + result.stdout);
     const context = { window: {} };
     vm.runInNewContext(fs.readFileSync(path.join(dir, 'js/nyc-geodata.js'), 'utf8'), context);
-    assert.ok(context.window.NYC.GEO.roadGraph.links.length > 0);
-    assert.ok(context.window.NYC.GEO.blocks.length > 0);
+    assert.ok(context.window.CITY.GEO.roadGraph.links.length > 0);
+    assert.ok(context.window.CITY.GEO.blocks.length > 0);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

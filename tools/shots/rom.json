@@ -1,0 +1,5 @@
+[
+  { "name": "o1-rom-golden", "camera": "rom", "time": "golden", "wait": 7000 },
+  { "name": "o2-rom-midday", "camera": "rom", "time": "midday" },
+  { "name": "o3-rom-bloor-walk", "mode": "person", "js": "(() => { const a = window.CITY.LANDMARK_SITES.rom; window.__CITY_APP.teleportTo(a.x + 90, a.z - 95, -Math.PI / 2); window.__CITY_APP.selectCamera('chase', true); })()", "wait": 6000 }
+]

@@ -1,0 +1,7 @@
+[
+  { "name": "m1-cityhall", "camera": "cityHall", "time": "midday", "wait": 7000 },
+  { "name": "m2-drone", "camera": "drone", "wait": 6000 },
+  { "name": "m3-rom", "mode": "helicopter", "js": "(() => { const a = window.CITY.LANDMARK_SITES.rom; window.__CITY_APP.teleportTo(a.x - 160, a.z + 160, Math.atan2(160, -160)); })()", "wait": 7000 },
+  { "name": "m4-union", "js": "(() => { const a = window.CITY.LANDMARK_SITES.unionStation; window.__CITY_APP.teleportTo(a.x, a.z - 180, 0); })()", "wait": 6000 },
+  { "name": "m5-legislature", "js": "(() => { const a = window.CITY.LANDMARK_SITES.legislature; window.__CITY_APP.teleportTo(a.x, a.z + 220, Math.PI); })()", "wait": 6000 }
+]

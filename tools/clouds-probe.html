@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Clouds probe</title>
+<!-- tools/clouds-probe.html: the cloud library's basic example on this page's import map and js/clouds.js, nothing of the city -->
+<script type="importmap">{ "imports": { "three": "../vendor/three/three.webgpu.js", "three/webgpu": "../vendor/three/three.webgpu.js", "three/tsl": "../vendor/three/three.tsl.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/" } }</script>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas></canvas>
+<script type="module">
+import { Color, Matrix4, NeutralToneMapping, PerspectiveCamera, Scene, Vector3, RenderPipeline, WebGPURenderer } from 'three/webgpu';
+import { context, mrt, normalView, output, pass } from 'three/tsl';
+import { Clouds, Atmosphere, Geospatial } from '../js/clouds.js';
+const canvas = document.querySelector('canvas');
+const renderer = new WebGPURenderer({ canvas, antialias: false });
+renderer.toneMapping = NeutralToneMapping;
+renderer.setSize(innerWidth, innerHeight);
+await renderer.init();
+const camera = new PerspectiveCamera(50, innerWidth / innerHeight, 100, 1e8);
+camera.position.set(0, 6378137 + 2500, 0);
+camera.lookAt(6378137 * 0.35, 6378137 + 4000, 0);
+const atmosphere = new Atmosphere.AtmosphereContext();
+atmosphere.raymarchScattering = false;
+atmosphere.camera = camera;
+const cloudsPass = Clouds.clouds({ sceneDepth: null });
+const ctx = cloudsPass.cloudsContext;
+renderer.contextNode = context({ ...(renderer.contextNode?.value ?? {}), getAtmosphere: () => atmosphere, getClouds: () => ctx });
+const scene = new Scene(); scene.background = new Color(0);
+const scenePass = pass(scene, camera, { samples: 0 });
+scenePass.setMRT(mrt({ output, normal: normalView }));
+cloudsPass.sceneDepth = scenePass.getTextureNode('depth');
+cloudsPass.camera = camera;
+Object.assign(ctx, await Clouds.loadBakedCloudTextures({ localWeather: '../' + Clouds.DEFAULT_LOCAL_WEATHER_URL, turbulence: '../' + Clouds.DEFAULT_TURBULENCE_URL, shape: '../' + Clouds.DEFAULT_SHAPE_URL, shapeDetail: '../' + Clouds.DEFAULT_SHAPE_DETAIL_URL }));
+ctx.stbnTexture = Clouds.createJitterTexture();
+const enu = Geospatial.Ellipsoid.WGS84.getEastNorthUpFrame(new Vector3(0, ctx.bottomRadius, 0));
+const el = 50 * Math.PI / 180, az = 150 * Math.PI / 180;
+const sun = new Vector3(Math.sin(az) * Math.cos(el), Math.cos(az) * Math.cos(el), Math.sin(el)).applyMatrix4(new Matrix4().extractRotation(enu));
+atmosphere.sunDirectionECEF.value.copy(sun); ctx.sunDirection.copy(sun);
+const aerial = Atmosphere.aerialPerspective(scenePass.getTextureNode('output'), scenePass.getTextureNode('depth'), scenePass.getTextureNode('normal'));
+aerial.lighting = true;
+const pipeline = new RenderPipeline(renderer); pipeline.outputNode = cloudsPass.composite(aerial);
+let frame = 0;
+renderer.setAnimationLoop(() => { ctx.time += 1 / 3600; ctx.frame = frame++; pipeline.render(); });
+window.__CITY_APP = { ready: true, getFps: () => 0, selectMode() {}, selectTime() {}, selectCamera() {}, teleportTo() {} };
+</script></body></html>

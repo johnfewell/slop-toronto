@@ -1,0 +1,5 @@
+[
+  { "name": "w7-humberbay-golden", "camera": "humberBay", "time": "golden", "wait": 5000 },
+  { "name": "w8-humberbay-midday", "camera": "humberBay", "time": "midday" },
+  { "name": "w9-sugarbeach-golden", "camera": "sugarBeach", "time": "golden" }
+]

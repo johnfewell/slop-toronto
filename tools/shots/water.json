@@ -1,0 +1,8 @@
+[
+  { "name": "w1-skyline-lake-golden", "camera": "skyline", "time": "golden", "wait": 5000 },
+  { "name": "w2-sugarbeach-golden-sunward", "camera": "sugarBeach" },
+  { "name": "w3-islands-golden", "camera": "islands" },
+  { "name": "w4-trail-golden", "camera": "trail" },
+  { "name": "w5-islands-midday", "camera": "islands", "time": "midday" },
+  { "name": "w6-drone-golden", "camera": "drone", "time": "golden", "wait": 6000 }
+]

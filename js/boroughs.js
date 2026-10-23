@@ -16,7 +16,7 @@
 //   Ellis Island) and the four East River bridges with their distinct structures and necklace lights
 // - The George Washington and Verrazzano-Narrows bridges as distant skyline landmarks
 
-const { THREE } = window.NYC;
+const { THREE } = window.CITY;
 const {
   Fn,
   float,
@@ -44,7 +44,7 @@ const {
   fwidth,
   select,
   uniform
-} = window.NYC.TSL;
+} = window.CITY.TSL;
 const {
   cityUniforms,
   MANHATTAN_COASTLINE,
@@ -68,7 +68,7 @@ const {
   EAST_RIVER_BRIDGES,
   OUTER_BRIDGES,
   streetZ
-} = window.NYC;
+} = window.CITY;
 
 // =====================================================================================================================
 // 0. REAL PLACES
@@ -1933,7 +1933,7 @@ function createPartCollector() {
       add(material, unitBox, matrixOf(x, y, z, w, h, d, 0, ry, 0));
     },
     build(parent, { castShadow = false, receiveShadow = false } = {}) {
-      const { mergeGeometries } = window.NYC.Addons;
+      const { mergeGeometries } = window.CITY.Addons;
       for (const [material, geos] of buckets) {
         const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
         if (!merged) continue;
@@ -2339,7 +2339,7 @@ function buildRooseveltTram(group, parts, lm) {
   cabinMat.colorNode = mix(srgb(0.7, 0.06, 0.08), srgb(0.07, 0.09, 0.11), glass);
   cabinMat.roughnessNode = mix(float(0.4), float(0.08), glass);
   cabinMat.emissiveNode = vec3(1.0, 0.84, 0.6).mul(glass.mul(nightFactorNode().mul(0.8)));
-  const gearGeo = window.NYC.Addons.mergeGeometries([
+  const gearGeo = window.CITY.Addons.mergeGeometries([
     new THREE.BoxGeometry(0.3, 1.7, 0.3).translate(0, -1.15, 0),
     new THREE.BoxGeometry(3.4, 0.8, 1.7)
   ]);
@@ -2388,7 +2388,7 @@ function makeCanopyGeometry(seed) {
     g.translate(x, y, z);
     return g;
   });
-  const geo = window.NYC.Addons.mergeGeometries(geos, false);
+  const geo = window.CITY.Addons.mergeGeometries(geos, false);
   const pos = geo.attributes.position;
   const nrm = geo.attributes.normal;
   const v = new THREE.Vector3();
@@ -3390,5 +3390,5 @@ function buildBoroughs(scene, { sidewalks = [] } = {}) {
   return { group, ridgeHeightAt, landAt, colliders: bridgeSite.colliders.concat(tram.colliders), update: tram.update };
 }
 
-Object.assign(window.NYC, { buildBoroughs, ridgeHeightAt, boroughLandAt: landAt });
+Object.assign(window.CITY, { buildBoroughs, ridgeHeightAt, boroughLandAt: landAt });
 })();

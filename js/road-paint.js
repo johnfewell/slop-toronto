@@ -1,14 +1,13 @@
 (function () {
 // js/road-paint.js
 // Road markings generated from the drivable road network (js/road-network.js), so the paint matches where traffic
-// actually drives and stops: dashed lane lines, double yellow centre lines on two-way roads, stop bars at the stop
-// lines, continental crosswalks across every intersection approach and green bike lanes along wide one-way avenues.
+// actually drives and stops, in Nigeria's white markings: dashed lane lines, a broken white centre line on two-way
+// roads, and at the signalised junctions stop bars at the stop lines and zebra crossings across every approach. The
+// paint rides the flyovers' decks & ramps (road-network.js edgeY).
 
-const { THREE, CROSSWALK, createRoadPaintMaterial } = window.NYC;
+const { THREE, CROSSWALK, createRoadPaintMaterial, edgeY } = window.CITY;
 
 const WHITE = new THREE.Color(0xe6e2d6);
-const YELLOW = new THREE.Color(0xe8ad22);
-const GREEN = new THREE.Color(0x2a8a4e);
 const HEIGHT = 0.012; // above the asphalt
 
 function buildRoadPaint(scene, network) {
@@ -18,15 +17,15 @@ function buildRoadPaint(scene, network) {
   const colors = [];
   const index = [];
 
-  // Flat strip w wide from a to b, with a dash pattern (period, duty cycle) running along it
-  function strip(ax, az, bx, bz, w, col, period = 1, duty = 1) {
+  // Flat strip w wide from a (at height ay) to b (by), with a dash pattern (period, duty cycle) running along it
+  function strip(ax, ay, az, bx, by, bz, w, col, period = 1, duty = 1) {
     const len = Math.hypot(bx - ax, bz - az);
     if (len < 0.05) return;
     const sx = ((az - bz) / len) * w * 0.5;
     const sz = ((bx - ax) / len) * w * 0.5;
     const i = position.length / 3;
-    for (const [x, z, s, u] of [[ax, az, -1, 0], [ax, az, 1, 0], [bx, bz, 1, len], [bx, bz, -1, len]]) {
-      position.push(x + sx * s, HEIGHT, z + sz * s);
+    for (const [x, y, z, s, u] of [[ax, ay, az, -1, 0], [ax, ay, az, 1, 0], [bx, by, bz, 1, len], [bx, by, bz, -1, len]]) {
+      position.push(x + sx * s, y + HEIGHT, z + sz * s);
       side.push(sx * s, sz * s);
       paint.push(u, period, duty);
       colors.push(col.r, col.g, col.b);
@@ -35,7 +34,7 @@ function buildRoadPaint(scene, network) {
   }
 
   // Edges run between stop lines; s is measured from the start one and o to the right of the centre line
-  const at = (e, s, o) => [e.sx + e.dx * s + e.rx * o, e.sz + e.dz * s + e.rz * o];
+  const at = (e, s, o) => [e.sx + e.dx * s + e.rx * o, edgeY(e, s), e.sz + e.dz * s + e.rz * o];
   const along = (e, o, w, col, period, duty) => strip(...at(e, 0.9, o), ...at(e, e.len - 0.9, o), w, col, period, duty);
   const across = (e, s, o0, o1, w, col, period, duty) => strip(...at(e, s, o0), ...at(e, s, o1), w, col, period, duty);
 
@@ -53,7 +52,7 @@ function buildRoadPaint(scene, network) {
     if (back) for (const o of back.lanes) lanes.push({ o: -o, dir: -1 });
     lanes.sort((p, q) => p.o - q.o);
 
-    // Dashed white between lanes going the same way, double yellow between opposing ones
+    // Dashed white between lanes going the same way, a broken white centre line between opposing ones
     // (nothing across a median or a lane closed off by an obstacle)
     for (let k = 0; k + 1 < lanes.length; k++) {
       const p = lanes[k];
@@ -63,33 +62,21 @@ function buildRoadPaint(scene, network) {
       if (p.dir === q.dir) {
         along(e, mid, 0.13, WHITE, 12, 0.25);
       } else {
-        along(e, mid - 0.12, 0.11, YELLOW);
-        along(e, mid + 0.12, 0.11, YELLOW);
+        along(e, mid, 0.12, WHITE, 9, 0.35);
       }
     }
 
-    // Wide one-way avenues: edge line, then a buffer and a green bike lane along the curb on the side left free
-    if (!back && e.axis === 'ave' && lanes.length >= 4) {
-      for (const [edge, sign] of [[lanes[lanes.length - 1].o + 1.8, 1], [lanes[0].o - 1.8, -1]]) {
-        const curb = sign * e.half;
-        if ((curb - edge) * sign < 3.5) continue;
-        along(e, edge + sign * 0.2, 0.13, WHITE);
-        along(e, curb - sign * 2.4, 0.13, WHITE);
-        along(e, curb - sign * 1.3, 2.0, GREEN);
-      }
-    }
-
-    // Stop bars across the lanes arriving at each stop line, from the centre line (or median) to the curb (none where a
-    // street merely bends: a shape node of the centreline streets)
+    // Stop bars across the lanes arriving at a signalised junction's stop line, from the centre line (or median) to the
+    // curb
     for (const f of back ? [e, back] : [e]) {
-      if (f.to.shape) continue;
+      if (!f.to.signal) continue;
       const left = back ? Math.max(0, f.lanes[0] - 1.8) : -f.half;
       across(f, f.len - 0.35, left + 0.1, f.half - 0.1, 0.45, WHITE);
     }
 
-    // Continental crosswalks curb to curb, between the stop lines and the intersections at both ends
-    if (!e.from.shape) across(e, -CROSSWALK / 2, -e.half, e.half, CROSSWALK - 0.3, WHITE, 1.2, 0.5);
-    if (!e.to.shape) across(e, e.len + CROSSWALK / 2, -e.half, e.half, CROSSWALK - 0.3, WHITE, 1.2, 0.5);
+    // Zebra crossings curb to curb at the signalised junctions, between the stop lines and the junction
+    if (e.from.signal) across(e, -CROSSWALK / 2, -e.half, e.half, CROSSWALK - 0.3, WHITE, 1.2, 0.5);
+    if (e.to.signal) across(e, e.len + CROSSWALK / 2, -e.half, e.half, CROSSWALK - 0.3, WHITE, 1.2, 0.5);
   }
 
   const normal = new Float32Array(position.length);
@@ -111,5 +98,5 @@ function buildRoadPaint(scene, network) {
   return mesh;
 }
 
-Object.assign(window.NYC, { buildRoadPaint });
+Object.assign(window.CITY, { buildRoadPaint });
 })();

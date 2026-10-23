@@ -1,0 +1,4755 @@
+{
+ "$provenance": "Extracted from /Users/johnfewell/code/water/three-stylized-water/src/water/presets.json (norio/three-stylized-water 47cc902, MIT MatrixRex/norio): _note, _demoDefault and the eight presets verbatim; shaderProperties and guidMap left out.",
+ "_note": "CORRECTION 2026-08-11: The original statement 'Do NOT re-apply sRGB->linear conversion' was incorrect. In a Linear color-space project, Unity converts the RGB of Color properties without the [HDR] attribute from sRGB to Linear during GPU upload (alpha is not converted). Direct linear input is correct only for the three [HDR] properties (_Color_Shallow / _Color_Deep / _Specular_Color). Confirmed by measurements from actual Unity renders (predicted murky _SurfFoam_Color (0.515,0.336,0.112) vs measured (0.522,0.342,0.121)). See HDR_COLOR_KEYS / gammaColorToLinear in src/water/uniforms.ts for the port implementation. --- Original note follows --- Colors are stored EXACTLY as serialized in the Unity .mat files. Unity project uses LINEAR color space, so these RGBA values are linear-space floats (HDR colors keep intensity > 1, e.g. _Specular_Color). Do NOT re-apply sRGB->linear conversion. Alpha is used as opacity/blend factor by the shader. 'floats/vectors/colors/textures' contain only properties that exist in the live shader (UberStylizedWater.shader Properties block); everything else found in the .mat is preserved under 'legacy_unused' (leftovers from older shader versions - not sampled by the shipped shader). Texture wrap=repeat, filter=bilinear, mipmaps=on, sRGB=OFF (linear) for all water textures; 'Normal 2.png' is imported as a normal map. Keyword toggles: keywords list = enabled shader_feature keywords. Boolean floats _Enable_SurfaceFoam/_Enable_Intersection/_ConformToGeometry/_WorldSpaceDepth/_Invert_SurfFoam/_InterSec_Foam_Invert/_InterSec_GradientDissolve/_SL_EnableTrail/_ShoreFade are ToggleUI floats (0/1), not keywords.",
+ "_demoDefault": "tropical",
+ "presets": {
+  "anime": {
+   "materialName": "",
+   "keywords": [
+    "_ENABLENORMAL",
+    "_ENABLEPLANERREFLECTION",
+    "_ENABLEREFRACTION",
+    "_ENABLE_UNDERWATERLAYER"
+   ],
+   "floats": {
+    "_1st_Wave_Height": 0.01,
+    "_1st_Wave_Length": 3,
+    "_1st_Wave_Sharpness": 0.3,
+    "_1st_Wave_Speed": 1,
+    "_2nd_Wave_Height": 0.015,
+    "_2nd_Wave_Length": 5,
+    "_2nd_Wave_Sharpness": 0.3,
+    "_2nd_Wave_Speed": 1.3,
+    "_Caustics_Depth": -4,
+    "_Caustics_Distortion_Scale": 2,
+    "_Caustics_Distortion_Strength": 3,
+    "_Caustics_Fade": 5,
+    "_Caustics_Pan": 0.1,
+    "_Caustics_Scale": 1,
+    "_Caustics_Start": 5,
+    "_Caustics_Strength": 4.33,
+    "_ConformToGeometry": 1,
+    "_DistanceMask_Fade": 10,
+    "_DistanceMask_Start": 5,
+    "_ENABLECAUSTICS": 0,
+    "_ENABLENORMAL": 1,
+    "_ENABLEPLANERREFLECTION": 1,
+    "_ENABLEREFRACTION": 1,
+    "_ENABLESHORELINE": 0,
+    "_ENABLEWAVE": 0,
+    "_ENABLE_UNDERWATERLAYER": 1,
+    "_Enable_Intersection": 1,
+    "_Enable_SurfaceFoam": 1,
+    "_InterSec_Dissolve": 1.88,
+    "_InterSec_Edge_Fade": 0,
+    "_InterSec_Foam_Distortion": 0.1,
+    "_InterSec_Foam_Invert": 1,
+    "_InterSec_Foam_Scale": 3.75,
+    "_InterSec_Foam_Smooth": 0,
+    "_InterSec_GradientDissolve": 1,
+    "_InterSec_Width": 0.45,
+    "_Invert_SurfFoam": 0,
+    "_Normal_DistanceStrength": 0.2,
+    "_Normal_Pan": 1.03,
+    "_Normal_Scale": 5,
+    "_Normal_Strength": 0.7,
+    "_QueueControl": 0,
+    "_QueueOffset": 0,
+    "_Reflection_Distortion": 3,
+    "_Reflection_Fresnel": 3.32,
+    "_Reflection_Strength": 1,
+    "_Refraction_Distance_Fade": 0.2,
+    "_Refraction_Distance_Strength": 0.1,
+    "_Refraction_Strength": 2,
+    "_SL_Ammount": 5,
+    "_SL_CenterMask": 0.5,
+    "_SL_CenterMaskFade": 0,
+    "_SL_Dissolve": 0.7,
+    "_SL_EnableTrail": 0,
+    "_SL_GradientDissolve": 0,
+    "_SL_MaskScale": 4,
+    "_SL_Speed": 0.05,
+    "_SL_Thickness": 0.3,
+    "_SL_Trail_Fade": 1,
+    "_SL_WaterDepth": 0.3,
+    "_ShoreFade": 0,
+    "_ShoreFade_Smoothness": 0.2,
+    "_Specular_Hardness": 1,
+    "_Specular_Size": 0.365,
+    "_Specular_Spread": 0.019,
+    "_SurfFoam_AlphaBlend": 0,
+    "_SurfFoam_Edge": 0.277,
+    "_SurfFoam_EdgeSmooth": 0.098,
+    "_SurfFoam_Scale": 3,
+    "_SurfaceDistortion_Scale": 1,
+    "_SurfaceDistortion_Strength": 0.2,
+    "_UnderWater_Depth": -3,
+    "_UnderWater_ScaleModifier": 0,
+    "_UnderWater_Start": 5,
+    "_Underwater_Fade": 15,
+    "_Water_Depth": 0.5,
+    "_WorldSpaceDepth": 1
+   },
+   "vectors": {
+    "_1st_Wave_Direction": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "_2nd_Wave_Direction": [
+     -1,
+     0,
+     1,
+     0
+    ],
+    "_InterSec_Foam_Pan": [
+     0.2,
+     0.5,
+     0,
+     0
+    ],
+    "_InterSec_Foam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SL_MaskPan": [
+     0.01,
+     0,
+     0,
+     0
+    ],
+    "_SL_MaskTile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfFoam_Pan": [
+     0.2,
+     0.1,
+     0,
+     0
+    ],
+    "_SurfFoam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfaceDistortion_Pan": [
+     1,
+     1,
+     0,
+     0
+    ]
+   },
+   "colors": {
+    "_Color_Deep": [
+     0,
+     0.15005267,
+     0.645,
+     1
+    ],
+    "_Color_Shallow": [
+     0.12156862,
+     1,
+     0.9824349,
+     1
+    ],
+    "_InterSec_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_SL_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_ShadowColor": [
+     0,
+     0,
+     0,
+     0.46666667
+    ],
+    "_Specular_Color": [
+     68.5935,
+     68.5935,
+     68.5935,
+     1
+    ],
+    "_SurfFoam_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_Underwater_Color": [
+     0.32941175,
+     0.6156863,
+     0.8117648,
+     0.37254903
+    ],
+    "_Wave_Top_Color": [
+     0.29829118,
+     0.9207434,
+     0.9245283,
+     1
+    ]
+   },
+   "textures": {
+    "_Caustics_Distortion_Map": null,
+    "_Caustics_Map": "Caustic 3.png",
+    "_InterSec_Foam_Mask": "Noise 8.png",
+    "_Normal_Map": "Normal 2.png",
+    "_SL_Dissolve_Mask": null,
+    "_SurfFoam_Map": "Foam 1.png",
+    "_SurfaceDistortion_Map": "Noise 2.png"
+   },
+   "legacy_unused": {
+    "floats": {
+     "_A": 11.3,
+     "_AffectedByMainColor": 1,
+     "_AlphaClip": 0,
+     "_AlphaToMask": 0,
+     "_B": 1,
+     "_Blend": 0,
+     "_BlendModePreserveSpecular": 0,
+     "_Boolean": 1,
+     "_CastShadows": 0,
+     "_CausisticsPan": 0.05,
+     "_CausisticsScale": 3.5,
+     "_CausisticsStrength": 50,
+     "_CausticsDepth": -4,
+     "_CausticsDistortionScale": 3,
+     "_CausticsDistortionStrength": 0.02,
+     "_CausticsFade": 5,
+     "_CausticsFadeSoftness": 5,
+     "_CausticsFadeStart": 2,
+     "_CausticsPan": 0,
+     "_CausticsScale": 1.1,
+     "_CausticsStart": 5,
+     "_CausticsStartDistance": 5,
+     "_CausticsStrength": 100,
+     "_Cull": 2,
+     "_Depth_Distance": 1.26,
+     "_DistanceMaskFade": 15,
+     "_DistanceMaskStart": 17,
+     "_DistanceNormalStrength": 0.01,
+     "_DistanceNormalTile": 5.54,
+     "_DistortionScale": 2,
+     "_DstBlend": 10,
+     "_ENABLEINTERSECTION": 1,
+     "_ENABLESURFACEFOAM": 1,
+     "_ENABLEUNDERWATERLAYER": 1,
+     "_ENVIRONMENTREFLECTIONS_OFF": 1,
+     "_Environment_Reflections": 1,
+     "_FarColorDistance": 20,
+     "_FarColorMaskHardness": 10,
+     "_FarColorStartOffset": 0.08,
+     "_FarDistance": 1.14,
+     "_FarMaskHardness": 50,
+     "_FarNormalStartOffset": 0,
+     "_FarNormalStrength": 0.01,
+     "_FarRefractionStrength": 0,
+     "_Float": 50,
+     "_Float_1": 0.5,
+     "_Float_2": 0.88,
+     "_Float_3": 1.09,
+     "_FoamDistortionScale": 1,
+     "_FoamShaodwFade": 16,
+     "_FoamShaodwRange": 7,
+     "_FresnelAmmount": 4.77,
+     "_FresnelPower": 5,
+     "_FresnelStrength": 1,
+     "_Fresnel_Opacity": 1,
+     "_Fresnel_Power": 10,
+     "_InterSec_Edge_Dissolve": 1,
+     "_IntersectionDistanceCutoff": 2.5,
+     "_IntersectionDistanceDepth": 0.5,
+     "_IntersectionFoamCutoff": 8.6,
+     "_IntersectionFoamCutoff_1": 2,
+     "_IntersectionFoamDepth": 0.98,
+     "_IntersectionFoamDepth_1": 10,
+     "_IntersectionFoamDistortion": 0.24,
+     "_IntersectionFoamFade": 0,
+     "_IntersectionFoamScale": 4.17,
+     "_Intersection_Foam_Fade": 1,
+     "_Intersection_Foam_depth": 0.13,
+     "_Intersection_foam_cutoff": 17.95,
+     "_NormalPan": 0.1,
+     "_NormalStrength": 0.2,
+     "_NormalTile": 4,
+     "_Normal_Tile": 5,
+     "_ParalaxDepth": 30,
+     "_ReceiveShadows": 1,
+     "_ReflectionDistortion": 0.07,
+     "_ReflectionFresnel": 2.24,
+     "_ReflectionFresnelStrength": 1.17,
+     "_Reflection_Fresnel_Strength": 1,
+     "_RefractionFadeDistance": 5,
+     "_RefractionStrength": 0.2,
+     "_Refraction_Distace_Mask": 10,
+     "_RefrectionPan": 0.1,
+     "_RefrectionTile": 5.58,
+     "_SL_Depth": 0.3,
+     "_SL_ExplandNearShore": 0,
+     "_SL_TrailFade": 0,
+     "_ShoreFadeHardness": 0.368,
+     "_ShoreFadeSmoothness": 0.2,
+     "_ShoreLineAmmount": 3.34,
+     "_ShoreLineCenterMask": 2.01,
+     "_ShoreLineCutoff": 0.66,
+     "_ShoreLineCutoffSmooth": 0,
+     "_ShoreLineDepth": 0.51,
+     "_ShoreLineDissolve": 1.5,
+     "_ShoreLineDistance": 1.38,
+     "_ShoreLineDistortion": 0.01,
+     "_ShoreLineEdgeMask": 0.95,
+     "_ShoreLineExpand": -0.23,
+     "_ShoreLineMaskScale": 1.66,
+     "_ShoreLineSpeed": 0,
+     "_ShoreLineThickness": 1.46,
+     "_ShoreLineTile": 4.43,
+     "_ShoreLineWidth": 0.96,
+     "_ShoreLine_Cutoff": 0.27,
+     "_Smoothness": 1,
+     "_Specular_Strength": 50,
+     "_SrcBlend": 5,
+     "_Surface": 1,
+     "_SurfaceDistortionScale": 1.48,
+     "_SurfaceDistortionStrength": 0.1,
+     "_SurfaceFoamDistortion": 0.1,
+     "_SurfaceFoamScale": 2.5,
+     "_SurfaceFomShaodwDepth": 24.99,
+     "_SurfaceFomShaodwDistance": 200,
+     "_SurfaceFomShaodwFade": 16,
+     "_SurfaceFomShaodwRange": 7,
+     "_UnderWaterDepth": -4,
+     "_UnderWaterLayerStart": 5,
+     "_UnderWaterScaleIncrease": 0.7,
+     "_UnderWaterScaleModifier": 1,
+     "_UnderwaterLayerFade": 15,
+     "_WORLDSPACEDEPTH": 1,
+     "_WaterDepth": 0.6,
+     "_WaveHeight": 0.01,
+     "_WaveHeight2nd": 0.01,
+     "_WaveLength": 10,
+     "_WaveLength2nd": 5,
+     "_WaveSharpness": 0.54,
+     "_WaveSharpness2nd": 0.3,
+     "_WaveSpeed": 0.3,
+     "_WaveSpeed2nd": 0.2,
+     "_WorkflowMode": 1,
+     "_ZTest": 4,
+     "_ZWrite": 0,
+     "_ZWriteControl": 0,
+     "_contact_foam_cutoff": 0.17,
+     "_fade": 0.04,
+     "_mask": 0.731,
+     "_max": 1,
+     "_min": 0,
+     "_shoreDistance": 0.731,
+     "_shoreLineAmmount": 0.25,
+     "_shoreLineCutoff": 1.32,
+     "_shoreLineDepth": 0.2,
+     "_shoreLineDissolve": 1.14,
+     "_shoreLineDistortion": 0,
+     "_shoreLineSpeed": -4.3,
+     "_shoreLineThickness": 0,
+     "_shoreLineTile": 4.64,
+     "_shoreLinedistortion": 0,
+     "_shoreLinewidth": 0.115,
+     "_shoreSpeed": 1,
+     "_shoreTile": 9.47,
+     "_speed": 0.25,
+     "_tile": 10,
+     "_width": 0.238
+    },
+    "colorsAndVectors": {
+     "_Deep_Color": [
+      0,
+      0.15303946,
+      1,
+      1
+     ],
+     "_DistanceColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_FarColor": [
+      0.15966535,
+      0.6787135,
+      0.8679245,
+      0
+     ],
+     "_FoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_FresnelColor": [
+      0.2647297,
+      0.116945416,
+      0.82641506,
+      1
+     ],
+     "_IntersectionDistanceTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_IntersectionFoamPan": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_IntersectionFoamTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionTexTile": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_IntersectionTexTile_1": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_Intersection_Foam_Color": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShallowColor": [
+      0,
+      1,
+      0.8971636,
+      1
+     ],
+     "_Shore": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineMaskPan": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_ShoreLineMaskPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_ShoreLineMaskTile": [
+      3,
+      3,
+      0,
+      0
+     ],
+     "_Surface": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceDistortionSpeed": [
+      0.1,
+      0.02,
+      0,
+      0
+     ],
+     "_SurfaceDistortion_Speed": [
+      0.53,
+      0.3,
+      0,
+      0
+     ],
+     "_SurfaceFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceFoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_SurfaceFoamShadowColor": [
+      0,
+      0,
+      0,
+      0.4745098
+     ],
+     "_UnderwaterLayerColor": [
+      0.08870696,
+      0.39086497,
+      0.59599996,
+      0.21176471
+     ],
+     "_Vector2": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_WaveDirection": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "_WaveDirection2nd": [
+      0,
+      0,
+      1,
+      0
+     ],
+     "_WaveTopColor": [
+      1,
+      0.07585351,
+      0,
+      1
+     ],
+     "_maskMinMax": [
+      0,
+      0.78,
+      0,
+      0
+     ],
+     "_shoreTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_shoreTexTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_water": [
+      0.2,
+      0.547062,
+      0.85490197,
+      1
+     ]
+    },
+    "textures": {
+     "_CausticsDistortionMap": null,
+     "_CausticsMap": null,
+     "_CausticticsMap": "MISSING:f1bdaa49db4e069449dd29dc620782b9",
+     "_DistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_IntersectionFoam": "MISSING:b595103ad8871194eb68426c76b1c4b2",
+     "_Intersection_Foam": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_NormalMap": "Normal 3.png",
+     "_SL_DissolveMask": null,
+     "_ShoreLineMask": null,
+     "_SurfFoam_Mask": "Foam 1.png",
+     "_SurfaceDistortionMap": "Noise 2.png",
+     "_SurfaceFoam": "Foam 1.png",
+     "_SurfaceFoamDistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_Texture2D": "MISSING:527f4e79fd08cf248af7a3c0f4972cb5"
+    }
+   }
+  },
+  "clear": {
+   "materialName": "",
+   "keywords": [
+    "_ENABLECAUSTICS",
+    "_ENABLENORMAL",
+    "_ENABLEPLANERREFLECTION",
+    "_ENABLEREFRACTION"
+   ],
+   "floats": {
+    "_1st_Wave_Height": 0.01,
+    "_1st_Wave_Length": 3,
+    "_1st_Wave_Sharpness": 0.3,
+    "_1st_Wave_Speed": 1,
+    "_2nd_Wave_Height": 0.015,
+    "_2nd_Wave_Length": 5,
+    "_2nd_Wave_Sharpness": 0.3,
+    "_2nd_Wave_Speed": 1.3,
+    "_Caustics_Depth": -4,
+    "_Caustics_Distortion_Scale": 2.14,
+    "_Caustics_Distortion_Strength": 3,
+    "_Caustics_Fade": 10,
+    "_Caustics_Pan": 1.3,
+    "_Caustics_Scale": 2.76,
+    "_Caustics_Start": 1,
+    "_Caustics_Strength": 3,
+    "_ConformToGeometry": 0,
+    "_DistanceMask_Fade": 10,
+    "_DistanceMask_Start": 5,
+    "_ENABLECAUSTICS": 1,
+    "_ENABLENORMAL": 1,
+    "_ENABLEPLANERREFLECTION": 1,
+    "_ENABLEREFRACTION": 1,
+    "_ENABLESHORELINE": 0,
+    "_ENABLEWAVE": 0,
+    "_ENABLE_UNDERWATERLAYER": 0,
+    "_Enable_Intersection": 0,
+    "_Enable_SurfaceFoam": 0,
+    "_InterSec_Dissolve": 1.6,
+    "_InterSec_Edge_Fade": 0,
+    "_InterSec_Foam_Distortion": 3,
+    "_InterSec_Foam_Invert": 0,
+    "_InterSec_Foam_Scale": 4,
+    "_InterSec_Foam_Smooth": 0.01,
+    "_InterSec_GradientDissolve": 0,
+    "_InterSec_Width": 0.5,
+    "_Invert_SurfFoam": 0,
+    "_Normal_DistanceStrength": 0.2,
+    "_Normal_Pan": 1.5,
+    "_Normal_Scale": 5,
+    "_Normal_Strength": 0.49,
+    "_QueueControl": 0,
+    "_QueueOffset": 0,
+    "_Reflection_Distortion": 1,
+    "_Reflection_Fresnel": 5,
+    "_Reflection_Strength": 1,
+    "_Refraction_Distance_Fade": 0.5,
+    "_Refraction_Distance_Strength": 0.1,
+    "_Refraction_Strength": 0.2,
+    "_SL_Ammount": 5,
+    "_SL_CenterMask": 0.5,
+    "_SL_CenterMaskFade": 0,
+    "_SL_Dissolve": 0.7,
+    "_SL_EnableTrail": 0,
+    "_SL_GradientDissolve": 0,
+    "_SL_MaskScale": 4,
+    "_SL_Speed": 0.05,
+    "_SL_Thickness": 0.3,
+    "_SL_Trail_Fade": 1,
+    "_SL_WaterDepth": 0.3,
+    "_ShoreFade": 1,
+    "_ShoreFade_Smoothness": 0.353,
+    "_Specular_Hardness": 0,
+    "_Specular_Size": 0,
+    "_Specular_Spread": 0,
+    "_SurfFoam_AlphaBlend": 0,
+    "_SurfFoam_Edge": 0.1,
+    "_SurfFoam_EdgeSmooth": 0.2,
+    "_SurfFoam_Scale": 3,
+    "_SurfaceDistortion_Scale": 1,
+    "_SurfaceDistortion_Strength": 0.03,
+    "_UnderWater_Depth": -4,
+    "_UnderWater_ScaleModifier": 0,
+    "_UnderWater_Start": 5,
+    "_Underwater_Fade": 15,
+    "_Water_Depth": 0.3,
+    "_WorldSpaceDepth": 1
+   },
+   "vectors": {
+    "_1st_Wave_Direction": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "_2nd_Wave_Direction": [
+     -1,
+     0,
+     1,
+     0
+    ],
+    "_InterSec_Foam_Pan": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "_InterSec_Foam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SL_MaskPan": [
+     0.01,
+     0,
+     0,
+     0
+    ],
+    "_SL_MaskTile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfFoam_Pan": [
+     0.01,
+     0.01,
+     0,
+     0
+    ],
+    "_SurfFoam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfaceDistortion_Pan": [
+     1,
+     1,
+     0,
+     0
+    ]
+   },
+   "colors": {
+    "_Color_Deep": [
+     0,
+     0.2541522,
+     0.4507858,
+     0.7019608
+    ],
+    "_Color_Shallow": [
+     0.2269659,
+     0.822786,
+     0.4507858,
+     0
+    ],
+    "_InterSec_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_SL_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_ShadowColor": [
+     0,
+     0,
+     0,
+     0.36078432
+    ],
+    "_Specular_Color": [
+     47.93726,
+     47.93726,
+     47.93726,
+     1
+    ],
+    "_SurfFoam_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_Underwater_Color": [
+     0,
+     0,
+     0,
+     0.5019608
+    ],
+    "_Wave_Top_Color": [
+     0.29829118,
+     0.9207434,
+     0.9245283,
+     1
+    ]
+   },
+   "textures": {
+    "_Caustics_Distortion_Map": "Noise 2.png",
+    "_Caustics_Map": "Caustic 1.png",
+    "_InterSec_Foam_Mask": null,
+    "_Normal_Map": "Normal 1.png",
+    "_SL_Dissolve_Mask": null,
+    "_SurfFoam_Map": null,
+    "_SurfaceDistortion_Map": "Noise 1.png"
+   },
+   "legacy_unused": {
+    "floats": {
+     "_A": 11.3,
+     "_AffectedByMainColor": 1,
+     "_AlphaClip": 0,
+     "_AlphaToMask": 0,
+     "_B": 1,
+     "_Blend": 0,
+     "_BlendModePreserveSpecular": 0,
+     "_Boolean": 1,
+     "_CastShadows": 0,
+     "_CausisticsPan": 0.05,
+     "_CausisticsScale": 3.5,
+     "_CausisticsStrength": 50,
+     "_CausticsDepth": -4,
+     "_CausticsDistortionScale": 5.6,
+     "_CausticsDistortionStrength": 2,
+     "_CausticsFade": 5,
+     "_CausticsFadeSoftness": 5,
+     "_CausticsFadeStart": 2,
+     "_CausticsPan": 0.2,
+     "_CausticsScale": 2.22,
+     "_CausticsStart": 3.24,
+     "_CausticsStartDistance": 5,
+     "_CausticsStrength": 10,
+     "_Cull": 2,
+     "_Depth_Distance": 1.26,
+     "_DistanceMaskFade": 10,
+     "_DistanceMaskStart": 15,
+     "_DistanceNormalStrength": 0.03,
+     "_DistanceNormalTile": 5.54,
+     "_DistortionScale": 2,
+     "_DstBlend": 10,
+     "_ENABLEINTERSECTION": 0,
+     "_ENABLESURFACEFOAM": 0,
+     "_ENABLEUNDERWATERLAYER": 0,
+     "_ENVIRONMENTREFLECTIONS_OFF": 1,
+     "_FarColorDistance": 20,
+     "_FarColorMaskHardness": 10,
+     "_FarColorStartOffset": 0.08,
+     "_FarDistance": 1.14,
+     "_FarMaskHardness": 50,
+     "_FarNormalStartOffset": 0,
+     "_FarNormalStrength": 0.01,
+     "_FarRefractionStrength": 0,
+     "_Float": -13.1,
+     "_Float_1": 5,
+     "_Float_2": 0.88,
+     "_Float_3": 1.09,
+     "_FoamDistortionScale": 1,
+     "_FoamShaodwFade": 16,
+     "_FoamShaodwRange": 7,
+     "_FresnelAmmount": 4.77,
+     "_FresnelPower": 5,
+     "_FresnelStrength": 0,
+     "_Fresnel_Opacity": 1,
+     "_Fresnel_Power": 10,
+     "_InterSec_Edge_Dissolve": 1,
+     "_IntersectionDistanceCutoff": 2.5,
+     "_IntersectionDistanceDepth": 0.5,
+     "_IntersectionFoamCutoff": 5.87,
+     "_IntersectionFoamCutoff_1": 2,
+     "_IntersectionFoamDepth": 1.43,
+     "_IntersectionFoamDepth_1": 10,
+     "_IntersectionFoamDistortion": 0.24,
+     "_IntersectionFoamFade": 0,
+     "_IntersectionFoamScale": 0.79,
+     "_Intersection_Foam_Fade": 1,
+     "_Intersection_Foam_depth": 0.13,
+     "_Intersection_foam_cutoff": 17.95,
+     "_NormalPan": 0.1,
+     "_NormalStrength": 0.15,
+     "_NormalTile": 4,
+     "_Normal_Tile": 5,
+     "_ParalaxDepth": 30,
+     "_ReceiveShadows": 1,
+     "_ReflectionDistortion": 0.08,
+     "_ReflectionFresnel": 3.39,
+     "_ReflectionFresnelStrength": 0.81,
+     "_Reflection_Fresnel_Strength": 1,
+     "_RefractionFadeDistance": 5,
+     "_RefractionStrength": 0.15,
+     "_Refraction_Distace_Mask": 10,
+     "_RefrectionPan": 0.1,
+     "_RefrectionTile": 5.58,
+     "_SL_Depth": 0.3,
+     "_SL_ExplandNearShore": 0,
+     "_SL_TrailFade": 0,
+     "_ShoreFadeHardness": 0.39,
+     "_ShoreFadeSmoothness": 0.136,
+     "_ShoreFade_1": 0,
+     "_ShoreLineAmmount": 3.34,
+     "_ShoreLineCenterMask": 2.01,
+     "_ShoreLineCutoff": 0.66,
+     "_ShoreLineCutoffSmooth": 0,
+     "_ShoreLineDepth": 0.51,
+     "_ShoreLineDissolve": 1.5,
+     "_ShoreLineDistance": 1.38,
+     "_ShoreLineDistortion": 0.01,
+     "_ShoreLineEdgeMask": 0.95,
+     "_ShoreLineExpand": -0.23,
+     "_ShoreLineMaskScale": 1.66,
+     "_ShoreLineSpeed": 0.24,
+     "_ShoreLineThickness": 1.46,
+     "_ShoreLineTile": 4.43,
+     "_ShoreLineWidth": 0.69,
+     "_ShoreLine_Cutoff": 0.27,
+     "_Smoothness": 1,
+     "_Specular_Strength": 29.1,
+     "_SrcBlend": 5,
+     "_Surface": 1,
+     "_SurfaceDistortionScale": 0.25,
+     "_SurfaceDistortionStrength": 0.15,
+     "_SurfaceFoamDistortion": 0.1,
+     "_SurfaceFoamScale": 2,
+     "_SurfaceFomShaodwDepth": 24.99,
+     "_SurfaceFomShaodwDistance": 200,
+     "_SurfaceFomShaodwFade": 16,
+     "_SurfaceFomShaodwRange": 7,
+     "_UnderWaterDepth": 30,
+     "_UnderWaterLayerStart": 5,
+     "_UnderWaterScaleIncrease": 0.7,
+     "_UnderWaterScaleModifier": 1,
+     "_UnderwaterLayerFade": 15,
+     "_WORLDSPACEDEPTH": 1,
+     "_WaterDepth": 0.42,
+     "_WaveHeight": 0.01,
+     "_WaveHeight2nd": 0.01,
+     "_WaveLength": 10,
+     "_WaveLength2nd": 5,
+     "_WaveSharpness": 0.54,
+     "_WaveSharpness2nd": 0.3,
+     "_WaveSpeed": 0.3,
+     "_WaveSpeed2nd": 0.2,
+     "_WorkflowMode": 1,
+     "_ZTest": 4,
+     "_ZWrite": 0,
+     "_ZWriteControl": 0,
+     "_contact_foam_cutoff": 0.17,
+     "_fade": 0.04,
+     "_mask": 0.731,
+     "_max": 1,
+     "_min": 0,
+     "_shoreDistance": 0.731,
+     "_shoreLineAmmount": 0.25,
+     "_shoreLineCutoff": 1.32,
+     "_shoreLineDepth": 0.2,
+     "_shoreLineDissolve": 1.14,
+     "_shoreLineDistortion": 0,
+     "_shoreLineSpeed": -4.3,
+     "_shoreLineThickness": 0,
+     "_shoreLineTile": 4.64,
+     "_shoreLinedistortion": 0,
+     "_shoreLinewidth": 0.115,
+     "_shoreSpeed": 1,
+     "_shoreTile": 9.47,
+     "_speed": 0.25,
+     "_tile": 10,
+     "_width": 0.238
+    },
+    "colorsAndVectors": {
+     "_Deep_Color": [
+      0,
+      0.6745098,
+      0.47963083,
+      0.40392157
+     ],
+     "_DistanceColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_FarColor": [
+      0.15966535,
+      0.6787135,
+      0.8679245,
+      0
+     ],
+     "_FoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_FresnelColor": [
+      0.2647297,
+      0.116945416,
+      0.82641506,
+      1
+     ],
+     "_IntersectionDistanceTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_IntersectionFoamPan": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_IntersectionFoamTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionTexTile": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_IntersectionTexTile_1": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_Intersection_Foam_Color": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShallowColor": [
+      0,
+      0.78431374,
+      0.7110313,
+      0
+     ],
+     "_Shore": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineColor": [
+      1,
+      1,
+      1,
+      0.30588236
+     ],
+     "_ShoreLineMaskPan": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_ShoreLineMaskPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_ShoreLineMaskTile": [
+      3,
+      3,
+      0,
+      0
+     ],
+     "_Surface": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceDistortionSpeed": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_SurfaceDistortion_Speed": [
+      -0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceFoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_SurfaceFoamShadowColor": [
+      0,
+      0,
+      0,
+      0.4745098
+     ],
+     "_UnderwaterLayerColor": [
+      0.08870696,
+      0.39086497,
+      0.59599996,
+      0.21176471
+     ],
+     "_Vector2": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_WaveDirection": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "_WaveDirection2nd": [
+      0,
+      0,
+      1,
+      0
+     ],
+     "_WaveTopColor": [
+      1,
+      0.07585351,
+      0,
+      1
+     ],
+     "_maskMinMax": [
+      0,
+      0.78,
+      0,
+      0
+     ],
+     "_shoreTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_shoreTexTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_water": [
+      0.2,
+      0.547062,
+      0.85490197,
+      1
+     ]
+    },
+    "textures": {
+     "_CausticsDistortionMap": "MISSING:cf657ddf2d7d1fa46b0ae8ddf852a91b",
+     "_CausticsMap": "Caustic 1.png",
+     "_CausticticsMap": "MISSING:f1bdaa49db4e069449dd29dc620782b9",
+     "_DistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_IntersectionFoam": null,
+     "_Intersection_Foam": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_NormalMap": "Normal 1.png",
+     "_SL_DissolveMask": null,
+     "_ShoreLineMask": "MISSING:94f662f432538fd48a8aef898b51f4ac",
+     "_SurfFoam_Mask": null,
+     "_SurfaceDistortionMap": null,
+     "_SurfaceFoam": null,
+     "_SurfaceFoamDistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_Texture2D": "MISSING:527f4e79fd08cf248af7a3c0f4972cb5"
+    }
+   }
+  },
+  "genshin": {
+   "materialName": "",
+   "keywords": [
+    "_ENABLECAUSTICS",
+    "_ENABLENORMAL",
+    "_ENABLEPLANERREFLECTION",
+    "_ENABLEREFRACTION",
+    "_ENABLESHORELINE"
+   ],
+   "floats": {
+    "_1st_Wave_Height": 0.01,
+    "_1st_Wave_Length": 3,
+    "_1st_Wave_Sharpness": 0.3,
+    "_1st_Wave_Speed": 1,
+    "_2nd_Wave_Height": 0.015,
+    "_2nd_Wave_Length": 5,
+    "_2nd_Wave_Sharpness": 0.3,
+    "_2nd_Wave_Speed": 1.3,
+    "_Caustics_Depth": -4,
+    "_Caustics_Distortion_Scale": 2,
+    "_Caustics_Distortion_Strength": 3,
+    "_Caustics_Fade": 5,
+    "_Caustics_Pan": 2,
+    "_Caustics_Scale": 3,
+    "_Caustics_Start": 2,
+    "_Caustics_Strength": 0.5,
+    "_ConformToGeometry": 1,
+    "_DistanceMask_Fade": 10,
+    "_DistanceMask_Start": 5,
+    "_ENABLECAUSTICS": 1,
+    "_ENABLENORMAL": 1,
+    "_ENABLEPLANERREFLECTION": 1,
+    "_ENABLEREFRACTION": 1,
+    "_ENABLESHORELINE": 1,
+    "_ENABLEWAVE": 0,
+    "_ENABLE_UNDERWATERLAYER": 0,
+    "_Enable_Intersection": 0,
+    "_Enable_SurfaceFoam": 0,
+    "_InterSec_Dissolve": 1.6,
+    "_InterSec_Edge_Fade": 0,
+    "_InterSec_Foam_Distortion": 3,
+    "_InterSec_Foam_Invert": 0,
+    "_InterSec_Foam_Scale": 4,
+    "_InterSec_Foam_Smooth": 0.01,
+    "_InterSec_GradientDissolve": 0,
+    "_InterSec_Width": 0.5,
+    "_Invert_SurfFoam": 0,
+    "_Normal_DistanceStrength": 0.2,
+    "_Normal_Pan": 1.3,
+    "_Normal_Scale": 3,
+    "_Normal_Strength": 0.7,
+    "_QueueControl": 0,
+    "_QueueOffset": 0,
+    "_Reflection_Distortion": 2.57,
+    "_Reflection_Fresnel": 6,
+    "_Reflection_Strength": 0.813,
+    "_Refraction_Distance_Fade": 0.5,
+    "_Refraction_Distance_Strength": 0.1,
+    "_Refraction_Strength": 0.5,
+    "_SL_Ammount": 5,
+    "_SL_CenterMask": 0.505,
+    "_SL_CenterMaskFade": 0.351,
+    "_SL_Dissolve": 1.17,
+    "_SL_EnableTrail": 0,
+    "_SL_GradientDissolve": 0.44,
+    "_SL_MaskScale": 0.91,
+    "_SL_Speed": -0.5,
+    "_SL_Thickness": 0.333,
+    "_SL_Trail_Fade": 0,
+    "_SL_WaterDepth": 0.5,
+    "_ShoreFade": 1,
+    "_ShoreFade_Smoothness": 0.167,
+    "_Specular_Hardness": 1,
+    "_Specular_Size": 0.479,
+    "_Specular_Spread": 0,
+    "_SurfFoam_AlphaBlend": 0,
+    "_SurfFoam_Edge": 0.1,
+    "_SurfFoam_EdgeSmooth": 0.2,
+    "_SurfFoam_Scale": 3,
+    "_SurfaceDistortion_Scale": 1,
+    "_SurfaceDistortion_Strength": 0.03,
+    "_UnderWater_Depth": -4,
+    "_UnderWater_ScaleModifier": 0,
+    "_UnderWater_Start": 5,
+    "_Underwater_Fade": 15,
+    "_Water_Depth": 0.3,
+    "_WorldSpaceDepth": 1
+   },
+   "vectors": {
+    "_1st_Wave_Direction": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "_2nd_Wave_Direction": [
+     -1,
+     0,
+     1,
+     0
+    ],
+    "_InterSec_Foam_Pan": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "_InterSec_Foam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SL_MaskPan": [
+     0.1,
+     0.01,
+     0,
+     0
+    ],
+    "_SL_MaskTile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfFoam_Pan": [
+     0.01,
+     0.01,
+     0,
+     0
+    ],
+    "_SurfFoam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfaceDistortion_Pan": [
+     1,
+     1,
+     0,
+     0
+    ]
+   },
+   "colors": {
+    "_Color_Deep": [
+     0,
+     0.52707064,
+     0.65199995,
+     0.78039217
+    ],
+    "_Color_Shallow": [
+     0,
+     0.695,
+     0.3670224,
+     0.09803922
+    ],
+    "_InterSec_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_SL_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_ShadowColor": [
+     0,
+     0,
+     0,
+     0.23529412
+    ],
+    "_Specular_Color": [
+     23.96863,
+     23.96863,
+     23.96863,
+     1
+    ],
+    "_SurfFoam_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_Underwater_Color": [
+     0,
+     0,
+     0,
+     0.5019608
+    ],
+    "_Wave_Top_Color": [
+     0.29829118,
+     0.9207434,
+     0.9245283,
+     1
+    ]
+   },
+   "textures": {
+    "_Caustics_Distortion_Map": "Noise 1.png",
+    "_Caustics_Map": "Caustic 2.png",
+    "_InterSec_Foam_Mask": null,
+    "_Normal_Map": "Normal 3.png",
+    "_SL_Dissolve_Mask": "Noise 1.png",
+    "_SurfFoam_Map": null,
+    "_SurfaceDistortion_Map": null
+   },
+   "legacy_unused": {
+    "floats": {
+     "_A": 11.3,
+     "_AffectedByMainColor": 1,
+     "_AlphaClip": 0,
+     "_AlphaToMask": 0,
+     "_B": 1,
+     "_Blend": 0,
+     "_BlendModePreserveSpecular": 0,
+     "_Boolean": 1,
+     "_CastShadows": 0,
+     "_CausisticsPan": 0.05,
+     "_CausisticsScale": 3.5,
+     "_CausisticsStrength": 50,
+     "_CausticsDepth": -4,
+     "_CausticsDistortionScale": 2,
+     "_CausticsDistortionStrength": 14.13,
+     "_CausticsFade": 5,
+     "_CausticsFadeSoftness": 5,
+     "_CausticsFadeStart": 2,
+     "_CausticsPan": 0.1,
+     "_CausticsScale": 3.33,
+     "_CausticsStart": 1.36,
+     "_CausticsStartDistance": 5,
+     "_CausticsStrength": 1.49,
+     "_Cull": 2,
+     "_Depth_Distance": 1.26,
+     "_DistanceMaskFade": 10,
+     "_DistanceMaskStart": 15,
+     "_DistanceNormalStrength": 0.01,
+     "_DistanceNormalTile": 5.54,
+     "_DistortionScale": 2,
+     "_DstBlend": 10,
+     "_ENABLEINTERSECTION": 0,
+     "_ENABLESURFACEFOAM": 0,
+     "_ENABLEUNDERWATERLAYER": 0,
+     "_ENVIRONMENTREFLECTIONS_OFF": 1,
+     "_FarColorDistance": 20,
+     "_FarColorMaskHardness": 10,
+     "_FarColorStartOffset": 0.08,
+     "_FarDistance": 1.14,
+     "_FarMaskHardness": 50,
+     "_FarNormalStartOffset": 0,
+     "_FarNormalStrength": 0.01,
+     "_FarRefractionStrength": 0.2,
+     "_Float": 10,
+     "_Float_1": 5,
+     "_Float_2": 0.88,
+     "_Float_3": 1.09,
+     "_FoamDistortionScale": 1,
+     "_FoamShaodwFade": 16,
+     "_FoamShaodwRange": 7,
+     "_FresnelAmmount": 4.77,
+     "_FresnelPower": 5,
+     "_FresnelStrength": 0,
+     "_Fresnel_Opacity": 1,
+     "_Fresnel_Power": 10,
+     "_InterSec_Edge_Dissolve": 1,
+     "_IntersectionDistanceCutoff": 2.5,
+     "_IntersectionDistanceDepth": 0.5,
+     "_IntersectionFoamCutoff": 1,
+     "_IntersectionFoamCutoff_1": 2,
+     "_IntersectionFoamDepth": 5,
+     "_IntersectionFoamDepth_1": 10,
+     "_IntersectionFoamDistortion": 0,
+     "_IntersectionFoamFade": 0,
+     "_IntersectionFoamScale": 1,
+     "_Intersection_Foam_Fade": 1,
+     "_Intersection_Foam_depth": 0.13,
+     "_Intersection_foam_cutoff": 17.95,
+     "_NormalPan": 0.1,
+     "_NormalStrength": 0.78,
+     "_NormalTile": 5,
+     "_Normal_Tile": 5,
+     "_ParalaxDepth": 30,
+     "_ReceiveShadows": 1,
+     "_ReflectionDistortion": 0,
+     "_ReflectionFresnel": 4.91,
+     "_ReflectionFresnelStrength": 0.8,
+     "_RefractionFadeDistance": 0.5,
+     "_RefractionStrength": 1,
+     "_Refraction_Distace_Mask": 0.5,
+     "_RefrectionPan": 0.1,
+     "_RefrectionTile": 5.58,
+     "_SL_Depth": 0.47,
+     "_SL_ExplandNearShore": -0.635,
+     "_SL_TrailFade": 0,
+     "_ShoreFadeHardness": 0.529,
+     "_ShoreFadeSmoothness": 0.2,
+     "_ShoreFade_1": 0,
+     "_ShoreLineAmmount": 3.47,
+     "_ShoreLineCenterMask": 2.01,
+     "_ShoreLineCutoff": 0.66,
+     "_ShoreLineCutoffSmooth": 0,
+     "_ShoreLineDepth": 0.13,
+     "_ShoreLineDissolve": 0.69,
+     "_ShoreLineDistance": 1.06,
+     "_ShoreLineDistortion": 0.01,
+     "_ShoreLineEdgeMask": 0.95,
+     "_ShoreLineExpand": 0.44,
+     "_ShoreLineMaskScale": 1,
+     "_ShoreLineSpeed": 0.3,
+     "_ShoreLineThickness": 1.46,
+     "_ShoreLineTile": 4.43,
+     "_ShoreLineWidth": 0.91,
+     "_ShoreLine_Cutoff": 0.27,
+     "_Smoothness": 1,
+     "_Specular_Strength": 20,
+     "_SrcBlend": 5,
+     "_Surface": 1,
+     "_SurfaceDistortionScale": 1.48,
+     "_SurfaceDistortionStrength": 0.01,
+     "_SurfaceFoamDistortion": 0.1,
+     "_SurfaceFoamScale": 2,
+     "_SurfaceFomShaodwDepth": 24.99,
+     "_SurfaceFomShaodwDistance": 200,
+     "_SurfaceFomShaodwFade": 16,
+     "_SurfaceFomShaodwRange": 7,
+     "_UnderWaterDepth": 30,
+     "_UnderWaterLayerStart": 5,
+     "_UnderWaterScaleModifier": 1,
+     "_UnderwaterLayerFade": 15,
+     "_WORLDSPACEDEPTH": 1,
+     "_WaterDepth": 0.4,
+     "_WaveHeight": 0.01,
+     "_WaveHeight2nd": 0.01,
+     "_WaveLength": 10,
+     "_WaveLength2nd": 5,
+     "_WaveSharpness": 0.54,
+     "_WaveSharpness2nd": 0.3,
+     "_WaveSpeed": 0.3,
+     "_WaveSpeed2nd": 0.2,
+     "_WorkflowMode": 1,
+     "_ZTest": 4,
+     "_ZWrite": 0,
+     "_ZWriteControl": 0,
+     "_contact_foam_cutoff": 0.17,
+     "_fade": 0.04,
+     "_mask": 0.731,
+     "_max": 1,
+     "_min": 0,
+     "_shoreDistance": 0.731,
+     "_shoreLineAmmount": 0.25,
+     "_shoreLineCutoff": 1.32,
+     "_shoreLineDepth": 0.2,
+     "_shoreLineDissolve": 1.14,
+     "_shoreLineDistortion": 0,
+     "_shoreLineSpeed": -4.3,
+     "_shoreLineThickness": 0,
+     "_shoreLineTile": 4.64,
+     "_shoreLinedistortion": 0,
+     "_shoreLinewidth": 0.115,
+     "_shoreSpeed": 1,
+     "_shoreTile": 9.47,
+     "_speed": 0.25,
+     "_tile": 10,
+     "_width": 0.238
+    },
+    "colorsAndVectors": {
+     "_Deep_Color": [
+      0.020447353,
+      0.2658158,
+      0.518,
+      1
+     ],
+     "_DistanceColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_FarColor": [
+      0.15966535,
+      0.6787135,
+      0.8679245,
+      0
+     ],
+     "_FoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_FresnelColor": [
+      0.2647297,
+      0.116945416,
+      0.82641506,
+      1
+     ],
+     "_IntersectionDistanceTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_IntersectionFoamPan": [
+      0.2,
+      0,
+      0,
+      0
+     ],
+     "_IntersectionFoamTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionTexTile": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_IntersectionTexTile_1": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_Intersection_Foam_Color": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShallowColor": [
+      0,
+      1,
+      0.41724777,
+      0.4117647
+     ],
+     "_Shore": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineMaskPan": [
+      0.02,
+      0.02,
+      0,
+      0
+     ],
+     "_ShoreLineMaskPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_ShoreLineMaskTile": [
+      3,
+      3,
+      0,
+      0
+     ],
+     "_Surface": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceDistortion_Speed": [
+      -0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceFoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamPanning": [
+      0.01,
+      -0.01,
+      0,
+      0
+     ],
+     "_SurfaceFoamShadowColor": [
+      0,
+      0,
+      0,
+      0.4745098
+     ],
+     "_UnderwaterLayerColor": [
+      0.2075471,
+      0.2075471,
+      0.2075471,
+      0.35686275
+     ],
+     "_WaveDirection": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "_WaveDirection2nd": [
+      0,
+      0,
+      1,
+      0
+     ],
+     "_WaveTopColor": [
+      1,
+      0.07585351,
+      0,
+      1
+     ],
+     "_maskMinMax": [
+      0,
+      0.78,
+      0,
+      0
+     ],
+     "_shoreTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_shoreTexTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_water": [
+      0.2,
+      0.547062,
+      0.85490197,
+      1
+     ]
+    },
+    "textures": {
+     "_CausticsDistortionMap": "Noise 1.png",
+     "_CausticsMap": "Caustic 2.png",
+     "_CausticticsMap": "MISSING:f1bdaa49db4e069449dd29dc620782b9",
+     "_DistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_IntersectionFoam": null,
+     "_Intersection_Foam": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_NormalMap": "Normal 2.png",
+     "_SL_DissolveMask": "Noise 2.png",
+     "_ShoreLineMask": "MISSING:c72d922ee274bad448e1a544dfad5adf",
+     "_SurfFoam_Mask": null,
+     "_SurfaceDistortionMap": null,
+     "_SurfaceFoam": null,
+     "_SurfaceFoamDistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_Texture2D": "MISSING:527f4e79fd08cf248af7a3c0f4972cb5"
+    }
+   }
+  },
+  "murky": {
+   "materialName": "",
+   "keywords": [
+    "_ENABLENORMAL",
+    "_ENABLEPLANERREFLECTION",
+    "_ENABLEREFRACTION",
+    "_ENABLE_UNDERWATERLAYER"
+   ],
+   "floats": {
+    "_1st_Wave_Height": 0.01,
+    "_1st_Wave_Length": 3,
+    "_1st_Wave_Sharpness": 0.3,
+    "_1st_Wave_Speed": 1,
+    "_2nd_Wave_Height": 0.015,
+    "_2nd_Wave_Length": 5,
+    "_2nd_Wave_Sharpness": 0.3,
+    "_2nd_Wave_Speed": 1.3,
+    "_Caustics_Depth": -4,
+    "_Caustics_Distortion_Scale": 2,
+    "_Caustics_Distortion_Strength": 3,
+    "_Caustics_Fade": 5,
+    "_Caustics_Pan": 0.1,
+    "_Caustics_Scale": 1,
+    "_Caustics_Start": 5,
+    "_Caustics_Strength": 1,
+    "_ConformToGeometry": 0,
+    "_DistanceMask_Fade": 10,
+    "_DistanceMask_Start": 5,
+    "_ENABLECAUSTICS": 0,
+    "_ENABLENORMAL": 1,
+    "_ENABLEPLANERREFLECTION": 1,
+    "_ENABLEREFRACTION": 1,
+    "_ENABLESHORELINE": 0,
+    "_ENABLEWAVE": 0,
+    "_ENABLE_UNDERWATERLAYER": 1,
+    "_Enable_Intersection": 0,
+    "_Enable_SurfaceFoam": 1,
+    "_InterSec_Dissolve": 1.6,
+    "_InterSec_Edge_Fade": 0,
+    "_InterSec_Foam_Distortion": 3,
+    "_InterSec_Foam_Invert": 0,
+    "_InterSec_Foam_Scale": 4,
+    "_InterSec_Foam_Smooth": 0.01,
+    "_InterSec_GradientDissolve": 0,
+    "_InterSec_Width": 0.5,
+    "_Invert_SurfFoam": 1,
+    "_Normal_DistanceStrength": 0.15,
+    "_Normal_Pan": 1.5,
+    "_Normal_Scale": 5,
+    "_Normal_Strength": 0.32,
+    "_QueueControl": 0,
+    "_QueueOffset": 0,
+    "_Reflection_Distortion": 3.5,
+    "_Reflection_Fresnel": 8,
+    "_Reflection_Strength": 1,
+    "_Refraction_Distance_Fade": 0.5,
+    "_Refraction_Distance_Strength": 0.1,
+    "_Refraction_Strength": 0.5,
+    "_SL_Ammount": 5,
+    "_SL_CenterMask": 0.5,
+    "_SL_CenterMaskFade": 0,
+    "_SL_Dissolve": 0.7,
+    "_SL_EnableTrail": 0,
+    "_SL_GradientDissolve": 0,
+    "_SL_MaskScale": 4,
+    "_SL_Speed": 0.05,
+    "_SL_Thickness": 0.3,
+    "_SL_Trail_Fade": 1,
+    "_SL_WaterDepth": 0.3,
+    "_ShoreFade": 1,
+    "_ShoreFade_Smoothness": 0.442,
+    "_Specular_Hardness": 0.481,
+    "_Specular_Size": 0.269,
+    "_Specular_Spread": 0.144,
+    "_SurfFoam_AlphaBlend": 1,
+    "_SurfFoam_Edge": 0.354,
+    "_SurfFoam_EdgeSmooth": 0.236,
+    "_SurfFoam_Scale": 2.2,
+    "_SurfaceDistortion_Scale": 13.46,
+    "_SurfaceDistortion_Strength": 0.24,
+    "_UnderWater_Depth": -2,
+    "_UnderWater_ScaleModifier": 0,
+    "_UnderWater_Start": 5,
+    "_Underwater_Fade": 15,
+    "_Water_Depth": 0.3,
+    "_WorldSpaceDepth": 1
+   },
+   "vectors": {
+    "_1st_Wave_Direction": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "_2nd_Wave_Direction": [
+     -1,
+     0,
+     1,
+     0
+    ],
+    "_InterSec_Foam_Pan": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "_InterSec_Foam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SL_MaskPan": [
+     0.01,
+     0,
+     0,
+     0
+    ],
+    "_SL_MaskTile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfFoam_Pan": [
+     -0.2,
+     0,
+     0,
+     0
+    ],
+    "_SurfFoam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfaceDistortion_Pan": [
+     0.5,
+     0.3,
+     0,
+     0
+    ]
+   },
+   "colors": {
+    "_Color_Deep": [
+     0.341,
+     0.13326436,
+     0.109747104,
+     1
+    ],
+    "_Color_Shallow": [
+     0.6132076,
+     0.4806971,
+     0.21693665,
+     1
+    ],
+    "_InterSec_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_SL_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_ShadowColor": [
+     0,
+     0,
+     0,
+     0.5803922
+    ],
+    "_Specular_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_SurfFoam_Color": [
+     0.745283,
+     0.6149609,
+     0.36912602,
+     1
+    ],
+    "_Underwater_Color": [
+     0.4245283,
+     0.1297809,
+     0.038047336,
+     0.5019608
+    ],
+    "_Wave_Top_Color": [
+     0.29829118,
+     0.9207434,
+     0.9245283,
+     1
+    ]
+   },
+   "textures": {
+    "_Caustics_Distortion_Map": null,
+    "_Caustics_Map": null,
+    "_InterSec_Foam_Mask": null,
+    "_Normal_Map": "Normal 2.png",
+    "_SL_Dissolve_Mask": null,
+    "_SurfFoam_Map": "Noise 7.png",
+    "_SurfaceDistortion_Map": "Noise 7.png"
+   },
+   "legacy_unused": {
+    "floats": {
+     "_A": 11.3,
+     "_AffectedByMainColor": 1,
+     "_AlphaClip": 0,
+     "_AlphaToMask": 0,
+     "_B": 1,
+     "_Blend": 0,
+     "_BlendModePreserveSpecular": 0,
+     "_Boolean": 1,
+     "_CastShadows": 0,
+     "_CausisticsPan": 0.05,
+     "_CausisticsScale": 3.5,
+     "_CausisticsStrength": 50,
+     "_CausticsDepth": 30,
+     "_CausticsDistortionScale": 3,
+     "_CausticsDistortionStrength": 0.02,
+     "_CausticsFade": 5,
+     "_CausticsFadeSoftness": 5,
+     "_CausticsFadeStart": 2,
+     "_CausticsPan": 0.05,
+     "_CausticsScale": 1.1,
+     "_CausticsStart": 5,
+     "_CausticsStartDistance": 5,
+     "_CausticsStrength": 50,
+     "_Cull": 2,
+     "_Depth_Distance": 1.26,
+     "_DistanceMaskFade": 10,
+     "_DistanceMaskStart": 15,
+     "_DistanceNormalStrength": 0.01,
+     "_DistanceNormalTile": 5.54,
+     "_DistortionScale": 2,
+     "_DstBlend": 10,
+     "_ENABLEINTERSECTION": 0,
+     "_ENABLESURFACEFOAM": 1,
+     "_ENABLEUNDERWATERLAYER": 1,
+     "_ENVIRONMENTREFLECTIONS_OFF": 1,
+     "_FarColorDistance": 20,
+     "_FarColorMaskHardness": 10,
+     "_FarColorStartOffset": 0.08,
+     "_FarDistance": 1.14,
+     "_FarMaskHardness": 50,
+     "_FarNormalStartOffset": 0,
+     "_FarNormalStrength": 0.01,
+     "_FarRefractionStrength": 0,
+     "_Float": 10,
+     "_Float_1": 5,
+     "_Float_2": 0.88,
+     "_Float_3": 1.09,
+     "_FoamDistortionScale": 1,
+     "_FoamShaodwFade": 16,
+     "_FoamShaodwRange": 7,
+     "_FresnelAmmount": 4.77,
+     "_FresnelPower": 5,
+     "_FresnelStrength": 0,
+     "_Fresnel_Opacity": 1,
+     "_Fresnel_Power": 10,
+     "_InterSec_Edge_Dissolve": 1,
+     "_IntersectionDistanceCutoff": 2.5,
+     "_IntersectionDistanceDepth": 0.5,
+     "_IntersectionFoamCutoff": 4.04,
+     "_IntersectionFoamCutoff_1": 2,
+     "_IntersectionFoamDepth": 0.91,
+     "_IntersectionFoamDepth_1": 10,
+     "_IntersectionFoamDistortion": 0.1,
+     "_IntersectionFoamFade": 0,
+     "_IntersectionFoamScale": 6.89,
+     "_Intersection_Foam_Fade": 1,
+     "_Intersection_Foam_depth": 0.13,
+     "_Intersection_foam_cutoff": 17.95,
+     "_NormalPan": 0.05,
+     "_NormalStrength": 0.14,
+     "_NormalTile": 7.78,
+     "_Normal_Tile": 4,
+     "_ParalaxDepth": 30,
+     "_ReceiveShadows": 1,
+     "_ReflectionDistortion": 0.16,
+     "_ReflectionFresnel": 5.6,
+     "_ReflectionFresnelStrength": 0.67,
+     "_RefractionFadeDistance": 5,
+     "_RefractionStrength": 0.2,
+     "_Refraction_Distace_Mask": 10,
+     "_RefrectionPan": 0.1,
+     "_RefrectionTile": 5.58,
+     "_SL_Depth": 0.3,
+     "_SL_ExplandNearShore": 0,
+     "_SL_TrailFade": 0,
+     "_ShoreFadeHardness": 0.426,
+     "_ShoreFadeSmoothness": 0.2,
+     "_ShoreFade_1": 0,
+     "_ShoreLineAmmount": 3.34,
+     "_ShoreLineCenterMask": 2.01,
+     "_ShoreLineCutoff": 0.66,
+     "_ShoreLineCutoffSmooth": 0,
+     "_ShoreLineDepth": 0.51,
+     "_ShoreLineDissolve": 1.5,
+     "_ShoreLineDistance": 1.38,
+     "_ShoreLineDistortion": 0.01,
+     "_ShoreLineEdgeMask": 0.95,
+     "_ShoreLineExpand": -0.23,
+     "_ShoreLineMaskScale": 1.66,
+     "_ShoreLineSpeed": 0,
+     "_ShoreLineThickness": 1.46,
+     "_ShoreLineTile": 4.43,
+     "_ShoreLineWidth": 0.96,
+     "_ShoreLine_Cutoff": 0.27,
+     "_Smoothness": 0.979,
+     "_Specular_Strength": 10,
+     "_SrcBlend": 5,
+     "_Surface": 1,
+     "_SurfaceDistortionScale": 3.72,
+     "_SurfaceDistortionStrength": 0.03,
+     "_SurfaceFoamDistortion": 0.1,
+     "_SurfaceFoamScale": 0.99,
+     "_SurfaceFomShaodwDepth": 24.99,
+     "_SurfaceFomShaodwDistance": 200,
+     "_SurfaceFomShaodwFade": 16,
+     "_SurfaceFomShaodwRange": 7,
+     "_UnderWaterDepth": -1,
+     "_UnderWaterLayerStart": 5,
+     "_UnderWaterScaleIncrease": 0.7,
+     "_UnderWaterScaleModifier": 1,
+     "_UnderwaterLayerFade": 15,
+     "_WORLDSPACEDEPTH": 1,
+     "_WaterDepth": 0.17,
+     "_WaveHeight": 0.01,
+     "_WaveHeight2nd": 0.01,
+     "_WaveLength": 10,
+     "_WaveLength2nd": 5,
+     "_WaveSharpness": 0.54,
+     "_WaveSharpness2nd": 0.3,
+     "_WaveSpeed": 0.3,
+     "_WaveSpeed2nd": 0.2,
+     "_WorkflowMode": 1,
+     "_ZTest": 4,
+     "_ZWrite": 0,
+     "_ZWriteControl": 0,
+     "_contact_foam_cutoff": 0.17,
+     "_fade": 0.04,
+     "_mask": 0.731,
+     "_max": 1,
+     "_min": 0,
+     "_shoreDistance": 0.731,
+     "_shoreLineAmmount": 0.25,
+     "_shoreLineCutoff": 1.32,
+     "_shoreLineDepth": 0.2,
+     "_shoreLineDissolve": 1.14,
+     "_shoreLineDistortion": 0,
+     "_shoreLineSpeed": -4.3,
+     "_shoreLineThickness": 0,
+     "_shoreLineTile": 4.64,
+     "_shoreLinedistortion": 0,
+     "_shoreLinewidth": 0.115,
+     "_shoreSpeed": 1,
+     "_shoreTile": 9.47,
+     "_speed": 0.25,
+     "_tile": 10,
+     "_width": 0.238
+    },
+    "colorsAndVectors": {
+     "_Deep_Color": [
+      0.2924528,
+      0.09355912,
+      0.056559265,
+      1
+     ],
+     "_DistanceColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_FarColor": [
+      0.15966535,
+      0.6787135,
+      0.8679245,
+      0
+     ],
+     "_FoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_FresnelColor": [
+      0.2647297,
+      0.116945416,
+      0.82641506,
+      1
+     ],
+     "_IntersectionDistanceTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionFoamColor": [
+      1,
+      0.94407684,
+      0.4198113,
+      0.89411765
+     ],
+     "_IntersectionFoamPan": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionFoamTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionTexTile": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_IntersectionTexTile_1": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_Intersection_Foam_Color": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShallowColor": [
+      0.2901961,
+      0.25715244,
+      0.054901965,
+      0.3882353
+     ],
+     "_Shore": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineMaskPan": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_ShoreLineMaskPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_ShoreLineMaskTile": [
+      3,
+      3,
+      0,
+      0
+     ],
+     "_Surface": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceDistortionSpeed": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_SurfaceDistortion_Speed": [
+      0.2,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamColor": [
+      0.8113208,
+      0.72542626,
+      0.4247953,
+      1
+     ],
+     "_SurfaceFoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamPanning": [
+      -0.05,
+      -0.03,
+      0,
+      0
+     ],
+     "_SurfaceFoamShadowColor": [
+      0,
+      0,
+      0,
+      0.4745098
+     ],
+     "_UnderwaterLayerColor": [
+      0.1509434,
+      0.07861827,
+      0.050551802,
+      1
+     ],
+     "_WaveDirection": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "_WaveDirection2nd": [
+      0,
+      0,
+      1,
+      0
+     ],
+     "_WaveTopColor": [
+      1,
+      0.07585351,
+      0,
+      1
+     ],
+     "_maskMinMax": [
+      0,
+      0.78,
+      0,
+      0
+     ],
+     "_shoreTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_shoreTexTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_water": [
+      0.2,
+      0.547062,
+      0.85490197,
+      1
+     ]
+    },
+    "textures": {
+     "_CausticsDistortionMap": null,
+     "_CausticsMap": null,
+     "_CausticticsMap": "MISSING:f1bdaa49db4e069449dd29dc620782b9",
+     "_DistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_IntersectionFoam": null,
+     "_Intersection_Foam": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_NormalMap": "Normal 2.png",
+     "_SL_DissolveMask": null,
+     "_ShoreLineMask": null,
+     "_SurfFoam_Mask": "Noise 3.png",
+     "_SurfaceDistortionMap": "Noise 7.png",
+     "_SurfaceFoam": "Noise 3.png",
+     "_SurfaceFoamDistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_Texture2D": "MISSING:527f4e79fd08cf248af7a3c0f4972cb5"
+    }
+   }
+  },
+  "oldschool": {
+   "materialName": "",
+   "keywords": [
+    "_ENABLEPLANERREFLECTION",
+    "_ENABLE_UNDERWATERLAYER"
+   ],
+   "floats": {
+    "_1st_Wave_Height": 0.01,
+    "_1st_Wave_Length": 3,
+    "_1st_Wave_Sharpness": 0.3,
+    "_1st_Wave_Speed": 1,
+    "_2nd_Wave_Height": 0.015,
+    "_2nd_Wave_Length": 5,
+    "_2nd_Wave_Sharpness": 0.3,
+    "_2nd_Wave_Speed": 1.3,
+    "_Caustics_Depth": -4,
+    "_Caustics_Distortion_Scale": 2,
+    "_Caustics_Distortion_Strength": 3,
+    "_Caustics_Fade": 5,
+    "_Caustics_Pan": 0.1,
+    "_Caustics_Scale": 1,
+    "_Caustics_Start": 5,
+    "_Caustics_Strength": 1,
+    "_ConformToGeometry": 0,
+    "_DistanceMask_Fade": 10,
+    "_DistanceMask_Start": 5,
+    "_ENABLECAUSTICS": 0,
+    "_ENABLENORMAL": 0,
+    "_ENABLEPLANERREFLECTION": 1,
+    "_ENABLEREFRACTION": 0,
+    "_ENABLESHORELINE": 0,
+    "_ENABLEWAVE": 0,
+    "_ENABLE_UNDERWATERLAYER": 1,
+    "_Enable_Intersection": 1,
+    "_Enable_SurfaceFoam": 1,
+    "_InterSec_Dissolve": 2,
+    "_InterSec_Edge_Fade": 0,
+    "_InterSec_Foam_Distortion": 0.5,
+    "_InterSec_Foam_Invert": 0,
+    "_InterSec_Foam_Scale": 4,
+    "_InterSec_Foam_Smooth": 0.02,
+    "_InterSec_GradientDissolve": 1,
+    "_InterSec_Width": 1.06,
+    "_Invert_SurfFoam": 0,
+    "_Normal_DistanceStrength": 0.01,
+    "_Normal_Pan": 0.1,
+    "_Normal_Scale": 5,
+    "_Normal_Strength": 0.1,
+    "_QueueControl": 0,
+    "_QueueOffset": 0,
+    "_Reflection_Distortion": 0,
+    "_Reflection_Fresnel": 4,
+    "_Reflection_Strength": 1,
+    "_Refraction_Distance_Fade": 0.5,
+    "_Refraction_Distance_Strength": 0.1,
+    "_Refraction_Strength": 0.5,
+    "_SL_Ammount": 5,
+    "_SL_CenterMask": 0.5,
+    "_SL_CenterMaskFade": 0,
+    "_SL_Dissolve": 0.7,
+    "_SL_EnableTrail": 0,
+    "_SL_GradientDissolve": 0,
+    "_SL_MaskScale": 4,
+    "_SL_Speed": 0.05,
+    "_SL_Thickness": 0.3,
+    "_SL_Trail_Fade": 1,
+    "_SL_WaterDepth": 0.3,
+    "_ShoreFade": 0,
+    "_ShoreFade_Smoothness": 0.2,
+    "_Specular_Hardness": 0,
+    "_Specular_Size": 1,
+    "_Specular_Spread": 0,
+    "_SurfFoam_AlphaBlend": 0,
+    "_SurfFoam_Edge": 0.063,
+    "_SurfFoam_EdgeSmooth": 0.03,
+    "_SurfFoam_Scale": 3,
+    "_SurfaceDistortion_Scale": 1,
+    "_SurfaceDistortion_Strength": 0.1,
+    "_UnderWater_Depth": 0,
+    "_UnderWater_ScaleModifier": -1,
+    "_UnderWater_Start": 5,
+    "_Underwater_Fade": 15,
+    "_Water_Depth": 0.3,
+    "_WorldSpaceDepth": 1
+   },
+   "vectors": {
+    "_1st_Wave_Direction": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "_2nd_Wave_Direction": [
+     -1,
+     0,
+     1,
+     0
+    ],
+    "_InterSec_Foam_Pan": [
+     -0.2,
+     0,
+     0,
+     0
+    ],
+    "_InterSec_Foam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SL_MaskPan": [
+     0.01,
+     0,
+     0,
+     0
+    ],
+    "_SL_MaskTile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfFoam_Pan": [
+     0.01,
+     0.01,
+     0,
+     0
+    ],
+    "_SurfFoam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfaceDistortion_Pan": [
+     1,
+     1,
+     0,
+     0
+    ]
+   },
+   "colors": {
+    "_Color_Deep": [
+     0,
+     0.18836021,
+     1,
+     1
+    ],
+    "_Color_Shallow": [
+     0,
+     0.33355188,
+     1,
+     1
+    ],
+    "_InterSec_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_SL_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_ShadowColor": [
+     0,
+     0,
+     0,
+     0.6
+    ],
+    "_Specular_Color": [
+     0.0009765625,
+     0.0009765625,
+     0.0009765625,
+     1
+    ],
+    "_SurfFoam_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_Underwater_Color": [
+     0,
+     0.38775,
+     0.752,
+     0.5019608
+    ],
+    "_Wave_Top_Color": [
+     0.29829118,
+     0.9207434,
+     0.9245283,
+     1
+    ]
+   },
+   "textures": {
+    "_Caustics_Distortion_Map": null,
+    "_Caustics_Map": null,
+    "_InterSec_Foam_Mask": "Noise 4.png",
+    "_Normal_Map": null,
+    "_SL_Dissolve_Mask": null,
+    "_SurfFoam_Map": "Foam 1.png",
+    "_SurfaceDistortion_Map": "Noise 1.png"
+   },
+   "legacy_unused": {
+    "floats": {
+     "_A": 11.3,
+     "_AffectedByMainColor": 1,
+     "_AlphaClip": 0,
+     "_AlphaToMask": 0,
+     "_B": 1,
+     "_Blend": 0,
+     "_BlendModePreserveSpecular": 0,
+     "_Boolean": 1,
+     "_CastShadows": 0,
+     "_CausisticsPan": 0.05,
+     "_CausisticsScale": 3.5,
+     "_CausisticsStrength": 50,
+     "_CausticsDepth": 30,
+     "_CausticsDistortionScale": 3,
+     "_CausticsDistortionStrength": 2,
+     "_CausticsFade": 5,
+     "_CausticsFadeSoftness": 5,
+     "_CausticsFadeStart": 2,
+     "_CausticsPan": 0.05,
+     "_CausticsScale": 1.1,
+     "_CausticsStart": 5,
+     "_CausticsStartDistance": 5,
+     "_CausticsStrength": 50,
+     "_Cull": 2,
+     "_Depth_Distance": 1.26,
+     "_DistanceMaskFade": 10,
+     "_DistanceMaskStart": 15,
+     "_DistanceNormalStrength": 0.01,
+     "_DistanceNormalTile": 5.54,
+     "_DistortionScale": 2,
+     "_DstBlend": 10,
+     "_ENABLEINTERSECTION": 1,
+     "_ENABLESURFACEFOAM": 1,
+     "_ENABLEUNDERWATERLAYER": 1,
+     "_ENVIRONMENTREFLECTIONS_OFF": 1,
+     "_FarColorDistance": 20,
+     "_FarColorMaskHardness": 10,
+     "_FarColorStartOffset": 0.08,
+     "_FarDistance": 1.14,
+     "_FarMaskHardness": 50,
+     "_FarNormalStartOffset": 0,
+     "_FarNormalStrength": 0.01,
+     "_FarRefractionStrength": 0.02,
+     "_Float": 10,
+     "_Float_1": 5,
+     "_Float_2": 0.88,
+     "_Float_3": 1.09,
+     "_FoamDistortionScale": 1,
+     "_FoamShaodwFade": 16,
+     "_FoamShaodwRange": 7,
+     "_FresnelAmmount": 4.77,
+     "_FresnelPower": 5,
+     "_FresnelStrength": 0,
+     "_Fresnel_Opacity": 1,
+     "_Fresnel_Power": 10,
+     "_InterSec_Edge_Dissolve": 1,
+     "_IntersectionDistanceCutoff": 2.5,
+     "_IntersectionDistanceDepth": 0.5,
+     "_IntersectionFoamCutoff": 1,
+     "_IntersectionFoamCutoff_1": 2,
+     "_IntersectionFoamDepth": 5.99,
+     "_IntersectionFoamDepth_1": 10,
+     "_IntersectionFoamDistortion": 0.3,
+     "_IntersectionFoamFade": 0,
+     "_IntersectionFoamScale": 6.89,
+     "_Intersection_Foam_Fade": 1,
+     "_Intersection_Foam_depth": 0.13,
+     "_Intersection_foam_cutoff": 17.95,
+     "_NormalPan": 0.1,
+     "_NormalStrength": 0.1,
+     "_NormalTile": 5,
+     "_Normal_Tile": 5,
+     "_ParalaxDepth": 30,
+     "_ReceiveShadows": 1,
+     "_ReflectionDistortion": 0.72,
+     "_ReflectionFresnel": 2.79,
+     "_ReflectionFresnelStrength": 1.13,
+     "_RefractionFadeDistance": 0.5,
+     "_RefractionStrength": 0.5,
+     "_Refraction_Distace_Mask": 0.5,
+     "_RefrectionPan": 0.1,
+     "_RefrectionTile": 5.58,
+     "_SL_Depth": 0.3,
+     "_SL_ExplandNearShore": 0,
+     "_SL_TrailFade": 0,
+     "_ShoreFadeHardness": 0.529,
+     "_ShoreFadeSmoothness": 0.2,
+     "_ShoreFade_1": 0,
+     "_ShoreLineAmmount": 4.31,
+     "_ShoreLineCenterMask": 2.01,
+     "_ShoreLineCutoff": 0.66,
+     "_ShoreLineCutoffSmooth": 0,
+     "_ShoreLineDepth": 0.75,
+     "_ShoreLineDissolve": 0.69,
+     "_ShoreLineDistance": 0.67,
+     "_ShoreLineDistortion": 0.01,
+     "_ShoreLineEdgeMask": 0.95,
+     "_ShoreLineExpand": -0.13,
+     "_ShoreLineMaskScale": 1,
+     "_ShoreLineSpeed": 0.3,
+     "_ShoreLineThickness": 1.46,
+     "_ShoreLineTile": 4.43,
+     "_ShoreLineWidth": 0.8,
+     "_ShoreLine_Cutoff": 0.27,
+     "_Smoothness": 0,
+     "_Specular_Strength": 0,
+     "_SrcBlend": 5,
+     "_Surface": 1,
+     "_SurfaceDistortionScale": 1,
+     "_SurfaceDistortionStrength": 0.11,
+     "_SurfaceFoamDistortion": 0.1,
+     "_SurfaceFoamScale": 2,
+     "_SurfaceFomShaodwDepth": 24.99,
+     "_SurfaceFomShaodwDistance": 200,
+     "_SurfaceFomShaodwFade": 16,
+     "_SurfaceFomShaodwRange": 7,
+     "_UnderWaterDepth": -1.68,
+     "_UnderWaterLayerStart": 5,
+     "_UnderWaterScaleIncrease": 0.7,
+     "_UnderWaterScaleModifier": 0.7,
+     "_UnderwaterLayerFade": 15,
+     "_WORLDSPACEDEPTH": 1,
+     "_WaterDepth": 0.3,
+     "_WaveHeight": 0.01,
+     "_WaveHeight2nd": 0.01,
+     "_WaveLength": 10,
+     "_WaveLength2nd": 5,
+     "_WaveSharpness": 0.54,
+     "_WaveSharpness2nd": 0.3,
+     "_WaveSpeed": 0.3,
+     "_WaveSpeed2nd": 0.2,
+     "_WorkflowMode": 1,
+     "_ZTest": 4,
+     "_ZWrite": 0,
+     "_ZWriteControl": 0,
+     "_contact_foam_cutoff": 0.17,
+     "_fade": 0.04,
+     "_mask": 0.731,
+     "_max": 1,
+     "_min": 0,
+     "_shoreDistance": 0.731,
+     "_shoreLineAmmount": 0.25,
+     "_shoreLineCutoff": 1.32,
+     "_shoreLineDepth": 0.2,
+     "_shoreLineDissolve": 1.14,
+     "_shoreLineDistortion": 0,
+     "_shoreLineSpeed": -4.3,
+     "_shoreLineThickness": 0,
+     "_shoreLineTile": 4.64,
+     "_shoreLinedistortion": 0,
+     "_shoreLinewidth": 0.115,
+     "_shoreSpeed": 1,
+     "_shoreTile": 9.47,
+     "_speed": 0.25,
+     "_tile": 10,
+     "_width": 0.238
+    },
+    "colorsAndVectors": {
+     "_Deep_Color": [
+      0,
+      0.18142791,
+      0.758,
+      1
+     ],
+     "_DistanceColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_FarColor": [
+      0.15966535,
+      0.6787135,
+      0.8679245,
+      0
+     ],
+     "_FoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_FresnelColor": [
+      0.2647297,
+      0.116945416,
+      0.82641506,
+      1
+     ],
+     "_IntersectionDistanceTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_IntersectionFoamPan": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionFoamTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionTexTile": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_IntersectionTexTile_1": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_Intersection_Foam_Color": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShallowColor": [
+      0,
+      0.20225781,
+      0.85300004,
+      1
+     ],
+     "_Shore": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineColor": [
+      1,
+      1,
+      1,
+      0.34901962
+     ],
+     "_ShoreLineMaskPan": [
+      0.02,
+      0.02,
+      0,
+      0
+     ],
+     "_ShoreLineMaskPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_ShoreLineMaskTile": [
+      3,
+      3,
+      0,
+      0
+     ],
+     "_Surface": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceDistortion_Speed": [
+      0.2,
+      0.37,
+      0,
+      0
+     ],
+     "_SurfaceFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceFoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_SurfaceFoamShadowColor": [
+      0,
+      0,
+      0,
+      0.4745098
+     ],
+     "_UnderwaterLayerColor": [
+      0.549251,
+      0.73563427,
+      0.8901961,
+      0.35686275
+     ],
+     "_WaveDirection": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "_WaveDirection2nd": [
+      0,
+      0,
+      1,
+      0
+     ],
+     "_WaveTopColor": [
+      1,
+      0.07585351,
+      0,
+      1
+     ],
+     "_maskMinMax": [
+      0,
+      0.78,
+      0,
+      0
+     ],
+     "_shoreTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_shoreTexTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_water": [
+      0.2,
+      0.547062,
+      0.85490197,
+      1
+     ]
+    },
+    "textures": {
+     "_CausticsDistortionMap": null,
+     "_CausticsMap": null,
+     "_CausticticsMap": "MISSING:f1bdaa49db4e069449dd29dc620782b9",
+     "_DistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_IntersectionFoam": "MISSING:8964c83b1784bd448853dcec8d779ed1",
+     "_Intersection_Foam": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_NormalMap": "Normal 3.png",
+     "_SL_DissolveMask": null,
+     "_ShoreLineMask": null,
+     "_SurfFoam_Mask": "Foam 1.png",
+     "_SurfaceDistortionMap": "Noise 2.png",
+     "_SurfaceFoam": "Foam 1.png",
+     "_SurfaceFoamDistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_Texture2D": "MISSING:527f4e79fd08cf248af7a3c0f4972cb5"
+    }
+   }
+  },
+  "tropical": {
+   "materialName": "",
+   "keywords": [
+    "_ENABLECAUSTICS",
+    "_ENABLENORMAL",
+    "_ENABLEPLANERREFLECTION",
+    "_ENABLEREFRACTION",
+    "_ENABLESHORELINE"
+   ],
+   "floats": {
+    "_1st_Wave_Height": 0.01,
+    "_1st_Wave_Length": 3,
+    "_1st_Wave_Sharpness": 0.3,
+    "_1st_Wave_Speed": 1,
+    "_2nd_Wave_Height": 0.015,
+    "_2nd_Wave_Length": 5,
+    "_2nd_Wave_Sharpness": 0.3,
+    "_2nd_Wave_Speed": 1.3,
+    "_Caustics_Depth": -4,
+    "_Caustics_Distortion_Scale": 3,
+    "_Caustics_Distortion_Strength": 1,
+    "_Caustics_Fade": 5,
+    "_Caustics_Pan": 1.5,
+    "_Caustics_Scale": 2,
+    "_Caustics_Start": 5,
+    "_Caustics_Strength": 1.33,
+    "_ConformToGeometry": 1,
+    "_DistanceMask_Fade": 10,
+    "_DistanceMask_Start": 5,
+    "_ENABLECAUSTICS": 1,
+    "_ENABLENORMAL": 1,
+    "_ENABLEPLANERREFLECTION": 1,
+    "_ENABLEREFRACTION": 1,
+    "_ENABLESHORELINE": 1,
+    "_ENABLEWAVE": 0,
+    "_ENABLE_UNDERWATERLAYER": 0,
+    "_Enable_Intersection": 1,
+    "_Enable_SurfaceFoam": 0,
+    "_InterSec_Dissolve": 1.6,
+    "_InterSec_Edge_Fade": 1,
+    "_InterSec_Foam_Distortion": 3,
+    "_InterSec_Foam_Invert": 0,
+    "_InterSec_Foam_Scale": 4.41,
+    "_InterSec_Foam_Smooth": 0,
+    "_InterSec_GradientDissolve": 0,
+    "_InterSec_Width": 1.17,
+    "_Invert_SurfFoam": 0,
+    "_Normal_DistanceStrength": 0.3,
+    "_Normal_Pan": 1.5,
+    "_Normal_Scale": 15,
+    "_Normal_Strength": 1.4,
+    "_QueueControl": 0,
+    "_QueueOffset": 0,
+    "_Reflection_Distortion": 1.25,
+    "_Reflection_Fresnel": 6,
+    "_Reflection_Strength": 0.875,
+    "_Refraction_Distance_Fade": 3,
+    "_Refraction_Distance_Strength": 0.3,
+    "_Refraction_Strength": 0.5,
+    "_SL_Ammount": 4.06,
+    "_SL_CenterMask": 0.5,
+    "_SL_CenterMaskFade": 0.257,
+    "_SL_Dissolve": 2.74,
+    "_SL_EnableTrail": 1,
+    "_SL_GradientDissolve": -1,
+    "_SL_MaskScale": 1.75,
+    "_SL_Speed": 0.79,
+    "_SL_Thickness": 0.868,
+    "_SL_Trail_Fade": 1.27,
+    "_SL_WaterDepth": 0.45,
+    "_ShoreFade": 1,
+    "_ShoreFade_Smoothness": 0.488,
+    "_Specular_Hardness": 0.976,
+    "_Specular_Size": 0.496,
+    "_Specular_Spread": 0,
+    "_SurfFoam_AlphaBlend": 0,
+    "_SurfFoam_Edge": 0.1,
+    "_SurfFoam_EdgeSmooth": 0.2,
+    "_SurfFoam_Scale": 3,
+    "_SurfaceDistortion_Scale": 1,
+    "_SurfaceDistortion_Strength": 0.03,
+    "_UnderWater_Depth": -4,
+    "_UnderWater_ScaleModifier": 0,
+    "_UnderWater_Start": 5,
+    "_Underwater_Fade": 15,
+    "_Water_Depth": 0.3,
+    "_WorldSpaceDepth": 1
+   },
+   "vectors": {
+    "_1st_Wave_Direction": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "_2nd_Wave_Direction": [
+     -1,
+     0,
+     1,
+     0
+    ],
+    "_InterSec_Foam_Pan": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "_InterSec_Foam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SL_MaskPan": [
+     0.2,
+     0.3,
+     0,
+     0
+    ],
+    "_SL_MaskTile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfFoam_Pan": [
+     0.01,
+     0.01,
+     0,
+     0
+    ],
+    "_SurfFoam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfaceDistortion_Pan": [
+     1,
+     1,
+     0,
+     0
+    ]
+   },
+   "colors": {
+    "_Color_Deep": [
+     0,
+     0.2462014,
+     0.5394797,
+     1
+    ],
+    "_Color_Shallow": [
+     0.02352938,
+     0.82328343,
+     0.9882353,
+     0.4117647
+    ],
+    "_InterSec_Color": [
+     0.9647059,
+     0.9125287,
+     0.46274513,
+     0.68235296
+    ],
+    "_SL_Color": [
+     1,
+     1,
+     1,
+     0.68235296
+    ],
+    "_ShadowColor": [
+     0,
+     0,
+     0,
+     0.6
+    ],
+    "_Specular_Color": [
+     22.627417,
+     22.627417,
+     22.627417,
+     1
+    ],
+    "_SurfFoam_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_Underwater_Color": [
+     0,
+     0,
+     0,
+     0.5019608
+    ],
+    "_Wave_Top_Color": [
+     0.29829118,
+     0.9207434,
+     0.9245283,
+     1
+    ]
+   },
+   "textures": {
+    "_Caustics_Distortion_Map": "Noise 4.png",
+    "_Caustics_Map": "Caustic 1.png",
+    "_InterSec_Foam_Mask": null,
+    "_Normal_Map": "Normal 2.png",
+    "_SL_Dissolve_Mask": "Noise 5.png",
+    "_SurfFoam_Map": null,
+    "_SurfaceDistortion_Map": null
+   },
+   "legacy_unused": {
+    "floats": {
+     "_A": 11.3,
+     "_AffectedByMainColor": 1,
+     "_AlphaClip": 0,
+     "_AlphaToMask": 0,
+     "_B": 1,
+     "_Blend": 0,
+     "_BlendModePreserveSpecular": 0,
+     "_Boolean": 1,
+     "_CastShadows": 0,
+     "_CausisticsPan": 0.05,
+     "_CausisticsScale": 3.5,
+     "_CausisticsStrength": 50,
+     "_CausticsDepth": 30,
+     "_CausticsDistortionScale": 3,
+     "_CausticsDistortionStrength": 2,
+     "_CausticsFade": 5,
+     "_CausticsFadeSoftness": 5,
+     "_CausticsFadeStart": 2,
+     "_CausticsPan": 0.05,
+     "_CausticsScale": 1.1,
+     "_CausticsStart": 5,
+     "_CausticsStartDistance": 5,
+     "_CausticsStrength": 50,
+     "_Cull": 2,
+     "_Depth_Distance": 1.26,
+     "_DistanceMaskFade": 10,
+     "_DistanceMaskStart": 15,
+     "_DistanceNormalStrength": 0,
+     "_DistanceNormalTile": 5.54,
+     "_DistortionScale": 2,
+     "_DstBlend": 10,
+     "_ENABLEINTERSECTION": 0,
+     "_ENABLESURFACEFOAM": 0,
+     "_ENABLEUNDERWATERLAYER": 0,
+     "_ENVIRONMENTREFLECTIONS_OFF": 1,
+     "_FarColorDistance": 20,
+     "_FarColorMaskHardness": 10,
+     "_FarColorStartOffset": 0.08,
+     "_FarDistance": 1.14,
+     "_FarMaskHardness": 50,
+     "_FarNormalStartOffset": 0,
+     "_FarNormalStrength": 0.01,
+     "_FarRefractionStrength": 0.1,
+     "_Float": 10,
+     "_Float_1": 5,
+     "_Float_2": 0.88,
+     "_Float_3": 1.09,
+     "_FoamDistortionScale": 1,
+     "_FoamShaodwFade": 16,
+     "_FoamShaodwRange": 7,
+     "_FresnelAmmount": 4.77,
+     "_FresnelPower": 5,
+     "_FresnelStrength": 1,
+     "_Fresnel_Opacity": 1,
+     "_Fresnel_Power": 10,
+     "_InterSec_Edge_Dissolve": 1,
+     "_IntersectionDistanceCutoff": 2.5,
+     "_IntersectionDistanceDepth": 0.5,
+     "_IntersectionFoamCutoff": 1.57,
+     "_IntersectionFoamCutoff_1": 2,
+     "_IntersectionFoamDepth": 1.85,
+     "_IntersectionFoamDepth_1": 10,
+     "_IntersectionFoamDistortion": -0.04,
+     "_IntersectionFoamFade": 0,
+     "_IntersectionFoamScale": 6.89,
+     "_Intersection_Foam_Fade": 1,
+     "_Intersection_Foam_depth": 0.13,
+     "_Intersection_foam_cutoff": 17.95,
+     "_NormalPan": 0.1,
+     "_NormalStrength": 0.3,
+     "_NormalTile": 4,
+     "_Normal_Tile": 5,
+     "_ParalaxDepth": 30,
+     "_ReceiveShadows": 1,
+     "_ReflectionDistortion": 0.21,
+     "_ReflectionFresnel": 2.96,
+     "_ReflectionFresnelStrength": 0.3,
+     "_RefractionFadeDistance": 0.5,
+     "_RefractionStrength": 1,
+     "_Refraction_Distace_Mask": 10,
+     "_RefrectionPan": 0.1,
+     "_RefrectionTile": 5.58,
+     "_SL_Depth": 0.3,
+     "_SL_ExplandNearShore": 0.32,
+     "_SL_TrailFade": 1,
+     "_ShoreFadeHardness": 0.067,
+     "_ShoreFadeSmoothness": 0.2,
+     "_ShoreFade_1": 0,
+     "_ShoreLineAmmount": 3.34,
+     "_ShoreLineCenterMask": 2.01,
+     "_ShoreLineCutoff": 0.66,
+     "_ShoreLineCutoffSmooth": 0,
+     "_ShoreLineDepth": 0.24,
+     "_ShoreLineDissolve": 0.93,
+     "_ShoreLineDistance": 1.38,
+     "_ShoreLineDistortion": 0.01,
+     "_ShoreLineEdgeMask": 0.95,
+     "_ShoreLineExpand": -0.23,
+     "_ShoreLineMaskScale": 1.66,
+     "_ShoreLineSpeed": 0.2,
+     "_ShoreLineThickness": 1.46,
+     "_ShoreLineTile": 4.43,
+     "_ShoreLineWidth": 0.96,
+     "_ShoreLine_Cutoff": 0.27,
+     "_Smoothness": 1,
+     "_Specular_Strength": 50,
+     "_SrcBlend": 5,
+     "_Surface": 1,
+     "_SurfaceDistortionScale": 1,
+     "_SurfaceDistortionStrength": 0.3,
+     "_SurfaceFoamDistortion": 0.1,
+     "_SurfaceFoamScale": 2,
+     "_SurfaceFomShaodwDepth": 24.99,
+     "_SurfaceFomShaodwDistance": 200,
+     "_SurfaceFomShaodwFade": 16,
+     "_SurfaceFomShaodwRange": 7,
+     "_UnderWaterDepth": -4,
+     "_UnderWaterLayerStart": 5,
+     "_UnderWaterScaleIncrease": 0.7,
+     "_UnderWaterScaleModifier": 0.7,
+     "_UnderwaterLayerFade": 15,
+     "_WORLDSPACEDEPTH": 1,
+     "_WaterDepth": 0.3,
+     "_WaveHeight": 0.01,
+     "_WaveHeight2nd": 0.01,
+     "_WaveLength": 10,
+     "_WaveLength2nd": 5,
+     "_WaveSharpness": 0.54,
+     "_WaveSharpness2nd": 0.3,
+     "_WaveSpeed": 0.3,
+     "_WaveSpeed2nd": 0.2,
+     "_WorkflowMode": 1,
+     "_ZTest": 4,
+     "_ZWrite": 0,
+     "_ZWriteControl": 0,
+     "_contact_foam_cutoff": 0.17,
+     "_fade": 0.04,
+     "_mask": 0.731,
+     "_max": 1,
+     "_min": 0,
+     "_shoreDistance": 0.731,
+     "_shoreLineAmmount": 0.25,
+     "_shoreLineCutoff": 1.32,
+     "_shoreLineDepth": 0.2,
+     "_shoreLineDissolve": 1.14,
+     "_shoreLineDistortion": 0,
+     "_shoreLineSpeed": -4.3,
+     "_shoreLineThickness": 0,
+     "_shoreLineTile": 4.64,
+     "_shoreLinedistortion": 0,
+     "_shoreLinewidth": 0.115,
+     "_shoreSpeed": 1,
+     "_shoreTile": 9.47,
+     "_speed": 0.25,
+     "_tile": 10,
+     "_width": 0.238
+    },
+    "colorsAndVectors": {
+     "_Deep_Color": [
+      0,
+      0.09093038,
+      0.674,
+      0.95686275
+     ],
+     "_DistanceColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_FarColor": [
+      0.15966535,
+      0.6787135,
+      0.8679245,
+      0
+     ],
+     "_FoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_FresnelColor": [
+      0.2647297,
+      0.116945416,
+      0.82641506,
+      1
+     ],
+     "_IntersectionDistanceTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_IntersectionFoamPan": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_IntersectionFoamTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionTexTile": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_IntersectionTexTile_1": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_Intersection_Foam_Color": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShallowColor": [
+      0,
+      0.91063833,
+      1,
+      0.4117647
+     ],
+     "_Shore": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineMaskPan": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_ShoreLineMaskPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_ShoreLineMaskTile": [
+      3,
+      3,
+      0,
+      0
+     ],
+     "_Surface": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceDistortion_Speed": [
+      -0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceFoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_SurfaceFoamShadowColor": [
+      0,
+      0,
+      0,
+      0.4745098
+     ],
+     "_UnderwaterLayerColor": [
+      0.3019608,
+      0.62352943,
+      0.89019614,
+      0.35686275
+     ],
+     "_WaveDirection": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "_WaveDirection2nd": [
+      0,
+      0,
+      1,
+      0
+     ],
+     "_WaveTopColor": [
+      1,
+      0.07585351,
+      0,
+      1
+     ],
+     "_maskMinMax": [
+      0,
+      0.78,
+      0,
+      0
+     ],
+     "_shoreTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_shoreTexTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_water": [
+      0.2,
+      0.547062,
+      0.85490197,
+      1
+     ]
+    },
+    "textures": {
+     "_CausticsDistortionMap": null,
+     "_CausticsMap": null,
+     "_CausticticsMap": "MISSING:f1bdaa49db4e069449dd29dc620782b9",
+     "_DistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_IntersectionFoam": "MISSING:8964c83b1784bd448853dcec8d779ed1",
+     "_Intersection_Foam": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_NormalMap": "Normal 2.png",
+     "_SL_DissolveMask": "Noise 3.png",
+     "_ShoreLineMask": "MISSING:87be74baf39a48545b2d35a86da25a26",
+     "_SurfFoam_Mask": null,
+     "_SurfaceDistortionMap": "MISSING:8964c83b1784bd448853dcec8d779ed1",
+     "_SurfaceFoam": null,
+     "_SurfaceFoamDistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_Texture2D": "MISSING:527f4e79fd08cf248af7a3c0f4972cb5"
+    }
+   }
+  },
+  "wavy": {
+   "materialName": "",
+   "keywords": [
+    "_ENABLECAUSTICS",
+    "_ENABLENORMAL",
+    "_ENABLEWAVE"
+   ],
+   "floats": {
+    "_1st_Wave_Height": 0.01,
+    "_1st_Wave_Length": 3,
+    "_1st_Wave_Sharpness": 0,
+    "_1st_Wave_Speed": 0.3,
+    "_2nd_Wave_Height": 0.01,
+    "_2nd_Wave_Length": 5,
+    "_2nd_Wave_Sharpness": 0,
+    "_2nd_Wave_Speed": 0.5,
+    "_Caustics_Depth": -4,
+    "_Caustics_Distortion_Scale": 3.6,
+    "_Caustics_Distortion_Strength": 5.28,
+    "_Caustics_Fade": 7.8,
+    "_Caustics_Pan": 1.45,
+    "_Caustics_Scale": 2.6,
+    "_Caustics_Start": 12.28,
+    "_Caustics_Strength": 1.86,
+    "_ConformToGeometry": 0,
+    "_DistanceMask_Fade": 10,
+    "_DistanceMask_Start": 5,
+    "_ENABLECAUSTICS": 1,
+    "_ENABLENORMAL": 1,
+    "_ENABLEPLANERREFLECTION": 0,
+    "_ENABLEREFRACTION": 0,
+    "_ENABLESHORELINE": 0,
+    "_ENABLEWAVE": 1,
+    "_ENABLE_UNDERWATERLAYER": 0,
+    "_Enable_Intersection": 0,
+    "_Enable_SurfaceFoam": 1,
+    "_InterSec_Dissolve": 1.6,
+    "_InterSec_Edge_Fade": 1,
+    "_InterSec_Foam_Distortion": 3,
+    "_InterSec_Foam_Invert": 0,
+    "_InterSec_Foam_Scale": 4,
+    "_InterSec_Foam_Smooth": 0.01,
+    "_InterSec_GradientDissolve": 0,
+    "_InterSec_Width": 0.77,
+    "_Invert_SurfFoam": 0,
+    "_Normal_DistanceStrength": 0.1,
+    "_Normal_Pan": 3,
+    "_Normal_Scale": 6,
+    "_Normal_Strength": 0.31,
+    "_QueueControl": 0,
+    "_QueueOffset": 0,
+    "_Reflection_Distortion": 3,
+    "_Reflection_Fresnel": 6,
+    "_Reflection_Strength": 1,
+    "_Refraction_Distance_Fade": 0.5,
+    "_Refraction_Distance_Strength": 0.1,
+    "_Refraction_Strength": 0.1,
+    "_SL_Ammount": 1.15,
+    "_SL_CenterMask": 0.5,
+    "_SL_CenterMaskFade": 0,
+    "_SL_Dissolve": 0.7,
+    "_SL_EnableTrail": 0,
+    "_SL_GradientDissolve": 0,
+    "_SL_MaskScale": 4,
+    "_SL_Speed": 0.05,
+    "_SL_Thickness": 0.821,
+    "_SL_Trail_Fade": 1,
+    "_SL_WaterDepth": 0.3,
+    "_ShoreFade": 1,
+    "_ShoreFade_Smoothness": 0.206,
+    "_Specular_Hardness": 0,
+    "_Specular_Size": 1,
+    "_Specular_Spread": 0,
+    "_SurfFoam_AlphaBlend": 0,
+    "_SurfFoam_Edge": 0.053,
+    "_SurfFoam_EdgeSmooth": 0.109,
+    "_SurfFoam_Scale": 2,
+    "_SurfaceDistortion_Scale": 0.5,
+    "_SurfaceDistortion_Strength": 0.1,
+    "_UnderWater_Depth": -4,
+    "_UnderWater_ScaleModifier": 0,
+    "_UnderWater_Start": 5,
+    "_Underwater_Fade": 15,
+    "_Water_Depth": 0.3,
+    "_WorldSpaceDepth": 1
+   },
+   "vectors": {
+    "_1st_Wave_Direction": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "_2nd_Wave_Direction": [
+     -1,
+     0,
+     1,
+     0
+    ],
+    "_InterSec_Foam_Pan": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "_InterSec_Foam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SL_MaskPan": [
+     0.01,
+     0,
+     0,
+     0
+    ],
+    "_SL_MaskTile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfFoam_Pan": [
+     0.2,
+     0.1,
+     0,
+     0
+    ],
+    "_SurfFoam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfaceDistortion_Pan": [
+     1,
+     1,
+     0,
+     0
+    ]
+   },
+   "colors": {
+    "_Color_Deep": [
+     0,
+     0.4509804,
+     0.3794683,
+     1
+    ],
+    "_Color_Shallow": [
+     0,
+     1,
+     0.84313726,
+     0
+    ],
+    "_InterSec_Color": [
+     1,
+     0.8512204,
+     0.089622594,
+     0.7882353
+    ],
+    "_SL_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_ShadowColor": [
+     0,
+     0,
+     0,
+     0.6
+    ],
+    "_Specular_Color": [
+     4.0000005,
+     4.0000005,
+     4.0000005,
+     1
+    ],
+    "_SurfFoam_Color": [
+     1,
+     0.844,
+     0.9524024,
+     1
+    ],
+    "_Underwater_Color": [
+     0,
+     0,
+     0,
+     0.5019608
+    ],
+    "_Wave_Top_Color": [
+     0,
+     1,
+     0.7202115,
+     1
+    ]
+   },
+   "textures": {
+    "_Caustics_Distortion_Map": "Noise 2.png",
+    "_Caustics_Map": "Caustic 1.png",
+    "_InterSec_Foam_Mask": null,
+    "_Normal_Map": "Normal 1.png",
+    "_SL_Dissolve_Mask": "Foam2.psd",
+    "_SurfFoam_Map": "Foam2.psd",
+    "_SurfaceDistortion_Map": "Noise 4.png"
+   },
+   "legacy_unused": {
+    "floats": {
+     "_A": 11.3,
+     "_AffectedByMainColor": 1,
+     "_AlphaClip": 0,
+     "_AlphaToMask": 0,
+     "_B": 1,
+     "_Blend": 0,
+     "_BlendModePreserveSpecular": 0,
+     "_Boolean": 1,
+     "_CastShadows": 0,
+     "_CausisticsPan": 0.05,
+     "_CausisticsScale": 3.5,
+     "_CausisticsStrength": 50,
+     "_CausticsDepth": -4,
+     "_CausticsDistortionScale": 5.6,
+     "_CausticsDistortionStrength": 3,
+     "_CausticsFade": 5,
+     "_CausticsFadeSoftness": 5,
+     "_CausticsFadeStart": 2,
+     "_CausticsPan": 0.2,
+     "_CausticsScale": 6,
+     "_CausticsStart": 3,
+     "_CausticsStartDistance": 5,
+     "_CausticsStrength": 0.7,
+     "_Cull": 2,
+     "_Depth_Distance": 1.26,
+     "_DistanceMaskFade": 10,
+     "_DistanceMaskStart": 15,
+     "_DistanceNormalStrength": 0.01,
+     "_DistanceNormalTile": 5.54,
+     "_DistortionScale": 2,
+     "_DstBlend": 10,
+     "_ENABLEINTERSECTION": 1,
+     "_ENABLESURFACEFOAM": 1,
+     "_ENABLEUNDERWATERLAYER": 0,
+     "_ENVIRONMENTREFLECTIONS_OFF": 1,
+     "_FarColorDistance": 20,
+     "_FarColorMaskHardness": 10,
+     "_FarColorStartOffset": 0.08,
+     "_FarDistance": 1.14,
+     "_FarMaskHardness": 50,
+     "_FarNormalStartOffset": 0,
+     "_FarNormalStrength": 0.01,
+     "_FarRefractionStrength": 0,
+     "_Float": -13.1,
+     "_Float_1": 5,
+     "_Float_2": 0.88,
+     "_Float_3": 1.09,
+     "_FoamDistortionScale": 1,
+     "_FoamShaodwFade": 16,
+     "_FoamShaodwRange": 7,
+     "_FresnelAmmount": 4.77,
+     "_FresnelPower": 5,
+     "_FresnelStrength": 0,
+     "_Fresnel_Opacity": 1,
+     "_Fresnel_Power": 10,
+     "_InterSec_Edge_Dissolve": 0.385,
+     "_IntersectionDistanceCutoff": 2.5,
+     "_IntersectionDistanceDepth": 0.5,
+     "_IntersectionFoamCutoff": 5.87,
+     "_IntersectionFoamCutoff_1": 2,
+     "_IntersectionFoamDepth": 1.43,
+     "_IntersectionFoamDepth_1": 10,
+     "_IntersectionFoamDistortion": 0.24,
+     "_IntersectionFoamFade": 0,
+     "_IntersectionFoamScale": 0.79,
+     "_Intersection_Foam_Fade": 1,
+     "_Intersection_Foam_depth": 0.13,
+     "_Intersection_foam_cutoff": 17.95,
+     "_NormalPan": 0.1,
+     "_NormalStrength": 0.1,
+     "_NormalTile": 5,
+     "_Normal_Tile": 15,
+     "_ParalaxDepth": 30,
+     "_ReceiveShadows": 1,
+     "_ReflectionDistortion": 0.24,
+     "_ReflectionFresnel": 3.01,
+     "_ReflectionFresnelStrength": 1,
+     "_RefractionFadeDistance": 5,
+     "_RefractionStrength": 0.15,
+     "_Refraction_Distace_Mask": 10,
+     "_RefrectionPan": 0.1,
+     "_RefrectionTile": 5.58,
+     "_SL_Depth": 0.3,
+     "_SL_ExplandNearShore": 0,
+     "_SL_TrailFade": 1,
+     "_ShoreFadeHardness": 0.641,
+     "_ShoreFadeSmoothness": 0.2,
+     "_ShoreFade_1": 0,
+     "_ShoreLineAmmount": 4.54,
+     "_ShoreLineCenterMask": 2.01,
+     "_ShoreLineCutoff": 0.66,
+     "_ShoreLineCutoffSmooth": 0,
+     "_ShoreLineDepth": 0.71,
+     "_ShoreLineDissolve": 0.3,
+     "_ShoreLineDistance": 1.2,
+     "_ShoreLineDistortion": 0.01,
+     "_ShoreLineEdgeMask": 0.95,
+     "_ShoreLineExpand": -0.44,
+     "_ShoreLineMaskScale": 1.39,
+     "_ShoreLineSpeed": 0,
+     "_ShoreLineThickness": 1.46,
+     "_ShoreLineTile": 4.43,
+     "_ShoreLineWidth": 0.73,
+     "_ShoreLine_Cutoff": 0.27,
+     "_Smoothness": 1,
+     "_Specular_Strength": 50,
+     "_SrcBlend": 5,
+     "_Surface": 1,
+     "_SurfaceDistortionScale": 0.1,
+     "_SurfaceDistortionStrength": 0.2,
+     "_SurfaceFoamDistortion": 0.1,
+     "_SurfaceFoamScale": 1.5,
+     "_SurfaceFomShaodwDepth": 24.99,
+     "_SurfaceFomShaodwDistance": 200,
+     "_SurfaceFomShaodwFade": 16,
+     "_SurfaceFomShaodwRange": 7,
+     "_UnderWaterDepth": -23.4,
+     "_UnderWaterLayerStart": 5,
+     "_UnderWaterScaleIncrease": 0.7,
+     "_UnderWaterScaleModifier": 1,
+     "_UnderwaterLayerFade": 15,
+     "_WORLDSPACEDEPTH": 1,
+     "_WaterDepth": 0.42,
+     "_WaveHeight": 0.02,
+     "_WaveHeight2nd": 0.05,
+     "_WaveLength": 5,
+     "_WaveLength2nd": 3,
+     "_WaveSharpness": 0.09,
+     "_WaveSharpness2nd": 0.03,
+     "_WaveSpeed": 0.5,
+     "_WaveSpeed2nd": 0.2,
+     "_WorkflowMode": 1,
+     "_ZTest": 4,
+     "_ZWrite": 0,
+     "_ZWriteControl": 0,
+     "_contact_foam_cutoff": 0.17,
+     "_fade": 0.04,
+     "_mask": 0.731,
+     "_max": 1,
+     "_min": 0,
+     "_shoreDistance": 0.731,
+     "_shoreLineAmmount": 0.25,
+     "_shoreLineCutoff": 1.32,
+     "_shoreLineDepth": 0.2,
+     "_shoreLineDissolve": 1.14,
+     "_shoreLineDistortion": 0,
+     "_shoreLineSpeed": -4.3,
+     "_shoreLineThickness": 0,
+     "_shoreLineTile": 4.64,
+     "_shoreLinedistortion": 0,
+     "_shoreLinewidth": 0.115,
+     "_shoreSpeed": 1,
+     "_shoreTile": 9.47,
+     "_speed": 0.25,
+     "_tile": 10,
+     "_width": 0.238
+    },
+    "colorsAndVectors": {
+     "_Caustics_Color": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_Deep_Color": [
+      0,
+      0.084048375,
+      0.341,
+      1
+     ],
+     "_DistanceColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_FarColor": [
+      0.15966535,
+      0.6787135,
+      0.8679245,
+      0
+     ],
+     "_FoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_FresnelColor": [
+      0.2647297,
+      0.116945416,
+      0.82641506,
+      1
+     ],
+     "_IntersectionDistanceTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionFoamColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_IntersectionFoamPan": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_IntersectionFoamTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionTexTile": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_IntersectionTexTile_1": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_Intersection_Foam_Color": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShallowColor": [
+      0.046745095,
+      0.745,
+      0.5917821,
+      1
+     ],
+     "_Shore": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineMaskPan": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_ShoreLineMaskPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_ShoreLineMaskTile": [
+      3,
+      3,
+      0,
+      0
+     ],
+     "_Surface": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceDistortionSpeed": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_SurfaceDistortion_Speed": [
+      0.2,
+      0.3,
+      0,
+      0
+     ],
+     "_SurfaceFoamColor": [
+      1,
+      0.652,
+      0.9506566,
+      1
+     ],
+     "_SurfaceFoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamPanning": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_SurfaceFoamShadowColor": [
+      0,
+      0,
+      0,
+      0.4745098
+     ],
+     "_UnderwaterLayerColor": [
+      0.08870693,
+      0.39086494,
+      0.59599996,
+      1
+     ],
+     "_WaveDirection": [
+      -1,
+      0,
+      0.91,
+      0
+     ],
+     "_WaveDirection2nd": [
+      -1,
+      0,
+      -1,
+      0
+     ],
+     "_WaveTopColor": [
+      0,
+      1,
+      0.2200641,
+      1
+     ],
+     "_maskMinMax": [
+      0,
+      0.78,
+      0,
+      0
+     ],
+     "_shoreTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_shoreTexTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_water": [
+      0.2,
+      0.547062,
+      0.85490197,
+      1
+     ]
+    },
+    "textures": {
+     "_CausticsDistortionMap": "MISSING:b595103ad8871194eb68426c76b1c4b2",
+     "_CausticsMap": "Caustic 2.png",
+     "_CausticticsMap": "MISSING:f1bdaa49db4e069449dd29dc620782b9",
+     "_DistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_IntersectionFoam": null,
+     "_Intersection_Foam": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_NormalMap": "Normal 2.png",
+     "_SL_DissolveMask": "MISSING:14aa64a917615624e8926af6ff456942",
+     "_ShoreLineMask": "MISSING:b595103ad8871194eb68426c76b1c4b2",
+     "_SurfFoam_Mask": "Foam2.psd",
+     "_SurfaceDistortionMap": "MISSING:b595103ad8871194eb68426c76b1c4b2",
+     "_SurfaceFoam": "Foam2.psd",
+     "_SurfaceFoamDistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_Texture2D": "MISSING:527f4e79fd08cf248af7a3c0f4972cb5"
+    }
+   }
+  },
+  "wavy2": {
+   "materialName": "",
+   "keywords": [
+    "_ENABLENORMAL",
+    "_ENABLEPLANERREFLECTION",
+    "_ENABLEREFRACTION",
+    "_ENABLEWAVE"
+   ],
+   "floats": {
+    "_1st_Wave_Height": 0.01,
+    "_1st_Wave_Length": 3,
+    "_1st_Wave_Sharpness": 0.1,
+    "_1st_Wave_Speed": 0.1,
+    "_2nd_Wave_Height": 0.015,
+    "_2nd_Wave_Length": 5,
+    "_2nd_Wave_Sharpness": 0,
+    "_2nd_Wave_Speed": 0.2,
+    "_Caustics_Depth": -4,
+    "_Caustics_Distortion_Scale": 2,
+    "_Caustics_Distortion_Strength": 3,
+    "_Caustics_Fade": 5,
+    "_Caustics_Pan": 2,
+    "_Caustics_Scale": 1.33,
+    "_Caustics_Start": 5,
+    "_Caustics_Strength": 0.55,
+    "_ConformToGeometry": 1,
+    "_DistanceMask_Fade": 10,
+    "_DistanceMask_Start": 5,
+    "_ENABLECAUSTICS": 0,
+    "_ENABLENORMAL": 1,
+    "_ENABLEPLANERREFLECTION": 1,
+    "_ENABLEREFRACTION": 1,
+    "_ENABLESHORELINE": 0,
+    "_ENABLEWAVE": 1,
+    "_ENABLE_UNDERWATERLAYER": 0,
+    "_Enable_Intersection": 1,
+    "_Enable_SurfaceFoam": 1,
+    "_InterSec_Dissolve": 2,
+    "_InterSec_Edge_Fade": 1,
+    "_InterSec_Foam_Distortion": 0,
+    "_InterSec_Foam_Invert": 0,
+    "_InterSec_Foam_Scale": 10,
+    "_InterSec_Foam_Smooth": 1,
+    "_InterSec_GradientDissolve": 1,
+    "_InterSec_Width": 0.95,
+    "_Invert_SurfFoam": 0,
+    "_Normal_DistanceStrength": 0.1,
+    "_Normal_Pan": 1.5,
+    "_Normal_Scale": 5,
+    "_Normal_Strength": 0.5,
+    "_QueueControl": 0,
+    "_QueueOffset": 0,
+    "_Reflection_Distortion": 2,
+    "_Reflection_Fresnel": 5,
+    "_Reflection_Strength": 0.992,
+    "_Refraction_Distance_Fade": 1,
+    "_Refraction_Distance_Strength": 0.3,
+    "_Refraction_Strength": 0.5,
+    "_SL_Ammount": 1.91,
+    "_SL_CenterMask": 0.5,
+    "_SL_CenterMaskFade": 0,
+    "_SL_Dissolve": 0,
+    "_SL_EnableTrail": 0,
+    "_SL_GradientDissolve": 0,
+    "_SL_MaskScale": 4,
+    "_SL_Speed": 1,
+    "_SL_Thickness": 0.071,
+    "_SL_Trail_Fade": 1,
+    "_SL_WaterDepth": 0.3,
+    "_ShoreFade": 1,
+    "_ShoreFade_Smoothness": 0.2,
+    "_Specular_Hardness": 1,
+    "_Specular_Size": 0.077,
+    "_Specular_Spread": 0.412,
+    "_SurfFoam_AlphaBlend": 1,
+    "_SurfFoam_Edge": 0.1,
+    "_SurfFoam_EdgeSmooth": 0.2,
+    "_SurfFoam_Scale": 3,
+    "_SurfaceDistortion_Scale": 1,
+    "_SurfaceDistortion_Strength": 0.3,
+    "_UnderWater_Depth": -4,
+    "_UnderWater_ScaleModifier": 0,
+    "_UnderWater_Start": 5,
+    "_Underwater_Fade": 15,
+    "_Water_Depth": 0.3,
+    "_WorldSpaceDepth": 1
+   },
+   "vectors": {
+    "_1st_Wave_Direction": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "_2nd_Wave_Direction": [
+     -1,
+     0,
+     1,
+     0
+    ],
+    "_InterSec_Foam_Pan": [
+     0.4,
+     0.02,
+     0,
+     0
+    ],
+    "_InterSec_Foam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SL_MaskPan": [
+     0.01,
+     0,
+     0,
+     0
+    ],
+    "_SL_MaskTile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfFoam_Pan": [
+     0.01,
+     0.01,
+     0,
+     0
+    ],
+    "_SurfFoam_Tile": [
+     1,
+     1,
+     0,
+     0
+    ],
+    "_SurfaceDistortion_Pan": [
+     1,
+     1,
+     0,
+     0
+    ]
+   },
+   "colors": {
+    "_Color_Deep": [
+     0,
+     0.20331088,
+     0.461,
+     1
+    ],
+    "_Color_Shallow": [
+     0.080322154,
+     0.8962264,
+     0.87848926,
+     0
+    ],
+    "_InterSec_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_SL_Color": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "_ShadowColor": [
+     0,
+     0,
+     0,
+     0.2901961
+    ],
+    "_Specular_Color": [
+     63.999996,
+     63.999996,
+     63.999996,
+     1
+    ],
+    "_SurfFoam_Color": [
+     1,
+     1,
+     1,
+     0.105882354
+    ],
+    "_Underwater_Color": [
+     0,
+     0,
+     0,
+     0.5019608
+    ],
+    "_Wave_Top_Color": [
+     0.5424528,
+     0.85063356,
+     1,
+     1
+    ]
+   },
+   "textures": {
+    "_Caustics_Distortion_Map": "Noise 2.png",
+    "_Caustics_Map": "Caustic 3.png",
+    "_InterSec_Foam_Mask": "Noise 3.png",
+    "_Normal_Map": "Normal 3.png",
+    "_SL_Dissolve_Mask": null,
+    "_SurfFoam_Map": "Foam 1.png",
+    "_SurfaceDistortion_Map": "Noise 1.png"
+   },
+   "legacy_unused": {
+    "floats": {
+     "_A": 11.3,
+     "_AffectedByMainColor": 1,
+     "_AlphaClip": 0,
+     "_AlphaToMask": 0,
+     "_B": 1,
+     "_Blend": 0,
+     "_BlendModePreserveSpecular": 0,
+     "_Boolean": 1,
+     "_CastShadows": 0,
+     "_CausisticsPan": 0.05,
+     "_CausisticsScale": 3.5,
+     "_CausisticsStrength": 50,
+     "_CausticsDepth": -4,
+     "_CausticsDistortionScale": 3,
+     "_CausticsDistortionStrength": 5,
+     "_CausticsFade": 4.34,
+     "_CausticsFadeSoftness": 5,
+     "_CausticsFadeStart": 2,
+     "_CausticsPan": 0.3,
+     "_CausticsScale": 2.08,
+     "_CausticsStart": 5.84,
+     "_CausticsStartDistance": 5,
+     "_CausticsStrength": 0.7,
+     "_Cull": 2,
+     "_Depth_Distance": 1.26,
+     "_DistanceMaskFade": 10,
+     "_DistanceMaskStart": 7.64,
+     "_DistanceNormalStrength": 0.1,
+     "_DistanceNormalTile": 5.54,
+     "_DistortionScale": 2,
+     "_DstBlend": 10,
+     "_ENABLEINTERSECTION": 1,
+     "_ENABLESURFACEFOAM": 1,
+     "_ENABLEUNDERWATERLAYER": 0,
+     "_ENVIRONMENTREFLECTIONS_OFF": 1,
+     "_Environment_Reflections": 1,
+     "_FarColorDistance": 20,
+     "_FarColorMaskHardness": 10,
+     "_FarColorStartOffset": 0.08,
+     "_FarDistance": 1.14,
+     "_FarMaskHardness": 50,
+     "_FarNormalStartOffset": 0,
+     "_FarNormalStrength": 0.01,
+     "_FarRefractionStrength": 0,
+     "_Float": -13.1,
+     "_Float_1": 5,
+     "_Float_2": 0.88,
+     "_Float_3": 1.09,
+     "_FoamDistortionScale": 1,
+     "_FoamShaodwFade": 16,
+     "_FoamShaodwRange": 7,
+     "_FresnelAmmount": 4.77,
+     "_FresnelPower": 5,
+     "_FresnelStrength": 1,
+     "_Fresnel_Opacity": 1,
+     "_Fresnel_Power": 10,
+     "_InterSec_Edge_Dissolve": 0.625,
+     "_IntersectionDistanceCutoff": 2.5,
+     "_IntersectionDistanceDepth": 0.5,
+     "_IntersectionFoamCutoff": 10,
+     "_IntersectionFoamCutoff_1": 2,
+     "_IntersectionFoamDepth": 0.51,
+     "_IntersectionFoamDepth_1": 10,
+     "_IntersectionFoamDistortion": 0.24,
+     "_IntersectionFoamFade": 0,
+     "_IntersectionFoamScale": 0.79,
+     "_Intersection_Foam_Fade": 1,
+     "_Intersection_Foam_depth": 0.13,
+     "_Intersection_foam_cutoff": 17.95,
+     "_NormalPan": 0.1,
+     "_NormalStrength": 1,
+     "_NormalTile": 6.77,
+     "_Normal_Tile": 20,
+     "_ParalaxDepth": 30,
+     "_ReceiveShadows": 1,
+     "_ReflectionDistortion": 0.09,
+     "_ReflectionFresnel": 7.09,
+     "_ReflectionFresnelStrength": 1,
+     "_Reflection_Fresnel_Strength": 1,
+     "_RefractionFadeDistance": 5,
+     "_RefractionStrength": 0.15,
+     "_Refraction_Distace_Mask": 10,
+     "_RefrectionPan": 0.1,
+     "_RefrectionTile": 5.58,
+     "_SL_Depth": 0.3,
+     "_SL_ExplandNearShore": 1,
+     "_SL_TrailFade": 1,
+     "_ShoreFadeHardness": 0.641,
+     "_ShoreFadeSmoothness": 0.047,
+     "_ShoreFade_1": 0,
+     "_ShoreLineAmmount": 4,
+     "_ShoreLineCenterMask": 2.01,
+     "_ShoreLineCutoff": 0.66,
+     "_ShoreLineCutoffSmooth": 0,
+     "_ShoreLineDepth": 1.5,
+     "_ShoreLineDissolve": 0.38,
+     "_ShoreLineDistance": 1.2,
+     "_ShoreLineDistortion": 0.01,
+     "_ShoreLineEdgeMask": 0.95,
+     "_ShoreLineExpand": -0.44,
+     "_ShoreLineMaskScale": 0.31,
+     "_ShoreLineSpeed": 0.24,
+     "_ShoreLineThickness": 1.46,
+     "_ShoreLineTile": 4.43,
+     "_ShoreLineWidth": 0.77,
+     "_ShoreLine_Cutoff": 0.27,
+     "_Smoothness": 1,
+     "_Specular_Strength": 100,
+     "_SrcBlend": 5,
+     "_Surface": 1,
+     "_SurfaceDistortionScale": 1,
+     "_SurfaceDistortionStrength": 0.08,
+     "_SurfaceFoamDistortion": 0.1,
+     "_SurfaceFoamScale": 2,
+     "_SurfaceFomShaodwDepth": 24.99,
+     "_SurfaceFomShaodwDistance": 200,
+     "_SurfaceFomShaodwFade": 16,
+     "_SurfaceFomShaodwRange": 7,
+     "_UnderWaterDepth": -4,
+     "_UnderWaterLayerStart": 100,
+     "_UnderWaterScaleIncrease": 0.7,
+     "_UnderWaterScaleModifier": 1.3,
+     "_UnderwaterLayerFade": 15,
+     "_WORLDSPACEDEPTH": 1,
+     "_WaterDepth": 0.3,
+     "_WaveHeight": 0.01,
+     "_WaveHeight2nd": 0.01,
+     "_WaveLength": 10,
+     "_WaveLength2nd": 15,
+     "_WaveSharpness": 0.01,
+     "_WaveSharpness2nd": 0.1,
+     "_WaveSpeed": 0.5,
+     "_WaveSpeed2nd": 0.2,
+     "_WorkflowMode": 1,
+     "_ZTest": 4,
+     "_ZWrite": 0,
+     "_ZWriteControl": 0,
+     "_contact_foam_cutoff": 0.17,
+     "_fade": 0.04,
+     "_mask": 0.731,
+     "_max": 1,
+     "_min": 0,
+     "_shoreDistance": 0.731,
+     "_shoreLineAmmount": 0.25,
+     "_shoreLineCutoff": 1.32,
+     "_shoreLineDepth": 0.2,
+     "_shoreLineDissolve": 1.14,
+     "_shoreLineDistortion": 0,
+     "_shoreLineSpeed": -4.3,
+     "_shoreLineThickness": 0,
+     "_shoreLineTile": 4.64,
+     "_shoreLinedistortion": 0,
+     "_shoreLinewidth": 0.115,
+     "_shoreSpeed": 1,
+     "_shoreTile": 9.47,
+     "_speed": 0.25,
+     "_tile": 10,
+     "_width": 0.238
+    },
+    "colorsAndVectors": {
+     "_Deep_Color": [
+      0,
+      0.084048375,
+      0.341,
+      1
+     ],
+     "_DistanceColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_FarColor": [
+      0.15966535,
+      0.6787135,
+      0.8679245,
+      0
+     ],
+     "_FoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_FresnelColor": [
+      0.2647297,
+      0.116945416,
+      0.82641506,
+      1
+     ],
+     "_IntersectionDistanceTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionFoamColor": [
+      1,
+      1,
+      1,
+      0.54509807
+     ],
+     "_IntersectionFoamPan": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_IntersectionFoamTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_IntersectionTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_IntersectionTexTile": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_IntersectionTexTile_1": [
+      20,
+      20,
+      0,
+      0
+     ],
+     "_Intersection_Foam_Color": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShallowColor": [
+      0.046745095,
+      0.745,
+      0.5917821,
+      0
+     ],
+     "_Shore": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineColor": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_ShoreLineMaskPan": [
+      0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_ShoreLineMaskPanning": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "_ShoreLineMaskTile": [
+      3,
+      3,
+      0,
+      0
+     ],
+     "_Surface": [
+      1,
+      1,
+      1,
+      1
+     ],
+     "_SurfaceDistortionSpeed": [
+      0.1,
+      0.02,
+      0,
+      0
+     ],
+     "_SurfaceDistortion_Speed": [
+      -0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamColor": [
+      1,
+      1,
+      1,
+      0.15686275
+     ],
+     "_SurfaceFoamDistortionSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_SurfaceFoamPanning": [
+      -0.01,
+      0.02,
+      0,
+      0
+     ],
+     "_SurfaceFoamShadowColor": [
+      0,
+      0,
+      0,
+      0.4745098
+     ],
+     "_UnderwaterLayerColor": [
+      0.15131569,
+      0.65789497,
+      1,
+      1
+     ],
+     "_WaveDirection": [
+      1,
+      0,
+      0,
+      0
+     ],
+     "_WaveDirection2nd": [
+      0.64,
+      0,
+      1,
+      0
+     ],
+     "_WaveTopColor": [
+      0,
+      1,
+      0.2200641,
+      0
+     ],
+     "_maskMinMax": [
+      0,
+      0.78,
+      0,
+      0
+     ],
+     "_shoreTexSpeed": [
+      0.1,
+      0.1,
+      0,
+      0
+     ],
+     "_shoreTexTile": [
+      1,
+      1,
+      0,
+      0
+     ],
+     "_water": [
+      0.2,
+      0.547062,
+      0.85490197,
+      1
+     ]
+    },
+    "textures": {
+     "_CausticsDistortionMap": "Noise 2.png",
+     "_CausticsMap": "Caustic 2.png",
+     "_CausticticsMap": "MISSING:f1bdaa49db4e069449dd29dc620782b9",
+     "_DistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_IntersectionFoam": "MISSING:b595103ad8871194eb68426c76b1c4b2",
+     "_Intersection_Foam": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_NormalMap": "Normal 2.png",
+     "_SL_DissolveMask": "Noise 6.png",
+     "_ShoreLineMask": null,
+     "_SurfFoam_Mask": "Foam 1.png",
+     "_SurfaceDistortionMap": "Noise 1.png",
+     "_SurfaceFoam": "Foam 1.png",
+     "_SurfaceFoamDistortionMap": "MISSING:63509923e4f5bc848bf05a395376c10b",
+     "_Texture2D": "MISSING:527f4e79fd08cf248af7a3c0f4972cb5"
+    }
+   }
+  }
+ }
+}

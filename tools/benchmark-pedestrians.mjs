@@ -17,9 +17,9 @@ const alwaysSolve = source.replaceAll('if (updatePose) this.solve();', 'this.sol
 assert.notEqual(alwaysSolve, source, 'Expected deferred pose solves in PersonRig.update');
 
 function rigClass(code) {
-  const window = { NYC: { THREE, TSL: {}, Addons: {} } };
+  const window = { CITY: { THREE, TSL: {}, Addons: {} } };
   vm.runInNewContext(code, { window, Math });
-  return window.NYC.PersonRig;
+  return window.CITY.PersonRig;
 }
 const BaselineRig = rigClass(alwaysSolve);
 const DeferredRig = rigClass(source);

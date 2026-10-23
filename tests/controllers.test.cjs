@@ -22,14 +22,14 @@ function eventTarget() {
 function keyboardHarness(nyc = {}) {
   const window = eventTarget();
   const document = { ...eventTarget(), hidden: false };
-  window.NYC = {
+  window.CITY = {
     streetZ: () => 0,
     isTypingInField: (event) => ['INPUT', 'SELECT'].includes(event.target?.tagName),
     ...nyc
   };
   vm.runInNewContext(source, { window, document });
   // Exercise the production event handlers without constructing the scene's 3D models.
-  const controller = Object.create(window.NYC.ThirdPersonControllerManager.prototype);
+  const controller = Object.create(window.CITY.ThirdPersonControllerManager.prototype);
   controller.keys = Object.fromEntries(['forward', 'backward', 'left', 'right', 'up', 'down', 'boost'].map((action) => [action, false]));
   controller.bindKeyboard();
   return {
@@ -182,11 +182,12 @@ for (const mode of ['Person', 'Car', 'Cyclist', 'Helicopter']) {
   });
 }
 
-function teleportHarness(mode, colliders = [], shore = () => ({ westX: -500, eastX: 500 })) {
+function teleportHarness(mode, colliders = [], waterAt = () => null) {
   const harness = keyboardHarness({
-    ISLAND_BOUNDS: { minX: -500, maxX: 500, minZ: -500, maxZ: 500, sidewalkHeight: 0.22 },
-    CENTRAL_PARK_BOUNDS: { minX: 1000, maxX: 1100, minZ: 1000, maxZ: 1100 },
-    getIslandBoundsAtZ: shore,
+    CITY_BOUNDS: { minX: -500, maxX: 500, minZ: -500, maxZ: 500, sidewalkHeight: 0.22 },
+    waterAt,
+    terrainHeightAt: () => 0,
+    deckHeightAt: () => 0,
     blockAt: () => null
   });
   const { controller } = harness;
@@ -292,13 +293,18 @@ test('teleports use oriented building footprints without rejecting clear corners
   }
 });
 
-test('ground arrivals share movement shoreline limits while helicopters may remain above lower buildings', () => {
-  const shore = z => ({ westX: -40 + z * 0.05, eastX: 40 + z * 0.05 });
-  const { controller, ent } = teleportHarness('person', [], shore);
-  const result = controller.teleportActiveTo(1000, -1000);
-  assert.deepEqual({ ...result }, { x: 8.5, z: -470 });
+test('ground arrivals stay inside the city and out of the lakes while helicopters may remain above lower buildings', () => {
+  // a lake over x > 100: the arrival is the nearest dry point, and walking can't carry the player into it either
+  const lake = (x) => (x > 100 ? { name: 'Jabi Reservoir' } : null);
+  const { controller, ent } = teleportHarness('person', [], lake);
+  const inside = controller.teleportActiveTo(-1000, -1000);
+  assert.deepEqual({ ...inside }, { x: -492, z: -492 }, 'clamped 8 m inside the detailed city');
+  const dry = controller.teleportActiveTo(110, 0);
+  assert.ok(dry.x <= 100 && !lake(dry.x), 'never in the lake');
   controller.resolveHorizontalCollision(ent.position, 0.48, ent.position.y + 1);
-  assert.deepEqual([ent.position.x, ent.position.z], [result.x, result.z]);
+  ent.position.x = 120;
+  controller.resolveHorizontalCollision(ent.position, 0.48, ent.position.y + 1);
+  assert.ok(ent.position.x <= 100, 'walking into the lake is undone');
 
   const heli = teleportHarness('helicopter', [{ minX: -30, maxX: 30, minZ: -30, maxZ: 30, maxY: 50 }]);
   heli.ent.position.y = 10;

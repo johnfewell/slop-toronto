@@ -57,9 +57,9 @@ function cameraHarness(entity = {
   };
   window.innerWidth = 1600;
   window.innerHeight = 900;
-  window.NYC = { THREE: { Vector3, PerspectiveCamera } };
+  window.CITY = { THREE: { Vector3, PerspectiveCamera } };
   vm.runInNewContext(source, { window, document });
-  const camera = new window.NYC.CameraSystem(canvas, { getActiveEntity: () => entity });
+  const camera = new window.CITY.CameraSystem(canvas, { getActiveEntity: () => entity });
   return {
     camera, canvas, controls, window, document, captured, entity,
     pointer(target, type, id, x, y = 0, pointerType = 'touch', button = 0) {

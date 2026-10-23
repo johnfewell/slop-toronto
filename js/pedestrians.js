@@ -1,6 +1,6 @@
 (function () {
 // js/pedestrians.js
-// Skinned, procedurally animated New Yorkers: the sidewalk crowds (traffic.js), the player's pedestrian and the
+// Skinned, procedurally animated Torontonians (mrdoob's New Yorkers, every skin tone of the city): the sidewalk crowds (traffic.js), the player's pedestrian and the
 // cyclist's rider (controllers.js).
 // - One continuous lofted body (torso & neck, trouser legs, sleeves, hands, head, hair, shoes) skinned to a 15-bone
 //   skeleton, with bind-pose morphs for build (girth), female proportions and hair volume & length; a near and a far
@@ -13,7 +13,7 @@
 //   rotation & sway, the chest's counter-rotation and the arm swing all follow the feet. It turns on the spot, stops
 //   with its feet together, steps up & down curbs, runs, jumps, and rides a bicycle (feet on the pedals).
 
-const { THREE } = window.NYC;
+const { THREE } = window.CITY;
 const {
   Fn,
   float,
@@ -38,8 +38,8 @@ const {
   step,
   smoothstep,
   length
-} = window.NYC.TSL;
-const { mergeGeometries } = window.NYC.Addons;
+} = window.CITY.TSL;
+const { mergeGeometries } = window.CITY.Addons;
 
 // ============================================================================
 // 1. SKELETON
@@ -729,7 +729,8 @@ const COAT_COLORS_F = [0x7a2630, 0xb89a72, 0x2e3e5c, 0x1f1d22, 0xc9c1b2, 0x5b6b4
 const SHIRT_COLORS = [0xe8e6e0, 0xb8c4d8, 0xcfc8b8, 0x9aa7b8];
 const LEG_COLORS = [0x22242c, 0x35485b, 0x51473d, 0x7c7160, 0x252526];
 const LEG_COLORS_F = [0x1c1c22, 0x2f4a6e, 0x46413b, 0xcfc8bb, 0x5a2a2e];
-const SKIN_COLORS = [0xc68863, 0xa96f4c, 0x8a5535, 0x6b3d24, 0xd9a077];
+// Toronto: mrdoob's five tones widened by a lighter and a deeper one
+const SKIN_COLORS = [0xe8c0a0, 0xc68863, 0xa96f4c, 0x8a5535, 0x6b3d24, 0xd9a077, 0x4a2c1f];
 const HAIR_COLORS = [0x1a1512, 0x3a2a1a, 0x584022, 0x6e6862, 0x2a2624, 0x8f6d43, 0x5e3020];
 
 // Branchless TSL palette selector from an array of hex colors and a [0..1) hash value
@@ -1498,5 +1499,5 @@ class PersonRig {
   }
 }
 
-Object.assign(window.NYC, { PERSON_BONES: BONE, buildPersonGeometry, createPersonMaterial, PersonCrowd, PersonRig });
+Object.assign(window.CITY, { PERSON_BONES: BONE, buildPersonGeometry, createPersonMaterial, PersonCrowd, PersonRig });
 })();

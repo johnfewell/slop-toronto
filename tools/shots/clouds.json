@@ -1,0 +1,6 @@
+[
+  { "name": "k1-skyline-golden", "camera": "skyline", "time": "golden", "wait": 9000 },
+  { "name": "k2-trail-golden", "camera": "trail", "wait": 6000 },
+  { "name": "k3-islands-midday", "camera": "islands", "time": "midday", "wait": 6000 },
+  { "name": "k4-drone-midday", "camera": "drone", "wait": 6000 }
+]

@@ -5,9 +5,9 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const read = (path) => readFileSync(join(__dirname, '..', path), 'utf8');
-const context = vm.createContext({ window: { NYC: {} } });
+const context = vm.createContext({ window: { CITY: {} } });
 for (const path of ['js/nyc-geodata.js', 'js/city-config.js']) vm.runInContext(read(path), context);
-const { TELEPORT_LOCATIONS, LANDMARK_SITES, blockAt, nearestRoads, getIslandBoundsAtZ } = context.window.NYC;
+const { TELEPORT_LOCATIONS, LANDMARK_SITES, blockAt, nearestRoads, getIslandBoundsAtZ } = context.window.CITY;
 
 test('every teleport button has a destination on a real roadway inside Manhattan', () => {
   const buttons = [...read('index.html').matchAll(/data-teleport="([^"]+)"/g)].map((match) => match[1]);
@@ -41,7 +41,7 @@ test('preset and map teleports share arrival resets and mark the resolved landin
   const landed = { x: -305.7, z: 5210 };
   let map;
   const environment = {
-    window: { NYC: { TELEPORT_LOCATIONS } },
+    window: { CITY: { TELEPORT_LOCATIONS } },
     controllerManager: {
       teleportActiveTo: (...args) => { calls.push(['teleport', ...args]); return landed; }
     },

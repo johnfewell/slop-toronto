@@ -24,9 +24,9 @@ class SpotLight {
     this.castShadow = false;
   }
 }
-const window = { NYC: { THREE: { SpotLight } } };
+const window = { CITY: { THREE: { SpotLight } } };
 vm.runInNewContext(readFileSync(join(__dirname, '../js/vehicle-lights.js'), 'utf8'), { window });
-const { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight } = window.NYC;
+const { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight } = window.CITY;
 const specs = {
   sedan: { headlight: [0.56, 0.705], zFront: 2.25 },
   suv: { headlight: [0.6, 0.9], zFront: 2.3 },

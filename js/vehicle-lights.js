@@ -1,5 +1,5 @@
 (function () {
-const { THREE } = window.NYC;
+const { THREE } = window.CITY;
 
 // A restrained pair of low beams. Intensity is calibrated for inverse-square decay (the previous lights used 1.22).
 // Keep these ordinary, unshadowed spots so they stay in the clustered lighting path.
@@ -35,5 +35,5 @@ function placeVehicleHeadlight(spot, spec, side, matrix = null) {
   }
 }
 
-Object.assign(window.NYC, { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight });
+Object.assign(window.CITY, { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight });
 })();
