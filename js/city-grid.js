@@ -1,9 +1,8 @@
 (function () {
 // js/city-grid.js
-// Builds Abuja's ground: the street level (asphalt) of the detailed city, every curb island with its kerb, walkway &
-// verge around the plots (yards, lawns, open savanna), the medians of the dual carriageways, the lakes & reservoirs
-// (Jabi Lake...) and the streams, the compound walls & gates that line the residential streets, and the flyovers of the
-// grade-separated interchanges (decks, parapets, piers, ramps).
+// Builds Toronto's ground: the street level (asphalt) of the detailed city, every curb island with its kerb, walkway &
+// verge around the plots (yards, lawns, parks), the medians, Lake Ontario & the harbour, the streams, the walls the map
+// has, and the flyovers of the Gardiner & the interchanges (decks, parapets, piers, ramps).
 
 const { THREE } = window.CITY;
 const { mergeGeometries } = window.CITY.Addons;
@@ -402,9 +401,8 @@ function accWall(A, ax, az, bx, bz, y0, h, t, col) {
   accQuad(A, b0, d0, d1, b1, [ux, 0, uz], [[0, 0], [t, 0], [t, h], [0, h]], col, h);
 }
 
-// Paint colours of Abuja's walls & gates (sRGB hex)
-const WALL_PAINTS = [0xe9dfc8, 0xf1ede3, 0xdac8a3, 0xcdb28b, 0xc4c1b8, 0xe2b691, 0xe7d59b, 0xb9673f, 0xd9d2c0, 0xa9b49a];
-const GATE_PAINTS = [0x24262a, 0x1d2b22, 0x5a1f1f, 0x2b3445, 0x6b6e70, 0x3a2c22];
+// Toronto's mapped walls: poured concrete, limestone & red-brown brick (sRGB hex)
+const WALL_PAINTS = [0xb9b4aa, 0xa8a49c, 0xc9c0ae, 0xd6ccb6, 0x9a5a44, 0x86513f, 0xb7b0a3];
 const rgb = (hex) => {
   const c = new THREE.Color(hex);
   return [c.r, c.g, c.b];
@@ -628,16 +626,13 @@ function buildCityGrid(scene) {
   }
 
   // ===================================================================================================================
-  // 4. COMPOUND WALLS & GATES. The walls the map has, and on the built-up islands of houses & low blocks (outside the
-  //    Central Business District & the Three Arms Zone) the property-line wall nearly every plot in Abuja has: rendered
-  //    blockwork painted per compound, 2.4 m high, a steel gate between piers every 25-45 m
+  // 4. WALLS. Only the walls the map has: Toronto's plots open onto the sidewalk (front yards, plazas, forecourts), so
+  //    Abuja's generated property-line wall & gate round every plot is gone
   // ===================================================================================================================
   {
     const wallMat = createRenderedWallMaterial();
-    const gateMat = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.55 });
     const CELL = 700;
     const walls = new Map(); // spatial cell -> accumulator
-    const gates = new Map();
     const accAt = (map, x, z, withExtra) => {
       const k = Math.floor(x / CELL) * 10000 + Math.floor(z / CELL);
       if (!map.has(k)) map.set(k, makeAcc(true, withExtra ? 'wallTop' : null));
@@ -655,59 +650,6 @@ function buildCityGrid(scene) {
         accWall(accAt(walls, ax, az, true), ax, az, bx, bz, SW_TOP, Math.min(Math.max(h, 1.8), 3.5), 0.22, col);
       }
     }
-    // buildings per island: count & mean footprint
-    const per = new Map();
-    for (const bl of GEO.buildings) {
-      const b = blockAt(bl[0], bl[1]);
-      if (!b) continue;
-      let area = 0;
-      for (const [u0, u1, v0, v1] of bl[3]) area += (u1 - u0) * (v1 - v0);
-      const s = per.get(b) || { n: 0, area: 0 };
-      s.n++;
-      s.area += area;
-      per.set(b, s);
-    }
-    let walled = 0;
-    for (const b of BLOCKS) {
-      const s = per.get(b);
-      if (!s || b.median || mappedOn.has(b) || b.park > 0.4 || b.wild > 0.5 || b.area > 2000000) continue;
-      if (s.area / s.n > 1500) continue; // offices & institutions stand in open grounds (and the CBD, below)
-      const d = b.district;
-      if (d === 'Central Business District' || d === 'Three Arms Zone') continue;
-      const line = offsetPolygonInward(b.poly, SW);
-      if (!line) continue;
-      walled++;
-      const col = rgb(WALL_PAINTS[Math.floor(hash2(b.cx, b.cz) * WALL_PAINTS.length)]);
-      const gateCol = rgb(GATE_PAINTS[Math.floor(hash2(b.cz, b.cx) * GATE_PAINTS.length)]);
-      // walk the property line: wall runs between gates
-      let next = 12 + hash2(b.cx, 1) * 20; // metres to the next gate
-      for (let i = 0; i < line.length; i++) {
-        const a = line[i], c = line[(i + 1) % line.length];
-        const L = Math.hypot(c.x - a.x, c.z - a.z);
-        if (L < 0.05) continue;
-        const ux = (c.x - a.x) / L, uz = (c.z - a.z) / L;
-        let s0 = 0;
-        while (s0 < L) {
-          if (next > 0) {
-            const run = Math.min(L - s0, next);
-            accWall(accAt(walls, a.x, a.z, true), a.x + ux * s0, a.z + uz * s0, a.x + ux * (s0 + run), a.z + uz * (s0 + run), SW_TOP, 2.4, 0.22, col);
-            s0 += run;
-            next -= run;
-          } else if (L - s0 >= 5.6) {
-            // a gate: two piers and the leaf between them, then the next wall run
-            const gx = a.x + ux * s0, gz = a.z + uz * s0;
-            const A = accAt(walls, gx, gz, true);
-            accWall(A, gx, gz, gx + ux * 0.5, gz + uz * 0.5, SW_TOP, 2.75, 0.5, col);
-            accWall(A, gx + ux * 5.1, gz + uz * 5.1, gx + ux * 5.6, gz + uz * 5.6, SW_TOP, 2.75, 0.5, col);
-            accWall(accAt(gates, gx, gz, false), gx + ux * 0.5, gz + uz * 0.5, gx + ux * 5.1, gz + uz * 5.1, SW_TOP + 0.05, 2.25, 0.08, gateCol);
-            s0 += 5.6;
-            next = 25 + hash2(gx, gz) * 20;
-          } else {
-            next = 2; // too short for a gate here: carry the wall on and try just after the corner
-          }
-        }
-      }
-    }
     for (const A of walls.values()) {
       const g = accGeometry(A);
       if (!g) continue;
@@ -716,15 +658,7 @@ function buildCityGrid(scene) {
       m.name = 'CompoundWalls';
       group.add(m);
     }
-    for (const A of gates.values()) {
-      const g = accGeometry(A);
-      if (!g) continue;
-      const m = new THREE.Mesh(g, gateMat);
-      m.castShadow = m.receiveShadow = true;
-      m.name = 'CompoundGates';
-      group.add(m);
-    }
-    if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] compound walls on ${walled} islands, ${mappedOn.size} with mapped walls`);
+    if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] mapped walls on ${mappedOn.size} islands`);
   }
 
   // ===================================================================================================================

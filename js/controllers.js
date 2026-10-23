@@ -9,8 +9,8 @@
 
 const { THREE } = window.CITY;
 const { CITY_BOUNDS, TELEPORT_LOCATIONS, isTypingInField, blockAt, waterAt, terrainHeightAt, deckHeightAt } = window.CITY;
-// Start on Shehu Shagari Way by Eagle Square, facing the square (city-config.js TELEPORT_LOCATIONS)
-const SPAWN = (TELEPORT_LOCATIONS && TELEPORT_LOCATIONS.humberArch) || { x: 0, z: 140, heading: Math.PI };
+// Start on Yonge Street by Sankofa Square, heading north to Dundas (city-config.js TELEPORT_LOCATIONS)
+const SPAWN = (TELEPORT_LOCATIONS && TELEPORT_LOCATIONS.yongeDundas) || { x: 0, z: 140, heading: Math.PI };
 const {
   cityUniforms,
   createCarPaintMaterial,

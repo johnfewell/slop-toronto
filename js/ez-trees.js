@@ -237,7 +237,7 @@ async function buildEzTrees(scene, generated) {
     update(viewPos.setFromMatrixPosition(camera.matrixWorld));
   };
   // levels for the start view, so the shader warm-up sees the tree meshes
-  const start = (window.CITY.TELEPORT_LOCATIONS || {}).humberArch || { x: 0, z: 0 };
+  const start = (window.CITY.TELEPORT_LOCATIONS || {}).yongeDundas || { x: 0, z: 0 };
   update(new V3(start.x, 10, start.z));
   // every tree mesh shows one instance deep underground until its first real use, so the start-up shader warm-up
   // (main.js) compiles all of them: a mesh seen for the first time mid-ride stalls the frame while it compiles

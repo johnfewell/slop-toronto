@@ -1,0 +1,4 @@
+[
+ {"name": "spawn-cycle", "wait": 6000},
+ {"name": "spawn-walk", "mode": "person", "wait": 5000}
+]
