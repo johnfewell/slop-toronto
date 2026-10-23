@@ -1,0 +1,5 @@
+[
+ { "name": "cr1-skyline-golden", "camera": "skyline", "time": "golden", "wait": 9000 },
+ { "name": "cr2-yonge-up", "mode": "person", "time": "midday", "wait": 8000, "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [330, 2, -1060], look: [322, 70, -1260], fov: 70 }); })()" },
+ { "name": "cr3-islands-midday", "camera": "islands", "time": "midday", "wait": 7000, "js": "window.__CITY_APP.cameraSystem.cinema = null" }
+]

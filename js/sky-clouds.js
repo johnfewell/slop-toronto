@@ -4,15 +4,16 @@
 // tools/build-clouds.mjs), lit by the takram atmosphere it is built on. The city keeps its own sky, lights & fog
 // (lighting.js): the clouds march through the scene pass's depth and composite over its colour before the grade
 // (main.js). The world sits on the globe at Union Station, turned by the street grid's bearing, and the clouds see the
-// same 22 August sun as the city. Opt-in for now: ?clouds=1.
+// same 22 August sun as the city. On by default (about 4-5 fps on the M4 mini); ?clouds=0 turns them off.
 
 const { THREE, TSL } = window.CITY;
+const CLOUD_GAIN = 4;
 
 // Called right after renderer.init(), before anything renders or builds (the contexts must be on the renderer first);
 // attach() hands it the camera & the lighting once they exist
 async function setupClouds(renderer) {
-  // opt-in (?clouds=1) until they render cleanly inside the city: on their own they do (tools/clouds-probe.html)
-  if (new URLSearchParams(location.search).get('clouds') !== '1') return null;
+  // on by default; ?clouds=0 turns them off
+  if (new URLSearchParams(location.search).get('clouds') === '0') return null;
   let M;
   try {
     M = await import('./clouds.js');
@@ -23,7 +24,11 @@ async function setupClouds(renderer) {
   const { Clouds, Atmosphere, Geospatial } = M;
   const { cityUniforms, GEO } = window.CITY;
 
-  const atmosphere = new Atmosphere.AtmosphereContext();
+  // The atmosphere lights the clouds in its own luminance units, which came out far darker than the city's sun & sky
+  // (grey-brown clouds at noon): its luminance scale is raised to the city's exposure. ?cloudGain=<n> tries another
+  const params = new Atmosphere.AtmosphereParameters();
+  params.luminanceScale *= parseFloat(new URLSearchParams(location.search).get('cloudGain')) || CLOUD_GAIN;
+  const atmosphere = new Atmosphere.AtmosphereContext(params);
   atmosphere.raymarchScattering = false;
   atmosphere.accurateShadowScattering = false;
   const cloudsPass = Clouds.clouds({ sceneDepth: null });
@@ -34,6 +39,10 @@ async function setupClouds(renderer) {
     getClouds: () => ctx
   });
   ctx.qualityPreset = 'medium';
+  // The medium & low presets' approximate sun & sky light breaks the clouds pass on three's dev build: its shader reads
+  // the atmosphere's parameters without ever declaring their struct ('Member "bottomRadius" not found in struct
+  // "AtmosphereParameters"', then nothing renders). The accurate light costs nothing measurable here
+  ctx.clouds.accurateSunSkyLight = true;
   Clouds.applyCloudTypePreset(ctx, 'fairWeatherCumulus');
   ctx.stbnTexture = Clouds.createJitterTexture();
   Clouds.loadBakedCloudTextures({
