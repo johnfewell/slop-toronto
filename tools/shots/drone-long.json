@@ -1,0 +1,1 @@
+[ { "name": "e1-drone", "camera": "drone", "time": "midday", "wait": 4000 }, { "name": "e2-drone", "wait": 12000 }, { "name": "e3-drone", "wait": 12000 } ]

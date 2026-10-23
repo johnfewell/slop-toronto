@@ -106,6 +106,10 @@ async function initApp() {
 
   const streetDetails = buildStreetDetails(scene);
   markInit('streetDetails');
+  // Trees: the City's street trees & the parkland ones in John's EZ-Tree models (ez-trees.js), else mrdoob's
+  const treeMode = new URLSearchParams(location.search).get('trees'); // ?trees=slop: mrdoob's trees (comparison)
+  if (treeMode === 'slop' || !(await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees();
+  markInit('trees');
   // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
   await window.CITY.buildStreetProps(scene);
   markInit('streetProps');

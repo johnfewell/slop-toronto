@@ -1,0 +1,38 @@
+[
+ {
+  "name": "t1-trail-golden",
+  "camera": "trail",
+  "time": "golden",
+  "wait": 8000
+ },
+ {
+  "name": "t2-islands-midday",
+  "camera": "islands",
+  "time": "midday",
+  "wait": 6000
+ },
+ {
+  "name": "t3-street-annex",
+  "mode": "person",
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.6662, -79.4040); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz)); window.__CITY_APP.selectCamera('chase', true); })()",
+  "wait": 8000
+ },
+ {
+  "name": "t4-street-cabbagetown",
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.6645, -79.3655); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz)); window.__CITY_APP.selectCamera('chase', true); })()",
+  "wait": 8000
+ },
+ {
+  "name": "t5-drone",
+  "camera": "drone",
+  "wait": 4000
+ },
+ {
+  "name": "t6-drone-later",
+  "wait": 12000
+ },
+ {
+  "name": "t7-drone-latest",
+  "wait": 12000
+ }
+]

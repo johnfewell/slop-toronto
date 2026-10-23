@@ -505,6 +505,7 @@ function buildStreetDetails(scene) {
   };
   const treePositions = [];
   const palms = [];
+  const cityStreetTrees = !!(GEO.streetTrees && GEO.streetTrees.length);
   // neem (feathery pinnate leaves, dense crown), Indian almond (tiered horizontal branches), mango (dense dark dome)
   const broadleaf = (r) => (r < 0.45 ? 0 : r < 0.8 ? 1 : 2);
   const ceremonial = new Set(['Central Business District', 'Three Arms Zone', 'Maitama', 'Asokoro']);
@@ -518,6 +519,8 @@ function buildStreetDetails(scene) {
       }
       const width = (2 * b.area) / per;
       if (width < 3) continue;
+      // Toronto: the City's street tree inventory (GEO.streetTrees, ez-trees.js) has the median & verge trees
+      if (cityStreetTrees) continue;
       const usePalms = ceremonial.has(b.district) || width < 5;
       alongCurb(b, usePalms ? 15 : 20, 7, (x, z, ux, uz, inx, inz) => {
         const px = x + inx * width * 0.5, pz = z + inz * width * 0.5;
@@ -546,8 +549,8 @@ function buildStreetDetails(scene) {
       }
       continue;
     }
-    // verge trees, ~2.6 m in from the kerb, every ~22 m where the road isn't a service lane
-    alongCurb(b, 22, 6, (x, z, ux, uz, inx, inz) => {
+    // verge trees, ~2.6 m in from the kerb, every ~22 m where the road isn't a service lane (Toronto: the City's own)
+    if (!cityStreetTrees) alongCurb(b, 22, 6, (x, z, ux, uz, inx, inz) => {
       const px = x + inx * 2.6, pz = z + inz * 2.6;
       if (hashPos(px, 3.1, pz) < 0.3 || blockAt(px, pz) !== b || !isClearOfPoles(px, pz, 5) || !clearOfBuildings(px, pz)) return;
       const r = roadNear(x - inx * 3, z - inz * 3, 12);
@@ -599,10 +602,9 @@ function buildStreetDetails(scene) {
     group.add(trunkInst, frondInst);
   }
 
-  // Procedural trees (js/trees.js): species skeletons with leaf-spray cards, one instanced mesh per species, variant &
-  // level of detail, each tree's level following the camera
-  const treeField = createTreeField(scene, treePositions);
-  group.add(treeField.group);
+  // Trees: main.js draws these (the parkland & yard trees) with the City's street trees in John's EZ-Tree models
+  // (ez-trees.js); mrdoob's procedural trees (js/trees.js) only if those don't load
+  const addFallbackTrees = () => group.add(createTreeField(scene, treePositions).group);
 
   // Instanced poles, arms, luminaires & signal heads
   function addMatrixArrayInstanced(geo, mat, matrices, castShadow = true) {
@@ -693,7 +695,7 @@ function buildStreetDetails(scene) {
   }
 
   scene.add(group);
-  return { group, footprints, signalClock, update };
+  return { group, footprints, signalClock, update, treePositions, addFallbackTrees };
 }
 
 Object.assign(window.CITY, { buildStreetDetails });
