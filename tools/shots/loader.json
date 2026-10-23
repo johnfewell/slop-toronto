@@ -1,0 +1,4 @@
+[
+ {"name": "loader-a", "mode": "person", "wait": 1500, "js": "document.getElementById('loading-overlay').classList.remove('hidden')"},
+ {"name": "loader-b", "mode": "person", "wait": 1300, "js": "document.getElementById('loading-status').textContent = 'Compiling Shaders & Render Pipelines... 62%'; document.getElementById('loading-progress').style.transform = 'scaleX(0.62)'; document.querySelector('.loader-track').classList.remove('is-indeterminate')"}
+]

@@ -173,7 +173,7 @@ body::after {
   z-index: 100;
   display: grid;
   place-items: center;
-  background: radial-gradient(120% 90% at 50% 38%, #1b1e24 0%, #0c0d10 55%, #060607 100%);
+  background: radial-gradient(120% 90% at 50% 36%, #16304d 0%, #0b1726 55%, #05090f 100%);
   transition: opacity 0.6s ease, visibility 0.6s ease;
 }
 
@@ -191,39 +191,166 @@ body::after {
   animation: rise-in 0.8s var(--ease-out) both;
 }
 
-.loader-logo {
-  width: 84px;
-  height: 84px;
-  margin-bottom: 22px;
-  border-radius: 24px;
-  box-shadow: 0 18px 40px -14px rgba(0, 135, 81, 0.6);
+/* The ride: a 360 x 170 window onto the waterfront trail. Layers back to front: sky & sun, far skyline, near skyline
+   (the CN Tower's beacon blinking), trees, trail & lake, the trail's centre line, the lake's sparkles, the rider. Each
+   sliding layer is two copies of a seamless tile, moved one tile's width per loop; the speeds fall off with distance. */
+.ride {
+  position: relative;
+  width: min(380px, calc(100vw - 32px));
+  aspect-ratio: 360 / 170;
+  margin-bottom: 26px;
+  border-radius: 22px;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 30px 70px -24px rgba(242, 183, 102, 0.45);
 }
 
-/* The pin drops onto Aso Rock and bounces; the road's centre line runs towards it */
-.ld-pin {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-  animation: pin-drop 1.6s var(--ease-out) 0.2s both, pin-bob 2.4s ease-in-out 1.8s infinite;
+.ride svg {
+  display: block;
 }
 
-.ld-dash {
-  animation: road-run 1.1s linear infinite;
+.ride-back,
+.ride-front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-@keyframes pin-drop {
-  0% { transform: translateY(-30px) scale(0.7); opacity: 0; }
-  55% { transform: translateY(2px) scaleY(0.86); opacity: 1; }
-  72% { transform: translateY(-4px) scaleY(1.04); }
-  100% { transform: none; }
+.ride-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: 200%;
+  height: 100%;
+  animation: ride-slide linear infinite;
+  will-change: transform;
 }
 
-@keyframes pin-bob {
-  0%, 100% { transform: none; }
-  50% { transform: translateY(-2.5px); }
+.ride-layer > svg {
+  flex: none;
+  width: 50%;
+  height: 100%;
 }
 
-@keyframes road-run {
-  to { stroke-dashoffset: -10; }
+.ld-far { animation-duration: 90s; }
+.ld-near { animation-duration: 38s; }
+.ld-trees { animation-duration: 8.5s; }
+.ld-dashes { animation-duration: 5s; }
+.ld-sparkle-a { animation-duration: 4.2s; }
+
+.ld-sparkle-b {
+  animation: ride-slide 6.4s linear infinite, twinkle 1.7s ease-in-out infinite alternate;
+}
+
+/* the CN Tower's beacon, over the antenna's tip in both copies of the tile */
+.beacon {
+  position: absolute;
+  top: 7.1%;
+  left: 20.833%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: #ff5a44;
+  box-shadow: 0 0 6px 2px rgba(255, 90, 68, 0.7);
+  animation: beacon 2.2s steps(1, end) infinite;
+}
+
+.beacon + .beacon {
+  left: 70.833%;
+}
+
+.rider {
+  position: absolute;
+  left: 31%;
+  top: 55.9%;
+  width: 17.78%;
+  aspect-ratio: 64 / 48;
+}
+
+.rider-part {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* wheels turn at the trail's speed (5 s a tile, 9-unit radius); the crank and legs at an easy cadence */
+.wheel {
+  position: absolute;
+  top: 60.42%;
+  width: 28.125%;
+  height: 37.5%;
+  animation: spin 0.79s linear infinite;
+}
+
+.wheel-rear { left: 7.81%; }
+.wheel-front { left: 60.94%; }
+
+.crank {
+  transform-origin: 45.31% 79.17%;
+  animation: spin 1s linear infinite;
+}
+
+.leg {
+  transform-origin: 39.06% 42.7%;
+  animation: pedal 0.5s ease-in-out infinite alternate;
+}
+
+.leg-back {
+  animation-delay: -0.5s;
+}
+
+.rider-body {
+  animation: bob 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes ride-slide {
+  to { transform: translateX(-50%); }
+}
+
+@keyframes spin {
+  to { transform: rotate(1turn); }
+}
+
+@keyframes pedal {
+  from { transform: rotate(-13deg); }
+  to { transform: rotate(11deg); }
+}
+
+@keyframes bob {
+  to { transform: translateY(1.5%); }
+}
+
+@keyframes twinkle {
+  from { opacity: 0.25; }
+  to { opacity: 1; }
+}
+
+@keyframes beacon {
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0.15; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ride *,
+  .ride-layer {
+    animation: none !important;
+  }
+}
+
+.loader-ends {
+  display: flex;
+  justify-content: space-between;
+  width: 240px;
+  margin: -8px 0 12px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
 }
 
 .loader-title {
@@ -253,7 +380,7 @@ body::after {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--accent);
+  background: linear-gradient(90deg, var(--accent), #f2b766);
   transform-origin: left center;
   transform: scaleX(0);
   transition: transform 0.3s ease;

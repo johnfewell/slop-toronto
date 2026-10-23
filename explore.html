@@ -151,38 +151,88 @@
     </defs>
   </svg>
 
-  <!-- Loading Screen -->
+  <!-- Loading Screen: a cyclist on the waterfront trail at golden hour, the skyline sliding past behind. Every moving
+       part is an HTML layer animated by transform or opacity alone, so it keeps riding on the compositor while the main
+       thread is busy building the city. The scenery tiles come from tools/build-loader-art.mjs. -->
   <div id="loading-overlay" role="status" aria-live="polite">
     <div class="loader">
-      <svg class="loader-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true">
-        <defs>
-          <linearGradient id="ld-sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#00b46c"/>
-            <stop offset="1" stop-color="#006b3d"/>
-          </linearGradient>
-          <linearGradient id="ld-rock" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#fffaf0"/>
-            <stop offset="1" stop-color="#eadcc2"/>
-          </linearGradient>
-          <clipPath id="ld-tile"><rect width="64" height="64" rx="18"/></clipPath>
-        </defs>
-        <g clip-path="url(#ld-tile)">
-          <rect width="64" height="64" fill="url(#ld-sky)"/>
-          <path d="M-2 49C6 48 10 40.5 13.5 33.5 17.5 26 24 22 32 21.5 40 21 45.5 25 48.5 31.5 51.5 38 55.5 45 66 48.5V66H-2Z" fill="url(#ld-rock)"/>
-          <g fill="none" stroke="#cdbb98" stroke-width="1.5" stroke-linecap="round">
-            <path d="M23.5 25.5C20.5 31.5 19 38 18.2 45"/>
-            <path d="M30.5 22.6C28.8 30 28 37.5 28 45.5"/>
-            <path d="M38.5 23C39.6 30 40.6 37 41.5 45"/>
-          </g>
-          <path d="M-2 51.5C14 50 40 49 66 51V66H-2Z" fill="#004a2c"/>
-          <path d="M17 66C22 59 33 54.5 50 51.5" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
-          <path class="ld-dash" d="M17 66C22 59 33 54.5 50 51.5" fill="none" stroke="#004a2c" stroke-width="0.9" stroke-dasharray="2.4 2.6"/>
-          <g class="ld-pin"><path d="M44 5.5a8.6 8.6 0 0 1 8.6 8.6c0 6.4-8.6 13.9-8.6 13.9s-8.6-7.5-8.6-13.9A8.6 8.6 0 0 1 44 5.5z" fill="#f4bf4f" stroke="#006b3d" stroke-width="1.2"/>
-          <circle cx="44" cy="14.2" r="3.1" fill="#006b3d"/></g>
-        </g>
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<linearGradient id="ld-haze" x1="0" y1="80" x2="0" y2="126" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6a8bb8"/><stop offset="1" stop-color="#c7a98c"/></linearGradient>
+<symbol id="ld-far" viewBox="0 0 360 170"><g fill="url(#ld-haze)"><path d="M-6 126V107.6h1.7V107.6h5.2V107.6h1.7V126z"/><path d="M354 126V107.6h1.7V107.6h5.2V107.6h1.7V126z"/><path d="M2.8 126V106.5h2.8V101.1h8.5V106.5h2.8V126z"/><path d="M18.5 126V88.7h3.7V88.7h11.1V88.7h3.7V126z"/><path d="M37.4 126V96.3h2.3V96.3h6.9V96.3h2.3V126z"/><path d="M51.7 126V110.3h3.5V103.2h10.4V110.3h3.5V126z"/><path d="M71.1 126V90.1h2.9V90.1h8.8V90.1h2.9V126z"/><path d="M88.4 126V110.4h1.6V110.4h4.7V110.4h1.6V126z"/><path d="M98.1 126V100.8h3.1V93.9h9.2V100.8h3.1V126z"/><path d="M115.2 126V83.1h2.3V83.1h6.9V83.1h2.3V126z"/><path d="M129.2 126V100.7h2.7V100.7h8.2V100.7h2.7V126z"/><path d="M145.5 126V80.5h1.6V80.5h4.9V80.5h1.6V126z"/><path d="M155.2 126V113h1.5V113h4.4V113h1.5V126z"/><path d="M162.7 126V90.4h1.9V90.4h5.8V90.4h1.9V126z"/><path d="M173.6 126V98h3.2V98h9.5V98h3.2V126z"/><path d="M191.4 126V113.9h1.6V113.9h4.8V113.9h1.6V126z"/><path d="M202.3 126V86.3h3.6V86.3h10.9V86.3h3.6V126z"/><path d="M220.8 126V116.8h3.4V112.8h10.1V116.8h3.4V126z"/><path d="M238.6 126V104h4V101h12.1V104h4V126z"/><path d="M261.1 126V113.9h2.4V113.9h7.1V113.9h2.4V126z"/><path d="M273.2 126V100.4h2.4V93.8h7.2V100.4h2.4V126z"/><path d="M287.1 126V102.7h3.9V102.7h11.6V102.7h3.9V126z"/><path d="M306.9 126V94.6h2V87.7h6.1V94.6h2V126z"/><path d="M319.5 126V85.2h3.1V85.2h9.3V85.2h3.1V126z"/><path d="M335.7 126V96.7h3.8V89.6h11.3V96.7h3.8V126z"/><path d="M356.5 126V101.3h4.1V101.3h12.4V101.3h4.1V126z"/><path d="M-3.5 126V101.3h4.1V101.3h12.4V101.3h4.1V126z"/></g></symbol>
+<symbol id="ld-near" viewBox="0 0 360 170"><g fill="#0d2238"><rect x="2" y="92" width="12" height="34"/><rect x="16" y="100" width="9" height="26"/><rect x="30" y="84" width="14" height="42"/><rect x="47" y="96" width="10" height="30"/><rect x="62" y="58" width="13" height="68"/><rect x="77" y="70" width="10" height="56"/><rect x="89" y="44" width="15" height="82"/><rect x="106" y="52" width="11" height="74"/><rect x="119" y="66" width="9" height="60"/><rect x="130" y="74" width="12" height="52"/><path d="M144.5 126 148.9 52h2.2l4.4 74z"/><ellipse cx="150" cy="51" rx="8.2" ry="3.4"/><rect x="146.4" y="47.2" width="7.2" height="3.6" rx="1.2"/><path d="M149 47.4 149.3 33h1.4l.3 14.4z"/><ellipse cx="150" cy="33.4" rx="2.8" ry="1.4"/><path d="M149.55 32.6 149.7 12h.6l.15 20.6z"/><path d="M164 126c2-13 12-21 24-21s22 8 24 21z"/><path d="M162 126v-6h52v6z"/><rect x="218" y="86" width="10" height="40"/><rect x="230" y="74" width="13" height="52"/><rect x="245" y="92" width="9" height="34"/><rect x="256" y="80" width="14" height="46"/><rect x="272" y="98" width="10" height="28"/><rect x="284" y="88" width="12" height="38"/><rect x="298" y="104" width="9" height="22"/><rect x="309" y="94" width="14" height="32"/><rect x="325" y="100" width="10" height="26"/><rect x="337" y="90" width="13" height="36"/><rect x="352" y="92" width="12" height="34"/><rect x="-8" y="92" width="12" height="34"/></g><g fill="#ffd28a" opacity="0.75"><rect x="17.8" y="104" width="1.2" height="1.8"/><rect x="20.8" y="104" width="1.2" height="1.8"/><rect x="17.8" y="116" width="1.2" height="1.8"/><rect x="69.8" y="66" width="1.2" height="1.8"/><rect x="69.8" y="74" width="1.2" height="1.8"/><rect x="66.8" y="82" width="1.2" height="1.8"/><rect x="63.8" y="86" width="1.2" height="1.8"/><rect x="69.8" y="86" width="1.2" height="1.8"/><rect x="69.8" y="106" width="1.2" height="1.8"/><rect x="72.8" y="110" width="1.2" height="1.8"/><rect x="72.8" y="114" width="1.2" height="1.8"/><rect x="84.8" y="82" width="1.2" height="1.8"/><rect x="78.8" y="86" width="1.2" height="1.8"/><rect x="78.8" y="90" width="1.2" height="1.8"/><rect x="84.8" y="102" width="1.2" height="1.8"/><rect x="84.8" y="110" width="1.2" height="1.8"/><rect x="99.8" y="48" width="1.2" height="1.8"/><rect x="90.8" y="56" width="1.2" height="1.8"/><rect x="93.8" y="56" width="1.2" height="1.8"/><rect x="90.8" y="60" width="1.2" height="1.8"/><rect x="99.8" y="60" width="1.2" height="1.8"/><rect x="93.8" y="68" width="1.2" height="1.8"/><rect x="90.8" y="72" width="1.2" height="1.8"/><rect x="93.8" y="76" width="1.2" height="1.8"/><rect x="96.8" y="92" width="1.2" height="1.8"/><rect x="93.8" y="96" width="1.2" height="1.8"/><rect x="90.8" y="100" width="1.2" height="1.8"/><rect x="99.8" y="104" width="1.2" height="1.8"/><rect x="90.8" y="112" width="1.2" height="1.8"/><rect x="96.8" y="112" width="1.2" height="1.8"/><rect x="99.8" y="112" width="1.2" height="1.8"/><rect x="107.8" y="68" width="1.2" height="1.8"/><rect x="110.8" y="72" width="1.2" height="1.8"/><rect x="110.8" y="96" width="1.2" height="1.8"/><rect x="113.8" y="112" width="1.2" height="1.8"/><rect x="113.8" y="116" width="1.2" height="1.8"/><rect x="120.8" y="70" width="1.2" height="1.8"/><rect x="123.8" y="74" width="1.2" height="1.8"/><rect x="123.8" y="94" width="1.2" height="1.8"/><rect x="134.8" y="78" width="1.2" height="1.8"/><rect x="134.8" y="98" width="1.2" height="1.8"/><rect x="137.8" y="102" width="1.2" height="1.8"/><rect x="137.8" y="114" width="1.2" height="1.8"/><rect x="225.8" y="106" width="1.2" height="1.8"/><rect x="222.8" y="110" width="1.2" height="1.8"/><rect x="234.8" y="102" width="1.2" height="1.8"/><rect x="234.8" y="110" width="1.2" height="1.8"/><rect x="249.8" y="104" width="1.2" height="1.8"/><rect x="257.8" y="88" width="1.2" height="1.8"/><rect x="260.8" y="88" width="1.2" height="1.8"/><rect x="263.8" y="92" width="1.2" height="1.8"/><rect x="257.8" y="104" width="1.2" height="1.8"/><rect x="279.8" y="102" width="1.2" height="1.8"/><rect x="288.8" y="100" width="1.2" height="1.8"/><rect x="313.8" y="98" width="1.2" height="1.8"/><rect x="310.8" y="106" width="1.2" height="1.8"/><rect x="313.8" y="106" width="1.2" height="1.8"/><rect x="329.8" y="104" width="1.2" height="1.8"/><rect x="332.8" y="108" width="1.2" height="1.8"/><rect x="329.8" y="112" width="1.2" height="1.8"/><rect x="359.8" y="96" width="1.2" height="1.8"/><rect x="-0.2" y="96" width="1.2" height="1.8"/><rect x="353.8" y="112" width="1.2" height="1.8"/></g></symbol>
+<symbol id="ld-trees" viewBox="0 0 360 170"><circle fill="#14463a" cx="2" cy="120.6" r="8.2"/><circle fill="#14463a" cx="362" cy="120.6" r="8.2"/><rect fill="#0f2f2a" x="1.4" y="125.5" width="1.2" height="8.5"/><circle fill="#14463a" cx="15.5" cy="120.9" r="6.6"/><rect fill="#0f2f2a" x="14.9" y="124.8" width="1.2" height="9.2"/><circle fill="#14463a" cx="23.8" cy="122.1" r="5.7"/><circle fill="#14463a" cx="32.5" cy="123" r="6.3"/><circle fill="#14463a" cx="44.8" cy="123.6" r="5.4"/><circle fill="#14463a" cx="50.3" cy="122.4" r="7.3"/><circle fill="#1d5a44" cx="63.7" cy="123" r="7"/><circle fill="#14463a" cx="76.4" cy="122" r="8"/><rect fill="#0f2f2a" x="75.8" y="126.8" width="1.2" height="7.2"/><circle fill="#1d5a44" cx="88.6" cy="120.4" r="9.3"/><rect fill="#0f2f2a" x="88" y="125.9" width="1.2" height="8.1"/><circle fill="#14463a" cx="102.5" cy="119.7" r="7.8"/><rect fill="#0f2f2a" x="101.9" y="124.4" width="1.2" height="9.6"/><circle fill="#14463a" cx="111.3" cy="123.5" r="5.5"/><circle fill="#14463a" cx="119.2" cy="121.9" r="8.6"/><rect fill="#0f2f2a" x="118.6" y="127" width="1.2" height="7"/><circle fill="#14463a" cx="135.4" cy="124.3" r="4.8"/><circle fill="#14463a" cx="145" cy="123.3" r="5.2"/><circle fill="#1d5a44" cx="151.7" cy="122.4" r="4.9"/><circle fill="#14463a" cx="157.7" cy="121.9" r="6.5"/><circle fill="#14463a" cx="169.2" cy="122.5" r="8"/><circle fill="#1d5a44" cx="183.2" cy="120.6" r="9.1"/><circle fill="#1d5a44" cx="197.5" cy="122.5" r="7.9"/><rect fill="#0f2f2a" x="196.9" y="127.2" width="1.2" height="6.8"/><circle fill="#1d5a44" cx="207.6" cy="122" r="7.5"/><rect fill="#0f2f2a" x="207" y="126.6" width="1.2" height="7.4"/><circle fill="#14463a" cx="217.6" cy="122" r="5.3"/><circle fill="#14463a" cx="226.2" cy="123" r="5"/><rect fill="#0f2f2a" x="225.6" y="126" width="1.2" height="8"/><circle fill="#14463a" cx="235" cy="123.3" r="4.5"/><circle fill="#1d5a44" cx="241.3" cy="122.9" r="7.1"/><circle fill="#1d5a44" cx="252.8" cy="120.6" r="8.2"/><rect fill="#0f2f2a" x="252.2" y="125.5" width="1.2" height="8.5"/><circle fill="#14463a" cx="264.8" cy="122.1" r="5.2"/><circle fill="#14463a" cx="275.2" cy="119.1" r="9"/><circle fill="#1d5a44" cx="290.1" cy="123.6" r="5.9"/><circle fill="#14463a" cx="301.2" cy="123.3" r="4.7"/><rect fill="#0f2f2a" x="300.6" y="126.1" width="1.2" height="7.9"/><circle fill="#1d5a44" cx="308.2" cy="122.1" r="8.6"/><rect fill="#0f2f2a" x="307.6" y="127.2" width="1.2" height="6.8"/><circle fill="#14463a" cx="325.3" cy="120.7" r="7"/><rect fill="#0f2f2a" x="324.7" y="124.9" width="1.2" height="9.1"/><circle fill="#14463a" cx="333.4" cy="122.9" r="5.4"/><circle fill="#1d5a44" cx="342.4" cy="120" r="9.4"/><circle fill="#1d5a44" cx="353" cy="119.8" r="7.9"/><circle fill="#1d5a44" cx="-7" cy="119.8" r="7.9"/></symbol>
+<symbol id="ld-dashes" viewBox="0 0 360 170"><path d="M0 140.2H360" stroke="#f6d27a" stroke-width="1.1" stroke-dasharray="7 11"/></symbol>
+<symbol id="ld-sparkle-a" viewBox="0 0 360 170"><g stroke="#f6c77a" stroke-width="1.1" stroke-linecap="round"><path d="M92.3 157.6h8.6" opacity="0.8"/><path d="M191.2 150.1h5.3" opacity="0.8"/><path d="M47.3 149.3h5" opacity="0.7"/><path d="M131.7 160.2h7.1" opacity="0.9"/><path d="M182.6 157.6h8.3" opacity="0.5"/><path d="M159.8 166.6h6.8" opacity="0.5"/><path d="M259.1 152.8h5.9" opacity="0.8"/><path d="M354.4 160.1h6.4" opacity="0.7"/><path d="M-5.6 160.1h6.4" opacity="0.4"/><path d="M147.5 153.9h5.1" opacity="0.9"/><path d="M175 156.9h5.4" opacity="0.9"/><path d="M199.3 153h6.4" opacity="0.8"/><path d="M217.8 153.2h5" opacity="0.4"/><path d="M295.7 163.3h7.1" opacity="0.8"/><path d="M18.7 162.5h10.6" opacity="0.8"/><path d="M88.9 166.7h6.2" opacity="0.5"/><path d="M102.8 166.7h7.9" opacity="0.8"/><path d="M79.6 164.6h10.6" opacity="0.4"/><path d="M181.1 156.7h5.2" opacity="0.4"/><path d="M267.3 155.3h5.7" opacity="0.9"/><path d="M237.5 162h5.9" opacity="0.6"/><path d="M129.3 166.3h11.9" opacity="0.4"/><path d="M178 158.1h5.5" opacity="0.8"/><path d="M261.1 165.3h9.9" opacity="0.6"/><path d="M334.8 155h6.3" opacity="0.7"/><path d="M13.5 163.9h5.8" opacity="0.7"/><path d="M358 167.4h10.4" opacity="0.7"/><path d="M-2 167.4h10.4" opacity="0.7"/></g></symbol>
+<symbol id="ld-sparkle-b" viewBox="0 0 360 170"><g stroke="#fff1cf" stroke-width="0.9" stroke-linecap="round"><path d="M81.5 152.1h5.7" opacity="0.9"/><path d="M357.4 149h5" opacity="0.9"/><path d="M-2.6 149h5" opacity="0.7"/><path d="M275.1 158.3h6.4" opacity="0.6"/><path d="M188.2 151.3h5.9" opacity="0.7"/><path d="M328.7 153.6h6.2" opacity="0.4"/><path d="M277.3 152.9h5.4" opacity="0.8"/><path d="M97.6 155.3h7.6" opacity="0.5"/><path d="M140.6 165.7h8.6" opacity="0.4"/><path d="M329.3 151.4h5.1" opacity="0.9"/><path d="M125.6 155.3h6.9" opacity="0.7"/><path d="M290.9 157.2h6.2" opacity="0.8"/><path d="M353.8 161.1h10.3" opacity="0.5"/><path d="M-6.2 161.1h10.3" opacity="0.6"/><path d="M333.7 149.5h5.1" opacity="0.8"/><path d="M186.8 153h6.7" opacity="0.4"/><path d="M103.8 151.1h5.6" opacity="0.5"/><path d="M127.1 153.3h6.4" opacity="0.6"/><path d="M53.7 154.5h5.5" opacity="0.9"/><path d="M24.3 164.5h9.1" opacity="0.7"/></g></symbol>
+<symbol id="ld-wheel" viewBox="0 0 18 18"><g fill="none"><circle cx="9" cy="9" r="8.1" stroke="#0d2238" stroke-width="1.6"/><path d="M9 1.6v14.8M2.6 5.3l12.8 7.4M2.6 12.7l12.8-7.4" stroke="#c9d3de" stroke-width="0.45" opacity="0.85"/></g><circle cx="9" cy="9" r="1.2" fill="#0d2238"/></symbol>
       </svg>
-      <div class="loader-title">Toronto<span> Slop</span></div>
+      <div class="ride" aria-hidden="true">
+        <svg class="ride-back" viewBox="0 0 360 170" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="ld-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2d84d8"/>
+              <stop offset="0.42" stop-color="#6aa8de"/>
+              <stop offset="0.74" stop-color="#f2b766"/>
+              <stop offset="1" stop-color="#f7cf91"/>
+            </linearGradient>
+            <radialGradient id="ld-glow">
+              <stop offset="0" stop-color="#ffe3a8" stop-opacity="0.85"/>
+              <stop offset="1" stop-color="#ffd18a" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="360" height="170" fill="url(#ld-sky)"/>
+          <circle cx="262" cy="100" r="64" fill="url(#ld-glow)"/>
+          <circle cx="262" cy="100" r="11" fill="#fff2cf"/>
+          <rect y="124" width="360" height="12" fill="#173f35"/>
+        </svg>
+        <div class="ride-layer ld-far"><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-far"/></svg><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-far"/></svg></div>
+        <div class="ride-layer ld-near"><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-near"/></svg><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-near"/></svg><i class="beacon"></i><i class="beacon"></i></div>
+        <div class="ride-layer ld-trees"><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-trees"/></svg><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-trees"/></svg></div>
+        <svg class="ride-front" viewBox="0 0 360 170" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="ld-lake" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2a6fae"/>
+              <stop offset="1" stop-color="#0b2f57"/>
+            </linearGradient>
+          </defs>
+          <rect y="134" width="360" height="12.4" fill="#cdb895"/>
+          <rect y="134" width="360" height="0.9" fill="#ead8b0"/>
+          <rect y="146.2" width="360" height="1.6" fill="#7d6c57"/>
+          <rect y="147.6" width="360" height="22.4" fill="url(#ld-lake)"/>
+          <g stroke="#ffd690" stroke-linecap="round"><path d="M248 151h28" stroke-width="1.6" opacity="0.8"/><path d="M252 155.5h20" stroke-width="1.4" opacity="0.65"/><path d="M255 160h14" stroke-width="1.2" opacity="0.5"/><path d="M258 164.5h8" stroke-width="1" opacity="0.35"/></g>
+        </svg>
+        <div class="ride-layer ld-dashes"><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-dashes"/></svg><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-dashes"/></svg></div>
+        <div class="ride-layer ld-sparkle-a"><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-sparkle-a"/></svg><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-sparkle-a"/></svg></div>
+        <div class="ride-layer ld-sparkle-b"><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-sparkle-b"/></svg><svg viewBox="0 0 360 170" preserveAspectRatio="none"><use href="#ld-sparkle-b"/></svg></div>
+        <div class="rider">
+          <svg class="rider-part" viewBox="0 0 64 48"><ellipse cx="31" cy="47.3" rx="21" ry="1.3" fill="#0d2238" opacity="0.28"/></svg>
+          <svg class="wheel wheel-rear" viewBox="0 0 18 18"><use href="#ld-wheel"/></svg>
+          <svg class="wheel wheel-front" viewBox="0 0 18 18"><use href="#ld-wheel"/></svg>
+          <svg class="rider-part leg leg-back" viewBox="0 0 64 48"><path d="M25 20.5 31.5 28.5 29.4 37.6h2.4" fill="none" stroke="#2a3f57" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="rider-part" viewBox="0 0 64 48">
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 38H29L25 22.5ZM29 38 43.4 24.5M25.4 23.4 42.8 22.6M42.6 21.2 48 38" stroke="#f6f5f2" stroke-width="1.7"/>
+              <circle cx="29" cy="38" r="2.6" stroke="#8895a6" stroke-width="0.9"/>
+              <path d="M22.6 20.8h5.4M42.6 21.2l2.6-1.6 1.8 1.6" stroke="#0d2238" stroke-width="1.8"/>
+            </g>
+          </svg>
+          <svg class="rider-part crank" viewBox="0 0 64 48"><path d="M29 34.2v7.6M27.6 34.2h2.8M27.6 41.8h2.8" stroke="#0d2238" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <svg class="rider-part leg leg-front" viewBox="0 0 64 48"><path d="M25 20.5 31.5 28.5 29.4 37.6h2.4" fill="none" stroke="#0d2238" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="rider-part rider-body" viewBox="0 0 64 48">
+            <g stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <path d="M25.5 20 37 11" stroke="#e8483b" stroke-width="5.6"/>
+              <path d="M37 11.4 40.6 15.6 44.2 20.2" stroke="#c68863" stroke-width="2"/>
+              <path d="M36.6 11.2 39.4 14.4" stroke="#e8483b" stroke-width="2.6"/>
+            </g>
+            <circle cx="40.6" cy="6.6" r="3.3" fill="#c68863"/>
+            <path d="M36.9 6.4a3.8 3.6 0 0 1 7.5-.9z" fill="#f6f5f2"/>
+            <path d="M38.4 4.3h4" stroke="#2477cc" stroke-width="0.9" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="loader-title">Slop<span> Toronto</span></div>
       <div class="loader-track is-indeterminate" aria-hidden="true"><span id="loading-progress" class="loader-fill"></span></div>
+      <div class="loader-ends" aria-hidden="true"><span>Humber Bay</span><span>Sugar Beach</span></div>
       <div id="loading-status">Initializing WebGPURenderer &amp; TSL Shaders...</div>
     </div>
   </div>
