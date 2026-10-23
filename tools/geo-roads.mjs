@@ -1,4 +1,4 @@
-// Part 2: Abuja's roads from OpenStreetMap, in the world frame.
+// Part 2: Toronto's roads from OpenStreetMap, in the world frame.
 // - Every highway=* way that carries traffic, with its class, carriageway width, travel lanes and direction
 // - Grade separation: a bridge (or layer > 0) way that actually crosses another road in plan is a flyover, raised on
 //   a deck; the roads it joins at either end climb to it on ramps (5.5% grade). Tunnels under roads are dropped.
@@ -6,7 +6,7 @@
 //   the decks & ramps themselves (city-grid.js builds them), and every road for the maps & labels
 import { toWorld, rdp, log, osmRoads } from './geo-base.mjs';
 
-// Detailed city (world frame, metres): Jabi Lake to Aso Rock, Katampe to Apo
+// Detailed city (world frame, metres): the Humber to Cherry Beach, the lake to Bloor
 export const DETAIL = { x0: -7900, x1: 3700, z0: -3000, z1: 3600 };
 export const inDetail = (x, z, m = 0) => x > DETAIL.x0 - m && x < DETAIL.x1 + m && z > DETAIL.z0 - m && z < DETAIL.z1 + m;
 
@@ -131,7 +131,45 @@ for (const w of ways) {
 }
 log(`${nElev} flyover ways (bridges crossing roads), ${nUnder} underpasses dropped`);
 
-// Per-vertex heights: decks at DECK_H per layer, ramps down the roads continuing straight on from their ends
+// Toronto's Gardiner Expressway stands on one continuous viaduct from Dufferin Street to the Don Roadway, about 12 m up.
+// OSM's layers along it (1-4) are stacking order, not height, and its stretches between the tagged bridges sit at
+// grade: taken literally they make a 22.5 m roller coaster that drops to the ground and climbs again. Every Gardiner
+// way between the two ends goes on the viaduct, and the elevated slip roads joining it (on through the elevated ways
+// they join in turn) meet it at its height; past either end it ramps down to the ground as any deck does.
+const GARDINER = { name: 'Gardiner Expressway', x0: -3950, x1: 2950, h: 12 };
+const midX = (w) => w.pts.reduce((a, [x]) => a + x, 0) / w.pts.length;
+const viaduct = [];
+for (const w of ways) {
+  if (w.name !== GARDINER.name || w.cls !== 'motorway' || w.tunnel) continue;
+  const x = midX(w);
+  if (x < GARDINER.x0 || x > GARDINER.x1) continue;
+  w.elevated = true;
+  w.under = false;
+  w.deckH = GARDINER.h;
+  viaduct.push(w);
+}
+{
+  const waysAt = new Map();
+  for (const w of ways) for (const n of w.nodes) (waysAt.get(n) || waysAt.set(n, []).get(n)).push(w);
+  const queue = [...viaduct];
+  let joined = 0;
+  while (queue.length) {
+    const w = queue.pop();
+    for (const n of w.nodes) {
+      for (const o of waysAt.get(n) || []) {
+        if (o.deckH || !o.elevated) continue;
+        o.deckH = GARDINER.h;
+        joined++;
+        queue.push(o);
+      }
+    }
+  }
+  log(`Gardiner viaduct: ${viaduct.length} ways at ${GARDINER.h} m, ${joined} elevated ways joining it levelled to it`);
+}
+
+// Per-vertex heights: decks at DECK_H per layer (the Gardiner's at its own), ramps down the roads continuing straight on
+// from their ends
+const deckBase = (w) => (w.elevated ? w.deckH || DECK_H * Math.max(1, w.layer) : 0);
 const byNode = new Map(); // OSM node -> [{ way, index }]
 for (const w of ways) {
   w.nodes.forEach((n, i) => {
@@ -140,7 +178,7 @@ for (const w of ways) {
   });
 }
 for (const w of ways) {
-  w.h = new Array(w.pts.length).fill(w.elevated ? DECK_H * Math.max(1, w.layer) : 0);
+  w.h = new Array(w.pts.length).fill(deckBase(w));
 }
 const unit = (a, b) => {
   const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
@@ -199,7 +237,6 @@ function continuation(node, from, d) {
 // Ramps: wherever roads meet at a node at different heights (a deck's end; a slip road joining partway up a ramp; a
 // deck joining a lower deck), each lower road climbs to the highest one there along its own ways, on into the road
 // straight ahead where a way is shorter than the ramp; repeated until every junction is level
-const deckBase = (w) => (w.elevated ? DECK_H * Math.max(1, w.layer) : 0);
 for (let pass = 0; pass < 8; pass++) {
   let changed = false;
   for (const [node, occ] of byNode) {

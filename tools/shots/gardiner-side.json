@@ -1,0 +1,37 @@
+[
+ {
+  "name": "gs1-spadina",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const G = window.CITY.GEO; let best = null;\nfor (const d of G.decks) if (d[0] === 'Gardiner Expressway') { const a = d[3]; for (let i = 0; i < a.length; i += 3) if (!best || Math.abs(a[i] - -1122) < Math.abs(best[0] - -1122)) best = [a[i], a[i + 1], a[i + 2]]; }\nconst [gx, gz, gh] = best; window.__CITY_APP.teleportTo(gx, gz + 70, Math.PI);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [gx - 60, 5, gz + 70], look: [gx + 40, Math.max(6, gh * 0.7), gz], fov: 55 });\n})()"
+ },
+ {
+  "name": "gs2-strachan",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const G = window.CITY.GEO; let best = null;\nfor (const d of G.decks) if (d[0] === 'Gardiner Expressway') { const a = d[3]; for (let i = 0; i < a.length; i += 3) if (!best || Math.abs(a[i] - -2514) < Math.abs(best[0] - -2514)) best = [a[i], a[i + 1], a[i + 2]]; }\nconst [gx, gz, gh] = best; window.__CITY_APP.teleportTo(gx, gz + 70, Math.PI);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [gx - 60, 5, gz + 70], look: [gx + 40, Math.max(6, gh * 0.7), gz], fov: 55 });\n})()"
+ },
+ {
+  "name": "gs3-dufferin",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const G = window.CITY.GEO; let best = null;\nfor (const d of G.decks) if (d[0] === 'Gardiner Expressway') { const a = d[3]; for (let i = 0; i < a.length; i += 3) if (!best || Math.abs(a[i] - -3700) < Math.abs(best[0] - -3700)) best = [a[i], a[i + 1], a[i + 2]]; }\nconst [gx, gz, gh] = best; window.__CITY_APP.teleportTo(gx, gz + 70, Math.PI);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [gx - 60, 5, gz + 70], look: [gx + 40, Math.max(6, gh * 0.7), gz], fov: 55 });\n})()"
+ },
+ {
+  "name": "gs4-yonge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const G = window.CITY.GEO; let best = null;\nfor (const d of G.decks) if (d[0] === 'Gardiner Expressway') { const a = d[3]; for (let i = 0; i < a.length; i += 3) if (!best || Math.abs(a[i] - 352) < Math.abs(best[0] - 352)) best = [a[i], a[i + 1], a[i + 2]]; }\nconst [gx, gz, gh] = best; window.__CITY_APP.teleportTo(gx, gz + 70, Math.PI);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [gx - 60, 5, gz + 70], look: [gx + 40, Math.max(6, gh * 0.7), gz], fov: 55 });\n})()"
+ },
+ {
+  "name": "gs5-west-humber",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const G = window.CITY.GEO; let best = null;\nfor (const d of G.decks) if (d[0] === 'Gardiner Expressway') { const a = d[3]; for (let i = 0; i < a.length; i += 3) if (!best || Math.abs(a[i] - -6200) < Math.abs(best[0] - -6200)) best = [a[i], a[i + 1], a[i + 2]]; }\nconst [gx, gz, gh] = best; window.__CITY_APP.teleportTo(gx, gz + 70, Math.PI);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [gx - 60, 5, gz + 70], look: [gx + 40, Math.max(6, gh * 0.7), gz], fov: 55 });\n})()"
+ }
+]

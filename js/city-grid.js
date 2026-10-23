@@ -781,9 +781,11 @@ function buildCityGrid(scene) {
         accQuad(top, aR, bR, bL, aL, [0, 1, 0], [[0, 0], [1, 0], [1, 1], [0, 1]]);
         // side faces & soffit
         const lo = (p, side) => [p[0], side, p[2]];
-        accQuad(faces, lo(aL, yBot(a)), lo(bL, yBot(b)), bL, aL, [anx, 0, anz], [[s, 0], [s + L, 0], [s + L, 1], [s, 1]]);
-        accQuad(faces, lo(bR, yBot(b)), lo(aR, yBot(a)), aR, bR, [-anx, 0, -anz], [[s + L, 0], [s, 0], [s, 1], [s + L, 1]]);
-        if (a.h > 4.6 && b.h > 4.6) accQuad(faces, lo(aR, yBot(a)), lo(bR, yBot(b)), lo(bL, yBot(b)), lo(aL, yBot(a)), [0, -1, 0], [[0, 0], [1, 0], [1, 1], [0, 1]]);
+        // (wound to face outward & down: the deck read hollow from the street, its far side's inner face seen through
+        // a missing soffit)
+        accQuad(faces, aL, bL, lo(bL, yBot(b)), lo(aL, yBot(a)), [anx, 0, anz], [[s, 1], [s + L, 1], [s + L, 0], [s, 0]]);
+        accQuad(faces, bR, aR, lo(aR, yBot(a)), lo(bR, yBot(b)), [-anx, 0, -anz], [[s + L, 1], [s, 1], [s, 0], [s + L, 0]]);
+        if (a.h > 4.6 && b.h > 4.6) accQuad(faces, lo(aL, yBot(a)), lo(bL, yBot(b)), lo(bR, yBot(b)), lo(aR, yBot(a)), [0, -1, 0], [[0, 1], [1, 1], [1, 0], [0, 0]]);
         // parapets (0.9 m concrete barriers) along both edges
         for (const sgn of [1, -1]) {
           const ax = a.x + anx * (hw - 0.25) * sgn, az = a.z + anz * (hw - 0.25) * sgn;

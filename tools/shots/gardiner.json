@@ -1,0 +1,33 @@
+[
+ {
+  "name": "g1-lakeshore-under-gardiner-spadina",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.64, -79.3935), b = C.worldFromLatLon(43.6415, -79.386); window.__CITY_APP.teleportTo(a.x, a.z, Math.atan2(b.x - a.x, b.z - a.z)); window.__CITY_APP.selectCamera('chase', true); })()"
+ },
+ {
+  "name": "g2-york-st-gardiner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.642, -79.382), b = C.worldFromLatLon(43.64, -79.383); window.__CITY_APP.teleportTo(a.x, a.z, Math.atan2(b.x - a.x, b.z - a.z)); window.__CITY_APP.selectCamera('chase', true); })()"
+ },
+ {
+  "name": "g3-air-gardiner-downtown",
+  "mode": "helicopter",
+  "wait": 7000,
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.638, -79.399), b = C.worldFromLatLon(43.641, -79.385); window.__CITY_APP.teleportTo(a.x, a.z, Math.atan2(b.x - a.x, b.z - a.z)); window.__CITY_APP.selectCamera('chase', true); })()"
+ },
+ {
+  "name": "g4-air-gardiner-west",
+  "mode": "helicopter",
+  "wait": 7000,
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.6355, -79.418), b = C.worldFromLatLon(43.638, -79.405); window.__CITY_APP.teleportTo(a.x, a.z, Math.atan2(b.x - a.x, b.z - a.z)); window.__CITY_APP.selectCamera('chase', true); })()"
+ },
+ {
+  "name": "g5-skyline-lake",
+  "camera": "skyline",
+  "wait": 5000
+ }
+]
