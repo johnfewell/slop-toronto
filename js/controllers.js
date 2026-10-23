@@ -3,7 +3,7 @@
 // Sculpted, non-blocky GTA 6-style 3D models, animations, and physics controllers
 // for Third-Person Navigation:
 // 1. Person (Skinned Pedestrian: planted-footstep IK walk/run/jump, see pedestrians.js)
-// 2. Car (Aerodynamic Sculpted FCT Green Taxi with Sloped Windshield & Clearcoat)
+// 2. Car (Aerodynamic Sculpted Sedan with Sloped Windshield & Clearcoat)
 // 3. Cyclist (Sculpted Road Cyclist with Drop-Bar Frame & Aero Helmet)
 // 4. Helicopter (Twin-Turbine Light Helicopter)
 
@@ -32,37 +32,27 @@ const { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight } = window.CIT
 // Walking surface for the player's pedestrian (its rig samples it around its feet)
 const personGround = (controllers, x, z) => controllers.getGroundHeight(x, z, 'person', controllers.entities ? controllers.entities.person.position.y : null);
 
-// Nigerian number plate (FCT, commercial): white, the national flag top left, the state & its slogan along the top, the
-// registration (LGA code, three digits, two letters) in red as on commercial vehicles, "Federal Republic of Nigeria" at
-// the bottom
-function createNigerianPlateTexture() {
+// Ontario number plate: white, blue lettering, "ONTARIO" along the top and the province's "YOURS TO DISCOVER" along the
+// bottom
+function createOntarioPlateTexture() {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 128;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#f4f5f2';
+  ctx.fillStyle = '#f6f7f4';
   ctx.fillRect(0, 0, 256, 128);
-  ctx.strokeStyle = '#1a1c1e';
+  ctx.strokeStyle = '#1d3f8f';
   ctx.lineWidth = 4;
   ctx.strokeRect(3, 3, 250, 122);
-  // flag: green, white, green
-  ctx.fillStyle = '#008751';
-  ctx.fillRect(12, 12, 10, 22);
-  ctx.fillRect(32, 12, 10, 22);
-  ctx.strokeStyle = '#9aa0a0';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(12, 12, 30, 22);
-  ctx.fillStyle = '#0b6b3a';
+  ctx.fillStyle = '#1d3f8f';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = '800 15px Inter, Arial, sans-serif';
-  ctx.fillText('FCT · CENTRE OF UNITY', 144, 24);
-  ctx.fillStyle = '#c8102e';
-  ctx.font = '900 44px JetBrains Mono, monospace';
-  ctx.fillText('ABJ-284TX', 128, 70);
-  ctx.fillStyle = '#0b6b3a';
+  ctx.font = '800 17px Inter, Arial, sans-serif';
+  ctx.fillText('ONTARIO', 128, 22);
+  ctx.font = '900 46px JetBrains Mono, monospace';
+  ctx.fillText('CNTW 553', 128, 68);
   ctx.font = '700 12px Inter, Arial, sans-serif';
-  ctx.fillText('FEDERAL REPUBLIC OF NIGERIA', 128, 110);
+  ctx.fillText('YOURS TO DISCOVER', 128, 110);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -319,7 +309,7 @@ class ThirdPersonControllerManager {
   }
 
   // =========================================================================
-  // 2. CAR (3D LOFTED SCULPTED FCT GREEN TAXI SEDAN)
+  // 2. CAR (3D LOFTED SCULPTED SEDAN, A DEEP RED)
   // =========================================================================
   createCarEntity() {
     const root = new THREE.Group();
@@ -328,8 +318,8 @@ class ThirdPersonControllerManager {
     const chassisPivot = new THREE.Group();
     root.add(chassisPivot);
 
-    const spec = BODY_SPECS.taxi;
-    const taxiLoftMat = createLoftedCarMaterial(spec, 0x0f7f3f);
+    const spec = BODY_SPECS.sedan;
+    const taxiLoftMat = createLoftedCarMaterial(spec, 0x9e1b22);
 
     // 1. 3D Lofted Taxi Body + Curved Windscreens + Crowned Roof + Side Mirrors + Roof Sign
     const carBodyGeo = buildCarGeometry(spec, false);
@@ -338,8 +328,8 @@ class ThirdPersonControllerManager {
     carBodyMesh.receiveShadow = true;
     chassisPivot.add(carBodyMesh);
 
-    // 2. Nigerian number plates on the bumpers (the FCT taxi's white side stripe is painted by the body material)
-    const plateMat = new THREE.MeshStandardNodeMaterial({ map: createNigerianPlateTexture(), roughness: 0.28 });
+    // 2. Ontario number plates on the bumpers
+    const plateMat = new THREE.MeshStandardNodeMaterial({ map: createOntarioPlateTexture(), roughness: 0.28 });
     const rearPlate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.15, 0.02), plateMat);
     rearPlate.position.set(0, spec.plates[1], spec.zRear - 0.006);
     chassisPivot.add(rearPlate);
@@ -393,7 +383,7 @@ class ThirdPersonControllerManager {
 
     return {
       type: 'car',
-      label: 'FCT Green Taxi',
+      label: 'Car',
       mesh: root,
       chassisPivot,
       carState,

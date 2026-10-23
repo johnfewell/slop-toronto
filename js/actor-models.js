@@ -307,8 +307,8 @@ const BODY_SPECS = {
     rails: true
   }
 };
-// Abuja's licensed taxis: FCT green with a white stripe down each side (no roof sign)
-BODY_SPECS.taxi = Object.assign({}, BODY_SPECS.sedan, { name: 'taxi', sign: false, fctLivery: true });
+// Toronto's taxis: a white sedan with a lit roof sign (no company livery)
+BODY_SPECS.taxi = Object.assign({}, BODY_SPECS.sedan, { name: 'taxi', sign: true, fctLivery: false });
 for (const spec of Object.values(BODY_SPECS)) {
   // Kept for code that places lamp flares: lamp heights (front, rear) and centres across the car
   spec.lamps = [spec.headlight[1], spec.taillight[1]];
@@ -1132,7 +1132,7 @@ function createLoftedCarMaterial(spec, fixedColorHex = null) {
   body = mix(body, color(0x7a0a10), reflector);
   body = mix(body, mix(color(0x8c0a12), color(0xc24d10), turnRear), taillight);
   body = mix(body, body.mul(0.55), plateRecess);
-  body = mix(body, color(0xeceeec), plates); // Nigerian plates: white (blue lettering, red on commercial vehicles)
+  body = mix(body, color(0xeceeec), plates); // Ontario plates: white with blue lettering
   body = mix(body, color(0x0e1013), under);
 
   // Glasshouse: tinted glass, black seals & B / C pillars, painted roof & A pillars, chrome sill strip, CHMSL

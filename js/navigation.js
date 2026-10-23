@@ -38,7 +38,7 @@ const ABBREV = {
   st: 'street', str: 'street', rd: 'road', ave: 'avenue', av: 'avenue', cres: 'crescent', cr: 'crescent',
   blvd: 'boulevard', expy: 'expressway', expwy: 'expressway', hwy: 'highway', cl: 'close', dr: 'drive', ln: 'lane',
   wy: 'way', sq: 'square', mt: 'mount', intl: 'international', natl: 'national', govt: 'government', hosp: 'hospital',
-  univ: 'university', ctr: 'centre', center: 'centre', abj: 'abuja', fct: 'fct'
+  univ: 'university', ctr: 'centre', center: 'centre', tor: 'toronto', to: 'toronto'
 };
 const normalize = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -86,7 +86,7 @@ function buildIndex() {
   for (const d of DISTRICTS) {
     if (districtNames.has(d.name)) continue;
     districtNames.add(d.name);
-    add({ kind: 'district', name: d.name, x: d.x, z: d.z, sub: 'District · Abuja' });
+    add({ kind: 'district', name: d.name, x: d.x, z: d.z, sub: 'Neighbourhood · Toronto' });
   }
   for (const [x, z, name, cat] of GEO.pois || []) {
     add({ kind: 'place', cat, name, x, z, sub: `${CATEGORY_LABEL[cat] || 'Place'} · ${districtAt(x, z)}` });

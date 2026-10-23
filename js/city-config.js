@@ -264,7 +264,7 @@ function districtAt(x, z) {
     const dist = Math.hypot(d.x - x, d.z - z);
     if (dist < bd) { bd = dist; best = d; }
   }
-  return best ? best.name : 'Abuja';
+  return best ? best.name : 'Toronto';
 }
 for (const b of BLOCKS) b.district = districtAt(b.cx, b.cz);
 

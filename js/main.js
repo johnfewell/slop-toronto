@@ -86,7 +86,7 @@ async function initApp() {
   markInit('lighting');
 
   if (loadingStatus) {
-    loadingStatus.textContent = 'Building Abuja: Streets, Landmarks, Aso Rock & Streetscape...';
+    loadingStatus.textContent = 'Building Toronto: Streets, Landmarks, the CN Tower & the Waterfront...';
   }
 
   // 3. Build Abuja's Ground & Terrain, Landmarks, Buildings, Street Details & Traffic

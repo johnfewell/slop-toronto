@@ -1,5 +1,5 @@
 /* css/style.css */
-/* HUD design system: quiet graphite glass in the corners of the screen, Nigerian green for whatever is active,
+/* HUD design system: quiet graphite glass in the corners of the screen, lake blue for whatever is active,
    green street-name signs, so that the city itself stays the star */
 
 :root {
@@ -18,7 +18,7 @@
   --text-3: rgba(246, 245, 242, 0.44);
 
   /* Accents */
-  --accent: #008751; /* Nigerian flag green */
+  --accent: #2477cc; /* lake blue, as the landing page */
   --accent-ink: #ffffff;
   --sign-green: #0b6a46;
   --highway: #c08a3e;
@@ -1486,7 +1486,7 @@ body.touch-enabled .pop-item { min-height: 44px; }
 }
 
 /* ------------------------------------------------------------------------------------------------------------------
-   Abuja Tour guide: search, place card, directions, navigation (tour-guide.js)
+   Tour guide: search, place card, directions, navigation (tour-guide.js)
    ------------------------------------------------------------------------------------------------------------------ */
 .hud-top-left {
   display: flex;

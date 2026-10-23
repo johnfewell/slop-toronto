@@ -317,10 +317,10 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     out.push({
       kind: 'player',
       name: realInCity() ? 'Your spot in the 3D city' : 'Your location (in the 3D city)',
-      sub: real.info && !realInCity() ? `You aren't in Abuja in real life · ${getLocationLabel(p.x, p.z)}` : getLocationLabel(p.x, p.z),
+      sub: real.info && !realInCity() ? `You aren't in Toronto in real life · ${getLocationLabel(p.x, p.z)}` : getLocationLabel(p.x, p.z),
       x: p.x, z: p.z
     });
-    if (!real.info && hasGeo) out.push({ kind: 'locate', name: 'Use my real location', sub: 'Your device’s GPS, if you are in Abuja', x: p.x, z: p.z });
+    if (!real.info && hasGeo) out.push({ kind: 'locate', name: 'Use my real location', sub: 'Your device’s GPS, if you are in Toronto', x: p.x, z: p.z });
     return out;
   }
 
@@ -328,7 +328,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
   const locPrompt = $('locate-prompt');
   const locateBtn = $('btn-locate');
   try {
-    real.dismissed = localStorage.getItem('abujaTour.locatePrompt') === 'dismissed';
+    real.dismissed = localStorage.getItem('slopToronto.locatePrompt') === 'dismissed';
   } catch { /* storage unavailable: ask again next time */ }
   if (locPrompt) locPrompt.hidden = !hasGeo || real.dismissed;
 
@@ -350,7 +350,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
   function requestLocation({ live = false } = {}) {
     if (locPrompt) locPrompt.hidden = true;
     if (!hasGeo) return locMessage('Location unavailable', 'This browser can’t share its location.');
-    if (!window.isSecureContext) return locMessage('Location needs a secure page', 'Open Abuja Tour over https (or localhost) to use your real location.');
+    if (!window.isSecureContext) return locMessage('Location needs a secure page', 'Open Slop Toronto over https (or localhost) to use your real location.');
     setLocBusy(true);
     const opts = { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 };
     const fail = (err) => {
@@ -392,17 +392,17 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     ic.className = `loc-icon status-${i.status}`;
     ic.replaceChildren(icon(i.status === 'city' ? 'i-gps' : i.status === 'fct' ? 'i-district' : 'i-globe'));
     if (i.status === 'city') {
-      $('loc-title').textContent = 'You’re in Abuja';
+      $('loc-title').textContent = 'You’re in the city';
       // mid-block (no street within 40 m): name the nearest street
       const street = nearestRoads(i.x, i.z, 250).find((n) => n.road.name);
       $('loc-sub').textContent = i.label !== i.district ? `${i.label} · ${i.district}`
         : street ? `Near ${window.CITY.shortName(street.road.name)} · ${i.district}` : i.district;
     } else if (i.status === 'fct') {
-      $('loc-title').textContent = 'You’re in the FCT';
+      $('loc-title').textContent = 'You’re in Toronto';
       $('loc-sub').textContent = `Outside the 3D city: ${away}`;
     } else {
-      $('loc-title').textContent = 'You’re not in Abuja';
-      $('loc-sub').textContent = `Abuja is ${formatDistance(i.distance)} ${compassWord((i.bearing + 180) % 360)} of you. Explore it from here anyway.`;
+      $('loc-title').textContent = 'You’re not in Toronto';
+      $('loc-sub').textContent = `Toronto is ${formatDistance(i.distance)} ${compassWord((i.bearing + 180) % 360)} of you. Explore it from here anyway.`;
     }
     $('loc-acc').textContent = `${acc > 1000 ? `Approximate (± ${formatDistance(acc)}), estimated from your network` : `± ${formatDistance(acc)}`}${real.watch !== null ? ' · following live' : ''} · stays on this device`;
     const actions = [];
@@ -452,7 +452,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
   if (promptNo) promptNo.addEventListener('click', () => {
     if (locPrompt) locPrompt.hidden = true;
     try {
-      localStorage.setItem('abujaTour.locatePrompt', 'dismissed');
+      localStorage.setItem('slopToronto.locatePrompt', 'dismissed');
     } catch { /* fine: it's only a reminder */ }
   });
 
@@ -909,7 +909,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     const near = (window.CITY.GEO.pois || []).map(([x, z, name, cat]) => ({ x, z, name, cat, d: Math.hypot(x - world.x, z - world.z) }))
       .filter((p) => p.d < 14 / Math.max(0.05, mapSystem.viewZoom) + 8).sort((a, b) => a.d - b.d)[0];
     ctxPoint = near ? { kind: 'place', name: near.name, cat: near.cat, x: near.x, z: near.z, sub: `${CATEGORY_LABEL[near.cat] || 'Place'} · ${districtAt(near.x, near.z)}` }
-      : { kind: 'point', name: label, x: world.x, z: world.z, sub: label === districtAt(world.x, world.z) ? 'District of Abuja' : districtAt(world.x, world.z) };
+      : { kind: 'point', name: label, x: world.x, z: world.z, sub: label === districtAt(world.x, world.z) ? 'Neighbourhood of Toronto' : districtAt(world.x, world.z) };
     $('ctx-title').textContent = ctxPoint.name;
     $('ctx-sub').textContent = ctxPoint.sub;
     const rect = ctx.parentElement.getBoundingClientRect();

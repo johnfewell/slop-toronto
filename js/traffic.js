@@ -1,7 +1,7 @@
 (function () {
 // js/traffic.js
 // Abuja's traffic and pedestrians on the road graph road-network.js derives from the city as built:
-// - 200 cars (FCT green taxis, sedans, SUVs) and 32 city buses keep to their lanes and follow the vehicle
+// - 200 cars (taxis, sedans, SUVs) and 32 city buses keep to their lanes and follow the vehicle
 //   ahead (Intelligent Driver Model), change lanes to overtake or to reach a turn lane, turn into other streets,
 //   stop for the signals street-details.js shows, give way to oncoming traffic when turning left, to the major road at
 //   unsignalized junctions & roundabouts and to pedestrians on crosswalks, and never enter a junction they can't clear.
@@ -122,7 +122,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   };
 
   // =========================================================================
-  // 1. 3D LOFTED FCT GREEN TAXIS, SEDANS & SUVS (200 VEHICLES)
+  // 1. 3D LOFTED TAXIS, SEDANS & SUVS (200 VEHICLES)
   // =========================================================================
   function createVehicle(bus, half, halfWidth, axle, driver, v0) {
     return {
@@ -147,9 +147,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   const taxiMat = createLoftedCarMaterial(BODY_SPECS.taxi);
   const sedanMat = createLoftedCarMaterial(BODY_SPECS.sedan);
   const suvMat = createLoftedCarMaterial(BODY_SPECS.suv);
-  const carWheelMat = createLoftedCarMaterial(BODY_SPECS.sedan, 0x0f7f3f);
+  const carWheelMat = createLoftedCarMaterial(BODY_SPECS.sedan, 0x5a5f66);
 
-  const taxiGreen = new THREE.Color(0x0f7f3f); // FCT taxi green (the white side stripe is painted by the material)
+  const taxiGreen = new THREE.Color(0xeef0f2); // Toronto taxis: white, the roof sign lit (actor-models.js)
   const sedanPalette = [
     new THREE.Color(0xc8ced4), // Silver
     new THREE.Color(0x1c2026), // Black
@@ -1955,7 +1955,7 @@ function createHighwayTraffic(scene, lanes) {
   scene.add(group);
   const KINDS = ['taxi', 'sedan', 'suv'];
   const PALETTES = {
-    taxi: [0x0f7f3f],
+    taxi: [0xeef0f2],
     sedan: [0x1c2026, 0xcfd6de, 0x1d3b6c, 0x52575e, 0x6e1f24, 0x8a8f96, 0xe9ecef],
     suv: [0x16191e, 0xf0f3f7, 0x3a434d, 0x28382e, 0xbec6cf, 0x5b2a2a]
   };
