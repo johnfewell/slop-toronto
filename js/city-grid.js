@@ -524,7 +524,7 @@ function buildCityGrid(scene) {
 
   // ===================================================================================================================
   // 2. CURB ISLANDS: kerbstones, the walkway & verge strip (SW = 4.6 m) inside the kerb, and inside the property line
-  //    the plots: compound yards, lawns (parks) or open savanna (undeveloped land). Medians: kerbed & grassed.
+  //    the plots: concrete downtown, front lawns among the houses, parkland or open land. Medians: kerbed & grassed.
   // ===================================================================================================================
   const sidewalkMat = createSidewalkMaterial();
   const curbMat = createCurbMaterial();
@@ -533,7 +533,26 @@ function buildCityGrid(scene) {
   const wildMat = createTerrainMaterial();
   const blockSidewalks = []; // { cx, cz, w, d, block, cover } axis-aligned cover of each island (street-details.js)
   const roadSidewalks = []; // rectangles inside the curbs that bound the roads (road-network.js)
-  const geos = { curb: [], walk: [], lawn: [], plot: [], wild: [] };
+  const geos = { curb: [], walk: [], lawn: [], plot: [], wild: [], paved: [] };
+  // Downtown is concrete to the building line: the core from Spadina to Parliament between the lake & Bloor, and
+  // anywhere else a block holds towers or big buildings. Houses keep their front lawns.
+  const blockBuilt = new Map(); // block -> { n, area, top }
+  for (const bl of GEO.buildings) {
+    const b = blockAt(bl[0], bl[1]);
+    if (!b) continue;
+    let area = 0;
+    for (const [u0, u1, v0, v1] of bl[3]) area += (u1 - u0) * (v1 - v0);
+    const s = blockBuilt.get(b) || { n: 0, area: 0, top: 0 };
+    s.n++;
+    s.area += area;
+    s.top = Math.max(s.top, bl[4]);
+    blockBuilt.set(b, s);
+  }
+  const isPaved = (b) => {
+    if (b.cx > -1150 && b.cx < 1500 && b.cz > -2750 && b.cz < 650) return true;
+    const s = blockBuilt.get(b);
+    return !!s && (s.top >= 20 || s.area / s.n >= 600 || s.area / b.area >= 0.45);
+  };
   const extrude = (shape, y0, h) => {
     const g = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false, curveSegments: 1 });
     g.rotateX(-Math.PI / 2);
@@ -556,7 +575,7 @@ function buildCityGrid(scene) {
       continue;
     }
     const prop = b.area > 400 ? offsetPolygonInward(b.poly, SW) : null;
-    const yard = b.park > 0.6 ? 'lawn' : b.wild > 0.5 ? 'wild' : 'plot';
+    const yard = b.park > 0.6 ? 'lawn' : b.wild > 0.5 ? 'wild' : isPaved(b) ? 'paved' : 'plot';
     if (prop) {
       const ring = createWorldXZShape(inner);
       ring.holes.push(new THREE.Path(prop.map((p) => new THREE.Vector2(p.x, -p.z))));
@@ -596,6 +615,7 @@ function buildCityGrid(scene) {
   mergeInto(geos.walk, sidewalkMat, false, 'Walkways');
   mergeInto(geos.lawn, lawnMat, false, 'Lawns');
   mergeInto(geos.plot, plotMat, false, 'Yards');
+  mergeInto(geos.paved, sidewalkMat, false, 'Forecourts');
   mergeInto(geos.wild, wildMat, false, 'OpenLand');
 
   // ===================================================================================================================

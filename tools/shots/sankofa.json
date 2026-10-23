@@ -1,0 +1,6 @@
+[
+ {"name": "sq1-spawn", "wait": 7000},
+ {"name": "sq2-square-view", "mode": "person", "wait": 6000, "js": "(() => { window.__CITY_APP.teleportTo(330, -1100, Math.PI); window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [318, 3, -1105], look: [372, 14, -1170], fov: 62 }); })()"},
+ {"name": "sq3-intersection-night", "mode": "person", "time": "midnight", "wait": 6000, "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [331, 2.2, -1120], look: [326, 16, -1200], fov: 64 }); })()"},
+ {"name": "sq4-air", "mode": "person", "time": "midday", "wait": 6000, "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [250, 70, -1020], look: [350, 0, -1170], fov: 55 }); })()"}
+]

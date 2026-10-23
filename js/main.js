@@ -112,6 +112,8 @@ async function initApp() {
   markInit('trees');
   // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
   await window.CITY.buildStreetProps(scene);
+  // Yonge & Dundas: the screens round Sankofa Square (yonge-dundas.js)
+  window.CITY.buildYongeDundas(scene);
   markInit('streetProps');
   // Buildings turned along non-grid streets have oriented colliders whose world bounds reach past their lots: they stay
   // inside the property line anyway, so the road network (lanes & sidewalks) doesn't need them

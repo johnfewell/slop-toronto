@@ -2299,17 +2299,17 @@ function createPlotGroundMaterial() {
   const mat = new THREE.MeshStandardNodeMaterial({ metalness: 0.0, roughness: 0.9 });
   mat.colorNode = Fn(() => {
     const p = positionWorld.xz;
-    const laterite = mix(color(0x8d5233), color(0xa9714a), noise2D(p.mul(0.21)));
-    const grass = mix(color(0x4a6a2a), color(0x7a8040), fbm2(p.mul(0.031).add(5.0)));
+    // Toronto's front & back yards in late summer: lawn, darker mulched beds, concrete driveways & walks
+    const mulch = mix(color(0x4a3524), color(0x5c4430), noise2D(p.mul(0.21)));
+    const grass = mix(color(0x4f7a2c), color(0x6f8a38), fbm2(p.mul(0.031).add(5.0)));
     const paving = mix(color(0x8d8a84), color(0xa8a49b), noise2D(p.mul(0.7)));
-    // October, the end of the rainy season: mostly grass, the red earth showing where it's worn (paths, parking)
-    const g = smoothstep(0.22, 0.42, fbm2(p.mul(0.018).add(1.3)));
-    const paved = smoothstep(0.66, 0.74, fbm2(p.mul(0.024).add(71.0)));
+    const g = smoothstep(0.12, 0.26, fbm2(p.mul(0.05).add(1.3)));
+    const paved = smoothstep(0.7, 0.76, fbm2(p.mul(0.024).add(71.0)));
     // interlocking pavers: a fine 0.2 x 0.1 m running bond, only up close
     const near = smoothstep(40.0, 8.0, length(positionWorld.sub(cameraPosition)));
     const bx = fract(p.x.mul(5.0).add(step(0.5, fract(p.y.mul(5.0))).mul(0.5)));
     const joint = max(smoothstep(0.06, 0.0, bx), smoothstep(0.12, 0.0, fract(p.y.mul(10.0)))).mul(near).mul(0.35);
-    const ground = mix(laterite, grass, g);
+    const ground = mix(mulch, grass, g);
     return mix(ground, paving.mul(float(1.0).sub(joint)), paved);
   })();
   mat.normalNode = Fn(() => {
