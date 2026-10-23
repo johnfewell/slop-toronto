@@ -10,3 +10,4 @@ tools/clouds-probe2.html
 tools/clouds-probe3.html
 
 dist/
+.netlify/
