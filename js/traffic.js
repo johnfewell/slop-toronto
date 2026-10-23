@@ -62,12 +62,12 @@ function createBusDestinationTexture() {
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#0c0f14';
   ctx.fillRect(0, 0, 256, 64);
-  // amber LED destination: Area 1 (Garki) to Nyanya, a busy commuter run out along the Abuja-Keffi Expressway
+  // amber LED destination: the TTC's 97 Yonge, up and down Yonge Street
   ctx.fillStyle = '#ff9d1c';
   ctx.font = '800 22px JetBrains Mono, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('AREA 1 - NYANYA', 128, 33);
+  ctx.fillText('97 YONGE', 128, 33);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
