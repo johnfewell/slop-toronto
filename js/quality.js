@@ -51,6 +51,9 @@ const TIERS = {
 function chooseTier() {
   const forced = params.get('quality');
   if (TIERS[forced]) return { tier: forced, reason: '?quality' };
+  // Until the phone tiers are proven on a real phone (low froze John's Pixel 8, 2026-10-24), everyone gets high unless
+  // ?quality=auto asks for the detection below
+  if (forced !== 'auto') return { tier: 'high', reason: 'default (?quality=auto detects)' };
   const adapter = window.CITY.gpuAdapter; // explore.html
   const info = (adapter && adapter.info) || {};
   const gpu = `${info.vendor || ''} ${info.architecture || ''} ${info.description || ''}`.toLowerCase();

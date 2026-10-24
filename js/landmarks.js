@@ -162,6 +162,8 @@ function buildLandmarks(scene) {
       brick: new THREE.MeshStandardNodeMaterial({ color: 0x9a5a43, roughness: 0.86 }),
       white: new THREE.MeshStandardNodeMaterial({ color: 0xf1efe9, roughness: 0.6 })
     };
+    // the multipatch faces don't keep one winding (the Rogers Centre's roof faced inward: from above its dome vanished)
+    for (const m of Object.values(LOOKS)) m.side = THREE.DoubleSide;
     const decode = (b64, Type) => {
       const bin = atob(b64);
       const bytes = new Uint8Array(bin.length);

@@ -1,0 +1,4 @@
+[
+ {"name": "rogers-above", "time": "golden", "wait": 6000, "js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [-1000, 230, -600], look: [-700, 20, 150], fov: 50 })"},
+ {"name": "cityhall-above", "time": "midday", "wait": 3000, "js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [0, 120, -650], look: [0, 30, -940], fov: 55 })"}
+]
