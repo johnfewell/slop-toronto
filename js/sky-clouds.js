@@ -8,6 +8,11 @@
 
 const { THREE, TSL } = window.CITY;
 const CLOUD_GAIN = 4;
+const CLOUD_CLOCK = 4;
+const CLOUD_SPEED = (() => {
+  const v = parseFloat(new URLSearchParams(location.search).get('cloudSpeed'));
+  return Number.isFinite(v) ? v : CLOUD_CLOCK;
+})();
 
 // Called right after renderer.init(), before anything renders or builds (the contexts must be on the renderer first);
 // attach() hands it the camera & the lighting once they exist
@@ -44,6 +49,10 @@ async function setupClouds(renderer) {
   // "AtmosphereParameters"', then nothing renders). The accurate light costs nothing measurable here
   ctx.clouds.accurateSunSkyLight = true;
   Clouds.applyCloudTypePreset(ctx, 'fairWeatherCumulus');
+  // The sky lives: cells grow & dissipate on a swirling wind (the library's evolvingWeather), on a clock running
+  // CLOUD_CLOCK times real time so a few minutes' ride sees it change (a cell's life: 600 s of cloud time). The whole
+  // sky still drifts with the local weather's velocity. ?cloudSpeed=<n> sets the clock, 0 holds the sky still
+  ctx.experimental = { evolvingWeather: true, windReprojection: true };
   ctx.stbnTexture = Clouds.createJitterTexture();
   Clouds.loadBakedCloudTextures({
     localWeather: Clouds.DEFAULT_LOCAL_WEATHER_URL,
@@ -86,7 +95,7 @@ async function setupClouds(renderer) {
       ctx.sunDirection.copy(sunECEF);
       ctx.worldToECEFMatrix.copy(worldToECEF);
       ctx.correctAltitude = atmosphere.correctAltitude;
-      ctx.time += dt / 60;
+      ctx.time += dt * CLOUD_SPEED;
       ctx.frame = frame++;
       ctx.updateCamera(camera);
     }

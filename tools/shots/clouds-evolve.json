@@ -1,0 +1,4 @@
+[
+ {"name": "evolve-a", "camera": "skyline", "time": "midday", "wait": 9000},
+ {"name": "evolve-b", "wait": 15000}
+]
