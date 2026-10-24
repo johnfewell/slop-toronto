@@ -9,7 +9,11 @@
 # Roughness/metallic come from the tags too (glossy glass, painted steel). No normal map: the geometry is the shape.
 # Output: one mesh, metres, base on z=0, centred, glTF +z (Blender -y) the front — what js/street-props.js instances —
 # with one baked material, plus a second, see-through one for the shelter's glass (panes & roof: they're clear glass). Then: npx @gltf-transform/cli@4 webp <out> <out>; npx @gltf-transform/cli@4 meshopt <out> <out>.
-# usage: Blender --background --factory-startup --python tools/blender/bake_props.py -- shelter|bin <src.glb> <out.glb> <workdir>
+# Round props (the hydrant, the post-and-ring bike stand, the post box's feet) are lathes & a bent band whose strips carry
+# their own unrolled UVs, so a barrel or the ring's lettering bakes without a seam on every facet.
+# usage: Blender --background --factory-startup --python tools/blender/bake_props.py -- shelter|bin|hydrant|postbox|bikering <src.glb> <out.glb> <workdir>
+#   sources (John's Meshy originals, tools/prop-src/, gitignored): shelter s-orig.glb, bin b-orig.glb, hydrant h-orig.glb
+#   (Rusted_Hydrant_with_C), postbox p-orig.glb (Graffiti_Mailbox_by_C), bikering cand-calga.glb (From_Toronto_to_Calga)
 import bpy, bmesh, sys, os, math, mathutils, numpy as np
 from mathutils import Vector, Matrix
 
@@ -30,6 +34,33 @@ if KIND == 'shelter':
         'roof':   (0.5, 0.0, 0.35, 0.10, 0.0, 0.0, None),
         'hidden': (0.05, 0.0, 0.0, 0.5, 0.0, 0.0, None),
     }
+elif KIND == 'hydrant':  # John's rusted cream hydrant: the paint keeps its rust & scrawl, the steel shoe & black cap read clean
+    HEIGHT, ATLAS, MR_SIZE = None, 1024, 128
+    TAGS = {
+        'paint':  (1.0, 0.8, 0.45, 0.55, 0.0, 0.0, None),
+        'cap':    (1.0, 0.6, 0.45, 0.45, 0.3, 0.0, None),
+        'nut':    (1.0, 0.8, 0.40, 0.50, 0.4, 0.0, None),
+        'steel':  (0.8, 0.45, 0.50, 0.35, 0.6, 0.0, None),
+        'hidden': (0.05, 0.0, 0.0, 0.7, 0.0, 0.0, None),
+    }
+elif KIND == 'postbox':  # John's graffiti-covered Canada Post box: the graffiti & stickers are the point, so the faces keep the bake
+    HEIGHT, ATLAS, MR_SIZE = None, 1024, 128
+    TAGS = {
+        'face':   (1.0, 1.0, 0.35, 0.45, 0.1, 0.0, None),
+        'skirt':  (1.0, 0.9, 0.45, 0.50, 0.45, 0.0, None),
+        'top':    (0.6, 0.6, 0.30, 0.45, 0.1, 0.0, None),
+        'hood':   (1.0, 0.7, 0.40, 0.45, 0.1, 0.0, None),
+        'slot':   (0.3, 0.0, 0.60, 0.90, 0.0, 0.0, (0.03, 0.03, 0.035)),
+        'foot':   (0.3, 0.0, 0.50, 0.60, 0.4, 0.0, (0.30, 0.30, 0.30)),
+        'hidden': (0.05, 0.0, 0.0, 0.7, 0.0, 0.0, None),
+    }
+elif KIND == 'bikering':  # John's Toronto post-and-ring: galvanised steel, the ring's lettering kept
+    HEIGHT, ATLAS, MR_SIZE = None, 1024, 128
+    TAGS = {
+        'ring':   (1.4, 0.75, 0.40, 0.40, 0.6, 0.0, None),
+        'post':   (1.0, 0.35, 0.45, 0.40, 0.6, 0.0, None),
+        'hidden': (0.05, 0.0, 0.0, 0.7, 0.0, 0.0, None),
+    }
 else:
     HEIGHT, ATLAS, MR_SIZE = None, 1024, 128
     TAGS = {
@@ -43,6 +74,12 @@ else:
         'hidden': (0.05, 0.0, 0.0, 0.7, 0.0, 0.0, None),
     }
 TAG_NAMES = list(TAGS)
+# per kind: output texture size, smoothing angle (an 8-sided post must stay smooth), the original's own axis (the hydrant's
+# barrel sits 4.5 cm behind its bounding-box centre: the pumper nozzle sticks out the front) moved to the origin
+TEX = {'shelter': 1024, 'bin': 1024}.get(KIND, 512)
+SHARP = {'hydrant': 50, 'bikering': 65}.get(KIND, 35)
+AXIS = {'hydrant': (0.005, 0.045)}.get(KIND, (0.0, 0.0))
+SLIVER = {'shelter': 1.0, 'bin': 1.0}.get(KIND, 0.15)  # the small props' many little faces (nuts, feet) would eat the atlas
 
 # ---------------------------------------------------------------- the high-poly original: one object, metres, centred
 bpy.ops.import_scene.gltf(filepath=SRC)
@@ -57,7 +94,7 @@ bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 co = np.empty(len(high.data.vertices) * 3); high.data.vertices.foreach_get('co', co); co = co.reshape(-1, 3)
 lo, hi = co.min(0), co.max(0)
 s = HEIGHT / (hi[2] - lo[2]) if HEIGHT else 1.0
-high.data.transform(Matrix.Scale(s, 4) @ Matrix.Translation(Vector((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]))))
+high.data.transform(Matrix.Translation(Vector((-AXIS[0], -AXIS[1], 0))) @ Matrix.Scale(s, 4) @ Matrix.Translation(Vector((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]))))
 print('HIGH', len(high.data.polygons), 'tris; size', ((hi - lo) * s).round(3))
 for m in high.data.materials:  # flat albedo: base colour straight into emission
     nt = m.node_tree; b = nt.nodes['Principled BSDF']; em = nt.nodes.new('ShaderNodeEmission')
@@ -67,6 +104,8 @@ for m in high.data.materials:  # flat albedo: base colour straight into emission
 
 # ---------------------------------------------------------------- low-poly builders (Blender coords: z up, -y front)
 bm = bmesh.new()
+UVL = bm.loops.layers.uv.new('UVMap')    # strips (lathes, the ring) carry their own unrolled UVs in metres ...
+PRE = bm.faces.layers.int.new('preuv')   # ... and are flagged so the planar projection below leaves them alone
 def axis_key(n):
     a = max(range(3), key=lambda i: abs(n[i])); return ('+' if n[a] > 0 else '-') + 'xyz'[a]
 def tag_new(faces, tag, faces_tag=None):
@@ -112,6 +151,57 @@ def add_panel_with_holes(x0, x1, z0, z1, y, holes, depth, tag, hole_tag):
             cen = q.calc_center_median(); axis = Vector(((a + b) / 2, cen.y, (c + d) / 2))
             want = (axis - cen) if q is not hf[-1] else Vector((0, -1, 0))
             if q.normal.dot(want) < 0: q.normal_flip()
+def add_grid(P, tags, wrap=True, smooth=True, isl=0.45):
+    """quad strips between rows of points P[i][j] (j runs around, closed when wrap): each band i..i+1 is unrolled by arc
+    length into UV strips at most isl metres long (long thin strips pack badly); faces face (P[i][j+1]-P[i][j]) x
+    (P[i+1][j]-P[i][j]). A row that is one point (a pole) makes triangles. tags: one tag, or one per band"""
+    V = [[bm.verts.new(p) for p in row] if len(row) > 1 else [bm.verts.new(row[0])] for row in P]
+    fs = []
+    for i in range(len(P) - 1):
+        a, b = V[i], V[i + 1]; n = max(len(a), len(b)); cols = n if wrap else n - 1
+        at = lambda r, j: r[j % len(r)] if len(r) > 1 else r[0]
+        # u: arc length along the band's middle; v: across the band
+        mid = [(at(a, j).co + at(b, j).co) / 2 for j in range(n + 1)]
+        us = [0.0]
+        for j in range(n): us.append(us[-1] + (mid[j + 1] - mid[j]).length)
+        h = sum((at(a, j).co - at(b, j).co).length for j in range(n)) / n
+        tag = tags if isinstance(tags, str) else tags[i]
+        k = max(1, math.ceil(us[cols] / isl)); start = [round(c * cols / k) for c in range(k)]
+        for j in range(cols):
+            u0 = us[max(c for c in start if c <= j)]  # this face's strip starts here
+            corners = [(at(a, j), us[j] - u0, 0), (at(a, j + 1), us[j + 1] - u0, 0), (at(b, j + 1), us[j + 1] - u0, h), (at(b, j), us[j] - u0, h)]
+            seen, cs = set(), []
+            for c in corners:
+                if c[0] not in seen: seen.add(c[0]); cs.append(c)
+            f = bm.faces.new([c[0] for c in cs]); f.material_index = TAG_NAMES.index(tag); f.smooth = smooth; f[PRE] = 1
+            uvs = {c[0]: (c[1], c[2]) for c in cs}
+            for lp in f.loops: lp[UVL].uv = uvs[lp.vert]
+            fs.append(f)
+    return fs
+def add_cap(ring, tag, flip=False):
+    """flat n-gon over a closed row of verts' positions (planar-projected UVs)"""
+    vs = [bm.verts.new(p) for p in (ring[::-1] if flip else ring)]
+    f = bm.faces.new(vs); f.material_index = TAG_NAMES.index(tag); f.smooth = False; return f
+def lathe(prof, seg, tags, M=Matrix(), sx=1.0, sy=1.0, phase=0.0, cap_end=None, cap_start=None):
+    """surface of revolution about local z: prof [(r, z), ...] bottom to top (r = 0 is a pole), placed by M;
+    cap_end/cap_start: tag for a flat cap over the last/first ring"""
+    rows = []
+    for r, z in prof:
+        if r == 0: rows.append([M @ Vector((0, 0, z))]); continue
+        rows.append([M @ Vector((r * sx * math.cos(phase + 2 * math.pi * j / seg), r * sy * math.sin(phase + 2 * math.pi * j / seg), z)) for j in range(seg)])
+    fs = add_grid(rows, tags)
+    if cap_end: fs.append(add_cap(rows[-1], cap_end))
+    if cap_start: fs.append(add_cap(rows[0], cap_start, flip=True))
+    return fs
+def ring_band(cz, ro, ri, t, seg, tag, phase=0.0):
+    """a flat band bent into a ring in the x-z plane about (0, cz): outer & inner radius and thickness (y +/- t/2) are functions of the angle"""
+    def row(r, s): return [Vector((r(p) * math.cos(p), s * t(p) / 2, cz + r(p) * math.sin(p))) for p in (phase + 2 * math.pi * j / seg for j in range(seg))]
+    o_b, o_f, i_b, i_f = row(ro, 1), row(ro, -1), row(ri, 1), row(ri, -1)
+    fs = []
+    for rows in ([o_b, o_f], [i_f, i_b], [o_f, i_f], [i_b, o_b]):  # outer, inner, front (-y), back (+y)
+        fs += add_grid(rows, tag, isl=0.25)
+    for f in fs: f.smooth = True
+    return fs
 
 if KIND == 'shelter':
     POSTS = (-1.99, -0.672, 0.672, 1.99)
@@ -138,6 +228,37 @@ if KIND == 'shelter':
     add_box(-0.625, 0.625, 0.10, 0.225, 0.17, 2.11, 'frame', ft={'-y': 'poster', '+y': 'poster', '-z': 'hidden'})
     add_box(0.93, 1.78, 0.30, 0.43, 1.23, 2.06, 'frame', ft={'-y': 'map', '+y': 'map'})
     CAGE, RAY = 0.03, 0.12
+elif KIND == 'hydrant':
+    # one lathe from the steel shoe to the dome (radii measured about the barrel's axis), the bolted flange a crisp step
+    # (the flange's underside is never seen from a sidewalk or a saddle: the shoe just runs up into it)
+    lathe([(0.150, 0.0), (0.122, 0.035), (0.122, 0.180)], 12, 'steel')
+    lathe([(0.186, 0.176), (0.186, 0.245), (0.120, 0.258), (0.153, 0.600), (0.156, 0.730), (0.128, 0.835), (0.0, 0.866)], 16, 'paint')
+    lathe([(0.028, 0.85), (0.028, 0.90)], 5, 'nut', cap_end='nut')                                  # operating nut
+    for sgn in (1, -1):                                                                              # hose nozzles
+        M = Matrix.Translation((0, 0, 0.65)) @ Matrix.Rotation(sgn * math.pi / 2, 4, 'Y')
+        lathe([(0.065, 0.12), (0.065, 0.208)], 8, 'paint', M=M, cap_end='paint')
+        lathe([(0.026, 0.20), (0.026, 0.235)], 5, 'nut', M=M, cap_end='nut')
+    M = Matrix.Translation((0, 0, 0.655)) @ Matrix.Rotation(math.pi / 2, 4, 'X')                   # pumper nozzle, out the front
+    lathe([(0.105, 0.10), (0.105, 0.205)], 16, 'paint', M=M, cap_end='paint')
+    lathe([(0.090, 0.20), (0.090, 0.228)], 16, 'cap', M=M, cap_end='cap')
+    lathe([(0.030, 0.22), (0.030, 0.272)], 5, 'cap', M=M, cap_end='cap', phase=math.pi / 2)
+    CAGE, RAY = 0.02, 0.06
+elif KIND == 'postbox':
+    up = add_box(-0.266, 0.266, -0.26, 0.285, 0.475, 1.30, 'face', ft={'+z': 'top', '-z': 'hidden'})   # red letter box
+    bm.faces.remove([f for f in up if f.normal.y < -0.9][0])
+    add_panel_with_holes(-0.266, 0.266, 0.475, 1.30, -0.26, [(-0.20, 0.20, 1.199, 1.215)], 0.05, 'face', 'slot')  # front, mail slot
+    add_box(-0.215, 0.215, -0.29, -0.26, 1.215, 1.27, 'hood', ft={'+y': 'hidden'})                 # the slot's hood
+    add_box(-0.262, 0.262, -0.252, 0.28, 0.06, 0.475, 'skirt', ft={'+z': 'hidden', '-z': 'foot'})  # ribbed grey base
+    for x in (-0.23, 0.23):
+        for y in (-0.2175, 0.2425):
+            lathe([(0.026, 0.0), (0.022, 0.062)], 6, 'foot', M=Matrix.Translation((x, y, 0)))         # round feet
+    CAGE, RAY = 0.03, 0.10
+elif KIND == 'bikering':
+    lathe([(0.042, 0.0), (0.030, 0.035), (0.030, 0.93)], 8, 'post', cap_end='post')               # the post
+    # the ring: a circle whose band swells into a lens-shaped clamp, wider & thicker, where it grips the post top & bottom
+    lens = lambda p: max(0.0, (abs(math.sin(p)) - 0.85) / 0.15)
+    ring_band(0.55, lambda p: 0.235, lambda p: 0.196 - 0.046 * lens(p) ** 1.5, lambda p: 0.028 + 0.06 * lens(p), 20, 'ring')
+    CAGE, RAY = 0.02, 0.06
 else:
     add_box(-0.70, 0.70, -0.30, 0.30, 1.185, 1.20, 'top')                        # lid plate
     lid = add_box(-0.655, 0.655, -0.265, 0.27, 0.91, 1.185, 'body', ft={'-y': 'label', '+z': 'hidden', '-z': 'hidden'})
@@ -156,13 +277,17 @@ low = bpy.data.objects.new('low', me); bpy.context.scene.collection.objects.link
 print('LOW', sum(len(p.vertices) - 2 for p in me.polygons), 'tris')
 
 # ---------------------------------------------------------------- UVs: every face projected flat at its tag's density, then packed
-uv = me.uv_layers.new(name='UVMap')
+uv = me.uv_layers['UVMap']; pre = me.attributes['preuv'].data
 for p in me.polygons:
+    d = TAGS[TAG_NAMES[p.material_index]][0]
+    if pre[p.index].value:  # an unrolled strip: its own UVs (metres) at the tag's density
+        for li in p.loop_indices: uv.data[li].uv = uv.data[li].uv * d
+        continue
     n = p.normal; up = Vector((0, 0, 1)) if abs(n.z) < 0.9 else Vector((0, 1, 0))
-    ua = up.cross(n).normalized(); va = n.cross(ua); d = TAGS[TAG_NAMES[p.material_index]][0]
+    ua = up.cross(n).normalized(); va = n.cross(ua)
     pts = [Vector((me.vertices[me.loops[li].vertex_index].co.dot(ua) * d, me.vertices[me.loops[li].vertex_index].co.dot(va) * d)) for li in p.loop_indices]
     # a sliver (a 2 cm roof edge) is stretched to a few texels across, or the mask & bake miss it and it bakes black
-    mn = 0.25 if d >= 0.3 else 0.08
+    mn = (0.25 if d >= 0.3 else 0.08) * SLIVER
     for ax in (0, 1):
         a0, a1 = min(q[ax] for q in pts), max(q[ax] for q in pts)
         if a1 - a0 < mn:
@@ -230,9 +355,9 @@ def save(arr, name, size):
     rgba = np.concatenate([arr, np.ones(arr.shape[:2] + (1,), np.float32)], -1).astype(np.float32)
     im.pixels.foreach_set(rgba.ravel()); im.scale(size, size)
     im.filepath_raw = os.path.join(WORK, f'{KIND}-{name}.png'); im.file_format = 'PNG'; im.save(); return im.filepath_raw
-p_alb = save(to_srgb(alb), 'albedo', ATLAS)
+p_alb = save(to_srgb(alb), 'albedo', TEX)
 p_mr = save(mr, 'mr', MR_SIZE)
-p_emi = save(to_srgb(emi), 'emissive', ATLAS // 2) if emi.max() > 0 else None
+p_emi = save(to_srgb(emi), 'emissive', TEX // 2) if emi.max() > 0 else None
 
 # ---------------------------------------------------------------- the baked material (+ clear glass), export
 bpy.data.objects.remove(high)
@@ -258,7 +383,10 @@ sep = nt.nodes.new('ShaderNodeSeparateColor'); nt.links.new(tex(p_mr, 'Non-Color
 nt.links.new(sep.outputs[1], b.inputs['Roughness']); nt.links.new(sep.outputs[2], b.inputs['Metallic'])
 if p_emi:
     nt.links.new(tex(p_emi, 'sRGB').outputs[0], b.inputs['Emission Color']); b.inputs['Emission Strength'].default_value = 1.0
-me.set_sharp_from_angle(angle=math.radians(35))
+me.set_sharp_from_angle(angle=math.radians(SHARP))
+if 'preuv' in me.attributes: me.attributes.remove(me.attributes['preuv'])
+co = np.empty(len(me.vertices) * 3); me.vertices.foreach_get('co', co); co = co.reshape(-1, 3)  # centred on its footprint
+me.transform(Matrix.Translation(Vector((-(co[:, 0].min() + co[:, 0].max()) / 2, -(co[:, 1].min() + co[:, 1].max()) / 2, -co[:, 2].min()))))
 bpy.ops.object.select_all(action='DESELECT'); low.select_set(True)
 bpy.ops.export_scene.gltf(filepath=OUT, export_format='GLB', use_selection=True, export_apply=True, export_yup=True,
                           export_normals=True, export_texcoords=True, export_tangents=False, export_materials='EXPORT', export_image_format='AUTO')

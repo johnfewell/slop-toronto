@@ -1,0 +1,56 @@
+[
+{
+"name": "sp3-hydrant-near",
+"time": "golden",
+"wait": 7000,
+"js": "__CITY_APP.teleportTo(330, -1100, Math.PI); __CITY_APP.cameraSystem.cinema = () => ({ pos: [337.5, 1.4, -1110.5], look: [341.6, 0.45, -1113.6], fov: 50 })"
+},
+{
+"name": "sp3-hydrant-far",
+"time": "golden",
+"wait": 2500,
+"js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [330, 1.8, -1103], look: [341.6, 0.5, -1113.6], fov: 45 })"
+},
+{
+"name": "sp3-postbox-near",
+"time": "golden",
+"wait": 2500,
+"js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [334.5, 1.6, -1071.5], look: [338.9, 0.7, -1075.5], fov: 50 })"
+},
+{
+"name": "sp3-postbox-far",
+"time": "golden",
+"wait": 2500,
+"js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [328, 1.9, -1065], look: [338.9, 0.7, -1075.5], fov: 45 })"
+},
+{
+"name": "sp3-ring-near",
+"time": "golden",
+"wait": 2500,
+"js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [329.2, 1.4, -1088.8], look: [332.8, 0.5, -1091.5], fov: 50 })"
+},
+{
+"name": "sp3-ring-far",
+"time": "golden",
+"wait": 2500,
+"js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [325.5, 1.8, -1082], look: [332.8, 0.5, -1091.5], fov: 45 })"
+},
+{
+"name": "sp3-hydrant-close",
+"time": "golden",
+"wait": 2500,
+"js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [339.75, 1.1, -1112.2], look: [341.6, 0.45, -1113.6], fov: 50 })"
+},
+{
+"name": "sp3-postbox-close",
+"time": "golden",
+"wait": 2500,
+"js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [336.92, 1.1, -1073.7], look: [338.9, 0.7, -1075.5], fov: 50 })"
+},
+{
+"name": "sp3-ring-close",
+"time": "golden",
+"wait": 2500,
+"js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [331.18, 1.1, -1090.29], look: [332.8, 0.5, -1091.5], fov: 50 })"
+}
+]
