@@ -187,17 +187,21 @@ async function initApp() {
   }
   markInit('culling');
 
-  // Small InstancedMeshes (<= 1000 instances) keep their matrices in uniform buffers that three.js
+  // On WebGPU, small InstancedMeshes (<= 1000 instances) keep their matrices in uniform buffers that three.js
   // re-uploads on every draw of every pass (~2.5 MB/frame with the shadow cascades, stalling the GPU queue).
-  // Storage attributes are only uploaded when instanceMatrix.needsUpdate is set.
-  scene.traverse((object) => {
-    if (object.isInstancedMesh) {
-      object.instanceMatrix = new THREE.StorageInstancedBufferAttribute(object.instanceMatrix.array, 16);
-    }
-  });
+  // Storage attributes are only uploaded when instanceMatrix.needsUpdate is set; the WebGL2 fallback needs ordinary
+  // instanced attributes for correct transforms (mrdoob's 2aad875)
+  if (renderer.backend.isWebGPUBackend) {
+    scene.traverse((object) => {
+      if (object.isInstancedMesh) {
+        object.instanceMatrix = new THREE.StorageInstancedBufferAttribute(object.instanceMatrix.array, 16);
+      }
+    });
+  }
 
   // 5. TSL RenderPipeline with Half-Res Screen Space Reflections (SSRNode), Bloom & Filmic Toning
-  //    SSR skips pixels with zero metalness, so fading it out with distance spares the far facades
+  //    SSR skips pixels with zero metalness, so fading it out with distance spares the far facades, and leaving out the
+  //    matte ones (roughness 0.75 and up) spends its rays on the visible glossy reflections (mrdoob's d837961)
   const scenePass = pass(scene, cameraSystem.camera);
   // The multisampled colour attachments (output, normal, metalRough) only need resolving, never storing: discarding
   // them spares the GPU writing 3 x 4 samples per pixel to memory every frame (transient, memoryless attachments where
@@ -207,10 +211,11 @@ async function initApp() {
   scenePass.renderTarget.storeMultisampledColorBuffer = !!lakeWater.water;
   // The phone tiers draw no SSR, so the scene pass writes its colour & depth alone (quality.js)
   const ssrFade = smoothstep(360.0, 180.0, positionView.z.negate());
+  const maxSSRRoughness = 0.75;
   const sceneMRT = QUALITY.ssr ? mrt({
     output: output,
     normal: normalView,
-    metalRough: vec2(metalness.mul(ssrFade), roughness)
+    metalRough: vec2(roughness.lessThan(maxSSRRoughness).select(metalness.mul(ssrFade), 0), roughness)
   }) : null;
   if (sceneMRT) {
     sceneMRT.setBlendMode('normal', new THREE.BlendMode(THREE.MaterialBlending));
@@ -228,21 +233,25 @@ async function initApp() {
   const scenePassDepth = scenePass.getTextureNode('depth');
 
   let ssrPass = null;
+  let ssrReflections = null;
   if (QUALITY.ssr) {
     const scenePassNormal = scenePass.getTextureNode('normal');
     const scenePassMetalRough = scenePass.getTextureNode('metalRough');
     ssrPass = ssr(scenePassColor, scenePassDepth, scenePassNormal, {
       metalnessNode: scenePassMetalRough.r,
       roughnessNode: scenePassMetalRough.g,
-      camera: cameraSystem.camera
+      camera: cameraSystem.camera,
+      binaryRefine: true // fewer coarse steps (quality 0.25), then each hit refined: precise reflection edges
     });
     ssrPass.resolutionScale = 0.5;
     ssrPass.blurQuality = 1;
     ssrPass.maxDistance.value = 42;
     ssrPass.thickness.value = 0.85;
-    ssrPass.quality.value = 0.35;
+    ssrPass.quality.value = 0.25;
     ssrPass.intensity.value = 0.50;
     ssrPass.screenEdgeFadeBlack = true;
+    // the roughness mip blur must not spread reflections back onto matte or non-reflective surfaces
+    ssrReflections = ssrPass.mul(scenePassMetalRough.r.greaterThan(0).select(smoothstep(maxSSRRoughness, 0.55, scenePassMetalRough.g), 0));
   }
 
   // John's volumetric clouds (sky-clouds.js): marched through the scene depth, composited over the scene colour
@@ -250,7 +259,7 @@ async function initApp() {
     skyClouds.attach(cameraSystem.camera, lightingSystem);
     skyClouds.pass.sceneDepth = scenePassDepth;
   }
-  const colorGrade = createPostProcessing(renderer, skyClouds ? skyClouds.composite(scenePassColor) : scenePassColor, ssrPass, {
+  const colorGrade = createPostProcessing(renderer, skyClouds ? skyClouds.composite(scenePassColor) : scenePassColor, ssrReflections, {
     bloom: QUALITY.bloom
   });
   const { bloomPass } = colorGrade;
