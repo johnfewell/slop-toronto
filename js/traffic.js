@@ -6,7 +6,7 @@
 //   stop for the signals street-details.js shows, give way to oncoming traffic when turning left, to the major road at
 //   unsignalized junctions & roundabouts and to pedestrians on crosswalks, and never enter a junction they can't clear.
 //   They ride the flyovers & ramps at the height of the deck (road-network.js edgeY).
-// - 340 pedestrians stroll the sidewalks and cross at signalized crosswalks on the WALK signal.
+// - 340 pedestrians follow connected sidewalks, meet to talk, and cross signalized crosswalks on WALK.
 // - Fixed-size local populations replenish distant roads and sidewalks in every direction, protecting the near view.
 // - The player's vehicle or character pushes and is pushed by the traffic (SAT contact, impulses, sparks).
 
@@ -91,7 +91,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // 0. ROAD NETWORK
   // =========================================================================
   const network = buildRoadNetwork(sidewalks, obstacles);
-  const { nodes, edges, connector, curvePoint, walkable, onSidewalk } = network;
+  const { nodes, edges, connector, curvePoint } = network;
 
   // Sides of an intersection (road-network.js step 9): a grid intersection's are 0 east, 1 west, 2 south, 3 north;
   // centreline junctions number their arms from 4. Where lane i of edge e meets a crosswalk, measured along the
@@ -311,7 +311,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     const hairRoll = hash(i, 2);
     peds.push({
       placed: false,
-      crossesStreets: i % 6 === 0, // walks back and forth over a signalized crosswalk
+      crossesStreets: i % 6 === 0, // some start near crossings; everyone can use them along their route
       x: 0,
       z: 0,
       ax: 0, // track: start, direction, length; position along it and walking direction
@@ -328,7 +328,16 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       waiting: false,
       speed: 1.22 + (i % 5) * 0.1 + hash(i, 3) * 0.08, // preferred walking speed
       v: 0, // current speed, easing up to it and down to stops
-      pause: 0, // turning round at the end of the track
+      pause: 0,
+      route: null,
+      nextRoute: null,
+      nextLeg: 0,
+      goalX: 0,
+      goalZ: 0,
+      goalTime: 0,
+      restTime: 0,
+      socialTime: 0,
+      conversation: null,
       rig: new PersonRig({
         seed: i * 1.6180339 + 0.13,
         female,
@@ -1351,56 +1360,27 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // 7. PEDESTRIANS
   // =========================================================================
   const KERB = 1.6; // how far along a crosswalk track pedestrians wait to cross (the curb is 2 m along)
-  const track = { ax: 0, az: 0, ux: 0, uz: 1, len: 1, node: null, side: 0, line: 0 };
-  const walkable2D = (ax, az, bx, bz) =>
-    walkable(Math.min(ax, bx) - 0.4, Math.max(ax, bx) + 0.4, Math.min(az, bz) - 0.4, Math.max(az, bz) + 0.4);
+  // Connected routes (pedestrian-routes.js, mrdoob's 0d5d574): two walking lines along each side of a street between
+  // its crosswalks, on the curb island (city-config.js blockAt) and clear of obstacles; crosswalks over signalized
+  // corners, curb to curb plus 2 m of sidewalk at each end, each on its own line clear of the signal poles, where
+  // walkers queue at the curb; and the links that carry them round each corner onto the next
+  const { blockAt, createPedestrianRoutes } = window.CITY;
+  const pedRoutes = createPedestrianRoutes(network, blockAt);
+  const track = { ax: 0, az: 0, ux: 0, uz: 1, len: 1, node: null, side: 0, line: 0, route: null };
 
-  // Along the sidewalk on either side of edge e, between its crosswalks. Grid edges test the strip in one box against
-  // the sidewalk rectangles; centreline streets (any direction, where those rectangles only roughly fill the sidewalks)
-  // every 3 m, on the curb island (city-config.js blockAt) and clear of obstacles
-  const { blockAt } = window.CITY;
   function sidewalkTrack(e) {
-    const off = (Math.random() < 0.5 ? 1 : -1) * (e.half + 1.4 + Math.random() * 2.6);
-    const ax = e.sx + e.rx * off;
-    const az = e.sz + e.rz * off;
-    if (e.general) {
-      for (let s = 0; s < e.len + 3; s += 3) {
-        const t = Math.min(s, e.len);
-        const x = ax + e.dx * t;
-        const z = az + e.dz * t;
-        if (!walkable(x - 0.4, x + 0.4, z - 0.4, z + 0.4) || !blockAt(x, z)) return false;
-      }
-    } else {
-      if (!walkable2D(ax, az, ax + e.dx * e.len, az + e.dz * e.len)) return false;
-      for (let s = 0; s < e.len + 3; s += 3) {
-        const t = Math.min(s, e.len);
-        if (!onSidewalk(ax + e.dx * t, az + e.dz * t)) return false;
-      }
-    }
-    Object.assign(track, { ax, az, ux: e.dx, uz: e.dz, len: e.len, node: null, side: 0, line: 0 });
+    const choices = pedRoutes.along(e);
+    if (!choices.length) return false;
+    const route = choices[Math.floor(Math.random() * choices.length)];
+    Object.assign(track, route, { route });
     return true;
   }
 
-  // Over one of the crosswalks of intersection n, curb to curb plus 2 m of sidewalk at each end: across the street
-  // (side 0 east / 1 west of the avenue) or across the avenue (side 2 south / 3 north of the street). Each walks its
-  // own line over the 2.5 m wide crosswalk, clear of its centre line (where the signal poles stand on the corners):
-  // across the street on either half, across the avenue on the outer half only, so that on each corner those waiting
-  // for one crosswalk stand clear of those waiting for the other. At the curb they queue in their line.
   function crosswalkTrack(n) {
-    const side = Math.floor(Math.random() * 4);
-    const road = n.road[side];
-    if (!road) return false;
-    const acrossAvenue = side >= 2;
-    const sign = side % 2 === 0 ? 1 : -1;
-    const line = (acrossAvenue || Math.random() < 0.5 ? sign : -sign) * (0.5 + Math.random() * 0.55);
-    const ax = acrossAvenue ? road.x0 - road.half - 2 : n.x + sign * (n.hx + 1.25) + line;
-    const az = acrossAvenue ? n.z + sign * (n.hz + 1.25) + line : road.z0 - road.half - 2;
-    const len = 2 * road.half + 4;
-    const ux = acrossAvenue ? 1 : 0;
-    const uz = acrossAvenue ? 0 : 1;
-    if (!walkable2D(ax, az, ax + ux * len, az + uz * len)) return false;
-    if (!onSidewalk(ax, az) || !onSidewalk(ax + ux * len, az + uz * len)) return false;
-    Object.assign(track, { ax, az, ux, uz, len, node: n, side, line });
+    const choices = pedRoutes.across(n);
+    if (!choices.length) return false;
+    const route = choices[Math.floor(Math.random() * choices.length)];
+    Object.assign(track, route, { route });
     return true;
   }
 
@@ -1409,14 +1389,16 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   const curbNodes = [];
   const curbProgress = (p) => (p.dir > 0 ? p.t : p.len - p.t); // m along its way over (the curb it waits at is KERB)
   function atCurb(p) {
-    if (curbProgress(p) > KERB + 0.5) return;
-    if (!p.node.curb.length) curbNodes.push(p.node);
-    p.node.curb.push(p);
+    const crossing = !p.node && p.nextRoute?.find((leg, i) => i >= p.nextLeg && leg.track.node);
+    const n = p.node || crossing?.track.node;
+    if (!n || (p.node && curbProgress(p) > KERB + 0.5) || n.curb.includes(p)) return;
+    if (!n.curb.length) curbNodes.push(n);
+    n.curb.push(p);
   }
   function gatherCurbs() {
     for (const n of curbNodes) n.curb.length = 0;
     curbNodes.length = 0;
-    for (const p of peds) if (p.placed && p.node) atCurb(p);
+    for (const p of peds) if (p.placed) atCurb(p);
   }
 
   // Try crosswalks first for crossing pedestrians, then fall back to sidewalks if no suitable crossing fits.
@@ -1437,6 +1419,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       if (d < rMin || d > rMax || (protectView && nearView(x, z, 2, PED_SPAWN_DISTANCE))) continue;
       if (player.active && Math.hypot(x - player.x, z - player.z) < 10) continue;
       if (crosswalk && track.node.curb.some((q) => Math.hypot(q.x - x, q.z - z) < QUEUE_GAP)) continue;
+      if (p.conversation) endConversation(p.conversation);
       Object.assign(p, track);
       p.t = t;
       p.dir = t < track.len * 0.5 ? 1 : -1;
@@ -1444,6 +1427,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       p.z = z;
       p.v = crosswalk ? 0 : p.speed;
       p.pause = 0;
+      p.nextRoute = null;
+      p.nextLeg = 0;
+      p.goalTime = 0;
+      p.restTime = clock + 25 + Math.random() * 45;
+      p.socialTime = clock + 5 + Math.random() * 15;
       p.rig.placed = false; // stands afresh where it now is
       p.placed = true;
       if (crosswalk) atCurb(p);
@@ -1470,9 +1458,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     return true;
   }
 
-  // Walk the track, easing to a stop at its ends and turning round on the spot; on a crosswalk, slow to a stop at the
-  // curb until it may cross, or behind whoever stands ahead in its line. Vehicles give way to those on it and, on the
-  // WALK, to those waiting at the curb to step off.
+  // Continue through validated sidewalk corners. Crossing tracks retain their curb queues and right of way;
+  // only a dead end needs a turnaround. Goals guide local choices without a city-wide path search.
   const PED_ACCEL = 1.3; // m/s^2 setting off
   const PED_BRAKE = 1.6; // m/s^2 easing to a stop
   const TURN_TIME = 0.85; // s turning round at the end of the track
@@ -1480,31 +1467,99 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   function walk(p, dt) {
     if (p.pause > 0) p.pause = Math.max(0, p.pause - dt);
     const ahead = p.dir > 0 ? p.len - p.t : p.t;
-    let vMax = p.pause > 0 ? 0 : Math.min(p.speed, Math.sqrt(2 * PED_BRAKE * ahead));
+    if (clock >= p.goalTime || Math.hypot(p.x - p.goalX, p.z - p.goalZ) < 25) {
+      const destination = nearEdges[Math.floor(Math.random() * nearEdges.length)];
+      p.goalX = destination ? destination.sx + destination.dx * destination.len * 0.5 : p.x;
+      p.goalZ = destination ? destination.sz + destination.dz * destination.len * 0.5 : p.z;
+      p.goalTime = clock + 120 + Math.random() * 180;
+    }
+    if (!p.nextRoute && p.route && ahead < 4) {
+      p.nextRoute = pedRoutes.next(p.route, p.dir, p.goalX, p.goalZ);
+      p.nextLeg = 0;
+      if (!p.node && p.nextRoute) atCurb(p);
+    }
+    if (!p.node && p.route?.edge && p.t > 6 && p.t < p.len - 6 && clock >= p.restTime) {
+      p.pause = 1.5 + Math.random() * 3;
+      p.restTime = clock + 35 + Math.random() * 55;
+    }
+    let vMax = p.pause > 0 || p.conversation ? 0 : p.speed;
+    if (!p.nextRoute) vMax = Math.min(vMax, Math.sqrt(2 * PED_BRAKE * ahead));
+    let room = Infinity;
+    if (!p.node && p.nextRoute) {
+      // A queue can reach back onto the sidewalk. Keep clear before entering its track, including short corner
+      // segments; actual separation matters where the approach meets the crossing at an angle.
+      const crossing = p.nextRoute.find((leg, i) => i >= p.nextLeg && leg.track.node);
+      if (crossing) {
+        const entranceX = crossing.track.ax + (crossing.dir < 0 ? crossing.track.ux * crossing.track.len : 0);
+        const entranceZ = crossing.track.az + (crossing.dir < 0 ? crossing.track.uz * crossing.track.len : 0);
+        let leader = null, nearest = Infinity;
+        for (const q of crossing.track.node.curb) {
+          const next = !q.node && q.nextRoute?.find((leg, i) => i >= q.nextLeg && leg.track.node);
+          const queued = q.node ? q : next?.track;
+          if (!queued || queued.node !== crossing.track.node || queued.side !== crossing.track.side || (q.node ? q.dir : next.dir) !== crossing.dir || Math.abs(queued.line - crossing.track.line) > 0.55) continue;
+          const distance = Math.hypot(q.x - entranceX, q.z - entranceZ);
+          if (!q.node && distance < nearest) { leader = q; nearest = distance; }
+          if (q === p) continue;
+          const dx = q.x - p.x, dz = q.z - p.z;
+          const forward = (dx * p.ux + dz * p.uz) * p.dir;
+          const lateral2 = Math.max(0, dx * dx + dz * dz - forward * forward);
+          if (forward >= 0 && lateral2 < QUEUE_GAP * QUEUE_GAP) {
+            room = Math.min(room, Math.max(0, forward - Math.sqrt(QUEUE_GAP * QUEUE_GAP - lateral2)));
+          }
+        }
+        if (leader && leader !== p) {
+          // The closest arrival merges first. Keep other approaches outside its remaining walking lines,
+          // so perpendicular queues cannot trap each other at the entrance after WALK turns green.
+          const yieldToLine = (line) => {
+            const side = (p.x - line.ax) * line.uz - (p.z - line.az) * line.ux;
+            const toward = (p.ux * line.uz - p.uz * line.ux) * p.dir;
+            if (side * toward < 0) room = Math.min(room, Math.max(0, (Math.abs(side) - QUEUE_GAP - 0.01) / Math.abs(toward)));
+          };
+          yieldToLine(leader);
+          for (let i = leader.nextLeg; i < leader.nextRoute.length; i++) {
+            yieldToLine(leader.nextRoute[i].track);
+            if (leader.nextRoute[i].track.node) break;
+          }
+        }
+      }
+    }
     if (p.node) {
       // room to walk before standing: up to the curb unless p may cross, and up to the back of whoever is ahead
       const s = curbProgress(p);
-      let room = s <= KERB && !mayCross(p) ? KERB - s : Infinity;
+      room = s <= KERB && !mayCross(p) ? KERB - s : Infinity;
       for (const q of p.node.curb) {
         if (q === p || q.node !== p.node || q.side !== p.side || q.dir !== p.dir || Math.abs(q.line - p.line) > 0.55) continue;
         const gap = curbProgress(q) - s;
         if (gap > 0) room = Math.min(room, Math.max(0, gap - QUEUE_GAP));
       }
-      vMax = Math.min(vMax, Math.sqrt(2 * PED_BRAKE * room));
     }
+    vMax = Math.min(vMax, Math.sqrt(2 * PED_BRAKE * room));
     p.v += Math.max(-2 * PED_BRAKE * dt, Math.min(PED_ACCEL * dt, vMax - p.v));
-    let t = p.t + p.dir * p.v * dt;
-    const stepsOff = !!p.node && (p.dir > 0 ? p.t <= KERB && t > KERB : p.t >= p.len - KERB && t < p.len - KERB);
-    p.waiting = stepsOff && !mayCross(p);
+    const movement = Math.min(p.v * dt, room);
+    if (p.v * dt > room) p.v = 0;
+    let t = p.t + p.dir * movement;
+    const reachesCurb = !!p.node && curbProgress(p) <= KERB && (p.dir > 0 ? t : p.len - t) >= KERB - 1e-6;
+    p.waiting = reachesCurb && !mayCross(p);
     if (p.waiting) {
-      t = p.t;
+      t = p.dir > 0 ? Math.min(t, KERB) : Math.max(t, p.len - KERB);
       p.v = 0;
     }
     if (p.dir > 0 ? t >= p.len : t <= 0) {
       t = p.dir > 0 ? p.len : 0;
-      p.dir = -p.dir;
-      p.v = 0;
-      p.pause = TURN_TIME;
+      if (p.nextRoute) {
+        const leg = p.nextRoute[p.nextLeg++];
+        Object.assign(p, leg.track);
+        p.route = leg.track;
+        p.dir = leg.dir;
+        t = p.dir > 0 ? 0 : p.len;
+        p.t = t;
+        if (p.node) atCurb(p); // later arrivals this frame must see the newly occupied entrance
+        if (p.nextLeg === p.nextRoute.length) p.nextRoute = null;
+      } else {
+        p.dir = -p.dir;
+        p.v = 0;
+        p.pause = TURN_TIME;
+      }
     }
     p.t = t;
     p.x = p.ax + p.ux * t;
@@ -1513,6 +1568,51 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       p.coord = p.side >= 2 ? p.x : p.z;
       if (!p.node.walkers.length) walkedNodes.push(p.node);
       p.node.walkers.push(p);
+    }
+  }
+
+  function endConversation(conversation) {
+    for (const p of [conversation.a, conversation.b]) {
+      p.conversation = null;
+      p.socialTime = clock + 30 + Math.random() * 60;
+    }
+    conversation.remaining = 0;
+  }
+
+  const meetingCells = new Map();
+  let nextMeeting = 0;
+  function meet(dt) {
+    for (const p of peds) {
+      const conversation = p.conversation;
+      if (!conversation || conversation.a !== p) continue;
+      conversation.remaining -= dt;
+      if (conversation.remaining <= 0) endConversation(conversation);
+    }
+    if (clock < nextMeeting) return;
+    nextMeeting = clock + 1;
+    meetingCells.clear();
+    for (const p of peds) {
+      if (!p.placed || p.node || !p.route?.edge || p.conversation || clock < p.socialTime || p.t < 6 || p.t > p.len - 6) continue;
+      const ix = Math.floor(p.x / 2), iz = Math.floor(p.z / 2);
+      let partner = null;
+      for (let dx = -1; dx <= 1 && !partner; dx++) {
+        for (let dz = -1; dz <= 1 && !partner; dz++) {
+          for (const q of meetingCells.get(`${ix + dx}:${iz + dz}`) || []) {
+            const distance = Math.hypot(p.x - q.x, p.z - q.z);
+            if (q.conversation || p.route.block !== q.route.block || distance < 0.75 || distance > 2 || Math.random() > 0.15) continue;
+            partner = q;
+            break;
+          }
+        }
+      }
+      if (partner) {
+        p.conversation = partner.conversation = { a: p, b: partner, remaining: 6 + Math.random() * 6 };
+        p.v = partner.v = 0;
+      } else {
+        const key = `${ix}:${iz}`;
+        if (!meetingCells.has(key)) meetingCells.set(key, []);
+        meetingCells.get(key).push(p);
+      }
     }
   }
 
@@ -1757,7 +1857,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // bone transforms and are drawn, the far ones with the light LOD.
   function renderPed(p, dt) {
     const draw = !hasView || visible(p.x, p.z, 7);
-    p.rig.update(dt, p.x, p.z, Math.atan2(p.ux * p.dir, p.uz * p.dir), pedGround, p, 0, draw);
+    const partner = p.conversation && (p.conversation.a === p ? p.conversation.b : p.conversation.a);
+    const heading = partner ? Math.atan2(partner.x - p.x, partner.z - p.z) : Math.atan2(p.ux * p.dir, p.uz * p.dir);
+    p.rig.update(dt, p.x, p.z, heading, pedGround, p, 0, draw);
     if (!draw) return;
     pedCrowd.add(p.rig, Math.hypot(p.x - focusX, p.z - focusZ));
   }
@@ -1927,6 +2029,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       pedBudget--;
       spawnPed(p, jump ? 0 : 60, jump ? NEAR_RADIUS : 280, !jump);
     }
+    meet(dt);
     gatherCurbs();
     pedCrowd.begin();
     for (let i = 0; i < NUM_PEDS; i++) {
