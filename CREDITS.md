@@ -14,7 +14,7 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 - **Stylized water** (`js/stylized-water.js`, built from `vendor/stylized-water`): John Fewell's three.js port of
   Uber Stylized Water. MIT, © MatrixRex / norio. See `vendor/stylized-water/LICENSE`.
 - **three-clouds-webgpu** (`js/clouds.js`, built from `vendor/clouds/three-clouds-webgpu-0.1.0-r187.tgz`): John
-  Fewell's volumetric clouds for WebGPU, a port of takram's three-clouds. MIT, © John Fewell; notice in the tarball's
+  Fewell's volumetric clouds for WebGPU, a port of takram's three-clouds. MIT, © Shota Matsuda & John Fewell; notice in the tarball's
   LICENSE. Built on **@takram/three-atmosphere** and **@takram/three-geospatial** (MIT, © takram).
 - **EZ-Tree** by Dan Greenheck: procedural trees. MIT. https://github.com/dgreenheck/ez-tree
 - **lil-gui** (loaded only for the `?waterTune` tuning panel). MIT.
