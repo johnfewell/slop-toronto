@@ -32,19 +32,21 @@ const TIERS = {
     treeFar: 1, // x the trees' furthest distances (3 km in the parks, 600 m for pines)
     cull: 1, // x the small props' cull distances (scene-culling.js)
     cars: 200, buses: 32, peds: 340,
+    streetcarSpacing: 500, // streetcars.js: one car per this many metres of track (TTC Flexity Outlooks)
+    trains: 1, // rail-corridor.js: x the GO & UP Express trains on the Union Station Rail Corridor
     lightPool: 1 // x the night's street light & headlight spot pools
   },
   medium: {
     scale: 1, aa: 'msaa', ssr: false, bloom: true, clouds: 'medium', cloudScale: 0.75,
     shadowTile: 2048, shadowFar: 0.75,
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85,
-    cull: 0.8, cars: 140, buses: 22, peds: 220, lightPool: 0.6
+    cull: 0.8, cars: 140, buses: 22, peds: 220, streetcarSpacing: 700, trains: 0.7, lightPool: 0.6
   },
   low: {
     scale: 1, aa: 'fxaa', ssr: false, bloom: true, clouds: 'low', cloudScale: 0.5,
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7,
-    cull: 0.6, cars: 90, buses: 14, peds: 140, lightPool: 0.4
+    cull: 0.6, cars: 90, buses: 14, peds: 140, streetcarSpacing: 1000, trains: 0.5, lightPool: 0.4
   }
 };
 

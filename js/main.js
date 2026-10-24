@@ -128,6 +128,10 @@ async function initApp() {
   ]);
   markInit('traffic');
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
+  // --- Toronto layer (after aalghooneh/slop-toronto): the TTC's streetcars, which the traffic keeps behind ---
+  const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
+  markInit('streetcars');
+  // --- end Toronto layer ---
   buildRoadPaint(scene, trafficSystem.network);
   markInit('roadPaint');
 
@@ -615,6 +619,7 @@ async function initApp() {
     quadtree: cityBlocks.quadtree,
     trafficSystem,
     highwayTraffic,
+    streetcars, // Toronto layer
     controllerManager,
     touchControls,
     cameraSystem,
@@ -739,6 +744,7 @@ async function initApp() {
       cameraSystem.camera
     );
     highwayTraffic.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode);
+    streetcars.update(dt, elapsed, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);

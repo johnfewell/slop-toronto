@@ -567,13 +567,28 @@ function buildCityGrid(scene) {
     g.translate(0, y, 0);
     return g;
   };
+  // --- Toronto layer: the medians the streetcars run along (Spadina Ave's & Queens Quay's rights-of-way, GEO.rails)
+  // are paved, not grassed (after aalghooneh/slop-toronto) ---
+  const tramMedians = new Set();
+  for (const [kind, , , flags, flat] of GEO.rails || []) {
+    if (kind !== 0 || flags & 2) continue;
+    for (let i = 2; i < flat.length; i += 2) {
+      const ax = flat[i - 2], az = flat[i - 1], bx = flat[i], bz = flat[i + 1];
+      const steps = Math.ceil(Math.hypot(bx - ax, bz - az) / 4);
+      for (let k = 0; k <= steps; k++) {
+        const b = blockAt(ax + ((bx - ax) * k) / steps, az + ((bz - az) * k) / steps);
+        if (b && b.median) tramMedians.add(b);
+      }
+    }
+  }
+  // --- end Toronto layer ---
   for (const b of BLOCKS) {
     // kerb ring under the slab (the slab is inset 0.25 m, so the kerb's top & face show)
     geos.curb.push(extrude(createWorldXZShape(b.poly), 0.0, 0.18));
     const inner = offsetPolygonInward(b.poly, 0.25);
     if (!inner) continue;
     if (b.median) {
-      geos.lawn.push(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03));
+      geos[tramMedians.has(b) ? 'paved' : 'lawn'].push(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03));
       continue;
     }
     const prop = b.area > 400 ? offsetPolygonInward(b.poly, SW) : null;

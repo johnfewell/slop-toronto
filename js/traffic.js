@@ -387,6 +387,10 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   let focusX = 0;
   let focusZ = 140;
   const player = { active: false, entity: null, x: 0, z: 0, vx: 0, vz: 0, halfW: 0.86, halfL: 2.18, push: 0.5 };
+  // --- Streetcars (streetcars.js, after aalghooneh/slop-toronto): other moving things the traffic keeps behind, one
+  // box per streetcar module { x, y, z, yaw, halfW, halfL, speed }, handed over every frame (setObstacles) ---
+  let movers = [];
+  const setObstacles = (list) => { movers = list || []; };
 
   // Lane lists hold pooled { v, s } entries sorted by position s along the lane, rebuilt every frame
   const pool = [];
@@ -545,6 +549,38 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     v.pRight = dz * fx - dx * fz;
     v.pSpeed = Math.max(0, player.vx * fx + player.vz * fz);
   }
+
+  // --- Streetcars: gap to the nearest streetcar module ahead of v in its path, and how fast it moves v's way ---
+  const moverGap = { gap: Infinity, speed: 0 };
+  function obstacleGap(v) {
+    moverGap.gap = Infinity;
+    moverGap.speed = 0;
+    if (!movers.length) return moverGap;
+    const fx = Math.sin(v.yaw);
+    const fz = Math.cos(v.yaw);
+    for (const o of movers) {
+      const dx = o.x - v.x;
+      const dz = o.z - v.z;
+      if (Math.abs(dx) > LOOKAHEAD + 20 || Math.abs(dz) > LOOKAHEAD + 20 || Math.abs((o.y || 0) - (v.y || 0)) > 2.5) continue;
+      const ahead = dx * fx + dz * fz;
+      if (ahead < 0 || ahead > LOOKAHEAD + 20) continue;
+      // the module's extent along & across v's heading
+      const ox = Math.sin(o.yaw);
+      const oz = Math.cos(o.yaw);
+      const along = Math.abs(ox * fx + oz * fz);
+      const across = Math.abs(ox * fz - oz * fx);
+      const reachAlong = o.halfL * along + o.halfW * across;
+      const reachAcross = o.halfL * across + o.halfW * along;
+      if (Math.abs(dz * fx - dx * fz) > v.halfWidth + reachAcross + 0.3) continue;
+      const gap = ahead - v.half - reachAlong;
+      if (gap < moverGap.gap) {
+        moverGap.gap = gap;
+        moverGap.speed = Math.max(0, o.speed * (ox * fx + oz * fz));
+      }
+    }
+    return moverGap;
+  }
+  // --- end streetcars ---
 
   // Gap to the player if it is ahead in the lane whose centre is `off` metres to the right of v
   function playerGap(v, off) {
@@ -974,6 +1010,16 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         v.leaderSpeed = v.pSpeed;
       }
     }
+    // --- Streetcars: keep behind them ---
+    const og = obstacleGap(v);
+    if (og.gap < LOOKAHEAD) {
+      worst = Math.min(worst, brake(v, Math.max(0.1, og.gap), og.speed));
+      if (og.gap < v.gap) {
+        v.gap = og.gap;
+        v.leaderSpeed = og.speed;
+      }
+    }
+    // --- end streetcars ---
     const acc = Math.min(freeAcc(v) + worst, (cap - v.speed) * 2);
     v.acc = clamp(acc, -9, v.driver.a);
   }
@@ -1329,6 +1375,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       if (d < rMin || d > rMax || (hidden && visible(x, z, v.half + 4))) continue;
       if (player.active && Math.hypot(x - player.x, z - player.z) < 25) continue;
       if (!laneClear(e.occ[lane], s, v.half + 8)) continue;
+      // --- Streetcars: never spawn on one ---
+      if (movers.some((o) => Math.abs(o.x - x) < o.halfL + v.half + 8 && Math.abs(o.z - z) < o.halfL + v.half + 8)) continue;
       place(v, e, lane, s);
       return true;
     }
@@ -1925,6 +1973,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   return {
     group,
     update,
+    setObstacles, // streetcars.js
     cars,
     buses,
     peds,
