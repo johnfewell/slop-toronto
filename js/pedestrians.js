@@ -1307,6 +1307,36 @@ class PersonRig {
     _qPelvis.multiply(qZ(_q, this.pelvisRoll)).multiply(qX(_q, this.pelvisTilt));
   }
 
+
+  // --- Ragdoll support (aalghooneh/slop-toronto 26da63c, MIT)
+  // World position of bone b's joint in the current pose
+  jointAt(b, out) {
+    const a = this.pose;
+    const o = b * 8;
+    _q.set(a[o], a[o + 1], a[o + 2], a[o + 3]);
+    return out.copy(this.bind[b]).applyQuaternion(_q).multiplyScalar(this.s).add(_v2.set(a[o + 4], a[o + 5], a[o + 6]));
+  }
+
+  // Blends the current pose towards a saved one (a copy of an earlier pose): `w` of it, bone by bone (getting up
+  // from where a ragdoll left the body)
+  blendFrom(saved, w) {
+    const a = this.pose;
+    const s = this.s;
+    for (let b = 0; b < BONE_COUNT; b++) {
+      const o = b * 8;
+      this.jointAt(b, _hip);
+      _q2.set(saved[o], saved[o + 1], saved[o + 2], saved[o + 3]);
+      _knee.copy(this.bind[b]).applyQuaternion(_q2).multiplyScalar(s).add(_v.set(saved[o + 4], saved[o + 5], saved[o + 6]));
+      _q.set(a[o], a[o + 1], a[o + 2], a[o + 3]).slerp(_q2, w);
+      _target.copy(_hip).lerp(_knee, w);
+      _qa.copy(_q);
+      this.writeBone(b, _qa, _target);
+    }
+  }
+
+  // Hip joint relative to the pelvis joint (out.y < 0: the hips are below it)
+  // --- end ragdoll support
+
   // Hip joint relative to the pelvis joint (out.y < 0: the hips are below it)
   hipOffset(i, out) {
     const j = this.bind;
@@ -1499,5 +1529,245 @@ class PersonRig {
   }
 }
 
-Object.assign(window.CITY, { PERSON_BONES: BONE, buildPersonGeometry, createPersonMaterial, PersonCrowd, PersonRig });
+
+// ============================================================================
+// 6. RAGDOLL
+// ============================================================================
+// (aalghooneh/slop-toronto 26da63c, MIT) A person knocked off their feet: the skeleton's joints become 18 Verlet particles held together by its bones
+// (distance constraints), braced so the torso and neck keep their shape, with joint limits (knees & elbows bend one way
+// and can't fold flat, legs can't fold into the chest). Gravity, the ground (with friction) and whatever pushes them
+// (the car's body) move the particles; the bones are posed from them every frame.
+const RG = { PELVIS: 0, CHEST: 1, NECK: 2, CROWN: 3, SH: [4, 5], EL: [6, 7], HA: [8, 9], HIP: [10, 11], KN: [12, 13], AN: [14, 15], TO: [16, 17] };
+const RG_COUNT = 18;
+const RG_RADIUS = [0.12, 0.13, 0.07, 0.1, 0.07, 0.07, 0.05, 0.05, 0.05, 0.05, 0.08, 0.08, 0.06, 0.06, 0.05, 0.05, 0.04, 0.04];
+// Each particle: the bone it rides on, and its point in the bind pose (a bone's joint, or the tip of the head or hand)
+function ragdollBind(bind) {
+  const pts = [];
+  const tipOf = (from, to, len) => to.clone().add(to.clone().sub(from).normalize().multiplyScalar(len));
+  pts[RG.PELVIS] = [BONE.PELVIS, bind[BONE.PELVIS]];
+  pts[RG.CHEST] = [BONE.CHEST, bind[BONE.CHEST]];
+  pts[RG.NECK] = [BONE.HEAD, bind[BONE.HEAD]];
+  pts[RG.CROWN] = [BONE.HEAD, bind[BONE.HEAD].clone().add(new THREE.Vector3(0, 0.23, 0.02))];
+  for (let k = 0; k < 2; k++) {
+    pts[RG.SH[k]] = [LIMB.upperArm[k], bind[LIMB.upperArm[k]]];
+    pts[RG.EL[k]] = [LIMB.forearm[k], bind[LIMB.forearm[k]]];
+    pts[RG.HA[k]] = [LIMB.forearm[k], tipOf(bind[LIMB.upperArm[k]], bind[LIMB.forearm[k]], FOREARM)];
+    pts[RG.HIP[k]] = [LIMB.thigh[k], bind[LIMB.thigh[k]]];
+    pts[RG.KN[k]] = [LIMB.shin[k], bind[LIMB.shin[k]]];
+    pts[RG.AN[k]] = [LIMB.foot[k], bind[LIMB.foot[k]]];
+    pts[RG.TO[k]] = [LIMB.toe[k], bind[LIMB.toe[k]]];
+  }
+  return pts;
+}
+const RG_BIND = [ragdollBind(BIND[0]), ragdollBind(BIND[1])];
+// The sticks: [a, b] pairs kept at their bind length. Bones first, then the bracing that keeps the torso a box, the
+// neck stiff and the feet at right angles to the shins
+const RG_STICKS = [
+  [RG.PELVIS, RG.CHEST], [RG.CHEST, RG.NECK], [RG.NECK, RG.CROWN],
+  [RG.PELVIS, RG.HIP[0]], [RG.PELVIS, RG.HIP[1]], [RG.HIP[0], RG.HIP[1]],
+  [RG.CHEST, RG.SH[0]], [RG.CHEST, RG.SH[1]], [RG.SH[0], RG.SH[1]],
+  [RG.PELVIS, RG.SH[0]], [RG.PELVIS, RG.SH[1]], [RG.CHEST, RG.HIP[0]], [RG.CHEST, RG.HIP[1]],
+  [RG.SH[0], RG.HIP[1]], [RG.SH[1], RG.HIP[0]], [RG.SH[0], RG.HIP[0]], [RG.SH[1], RG.HIP[1]],
+  [RG.CHEST, RG.CROWN], [RG.SH[0], RG.NECK], [RG.SH[1], RG.NECK], [RG.SH[0], RG.CROWN], [RG.SH[1], RG.CROWN],
+  ...[0, 1].flatMap((k) => [
+    [RG.SH[k], RG.EL[k]], [RG.EL[k], RG.HA[k]],
+    [RG.HIP[k], RG.KN[k]], [RG.KN[k], RG.AN[k]], [RG.AN[k], RG.TO[k]], [RG.KN[k], RG.TO[k]]
+  ])
+];
+// Joint limits: [a, b, min share of their bind distance] (a knee or elbow can't fold flat, a thigh can't fold into
+// the chest, a hand can't sink into the hip)
+const RG_LIMITS = [0, 1].flatMap((k) => [
+  [RG.HIP[k], RG.AN[k], 0.42], [RG.SH[k], RG.HA[k], 0.32], [RG.CHEST, RG.KN[k], 0.55], [RG.HA[k], RG.HIP[k], 0.2],
+  [RG.KN[0], RG.KN[1], 0.6], [RG.AN[0], RG.AN[1], 0.6]
+]).filter((l, i, all) => all.findIndex((m) => m[0] === l[0] && m[1] === l[1]) === i);
+// The bones posed from the particles: [bone, joint, towards, side-from, side-to] (its frame: along joint -> towards,
+// turned so that side-from -> side-to stays on its side)
+const RG_BONES = [
+  [BONE.PELVIS, RG.PELVIS, RG.CHEST, RG.HIP[1], RG.HIP[0]],
+  [BONE.CHEST, RG.CHEST, RG.NECK, RG.SH[1], RG.SH[0]],
+  [BONE.HEAD, RG.NECK, RG.CROWN, RG.SH[1], RG.SH[0]],
+  ...[0, 1].flatMap((k) => [
+    [LIMB.upperArm[k], RG.SH[k], RG.EL[k], RG.SH[1], RG.SH[0]],
+    [LIMB.forearm[k], RG.EL[k], RG.HA[k], RG.SH[1], RG.SH[0]],
+    [LIMB.thigh[k], RG.HIP[k], RG.KN[k], RG.HIP[1], RG.HIP[0]],
+    [LIMB.shin[k], RG.KN[k], RG.AN[k], RG.HIP[1], RG.HIP[0]],
+    [LIMB.foot[k], RG.AN[k], RG.TO[k], RG.HIP[1], RG.HIP[0]],
+    [LIMB.toe[k], RG.TO[k], -1, RG.HIP[1], RG.HIP[0]] // (the toes carry on the foot's line)
+  ])
+];
+const _ra = new THREE.Vector3();
+const _rb = new THREE.Vector3();
+const _rc = new THREE.Vector3();
+const _rq = new THREE.Quaternion();
+const _rq2 = new THREE.Quaternion();
+const _rm = new THREE.Matrix4();
+// Orthonormal frame (as a quaternion) with x along `dir` and y towards `side` (any perpendicular if they line up)
+function frameOf(dir, side, out) {
+  _bx.copy(dir).normalize();
+  _by.copy(side).addScaledVector(_bx, -side.dot(_bx));
+  if (_by.lengthSq() < 1e-6) _by.set(_bx.y, -_bx.x, 0).addScaledVector(_bx, -_bx.y * _bx.y);
+  if (_by.lengthSq() < 1e-6) _by.set(0, _bx.z, -_bx.y);
+  _by.normalize();
+  _bz.crossVectors(_bx, _by);
+  return out.setFromRotationMatrix(_rm.makeBasis(_bx, _by, _bz));
+}
+
+class PersonRagdoll {
+  constructor() {
+    this.pos = new Float32Array(RG_COUNT * 3);
+    this.prev = new Float32Array(RG_COUNT * 3);
+    this.rest = new Float32Array(RG_STICKS.length);
+    this.limit = new Float32Array(RG_LIMITS.length);
+    this.speed = 0; // the fastest particle (m/s), to tell when it has come to rest
+  }
+
+  get x() { return this.pos[0]; }
+  get y() { return this.pos[1]; }
+  get z() { return this.pos[2]; }
+
+  // Takes over the rig's current pose, moving at (vx, vy, vz) for the upper body and (lvx, lvz) for the legs (hit
+  // low by a bumper, they are swept from under it)
+  start(rig, vx, vy, vz, lvx, lvz) {
+    const bind = RG_BIND[rig.female];
+    const s = rig.s;
+    const P = this.pos, Q = this.prev;
+    const h = 1 / 120;
+    for (let i = 0; i < RG_COUNT; i++) {
+      const [bone, point] = bind[i];
+      const o = bone * 8;
+      const a = rig.pose;
+      _rq.set(a[o], a[o + 1], a[o + 2], a[o + 3]);
+      rig.jointAt(bone, _ra).add(_rb.copy(point).sub(rig.bind[bone]).applyQuaternion(_rq).multiplyScalar(s));
+      P[i * 3] = _ra.x;
+      P[i * 3 + 1] = _ra.y;
+      P[i * 3 + 2] = _ra.z;
+      const legs = i >= RG.HIP[0];
+      const up = i === RG.PELVIS || legs ? 1 : 0.7;
+      Q[i * 3] = _ra.x - (legs ? lvx : vx) * h;
+      Q[i * 3 + 1] = _ra.y - vy * up * h;
+      Q[i * 3 + 2] = _ra.z - (legs ? lvz : vz) * h;
+    }
+    const len = (i, j) => Math.hypot(P[i * 3] - P[j * 3], P[i * 3 + 1] - P[j * 3 + 1], P[i * 3 + 2] - P[j * 3 + 2]);
+    RG_STICKS.forEach(([i, j], n) => (this.rest[n] = len(i, j)));
+    RG_LIMITS.forEach(([i, j, k], n) => (this.limit[n] = len(i, j) * k));
+  }
+
+  // Advances dt s: ground(x, z) is the height of the ground there, push(out, i) may move particle `out` out of
+  // something solid (true if it did)
+  step(dt, ground, push = null) {
+    const P = this.pos, Q = this.prev;
+    const n = Math.max(1, Math.min(8, Math.ceil(dt * 120)));
+    const h = dt / n;
+    let fastest = 0;
+    for (let sub = 0; sub < n; sub++) {
+      fastest = 0;
+      for (let i = 0; i < RG_COUNT; i++) {
+        const o = i * 3;
+        const vx = (P[o] - Q[o]) * 0.999, vy = (P[o + 1] - Q[o + 1]) * 0.999, vz = (P[o + 2] - Q[o + 2]) * 0.999;
+        Q[o] = P[o]; Q[o + 1] = P[o + 1]; Q[o + 2] = P[o + 2];
+        P[o] += vx;
+        P[o + 1] += vy - 9.81 * h * h;
+        P[o + 2] += vz;
+        fastest = Math.max(fastest, Math.hypot(vx, vy, vz) / h);
+      }
+      for (let it = 0; it < 6; it++) {
+        this.solveSticks();
+        this.solveLimits();
+        this.solveBends();
+        for (let i = 0; i < RG_COUNT; i++) {
+          const o = i * 3;
+          if (push) {
+            _ra.set(P[o], P[o + 1], P[o + 2]);
+            if (push(_ra, i)) { P[o] = _ra.x; P[o + 1] = _ra.y; P[o + 2] = _ra.z; }
+          }
+          // the ground: no sinking, and sliding along it costs speed (asphalt, μ ≈ 0.6)
+          const g = ground(P[o], P[o + 2]) + RG_RADIUS[i];
+          if (P[o + 1] < g) {
+            P[o + 1] = g;
+            if (Q[o + 1] > g) Q[o + 1] = g + (Q[o + 1] - g) * 0.2; // (the fall stops dead, near enough)
+            const dx = P[o] - Q[o], dz = P[o + 2] - Q[o + 2];
+            const d = Math.hypot(dx, dz);
+            const keep = d > 0 ? Math.max(0, d - 0.6 * 9.81 * h * h) / d : 0;
+            Q[o] = P[o] - dx * keep;
+            Q[o + 2] = P[o + 2] - dz * keep;
+          }
+        }
+      }
+    }
+    this.speed = fastest;
+  }
+
+  solveSticks() {
+    for (let n = 0; n < RG_STICKS.length; n++) {
+      const [i, j] = RG_STICKS[n];
+      this.pull(i, j, this.rest[n], 0.5, 0);
+    }
+  }
+
+  solveLimits() {
+    for (let n = 0; n < RG_LIMITS.length; n++) this.pull(RG_LIMITS[n][0], RG_LIMITS[n][1], this.limit[n], 0.5, 1);
+  }
+
+  // Moves i & j to `rest` apart (mode 1: only if closer than that), half each
+  pull(i, j, rest, share, mode) {
+    const P = this.pos;
+    const a = i * 3, b = j * 3;
+    const dx = P[b] - P[a], dy = P[b + 1] - P[a + 1], dz = P[b + 2] - P[a + 2];
+    const d = Math.hypot(dx, dy, dz) || 1e-6;
+    if (mode === 1 && d >= rest) return;
+    const f = ((d - rest) / d) * share;
+    P[a] += dx * f; P[a + 1] += dy * f; P[a + 2] += dz * f;
+    P[b] -= dx * f; P[b + 1] -= dy * f; P[b + 2] -= dz * f;
+  }
+
+  // Knees bend forward (towards the toes): one on the wrong side of the line from the hip to the ankle is put back just
+  // over it (with its last position, so that adds no speed). Elbows only have their limit: a rule for them fights the
+  // bones whenever the body lies on its arm
+  solveBends() {
+    const P = this.pos, Q = this.prev;
+    const v = (i, out) => out.set(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+    const fold = (top, mid, end, towards) => {
+      v(top, _ra);
+      v(end, _rb).sub(_ra).normalize(); // the limb's axis
+      v(mid, _rc).sub(_ra);
+      _rc.addScaledVector(_rb, -_rc.dot(_rb)); // the joint off the axis
+      towards.addScaledVector(_rb, -towards.dot(_rb));
+      if (towards.lengthSq() < 1e-6) return;
+      towards.normalize();
+      const off = _rc.dot(towards);
+      if (off >= 0) return;
+      const k = mid * 3, c = 0.01 - off;
+      P[k] += towards.x * c; P[k + 1] += towards.y * c; P[k + 2] += towards.z * c;
+      Q[k] += towards.x * c; Q[k + 1] += towards.y * c; Q[k + 2] += towards.z * c;
+    };
+    for (let k = 0; k < 2; k++) {
+      v(RG.TO[k], _front).sub(v(RG.AN[k], _v2));
+      fold(RG.HIP[k], RG.KN[k], RG.AN[k], _front);
+    }
+  }
+
+  // Poses the rig's bones from the particles
+  apply(rig) {
+    const P = this.pos;
+    const bind = RG_BIND[rig.female];
+    const v = (i, out) => out.set(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+    for (const [bone, j, t, sa, sb] of RG_BONES) {
+      const to = t < 0 ? RG.TO.indexOf(j) : -1;
+      // the frame now
+      if (t >= 0) v(t, _ra).sub(v(j, _rb));
+      else v(j, _ra).sub(v(RG.AN[to], _rb));
+      v(sb, _rc).sub(v(sa, _rb));
+      frameOf(_ra, _rc, _rq);
+      // the same frame in the bind pose
+      if (t >= 0) _ra.copy(bind[t][1]).sub(bind[j][1]);
+      else _ra.copy(bind[j][1]).sub(bind[RG.AN[to]][1]);
+      _rc.copy(bind[sb][1]).sub(bind[sa][1]);
+      frameOf(_ra, _rc, _rq2);
+      _rq.multiply(_rq2.invert());
+      rig.writeBone(bone, _rq, v(j, _rb));
+    }
+  }
+}
+
+Object.assign(window.CITY, { PERSON_BONES: BONE, buildPersonGeometry, createPersonMaterial, PersonCrowd, PersonRig, PersonRagdoll });
 })();
