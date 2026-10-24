@@ -65,29 +65,40 @@ async function buildStreetProps(scene) {
       console.warn(`[streetProps] ${file}.glb did not load:`, e);
       return;
     }
-    let src = null;
-    gltf.scene.traverse((o) => { if (!src && o.isMesh) src = o; });
-    if (!src) return;
-    // the model's base on the ground, centred on its footprint. Meshopt quantisation stores positions as normalised
-    // 16-bit integers (-1..1, the node's transform scaling them): back to floats first, or baking the transform in
-    // clips everything past a metre (the post box lost its top half)
-    const geo = src.geometry.clone();
-    const pos = geo.attributes.position;
-    if (!(pos.array instanceof Float32Array) || pos.normalized) {
-      const f = new Float32Array(pos.count * 3);
-      for (let i = 0; i < pos.count; i++) { f[3 * i] = pos.getX(i); f[3 * i + 1] = pos.getY(i); f[3 * i + 2] = pos.getZ(i); }
-      geo.setAttribute('position', new THREE.BufferAttribute(f, 3));
+    const srcs = [];
+    gltf.scene.traverse((o) => { if (o.isMesh) srcs.push(o); });
+    if (!srcs.length) return;
+    // every part of the model (the shelter's frame & its clear glass) in one frame: the base on the ground, centred on
+    // its footprint. Meshopt quantisation stores positions as normalised 16-bit integers (-1..1, the node's transform
+    // scaling them): back to floats first, or baking the transform in clips everything past a metre (the post box lost
+    // its top half)
+    const geos = srcs.map((src) => {
+      const geo = src.geometry.clone();
+      const pos = geo.attributes.position;
+      if (!(pos.array instanceof Float32Array) || pos.normalized) {
+        const f = new Float32Array(pos.count * 3);
+        for (let i = 0; i < pos.count; i++) { f[3 * i] = pos.getX(i); f[3 * i + 1] = pos.getY(i); f[3 * i + 2] = pos.getZ(i); }
+        geo.setAttribute('position', new THREE.BufferAttribute(f, 3));
+      }
+      src.updateWorldMatrix(true, false);
+      geo.applyMatrix4(src.matrixWorld);
+      geo.computeBoundingBox();
+      return geo;
+    });
+    const b = new THREE.Box3();
+    geos.forEach((g) => b.union(g.boundingBox));
+    const k = height ? height / (b.max.y - b.min.y) : 1;
+    for (const geo of geos) {
+      geo.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+      if (k !== 1) geo.scale(k, k, k);
     }
-    src.updateWorldMatrix(true, false);
-    geo.applyMatrix4(src.matrixWorld);
-    geo.computeBoundingBox();
-    const b = geo.boundingBox;
-    geo.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
-    if (height) geo.scale(height / (b.max.y - b.min.y), height / (b.max.y - b.min.y), height / (b.max.y - b.min.y));
-    if (key === 'shelter') { geo.computeBoundingBox(); pts = spreadAlongStreet(pts, geo.boundingBox.max.x - geo.boundingBox.min.x); }
+    if (key === 'shelter') pts = spreadAlongStreet(pts, (b.max.x - b.min.x) * k);
     const n = pts.length / 2;
-    const mesh = new THREE.InstancedMesh(geo, src.material, n);
-    mesh.name = `StreetProps_${key}`;
+    const meshes = srcs.map((src, j) => {
+      const mesh = new THREE.InstancedMesh(geos[j], src.material, n);
+      mesh.name = `StreetProps_${key}${j ? `_${src.material.name || j}` : ''}`;
+      return mesh;
+    });
     let nudged = 0;
     for (let i = 0; i < n; i++) {
       let x = pts[2 * i], z = pts[2 * i + 1];
@@ -108,15 +119,20 @@ async function buildStreetProps(scene) {
       } else yaw = hash(x, z) * Math.PI * 2;
       p.set(x, blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0, z);
       q.setFromAxisAngle(up, yaw);
-      mesh.setMatrixAt(i, m.compose(p, q, sc));
+      m.compose(p, q, sc);
+      for (const mesh of meshes) mesh.setMatrixAt(i, m);
     }
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.castShadow = shadows;
-    mesh.receiveShadow = true;
-    mesh.userData.cullDistance = cullDistance;
-    mesh.userData.cullCell = 60;
-    mesh.computeBoundingSphere();
-    group.add(mesh);
+    for (const mesh of meshes) {
+      const clear = mesh.material.transparent;
+      if (clear) mesh.material.depthWrite = false; // glass: the frame behind it still shows
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.castShadow = shadows && !clear;
+      mesh.receiveShadow = true;
+      mesh.userData.cullDistance = cullDistance;
+      mesh.userData.cullCell = 60;
+      mesh.computeBoundingSphere();
+      group.add(mesh);
+    }
     counts[key] = n;
     if (nudged) console.info(`[streetProps] ${key}: ${nudged} stepped back onto the sidewalk`);
   }));

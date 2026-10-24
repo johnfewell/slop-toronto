@@ -7,8 +7,8 @@
 # Faces carry a tag: detail tags (poster, map, signs, the bin's labels) keep the bake; structure tags (frame, glass,
 # roof) are flattened to the bake's own median colour so flat panels read flat, then a soft AO bake grounds everything.
 # Roughness/metallic come from the tags too (glossy glass, painted steel). No normal map: the geometry is the shape.
-# Output: ONE mesh, ONE material, metres, base on z=0, centred, glTF +z (Blender -y) the front — what js/street-props.js
-# instances. Then: npx @gltf-transform/cli@4 webp <out> <out>; npx @gltf-transform/cli@4 meshopt <out> <out>.
+# Output: one mesh, metres, base on z=0, centred, glTF +z (Blender -y) the front — what js/street-props.js instances —
+# with one baked material, plus a second, see-through one for the shelter's glass (panes & roof: they're clear glass). Then: npx @gltf-transform/cli@4 webp <out> <out>; npx @gltf-transform/cli@4 meshopt <out> <out>.
 # usage: Blender --background --factory-startup --python tools/blender/bake_props.py -- shelter|bin <src.glb> <out.glb> <workdir>
 import bpy, bmesh, sys, os, math, mathutils, numpy as np
 from mathutils import Vector, Matrix
@@ -234,10 +234,22 @@ p_alb = save(to_srgb(alb), 'albedo', ATLAS)
 p_mr = save(mr, 'mr', MR_SIZE)
 p_emi = save(to_srgb(emi), 'emissive', ATLAS // 2) if emi.max() > 0 else None
 
-# ---------------------------------------------------------------- one material, export
+# ---------------------------------------------------------------- the baked material (+ clear glass), export
 bpy.data.objects.remove(high)
+GLASS = {'glass': 0.16, 'roof': 0.28}  # tag -> opacity (the roof a touch frosted)
+tag_of = [TAG_NAMES[p.material_index] for p in me.polygons]
 me.materials.clear(); m = bpy.data.materials.new(f'{KIND}'); m.use_nodes = True; me.materials.append(m)
 for p in me.polygons: p.material_index = 0
+if any(t in GLASS for t in tag_of):
+    for name, alpha in GLASS.items():
+        g = bpy.data.materials.new(f'{KIND}-{name}'); g.use_nodes = True; me.materials.append(g)
+        gb = g.node_tree.nodes['Principled BSDF']
+        gb.inputs['Base Color'].default_value = (0.80, 0.88, 0.90, 1.0)
+        gb.inputs['Roughness'].default_value = 0.05
+        gb.inputs['Alpha'].default_value = alpha
+        g.surface_render_method = 'BLENDED'
+        for p, t in zip(me.polygons, tag_of):
+            if t == name: p.material_index = len(me.materials) - 1
 nt = m.node_tree; b = nt.nodes['Principled BSDF']
 def tex(path, cs):
     n = nt.nodes.new('ShaderNodeTexImage'); n.image = bpy.data.images.load(path); n.image.colorspace_settings.name = cs; return n
