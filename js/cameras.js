@@ -146,14 +146,31 @@ class CameraSystem {
     }
   }
 
-  resetForTeleport() {
-    // Arrive with a fresh chase view, without carrying a previous drive or gesture into the destination.
-    this._clearPointers();
-    this.isDragging = false;
+  // The gamepad's right stick orbits the chase & POV cameras, its D-pad zooms the chase one (gamepad-controls.js)
+  applyGamepadInput(lookX, lookY, zoom, dt) {
+    if (!(dt > 0) || !Number.isFinite(dt)) return;
+    if (this.activePresetId !== 'chase' && this.activePresetId !== 'pov') return;
+    // POV uses the orbit angles, but only chase renders a zoomed camera distance.
+    if (this.activePresetId !== 'chase') zoom = 0;
+    if (!lookX && !lookY && !zoom) return;
+    this.orbitYawOffset -= lookX * 2.0 * dt;
+    this.orbitPitchOffset = Math.max(-0.32, Math.min(0.68, this.orbitPitchOffset + lookY * 1.25 * dt));
+    this.zoomMultiplier = Math.max(0.45, Math.min(2.4, this.zoomMultiplier + zoom * 0.9 * dt));
+    this.userOrbitTimer = 4.0;
+  }
+
+  resetOrbit() {
     this.orbitYawOffset = 0;
     this.orbitPitchOffset = 0.09;
     this.zoomMultiplier = 1;
     this.userOrbitTimer = 0;
+  }
+
+  resetForTeleport() {
+    // Arrive with a fresh chase view, without carrying a previous drive or gesture into the destination.
+    this._clearPointers();
+    this.isDragging = false;
+    this.resetOrbit();
     this.smoothedSpeed = 0;
     this.followEntity = null;
     this.followOffset.set(0, 0, 0);

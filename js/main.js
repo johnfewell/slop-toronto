@@ -33,6 +33,7 @@ const { createTrafficSystem, createHighwayTraffic } = window.CITY;
 const { buildRoadPaint } = window.CITY;
 const { ThirdPersonControllerManager } = window.CITY;
 const { TouchControls } = window.CITY;
+const { GamepadControls } = window.CITY;
 const { CameraSystem, CAMERA_PRESETS } = window.CITY;
 const { LightingSystem } = window.CITY;
 const { CityMapSystem } = window.CITY;
@@ -245,6 +246,16 @@ async function initApp() {
   const elAltitude = document.getElementById('hud-altitude');
   const elLocation = document.getElementById('hud-location');
   const elControlsHint = document.getElementById('hud-controls-hint');
+  // A gamepad drives too (gamepad-controls.js): its bumpers step the mode, Y the camera, Start the map
+  const gamepadControls = new GamepadControls(controllerManager, cameraSystem, {
+    onCycleMode: (step) => {
+      const modes = ['person', 'car', 'cyclist', 'helicopter'];
+      selectMode(modes[(modes.indexOf(controllerManager.activeMode) + step + modes.length) % modes.length]);
+    },
+    onCycleCamera: (step) => cycleCamera(step),
+    onToggleMap: () => mapSystem.toggleFullMap(!mapSystem.isFullMapOpen),
+    onCloseMap: () => mapSystem.toggleFullMap(false)
+  });
 
   // Keyboard guide for each mode: [keys, action]
   const controlHints = {
@@ -286,6 +297,7 @@ async function initApp() {
   function selectMode(mode) {
     controllerManager.setMode(mode);
     touchControls.setMode(controllerManager.activeMode);
+    gamepadControls.reset();
     modeButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
     });
@@ -442,6 +454,7 @@ async function initApp() {
   function teleportTo(x, z, heading = Math.PI) {
     const destination = controllerManager.teleportActiveTo(x, z, heading);
     touchControls.reset();
+    gamepadControls.reset();
     cameraSystem.resetForTeleport();
     selectCamera('chase', true);
     return destination;
@@ -454,6 +467,7 @@ async function initApp() {
     onToggle: (open) => {
       controllerManager.resetInput();
       touchControls.setEnabled(!open);
+      gamepadControls.setEnabled(!open);
       const mapHint = document.getElementById('fullmap-hover-info');
       if (open && touchControls.available && mapHint) {
         mapHint.textContent = 'Tap a place for directions · Drag to pan · Pinch to zoom';
@@ -617,6 +631,7 @@ async function initApp() {
     highwayTraffic,
     controllerManager,
     touchControls,
+    gamepadControls,
     cameraSystem,
     lightingSystem,
     mapSystem,
@@ -727,6 +742,7 @@ async function initApp() {
     elapsed += dt;
 
     // Update 3rd-person controllers, camera, signals, traffic & vehicle collisions, building LODs, and dynamic shadow focus
+    gamepadControls.update(dt);
     controllerManager.update(dt, elapsed);
     cameraSystem.update(dt, elapsed);
     streetDetails.signalClock.value = elapsed;

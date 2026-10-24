@@ -14,12 +14,12 @@ test('city script preloads start before stylesheets can block the loader', () =>
   assert.match(html, /<link rel="preconnect" href="https:\/\/cdn\.jsdelivr\.net" crossorigin\s*\/>/);
 });
 
-test('preloaded URLs match ordered scripts and execution waits for Three.js imports', () => {
+test('preloaded URLs match ordered scripts and execution waits for Three.js imports', async () => {
   const links = [];
   const scripts = [];
   const window = {};
   const THREE = {};
-  const imports = Object.fromEntries(['bloom', 'ssr', 'mergeGeometries', 'mergeVertices', 'SkyMesh', 'SunLight', 'SunLightNode', 'ClusteredLighting'].map((name) => [name, () => {}]));
+  const imports = Object.fromEntries(['bloom', 'ssr', 'fxaa', 'mergeGeometries', 'mergeVertices', 'SkyMesh', 'SunLight', 'SunLightNode', 'ClusteredLighting', 'GLTFLoader', 'MeshoptDecoder'].map((name) => [name, () => {}]));
   const document = {
     createElement: (tagName) => ({ tagName, async: true }),
     head: {
@@ -37,16 +37,17 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
       }
     }
   };
-  const context = vm.createContext({ window, document, THREE, TSL: {}, ...imports });
+  const context = vm.createContext({ window, document, navigator: {}, THREE, TSL: {}, StylizedWater: {}, ...imports });
   vm.runInContext(preloadScript[1], context);
   assert.equal(scripts.length, 0);
-  assert.equal(links.length, 27);
+  assert.equal(links.length, 36);
   assert.equal(new Set(links).size, links.length, 'each script is preloaded once');
 
-  // Imports are supplied above; evaluate the unchanged module body in the same global lexical environment.
-  vm.runInContext(moduleScript[1].replace(/^\s*import .+;$/gm, ''), context);
+  // Imports are supplied above; evaluate the unchanged module body in the same global lexical environment (inside an
+  // async function: the module awaits the GPU adapter probe at its top level).
+  await vm.runInContext(`(async () => {${moduleScript[1].replace(/^\s*import .+;$/gm, '')}})()`, context);
   assert.deepEqual(scripts, links);
-  assert.match(scripts[0], /\/toronto-geodata\.js\?v=/);
+  assert.match(scripts[0], /\/quality\.js\?v=/);
   assert.match(scripts.at(-1), /\/main\.js\?v=/);
   assert.equal(new Set(scripts.map((src) => src.split('?v=')[1])).size, 1);
 });

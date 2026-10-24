@@ -115,6 +115,7 @@ class ThirdPersonControllerManager {
     this._pressedCodes = new Set();
     this._keyboardKeys = {};
     this._touchKeys = {};
+    this._gamepadKeys = {};
 
     const onKey = (e, isDown) => {
       const action = actionsByCode.get(e.code);
@@ -123,7 +124,7 @@ class ThirdPersonControllerManager {
       else this._pressedCodes.delete(e.code);
       // Releasing one binding must not cancel another key held for the same action.
       this._keyboardKeys[action] = bindings[action].some((code) => this._pressedCodes.has(code));
-      this.keys[action] = this._keyboardKeys[action] || this._touchKeys[action] || false;
+      this._blendInput(action);
     };
 
     window.addEventListener('keydown', (e) => onKey(e, true));
@@ -134,21 +135,47 @@ class ThirdPersonControllerManager {
     });
   }
 
-  setTouchInput(action, value) {
+  // Keyboard, touch and gamepad (gamepad-controls.js) blend per action: a held key or button wins outright, else the
+  // strongest analog value (a stick or a trigger part-way)
+  _blendInput(action) {
+    const keyboard = this._keyboardKeys[action] || false;
+    const touch = this._touchKeys[action] || false;
+    const gamepad = this._gamepadKeys[action] || false;
+    const strength = Math.max(keyboard, touch, gamepad);
+    this.keys[action] = keyboard === true || touch === true || gamepad === true ? true : strength || false;
+  }
+
+  _setAnalogInput(source, action, value) {
     if (!Object.hasOwn(this.keys, action)) return;
-    this._touchKeys[action] = typeof value === 'boolean' ? value : Math.max(0, Math.min(1, Number(value) || 0));
-    this.keys[action] = this._keyboardKeys[action] || this._touchKeys[action] || false;
+    const strength = Number(value);
+    source[action] = typeof value === 'boolean' ? value : Number.isFinite(strength) ? Math.max(0, Math.min(1, strength)) : 0;
+    this._blendInput(action);
+  }
+
+  setTouchInput(action, value) {
+    this._setAnalogInput(this._touchKeys, action, value);
+  }
+
+  setGamepadInput(action, value) {
+    this._setAnalogInput(this._gamepadKeys, action, value);
   }
 
   clearTouchInput() {
     this._touchKeys = {};
-    for (const action of Object.keys(this.keys)) this.keys[action] = this._keyboardKeys[action] || false;
+    for (const action of Object.keys(this.keys)) this._blendInput(action);
+  }
+
+  clearGamepadInput() {
+    this._gamepadKeys = {};
+    for (const action of Object.keys(this.keys)) this._blendInput(action);
   }
 
   resetInput() {
     this._pressedCodes.clear();
     this._keyboardKeys = {};
-    this.clearTouchInput();
+    this._touchKeys = {};
+    this._gamepadKeys = {};
+    for (const action of Object.keys(this.keys)) this.keys[action] = false;
   }
 
   setMode(mode) {
