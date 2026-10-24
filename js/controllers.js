@@ -32,6 +32,178 @@ const { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight } = window.CIT
 // Walking surface for the player's pedestrian (its rig samples it around its feet)
 const personGround = (controllers, x, z) => controllers.getGroundHeight(x, z, 'person', controllers.entities ? controllers.entities.person.position.y : null);
 
+// --- Driving
+// The bicycle (mrdoob's f3132b6 & 0e92315): constant rolling resistance, quadratic air drag and, off the pedals, a
+// little extra coasting resistance, kept apart from braking; boost adds power, and letting it go lets the momentum
+// decay instead of clamping it. (Backward input is scaled to 0.6, giving 4.5 m/s² braking.)
+const BICYCLE_DRIVE = {
+  speed: 12.8, boostSpeed: 19, reverseSpeed: 4.5, acceleration: 9, boostAcceleration: 13.5,
+  rolling: 0.08, drag: 0.004, coast: 0.2, brake: 7.5
+};
+
+function driveSpeed(speed, throttle, boost, dt, drive) {
+  const braking = speed * throttle < 0;
+  const magnitude = Math.abs(speed);
+  const deceleration = drive.rolling + (!throttle ? drive.coast : braking ? Math.abs(throttle) * drive.brake : 0);
+  // (without crossing zero or large-dt instability)
+  const coasting = Math.max(0, magnitude - deceleration * dt) / (1 + drive.drag * magnitude * dt);
+  if (!throttle || braking) return Math.sign(speed) * coasting;
+  const limit = throttle < 0 ? drive.reverseSpeed : boost ? drive.boostSpeed : drive.speed;
+  const acceleration = boost ? drive.boostAcceleration : drive.acceleration;
+  return Math.sign(throttle) * Math.min(Math.max(limit, coasting), coasting + Math.abs(throttle) * acceleration * dt);
+}
+
+// The car's powertrain (aalghooneh/slop-toronto f464ec8, MIT, modelled on a 2.0 L turbo crossover): 400 N·m from
+// 1,500 rpm, ~188 kW, a six-speed automatic and all-wheel drive moving ~1,800 kg. Nothing caps its speed: it runs out
+// of power against the air near 230 km/h; 0-100 km/h in about 7 s floored, 100-0 in about 40 m
+const CAR_POWERTRAIN = {
+  mass: 1800, wheelRadius: 0.35, finalDrive: 3.5, efficiency: 0.85,
+  gears: [4.48, 2.87, 1.84, 1.41, 1.0, 0.74], reverse: 3.8,
+  idle: 800, stall: 2200, redline: 6300, reverseLimit: 3000, peakTorque: 400, peakPower: 188000,
+  shiftTime: 0.28, // the drive is cut while the box changes gear
+  traction: 5.2, // m/s²: what the tyres (and the traction control) put down pulling away, all four driven
+  drag: 3.06e-4, // ½ ρ Cd A / m (Cd A ≈ 0.9 m²): a = drag v²
+  rolling: 0.13, // m/s²: tyre rolling resistance
+  brake: 9.5, handbrake: 7
+};
+const RPM_PER_MS = 60 / (2 * Math.PI * CAR_POWERTRAIN.wheelRadius); // wheel rpm per m/s
+
+// Full-load engine torque (N·m): building to the plateau off idle, then held to peak power
+function engineTorque(rpm) {
+  const E = CAR_POWERTRAIN;
+  const r = Math.max(E.idle, Math.min(E.redline, rpm));
+  const plateau = r < 1500 ? E.peakTorque * (0.6 + 0.4 * (r - E.idle) / (1500 - E.idle)) : E.peakTorque;
+  return Math.min(plateau, E.peakPower / (r * Math.PI / 30));
+}
+
+// One step of the car's longitudinal motion: picks the gear like an automatic (holding gears to the redline with the
+// pedal floored, short-shifting when cruising, kicking down for power), drives the wheels through it, and takes off the
+// air drag, rolling resistance and engine braking. `throttle` -1..1 (backward brakes, then reverses); `pedal` 0..1.
+// Leaves c.gear (-1 reverse), c.rpm and c.shiftTimer for the sound and the dashboard; returns the new speed
+function driveCar(c, throttle, pedal, dt) {
+  const E = CAR_POWERTRAIN;
+  const v = c.speed;
+  if (!Number.isInteger(c.gear)) c.gear = 0;
+  const braking = throttle * v < 0 && Math.abs(v) > 0.3;
+  if (!braking) {
+    if (throttle < 0 && v <= 0.3) c.gear = -1;
+    else if (throttle > 0 && v >= -0.3 && c.gear < 0) c.gear = 0;
+  }
+  c.shiftTimer = Math.max(0, (c.shiftTimer || 0) - dt);
+  const wheelRpm = Math.abs(v) * RPM_PER_MS;
+  const ratioOf = (g) => (g < 0 ? E.reverse : E.gears[g]) * E.finalDrive;
+  if (c.gear >= 0 && !c.shiftTimer) {
+    const up = pedal > 0.95 ? E.redline - 250 : 2200 + pedal * 3000;
+    const down = pedal > 0.95 ? E.redline - 1500 : 1300 + pedal * 1800;
+    if (c.gear < E.gears.length - 1 && wheelRpm * ratioOf(c.gear) > up) {
+      c.gear++;
+      c.shiftTimer = E.shiftTime;
+    } else if (c.gear > 0 && wheelRpm * ratioOf(c.gear) < down && wheelRpm * ratioOf(c.gear - 1) < up * 0.9) {
+      c.gear--;
+      c.shiftTimer = pedal > 0 ? E.shiftTime * 0.7 : 0;
+    }
+  }
+  const ratio = ratioOf(c.gear);
+  // (the torque converter lets the engine spin up ahead of the wheels pulling away, to its stall speed)
+  const rpm = Math.max(wheelRpm * ratio, !braking && pedal > 0 ? E.stall : E.idle);
+  c.rpm = Math.min(E.redline, rpm);
+
+  let push = 0; // along the gear's direction of travel
+  if (!braking && pedal > 0 && !c.shiftTimer && rpm < (c.gear < 0 ? E.reverseLimit : E.redline)) {
+    // (the spinning engine & wheels add to the mass to get moving, the more so in the low gears)
+    const inertia = 1.04 + 0.004 * (ratio / E.finalDrive) ** 2;
+    push = Math.min(E.traction, (engineTorque(rpm) * pedal * ratio * E.efficiency) / (E.wheelRadius * E.mass * inertia));
+  }
+  // what slows it: the brakes, the air, the tyres and, off the pedal, the engine held by the gearbox
+  let resist = E.rolling + E.drag * v * v;
+  if (braking) resist += E.brake * Math.abs(throttle);
+  else if (!pedal) resist += ((20 + 0.012 * rpm) * ratio * E.efficiency) / (E.wheelRadius * E.mass);
+  const dir = c.gear < 0 ? -1 : 1;
+  let next = v + dir * push * dt;
+  const slow = resist * dt;
+  next = Math.abs(next) <= slow ? (push ? next : 0) : next - Math.sign(next) * slow;
+  return next;
+}
+
+// Crash damage (aalghooneh/slop-toronto 0557fbb & 26da63c, MIT): an impact at `speed` m/s (closing speed along the
+// contact normal) takes this much of the car's 100 condition. Bumps & scrapes under ~15 km/h are free; a 50 km/h wall
+// costs about a tenth, a 100 km/h one about 40, so it takes a few big crashes to wreck it. The frames of one crash
+// (grinding along a wall, bouncing back into it) count once: within `window` s only what a harder impact adds is taken
+const CRASH = { threshold: 4, scale: 0.35, exponent: 1.5, window: 0.6, wreckTime: 3.5 };
+function crashDamage(speed) {
+  return speed > CRASH.threshold ? CRASH.scale * (speed - CRASH.threshold) ** CRASH.exponent : 0;
+}
+// --- end driving
+
+// --- Building contact (mrdoob's 49b2ef2): the player's body against a collider box, shared by movement and the
+// teleport's clearance. A circle for walking, cycling & flying, the car's oriented rectangle (0.86 x 2.18 m half sizes)
+// tested on all four separating axes, so it slides along a wall and round a corner instead of snapping to the nearest
+// face of the box's bounds; only parts whose height range [minY, maxY] meets the body's collide
+function collisionBody(mode, radius, heading, margin = 0) {
+  const car = mode === 'car';
+  const sin = Math.sin(heading), cos = Math.cos(heading);
+  const hx = 0.86 + margin, hz = 2.18 + margin;
+  return {
+    car, sin, cos, hx, hz, radius: radius + margin,
+    extX: car ? Math.abs(cos) * hx + Math.abs(sin) * hz : radius + margin,
+    extZ: car ? Math.abs(sin) * hx + Math.abs(cos) * hz : radius + margin,
+    bottom: mode === 'helicopter' ? -0.25 : 0,
+    top: mode === 'helicopter' ? 3.2 : car ? 1.8 : 1.9
+  };
+}
+
+// World bounds reject distant boxes cheaply; `contact` (if given) gets the push-out normal & depth
+function buildingContact(c, x, y, z, body, contact) {
+  if (y + body.bottom >= c.maxY || y + body.top <= (c.minY ?? 0)) return false;
+  if (x + body.extX <= c.minX || x - body.extX >= c.maxX || z + body.extZ <= c.minZ || z - body.extZ >= c.maxZ) return false;
+  const o = c.obb;
+  const cs = o ? o.cs : 1, sn = o ? o.sn : 0;
+  const hx = o ? o.hx : (c.maxX - c.minX) * 0.5;
+  const hz = o ? o.hz : (c.maxZ - c.minZ) * 0.5;
+  const dx = x - (o ? o.cx : (c.minX + c.maxX) * 0.5);
+  const dz = z - (o ? o.cz : (c.minZ + c.maxZ) * 0.5);
+  const lx = dx * cs - dz * sn, lz = dx * sn + dz * cs;
+  let nx = 0, nz = 0, depth = Infinity;
+  if (body.car) {
+    const ls = body.sin * cs - body.cos * sn, lc = body.sin * sn + body.cos * cs;
+    for (let axis = 0; axis < 4; axis++) {
+      const ax = axis === 0 ? 1 : axis === 1 ? 0 : axis === 2 ? lc : ls;
+      const az = axis === 0 ? 0 : axis === 1 ? 1 : axis === 2 ? -ls : lc;
+      const distance = lx * ax + lz * az;
+      const overlap = hx * Math.abs(ax) + hz * Math.abs(az)
+        + body.hx * Math.abs(ax * lc - az * ls) + body.hz * Math.abs(ax * ls + az * lc) - Math.abs(distance);
+      if (overlap <= 0) return false;
+      if (overlap < depth) {
+        depth = overlap;
+        const sign = distance <= 0 ? -1 : 1;
+        nx = ax * sign; nz = az * sign;
+      }
+    }
+  } else {
+    const qx = lx - Math.max(-hx, Math.min(hx, lx));
+    const qz = lz - Math.max(-hz, Math.min(hz, lz));
+    const distance = Math.hypot(qx, qz);
+    if (distance >= body.radius) return false;
+    if (distance > 0) {
+      nx = qx / distance; nz = qz / distance;
+      depth = body.radius - distance;
+    } else if (hx - Math.abs(lx) <= hz - Math.abs(lz)) {
+      nx = lx <= 0 ? -1 : 1;
+      depth = hx - Math.abs(lx) + body.radius;
+    } else {
+      nz = lz <= 0 ? -1 : 1;
+      depth = hz - Math.abs(lz) + body.radius;
+    }
+  }
+  if (contact) {
+    contact.nx = nx * cs + nz * sn;
+    contact.nz = -nx * sn + nz * cs;
+    contact.depth = depth;
+  }
+  return true;
+}
+// --- end building contact
+
 // Ontario number plate: white, blue lettering, "ONTARIO" along the top and the province's "YOURS TO DISCOVER" along the
 // bottom
 function createOntarioPlateTexture() {
@@ -81,6 +253,8 @@ class ThirdPersonControllerManager {
       cyclist: this.createCyclistEntity(),
       helicopter: this.createHelicopterEntity()
     };
+    // whatever the car runs into (buildings here; traffic & pedestrians in traffic.js) damages it (CRASH)
+    this.entities.car.takeHit = (speed) => this.damageCar(speed);
 
     Object.values(this.entities).forEach((ent) => {
       if (ent.mesh) {
@@ -181,6 +355,8 @@ class ThirdPersonControllerManager {
   setMode(mode) {
     if (!this.entities[mode]) return;
     this.activeMode = mode;
+    // a wrecked car restarts where this drive began
+    if (mode === 'car') this.entities.car.home = { x: this.entities.car.position.x, z: this.entities.car.position.z, heading: this.entities.car.heading };
   }
 
   getActiveEntity() {
@@ -209,7 +385,9 @@ class ThirdPersonControllerManager {
       ent.crowd.add(ent.rig, 0);
       ent.crowd.end();
     } else if (this.activeMode === 'car') {
-      ent.vx = ent.vz = ent.angularVel = ent.steerAngle = 0;
+      ent.vx = ent.vz = ent.angularVel = ent.steerAngle = ent.skid = ent.gear = ent.shiftTimer = 0;
+      ent.rpm = CAR_POWERTRAIN.idle;
+      ent.home = { x: ent.position.x, z: ent.position.z, heading: ent.heading };
       ent.pitchVel = ent.rollVel = ent.heaveY = ent.heaveVel = 0;
       ent.chassisPivot.rotation.x = ent.chassisPivot.rotation.z = 0;
       ent.chassisPivot.position.y = 0;
@@ -233,12 +411,10 @@ class ThirdPersonControllerManager {
   findTeleportPosition(x, z, heading, altitude) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
     const heli = this.activeMode === 'helicopter';
-    const car = this.activeMode === 'car';
     const radius = heli ? 4.5 : this.activeMode === 'person' ? 0.48 : 0.65;
     const sinH = Math.sin(heading), cosH = Math.cos(heading);
-    const extX = (car ? Math.abs(cosH) * 0.86 + Math.abs(sinH) * 2.18 : radius) + 0.1;
-    const extZ = (car ? Math.abs(sinH) * 0.86 + Math.abs(cosH) * 2.18 : radius) + 0.1;
-    const reach = Math.max(extX, extZ);
+    const shape = collisionBody(this.activeMode, radius, heading, 0.1);
+    const reach = Math.max(shape.extX, shape.extZ);
     const margin = heli ? 6000 : 0;
     const entity = this.getActiveEntity();
     // Conservative body cylinders, including the taxi's corners, bicycle wheels and helicopter tail/rotor.
@@ -259,7 +435,6 @@ class ThirdPersonControllerManager {
     const clear = (p) => {
       if (!p) return false;
       const baseY = heli ? altitude : this.getGroundHeight(p.x, p.z, this.activeMode);
-      const y = heli ? altitude : this.activeMode === 'person' ? baseY + 1 : 1;
       // Keep other player models out of both the arrival and its default chase view. A corridor also prevents a
       // parked car between camera and character from hiding the character even when the camera itself is outside it.
       const viewTop = baseY + Math.max(body[entity.type][1], cameraUp);
@@ -270,16 +445,7 @@ class ThirdPersonControllerManager {
         if (Math.hypot(dx + sinH * back, dz + cosH * back) < other.radius + Math.max(body[entity.type][0], 0.5) + 0.1) return false;
       }
       for (const c of this.nearColliders(p.x, p.z, reach)) {
-        if (y > c.maxY + 1.5) continue;
-        if (p.x + extX <= c.minX || p.x - extX >= c.maxX || p.z + extZ <= c.minZ || p.z - extZ >= c.maxZ) continue;
-        if (c.obb) {
-          const o = c.obb, dx = p.x - o.cx, dz = p.z - o.cz;
-          const ls = sinH * o.cs - cosH * o.sn, lc = sinH * o.sn + cosH * o.cs;
-          const ex = (car ? Math.abs(lc) * 0.86 + Math.abs(ls) * 2.18 : radius) + 0.1;
-          const ez = (car ? Math.abs(ls) * 0.86 + Math.abs(lc) * 2.18 : radius) + 0.1;
-          if (Math.abs(dx * o.cs - dz * o.sn) >= o.hx + ex || Math.abs(dx * o.sn + dz * o.cs) >= o.hz + ez) continue;
-        }
-        return false;
+        if (buildingContact(c, p.x, baseY, p.z, shape)) return false;
       }
       return true;
     };
@@ -430,6 +596,14 @@ class ThirdPersonControllerManager {
       lastCollisionSpark: null,
       steerAngle: 0,
       wheelSpin: 0,
+      skid: 0, // 0..1 how hard it slides (tyre squeal)
+      gear: 0, // -1 reverse (CAR_POWERTRAIN)
+      rpm: CAR_POWERTRAIN.idle,
+      shiftTimer: 0,
+      health: 100, // 0 wrecks it (CRASH)
+      wrecked: 0, // seconds until a wrecked car restarts
+      lastCrash: null,
+      home: { x: SPAWN.x, z: SPAWN.z, heading: SPAWN.heading },
       cameraTargetOffset: new THREE.Vector3(0, 0.96, 0),
       chaseDistance: 6.9,
       chaseHeight: 2.12
@@ -735,7 +909,9 @@ class ThirdPersonControllerManager {
     return out;
   }
 
-  resolveHorizontalCollision(pos, radius, yHeight = 1.0, carEntity = null) {
+  // Keeps pos inside the city & out of the lake and pushes it out of the colliders it overlaps at its height (pos.y);
+  // carEntity: the car, whose rectangle bounces, spins & sparks off what it hits
+  resolveHorizontalCollision(pos, radius, carEntity = null) {
     // The detailed city (the helicopter may roam out over the hills around it); no driving or walking into a lake
     const heli = this.activeMode === 'helicopter';
     const m = heli ? 12000 : -8;
@@ -754,10 +930,9 @@ class ThirdPersonControllerManager {
       }
     }
 
-    const sinH = carEntity ? Math.sin(carEntity.heading) : 0;
-    const cosH = carEntity ? Math.cos(carEntity.heading) : 1;
-    const extX = carEntity ? (Math.abs(cosH) * 0.86 + Math.abs(sinH) * 2.18) : radius;
-    const extZ = carEntity ? (Math.abs(sinH) * 0.86 + Math.abs(cosH) * 2.18) : radius;
+    const body = collisionBody(this.activeMode, radius, carEntity ? carEntity.heading : 0);
+    const { sin: sinH, cos: cosH, extX, extZ } = body;
+    const contact = this._buildingContact ??= { nx: 0, nz: 0, depth: 0 };
 
     const reach = Math.max(extX, extZ) + 6;
     let gx = pos.x;
@@ -765,72 +940,17 @@ class ThirdPersonControllerManager {
     let near = this.nearColliders(gx, gz, reach);
     for (let i = 0; i < near.length; i++) {
       const c = near[i];
-      if (yHeight > c.maxY + 1.5) continue;
-
-      if (
-        pos.x + extX > c.minX &&
-        pos.x - extX < c.maxX &&
-        pos.z + extZ > c.minZ &&
-        pos.z - extZ < c.maxZ
-      ) {
-        let nx = 0;
-        let nz = 0;
-        if (c.obb) {
-          // Oriented box (buildings along a non-grid street; min/max are its world bounds): push out in its own frame
-          const o = c.obb;
-          const dx = pos.x - o.cx;
-          const dz = pos.z - o.cz;
-          const lx = dx * o.cs - dz * o.sn;
-          const lz = dx * o.sn + dz * o.cs;
-          const ls = sinH * o.cs - cosH * o.sn; // heading in the box's frame
-          const lc = sinH * o.sn + cosH * o.cs;
-          const ex = carEntity ? (Math.abs(lc) * 0.86 + Math.abs(ls) * 2.18) : radius;
-          const ez = carEntity ? (Math.abs(ls) * 0.86 + Math.abs(lc) * 2.18) : radius;
-          if (lx + ex <= -o.hx || lx - ex >= o.hx || lz + ez <= -o.hz || lz - ez >= o.hz) continue;
-          const oL = lx + ex + o.hx;
-          const oR = o.hx - (lx - ex);
-          const oT = lz + ez + o.hz;
-          const oB = o.hz - (lz - ez);
-          const m = Math.min(oL, oR, oT, oB);
-          let qx = lx;
-          let qz = lz;
-          let mx = 0;
-          let mz = 0;
-          if (m === oL) { qx = -o.hx - ex; mx = -1; }
-          else if (m === oR) { qx = o.hx + ex; mx = 1; }
-          else if (m === oT) { qz = -o.hz - ez; mz = -1; }
-          else { qz = o.hz + ez; mz = 1; }
-          pos.x = o.cx + qx * o.cs + qz * o.sn;
-          pos.z = o.cz - qx * o.sn + qz * o.cs;
-          nx = mx * o.cs + mz * o.sn;
-          nz = -mx * o.sn + mz * o.cs;
-        } else {
-          const overlapLeft = (pos.x + extX) - c.minX;
-          const overlapRight = c.maxX - (pos.x - extX);
-          const overlapTop = (pos.z + extZ) - c.minZ;
-          const overlapBottom = c.maxZ - (pos.z - extZ);
-
-          const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
-          if (minOverlap === overlapLeft) {
-            pos.x = c.minX - extX;
-            nx = -1;
-          } else if (minOverlap === overlapRight) {
-            pos.x = c.maxX + extX;
-            nx = 1;
-          } else if (minOverlap === overlapTop) {
-            pos.z = c.minZ - extZ;
-            nz = -1;
-          } else {
-            pos.z = c.maxZ + extZ;
-            nz = 1;
-          }
-        }
+      if (buildingContact(c, pos.x, pos.y, pos.z, body, contact)) {
+        const { nx, nz, depth } = contact;
+        pos.x += nx * depth;
+        pos.z += nz * depth;
 
         if (carEntity) {
           const totalVx = sinH * carEntity.speed + (carEntity.vx || 0);
           const totalVz = cosH * carEntity.speed + (carEntity.vz || 0);
           const vn = -(totalVx * nx + totalVz * nz);
           if (vn > 0.5) {
+            carEntity.takeHit?.(vn);
             const headOn = Math.abs(sinH * nx + cosH * nz);
             const sideDot = cosH * nx - sinH * nz;
             carEntity.vx = (carEntity.vx || 0) + nx * vn * 0.42;
@@ -892,6 +1012,7 @@ class ThirdPersonControllerManager {
   }
 
   update(dt, elapsed) {
+    this.clock = (this.clock || 0) + dt;
     const heli = this.entities.helicopter;
     heli.mainRotorPivot.rotation.y += dt * 24.0;
     heli.tailRotorPivot.rotation.x += dt * 32.0;
@@ -958,7 +1079,7 @@ class ThirdPersonControllerManager {
 
     p.position.x += Math.sin(p.heading) * p.speed * dt;
     p.position.z += Math.cos(p.heading) * p.speed * dt;
-    this.resolveHorizontalCollision(p.position, 0.48, p.position.y + 1.0);
+    this.resolveHorizontalCollision(p.position, 0.48);
 
     const groundY = this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
     if (this.keys.up && p.position.y <= groundY + 0.02) {
@@ -972,55 +1093,111 @@ class ThirdPersonControllerManager {
     }
   }
 
+  // An impact at `speed` m/s: takes its toll on the car's condition, and wrecks it at 0
+  damageCar(speed) {
+    const c = this.entities.car;
+    if (c.wrecked > 0 || !Number.isFinite(speed)) return;
+    const now = this.clock || 0;
+    let damage = crashDamage(speed);
+    if (c.lastCrash && now - c.lastCrash.time < CRASH.window) {
+      damage -= crashDamage(c.lastCrash.speed);
+      if (damage <= 0) return;
+      c.lastCrash.speed = speed;
+    } else {
+      c.lastCrash = { time: now, speed };
+    }
+    c.health = Math.max(0, c.health - damage);
+    if (c.health === 0) c.wrecked = CRASH.wreckTime;
+  }
+
+  // A wrecked car's restart: back where the drive began, as new
+  restartCar() {
+    const c = this.entities.car;
+    c.health = 100;
+    c.wrecked = 0;
+    c.lastCrash = null;
+    const home = c.home;
+    if (this.activeMode === 'car') this.teleportActiveTo(home.x, home.z, home.heading);
+    else {
+      c.position.set(home.x, 0, home.z);
+      c.heading = home.heading;
+      c.speed = c.vx = c.vz = 0;
+    }
+    c.home = home;
+  }
+
   updateCar(dt) {
     const c = this.entities.car;
-    const maxSpeed = this.keys.boost ? 36.0 : 23.5;
-    const accel = this.keys.boost ? 21.0 : 14.0;
-
-    let throttle = 0;
-    if (this.keys.forward) throttle = this.keys.forward;
-    else if (this.keys.backward) throttle = -this.keys.backward;
-
-    if (throttle !== 0) {
-      c.speed += throttle * accel * dt;
-      c.speed = Math.max(-maxSpeed * 0.45, Math.min(maxSpeed, c.speed));
-    } else {
-      c.speed *= Math.max(0, 1 - dt * 2.8);
-      if (Math.abs(c.speed) < 0.08) c.speed = 0;
+    // wrecked: the engine is dead and the controls do nothing until it restarts
+    if (c.wrecked > 0) {
+      c.wrecked -= dt;
+      if (c.wrecked <= 0) return this.restartCar();
     }
+    const dead = c.wrecked > 0;
+    let throttle = 0;
+    if (!dead && this.keys.forward) throttle = this.keys.forward;
+    else if (!dead && this.keys.backward) throttle = -this.keys.backward;
+
+    const braking = c.speed * throttle < 0;
+    const previousSpeed = c.speed;
+    // the keys press the accelerator most of the way; Shift floors it (a gamepad trigger or the touch stick is analog)
+    const pedal = braking ? 0 : Math.min(1, Math.abs(throttle) * (this.keys.boost ? 1 : 0.8));
+    c.speed = driveCar(c, throttle, pedal, dt);
+    const acceleration = dt > 0 ? (c.speed - previousSpeed) / dt : 0;
 
     let steerInput = 0;
-    if (this.keys.left) steerInput = this.keys.left;
-    if (this.keys.right) steerInput = -this.keys.right;
+    if (!dead && this.keys.left) steerInput = this.keys.left;
+    if (!dead && this.keys.right) steerInput = -this.keys.right;
 
-    c.steerAngle += (steerInput * 0.52 - c.steerAngle) * Math.min(1, dt * 10);
+    c.steerAngle += (steerInput * 0.52 - c.steerAngle) * Math.min(1, dt * 14);
 
-    if (Math.abs(c.speed) > 0.2) {
-      const dirSign = c.speed >= 0 ? 1 : -1;
-      const speedFactor = Math.min(1.0, Math.abs(c.speed) / 8.0);
-      c.heading += c.steerAngle * 2.4 * speedFactor * dirSign * dt;
+    // Arcade handling (aalghooneh/slop-toronto 6849713, MIT), in the spirit of the 90s car-chase games: the nose turns
+    // in sharply and the car's momentum follows it only as far as the tyres can pull it round, so at speed the tail
+    // steps out and the car slides; the handbrake (Space) locks the rear for power slides and handbrake turns. The car
+    // moves with its momentum (forward speed along the nose + the slide across it in vx/vz), which is split again along
+    // the new heading every frame
+    const handbrake = !dead && !!this.keys.up && Math.hypot(c.speed, c.vx, c.vz) > 2;
+    if (handbrake) c.speed = Math.sign(c.speed) * Math.max(0, Math.abs(c.speed) - CAR_POWERTRAIN.handbrake * dt);
+    const momentumX = Math.sin(c.heading) * c.speed + c.vx;
+    const momentumZ = Math.cos(c.heading) * c.speed + c.vz;
+    const moving = Math.hypot(momentumX, momentumZ);
+    if (moving > 0.2) {
+      // (it turns with its momentum, so a handbrake turn keeps swinging round while the car slides sideways)
+      const dirSign = c.speed < -0.5 && !handbrake ? -1 : 1;
+      const speedFactor = Math.min(1.0, moving / 5.0);
+      c.heading += c.steerAngle * (handbrake ? 4.6 : 2.9) * speedFactor * dirSign * dt;
     }
-
-    // Integrate collision yaw spin & lateral tire slip velocity with asphalt grip damping
-    const tireGripDamp = Math.exp(-dt * 6.8);
-    c.heading += c.angularVel * dt;
+    c.heading += c.angularVel * dt; // collision spin
     c.angularVel *= Math.exp(-dt * 7.8);
+    const sinH = Math.sin(c.heading);
+    const cosH = Math.cos(c.heading);
+    c.speed = momentumX * sinH + momentumZ * cosH;
+    let lateral = momentumX * cosH - momentumZ * sinH; // the slide across the car (m/s), + to its left
+    // the tyres' sideways grip: firm at low speed, giving way at speed with the wheel turned hard, weaker still once
+    // sliding (and next to none with the rear locked)
+    const fast = Math.min(1, Math.max(0, (Math.abs(c.speed) - 9) / 22));
+    let grip = handbrake ? 0.9 : 14 - fast * Math.abs(c.steerAngle / 0.52) * 11;
+    if (Math.abs(lateral) > 4 && !handbrake) grip *= 0.55;
+    lateral *= Math.exp(-dt * grip);
+    c.speed *= Math.exp(-dt * Math.abs(lateral) * 0.035); // sliding scrubs off speed
+    c.vx = cosH * lateral;
+    c.vz = -sinH * lateral;
+    c.skid = Math.min(1, Math.abs(lateral) / 6);
 
     const prevX = c.position.x;
     const prevZ = c.position.z;
     c.position.x += (Math.sin(c.heading) * c.speed + c.vx) * dt;
     c.position.z += (Math.cos(c.heading) * c.speed + c.vz) * dt;
-    c.vx *= tireGripDamp;
-    c.vz *= tireGripDamp;
 
-    this.resolveHorizontalCollision(c.position, 1.35, 1.0, c);
+    this.resolveHorizontalCollision(c.position, 1.35, c);
     c.position.y = this.getGroundHeight(c.position.x, c.position.z, 'car', c.position.y);
 
     // 3-DOF Spring-Damper Chassis Suspension (Pitch, Roll & Vertical Heave)
-    const targetPitch = -throttle * 0.026;
-    const targetRoll = -c.steerAngle * (c.speed / maxSpeed) * 0.092;
-    const springK = 68.0;
-    const dampC = 11.2;
+    // (soft and floaty: the body dives under braking, squats under power and leans hard into the corners & slides)
+    const targetPitch = -Math.max(-1, Math.min(1, acceleration / CAR_POWERTRAIN.traction)) * 0.065;
+    const targetRoll = -c.steerAngle * Math.min(1, c.speed / 30) * 0.15 + Math.max(-1, Math.min(1, lateral / 10)) * 0.09;
+    const springK = 42.0;
+    const dampC = 6.2;
     c.pitchVel += ((targetPitch - c.chassisPivot.rotation.x) * springK - c.pitchVel * dampC) * dt;
     c.rollVel += ((targetRoll - c.chassisPivot.rotation.z) * springK - c.rollVel * dampC) * dt;
     c.chassisPivot.rotation.x = Math.max(-0.22, Math.min(0.22, c.chassisPivot.rotation.x + c.pitchVel * dt));
@@ -1030,8 +1207,9 @@ class ThirdPersonControllerManager {
     c.heaveY = Math.max(-0.08, Math.min(0.14, c.heaveY + c.heaveVel * dt));
     c.chassisPivot.position.y = c.heaveY;
 
+    // brake lamps: braking, or standing still off the pedal (mrdoob's f3132b6)
     if (c.carState) {
-      c.carState.value.x = throttle < 0 || Math.abs(c.speed) < 0.6 ? 1 : 0;
+      c.carState.value.x = braking || (c.speed === 0 && !throttle) ? 1 : 0;
     }
 
     const forwardDist = (c.position.x - prevX) * Math.sin(c.heading) + (c.position.z - prevZ) * Math.cos(c.heading);
@@ -1048,20 +1226,12 @@ class ThirdPersonControllerManager {
 
   updateCyclist(dt) {
     const b = this.entities.cyclist;
-    const maxSpeed = this.keys.boost ? 19.0 : 12.8;
-    const accel = this.keys.boost ? 13.5 : 9.0;
 
     let throttle = 0;
     if (this.keys.forward) throttle = this.keys.forward;
     else if (this.keys.backward) throttle = -0.6 * this.keys.backward;
 
-    if (throttle !== 0) {
-      b.speed += throttle * accel * dt;
-      b.speed = Math.max(-4.5, Math.min(maxSpeed, b.speed));
-    } else {
-      b.speed *= Math.max(0, 1 - dt * 2.4);
-      if (Math.abs(b.speed) < 0.05) b.speed = 0;
-    }
+    b.speed = driveSpeed(b.speed, throttle, this.keys.boost, dt, BICYCLE_DRIVE);
 
     let turnInput = 0;
     if (this.keys.left) turnInput = this.keys.left;
@@ -1074,7 +1244,7 @@ class ThirdPersonControllerManager {
 
     b.position.x += Math.sin(b.heading) * b.speed * dt;
     b.position.z += Math.cos(b.heading) * b.speed * dt;
-    this.resolveHorizontalCollision(b.position, 0.65, 1.0);
+    this.resolveHorizontalCollision(b.position, 0.65);
     b.position.y = this.getGroundHeight(b.position.x, b.position.z, 'cyclist', b.position.y);
 
     const targetLean = -turnInput * Math.min(1.0, Math.abs(b.speed) / 9.0) * 0.34;
@@ -1130,7 +1300,7 @@ class ThirdPersonControllerManager {
     h.position.y += h.verticalSpeed * dt;
 
     h.position.y = Math.max(0.25, Math.min(380, h.position.y));
-    this.resolveHorizontalCollision(h.position, 4.5, h.position.y);
+    this.resolveHorizontalCollision(h.position, 4.5);
 
     const targetPitch = (h.speed / maxHorizSpeed) * 0.24;
     const targetRoll = -yawInput * 0.28;

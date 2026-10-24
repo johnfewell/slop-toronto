@@ -159,7 +159,7 @@ class GamepadControls {
     this.controller.setGamepadInput('backward', Math.max(0, -drive));
     this.controller.setGamepadInput('left', Math.max(0, -movement.x));
     this.controller.setGamepadInput('right', Math.max(0, movement.x));
-    this.controller.setGamepadInput('up', mode === 'person' ? Number(Boolean(held(0))) : Math.max(0, vertical));
+    this.controller.setGamepadInput('up', mode === 'person' || mode === 'car' ? Number(Boolean(held(0))) : Math.max(0, vertical)); // jump / handbrake
     this.controller.setGamepadInput('down', Math.max(0, -vertical));
     this.controller.setGamepadInput('boost', Number(Boolean(held(2))));
     const zoom = Number(Boolean(held(13))) - Number(Boolean(held(12)));

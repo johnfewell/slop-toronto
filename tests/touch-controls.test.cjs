@@ -144,8 +144,11 @@ test('mode changes clear touches and expose the relevant actions', () => {
   assert.equal(buttons.up.hidden, false);
   assert.equal(buttons.down.hidden, false);
   controls.setMode('car');
-  assert.equal(buttons.up.hidden, true);
+  assert.equal(labels.up.textContent, 'Handbrake');
+  assert.equal(buttons.up.hidden, false);
   assert.equal(buttons.down.hidden, true);
+  controls.setMode('cyclist');
+  assert.equal(buttons.up.hidden, true);
   buttons.up.dispatch('pointerdown', { pointerId: 3 });
   assert.equal(input.up, 0, 'hidden actions cannot receive input');
   controls.setMode('cyclist');

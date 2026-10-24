@@ -1123,6 +1123,78 @@ body.is-boosting #hud-speed-meter {
   background: var(--accent);
 }
 
+/* The car's condition (aalghooneh/slop-toronto): full and green when new, through amber to red as it is damaged (car
+   mode only); the wreck notice while it waits to restart */
+.gauge-health {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+body[data-mode='car'] .gauge-health {
+  display: flex;
+}
+
+.gauge-health-label {
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.gauge-health .gauge-meter {
+  flex: 1;
+  margin-top: 0;
+}
+
+#hud-health-meter {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ok);
+  transform-origin: left center;
+  transition: transform 0.2s ease-out, background-color 0.3s ease;
+}
+
+#hud-health-meter.is-warn { background: var(--warn); }
+#hud-health-meter.is-bad { background: var(--bad); }
+
+.wrecked {
+  position: fixed;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  padding: 18px 34px;
+  border-radius: var(--r-panel);
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+  text-align: center;
+  pointer-events: none;
+}
+
+.wrecked[hidden] {
+  display: none;
+}
+
+.wrecked-title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bad);
+}
+
+.wrecked-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
 .camera-switch {
   display: flex;
   align-items: center;

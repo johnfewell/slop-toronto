@@ -279,6 +279,31 @@ async function initApp() {
   const elAltitude = document.getElementById('hud-altitude');
   const elLocation = document.getElementById('hud-location');
   const elControlsHint = document.getElementById('hud-controls-hint');
+  // --- Crash damage HUD (aalghooneh/slop-toronto 0557fbb): the car's condition bar & the wreck notice
+  const elHealth = document.getElementById('hud-health');
+  const elHealthMeter = document.getElementById('hud-health-meter');
+  const elWrecked = document.getElementById('hud-wrecked');
+  const elWreckedTime = document.getElementById('hud-wrecked-time');
+  let shownHealth = -1;
+  let shownWreck = -1;
+  function renderCarCondition() { // (DOM touched only on change)
+    const car = controllerManager.entities.car;
+    const health = Math.ceil(car.health);
+    if (health !== shownHealth && elHealthMeter) {
+      shownHealth = health;
+      elHealthMeter.style.transform = `scaleX(${health / 100})`;
+      elHealthMeter.classList.toggle('is-warn', health <= 60 && health > 25);
+      elHealthMeter.classList.toggle('is-bad', health <= 25);
+      if (elHealth) elHealth.setAttribute('aria-valuenow', String(health));
+    }
+    const wreck = controllerManager.activeMode === 'car' && car.wrecked > 0 ? Math.ceil(car.wrecked) : 0;
+    if (wreck !== shownWreck && elWrecked) {
+      shownWreck = wreck;
+      elWrecked.hidden = !wreck;
+      if (elWreckedTime) elWreckedTime.textContent = String(wreck);
+    }
+  }
+  // --- end crash damage HUD
   // A gamepad drives too (gamepad-controls.js): its bumpers step the mode, Y the camera, Start the map
   const gamepadControls = new GamepadControls(controllerManager, cameraSystem, {
     onCycleMode: (step) => {
@@ -293,12 +318,13 @@ async function initApp() {
   // Keyboard guide for each mode: [keys, action]
   const controlHints = {
     person: [[['W', 'S'], 'Walk'], [['A', 'D'], 'Turn'], [['Shift'], 'Sprint'], [['Space'], 'Jump'], [['Drag'], 'Orbit']],
-    car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Boost'], [['Drag'], 'Orbit']],
+    car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Floor it'], [['Space'], 'Handbrake'], [['Drag'], 'Orbit']],
     cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['Drag'], 'Orbit']],
     helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']]
   };
-  // Boosted top speeds in km/h (controllers.js caps them at 8.2, 36, 19 & 52 m/s): full scale of the speed meter
-  const topSpeedKmh = { person: 30, car: 130, cyclist: 68, helicopter: 187 };
+  // Top speeds in km/h (controllers.js: 8.2, 19 & 52 m/s; the car runs out of power against the air near 230): full
+  // scale of the speed meter
+  const topSpeedKmh = { person: 30, car: 230, cyclist: 68, helicopter: 187 };
 
   function renderControlHints(mode) {
     if (!elControlsHint) return;
@@ -802,6 +828,7 @@ async function initApp() {
     if (skyClouds) skyClouds.update(dt);
     mapSystem.update();
     tourGuide.update(dt, elapsed);
+    renderCarCondition();
     if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
 
     // Render frame via TSL RenderPipeline (SSR + Bloom)
