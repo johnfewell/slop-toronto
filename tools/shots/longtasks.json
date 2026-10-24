@@ -1,0 +1,3 @@
+[
+ {"name": "longtasks", "wait": 500, "js": "console.log('[loaf] ' + performance.getEntriesByType('long-animation-frame').filter(e => e.duration > 400).map(e => Math.round(e.startTime) + '+' + Math.round(e.duration) + ' ' + (e.scripts || []).slice(0,3).map(s => (s.sourceURL||'').split('/').pop() + ':' + (s.sourceFunctionName||s.invoker) + ' ' + Math.round(s.duration)).join(' | ')).join('\\n[loaf] '))"}
+]

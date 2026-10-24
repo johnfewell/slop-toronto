@@ -41,7 +41,31 @@ const AREAS = GEO.areas.map(([kind, name, flat, holes]) => {
   const hs = (holes || []).map((h) => { const hp = toPts(h); return { pts: hp, ...polyBounds(hp) }; });
   return { kind, name, pts, holes: hs, ...polyBounds(pts) };
 });
-const WATER_BODIES = AREAS.filter((a) => a.kind === 'water');
+// The water tests run hundreds of thousands of times at start-up (the road network keeps its lanes off the lake), and
+// Lake Ontario's outline is 8,550 points with bounds taking in the whole city: each outline keeps its edges in 8 m bands
+// of z, so a test only crosses the few edges in its point's band (the full scan held the page for 20 s)
+const BAND = 8;
+function bandPoly(p) {
+  p.bands = Array.from({ length: Math.floor((p.maxZ - p.minZ) / BAND) + 1 }, () => []);
+  const pts = p.pts;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[i], b = pts[j];
+    const k0 = Math.floor((Math.min(a.z, b.z) - p.minZ) / BAND), k1 = Math.floor((Math.max(a.z, b.z) - p.minZ) / BAND);
+    for (let k = k0; k <= k1; k++) p.bands[k].push(a.x, a.z, b.x, b.z);
+  }
+  return p;
+}
+function inBandedPoly(p, x, z) {
+  const e = p.bands[Math.floor((z - p.minZ) / BAND)];
+  if (!e) return false;
+  let inside = false;
+  for (let i = 0; i < e.length; i += 4) {
+    const ax = e[i], az = e[i + 1], bx = e[i + 2], bz = e[i + 3];
+    if ((az > z) !== (bz > z) && x < ((bx - ax) * (z - az)) / (bz - az) + ax) inside = !inside;
+  }
+  return inside;
+}
+const WATER_BODIES = AREAS.filter((a) => a.kind === 'water').map((w) => { bandPoly(w); w.holes.forEach(bandPoly); return w; });
 const STREAMS = GEO.streams.map(([name, w, kind, flat]) => ({ name, w, kind, pts: toPts(flat) }));
 function pointInPoly(poly, x, z) {
   let inside = false;
@@ -54,8 +78,8 @@ function pointInPoly(poly, x, z) {
 /** The lake or reservoir at (x, z), or null */
 function waterAt(x, z) {
   for (const w of WATER_BODIES) {
-    if (!(x > w.minX && x < w.maxX && z > w.minZ && z < w.maxZ && pointInPoly(w.pts, x, z))) continue;
-    if (w.holes.some((h) => x > h.minX && x < h.maxX && z > h.minZ && z < h.maxZ && pointInPoly(h.pts, x, z))) continue;
+    if (!(x > w.minX && x < w.maxX && z > w.minZ && z < w.maxZ && inBandedPoly(w, x, z))) continue;
+    if (w.holes.some((h) => x > h.minX && x < h.maxX && z > h.minZ && z < h.maxZ && inBandedPoly(h, x, z))) continue;
     return w;
   }
   return null;
