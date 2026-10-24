@@ -36,9 +36,25 @@ page.on('console', (m) => log.push(`[${m.type()}] ${m.text()}`));
 page.on('pageerror', (e) => log.push(`[pageerror] ${e.message}`));
 page.on('response', (r) => { if (r.status() >= 400) log.push(`[http ${r.status()} error] ${r.url()}`); });
 
-// CAPTURE_PROFILE=1: a CPU profile of the load (until the city is ready), its top self-time functions in profile.txt
-const cdp = process.env.CAPTURE_PROFILE ? await page.context().newCDPSession(page) : null;
-if (cdp) { await cdp.send('Profiler.enable'); await cdp.send('Profiler.setSamplingInterval', { interval: 1000 }); await cdp.send('Profiler.start'); }
+// CAPTURE_PROFILE=1: a CPU profile of the load (until the city is ready), its top self-time functions in profile.txt;
+// CAPTURE_PROFILE=shots profiles the shots instead (riding: a shot's hold is a key held through its wait, e.g. "KeyW")
+const PROFILE = process.env.CAPTURE_PROFILE;
+const cdp = PROFILE ? await page.context().newCDPSession(page) : null;
+const startProfile = async () => { await cdp.send('Profiler.enable'); await cdp.send('Profiler.setSamplingInterval', { interval: 500 }); await cdp.send('Profiler.start'); };
+const stopProfile = async () => {
+  const { profile } = await cdp.send('Profiler.stop');
+  const dt = new Map(), byId = new Map(profile.nodes.map((n) => [n.id, n]));
+  profile.samples.forEach((id, i) => dt.set(id, (dt.get(id) || 0) + (profile.timeDeltas[i] || 0)));
+  const self = new Map();
+  for (const [id, us] of dt) {
+    const f = byId.get(id).callFrame;
+    const k = `${f.functionName || '(anon)'} ${f.url.split('/').pop()}:${f.lineNumber + 1}`;
+    self.set(k, (self.get(k) || 0) + us);
+  }
+  const top = [...self].sort((a, b) => b[1] - a[1]).slice(0, 60).map(([k, us]) => `${Math.round(us / 1000)} ms  ${k}`);
+  fs.writeFileSync(path.join(OUT, 'profile.txt'), top.join('\n') + '\n');
+};
+if (PROFILE && PROFILE !== 'shots') await startProfile();
 const t0 = Date.now();
 await page.goto(`${BASE}/${process.env.CAPTURE_PAGE || 'explore.html'}${process.env.CAPTURE_QUERY || ''}`, { waitUntil: 'load' });
 const flush = () => fs.writeFileSync(path.join(OUT, 'console.log'), log.join('\n') + '\n');
@@ -71,19 +87,8 @@ try {
   process.exit(1);
 }
 log.push(`[capture] ready after ${Date.now() - t0} ms`);
-if (cdp) {
-  const { profile } = await cdp.send('Profiler.stop');
-  const dt = new Map(), byId = new Map(profile.nodes.map((n) => [n.id, n]));
-  profile.samples.forEach((id, i) => dt.set(id, (dt.get(id) || 0) + (profile.timeDeltas[i] || 0)));
-  const self = new Map();
-  for (const [id, us] of dt) {
-    const f = byId.get(id).callFrame;
-    const k = `${f.functionName || '(anon)'} ${f.url.split('/').pop()}:${f.lineNumber + 1}`;
-    self.set(k, (self.get(k) || 0) + us);
-  }
-  const top = [...self].sort((a, b) => b[1] - a[1]).slice(0, 40).map(([k, us]) => `${Math.round(us / 1000)} ms  ${k}`);
-  fs.writeFileSync(path.join(OUT, 'profile.txt'), top.join('\n') + '\n');
-}
+if (PROFILE && PROFILE !== 'shots') await stopProfile();
+if (PROFILE === 'shots') await startProfile();
 
 for (const s of shots) {
   await page.evaluate((s) => {
@@ -94,11 +99,14 @@ for (const s of shots) {
     if (s.camera) app.selectCamera(s.camera, true);
     if (s.js) (0, eval)(s.js);
   }, s);
+  if (s.hold) await page.keyboard.down(s.hold);
   await page.waitForTimeout(s.wait ?? 4000);
+  if (s.hold) await page.keyboard.up(s.hold);
   const fps = await page.evaluate(() => window.__CITY_APP.getFps());
   await page.screenshot({ path: path.join(OUT, `${s.name}.png`) });
   log.push(`[capture] ${s.name} fps ${Math.round(fps)}`);
 }
+if (PROFILE === 'shots') await stopProfile();
 flush();
 console.log(log.filter((l) => l.startsWith('[capture]') || l.includes('error')).join('\n'));
 await browser.close();

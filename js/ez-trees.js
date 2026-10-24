@@ -17,6 +17,9 @@ const V3 = THREE.Vector3;
 
 const NEAR = 55; // full EZ-Tree mesh within (m)
 const MID = 320; // decimated mesh within; whole-crown cards beyond
+// mid trees further than this cast no shadow (a twin mesh that skips the shadow maps): drawing the ~500 mid trees of a
+// 320 m circle into both cascades cost 2.2 ms a frame on the M4 mini, for shadows a few pixels long
+const MID_SHADOW = Number(new URLSearchParams(location.search).get('treeshadow') ?? 130); // ?treeshadow=320: all of them, for A/B
 // ?lodfade=0: the old hard swap (no masks, no bands), for A/B
 const FADE = new URLSearchParams(location.search).get('lodfade') !== '0';
 // hand-over bands, centred on the edge (m): near <-> mid, mid <-> far, the last level -> nothing
@@ -162,14 +165,16 @@ async function buildEzTrees(scene, generated) {
   const tints = new Float32Array(N * 3);
   const px = new Float32Array(N), py = new Float32Array(N), pz = new Float32Array(N);
   const meshOf = new Int16Array(N * 3);
+  const midFarOf = new Int16Array(N);
   const tier = new Uint8Array(N);
   const isPine = new Uint8Array(N);
   const levels = new Uint8Array(N); // bit L: drawn at level L (both levels inside a hand-over band)
   const fades = new Float32Array(N * 12); // per level: edge in, band in, edge out, band out
   const meshes = [];
-  const make = (geo, material, name, attrs) => { meshes.push({ geo, material, name, capacity: 0, attrs }); return meshes.length - 1; };
+  const make = (geo, material, name, attrs, noShadow) => { meshes.push({ geo, material, name, capacity: 0, attrs, noShadow }); return meshes.length - 1; };
   const idxNear = models.map((m) => make(m.near, m.material, `Trees_${m.id}_near`));
   const idxMid = models.map((m) => make(m.mid, m.material, `Trees_${m.id}_mid`));
+  const idxMidFar = models.map((m) => make(m.mid, m.material, `Trees_${m.id}_mid_noshadow`, false, true));
   const idxFar = farGeos.map((g, s) => make(g, farMaterial, `Trees_far_${TREE_SPECIES[s].name}`, true));
   const dummy = new THREE.Object3D();
   const tint = new THREE.Color();
@@ -202,6 +207,8 @@ async function buildEzTrees(scene, generated) {
     meshOf[i * 3 + 2] = sp >= 0 ? idxFar[sp] : idxMid[m];
     meshes[idxNear[m]].capacity++;
     meshes[idxMid[m]].capacity++;
+    midFarOf[i] = idxMidFar[m];
+    meshes[idxMidFar[m]].capacity++;
     if (sp >= 0) meshes[idxFar[sp]].capacity++;
   });
   const instanced = meshes.map((m) => {
@@ -219,7 +226,7 @@ async function buildEzTrees(scene, generated) {
     mesh.count = 0;
     mesh.visible = false;
     mesh.frustumCulled = false; // instances surround the camera: the per-tree levels do the culling
-    mesh.castShadow = !m.attrs; // the far crowns stand past the shadow cascades
+    mesh.castShadow = !m.attrs && !m.noShadow; // the far crowns stand past the shadow cascades
     mesh.receiveShadow = true;
     group.add(mesh);
     return mesh;
@@ -232,7 +239,7 @@ async function buildEzTrees(scene, generated) {
       if (!bits) continue;
       for (let l = 0; l < 3; l++) {
         if (!(bits & (1 << l))) continue;
-        const mi = meshOf[i * 3 + l];
+        const mi = l === 1 && bits & 8 ? midFarOf[i] : meshOf[i * 3 + l];
         const mesh = instanced[mi];
         const c = counts[mi]++;
         const far = meshes[mi].attrs;
@@ -286,6 +293,7 @@ async function buildEzTrees(scene, generated) {
         const lo = f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, hi = f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN;
         if (d >= lo && d < hi) bits |= 1 << l;
       }
+      if (bits & 2 && d > MID_SHADOW) bits |= 8; // (bit 3: the mid level without a shadow)
       if (bits !== levels[i]) { levels[i] = bits; changed = true; }
     }
     if (changed) rebuild();

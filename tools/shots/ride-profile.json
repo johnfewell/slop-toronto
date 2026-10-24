@@ -1,0 +1,3 @@
+[
+ {"name": "ride-yonge", "mode": "cyclist", "hold": "KeyW", "wait": 15000, "js": "window.__pf={n:0,t:performance.now()};(function f(){window.__pf.n++;requestAnimationFrame(f)})();setTimeout(()=>console.log('[ride] frames '+window.__pf.n+' in '+Math.round(performance.now()-window.__pf.t)+' ms; calls '+__CITY_APP.renderer.info.render.calls+' tris '+__CITY_APP.renderer.info.render.triangles),14500)"}
+]

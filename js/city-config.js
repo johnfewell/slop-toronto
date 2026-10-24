@@ -75,13 +75,30 @@ function pointInPoly(poly, x, z) {
   }
   return inside;
 }
+/** Whether (x, z) is in the water body `w` (and not on one of its islands) */
+function inWaterBody(w, x, z) {
+  if (!(x > w.minX && x < w.maxX && z > w.minZ && z < w.maxZ && inBandedPoly(w, x, z))) return false;
+  return !w.holes.some((h) => x > h.minX && x < h.maxX && z > h.minZ && z < h.maxZ && inBandedPoly(h, x, z));
+}
+// 256 m cells -> the water bodies whose bounds reach into them (a test then skips the other ~150 ponds' bounds)
+const WATER_CELL = 256;
+const WATER_GRID = new Map();
+for (const w of WATER_BODIES) {
+  if ((w.maxX - w.minX) * (w.maxZ - w.minZ) > 4e8) continue; // the lake's bounds take in everything: tested always
+  for (let ix = Math.floor(w.minX / WATER_CELL); ix <= Math.floor(w.maxX / WATER_CELL); ix++) {
+    for (let iz = Math.floor(w.minZ / WATER_CELL); iz <= Math.floor(w.maxZ / WATER_CELL); iz++) {
+      const k = ix * 100000 + iz;
+      if (!WATER_GRID.has(k)) WATER_GRID.set(k, []);
+      WATER_GRID.get(k).push(w);
+    }
+  }
+}
+const WATER_EVERYWHERE = WATER_BODIES.filter((w) => (w.maxX - w.minX) * (w.maxZ - w.minZ) > 4e8);
 /** The lake or reservoir at (x, z), or null */
 function waterAt(x, z) {
-  for (const w of WATER_BODIES) {
-    if (!(x > w.minX && x < w.maxX && z > w.minZ && z < w.maxZ && inBandedPoly(w, x, z))) continue;
-    if (w.holes.some((h) => x > h.minX && x < h.maxX && z > h.minZ && z < h.maxZ && inBandedPoly(h, x, z))) continue;
-    return w;
-  }
+  for (const w of WATER_EVERYWHERE) if (inWaterBody(w, x, z)) return w;
+  const near = WATER_GRID.get(Math.floor(x / WATER_CELL) * 100000 + Math.floor(z / WATER_CELL));
+  if (near) for (const w of near) if (inWaterBody(w, x, z)) return w;
   return null;
 }
 /** Inside the detailed city and not in a lake (`margin` metres in from its edge) */

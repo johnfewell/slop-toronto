@@ -1,0 +1,3 @@
+[
+ {"name": "tree-census", "wait": 2000, "js": "(()=>{const g=__CITY_APP.scene.getObjectByName('Trees');console.log('[trees] '+g.children.filter(m=>m.count>0).map(m=>m.name+' n'+m.count+' t'+Math.round((m.geometry.index?m.geometry.index.count:m.geometry.attributes.position.count)/3)).join(' | '))})()"}
+]

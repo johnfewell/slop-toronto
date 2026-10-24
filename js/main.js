@@ -139,6 +139,14 @@ async function initApp() {
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
+  // The static city's ~9,000 objects never move: the per-frame matrix pass skips them (it was 2.6 ms of every frame).
+  // Only its lights move (the street lights' spot pool follows the rider): the frame loop updates those itself
+  const staticLights = [];
+  for (const root of cullingRoots) {
+    root.updateMatrixWorld(true);
+    root.updateMatrixWorld = () => {}; // (three r187 walks every descendant even with the auto-update flags off)
+    root.traverse((o) => { if (o.isLight) staticLights.push(o); });
+  }
   markInit('culling');
 
   // Small InstancedMeshes (<= 1000 instances) keep their matrices in uniform buffers that three.js
@@ -707,6 +715,7 @@ async function initApp() {
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);
+    for (const l of staticLights) { l.updateMatrixWorld(); if (l.target) l.target.updateMatrixWorld(); }
     lightingSystem.update(cameraSystem.currentPos);
     lakeWater.update(elapsed);
     if (skyClouds) skyClouds.update(dt);

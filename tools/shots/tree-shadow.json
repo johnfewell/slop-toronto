@@ -1,0 +1,4 @@
+[
+ {"name": "treeshadow-euclid", "mode": "cyclist", "time": "golden", "wait": 8000, "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2046, -1894, Math.PI); app.cameraSystem.cinema = () => ({ pos: [-2051, 2.2, -1900], look: [-2050, 3.5, -2020], fov: 60 }); })()"},
+ {"name": "treeshadow-high", "time": "golden", "wait": 4000, "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-2051, 60, -1860], look: [-2050, 0, -2060], fov: 60 }); })()"}
+]
