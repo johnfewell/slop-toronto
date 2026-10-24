@@ -14,12 +14,16 @@ test('city script preloads start before stylesheets can block the loader', () =>
   assert.match(html, /<link rel="preconnect" href="https:\/\/cdn\.jsdelivr\.net" crossorigin\s*\/>/);
 });
 
-test('preloaded URLs match ordered scripts and execution waits for Three.js imports', () => {
+test('preloaded URLs match ordered scripts and execution waits for Three.js imports', async () => {
   const links = [];
   const scripts = [];
   const window = {};
   const THREE = {};
-  const imports = Object.fromEntries(['bloom', 'ssr', 'mergeGeometries', 'mergeVertices', 'SkyMesh', 'SunLight', 'SunLightNode', 'ClusteredLighting'].map((name) => [name, () => {}]));
+  // every name the module imports (THREE & TSL apart), as a stub
+  const imported = [...moduleScript[1].matchAll(/^\s*import (?:\{([^}]+)\}|\* as (\w+)) from/gm)]
+    .flatMap((m) => (m[1] ? m[1].split(',') : [m[2]]).map((n) => n.trim()))
+    .filter((n) => n && n !== 'THREE' && n !== 'TSL');
+  const imports = Object.fromEntries(imported.map((name) => [name, () => {}]));
   const document = {
     createElement: (tagName) => ({ tagName, async: true }),
     head: {
@@ -37,16 +41,20 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
       }
     }
   };
-  const context = vm.createContext({ window, document, THREE, TSL: {}, ...imports });
+  // (no WebGPU here: the module's capability probe awaits nothing and the loader runs straight on)
+  const context = vm.createContext({ window, document, navigator: {}, THREE, TSL: {}, ...imports });
   vm.runInContext(preloadScript[1], context);
   assert.equal(scripts.length, 0);
-  assert.equal(links.length, 27);
+  // every script the loader lists, once (the count follows the list: scripts are added often)
+  assert.equal(links.length, preloadScript[1].match(/'\.\/js\/[\w-]+\.js'/g).length);
+  assert.ok(links.findIndex((src) => src.includes('/audio-system.js')) < links.findIndex((src) => src.includes('/main.js')));
   assert.equal(new Set(links).size, links.length, 'each script is preloaded once');
 
   // Imports are supplied above; evaluate the unchanged module body in the same global lexical environment.
-  vm.runInContext(moduleScript[1].replace(/^\s*import .+;$/gm, ''), context);
+  // (inside an async function: the module awaits the GPU probe at its top level)
+  await vm.runInContext(`(async () => {${moduleScript[1].replace(/^\s*import .+;$/gm, '')}})()`, context);
   assert.deepEqual(scripts, links);
-  assert.match(scripts[0], /\/toronto-geodata\.js\?v=/);
+  assert.match(scripts[0], /\/quality\.js\?v=/); // the tier is chosen before anything is built
   assert.match(scripts.at(-1), /\/main\.js\?v=/);
   assert.equal(new Set(scripts.map((src) => src.split('?v=')[1])).size, 1);
 });

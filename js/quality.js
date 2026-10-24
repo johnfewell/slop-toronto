@@ -32,19 +32,24 @@ const TIERS = {
     treeFar: 1, // x the trees' furthest distances (3 km in the parks, 600 m for pines)
     cull: 1, // x the small props' cull distances (scene-culling.js)
     cars: 200, buses: 32, peds: 340,
-    lightPool: 1 // x the night's street light & headlight spot pools
+    lightPool: 1, // x the night's street light & headlight spot pools
+    // the city's sound (audio-system.js): running vehicle voices, sirens & one-shot events at once, HRTF panning (else
+    // plain stereo, far cheaper on the audio thread)
+    audio: { motors: 8, sirens: 2, events: 8, hrtf: true }
   },
   medium: {
     scale: 1, aa: 'msaa', ssr: false, bloom: true, clouds: 'medium', cloudScale: 0.75,
     shadowTile: 2048, shadowFar: 0.75,
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85,
-    cull: 0.8, cars: 140, buses: 22, peds: 220, lightPool: 0.6
+    cull: 0.8, cars: 140, buses: 22, peds: 220, lightPool: 0.6,
+    audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
     scale: 1, aa: 'fxaa', ssr: false, bloom: true, clouds: 'low', cloudScale: 0.5,
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7,
-    cull: 0.6, cars: 90, buses: 14, peds: 140, lightPool: 0.4
+    cull: 0.6, cars: 90, buses: 14, peds: 140, lightPool: 0.4,
+    audio: { motors: 4, sirens: 1, events: 5, hrtf: false }
   }
 };
 
