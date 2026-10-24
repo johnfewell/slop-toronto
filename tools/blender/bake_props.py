@@ -1,0 +1,253 @@
+# tools/blender/bake_props.py — rebuilds John's Meshy street props (tools/prop-src/s-orig.glb, the TTC/astral transit
+# shelter; b-orig.glb, the three-chamber litter & recycling bin) as clean low-poly models and bakes their look onto them.
+# Meshy's meshes are 0.5-1.3M lumpy triangles on a shattered UV atlas, so decimating them smears the texture: instead
+# each prop is re-modelled here as a few dozen straight boxes following the original's measured silhouette (posts,
+# roof, panes, ad box, map case; the bin's stacked bands, lid with its three openings, plinth), given one clean UV layout,
+# and the original's albedo is baked onto it (Cycles, selected-to-active, emission = base colour so no lighting gets in).
+# Faces carry a tag: detail tags (poster, map, signs, the bin's labels) keep the bake; structure tags (frame, glass,
+# roof) are flattened to the bake's own median colour so flat panels read flat, then a soft AO bake grounds everything.
+# Roughness/metallic come from the tags too (glossy glass, painted steel). No normal map: the geometry is the shape.
+# Output: ONE mesh, ONE material, metres, base on z=0, centred, glTF +z (Blender -y) the front — what js/street-props.js
+# instances. Then: npx @gltf-transform/cli@4 webp <out> <out>; npx @gltf-transform/cli@4 meshopt <out> <out>.
+# usage: Blender --background --factory-startup --python tools/blender/bake_props.py -- shelter|bin <src.glb> <out.glb> <workdir>
+import bpy, bmesh, sys, os, math, mathutils, numpy as np
+from mathutils import Vector, Matrix
+
+argv = sys.argv[sys.argv.index('--') + 1:]
+KIND, SRC, OUT, WORK = argv[0], argv[1], argv[2], argv[3]
+os.makedirs(WORK, exist_ok=True)
+bpy.ops.wm.read_factory_settings(use_empty=True)
+
+# ---------------------------------------------------------------- tags: (texel density, keep bake 0..1, AO strength, roughness, metallic, emission, flat colour override sRGB)
+if KIND == 'shelter':
+    HEIGHT, ATLAS, MR_SIZE = 2.5, 1024, 512
+    TAGS = {
+        'poster': (6.0, 1.0, 0.25, 0.18, 0.0, 0.22, None),
+        'map':    (6.0, 1.0, 0.25, 0.18, 0.0, 0.30, None),
+        'sign':   (4.0, 1.0, 0.25, 0.40, 0.0, 0.0, None),
+        'frame':  (1.0, 0.0, 0.55, 0.42, 0.35, 0.0, None),
+        'glass':  (0.6, 0.0, 0.45, 0.06, 0.0, 0.0, None),
+        'roof':   (0.5, 0.0, 0.35, 0.10, 0.0, 0.0, None),
+        'hidden': (0.05, 0.0, 0.0, 0.5, 0.0, 0.0, None),
+    }
+else:
+    HEIGHT, ATLAS, MR_SIZE = None, 1024, 128
+    TAGS = {
+        'label':  (1.0, 1.0, 0.35, 0.50, 0.15, 0.0, None),
+        'body':   (0.8, 0.55, 0.45, 0.55, 0.15, 0.0, None),
+        'grey':   (0.8, 0.5, 0.35, 0.38, 0.55, 0.0, None),
+        'top':    (0.5, 0.25, 0.30, 0.50, 0.20, 0.0, None),
+        'base':   (0.4, 0.3, 0.50, 0.70, 0.0, 0.0, None),
+        'groove': (0.2, 0.0, 0.40, 0.70, 0.0, 0.0, (0.06, 0.06, 0.065)),
+        'hole':   (0.15, 0.0, 0.60, 0.90, 0.0, 0.0, (0.035, 0.035, 0.04)),
+        'hidden': (0.05, 0.0, 0.0, 0.7, 0.0, 0.0, None),
+    }
+TAG_NAMES = list(TAGS)
+
+# ---------------------------------------------------------------- the high-poly original: one object, metres, centred
+bpy.ops.import_scene.gltf(filepath=SRC)
+hs = [o for o in bpy.context.scene.objects if o.type == 'MESH']
+bpy.ops.object.select_all(action='DESELECT')
+for o in hs: o.select_set(True)
+bpy.context.view_layer.objects.active = hs[0]
+if len(hs) > 1: bpy.ops.object.join()
+high = bpy.context.view_layer.objects.active
+bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+co = np.empty(len(high.data.vertices) * 3); high.data.vertices.foreach_get('co', co); co = co.reshape(-1, 3)
+lo, hi = co.min(0), co.max(0)
+s = HEIGHT / (hi[2] - lo[2]) if HEIGHT else 1.0
+high.data.transform(Matrix.Scale(s, 4) @ Matrix.Translation(Vector((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]))))
+print('HIGH', len(high.data.polygons), 'tris; size', ((hi - lo) * s).round(3))
+for m in high.data.materials:  # flat albedo: base colour straight into emission
+    nt = m.node_tree; b = nt.nodes['Principled BSDF']; em = nt.nodes.new('ShaderNodeEmission')
+    if b.inputs['Base Color'].links: nt.links.new(b.inputs['Base Color'].links[0].from_socket, em.inputs[0])
+    else: em.inputs[0].default_value = b.inputs['Base Color'].default_value
+    nt.links.new(em.outputs[0], [n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL'][0].inputs[0])
+
+# ---------------------------------------------------------------- low-poly builders (Blender coords: z up, -y front)
+bm = bmesh.new()
+def axis_key(n):
+    a = max(range(3), key=lambda i: abs(n[i])); return ('+' if n[a] > 0 else '-') + 'xyz'[a]
+def tag_new(faces, tag, faces_tag=None):
+    for f in faces:
+        f.normal_update(); t = (faces_tag or {}).get(axis_key(f.normal), tag); f.material_index = TAG_NAMES.index(t)
+def add_box(x0, x1, y0, y1, z0, z1, tag, ft=None, shear=0.0, sy=None):
+    """axis box; shear lifts z by shear*(y - sy) (the sloped roof)"""
+    sy = y0 if sy is None else sy
+    vs = [bm.verts.new((x, y, z + shear * (y - sy))) for x in (x0, x1) for y in (y0, y1) for z in (z0, z1)]
+    v = lambda i, j, k: vs[i * 4 + j * 2 + k]
+    quads = [(v(0,0,0), v(0,0,1), v(0,1,1), v(0,1,0)), (v(1,0,0), v(1,1,0), v(1,1,1), v(1,0,1)),
+             (v(0,0,0), v(1,0,0), v(1,0,1), v(0,0,1)), (v(0,1,0), v(0,1,1), v(1,1,1), v(1,1,0)),
+             (v(0,0,0), v(0,1,0), v(1,1,0), v(1,0,0)), (v(0,0,1), v(1,0,1), v(1,1,1), v(0,1,1))]
+    fs = [bm.faces.new(q) for q in quads]; tag_new(fs, tag, ft); return fs
+def add_cyl(x, y, z0, z1, r0, r1, seg, tag, ft=None, rot=0.0, sx=1.0, sy=1.0, smooth=True):
+    before = set(bm.faces)
+    bmesh.ops.create_cone(bm, cap_ends=True, segments=seg, radius1=r0, radius2=r1, depth=z1 - z0,
+                          matrix=Matrix.Translation((x, y, (z0 + z1) / 2)) @ Matrix.Diagonal((sx, sy, 1, 1)) @ Matrix.Rotation(rot, 4, 'Z'))
+    fs = [f for f in bm.faces if f not in before]; tag_new(fs, tag, ft)
+    for f in fs: f.smooth = smooth and abs(f.normal.z) < 0.5
+    return fs
+def add_panel_with_holes(x0, x1, z0, z1, y, holes, depth, tag, hole_tag):
+    """a -y facing panel at y with rectangular openings (x0,x1,z0,z1) recessed depth back"""
+    xs = sorted({x0, x1, *[h[0] for h in holes], *[h[1] for h in holes]}); zs = sorted({z0, z1, *[h[2] for h in holes], *[h[3] for h in holes]})
+    vid = {}
+    def V(x, z):
+        if (x, z) not in vid: vid[(x, z)] = bm.verts.new((x, y, z))
+        return vid[(x, z)]
+    fs = []
+    for i in range(len(xs) - 1):
+        for k in range(len(zs) - 1):
+            cx, cz = (xs[i] + xs[i + 1]) / 2, (zs[k] + zs[k + 1]) / 2
+            if any(h[0] < cx < h[1] and h[2] < cz < h[3] for h in holes): continue
+            fs.append(bm.faces.new((V(xs[i], zs[k]), V(xs[i + 1], zs[k]), V(xs[i + 1], zs[k + 1]), V(xs[i], zs[k + 1]))))
+    tag_new(fs, tag)
+    for (a, b, c, d) in holes:
+        f = [bm.verts.new(p) for p in ((a, y, c), (b, y, c), (b, y, d), (a, y, d))]
+        r = [bm.verts.new(p) for p in ((a, y + depth, c), (b, y + depth, c), (b, y + depth, d), (a, y + depth, d))]
+        hf = [bm.faces.new((f[i], f[(i + 1) % 4], r[(i + 1) % 4], r[i])) for i in range(4)] + [bm.faces.new(r)]
+        tag_new(hf, hole_tag)
+        for q in hf:  # tunnel faces look inward (toward the opening's axis) and the back looks out the front
+            q.normal_update()
+            cen = q.calc_center_median(); axis = Vector(((a + b) / 2, cen.y, (c + d) / 2))
+            want = (axis - cen) if q is not hf[-1] else Vector((0, -1, 0))
+            if q.normal.dot(want) < 0: q.normal_flip()
+
+if KIND == 'shelter':
+    POSTS = (-1.99, -0.672, 0.672, 1.99)
+    SL = -0.19 / 1.10  # the glass roof falls 19 cm from the street edge to the back
+    add_box(-2.21, 2.21, -0.55, 0.55, 2.475, 2.50, 'roof', shear=SL)
+    add_box(-2.15, 2.15, 0.30, 0.44, 2.15, 2.33, 'frame')                       # back beam
+    add_box(-2.15, 2.15, -0.19, -0.14, 2.365, 2.415, 'frame', shear=SL, sy=-0.165)  # purlin under the glass
+    for x in POSTS:
+        add_box(x - 0.025, x + 0.025, -0.52, 0.42, 2.40, 2.465, 'frame', shear=SL)  # rafter under the roof
+        add_cyl(x, 0.30, 0.06, 2.20, 0.075, 0.075, 8, 'frame', rot=math.pi / 8, sx=0.72, sy=0.72, smooth=False)  # post
+        add_cyl(x, 0.30, 0.0, 0.08, 0.15, 0.12, 16, 'frame', ft={'-z': 'hidden'})  # round foot
+    # back wall: tinted panes between the posts, a rail at hand height; the right bay is open above the rail (the map)
+    for (a, b) in ((-1.935, -0.727), (0.727, 1.935)):
+        add_box(a, b, 0.28, 0.32, 1.115, 1.155, 'frame')
+        add_box(a, b, 0.29, 0.31, 0.19, 1.10, 'glass')
+    add_box(-1.935, -0.727, 0.29, 0.31, 1.17, 2.09, 'glass')
+    # end wings: two panes, a rail, the blue stop sign on top
+    for x in (-1.99, 1.99):
+        add_box(x - 0.01, x + 0.01, -0.22, 0.25, 0.19, 1.10, 'glass')
+        add_box(x - 0.01, x + 0.01, -0.22, 0.25, 1.17, 1.955, 'glass')
+        add_box(x - 0.02, x + 0.02, -0.22, 0.25, 1.115, 1.155, 'frame')
+        add_box(x - 0.02, x + 0.02, -0.225, 0.25, 1.955, 2.09, 'frame', ft={'-x': 'sign', '+x': 'sign', '-y': 'sign'})
+    # the lit ad box (poster both faces, astral above it) and the TTC map case
+    add_box(-0.625, 0.625, 0.10, 0.225, 0.17, 2.11, 'frame', ft={'-y': 'poster', '+y': 'poster', '-z': 'hidden'})
+    add_box(0.93, 1.78, 0.30, 0.43, 1.23, 2.06, 'frame', ft={'-y': 'map', '+y': 'map'})
+    CAGE, RAY = 0.03, 0.12
+else:
+    add_box(-0.70, 0.70, -0.30, 0.30, 1.185, 1.20, 'top')                        # lid plate
+    lid = add_box(-0.655, 0.655, -0.265, 0.27, 0.91, 1.185, 'body', ft={'-y': 'label', '+z': 'hidden', '-z': 'hidden'})
+    bm.faces.remove([f for f in lid if f.material_index == TAG_NAMES.index('label')][0])
+    holes = [(c - 0.17, c + 0.17, 0.975, 1.16) for c in (-0.435, 0.0, 0.435)]
+    add_panel_with_holes(-0.655, 0.655, 0.91, 1.185, -0.265, holes, 0.09, 'label', 'hole')
+    add_box(-0.655, 0.655, -0.255, 0.26, 0.785, 0.90, 'body', ft={'-y': 'label', '+z': 'hidden', '-z': 'hidden'})   # icon band
+    add_box(-0.672, 0.672, -0.265, 0.265, 0.62, 0.765, 'grey', ft={'+z': 'hidden', '-z': 'hidden'})                 # steel band
+    add_box(-0.66, 0.66, -0.255, 0.26, 0.095, 0.60, 'body', ft={'+z': 'hidden', '-z': 'hidden'})                      # doors
+    add_box(-0.645, 0.645, -0.20, 0.25, 0.0, 0.085, 'base', ft={'-z': 'hidden'})                                     # plinth
+    add_box(-0.64, 0.64, -0.24, 0.25, 0.08, 1.186, 'groove', ft={'-z': 'hidden'})                                    # core (shows in the joints)
+    CAGE, RAY = 0.025, 0.08
+
+me = bpy.data.meshes.new('low'); bm.normal_update(); bm.to_mesh(me); bm.free()
+low = bpy.data.objects.new('low', me); bpy.context.scene.collection.objects.link(low)
+print('LOW', sum(len(p.vertices) - 2 for p in me.polygons), 'tris')
+
+# ---------------------------------------------------------------- UVs: every face projected flat at its tag's density, then packed
+uv = me.uv_layers.new(name='UVMap')
+for p in me.polygons:
+    n = p.normal; up = Vector((0, 0, 1)) if abs(n.z) < 0.9 else Vector((0, 1, 0))
+    ua = up.cross(n).normalized(); va = n.cross(ua); d = TAGS[TAG_NAMES[p.material_index]][0]
+    pts = [Vector((me.vertices[me.loops[li].vertex_index].co.dot(ua) * d, me.vertices[me.loops[li].vertex_index].co.dot(va) * d)) for li in p.loop_indices]
+    # a sliver (a 2 cm roof edge) is stretched to a few texels across, or the mask & bake miss it and it bakes black
+    mn = 0.25 if d >= 0.3 else 0.08
+    for ax in (0, 1):
+        a0, a1 = min(q[ax] for q in pts), max(q[ax] for q in pts)
+        if a1 - a0 < mn:
+            for q in pts: q[ax] = (a0 + a1) / 2 + (q[ax] - (a0 + a1) / 2) * mn / max(a1 - a0, 1e-4)
+    for li, q in zip(p.loop_indices, pts): uv.data[li].uv = q
+bpy.context.view_layer.objects.active = low
+bpy.ops.object.select_all(action='DESELECT'); low.select_set(True)
+bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.uv.select_all(action='SELECT')
+bpy.ops.uv.pack_islands(rotate=True, rotate_method='CARDINAL', scale=True, margin_method='FRACTION', margin=0.006, shape_method='AABB')
+bpy.ops.object.mode_set(mode='OBJECT')
+
+# ---------------------------------------------------------------- bakes
+sc = bpy.context.scene
+sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'
+for t in TAG_NAMES:
+    m = bpy.data.materials.new(t); m.use_nodes = True; me.materials.append(m)
+def target(img):
+    for m in me.materials:
+        nt = m.node_tree; n = nt.nodes.get('bake') or nt.nodes.new('ShaderNodeTexImage'); n.name = 'bake'; n.image = img
+        nt.nodes.active = n
+def fimg(name, size):
+    im = bpy.data.images.new(name, size, size, alpha=False, float_buffer=True); im.colorspace_settings.name = 'Non-Color'; return im
+def px(im):
+    a = np.empty(im.size[0] * im.size[1] * 4, np.float32); im.pixels.foreach_get(a); return a.reshape(im.size[1], im.size[0], 4)
+
+# 1. albedo from the original
+A = fimg('A', ATLAS); target(A)
+sc.cycles.samples = 16
+bpy.ops.object.select_all(action='DESELECT'); high.select_set(True); low.select_set(True); bpy.context.view_layer.objects.active = low
+bpy.ops.object.bake(type='EMIT', use_selected_to_active=True, cage_extrusion=CAGE, max_ray_distance=RAY, margin=8, margin_type='EXTEND')
+high.hide_render = True
+# 2. tag mask: each tag's material emits its index
+for i, m in enumerate(me.materials):
+    nt = m.node_tree; em = nt.nodes.new('ShaderNodeEmission'); em.inputs[0].default_value = ((i + 1) / 32, 0, 0, 1)
+    nt.links.new(em.outputs[0], nt.nodes['Material Output'].inputs[0])
+M = fimg('M', ATLAS); target(M); sc.cycles.samples = 1
+bpy.ops.object.select_all(action='DESELECT'); low.select_set(True)
+bpy.ops.object.bake(type='EMIT', margin=8, margin_type='EXTEND')
+# 3. ambient occlusion of the low-poly on a ground plane
+for m in me.materials: m.node_tree.nodes['Material Output'].inputs[0].links and m.node_tree.links.remove(m.node_tree.nodes['Material Output'].inputs[0].links[0])
+bpy.ops.mesh.primitive_plane_add(size=40, location=(0, 0, 0)); ground = bpy.context.active_object
+sc.cycles.samples = 128; sc.world = bpy.data.worlds.new('w')
+AO = fimg('AO', ATLAS); target(AO)
+bpy.ops.object.select_all(action='DESELECT'); low.select_set(True); bpy.context.view_layer.objects.active = low
+bpy.ops.object.bake(type='AO', margin=8, margin_type='EXTEND')
+bpy.data.objects.remove(ground)
+
+# ---------------------------------------------------------------- composite in numpy (linear), write sRGB PNGs
+a, mk, ao = px(A)[..., :3], np.rint(px(M)[..., 0] * 32).astype(int) - 1, px(AO)[..., 0]
+def to_srgb(c): c = np.clip(c, 0, 1); return np.where(c <= 0.0031308, c * 12.92, 1.055 * np.power(c, 1 / 2.4) - 0.055)
+def to_lin(c): c = np.asarray(c, np.float32); return np.where(c <= 0.04045, c / 12.92, np.power((c + 0.055) / 1.055, 2.4))
+alb = a.copy(); emi = np.zeros_like(a); mr = np.ones_like(a)
+for i, t in enumerate(TAG_NAMES):
+    d, keep, aos, rough, metal, em, flat = TAGS[t]; sel = mk == i
+    if not sel.any(): continue
+    c = to_lin(flat) if flat else np.median(a[sel], axis=0)
+    print('TAG', t, 'px', int(sel.sum()), 'flat sRGB', to_srgb(c).round(3))
+    occ = 1 - aos * (1 - ao[sel])[:, None]
+    alb[sel] = (keep * a[sel] + (1 - keep) * c) * occ
+    emi[sel] = a[sel] * em
+    mr[sel] = (1.0, rough, metal)
+def save(arr, name, size):
+    im = bpy.data.images.new(name, arr.shape[1], arr.shape[0], alpha=False); im.colorspace_settings.name = 'Non-Color'
+    rgba = np.concatenate([arr, np.ones(arr.shape[:2] + (1,), np.float32)], -1).astype(np.float32)
+    im.pixels.foreach_set(rgba.ravel()); im.scale(size, size)
+    im.filepath_raw = os.path.join(WORK, f'{KIND}-{name}.png'); im.file_format = 'PNG'; im.save(); return im.filepath_raw
+p_alb = save(to_srgb(alb), 'albedo', ATLAS)
+p_mr = save(mr, 'mr', MR_SIZE)
+p_emi = save(to_srgb(emi), 'emissive', ATLAS // 2) if emi.max() > 0 else None
+
+# ---------------------------------------------------------------- one material, export
+bpy.data.objects.remove(high)
+me.materials.clear(); m = bpy.data.materials.new(f'{KIND}'); m.use_nodes = True; me.materials.append(m)
+for p in me.polygons: p.material_index = 0
+nt = m.node_tree; b = nt.nodes['Principled BSDF']
+def tex(path, cs):
+    n = nt.nodes.new('ShaderNodeTexImage'); n.image = bpy.data.images.load(path); n.image.colorspace_settings.name = cs; return n
+nt.links.new(tex(p_alb, 'sRGB').outputs[0], b.inputs['Base Color'])
+sep = nt.nodes.new('ShaderNodeSeparateColor'); nt.links.new(tex(p_mr, 'Non-Color').outputs[0], sep.inputs[0])
+nt.links.new(sep.outputs[1], b.inputs['Roughness']); nt.links.new(sep.outputs[2], b.inputs['Metallic'])
+if p_emi:
+    nt.links.new(tex(p_emi, 'sRGB').outputs[0], b.inputs['Emission Color']); b.inputs['Emission Strength'].default_value = 1.0
+me.set_sharp_from_angle(angle=math.radians(35))
+bpy.ops.object.select_all(action='DESELECT'); low.select_set(True)
+bpy.ops.export_scene.gltf(filepath=OUT, export_format='GLB', use_selection=True, export_apply=True, export_yup=True,
+                          export_normals=True, export_texcoords=True, export_tangents=False, export_materials='EXPORT', export_image_format='AUTO')
+print('WROTE', OUT)
