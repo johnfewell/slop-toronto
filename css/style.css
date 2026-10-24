@@ -483,6 +483,13 @@ body.hud-minimized .toolbar > :not(#btn-toggle-hud) {
   display: none;
 }
 
+/* Film mode (js/film.js, ?film=1): the city alone, no UI at all */
+body.film > :not(#canvas-container),
+body.film::before,
+body.film::after {
+  display: none !important;
+}
+
 /* ------------------------------------------------------------------------------------------------------------------
    Top left: brand
    ------------------------------------------------------------------------------------------------------------------ */
