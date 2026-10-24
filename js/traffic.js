@@ -1,7 +1,7 @@
 (function () {
 // js/traffic.js
 // Abuja's traffic and pedestrians on the road graph road-network.js derives from the city as built:
-// - 200 cars (taxis, sedans, SUVs) and 12 TTC buses keep to their lanes and follow the vehicle
+// - 200 cars (taxis, sedans, SUVs, police cruisers) and 12 TTC buses keep to their lanes and follow the vehicle
 //   ahead (Intelligent Driver Model), change lanes to overtake or to reach a turn lane, turn into other streets,
 //   stop for the signals street-details.js shows, give way to oncoming traffic when turning left, to the major road at
 //   unsignalized junctions & roundabouts and to pedestrians on crosswalks, and never enter a junction they can't clear.
@@ -150,6 +150,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   const carWheelMat = createLoftedCarMaterial(BODY_SPECS.sedan, 0x5a5f66);
 
   const taxiGreen = new THREE.Color(0xeef0f2); // Toronto taxis: white, the roof sign lit (actor-models.js)
+  const policeWhite = new THREE.Color(0xf6f9fc); // police cruisers: white sedans in livery (actor-models.js)
   const sedanPalette = [
     new THREE.Color(0xc8ced4), // Silver
     new THREE.Color(0x1c2026), // Black
@@ -171,10 +172,13 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   let taxiCount = 0;
   let sedanCount = 0;
   let suvCount = 0;
+  let policeCount = 0;
 
   for (let i = 0; i < NUM_CARS; i++) {
-    const isTaxi = (i % 5) === 0; // one car in five a taxi: mostly private cars (mrdoob's a1866b7)
-    const isSUV = !isTaxi && (i % 5) < 3;
+    // one car in forty a police cruiser (mrdoob's 3f5bcda), one in five a taxi: mostly private cars (a1866b7)
+    const isPolice = (i % 40) === 6;
+    const isTaxi = !isPolice && (i % 5) === 0;
+    const isSUV = !isPolice && !isTaxi && (i % 5) < 3;
 
     let bodyType = 'sedan';
     let col;
@@ -189,13 +193,14 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       col = suvPalette[i % suvPalette.length];
     } else {
       sedanCount++;
-      col = sedanPalette[i % sedanPalette.length];
+      col = isPolice ? policeWhite : sedanPalette[i % sedanPalette.length];
+      if (isPolice) policeCount++;
     }
 
     const car = createVehicle(false, isSUV ? 2.3 : 2.25, isSUV ? 0.92 : 0.86, isSUV ? 1.4 : 1.38, CAR_DRIVER, 10 + (i % 5) * 0.9);
     // paint as float32 values, so renderCar() can tell whether an instance slot's paint changes by comparing
     const paint = [Math.fround(col.r), Math.fround(col.g), Math.fround(col.b)];
-    Object.assign(car, { isTaxi, isSUV, bodyType, paint });
+    Object.assign(car, { isTaxi, isPolice, isSUV, bodyType, paint });
     cars.push(car);
   }
 
@@ -251,6 +256,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
   const carShadowInst = new THREE.InstancedMesh(unitPlane, contactShadowMat, NUM_CARS);
   carShadowInst.renderOrder = 998;
+  // Police roof light bars (the livery is painted by the sedan material from the instance's carState.w)
+  const policeLightbarInst = new THREE.InstancedMesh(buildLightbarGeometry(BODY_SPECS.sedan), createLightbarMaterial(), Math.max(1, policeCount));
+  policeLightbarInst.castShadow = true;
 
   for (const m of bodyMeshes) m.castShadow = m.receiveShadow = true;
   carWheelLeftInst.castShadow = carWheelLeftInst.receiveShadow = true;
@@ -260,7 +268,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     ...bodyMeshes,
     carWheelLeftInst,
     carWheelRightInst,
-    sparkInst
+    sparkInst,
+    policeLightbarInst
   );
 
   // =========================================================================
@@ -372,9 +381,18 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     trafficLightsGroup.add(spot, spot.target);
     headlightPool.push(spot);
   }
+  // Red & blue flashes from the light bars of the nearest police cruisers
+  const POLICE_LIGHT_POOL_SIZE = Math.round(6 * window.CITY.QUALITY.lightPool);
+  const policeLightPool = [];
+  for (let i = 0; i < POLICE_LIGHT_POOL_SIZE; i++) {
+    const pt = new THREE.PointLight(0xff1828, 0, 12.0, 1.25);
+    pt.position.set(0, -1000, 0);
+    trafficLightsGroup.add(pt);
+    policeLightPool.push(pt);
+  }
 
   // Nothing shows until it has been placed
-  const carInstances = [...bodyMeshes, carWheelLeftInst, carWheelRightInst, carShadowInst];
+  const carInstances = [...bodyMeshes, carWheelLeftInst, carWheelRightInst, policeLightbarInst, carShadowInst];
   const busInstances = [busBodyInst, busHeaderInst, busWheelLeftInst, busWheelRightInst, busShadowInst];
   for (const inst of [...carInstances, ...busInstances, sparkInst]) {
     inst.frustumCulled = false;
@@ -626,7 +644,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
   // Braking for a red (or an amber with room to stop) at the end of edge f, `d` metres ahead
   function signalAhead(v, f, d) {
-    if (!f.to.signal || d > LOOKAHEAD) return 0;
+    if (v.isPolice || !f.to.signal || d > LOOKAHEAD) return 0;
     const phase = phaseOf(f);
     if (phase === 'green' || (phase === 'amber' && !canStopBefore(v, d))) return 0;
     return stopAt(v, d);
@@ -673,15 +691,16 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   }
 
   // A left turn waits for oncoming traffic going straight or right (approach o); vehicles not on o yet haven't picked
-  // their way on, and at a red, only those already committed to crossing still come. Waiting to turn at the line, v
+  // their way on, and at a red, only police and those already committed to crossing still come. Waiting at the line, v
   // also takes turns with those waiting at theirs: whoever has waited longer goes first, if it has room to go.
   function yieldOncoming(o, impatient, v = null) {
     if (!o) return false;
     if (o.through > 0) return true;
-    if (o.to.signal && phaseOf(o) === 'red') return false;
+    const red = o.to.signal && phaseOf(o) === 'red';
     for (const list of o.occ) {
       const lead = leadOf(list);
       if (!lead || (lead.v.edge === o && lead.v.move.turn === 'L')) continue;
+      if (red && !lead.v.isPolice) continue;
       if (!canStop(lead, o, impatient)) return true;
       const u = lead.v;
       const j = u.edge === o ? u.move.out[u.lane] : -1;
@@ -704,14 +723,14 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     return cs - 0.5;
   }
 
-  // At corners without signals, every other road gives way to group 0 (the avenue on the grid, the widest road at a
-  // centreline junction)
-  function yieldToAvenue(v, n) {
+  // At unsignalized corners, give way to the main road. Police passing a non-green signal yield to approaching
+  // cross traffic as well as vehicles already in the intersection, instead of treating the light as a clear road.
+  function yieldToCrossTraffic(v, n) {
     for (const a of n.in) {
-      if (a.axisIndex !== 0) continue;
+      if (n.signal ? a.axisIndex === v.edge.axisIndex : a.axisIndex !== 0) continue;
       for (const list of a.occ) {
         const lead = leadOf(list);
-        if (lead && !canStop(lead, a, v.wait > 8)) return true;
+        if (lead && !canStop(lead, a, !n.signal && v.wait > 8)) return true;
       }
     }
     return false;
@@ -840,7 +859,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       }
       return false;
     }
-    if (phase === 'red' || (phase === 'amber' && stoppable)) return false;
+    if (!v.isPolice && (phase === 'red' || (phase === 'amber' && stoppable))) return false;
     if (boxBusy(n, e.axisIndex)) return false; // crossing traffic inside
     const lead = ahead(e.occ[v.lane], v.s, v);
     if (lead && lead.v.yielding) return false; // the vehicle ahead waits inside to turn: wait behind the line
@@ -849,11 +868,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     // road it turns into (they walk on the same green): short of their crosswalk or, turning left across oncoming
     // traffic, short of the oncoming lanes until there is a gap. The light changing stops both for it at the latest.
     const c = connector(e, v.lane, f, j);
-    const first = n.signal && m.turn !== 'S' && !lead;
+    const first = n.signal && (!v.isPolice || phase === 'green') && m.turn !== 'S' && !lead;
     const across = m.turn === 'L' && !!e.opposite;
     const wait = first ? (across ? yieldPoint(v, c, e) : c.len - 3 - v.half) : -1; // < 0: no room inside to wait
     if (m.turn === 'L' ? across && wait < 0 && yieldOncoming(e.opposite, v.wait > 8, v) : e.opposite && e.opposite.lefts > 0) return false;
-    if (!n.signal && e.axisIndex !== 0 && yieldToAvenue(v, n)) return false;
+    if ((n.signal ? v.isPolice && phase !== 'green' : e.axisIndex !== 0) && yieldToCrossTraffic(v, n)) return false;
     // nobody on the crosswalks while it passes over them, on the way in and on the way out, and a free place to
     // clear the intersection to, taking turns with lanes merging into it
     if (pedestrianOn(n, e.inSide, laneCoord(e, v.lane), 0, timeTo(v, d + 2.5 + 2 * v.half))) return false;
@@ -965,7 +984,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         const o = c && !v.claimed && mergingAhead(v, f, j);
         if (o) worst = Math.min(worst, Math.max(-v.driver.b, brake(v, o.s - o.v.half - vs - v.half, o.v.speed)));
         let vt = c ? bendSpeed(v, c) : Infinity;
-        if (!e.to.signal && e.axisIndex !== 0) vt = Math.min(vt, 5);
+        const cautious = e.to.signal ? v.isPolice && phaseOf(e) !== 'green' : e.axisIndex !== 0;
+        if (cautious) vt = Math.min(vt, 5);
         cap = Math.sqrt(vt * vt + 5 * Math.max(0, d));
       }
     } else {
@@ -1632,6 +1652,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   let wheelCars = 0;
   let visibleCars = 0;
   let visibleBuses = 0;
+  let policeDrawn = 0;
   let updates = 0;
 
   function flagRange(attr, n) {
@@ -1688,6 +1709,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     dummy.scale.set(1, 1, 1);
     dummy.updateMatrix();
     bodyInst.setMatrixAt(slot, dummy.matrix);
+    if (c.isPolice) policeLightbarInst.setMatrixAt(policeDrawn++, dummy.matrix);
 
     const attrs = bodyInst.geometry.attributes;
     const paint = attrs.paintColor.array;
@@ -1704,7 +1726,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     const b0 = c.acc < -0.8 || c.speed < 0.3 ? 1 : 0;
     const b1 = blinkOn && c.blink < 0 ? 1 : 0;
     const b2 = blinkOn && c.blink > 0 ? 1 : 0;
-    const b3 = 0;
+    const b3 = c.isPolice ? 1 : 0; // the police livery (actor-models.js)
     if (state[o4] !== b0 || state[o4 + 1] !== b1 || state[o4 + 2] !== b2 || state[o4 + 3] !== b3) {
       state[o4] = b0;
       state[o4 + 1] = b1;
@@ -1843,6 +1865,28 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       spot.position.set(0, -1000, 0);
     }
 
+    // Police light bars: smoothly pulsing red / blue 360° point lights on the nearby cruisers
+    let policeUsed = 0;
+    for (let i = 0; i < litVehicleCount && policeUsed < POLICE_LIGHT_POOL_SIZE; i++) {
+      const v = litVehicles[i];
+      if (!v.isPolice || v._effDist >= 88) continue;
+      const fade = smoothDistFade(v._effDist, 52, 88);
+      if (fade <= 0.001) continue;
+      const wave = Math.sin((clock + v.blinkPhase) * Math.PI * 6.0);
+      const redPhase = wave >= 0;
+      const pulse = 0.35 + 0.65 * Math.abs(wave);
+      const side = redPhase ? -0.36 : 0.36;
+      const pt = policeLightPool[policeUsed++];
+      pt.color.setHex(redPhase ? 0xff1828 : 0x1868ff);
+      pt.position.set((v.x + side * v._cosY - 0.25 * v._sinY), (v.y || 0) + 1.85, v.z - side * v._sinY - 0.25 * v._cosY);
+      pt.distance = 12.0;
+      pt.intensity = 42.0 * tailScale * fade * pulse;
+    }
+    for (let i = policeUsed; i < POLICE_LIGHT_POOL_SIZE; i++) {
+      const pt = policeLightPool[i];
+      pt.intensity = 0;
+      pt.position.set(0, -1000, 0);
+    }
   }
 
   // Walking surface around a pedestrian: sidewalks are 0.22 m above the road, and crosswalk tracks start and end
@@ -2110,6 +2154,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     wheelCars = 0;
     visibleCars = 0;
     visibleBuses = 0;
+    policeDrawn = 0;
     for (let i = 0; i < vehicles.length; i++) {
       const v = vehicles[i];
       if (!v.edge) continue;
@@ -2163,6 +2208,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     syncInst(carWheelLeftInst, wheelCars * 2);
     syncInst(carWheelRightInst, wheelCars * 2);
     syncInst(carShadowInst, visibleCars);
+    syncInst(policeLightbarInst, policeDrawn);
     syncInst(busBodyInst, visibleBuses);
     syncInst(busHeaderInst, visibleBuses);
     syncInst(busWheelLeftInst, visibleBuses * 2);

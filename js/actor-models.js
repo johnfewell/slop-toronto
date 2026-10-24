@@ -1182,6 +1182,20 @@ function createLoftedCarMaterial(spec, fixedColorHex = null) {
   // ---- Colour ---------------------------------------------------------------------------------------------------
   // Livery: an FCT taxi's white stripe along both sides at door-handle height, from the front to the rear wing
   let painted = paint;
+  // Police cruisers (per-instance carState.w = 1, traffic.js; mrdoob's police livery in Toronto's colours): white with
+  // a dark blue band along the sides, a red pinstripe over it and POLICE lettering on the front doors
+  {
+    const isPolice = step(0.5, state.w).mul(isSide).mul(isBody);
+    const doorMid = (spec.doors[0] + spec.doors[1]) / 2;
+    const along = smoothstep(spec.zRear + 0.22, spec.zRear + 0.3, p.z).mul(smoothstep(spec.zFront - 0.28, spec.zFront - 0.36, p.z));
+    const band = smoothstep(0.495, 0.5, p.y).mul(smoothstep(0.645, 0.64, p.y)).mul(along);
+    const pin = smoothstep(0.663, 0.667, p.y).mul(smoothstep(0.687, 0.683, p.y)).mul(along);
+    const lettering = step(0.45, sin(p.z.mul(70.0)))
+      .mul(smoothstep(0.725, 0.73, p.y))
+      .mul(smoothstep(0.81, 0.805, p.y))
+      .mul(step(abs(p.z.sub(doorMid)), 0.22));
+    painted = mix(mix(painted, color(0x1d2f6b), max(band, lettering).mul(isPolice)), color(0xc8102e), pin.mul(isPolice));
+  }
   if (spec.fctLivery) {
     const along = smoothstep(spec.zRear + 0.22, spec.zRear + 0.3, p.z).mul(smoothstep(spec.zFront - 0.28, spec.zFront - 0.36, p.z));
     const stripe = smoothstep(0.62, 0.625, p.y).mul(smoothstep(0.735, 0.73, p.y)).mul(along).mul(isSide).mul(isBody);
