@@ -1,4 +1,4 @@
-// Copied from /Users/johnfewell/code/water/three-stylized-water (norio/three-stylized-water 47cc902), MIT MatrixRex/norio;
+// Copied from three-stylized-water (norio/three-stylized-water 47cc902), MIT MatrixRex/norio;
 // notice in src/render/water/LICENSE. The WebGPU water (stylized; colours per kind from kits/water.json). Unchanged.
 // Evaluate the wave field in world space so vertex displacement and fragment crest color share a phase.
 // positionWorld is circular inside positionNode, so derive the undisplaced world position manually.

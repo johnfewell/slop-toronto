@@ -1,4 +1,4 @@
-// Copied from /Users/johnfewell/code/water/three-stylized-water (norio/three-stylized-water 47cc902), MIT MatrixRex/norio;
+// Copied from three-stylized-water (norio/three-stylized-water 47cc902), MIT MatrixRex/norio;
 // notice in src/render/water/LICENSE. The WebGPU water (stylized; colours per kind from kits/water.json). Change: local publicAsset.
 // Uniform definitions that mirror every property in Unity's UberStylizedWater.shader 1:1.
 // Key names omit the leading "_" from Unity property names to preserve the presets.json mapping.

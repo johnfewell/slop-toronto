@@ -1,4 +1,4 @@
-// Copied from /Users/johnfewell/code/water/three-stylized-water (norio/three-stylized-water 47cc902), MIT MatrixRex/norio;
+// Copied from three-stylized-water (norio/three-stylized-water 47cc902), MIT MatrixRex/norio;
 // notice in src/render/water/LICENSE. The WebGPU water (stylized; colours per kind from kits/water.json). Change: the scene's shared sun shadow node replaces the directional-light lookup.
 import { cameraPosition, exp2, float, mix, positionWorld, pow, reflect, saturate, vec3 } from 'three/tsl';
 import type { WaterCtx } from './types';

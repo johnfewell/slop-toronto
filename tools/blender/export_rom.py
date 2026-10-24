@@ -103,9 +103,11 @@ info = {'objects': len(objs), 'verts': len(pts), 'zmin': min(zs), 'zmax': max(zs
 # ground-level plan points (lowest 3 m), thinned, for fitting to the OSM outline
 low = [(round(p[0], 2), round(p[1], 2)) for p in pts if p[2] < info['zmin'] + 3.0]
 info['plan'] = low[::max(1, len(low) // 4000)]
-out = '/Users/johnfewell/code/slop-toronto/assets/landmarks/rom.glb'
+import os
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
+out = os.path.join(ROOT, 'assets', 'landmarks', 'rom.glb')
 bpy.ops.export_scene.gltf(filepath=out, export_format='GLB', use_active_collection=True, use_visible=False, export_apply=True, export_yup=True,
                           export_image_format='WEBP', export_jpeg_quality=80, export_texcoords=True, export_normals=True,
                           export_materials='EXPORT', export_cameras=False, export_lights=False, export_animations=False)
-json.dump(info, open('/Users/johnfewell/code/slop-toronto/assets/landmarks/rom-info.json', 'w'))
+json.dump(info, open(os.path.join(ROOT, 'assets', 'landmarks', 'rom-info.json'), 'w'))
 print('ROMEXPORT ok', info['objects'], info['verts'], round(info['zmin'], 2), round(info['zmax'], 2))

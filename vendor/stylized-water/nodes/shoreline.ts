@@ -1,4 +1,4 @@
-// Copied from /Users/johnfewell/code/water/three-stylized-water (norio/three-stylized-water 47cc902), MIT MatrixRex/norio;
+// Copied from three-stylized-water (norio/three-stylized-water 47cc902), MIT MatrixRex/norio;
 // notice in src/render/water/LICENSE. The WebGPU water (stylized; colours per kind from kits/water.json). Change: frame UV.
 // The dissolve mask is linear data. The -0.5 thickness remap and smoothness 1 are HLSL constants.
 import { float, mix, positionWorld } from 'three/tsl';

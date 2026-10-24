@@ -1,4 +1,4 @@
-// Adapted from /Users/johnfewell/code/water/three-stylized-water/src/water/nodes/reflection.ts (norio/three-stylized-water
+// Adapted from three-stylized-water src/water/nodes/reflection.ts (norio/three-stylized-water
 // 47cc902), MIT MatrixRex/norio; notice in src/render/water/LICENSE. The WebGPU water (stylized; colours per kind from kits/water.json).
 // The donor reflects a planar reflector inside a fixed demo-scene volume and a baked, box-projected cube probe outside it.
 // An open world has neither volume nor bounds, so this keeps the donor's outside-the-volume path: its probe perturbation

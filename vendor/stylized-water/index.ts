@@ -1,6 +1,6 @@
 // John's stylized water (his three.js WebGPU / TSL port of MatrixRex's Uber Stylized Water,
-// /Users/johnfewell/code/water/three-stylized-water, MIT © 2025 MatrixRex, © 2026 norio; notice in ./LICENSE), as
-// ride-anywhere adapted it for an open world (/Users/johnfewell/code/ride-anywhere, src/render/water/stylized: the
+// three-stylized-water, MIT © 2025 MatrixRex, © 2026 norio; notice in ./LICENSE), as
+// ride-anywhere adapted it for an open world (John Fewell's ride-anywhere, src/render/water/stylized: the
 // reversed-depth copy, the scene's sky in place of the baked probe, the radiance scale, depth writes). This file is
 // ride-anywhere's material.ts without its kit, frame and atmosphere dependencies: still water only, one kit entry per
 // water, the sky handed in by the scene. Built into js/stylized-water.js by tools/build-water.mjs.
