@@ -1,13 +1,13 @@
 (function () {
 // js/traffic.js
 // Abuja's traffic and pedestrians on the road graph road-network.js derives from the city as built:
-// - 200 cars (taxis, sedans, SUVs) and 32 city buses keep to their lanes and follow the vehicle
+// - 200 cars (taxis, sedans, SUVs) and 12 TTC buses keep to their lanes and follow the vehicle
 //   ahead (Intelligent Driver Model), change lanes to overtake or to reach a turn lane, turn into other streets,
 //   stop for the signals street-details.js shows, give way to oncoming traffic when turning left, to the major road at
 //   unsignalized junctions & roundabouts and to pedestrians on crosswalks, and never enter a junction they can't clear.
 //   They ride the flyovers & ramps at the height of the deck (road-network.js edgeY).
 // - 340 pedestrians stroll the sidewalks and cross at signalized crosswalks on the WALK signal.
-// - Vehicles and pedestrians are only ever moved while out of the camera's view, so nothing pops in or out.
+// - Fixed-size local populations replenish distant roads and sidewalks in every direction, protecting the near view.
 // - The player's vehicle or character pushes and is pushed by the traffic (SAT contact, impulses, sparks).
 
 const { THREE, buildRoadNetwork, edgeY, signalPhase, walkSignal, deckHeightAt } = window.CITY;
@@ -49,12 +49,13 @@ const CAR_DRIVER = { a: 2.0, b: 3.0, T: 1.2, s0: 2.0, aLat: 3.5 };
 const BUS_DRIVER = { a: 1.1, b: 2.5, T: 1.5, s0: 2.5, aLat: 2.0 };
 const LOOKAHEAD = 70; // metres a driver looks ahead for vehicles, stop lines and signals
 
-// Vehicles further than VEHICLE_RADIUS from the camera and out of its view move to a free lane 100-300 m away,
-// also out of view; pedestrians likewise beyond PED_RADIUS, to 60-260 m away. After a teleport, everything
-// further than NEAR_RADIUS is placed around the new spot.
+// Retire distant actors even when looking their way: keeping them indefinitely starves upcoming streets.
+// Replacements may enter the far view, but nearby visible roads and sidewalks are protected from pop-in.
 const VEHICLE_RADIUS = 380;
 const PED_RADIUS = 320;
 const NEAR_RADIUS = 350;
+const VEHICLE_SPAWN_DISTANCE = 250;
+const PED_SPAWN_DISTANCE = 150;
 
 function createBusDestinationTexture() {
   const c = document.createElement('canvas');
@@ -113,8 +114,6 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     e.to.road[e.inSide] = e.from.road[e.outSide] = e;
     e.through = 0; // vehicles from e crossing e.to straight on or to the right
     e.lefts = 0; // and to the left
-    e.mx = e.sx + e.dx * e.len * 0.5;
-    e.mz = e.sz + e.dz * e.len * 0.5;
   }
   // Is the intersection box held by vehicles of any road but group g's?
   const boxBusy = (n, g) => {
@@ -174,7 +173,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   let suvCount = 0;
 
   for (let i = 0; i < NUM_CARS; i++) {
-    const isTaxi = (i % 7) < 2;
+    const isTaxi = (i % 5) === 0; // one car in five a taxi: mostly private cars (mrdoob's a1866b7)
     const isSUV = !isTaxi && (i % 5) < 3;
 
     let bodyType = 'sedan';
@@ -484,7 +483,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     }
   }
 
-  // The camera's view, to move things only where it can't see
+  // The camera's view, for drawing and protecting nearby spawn locations
   const frustum = new THREE.Frustum();
   const viewProjection = new THREE.Matrix4();
   let hasView = false;
@@ -517,6 +516,10 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     return true;
   }
 
+  function nearView(x, z, radius, distance) {
+    return hasView && Math.hypot(x - camX, camY, z - camZ) < distance && visible(x, z, radius);
+  }
+
   // Edges and signalized intersections around the focus, to place vehicles and pedestrians on
   const nearEdges = [];
   const nearSignals = [];
@@ -528,8 +531,15 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     nearZ = focusZ;
     nearEdges.length = 0;
     nearSignals.length = 0;
-    for (const e of edges) if (Math.hypot(e.mx - focusX, e.mz - focusZ) < NEAR_RADIUS) nearEdges.push(e);
-    for (const n of nodes) if (n.signal && Math.hypot(n.x - focusX, n.z - focusZ) < NEAR_RADIUS) nearSignals.push(n);
+    for (const e of edges) {
+      const s = clamp((focusX - e.sx) * e.dx + (focusZ - e.sz) * e.dz, 0, e.len);
+      const dx = e.sx + e.dx * s - focusX, dz = e.sz + e.dz * s - focusZ;
+      if (dx * dx + dz * dz < NEAR_RADIUS * NEAR_RADIUS) nearEdges.push(e);
+    }
+    for (const n of nodes) {
+      const dx = n.x - focusX, dz = n.z - focusZ;
+      if (n.signal && dx * dx + dz * dz < NEAR_RADIUS * NEAR_RADIUS) nearSignals.push(n);
+    }
   }
 
   // Where the player is relative to v: metres ahead, metres to the right, and how fast it moves v's way
@@ -613,12 +623,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     return stopAt(v, d);
   }
 
-  // Where to go at the end of the current edge: mostly straight on, sometimes a turn (buses keep to wide roads),
-  // drifting towards the camera when far from it. With `fromLane`, only moves the current lane allows.
+  // Mostly straight on, sometimes a turn (buses keep to wide roads). Routes don't follow the camera;
+  // distant vehicles are recycled instead. With `fromLane`, only moves the current lane allows.
   const weights = [];
   function chooseMove(v, fromLane) {
     const e = v.edge;
-    const toFocus = Math.hypot(focusX - v.x, focusZ - v.z) > 250;
     let total = 0;
     for (let k = 0; k < e.moves.length; k++) {
       const m = e.moves[k];
@@ -629,7 +638,6 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       } else if (Math.abs(nearestLane(m, v.lane) - v.lane) * 22 > e.len - v.s) {
         w *= 0.02; // too little road left to change lanes for it
       }
-      if (toFocus && m.to.dx * (focusX - v.x) + m.to.dz * (focusZ - v.z) > 0) w *= 3;
       weights[k] = w;
       total += w;
     }
@@ -1316,17 +1324,21 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     occupy(e.occ[lane], v, s);
   }
 
-  // Put v in a free spot of a random lane rMin..rMax metres from the focus, out of view if `hidden`
-  function spawnVehicle(v, rMin, rMax, hidden) {
+  // Put v in a free lane around the focus. Normal replenishment protects the near view; teleports can fill it.
+  function spawnVehicle(v, rMin, rMax, protectView) {
     for (let attempt = 0; attempt < 12; attempt++) {
       const e = nearEdges[Math.floor(Math.random() * nearEdges.length)];
       if (!e || (v.bus && e.axis !== 'ave') || e.len < 2 * v.half + 10) continue;
       const lane = Math.floor(Math.random() * e.lanes.length);
-      const s = v.half + 5 + Math.random() * (e.len - 2 * v.half - 10);
+      const along = (focusX - e.sx) * e.dx + (focusZ - e.sz) * e.dz;
+      const minS = Math.max(v.half + 5, along - rMax);
+      const maxS = Math.min(e.len - v.half - 5, along + rMax);
+      if (minS > maxS) continue;
+      const s = minS + Math.random() * (maxS - minS);
       const x = e.sx + e.dx * s + e.rx * e.lanes[lane];
       const z = e.sz + e.dz * s + e.rz * e.lanes[lane];
       const d = Math.hypot(x - focusX, z - focusZ);
-      if (d < rMin || d > rMax || (hidden && visible(x, z, v.half + 4))) continue;
+      if (d < rMin || d > rMax || (protectView && nearView(x, z, v.half + 4, VEHICLE_SPAWN_DISTANCE))) continue;
       if (player.active && Math.hypot(x - player.x, z - player.z) < 25) continue;
       if (!laneClear(e.occ[lane], s, v.half + 8)) continue;
       place(v, e, lane, s);
@@ -1407,19 +1419,23 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     for (const p of peds) if (p.placed && p.node) atCurb(p);
   }
 
-  // Put p on a random sidewalk or crosswalk rMin..rMax metres from the focus, out of view if `hidden`
-  function spawnPed(p, rMin, rMax, hidden) {
+  // Try crosswalks first for crossing pedestrians, then fall back to sidewalks if no suitable crossing fits.
+  function spawnPed(p, rMin, rMax, protectView) {
     for (let attempt = 0; attempt < 10; attempt++) {
-      const crosswalk = p.crossesStreets && nearSignals.length > 0;
+      const crosswalk = p.crossesStreets && nearSignals.length > 0 && attempt < 5;
       const ok = crosswalk
         ? crosswalkTrack(nearSignals[Math.floor(Math.random() * nearSignals.length)])
         : nearEdges.length > 0 && sidewalkTrack(nearEdges[Math.floor(Math.random() * nearEdges.length)]);
       if (!ok) continue;
-      const t = crosswalk ? (Math.random() < 0.5 ? Math.random() * KERB : track.len - Math.random() * KERB) : Math.random() * track.len;
+      const along = (focusX - track.ax) * track.ux + (focusZ - track.az) * track.uz;
+      const minT = Math.max(0, along - rMax), maxT = Math.min(track.len, along + rMax);
+      if (minT > maxT) continue;
+      const t = crosswalk ? (Math.random() < 0.5 ? Math.random() * KERB : track.len - Math.random() * KERB) : minT + Math.random() * (maxT - minT);
       const x = track.ax + track.ux * t;
       const z = track.az + track.uz * t;
       const d = Math.hypot(x - focusX, z - focusZ);
-      if (d < rMin || d > rMax || (hidden && visible(x, z, 2))) continue;
+      if (d < rMin || d > rMax || (protectView && nearView(x, z, 2, PED_SPAWN_DISTANCE))) continue;
+      if (player.active && Math.hypot(x - player.x, z - player.z) < 10) continue;
       if (crosswalk && track.node.curb.some((q) => Math.hypot(q.x - x, q.z - z) < QUEUE_GAP)) continue;
       Object.assign(p, track);
       p.t = t;
@@ -1785,6 +1801,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // =========================================================================
   let lastFocusX = Infinity;
   let lastFocusZ = Infinity;
+  let vehicleCursor = 0;
+  let pedCursor = 0;
 
   function update(dt, elapsed, focusPos = null, playerEntity = null, activeMode = 'car', camera = null) {
     clock = elapsed;
@@ -1819,21 +1837,25 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     player.push = activeMode === 'cyclist' ? 0.82 : activeMode === 'person' ? 0.88 : 0.50;
 
     // 1. Cars & buses
+    // Limit attempted placements, not just successes, and rotate through the pool so an awkward location
+    // cannot monopolize a frame. Previous-frame lane lists protect spawn spacing; rebuild before driving.
+    let budget = jump ? vehicles.length : 4;
+    for (let scanned = 0; scanned < vehicles.length && budget > 0; scanned++) {
+      const v = vehicles[vehicleCursor];
+      vehicleCursor = (vehicleCursor + 1) % vehicles.length;
+      const d = v.edge ? Math.hypot(v.x - focusX, v.z - focusZ) : Infinity;
+      if (d <= (jump ? NEAR_RADIUS : VEHICLE_RADIUS)) continue;
+      budget--;
+      spawnVehicle(v, jump ? 0 : 100, NEAR_RADIUS, !jump);
+    }
     buildOccupancy();
     for (const m of bodyMeshes) m.count = 0;
     litVehicleCount = 0;
     wheelCars = 0;
     visibleCars = 0;
     visibleBuses = 0;
-    let budget = jump ? Infinity : 4;
     for (let i = 0; i < vehicles.length; i++) {
       const v = vehicles[i];
-      const d = v.edge ? Math.hypot(v.x - focusX, v.z - focusZ) : Infinity;
-      if (!v.edge || (jump && d > NEAR_RADIUS)) {
-        spawnVehicle(v, 0, NEAR_RADIUS, false);
-      } else if (budget > 0 && (d > 1200 || (d > VEHICLE_RADIUS && !visible(v.x, v.z, v.half + 2))) && spawnVehicle(v, 100, 300, true)) {
-        budget--;
-      }
       if (!v.edge) continue;
 
       v.prevX = v.x;
@@ -1896,17 +1918,19 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     // 2. Pedestrians
     for (const n of walkedNodes) n.walkers.length = 0;
     walkedNodes.length = 0;
+    let pedBudget = jump ? NUM_PEDS : 6;
+    for (let scanned = 0; scanned < NUM_PEDS && pedBudget > 0; scanned++) {
+      const p = peds[pedCursor];
+      pedCursor = (pedCursor + 1) % NUM_PEDS;
+      const d = p.placed ? Math.hypot(p.x - focusX, p.z - focusZ) : Infinity;
+      if (d <= (jump ? NEAR_RADIUS : PED_RADIUS)) continue;
+      pedBudget--;
+      spawnPed(p, jump ? 0 : 60, jump ? NEAR_RADIUS : 280, !jump);
+    }
     gatherCurbs();
-    let pedBudget = jump ? Infinity : 6;
     pedCrowd.begin();
     for (let i = 0; i < NUM_PEDS; i++) {
       const p = peds[i];
-      const d = p.placed ? Math.hypot(p.x - focusX, p.z - focusZ) : Infinity;
-      if (!p.placed || (jump && d > NEAR_RADIUS)) {
-        spawnPed(p, 0, NEAR_RADIUS, false);
-      } else if (pedBudget > 0 && (d > 1000 || (d > PED_RADIUS && !visible(p.x, p.z, 2))) && spawnPed(p, 60, 260, true)) {
-        pedBudget--;
-      }
       if (!p.placed) continue;
       walk(p, dt);
       renderPed(p, dt);
@@ -1981,7 +2005,7 @@ function createHighwayTraffic(scene, lanes) {
     lane.cars = [];
     for (let u = rand() * 30; u < lane.len - 12; u += 24 + rand() * 50) {
       const h = rand();
-      const kind = h < 0.32 ? 'taxi' : h < 0.72 ? 'sedan' : 'suv';
+      const kind = h < 0.20 ? 'taxi' : h < 0.65 ? 'sedan' : 'suv'; // mostly private cars (mrdoob's a1866b7)
       const col = new THREE.Color(PALETTES[kind][Math.floor(rand() * PALETTES[kind].length)]);
       // (float32 values, so update() can tell whether an instance slot's paint changes by comparing with the buffer)
       const car = { lane, kind, u, v: lane.speed, acc: 0, seg: 0, col: [Math.fround(col.r), Math.fround(col.g), Math.fround(col.b)] };
