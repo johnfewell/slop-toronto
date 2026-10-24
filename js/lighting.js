@@ -264,7 +264,8 @@ class LightingSystem {
     // 3072x3072 per cascade = 6144x3072 2-cascade shadow atlas (an 8192x4096 one cost ~20% fps and caused hitches),
     // 2048 where the device allows less. The near cascade spans ~0.35-80 m of the view at street level (see update)
     const maxTex = (renderer && renderer.backend && renderer.backend.device && renderer.backend.device.limits.maxTextureDimension2D) || 4096;
-    const tile = maxTex >= 6144 ? 3072 : 2048;
+    // (smaller on the phone tiers, quality.js)
+    const tile = Math.min(window.CITY.QUALITY.shadowTile, maxTex >= 6144 ? 3072 : 2048);
     this.sunLight.shadow.mapSize.set(tile, tile);
     this.sunLight.shadow.camera.near = 0.5;
     this.sunLight.shadow.camera.far = 300;
@@ -373,7 +374,9 @@ class LightingSystem {
     // logarithmic split (the near cascade ends at ~far / 4). Keep far at 300 m at street level so the near cascade
     // stays sharp, and expand it with altitude (helicopter / observatory) so shadows reach all the way down to street level.
     const altitude = focusPos && Number.isFinite(focusPos.y) ? Math.max(0, focusPos.y) : 0;
-    this.sunLight.shadow.camera.far = Math.max(300, Math.min(720, 260 + altitude * 1.6));
+    // (shorter on the phone tiers & when the quality safety net pulls the distances in, quality.js)
+    const Q = window.CITY.QUALITY;
+    this.sunLight.shadow.camera.far = Math.max(300, Math.min(720, 260 + altitude * 1.6)) * Q.shadowFar * Q.dist;
   }
 }
 

@@ -38,9 +38,10 @@ const {
 const { PersonCrowd, PersonRig } = window.CITY;
 const { mergeGeometries } = window.CITY.Addons;
 
-const NUM_CARS = 200;
-const NUM_BUSES = 32;
-const NUM_PEDS = 340;
+// (fewer on the phone tiers, quality.js)
+const NUM_CARS = window.CITY.QUALITY.cars;
+const NUM_BUSES = window.CITY.QUALITY.buses;
+const NUM_PEDS = window.CITY.QUALITY.peds;
 
 // Intelligent Driver Model: max acceleration, comfortable braking, time headway, standstill gap; and the sideways
 // acceleration drivers accept in bends, which sets how fast they take each turn or lane shift
@@ -345,7 +346,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // Add vehicle contact shadows last + pre-allocated Clustered SpotLight / PointLight pools
   group.add(carShadowInst, busShadowInst);
 
-  const HEADLIGHT_POOL_SIZE = 96;
+  const HEADLIGHT_POOL_SIZE = 2 * Math.round(48 * window.CITY.QUALITY.lightPool);
   const MAX_LIGHT_DIST = 115;
   const MAX_LIGHT_DIST_SQ = MAX_LIGHT_DIST * MAX_LIGHT_DIST;
   const DUAL_BEAM_DIST_SQ = 96 * 96;

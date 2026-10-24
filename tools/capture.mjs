@@ -4,6 +4,10 @@
 // default list is one overview per time of day.
 // CAPTURE_ROOT=dist serves another folder (the built site); CAPTURE_STATIC=1 with CAPTURE_PAGE=index.html screenshots a
 // plain page (full page, desktop and phone width) instead of waiting for the city.
+// Phone-like runs: CAPTURE_VIEWPORT=412x915 (CSS px), CAPTURE_DPR=2.625, CAPTURE_MOBILE=1 (isMobile & hasTouch, so the
+// auto quality tier & the touch UI kick in), CAPTURE_CPU_THROTTLE=4 (the page's main thread that many times slower);
+// CAPTURE_UNCAPPED=1 lifts vsync & the frame rate limit, so frame times under 16.7 ms show; CAPTURE_TAG=<t> prefixes
+// the screenshots' names (one shot list for several runs).
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
@@ -28,9 +32,22 @@ const shots = process.argv[2]
 fs.mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({
   channel: 'chromium',
-  args: ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist']
+  args: ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist',
+    ...(process.env.CAPTURE_UNCAPPED ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : [])]
 });
-const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+const [VW, VH] = (process.env.CAPTURE_VIEWPORT || '1600x900').split('x').map(Number);
+const MOBILE = !!process.env.CAPTURE_MOBILE;
+const page = await browser.newPage({
+  viewport: { width: VW, height: VH },
+  deviceScaleFactor: Number(process.env.CAPTURE_DPR || 1),
+  isMobile: MOBILE,
+  hasTouch: MOBILE
+});
+const TAG = process.env.CAPTURE_TAG ? `${process.env.CAPTURE_TAG}-` : '';
+if (process.env.CAPTURE_CPU_THROTTLE) {
+  const throttle = await page.context().newCDPSession(page);
+  await throttle.send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.CAPTURE_CPU_THROTTLE) });
+}
 const log = [];
 page.on('console', (m) => log.push(`[${m.type()}] ${m.text()}`));
 page.on('pageerror', (e) => log.push(`[pageerror] ${e.message}`));
@@ -57,7 +74,7 @@ const stopProfile = async () => {
 if (PROFILE && PROFILE !== 'shots') await startProfile();
 const t0 = Date.now();
 await page.goto(`${BASE}/${process.env.CAPTURE_PAGE || 'explore.html'}${process.env.CAPTURE_QUERY || ''}`, { waitUntil: 'load' });
-const flush = () => fs.writeFileSync(path.join(OUT, 'console.log'), log.join('\n') + '\n');
+const flush = () => fs.writeFileSync(path.join(OUT, `${TAG}console.log`), log.join('\n') + '\n');
 if (process.env.CAPTURE_STATIC) {
   const name = path.basename(process.env.CAPTURE_PAGE || 'page', '.html');
   await page.waitForTimeout(2500);
@@ -103,8 +120,8 @@ for (const s of shots) {
   await page.waitForTimeout(s.wait ?? 4000);
   if (s.hold) await page.keyboard.up(s.hold);
   const fps = await page.evaluate(() => window.__CITY_APP.getFps());
-  await page.screenshot({ path: path.join(OUT, `${s.name}.png`) });
-  log.push(`[capture] ${s.name} fps ${Math.round(fps)}`);
+  await page.screenshot({ path: path.join(OUT, `${TAG}${s.name}.png`) });
+  log.push(`[capture] ${TAG}${s.name} fps ${Math.round(fps)}`);
 }
 if (PROFILE === 'shots') await stopProfile();
 flush();

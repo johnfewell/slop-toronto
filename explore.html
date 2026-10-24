@@ -34,6 +34,7 @@
     const cityAppScripts = (() => {
       const assetVersion = '20261022-tour2';
       return [
+        './js/quality.js',
         './js/toronto-geodata.js',
         './js/city-config.js',
         './js/tsl-materials.js',
@@ -623,6 +624,7 @@
     import * as TSL from 'three/tsl';
     import { bloom } from 'three/addons/tsl/display/BloomNode.js';
     import { ssr } from 'three/addons/tsl/display/SSRNode.js';
+    import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
     import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
     import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
     import { SunLight } from 'three/addons/lights/SunLight.js';
@@ -635,7 +637,7 @@
     window.CITY = {
       THREE,
       TSL,
-      PostFX: { bloom, ssr },
+      PostFX: { bloom, ssr, fxaa },
       StylizedWater,
       Addons: {
         mergeGeometries,
@@ -648,6 +650,16 @@
         MeshoptDecoder
       }
     };
+
+    // The quality tier (js/quality.js, the first script) reads the GPU before anything is built: a capability probe of
+    // the adapter, not the user agent
+    // (never waiting more than 3 s for it: the probe must not hold up the city)
+    window.CITY.gpuAdapter = navigator.gpu
+      ? await Promise.race([
+        navigator.gpu.requestAdapter({ powerPreference: 'high-performance' }).catch(() => null),
+        new Promise((resolve) => setTimeout(() => resolve(null), 3000))
+      ])
+      : null;
 
     for (const src of cityAppScripts) {
       const s = document.createElement('script');

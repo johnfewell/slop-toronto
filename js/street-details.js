@@ -637,7 +637,7 @@ function buildStreetDetails(scene) {
     const k = Math.floor(s.x / 60) * 100000 + Math.floor(s.z / 60);
     (lampCells.get(k) || lampCells.set(k, []).get(k)).push(s);
   }
-  const STREETLIGHT_SPOT_POOL = 40;
+  const STREETLIGHT_SPOT_POOL = Math.round(40 * window.CITY.QUALITY.lightPool);
   const STREETLIGHT_DIST = 120;
   const streetLightsGroup = new THREE.Group();
   streetLightsGroup.name = 'StreetClusteredLights';

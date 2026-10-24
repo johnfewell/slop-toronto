@@ -17,8 +17,12 @@ const CLOUD_SPEED = (() => {
 // Called right after renderer.init(), before anything renders or builds (the contexts must be on the renderer first);
 // attach() hands it the camera & the lighting once they exist
 async function setupClouds(renderer) {
-  // on by default; ?clouds=0 turns them off
-  if (new URLSearchParams(location.search).get('clouds') === '0') return null;
+  // on by default; ?clouds=0 turns them off, ?clouds=low|medium|high picks the library's quality preset (the tier's by
+  // default, quality.js: none leaves the sky dome's painted clouds)
+  const Q = window.CITY.QUALITY;
+  const choice = new URLSearchParams(location.search).get('clouds');
+  const preset = choice && choice !== '0' ? choice : Q.clouds;
+  if (choice === '0' || !preset) return null;
   let M;
   try {
     M = await import('./clouds.js');
@@ -43,7 +47,8 @@ async function setupClouds(renderer) {
     getAtmosphere: () => atmosphere,
     getClouds: () => ctx
   });
-  ctx.qualityPreset = 'medium';
+  ctx.qualityPreset = preset;
+  ctx.resolutionScale = Q.cloudScale;
   // The medium & low presets' approximate sun & sky light breaks the clouds pass on three's dev build: its shader reads
   // the atmosphere's parameters without ever declaring their struct ('Member "bottomRadius" not found in struct
   // "AtmosphereParameters"', then nothing renders). The accurate light costs nothing measurable here

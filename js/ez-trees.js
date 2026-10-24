@@ -15,20 +15,22 @@
 const { THREE } = window.CITY;
 const V3 = THREE.Vector3;
 
-const NEAR = 55; // full EZ-Tree mesh within (m)
-const MID = 320; // decimated mesh within; whole-crown cards beyond
+// (the distances by quality tier, quality.js: 55, 320 & 130 m on desktops)
+const NEAR = window.CITY.QUALITY.treeNear; // full EZ-Tree mesh within (m)
+const MID = window.CITY.QUALITY.treeMid; // decimated mesh within; whole-crown cards beyond
 // mid trees further than this cast no shadow (a twin mesh that skips the shadow maps): drawing the ~500 mid trees of a
 // 320 m circle into both cascades cost 2.2 ms a frame on the M4 mini, for shadows a few pixels long
-const MID_SHADOW = Number(new URLSearchParams(location.search).get('treeshadow') ?? 130); // ?treeshadow=320: all of them, for A/B
+const MID_SHADOW = Number(new URLSearchParams(location.search).get('treeshadow') ?? window.CITY.QUALITY.treeMidShadow); // ?treeshadow=320: all of them, for A/B
 // ?lodfade=0: the old hard swap (no masks, no bands), for A/B
 const FADE = new URLSearchParams(location.search).get('lodfade') !== '0';
 // hand-over bands, centred on the edge (m): near <-> mid, mid <-> far, the last level -> nothing
 const BAND = FADE ? [14, 50, 80] : [0, 0, 0];
 // the levels are regrouped every 4 m of camera travel: a tree joins a level this much before its band starts
 const MARGIN = FADE ? 6 : 0;
-const MAX_DIST = [3000, 1600, 950]; // by tier (0 park, 1 street, 2 yard), as trees.js
-const LOW_CUTOFF = 1150; // at street level everything further is behind the buildings
-const PINE_FAR = Number(new URLSearchParams(location.search).get('pinefar') ?? 600); // pines keep their mid mesh far out (mrdoob's species are all broadleaf)
+const FAR = window.CITY.QUALITY.treeFar; // (x the furthest distances below: nearer on the phone tiers, quality.js)
+const MAX_DIST = [3000 * FAR, 1600 * FAR, 950 * FAR]; // by tier (0 park, 1 street, 2 yard), as trees.js
+const LOW_CUTOFF = 1150 * FAR; // at street level everything further is behind the buildings
+const PINE_FAR = Number(new URLSearchParams(location.search).get('pinefar') ?? 600 * FAR); // pines keep their mid mesh far out (mrdoob's species are all broadleaf)
 
 // model family -> mrdoob's far crown species (0 London plane, 1 honey locust, 2 elm); -1: no far crown (pines)
 const FAR_SPECIES = (id) => (id.includes('pine') ? -1 : id.includes('ash') ? 1 : id.includes('aspen') ? 2 : 0);

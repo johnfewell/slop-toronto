@@ -11,6 +11,7 @@
 //    originals stop casting. The stand-ins share one material per face side, so a cell costs one draw.
 
 const { THREE } = window.CITY;
+const Q = window.CITY.QUALITY; // the tier's cull distances (x Q.cull) & the safety net's (x Q.dist), quality.js
 
 const SHADOW_PROXY_LAYER = 3;
 // Distance at which an instance of typical size s (m) is culled: about s / d * 1100 px tall on a 1300 px viewport
@@ -154,11 +155,11 @@ function setupSceneCulling(scene, roots, shadow = null) {
     // unlit (glowing) props, like signal lenses & lamp bulbs, read from much further away at night
     const glow = mesh.material.isMeshBasicNodeMaterial || mesh.material.type === 'MeshBasicNodeMaterial' ? 3 : 1;
     let cullDist = Math.max(CULL_MIN, instanceSize(mesh) * CULL_PER_METRE * glow);
-    if (cullDist > CULL_MAX) cullDist = Infinity;
+    cullDist = cullDist > CULL_MAX ? Infinity : cullDist * Q.cull;
     let cell = Number.isFinite(cullDist) ? Math.min(600, Math.max(250, cullDist * 0.5)) : 0;
     // a mesh may set its own (street-props.js: John's dense, detailed props go much sooner, in small cells)
     if (mesh.userData.cullDistance) {
-      cullDist = mesh.userData.cullDistance;
+      cullDist = mesh.userData.cullDistance * Q.cull;
       cell = mesh.userData.cullCell || Math.max(40, cullDist * 0.5);
     }
     if (!cell) continue; // big things (sidewalk slabs, light pools...) stay whole: chunking them would only add draws
@@ -321,11 +322,12 @@ const state = { culled: [] };
 // Per frame (after the warm-up frame, which must see everything): hide the chunks beyond their cull distance
 function updateSceneCulling(cameraPosition) {
   const { x, y, z } = cameraPosition;
+  const k = Q.dist;
   for (const c of state.culled) {
     const dx = c.x - x;
     const dy = c.y - y;
     const dz = c.z - z;
-    c.mesh.visible = Math.sqrt(dx * dx + dy * dy + dz * dz) - c.r < c.d;
+    c.mesh.visible = Math.sqrt(dx * dx + dy * dy + dz * dz) - c.r < c.d * k;
   }
 }
 

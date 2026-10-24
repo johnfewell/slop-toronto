@@ -1,0 +1,24 @@
+[
+ {
+  "name": "q-spawn",
+  "wait": 6500,
+  "js": "(async(name)=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);const d=[];let last=performance.now();const t=last;await new Promise(res=>{(function f(now){d.push(now-last);last=now;if(now-t<4000)requestAnimationFrame(f);else res()})(t)});d.shift();d.sort((a,b)=>a-b);const mean=d.reduce((a,b)=>a+b,0)/d.length;const q=window.CITY.QUALITY;const i=__CITY_APP.renderer.info.render;const ro=document.getElementById('quality-readout');console.log('[perf] '+name+' mean '+mean.toFixed(1)+' ms p50 '+d[d.length>>1].toFixed(1)+' p90 '+d[Math.floor(d.length*0.9)].toFixed(1)+' | tier '+(q?q.tier+' scale '+q.scale.toFixed(2):'none')+' | '+innerWidth+'x'+innerHeight+' canvas '+__CITY_APP.renderer.domElement.width+'x'+__CITY_APP.renderer.domElement.height+' draws '+i.drawCalls+' tris '+i.triangles+(ro?' | '+ro.textContent.replace(/\\n/g,' / '):''))})('spawn')"
+ },
+ {
+  "name": "q-waterfront",
+  "wait": 7500,
+  "js": "const l=CITY.TELEPORT_LOCATIONS.humberArch;__CITY_APP.teleportTo(l.x,l.z,l.heading);(async(name)=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);const d=[];let last=performance.now();const t=last;await new Promise(res=>{(function f(now){d.push(now-last);last=now;if(now-t<4000)requestAnimationFrame(f);else res()})(t)});d.shift();d.sort((a,b)=>a-b);const mean=d.reduce((a,b)=>a+b,0)/d.length;const q=window.CITY.QUALITY;const i=__CITY_APP.renderer.info.render;const ro=document.getElementById('quality-readout');console.log('[perf] '+name+' mean '+mean.toFixed(1)+' ms p50 '+d[d.length>>1].toFixed(1)+' p90 '+d[Math.floor(d.length*0.9)].toFixed(1)+' | tier '+(q?q.tier+' scale '+q.scale.toFixed(2):'none')+' | '+innerWidth+'x'+innerHeight+' canvas '+__CITY_APP.renderer.domElement.width+'x'+__CITY_APP.renderer.domElement.height+' draws '+i.drawCalls+' tris '+i.triangles+(ro?' | '+ro.textContent.replace(/\\n/g,' / '):''))})('waterfront')"
+ },
+ {
+  "name": "q-ride",
+  "hold": "KeyW",
+  "wait": 7000,
+  "js": "(async(name)=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);const d=[];let last=performance.now();const t=last;await new Promise(res=>{(function f(now){d.push(now-last);last=now;if(now-t<4000)requestAnimationFrame(f);else res()})(t)});d.shift();d.sort((a,b)=>a-b);const mean=d.reduce((a,b)=>a+b,0)/d.length;const q=window.CITY.QUALITY;const i=__CITY_APP.renderer.info.render;const ro=document.getElementById('quality-readout');console.log('[perf] '+name+' mean '+mean.toFixed(1)+' ms p50 '+d[d.length>>1].toFixed(1)+' p90 '+d[Math.floor(d.length*0.9)].toFixed(1)+' | tier '+(q?q.tier+' scale '+q.scale.toFixed(2):'none')+' | '+innerWidth+'x'+innerHeight+' canvas '+__CITY_APP.renderer.domElement.width+'x'+__CITY_APP.renderer.domElement.height+' draws '+i.drawCalls+' tris '+i.triangles+(ro?' | '+ro.textContent.replace(/\\n/g,' / '):''))})('ride')"
+ },
+ {
+  "name": "q-islands",
+  "camera": "islands",
+  "wait": 6500,
+  "js": "(async(name)=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);const d=[];let last=performance.now();const t=last;await new Promise(res=>{(function f(now){d.push(now-last);last=now;if(now-t<4000)requestAnimationFrame(f);else res()})(t)});d.shift();d.sort((a,b)=>a-b);const mean=d.reduce((a,b)=>a+b,0)/d.length;const q=window.CITY.QUALITY;const i=__CITY_APP.renderer.info.render;const ro=document.getElementById('quality-readout');console.log('[perf] '+name+' mean '+mean.toFixed(1)+' ms p50 '+d[d.length>>1].toFixed(1)+' p90 '+d[Math.floor(d.length*0.9)].toFixed(1)+' | tier '+(q?q.tier+' scale '+q.scale.toFixed(2):'none')+' | '+innerWidth+'x'+innerHeight+' canvas '+__CITY_APP.renderer.domElement.width+'x'+__CITY_APP.renderer.domElement.height+' draws '+i.drawCalls+' tris '+i.triangles+(ro?' | '+ro.textContent.replace(/\\n/g,' / '):''))})('islands')"
+ }
+]

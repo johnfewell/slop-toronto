@@ -12,9 +12,12 @@ const {
   metalness,
   roughness,
   vec2,
-  smoothstep
+  smoothstep,
+  renderOutput
 } = window.CITY.TSL;
-const { ssr } = window.CITY.PostFX;
+const { ssr, fxaa } = window.CITY.PostFX;
+// The quality tier, chosen before anything was built (quality.js): desktops draw everything, phones less
+const QUALITY = window.CITY.QUALITY;
 const { createPostProcessing } = window.CITY;
 const { ClusteredLighting } = window.CITY.Addons;
 
@@ -52,13 +55,14 @@ async function initApp() {
     loadingStatus.textContent = `Initializing Three.js r${THREE.REVISION} WebGPURenderer & TSL Shaders...`;
   }
 
-  // 1. Initialize Three.js WebGPURenderer with 32-bit float reversedDepthBuffer
+  // 1. Initialize Three.js WebGPURenderer with 32-bit float reversedDepthBuffer. MSAA & the render resolution (a share
+  //    of the CSS pixels) by quality tier (quality.js)
   const renderer = new THREE.WebGPURenderer({
-    antialias: true,
+    antialias: QUALITY.aa === 'msaa',
     powerPreference: 'high-performance',
     reversedDepthBuffer: true
   });
-  renderer.setPixelRatio(1.0);
+  renderer.setPixelRatio(QUALITY.scale);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   if (ClusteredLighting && !new URLSearchParams(location.search).has('nocl')) {
@@ -167,42 +171,62 @@ async function initApp() {
   // Toronto: John's stylized lake water copies the frame mid-pass (its depth & refraction), so the colour attachments
   // must be stored for the pass to carry on after the copy
   scenePass.renderTarget.storeMultisampledColorBuffer = !!lakeWater.water;
+  // The phone tiers draw no SSR, so the scene pass writes its colour & depth alone (quality.js)
   const ssrFade = smoothstep(360.0, 180.0, positionView.z.negate());
-  const sceneMRT = mrt({
+  const sceneMRT = QUALITY.ssr ? mrt({
     output: output,
     normal: normalView,
     metalRough: vec2(metalness.mul(ssrFade), roughness)
-  });
-  sceneMRT.setBlendMode('normal', new THREE.BlendMode(THREE.MaterialBlending));
-  sceneMRT.setBlendMode('metalRough', new THREE.BlendMode(THREE.MaterialBlending));
-  scenePass.setMRT(sceneMRT);
+  }) : null;
+  if (sceneMRT) {
+    sceneMRT.setBlendMode('normal', new THREE.BlendMode(THREE.MaterialBlending));
+    sceneMRT.setBlendMode('metalRough', new THREE.BlendMode(THREE.MaterialBlending));
+    scenePass.setMRT(sceneMRT);
+  } else {
+    // the decals' & effects' own normal / metalRough outputs (tsl-materials.js) only feed SSR: without the targets
+    // they would leave their shaders with no output at all
+    scene.traverse((o) => {
+      for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) m.mrtNode = null;
+    });
+  }
 
   const scenePassColor = scenePass.getTextureNode('output');
   const scenePassDepth = scenePass.getTextureNode('depth');
-  const scenePassNormal = scenePass.getTextureNode('normal');
-  const scenePassMetalRough = scenePass.getTextureNode('metalRough');
 
-  const ssrPass = ssr(scenePassColor, scenePassDepth, scenePassNormal, {
-    metalnessNode: scenePassMetalRough.r,
-    roughnessNode: scenePassMetalRough.g,
-    camera: cameraSystem.camera
-  });
-  ssrPass.resolutionScale = 0.5;
-  ssrPass.blurQuality = 1;
-  ssrPass.maxDistance.value = 42;
-  ssrPass.thickness.value = 0.85;
-  ssrPass.quality.value = 0.35;
-  ssrPass.intensity.value = 0.50;
-  ssrPass.screenEdgeFadeBlack = true;
+  let ssrPass = null;
+  if (QUALITY.ssr) {
+    const scenePassNormal = scenePass.getTextureNode('normal');
+    const scenePassMetalRough = scenePass.getTextureNode('metalRough');
+    ssrPass = ssr(scenePassColor, scenePassDepth, scenePassNormal, {
+      metalnessNode: scenePassMetalRough.r,
+      roughnessNode: scenePassMetalRough.g,
+      camera: cameraSystem.camera
+    });
+    ssrPass.resolutionScale = 0.5;
+    ssrPass.blurQuality = 1;
+    ssrPass.maxDistance.value = 42;
+    ssrPass.thickness.value = 0.85;
+    ssrPass.quality.value = 0.35;
+    ssrPass.intensity.value = 0.50;
+    ssrPass.screenEdgeFadeBlack = true;
+  }
 
   // John's volumetric clouds (sky-clouds.js): marched through the scene depth, composited over the scene colour
   if (skyClouds) {
     skyClouds.attach(cameraSystem.camera, lightingSystem);
     skyClouds.pass.sceneDepth = scenePassDepth;
   }
-  const colorGrade = createPostProcessing(renderer, skyClouds ? skyClouds.composite(scenePassColor) : scenePassColor, ssrPass);
+  const colorGrade = createPostProcessing(renderer, skyClouds ? skyClouds.composite(scenePassColor) : scenePassColor, ssrPass, {
+    bloom: QUALITY.bloom
+  });
   const { bloomPass } = colorGrade;
-  const renderPipeline = new THREE.RenderPipeline(renderer, colorGrade.outputNode);
+  // FXAA instead of MSAA (the low tier): it smooths the tone-mapped sRGB image, so the pipeline's own output transform
+  // moves ahead of it
+  const renderPipeline = new THREE.RenderPipeline(
+    renderer,
+    QUALITY.aa === 'fxaa' ? fxaa(renderOutput(colorGrade.outputNode)) : colorGrade.outputNode
+  );
+  if (QUALITY.aa === 'fxaa') renderPipeline.outputColorTransform = false;
 
   // 6. Wire UI Controls (Strictly using safe DOM APIs: textContent, classList, addEventListener)
   const modeButtons = document.querySelectorAll('[data-mode]');
@@ -602,8 +626,11 @@ async function initApp() {
     selectTime,
     tourGuide,
     teleportTo,
+    quality: QUALITY,
     getFps: () => currentFps
   };
+  // The quality safety net & the ?fps=1 readout (quality.js), fed every real-time frame
+  const qualityNet = QUALITY.attach(window.__CITY_APP);
 
   // 6b. Shader pre-compilation behind the loading screen. compileAsync() builds the node graphs in slices and has the GPU
   //     process compile the pipelines in parallel, but after every 8 ms slice it waits for a rendered frame, which
@@ -756,6 +783,8 @@ async function initApp() {
         openDeepLink();
       });
     }
+
+    if (fixedDt === null && warmedUp) qualityNet.tick(Math.max(0, rawDt));
 
     // Telemetry uses wall time, not the clamped simulation step, so slow frames and high-refresh displays report
     // their actual frame rate (updates DOM every 250ms).
