@@ -187,12 +187,13 @@ class ThirdPersonControllerManager {
     return this.entities[this.activeMode];
   }
 
-  teleportActiveTo(x, z, heading = Math.PI) {
+  // savedAltitude: the helicopter's height on a restored visit (main.js), else it arrives at a safe 92 m or more
+  teleportActiveTo(x, z, heading = Math.PI, savedAltitude = null) {
     const ent = this.getActiveEntity();
     this.resetInput();
     if (!Number.isFinite(heading)) heading = ent.heading;
     const heli = this.activeMode === 'helicopter';
-    const altitude = heli ? Math.max(92, Math.min(380, ent.position.y)) : 0;
+    const altitude = heli ? Math.max(0.25, Math.min(380, savedAltitude ?? Math.max(92, ent.position.y))) : 0;
     const destination = this.findTeleportPosition(x, z, heading, altitude);
     if (destination) {
       ent.position.x = destination.x;

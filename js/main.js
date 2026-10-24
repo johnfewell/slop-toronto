@@ -134,6 +134,39 @@ async function initApp() {
 
   // 4. Initialize Third-Person Controllers (Person, Car, Cyclist, Helicopter) & Multi-Camera System
   const controllerManager = new ThirdPersonControllerManager(scene, allColliders);
+  // --- Restored visits (mrdoob's 9301fcb): every player (walker, car, bicycle, helicopter) comes back where it was left,
+  // at rest, placed by the teleport's clear-arrival search; first visits start on Yonge. The film (?film) neither
+  // restores nor saves (it parks the player for its shots)
+  const PLAYER_STATE_KEY = 'toronto-player-state';
+  const keepPlayerState = !new URLSearchParams(location.search).has('film');
+  let restoredPlayer = false;
+  if (keepPlayerState) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PLAYER_STATE_KEY));
+      if (saved?.version === 1) {
+        for (const mode of Object.keys(controllerManager.entities)) {
+          const p = saved.entities?.[mode];
+          if (!p || ![p.x, p.y, p.z, p.heading].every(Number.isFinite)) continue;
+          controllerManager.setMode(mode);
+          controllerManager.teleportActiveTo(p.x, p.z, p.heading, p.y);
+        }
+        controllerManager.setMode(Object.hasOwn(controllerManager.entities, saved.activeMode) ? saved.activeMode : 'cyclist');
+        restoredPlayer = true;
+      }
+    } catch { /* missing or unavailable storage does not prevent riding */ }
+  }
+  function savePlayerState() {
+    if (!keepPlayerState) return;
+    try {
+      const entities = Object.fromEntries(Object.entries(controllerManager.entities).map(([mode, entity]) => [mode, {
+        x: entity.position.x, y: entity.position.y, z: entity.position.z, heading: entity.heading
+      }]));
+      localStorage.setItem(PLAYER_STATE_KEY, JSON.stringify({ version: 1, activeMode: controllerManager.activeMode, entities }));
+    } catch { /* storage may be disabled or full */ }
+  }
+  window.addEventListener('pagehide', savePlayerState);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) savePlayerState(); });
+  // --- end restored visits
   const cameraSystem = new CameraSystem(renderer.domElement, controllerManager);
   const touchControls = new TouchControls(controllerManager);
   markInit('controllers');
@@ -603,8 +636,8 @@ async function initApp() {
     }
   }
 
-  // Initialize default selection
-  selectMode('cyclist');
+  // Initialize default selection: the restored player's mode, else the bicycle
+  selectMode(restoredPlayer ? controllerManager.activeMode : 'cyclist');
   selectCamera('chase', true);
   selectTime('golden');
   // the web fonts change the buttons' widths once they arrive
@@ -729,6 +762,7 @@ async function initApp() {
   let elapsed = 0;
   let frameCount = 0;
   let fpsTimer = 0;
+  let nextPlayerSave = 0;
   let warmedUp = false; // see the first frame below
 
   if (elFps) elFps.textContent = '60';
@@ -755,6 +789,10 @@ async function initApp() {
       cameraSystem.camera
     );
     highwayTraffic.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode);
+    if (!document.hidden && now >= nextPlayerSave) {
+      savePlayerState();
+      nextPlayerSave = now + 5000;
+    }
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);
