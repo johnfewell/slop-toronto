@@ -1,6 +1,7 @@
 // Part 7: street props where the City (and OpenStreetMap) say they stand, for John's prop models (js/street-props.js):
 // fire hydrants (City of Toronto Water Hydrants), post-and-ring bike stands (City of Toronto Street Furniture – Bicycle
-// Parking, rings that exist) and Canada Post boxes (OpenStreetMap amenity=post_box). Flat [x, z, ...] per kind, 0.1 m.
+// Parking, rings that exist), transit shelters & litter/recycling bins (Street Furniture – Transit Shelter and – Litter
+// Receptacle, those in place) and Canada Post boxes (OpenStreetMap amenity=post_box). Flat [x, z, ...] per kind, 0.1 m.
 import fs from 'node:fs';
 import path from 'node:path';
 import { toWorld, load, log } from './geo-base.mjs';
@@ -42,6 +43,8 @@ function cityPoints(file, keep = () => true) {
 export const props = {
   hydrant: cityPoints('water-hydrants.csv'),
   bikeRing: cityPoints('bicycle-parking.csv', (r) => r.ASSETTYPE === 'Ring' && r.STATUS === 'Existing'),
+  shelter: cityPoints('transit-shelters.csv', (r) => r.STATUS === 'Existing'),
+  litterBin: cityPoints('litter-receptacles.csv', (r) => r.STATUS === 'Existing'),
   postBox: (() => {
     let el = [];
     try { el = load('osm_postboxes.json').elements; } catch { el = []; }
@@ -50,4 +53,4 @@ export const props = {
     return pts;
   })()
 };
-log(`street props: ${props.hydrant.length / 2} hydrants, ${props.bikeRing.length / 2} bike rings, ${props.postBox.length / 2} post boxes`);
+log(`street props: ${props.hydrant.length / 2} hydrants, ${props.bikeRing.length / 2} bike rings, ${props.shelter.length / 2} transit shelters, ${props.litterBin.length / 2} litter bins, ${props.postBox.length / 2} post boxes`);

@@ -23,7 +23,7 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 
 - **City of Toronto Open Data**, under the Open Government Licence – Toronto
   (https://open.toronto.ca/open-data-license/): 3D Massing, Topographic Mapping – Edge of Roadway, Street Tree Data,
-  Water Hydrants, Bicycle Parking.
+  Water Hydrants, Bicycle Parking, Street Furniture – Transit Shelter, Street Furniture – Litter Receptacle.
   Contains information licensed under the Open Government Licence – Toronto.
 - **OpenStreetMap**: streets, places, water and land use. © OpenStreetMap contributors, under the Open Database
   License (ODbL). https://www.openstreetmap.org/copyright
@@ -35,7 +35,8 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 
 - **Poly Haven** textures (CC0): `brick_wall_07` (the ROM's heritage brick, warmed to buff) and other Poly Haven
   surfaces in the ROM model. https://polyhaven.com/
-- **Street props** (hydrant, mailbox, bike ring: `assets/props/`) by John Fewell.
+- **Street props** (hydrant, mailbox, bike ring, transit shelter, litter & recycling bin: `assets/props/`) by John
+  Fewell, simplified for the city (meshoptimizer, textures cut to 512–1024 px).
 - **Royal Ontario Museum model** (`assets/landmarks/rom.glb`): from John Fewell's rom-heist project, a SketchUp shell
   re-textured in Blender (`tools/blender/export_rom.py`), with SketchUp library materials and a Flag of Canada image.
   It is not covered by this project's MIT License.

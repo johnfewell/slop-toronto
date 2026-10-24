@@ -11,3 +11,6 @@ tools/clouds-probe3.html
 
 dist/
 .netlify/
+
+# local prop sources for tools/prop-preview.html (John's raw models & simplification variants)
+tools/prop-src/

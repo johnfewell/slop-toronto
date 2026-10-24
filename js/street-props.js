@@ -1,25 +1,49 @@
 (function () {
 // js/street-props.js
 // John's street props where the City says they stand (GEO.props, tools/geo-props.mjs): his fire hydrant at every
-// City hydrant, his post-and-ring bike stand at every City bike ring and his Canada Post box at every OpenStreetMap post
+// City hydrant, his post-and-ring bike stand at every City bike ring, his transit shelter at every City shelter, his
+// three-chamber litter & recycling bin at every City litter receptacle and his Canada Post box at every OpenStreetMap post
 // box. One instanced mesh per model (assets/props/*.glb: his Meshy models, textures cut to 512 px, meshopt), each prop on
 // the sidewalk and turned to face its nearest street; scene-culling.js chunks them and hides them by distance.
 
 const { THREE } = window.CITY;
 const { GEO, CITY_BOUNDS, nearestRoads, blockAt } = window.CITY;
 
-// [GEO.props key, model, how it faces the street: 'front' (the model's +z toward the road), 'along' (its +z across the
-// curb, so a bike stand's ring runs with the street), cull distance (m), casts shadows]. Thousands of bike rings line
-// downtown's streets: they go soonest and cast none (a thin post's shadow barely reads).
+// [GEO.props key, model, how it faces the street: 'front' (the model's +z toward the road), 'back' (its -z), 'along'
+// (its +z across the curb, so a bike stand's ring runs with the street), cull distance (m), casts shadows, height (m)
+// when the model isn't to scale]. Thousands of bike rings line downtown's streets: they go soonest and cast none (a thin
+// post's shadow barely reads).
 const KINDS = [
   ['hydrant', 'hydrant', 'front', 120, true],
   ['bikeRing', 'bike-ring', 'along', 90, false],
-  ['postBox', 'mailbox', 'front', 150, true]
+  ['postBox', 'mailbox', 'front', 150, true],
+  ['shelter', 'transit-shelter', 'front', 260, true, 2.5],
+  ['litterBin', 'litter-bin', 'back', 80, true]
 ];
 
 function hash(x, z) {
   const s = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
   return s - Math.floor(s);
+}
+
+// The City lists double shelters at busy stops as two points a metre or three apart: a pair closer than a shelter's
+// length stands end to end along the street instead, about its middle
+function spreadAlongStreet(pts, len) {
+  const out = Array.from(pts);
+  for (let i = 0; i < out.length; i += 2) {
+    for (let j = i + 2; j < out.length; j += 2) {
+      const dx = out[j] - out[i], dz = out[j + 1] - out[i + 1], d = Math.hypot(dx, dz);
+      if (d >= len) continue;
+      const mx = (out[i] + out[j]) / 2, mz = (out[i + 1] + out[j + 1]) / 2;
+      const road = nearestRoads(mx, mz, 30)[0];
+      let ux = road ? road.dx : dx / (d || 1), uz = road ? road.dz : dz / (d || 1);
+      if (ux * dx + uz * dz < 0) { ux = -ux; uz = -uz; }
+      const h = (len + 0.3) / 2;
+      out[i] = mx - ux * h; out[i + 1] = mz - uz * h;
+      out[j] = mx + ux * h; out[j + 1] = mz + uz * h;
+    }
+  }
+  return out;
 }
 
 async function buildStreetProps(scene) {
@@ -31,8 +55,8 @@ async function buildStreetProps(scene) {
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   const counts = {};
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
-  await Promise.all(KINDS.map(async ([key, file, facing, cullDistance, shadows]) => {
-    const pts = props[key];
+  await Promise.all(KINDS.map(async ([key, file, facing, cullDistance, shadows, height]) => {
+    let pts = props[key];
     if (!pts || !pts.length) return;
     let gltf;
     try {
@@ -59,6 +83,8 @@ async function buildStreetProps(scene) {
     geo.computeBoundingBox();
     const b = geo.boundingBox;
     geo.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+    if (height) geo.scale(height / (b.max.y - b.min.y), height / (b.max.y - b.min.y), height / (b.max.y - b.min.y));
+    if (key === 'shelter') { geo.computeBoundingBox(); pts = spreadAlongStreet(pts, geo.boundingBox.max.x - geo.boundingBox.min.x); }
     const n = pts.length / 2;
     const mesh = new THREE.InstancedMesh(geo, src.material, n);
     mesh.name = `StreetProps_${key}`;
@@ -77,8 +103,8 @@ async function buildStreetProps(scene) {
       if (road) {
         // toward the road (front) or across the curb (along), with a little hand-placed wobble
         const tx = road.px - x, tz = road.pz - z;
-        yaw = facing === 'along' ? Math.atan2(-road.dz, road.dx) : Math.atan2(tx, tz);
-        yaw += (hash(x, z) - 0.5) * 0.12;
+        yaw = facing === 'along' ? Math.atan2(-road.dz, road.dx) : Math.atan2(tx, tz) + (facing === 'back' ? Math.PI : 0);
+        if (key !== 'shelter') yaw += (hash(x, z) - 0.5) * 0.12; // (a shelter stays square to the curb)
       } else yaw = hash(x, z) * Math.PI * 2;
       p.set(x, blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0, z);
       q.setFromAxisAngle(up, yaw);
