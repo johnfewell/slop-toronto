@@ -7,10 +7,10 @@
 //   primary pointer without hover (a touch screen), the screen's short side, navigator.deviceMemory & the core count.
 //   Desktops are `high`: today's settings exactly.
 // - attach() (main.js, once the city is on screen) starts the safety net: frame times are taken over 2 s windows from
-//   5 s after the start, and a tier still running well under 30 fps steps its render resolution (then its draw
-//   distances) down a rung at a time, and back up when there is headroom; a rung that had to be left again soon after
-//   stepping up becomes the ceiling, so it never thrashes. `high` only steps down when it is genuinely struggling
-//   (under ~20 fps), and only its resolution. ?autoscale=0 holds the start rung, ?scale=<0.4-1> sets the resolution.
+//   5 s after the start, and a tier still running well under 30 fps steps its draw distances (shadows, props) down a
+//   rung at a time, and back up when there is headroom; a rung that had to be left again soon after stepping up
+//   becomes the ceiling, so it never thrashes. `high` has no net. ?autoscale=0 holds the start rung, ?scale=<0.4-1>
+//   sets the render resolution at the start.
 // - ?fps=1 shows a readout (fps, frame ms, tier, resolution) for reporting numbers from a phone.
 
 const params = new URLSearchParams(location.search);
@@ -77,10 +77,12 @@ const forcedScale = parseFloat(params.get('scale'));
 if (forcedScale >= 0.25 && forcedScale <= 2) QUALITY.scale = forcedScale;
 console.info(`[quality] ${tier}: ${reason}`);
 
-// The safety net's rungs: [resolution x, draw distance x]. high only gives up resolution
+// The safety net's rungs: [resolution x, draw distance x]. Only distances: a resolution change reallocates every
+// full-screen target at once (the scene pass, the clouds, the water's frame copy), which crashed the Pixel 8's GPU
+// process a few seconds in, and a phone already renders at its CSS pixels (412 x 915 on the Pixel). high has no net
 const RUNGS = tier === 'high'
-  ? [[1, 1], [0.85, 1], [0.72, 1]]
-  : [[1, 1], [0.85, 1], [0.85, 0.75], [0.72, 0.75], [0.6, 0.6]];
+  ? [[1, 1]]
+  : [[1, 1], [1, 0.8], [1, 0.65], [1, 0.5]];
 const SLOW_MS = tier === 'high' ? 50 : 36; // a window's median frame slower than this (~20 / ~28 fps) is too slow...
 const SLOW_WINDOWS = 2; // ...this many windows in a row: a rung down
 const FAST_MS = 22; // ~45 fps: room to step back up...
@@ -102,8 +104,10 @@ function attach(app) {
     const [s, d] = RUNGS[r];
     QUALITY.scale = baseScale * s;
     QUALITY.dist = d;
-    renderer.setPixelRatio(QUALITY.scale);
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    if (s !== 1) {
+      renderer.setPixelRatio(QUALITY.scale);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
     console.info(`[quality] rung ${r}: resolution x${QUALITY.scale.toFixed(2)}, distances x${d}`);
   }
 
