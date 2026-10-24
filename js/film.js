@@ -1,7 +1,7 @@
 (function () {
 // js/film.js
-// The launch film: one scripted ~35 s camera run through the city in four shots, golden hour with a night cut (js/cinema.js
-// shots, eased & splined). explore.html?film=1 plays it live and loops, with the UI hidden; ?film=render only hides
+// The launch film: one scripted ~37 s camera run through the city in five shots: golden hour, two first-person rides in
+// the midday sun and a night cut (js/cinema.js shots, eased & splined). explore.html?film=1 plays it live and loops, with the UI hidden; ?film=render only hides
 // the UI and parks the player, for tools/render-film.mjs, which renders it frame by frame on a virtual clock.
 // The strongest shot goes first: X autoplays muted and people decide in two seconds.
 // World frame: x grid east, z grid south (towards the lake), y up, metres; Union Station at the origin.
@@ -10,34 +10,44 @@ const SHOTS = [
   // 1. The skyline from the lake off Coronation Park, low over the water: the towers and the CN Tower lit gold by the
   //    sun behind the camera, under the evening clouds (telephoto, so the skyline stands tall)
   {
-    name: 'skyline', time: 'golden', duration: 8, ease: 'linear',
+    name: 'skyline', time: 'golden', duration: 7, ease: 'linear',
     path: [
       { t: 0, pos: [-2330, 8, 1030], look: [-520, 195, 110], fov: 32 },
-      { t: 8, pos: [-2170, 24, 940], look: [-470, 190, 60], fov: 31 }
+      { t: 7, pos: [-2190, 22, 950], look: [-475, 190, 65], fov: 31 }
     ]
   },
-  // 2. Up Yonge Street at street level, over the traffic between the shopfronts, towards Dundas
+  // 2. Riding up Yonge Street in the midday sun, first person at a cyclist's eye height along the curb lane, towards
+  //    the Dundas screens (at the curb's edge, clear of the cars passing in the curb lane)
   {
-    name: 'yonge', time: 'golden', duration: 9, ease: 'linear',
+    name: 'yonge-ride', time: 'midday', duration: 7, ease: 'linear',
     path: [
-      { t: 0, pos: [328.5, 4.2, -880], look: [326.5, 6, -1180], fov: 52 },
-      { t: 9, pos: [327.5, 4.0, -990], look: [326, 8, -1260], fov: 50 }
+      { t: 0, pos: [334.4, 1.65, -900], look: [331, 3.2, -1060], fov: 66 },
+      { t: 7, pos: [334.2, 1.65, -985], look: [330.5, 3.4, -1145], fov: 66 }
     ]
   },
-  // 3. Yonge & Dundas by night: Sankofa Square and the screens, a slow crane up out of the square
+  // 3. A leafy side street (Euclid Avenue, one-way, one lane) at midday, first person under the street trees, hugging
+  //    the curb as the cars pass
   {
-    name: 'sankofa', time: 'midnight', duration: 8, ease: 'inOut',
+    name: 'euclid-ride', time: 'midday', duration: 7, ease: 'linear',
+    path: [
+      { t: 0, pos: [-2046.5, 1.65, -1880], look: [-2048.5, 3, -2030], fov: 66 },
+      { t: 7, pos: [-2046.4, 1.65, -1960], look: [-2048, 3, -2110], fov: 66 }
+    ]
+  },
+  // 4. Yonge & Dundas by night: Sankofa Square and the screens, a slow crane up out of the square
+  {
+    name: 'sankofa', time: 'midnight', duration: 7, ease: 'inOut',
     path: [
       { t: 0, pos: [386, 8, -1122], look: [326, 14, -1185], fov: 54 },
-      { t: 8, pos: [374, 18, -1136], look: [322, 20, -1200], fov: 54 }
+      { t: 7, pos: [374, 18, -1136], look: [322, 20, -1200], fov: 54 }
     ]
   },
-  // 4. The finale: back out over the western waterfront, rising to the whole city, the CN Tower and the lake
+  // 5. The finale: back out over the western waterfront, rising to the whole city, the CN Tower and the lake
   {
-    name: 'waterfront', time: 'golden', duration: 10, ease: 'out',
+    name: 'waterfront', time: 'golden', duration: 9, ease: 'out',
     path: [
       { t: 0, pos: [-2000, 60, 950], look: [-500, 150, 100], fov: 42 },
-      { t: 10, pos: [-2420, 150, 1320], look: [-400, 125, 40], fov: 46 }
+      { t: 9, pos: [-2420, 150, 1320], look: [-400, 125, 40], fov: 46 }
     ]
   }
 ];
