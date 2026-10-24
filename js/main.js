@@ -130,6 +130,8 @@ async function initApp() {
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
   // --- Toronto layer (after aalghooneh/slop-toronto): the TTC's streetcars, which the traffic keeps behind ---
   const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
+  // the Union Station Rail Corridor's tracks & GO trains (rail-corridor.js)
+  const railCorridor = window.CITY.createRailCorridor(scene, trafficSystem);
   markInit('streetcars');
   // --- end Toronto layer ---
   buildRoadPaint(scene, trafficSystem.network);
@@ -620,6 +622,7 @@ async function initApp() {
     trafficSystem,
     highwayTraffic,
     streetcars, // Toronto layer
+    railCorridor, // Toronto layer
     controllerManager,
     touchControls,
     cameraSystem,
@@ -745,6 +748,7 @@ async function initApp() {
     );
     highwayTraffic.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode);
     streetcars.update(dt, elapsed, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
+    railCorridor.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);

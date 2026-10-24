@@ -1,0 +1,30 @@
+[
+ {
+  "name": "rc1-corridor-aerial",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6408, -79.401), b = C.worldFromLatLon(43.644, -79.383);\napp.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 45, a.z], look: [b.x, 0, b.z], fov: 50 }); })()"
+ },
+ {
+  "name": "rc2-union-train",
+  "mode": "person",
+  "time": "golden",
+  "wait": 9000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.644, -79.3806);\nlet best = null, bd = 1e9;\nfor (const tr of app.railCorridor.trains) { if (tr.wait > 0) continue; const c = tr.cars[0]; const d = Math.hypot(c.x - t.x, c.z - t.z); if (d < bd) { bd = d; best = tr; } }\nconsole.log('[shot] train ' + Math.round(bd) + ' m from target, speed ' + best.speed.toFixed(1) + ', ' + app.railCorridor.trains.length + ' trains');\nconst c0 = best.cars[0]; app.teleportTo(c0.x + 40, c0.z + 40, 0);\napp.cameraSystem.cinema = () => { const n = best.cars[0], m = best.cars[3]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 80 + rx * 0, n.y + 22, n.z + fz * 80 + rz * 0], look: [m.x, m.y + 2.4, m.z], fov: 55 }; };\n})()"
+ },
+ {
+  "name": "rc3-train-west",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.637, -79.42);\nlet best = null, bd = 1e9;\nfor (const tr of app.railCorridor.trains) { if (tr.wait > 0) continue; const c = tr.cars[0]; const d = Math.hypot(c.x - t.x, c.z - t.z); if (d < bd) { bd = d; best = tr; } }\nconsole.log('[shot] train ' + Math.round(bd) + ' m from target, speed ' + best.speed.toFixed(1) + ', ' + app.railCorridor.trains.length + ' trains');\nconst c0 = best.cars[0]; app.teleportTo(c0.x + 40, c0.z + 40, 0);\napp.cameraSystem.cinema = () => { const n = best.cars[0], m = best.cars[1]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 28 + rx * 9, n.y + 2.5, n.z + fz * 28 + rz * 9], look: [m.x, m.y + 2.4, m.z], fov: 55 }; };\n})()"
+ },
+ {
+  "name": "rc4-corridor-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6418, -79.3995), b = C.worldFromLatLon(43.6432, -79.392);\napp.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 2, a.z], look: [b.x, 1.5, b.z], fov: 60 }); })()"
+ }
+]

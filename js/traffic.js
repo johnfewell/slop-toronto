@@ -387,10 +387,16 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   let focusX = 0;
   let focusZ = 140;
   const player = { active: false, entity: null, x: 0, z: 0, vx: 0, vz: 0, halfW: 0.86, halfL: 2.18, push: 0.5 };
-  // --- Streetcars (streetcars.js, after aalghooneh/slop-toronto): other moving things the traffic keeps behind, one
-  // box per streetcar module { x, y, z, yaw, halfW, halfL, speed }, handed over every frame (setObstacles) ---
+  // --- Streetcars (streetcars.js, after aalghooneh/slop-toronto) & trains (rail-corridor.js): other moving things the
+  // traffic keeps behind, one box per streetcar module or rail car { x, y, z, yaw, halfW, halfL, speed }, handed over
+  // every frame (setObstacles) ---
+  // (one list per source: 'streetcars', 'trains' from rail-corridor.js)
   let movers = [];
-  const setObstacles = (list) => { movers = list || []; };
+  const moverSources = {};
+  const setObstacles = (list, source = 'streetcars') => {
+    moverSources[source] = list || [];
+    movers = [].concat(...Object.values(moverSources));
+  };
 
   // Lane lists hold pooled { v, s } entries sorted by position s along the lane, rebuilt every frame
   const pool = [];
