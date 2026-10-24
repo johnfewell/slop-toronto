@@ -9,6 +9,14 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   https://github.com/mrdoob/slop-newyork
 - **Abuja Tour** (abujatour.site), the Slop New York fork this was forked from, including the landing page's layout
   and styles (`css/landing.css`). MIT, © Mr.doob.
+  Later Slop New York work ported onto it (to upstream 1b54e16): gamepad controls (`js/gamepad-controls.js`),
+  pedestrians' connected routes & conversations (`js/pedestrian-routes.js`), vehicle bumpers & lamps, fire escapes,
+  corner collisions, bicycle coasting, restored visits, traffic that stays populated, SSR & road-marking fixes.
+- **aalghooneh/slop-toronto** by aalghooneh, another Toronto fork of Slop New York: the car's powertrain, arcade
+  handling & handbrake, crash damage, and the pedestrians knocked down as ragdolls (`PersonRagdoll` in
+  `js/pedestrians.js`, the knock-downs in `js/traffic.js`, the driving in `js/controllers.js`). MIT, © Mr.doob & Slop
+  Toronto contributors.
+  https://github.com/aalghooneh/slop-toronto
 - **three.js**, WebGPURenderer and TSL, loaded from jsDelivr at a pinned dev-branch commit. MIT.
   https://threejs.org/
 - **Stylized water** (`js/stylized-water.js`, built from `vendor/stylized-water`): John Fewell's three.js port of
