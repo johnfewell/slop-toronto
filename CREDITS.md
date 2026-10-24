@@ -37,6 +37,11 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   surfaces in the ROM model. https://polyhaven.com/
 - **Street props** (hydrant, mailbox, bike ring, transit shelter, litter & recycling bin: `assets/props/`) by John
   Fewell, simplified for the city (meshoptimizer, textures cut to 512–1024 px).
+- **CN Tower model** (`assets/landmarks/cn-tower.glb`): "CN Tower low poly model base mesh" by C.J..Goldman
+  (https://sketchfab.com/C.J..Goldman),
+  https://sketchfab.com/3d-models/cn-tower-low-poly-model-base-mesh-da7bbf4926de434cb5ef8d0e0bea9d59, licensed CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/). Modified: display plinth removed, scaled to 553.3 m, glass made opaque
+  dark glass, compressed (`tools/blender/export_cn_tower.py`).
 - **Royal Ontario Museum model** (`assets/landmarks/rom.glb`): from John Fewell's rom-heist project, a SketchUp shell
   re-textured in Blender (`tools/blender/export_rom.py`), with SketchUp library materials and a Flag of Canada image.
   It is not covered by this project's MIT License.

@@ -1,0 +1,5 @@
+[
+ {"name": "lm-cn-skyline", "time": "golden", "wait": 6000, "js": "__CITY_APP.selectCamera('islands', true)"},
+ {"name": "lm-cn-base", "time": "golden", "wait": 4000, "js": "__CITY_APP.selectCamera('cnTower', true)"},
+ {"name": "lm-rom", "time": "golden", "wait": 4000, "js": "__CITY_APP.selectCamera('rom', true)"}
+]

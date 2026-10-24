@@ -1,0 +1,6 @@
+[
+ {"name": "cn-lake", "time": "golden", "wait": 6000, "js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [-380, 25, 1250], look: [-586, 260, 142], fov: 45 })"},
+ {"name": "cn-pod", "time": "golden", "wait": 3000, "js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [-470, 330, 60], look: [-586, 345, 142], fov: 55 })"},
+ {"name": "cn-lake-twilight", "time": "twilight", "wait": 5000, "js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [-380, 25, 1250], look: [-586, 260, 142], fov: 45 })"},
+ {"name": "cn-lake-night", "time": "midnight", "wait": 5000, "js": "__CITY_APP.cameraSystem.cinema = () => ({ pos: [-380, 25, 1250], look: [-586, 260, 142], fov: 45 })"}
+]

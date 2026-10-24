@@ -80,9 +80,10 @@ function buildLandmarks(scene) {
   const done = new Set();
 
   // =========================================================================
-  // CN TOWER (1976, 553.3 m): the tapering Y-plan shaft as a lathe, the main pod with its glass band, the SkyPod and
-  // the antenna mast. Proportions from the published heights (main pod ~342-352 m, SkyPod 447 m); the lathe profile
-  // is one-minute-ride's.
+  // CN TOWER (1976, 553.3 m): C.J..Goldman's model (Sketchfab, CC BY 4.0; tools/blender/export_cn_tower.py made
+  // assets/landmarks/cn-tower.glb from it). Until it has loaded (or if it can't) a stand-in: the tapering shaft as a
+  // lathe, the main pod with its glass band, the SkyPod and the antenna mast (main pod ~342-352 m, SkyPod 447 m; the
+  // lathe profile is one-minute-ride's).
   // =========================================================================
   {
     const p = GEO.points.cnTower;
@@ -101,10 +102,29 @@ function buildLandmarks(scene) {
       const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, h, 48, 1, true), glassDark);
       m.position.set(s.x, SW_Y + y0 + h / 2, s.z);
       group.add(m);
+      return m;
     };
-    band(24.2, 26.2, 339, 6.5);
-    band(11.2, 11.2, 445, 6);
+    const stand = [shaft, band(24.2, 26.2, 339, 6.5), band(11.2, 11.2, 445, 6)];
     boxCollider(s.x, s.z, 24, 24, 0, 553);
+    if (window.CITY.Addons.GLTFLoader) {
+      const loader = new window.CITY.Addons.GLTFLoader();
+      if (window.CITY.Addons.MeshoptDecoder) loader.setMeshoptDecoder(window.CITY.Addons.MeshoptDecoder);
+      loader.loadAsync('./assets/landmarks/cn-tower.glb').then((gltf) => {
+        const tower = gltf.scene;
+        tower.name = 'Landmark_cnTower';
+        tower.position.set(s.x, SW_Y, s.z);
+        tower.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = true;
+            o.receiveShadow = true;
+          }
+        });
+        for (const m of stand) group.remove(m);
+        group.add(tower);
+        tower.updateMatrixWorld(true); // (the static city's matrices are frozen once built: main.js)
+        console.info('[landmarks] CN Tower model placed');
+      }).catch((e) => console.warn('[landmarks] CN Tower model did not load:', e));
+    }
     done.add('cnTower');
   }
 
@@ -190,6 +210,7 @@ function buildLandmarks(scene) {
         }
       });
       group.add(rom);
+      rom.updateMatrixWorld(true); // (the static city's matrices are frozen once built: main.js)
       console.info('[landmarks] ROM model placed');
     }).catch((e) => console.warn('[landmarks] ROM model did not load:', e));
     done.add('rom');
