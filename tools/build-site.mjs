@@ -1,4 +1,5 @@
-// tools/build-site.mjs: copies what the published site needs into dist/ (Netlify publishes dist/, see netlify.toml).
+// tools/build-site.mjs: copies what the published site needs into dist/ (Cloudflare serves dist/ as a Worker's static
+// assets, see wrangler.jsonc; dist/_headers sets the response headers).
 // usage: node tools/build-site.mjs [outDir]   (default dist; node builtins only, no install needed)
 // Ships the two pages, css/, assets/ (minus the git-ignored Abuja leftovers) and only the js/ files the pages load:
 // every ./js/*.js named in index.html / explore.html, plus whatever those files import or reference in turn
@@ -60,4 +61,12 @@ while (queue.length) {
 for (const rel of [...PAGES, ...TEXT, 'css', 'assets', ...[...scripts].sort()]) {
   if (fs.existsSync(path.join(ROOT, rel))) copy(rel);
 }
+// Response headers (Cloudflare's _headers format): no MIME sniffing everywhere; static media a day fresh, then served
+// while it revalidates; pages & code revalidate on every visit, so a deploy is live at once
+const MEDIA = 'Cache-Control: public, max-age=86400, stale-while-revalidate=604800';
+fs.writeFileSync(path.join(OUT, '_headers'), [
+  '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin',
+  ...['/assets/*'].flatMap((p) => [p, `  ${MEDIA}`]),
+  '/*.glb', '  Content-Type: model/gltf-binary'
+].join('\n') + '\n');
 console.log(`build-site: ${files} files, ${(bytes / 1e6).toFixed(1)} MB -> ${path.relative(ROOT, OUT)}/ (${scripts.size} scripts)`);
