@@ -305,7 +305,32 @@ function buildCityBlocks(scene) {
     // house), split-AC condensers on the side walls, a satellite dish
     const [u0, u1, v0, v1] = parts[0];
     const local = (u, v) => [cx + u * cs + v * sn, cz - u * sn + v * cs];
-    const detail = { cx, cz, tanks: [], acs: [], dishes: [], ry: ang };
+    const detail = { cx, cz, tanks: [], acs: [], dishes: [], fireEscapes: [], ry: ang };
+    // --- Fire escapes (js/fire-escapes.js, mrdoob's 8c17250): on the older brick walk-ups and main-street blocks of
+    // 3 to 8 storeys, about two in five, on the rear wall (the lane side), never the street front; a landing per floor
+    // from the 2nd up, one escape per 15 m of wall
+    if ((kind === 1 || kind === 2) && mat < 2 && rnd() < 0.42) {
+      const storey = mat === 1 ? 3.6 : 3.4; // the facade's floor height (materials above)
+      const nf = Math.round(h / storey);
+      const back = front === 3 ? 2 : front === 2 ? 3 : front === 0 ? 1 : 0;
+      const lenOf = (f) => (f < 2 ? v1 - v0 : u1 - u0); // (walls of the main part, parts[0])
+      const wall = lenOf(back) >= 4.6 ? back : undefined; // (side walls are often party walls in a row)
+      if (nf >= 3 && nf <= 8 && wall !== undefined) {
+        const landings = Math.min(nf - 1, 7);
+        const count = lenOf(wall) >= 15 ? 2 : 1;
+        for (let k = 0; k < count; k++) {
+          const t = (k + 0.5) / count;
+          const [fx, fz] = wall < 2
+            ? local(wall === 0 ? u0 - 0.55 : u1 + 0.55, v0 + (v1 - v0) * t)
+            : local(u0 + (u1 - u0) * t, wall === 2 ? v0 - 0.55 : v1 + 0.55);
+          detail.fireEscapes.push({
+            x: fx, y: storey + 0.1, z: fz, h: (landings - 1) * storey + 1, storey, landings, ry: ang,
+            facing: [-Math.PI / 2, Math.PI / 2, Math.PI, 0][wall] // the module's +z faces out of the wall
+          });
+        }
+      }
+    }
+    // --- end fire escapes
     if (kind <= 2 || kind === 6 || kind === 7) {
       if (rnd() < 0.8) {
         const tankCol = Math.floor(rnd() * 4);
@@ -338,7 +363,7 @@ function buildCityBlocks(scene) {
         detail.dishes.push({ x: dx, y: topY + (roof === 1 ? 0.2 : 0), z: dz, ry: rnd() * Math.PI * 2 });
       }
     }
-    if (detail.tanks.length || detail.acs.length || detail.dishes.length) {
+    if (detail.tanks.length || detail.acs.length || detail.dishes.length || detail.fireEscapes.length) {
       quadtree.insert(detail);
       allBlocks.push(detail);
     }
@@ -436,6 +461,8 @@ function buildCityBlocks(scene) {
     m.count = 0;
     group.add(m);
   }
+  // Wrought-iron fire escapes: real stairs & landings near the camera, masked boxes further out (fire-escapes.js)
+  const fireEscapeSystem = window.CITY.createFireEscapes(group);
 
   let lastX = Infinity, lastZ = Infinity, activeCount = 0;
   const STREAM_RADIUS = 420;
@@ -453,7 +480,9 @@ function buildCityBlocks(scene) {
     near.sort((a, b) => (a.cx - fx) ** 2 + (a.cz - fz) ** 2 - ((b.cx - fx) ** 2 + (b.cz - fz) ** 2));
     activeCount = near.length;
     let nt = 0, na = 0, nd = 0;
+    fireEscapeSystem.begin();
     for (const d of near) {
+      for (const fe of d.fireEscapes || []) fireEscapeSystem.add(fe, fx, fz);
       for (const t of d.tanks) {
         if (nt >= MAX_TANKS) break;
         dummy.rotation.set(0, d.ry, 0);
@@ -493,6 +522,7 @@ function buildCityBlocks(scene) {
     if (tankInst.instanceColor) flagRange(tankInst.instanceColor, nt);
     flagRange(acInst.instanceMatrix, na);
     flagRange(dishInst.instanceMatrix, nd);
+    fireEscapeSystem.end();
   }
   update(0, 0, true);
 
