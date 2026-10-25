@@ -1,0 +1,9 @@
+[
+ {
+  "name": "diag",
+  "mode": "helicopter",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const C = window.CITY, T = window.__CITY_APP.trafficSystem; console.log('[diag] conflicts ' + JSON.stringify(T.signalConflicts)); for (const k of [...new Set(T.signalConflicts.map((c) => c.j))].concat(C.SIGNALS.junctions.filter((j) => Math.hypot(j.x + 2522, j.z - 482) < 30).map((j) => j.index))) { const j = C.SIGNALS.junctions[k]; console.log('[diag] junction ' + k + ' ' + Math.round(j.x) + ',' + Math.round(j.z) + ' road ' + j.road + ' axes ' + JSON.stringify(j.axes.map(([x, z]) => Math.round(Math.atan2(z, x) * 180 / Math.PI))) + ' arms ' + JSON.stringify(j.arms.map((a) => [a.road, Math.round(Math.atan2(a.uz, a.ux) * 180 / Math.PI), a.rank, a.w]))); } })()"
+ }
+]

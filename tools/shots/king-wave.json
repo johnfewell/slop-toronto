@@ -1,0 +1,37 @@
+[
+ {
+  "name": "king-wave-0",
+  "mode": "helicopter",
+  "time": "golden",
+  "wait": 25000,
+  "js": "(() => { const app = window.__CITY_APP; document.getElementById('btn-toggle-hud')?.click(); app.teleportTo(-1180, -349, 0); app.cameraSystem.cinema = () => ({ pos: [-1062, 5.2, -352.5], look: [-200, 4.6, -349], fov: 26 }); })()"
+ },
+ {
+  "name": "king-wave-1",
+  "wait": 3000
+ },
+ {
+  "name": "king-wave-2",
+  "wait": 3000
+ },
+ {
+  "name": "king-wave-3",
+  "wait": 3000
+ },
+ {
+  "name": "king-wave-4",
+  "wait": 3000
+ },
+ {
+  "name": "king-wave-5",
+  "wait": 3000
+ },
+ {
+  "name": "king-wave-6",
+  "wait": 3000
+ },
+ {
+  "name": "king-wave-7",
+  "wait": 3000
+ }
+]
