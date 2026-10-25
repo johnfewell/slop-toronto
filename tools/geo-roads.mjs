@@ -134,13 +134,22 @@ function crossesRoad(w) {
 // tools/geo-rails.mjs); ramps no steeper than `maxGrade`, no gentler than `minGrade`, ending `clear` metres short of the
 // cross streets' junctions, which stay at their own grade. Where that leaves too little room the cut is shallower and
 // tools/geo-rails.mjs lifts the tracks the rest of the way.
+// `under: 'subway'` (John, 2026-10-25: Rosedale Valley Road, the valley the flat city leaves out): the street dips under
+// the subway's covered bridge instead (OpenStreetMap railway=subway, covered & bridge), which js/subway.js then sets
+// down on the ground over the cut as a covered concrete box; `box`: the box's half width, so the floor runs on under
+// all of it however skewed the crossing. `follow`: the cut follows the street's own centreline (a curving street: its
+// walls stay at the street's sides), not one straight axis. `bank`: grassed banks instead of walls (out per metre up;
+// js/city-config.js cuts them short at whatever stands in their way).
 const SIDEWALK_W = 4.6; // (tools/geo-blocks.mjs SIDEWALK: the curb to the property line)
-const ROAD_CUTS = [{ name: 'Strachan Avenue', x0: -2600, x1: -2460, z0: -330, z1: 240, depth: 6.2, maxGrade: 0.1, minGrade: 0.05, clear: 16 }];
+const ROAD_CUTS = [
+  { name: 'Strachan Avenue', x0: -2600, x1: -2460, z0: -330, z1: 240, depth: 6.2, maxGrade: 0.1, minGrade: 0.05, clear: 16 },
+  { name: 'Rosedale Valley Road', x0: 1520, x1: 1760, z0: -2760, z1: -2600, depth: 7.2, maxGrade: 0.09, minGrade: 0.08, clear: 16, under: 'subway', box: 5.4, follow: true, bank: 2 }
+];
 for (const w of ways) {
   const u = ROAD_CUTS.find((o) => o.name === w.name && w.pts.some(([x, z]) => x > o.x0 && x < o.x1 && z > o.z0 && z < o.z1));
   if (!u) continue;
   w.cut = u;
-  w.railUnder = true; // (tools/geo-rails.mjs: the railway passes over it)
+  if (!u.under) w.railUnder = true; // (tools/geo-rails.mjs: the railway passes over it)
   if (w.bridge) {
     w.bridge = false;
     w.layer = 0;
@@ -154,11 +163,16 @@ log(`road cuts: ${ways.filter((w) => w.cut).length} ways of ${ROAD_CUTS.map((o) 
 const railKey = (x, z) => `${Math.round(x * 100)},${Math.round(z * 100)}`;
 const railGrid = new Map();
 const railAt = new Set();
+const subwayCovered = []; // the subway's covered bridges' segments [[x, z], [x, z]] (road cuts `under: 'subway'`)
 {
   let elements = [];
   try { elements = load('osm_rails.json').elements; } catch { /* no rails: no rail bridges */ }
   for (const e of elements) {
     const t = e.tags || {};
+    if (e.type === 'way' && e.geometry && t.railway === 'subway' && t.covered === 'yes' && t.bridge && t.bridge !== 'no' && t.bridge !== 'viaduct') {
+      const P = e.geometry.map((g) => toWorld(g.lon, g.lat));
+      for (let i = 0; i + 1 < P.length; i++) subwayCovered.push([P[i], P[i + 1]]);
+    }
     if (e.type !== 'way' || !e.geometry || t.railway !== 'rail' || (t.tunnel && t.tunnel !== 'no')) continue;
     const r = { bridge: !!t.bridge && t.bridge !== 'no', layer: Math.round(num(t.layer) || 0), pts: e.geometry.map((g) => toWorld(g.lon, g.lat)) };
     for (const [x, z] of r.pts) railAt.add(railKey(x, z));
@@ -373,8 +387,9 @@ for (let pass = 0; pass < 8; pass++) {
 // railway's crossings, grouped (a corridor's parallel tracks); each group's floor runs under its tracks, 3.5 m past the
 // outer ones either way, with a ramp up to street level at either end clear of the nearest cross street's junction.
 // The ways get a vertex at every break of slope (where tools/geo-roads.mjs's street graph puts a node, so the traffic
-// follows the profile) and their heights (negative: below street level).
-export const roadCutOut = []; // [name, half width (carriageways & sidewalks), [x, z, h, ...] the axis at the breaks]
+// follows the profile) and their heights (negative: below street level). The cut's axis (js/city-config.js reads it as
+// a polyline) is the straight line through the breaks, or with `follow` the street's own centreline, every vertex.
+export const roadCutOut = []; // [name, half width (carriageways & sidewalks), [x, z, h, ...] the axis (polyline), bank?]
 for (const C of ROAD_CUTS) {
   const W = ways.filter((w) => w.cut === C);
   if (!W.length) continue;
@@ -386,11 +401,24 @@ for (const C of ROAD_CUTS) {
   const ux = Math.cos(ang), uz = Math.sin(ang);
   const along = ([x, z]) => (x - cx) * ux + (z - cz) * uz;
   const across = ([x, z]) => -(x - cx) * uz + (z - cz) * ux;
-  // the railway's crossings
+  // the railway's crossings (or the subway's covered bridge's: then the floor runs on under the whole box, `pad` either
+  // side of its track, the more the more skewed the crossing)
   const hits = [];
+  let pad = 3.5;
   for (const w of W) {
     for (let i = 0; i + 1 < w.pts.length; i++) {
       const p0 = w.pts[i], p1 = w.pts[i + 1];
+      if (C.under === 'subway') {
+        for (const [q0, q1] of subwayCovered) {
+          const t = crossT(p0, p1, q0, q1);
+          if (t < 0) continue;
+          hits.push(along([p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t]));
+          const a = [p1[0] - p0[0], p1[1] - p0[1]], b = [q1[0] - q0[0], q1[1] - q0[1]];
+          const sin = Math.abs(a[0] * b[1] - a[1] * b[0]) / (Math.hypot(...a) * Math.hypot(...b) || 1);
+          pad = Math.max(pad, (C.box + 1.5) / Math.max(sin, 0.3));
+        }
+        continue;
+      }
       for (let ix = Math.floor(Math.min(p0[0], p1[0]) / SEG_CELL); ix <= Math.floor(Math.max(p0[0], p1[0]) / SEG_CELL); ix++) {
         for (let iz = Math.floor(Math.min(p0[1], p1[1]) / SEG_CELL); iz <= Math.floor(Math.max(p0[1], p1[1]) / SEG_CELL); iz++) {
           for (const [r, j] of railGrid.get(segKey(ix, iz)) || []) {
@@ -416,7 +444,7 @@ for (const C of ROAD_CUTS) {
     });
   }
   for (const [a, b] of groups) {
-    const f0 = a - 3.5, f1 = b + 3.5;
+    const f0 = a - pad, f1 = b + pad;
     const north = Math.max(-Infinity, ...junctions.filter((j) => j < f0)) + C.clear;
     const south = Math.min(Infinity, ...junctions.filter((j) => j > f1)) - C.clear;
     const D = Math.min(C.depth, C.maxGrade * (f0 - north), C.maxGrade * (south - f1));
@@ -453,15 +481,25 @@ for (const C of ROAD_CUTS) {
       w.pts.forEach((p, i) => {
         const t = along(p);
         if (t < r0 || t > r1) return;
-        // (a vertex within half a metre of a break is the break)
-        if (prof.some(([b]) => Math.abs(b - t) < 0.5)) (w.cutBreaks || (w.cutBreaks = new Set())).add(p);
+        // (a vertex within half a metre of a break is the break; following a curving street, every vertex on the ramps
+        // is one too: the street graph's nodes carry the heights, a bend between them would be driven at street level)
+        if (prof.some(([b]) => Math.abs(b - t) < 0.5) || C.follow) (w.cutBreaks || (w.cutBreaks = new Set())).add(p);
         w.h[i] = Math.min(w.h[i], hAt(t));
         half = Math.max(half, Math.abs(across(p)) + w.w / 2);
       });
     }
     const pt = (t, h) => [cx + ux * t, cz + uz * t, h];
-    roadCutOut.push([C.name, Math.round((half + SIDEWALK_W) * 10) / 10, prof.flatMap(([t, h]) => pt(t, h)).map((v) => Math.round(v * 100) / 100)]);
-    log(`road cut ${C.name}: ${Math.round(a)}..${Math.round(b)} m along it, ${D.toFixed(1)} m down (the tracks ${(C.depth - D).toFixed(1)} m up), ramps ${Math.round(f0 - r0)} m & ${Math.round(r1 - f1)} m, ${(half + SIDEWALK_W).toFixed(1)} m either side`);
+    let axis = prof.flatMap(([t, h]) => pt(t, h));
+    if (C.follow) {
+      // the street's centreline from ramp end to ramp end (one chain of ways: its points in order along it), its own
+      // width either side
+      const seen = new Map();
+      for (const w of W) for (const p of w.pts) { const t = along(p); if (t >= r0 - 0.01 && t <= r1 + 0.01) seen.set(`${p[0].toFixed(2)},${p[1].toFixed(2)}`, [p[0], p[1], hAt(t), t]); }
+      axis = [...seen.values()].sort((a, b) => a[3] - b[3]).flatMap(([x, z, h]) => [x, z, h]);
+      half = Math.max(...W.map((w) => w.w / 2));
+    }
+    roadCutOut.push([C.name, Math.round((half + SIDEWALK_W) * 10) / 10, axis.map((v) => Math.round(v * 100) / 100), ...(C.bank ? [C.bank] : [])]);
+    log(`road cut ${C.name}: ${Math.round(a)}..${Math.round(b)} m along it, ${D.toFixed(1)} m down (${C.under ? `under the ${C.under}` : `the tracks ${(C.depth - D).toFixed(1)} m up`}), ramps ${Math.round(f0 - r0)} m & ${Math.round(r1 - f1)} m, ${(half + SIDEWALK_W).toFixed(1)} m either side`);
   }
 }
 

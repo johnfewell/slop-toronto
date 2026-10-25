@@ -13,13 +13,15 @@
 //   Ave, Indian Rd) and tunnel portals at their ends (and at Keele station's building over the tracks), a chain-link
 //   fence on the walls' upstand round the top; the street level is masked out over them (city-grid.js
 //   maskRoadCuts). Trains run both ways through them, two more stand on Vincent Yard's sidings.
-// - The covered bridge over the Rosedale Valley west of Castle Frank: an enclosed concrete box over Rosedale Valley
-//   Road on blade piers, between grassed mounds (the valley's sides, which the flat city leaves out).
+// - The covered bridge over the Rosedale Valley west of Castle Frank: an enclosed concrete box at about ground level,
+//   Rosedale Valley Road dipping under it between grassed banks, a ravine (city-config.js cutAt & cutBankAt,
+//   tools/geo-roads.mjs ROAD_CUTS: the flat city leaves the valley out), its fascia & corner pilasters where the road
+//   passes under, short abutment walls either side of it, grassed mounds where it goes in at either end. (Without the cut in the geodata: the box raised on blade piers over the road, as before.)
 // - Every station's street entrances (OpenStreetMap railway=subway_entrance, or the station's node where none is
 //   mapped): a stairway going down, set along the street on its sidewalk (beyond the sidewalk where the node lies in
 //   open ground; else against the building line, clear of the inner walking line), its low walls & rail round it, and
 //   the TTC's insignia pylon at the curb abreast of its open end (js/ttc-pylons.js draws them: the insignia, the entry
-//   ID sign with the station's name & lines). An entrance in a building gets the pylon alone, at the curb. The stairs are a flat decal at the sidewalk drawn as a pit
+//   ID sign with the station's name & lines; or, where Street View shows one still stands, the older square lantern). An entrance in a building gets the pylon alone, at the curb. The stairs are a flat decal at the sidewalk drawn as a pit
 //   (the view ray traced through the stairwell in the shader): the sidewalk itself stays whole.
 // - Colliders for the player (the piers & abutments, the cuts' fences & the decks' parapets, the covered bridge's
 //   piers & mounds, the stair walls & pylons); the trains sound like the
@@ -351,10 +353,13 @@ const SUBWAY_CUT_RECTS = SUBWAY_CUTS.flatMap((c) => c.rects);
 // ---------------------------------------------------------------------------------------------------------------------
 // The covered bridges (OpenStreetMap covered=yes bridges off the viaduct: Line 2's crossing of the Rosedale Valley west
 // of Castle Frank, an enclosed concrete box over Rosedale Valley Road). The valley isn't in the flat city (Bloor St
-// crosses it on a flyover deck beside it): the box stands on blade piers between two grassed mounds, the valley's
-// sides, each faced with a concrete headwall where the box goes in. Nothing of the trains shows.
+// crosses it on a flyover deck beside it). Where the road dips under the box in a cut (the geodata's road cut, John
+// 2026-10-25: as Strachan Ave dips under the railway) the box sits on the ground, its underside CB_CLEAR over the cut's
+// floor and its top a few metres up; else it stands on blade piers over the road. Either way, a grassed mound at each
+// end with a concrete headwall where the box goes in. Nothing of the trains shows.
 // ---------------------------------------------------------------------------------------------------------------------
-const CB_SOFFIT = 4.9; // over the road
+const CB_SOFFIT = 4.9; // over the road (no cut under it)
+const CB_CLEAR = 4.7; // over a road cut's floor
 const CB_H = 5.0;
 const CB_HALF = 4.9;
 const CB_ABUT = 10; // a mound's flat top behind its headwall
@@ -385,7 +390,16 @@ const COVERED = (() => {
       pts.push({ x, z });
     }
     const len = lenOf(pts);
-    const top = CB_SOFFIT + CB_H;
+    // a road cut under it: the deepest floor under the box
+    let floor = 0;
+    const cutAt = window.CITY.cutAt || (() => 0);
+    for (let s = 0; s <= len; s += 1) {
+      const p = at(pts, s);
+      for (const c of [-CB_HALF, 0, CB_HALF]) floor = Math.min(floor, cutAt(p.x - p.tz * c, p.z + p.tx * c));
+    }
+    const atGrade = floor < -3;
+    const soffit = atGrade ? floor + CB_CLEAR : CB_SOFFIT;
+    const top = soffit + CB_H;
     const W = CB_HALF + 0.6, Sp = top * CB_SLOPE;
     // each end: its point, the way out (away from the valley), the mound's footprint
     const ends = [0, 1].map((end) => {
@@ -393,7 +407,7 @@ const COVERED = (() => {
       const d = end ? 1 : -1;
       return { x: e.x, z: e.z, tx: e.tx * d, tz: e.tz * d };
     });
-    return { pts, len, top, W, Sp, ends };
+    return { pts, len, top, W, Sp, ends, soffit, atGrade, floor };
   }).filter((c) => c.len > 30);
 })();
 // (x, z) in an end's frame: a metres out from its headwall, c across
@@ -1009,46 +1023,97 @@ function buildCut(C, parent, colliders, mats) {
   return stats;
 }
 
-// A covered bridge: the box (pilasters every 6 m, a cornice), blade piers clear of the road under it, and at each end
-// a concrete headwall with its wing walls holding a grassed mound
+// A covered bridge: the box (pilasters every 6 m, a cornice), blade piers clear of the road under it (or, at grade over
+// a road cut, its sides reaching down only over the cut, a fascia & pilasters where the road passes under), and at each
+// end a concrete headwall with its wing walls holding a grassed mound
 function buildCovered(V, parent, colliders, mats) {
   const group = new THREE.Group();
   group.name = 'SubwayCoveredBridge';
   parent.add(group);
   const concrete = [], grass = [];
   const { pts, len, top, W, Sp } = V;
-  const y0 = CB_SOFFIT;
-  // the box, every ~6 m
+  const y0 = V.soffit;
+  const cutAt = window.CITY.cutAt || (() => 0);
+  const overCut = (x, z) => cutAt(x, z) < y0 - 0.3; // (the floor well below the box: open under it)
+  const C = (p, c, y) => [p.x - p.tz * c, y, p.z + p.tx * c];
+  // the box: its top, cornice & pilasters every ~6 m; its sides & underside in 1 m slices (at grade: down into the
+  // ground, or over the cut down to the soffit, with the soffit's drip band & the fascia)
   const n = Math.max(1, Math.round(len / 6));
   for (let i = 0; i < n; i++) {
     const s0 = (len * i) / n, s1 = (len * (i + 1)) / n;
     const p0 = at(pts, s0), p1 = at(pts, s1);
-    const C = (p, c, y) => [p.x - p.tz * c, y, p.z + p.tx * c];
     quad(concrete, C(p0, -CB_HALF, top), C(p1, -CB_HALF, top), C(p1, CB_HALF, top), C(p0, CB_HALF, top), 0, 1, 0);
-    quad(concrete, C(p0, -CB_HALF, y0), C(p1, -CB_HALF, y0), C(p1, CB_HALF, y0), C(p0, CB_HALF, y0), 0, -1, 0);
-    for (const sg of [-1, 1]) quad(concrete, C(p0, CB_HALF * sg, y0), C(p1, CB_HALF * sg, y0), C(p1, CB_HALF * sg, top), C(p0, CB_HALF * sg, top), -p0.tz * sg, 0, p0.tx * sg);
-    // a pilaster at each bay's joint, the cornice along the top, a drip band along the soffit
-    if (i) for (const sg of [-1, 1]) obox(concrete, p0.x, p0.z, p0.tx, p0.tz, -0.3, 0.3, sg > 0 ? CB_HALF : -CB_HALF - 0.18, sg > 0 ? CB_HALF + 0.18 : -CB_HALF, y0 - 0.25, top, sg > 0 ? 1 | 2 | 8 | 16 | 32 : 1 | 2 | 4 | 16 | 32);
+    if (i) {
+      for (const sg of [-1, 1]) {
+        const q = C(p0, CB_HALF * sg, 0), foot = !V.atGrade || overCut(q[0], q[2]) ? y0 - 0.25 : -0.3;
+        obox(concrete, p0.x, p0.z, p0.tx, p0.tz, -0.3, 0.3, sg > 0 ? CB_HALF : -CB_HALF - 0.18, sg > 0 ? CB_HALF + 0.18 : -CB_HALF, foot, top, sg > 0 ? 1 | 2 | 8 | 16 | 32 : 1 | 2 | 4 | 16 | 32);
+      }
+    }
     obox(concrete, p0.x, p0.z, p0.tx, p0.tz, 0, s1 - s0, -CB_HALF - 0.35, CB_HALF + 0.35, top, top + 0.45, 1 | 2 | 4 | 8);
-    obox(concrete, p0.x, p0.z, p0.tx, p0.tz, 0, s1 - s0, -CB_HALF - 0.12, CB_HALF + 0.12, y0 - 0.25, y0, 2 | 4 | 8);
   }
-  // piers about every 30 m, each moved along (up to 10 m) to stand clear of the streets under it, else left out
-  const roads = ROADS.filter((r) => !r.raised && r.pts.some((p) => pts.some((q) => Math.hypot(p.x - q.x, p.z - q.z) < len + 40)));
-  const clear = (x, z) => {
-    for (const r of roads) for (let i = 1; i < r.pts.length; i++) if (segDist(x, z, r.pts[i - 1], r.pts[i]) < r.w / 2 + 2.5) return false;
-    return true;
-  };
-  const m = Math.max(1, Math.round(len / 30));
+  const m1 = Math.max(1, Math.round(len));
+  let fascia = 0;
+  for (let i = 0; i < m1; i++) {
+    const s0 = (len * i) / m1, s1 = (len * (i + 1)) / m1;
+    const p0 = at(pts, s0), p1 = at(pts, s1);
+    for (const sg of [-1, 1]) {
+      const a0 = C(p0, CB_HALF * sg, 0), a1 = C(p1, CB_HALF * sg, 0);
+      const open0 = !V.atGrade || overCut(a0[0], a0[2]), open1 = !V.atGrade || overCut(a1[0], a1[2]);
+      const b0 = open0 ? y0 : -0.3, b1 = open1 ? y0 : -0.3;
+      quad(concrete, C(p0, CB_HALF * sg, b0), C(p1, CB_HALF * sg, b1), C(p1, CB_HALF * sg, top), C(p0, CB_HALF * sg, top), -p0.tz * sg, 0, p0.tx * sg);
+      if (V.atGrade && open0 && open1) {
+        // the fascia where the road passes under: a deep beam standing proud of the side, its drip under it
+        const ou = (CB_HALF + 0.16) * sg;
+        obox(concrete, p0.x, p0.z, p0.tx, p0.tz, 0, s1 - s0, Math.min(CB_HALF * sg, ou), Math.max(CB_HALF * sg, ou), y0 - 0.3, y0 + 1.15, 1 | 2 | (sg > 0 ? 8 : 4));
+        fascia++;
+      }
+    }
+    // the underside, over the road (or everywhere, raised on its piers)
+    if (!V.atGrade || [-CB_HALF, 0, CB_HALF].some((c) => { const q = C(at(pts, (s0 + s1) / 2), c, 0); return overCut(q[0], q[2]); })) {
+      quad(concrete, C(p0, -CB_HALF, y0), C(p1, -CB_HALF, y0), C(p1, CB_HALF, y0), C(p0, CB_HALF, y0), 0, -1, 0);
+      if (!V.atGrade) obox(concrete, p0.x, p0.z, p0.tx, p0.tz, 0, s1 - s0, -CB_HALF - 0.12, CB_HALF + 0.12, y0 - 0.25, y0, 2 | 4 | 8);
+    }
+  }
   let piers = 0;
-  for (let i = 1; i < m; i++) {
-    for (const d of [0, 3, -3, 6, -6, 10, -10]) {
-      const p = at(pts, (len * i) / m + d);
-      if (![-4.4, 0, 4.4].every((c) => [-0.8, 0.8].every((a) => clear(p.x + p.tx * a - p.tz * c, p.z + p.tz * a + p.tx * c)))) continue;
-      obox(concrete, p.x, p.z, p.tx, p.tz, -0.7, 0.7, -4.2, 4.2, -0.3, y0 - 0.25, 4 | 8 | 16 | 32);
-      obox(concrete, p.x, p.z, p.tx, p.tz, -1.0, 1.0, -4.8, 4.8, y0 - 0.85, y0 - 0.25, 1 | 2 | 4 | 8 | 16 | 32);
-      obbCollider(colliders, p.x, p.z, p.tx, p.tz, 0.8, 4.3, y0);
-      piers++;
-      break;
+  if (V.atGrade) {
+    // the pilasters where the box's sides meet the cut's retaining walls (city-grid.js, at the cut's half width), from
+    // the cut's floor to the cornice: the corners of the underpass
+    for (const sg of [-1, 1]) {
+      let prev = null;
+      for (let s = 0; s <= len; s += 0.25) {
+        const q = C(at(pts, s), CB_HALF * sg, 0), open = overCut(q[0], q[2]);
+        if (prev !== null && open !== prev) {
+          const p = at(pts, s - 0.125);
+          obox(concrete, p.x, p.z, p.tx, p.tz, -0.45, 0.45, sg > 0 ? CB_HALF - 0.1 : -CB_HALF - 0.32, sg > 0 ? CB_HALF + 0.32 : -CB_HALF + 0.1, V.floor - 0.2, top + 0.45, 4 | 8 | 16 | 32 | 1);
+          piers++;
+        }
+        prev = open;
+      }
+    }
+    // its collider: the box, at grade (a collider's height starts at the street level: the cut's floor passes under it)
+    const m2 = Math.max(1, Math.round(len / 8));
+    for (let i = 0; i < m2; i++) {
+      const p = at(pts, (len * (i + 0.5)) / m2);
+      obbCollider(colliders, p.x, p.z, p.tx, p.tz, len / m2 / 2 + 0.2, CB_HALF + 0.35, top + 0.45);
+    }
+  } else {
+    // piers about every 30 m, each moved along (up to 10 m) to stand clear of the streets under it, else left out
+    const roads = ROADS.filter((r) => !r.raised && r.pts.some((p) => pts.some((q) => Math.hypot(p.x - q.x, p.z - q.z) < len + 40)));
+    const clear = (x, z) => {
+      for (const r of roads) for (let i = 1; i < r.pts.length; i++) if (segDist(x, z, r.pts[i - 1], r.pts[i]) < r.w / 2 + 2.5) return false;
+      return true;
+    };
+    const m = Math.max(1, Math.round(len / 30));
+    for (let i = 1; i < m; i++) {
+      for (const d of [0, 3, -3, 6, -6, 10, -10]) {
+        const p = at(pts, (len * i) / m + d);
+        if (![-4.4, 0, 4.4].every((c) => [-0.8, 0.8].every((a) => clear(p.x + p.tx * a - p.tz * c, p.z + p.tz * a + p.tx * c)))) continue;
+        obox(concrete, p.x, p.z, p.tx, p.tz, -0.7, 0.7, -4.2, 4.2, -0.3, y0 - 0.25, 4 | 8 | 16 | 32);
+        obox(concrete, p.x, p.z, p.tx, p.tz, -1.0, 1.0, -4.8, 4.8, y0 - 0.85, y0 - 0.25, 1 | 2 | 4 | 8 | 16 | 32);
+        obbCollider(colliders, p.x, p.z, p.tx, p.tz, 0.8, 4.3, y0);
+        piers++;
+        break;
+      }
     }
   }
   // the ends: headwall (its cornice), wing walls, the mound
@@ -1076,7 +1141,7 @@ function buildCovered(V, parent, colliders, mats) {
     obbCollider(colliders, e.x + (e.tx * R) / 2, e.z + (e.tz * R) / 2, e.tx, e.tz, R / 2, W + Sp * 0.88, Ht + 1);
   }
   for (const m2 of [meshOf(concrete, mats.coveredConcrete, 'SubwayCoveredBridge'), meshOf(grass, mats.mound, 'SubwayCoveredMounds')].filter(Boolean)) group.add(m2);
-  return { piers };
+  return { piers, fascia };
 }
 
 // Train routes through a trench: on the main tracks (eastbound on the south one), EXT m on into the tunnels at
@@ -1248,7 +1313,7 @@ function buildEntrances(group, colliders) {
     return null;
   };
   const sites = [];
-  const todo = S.entrances.filter(([x, z]) => inCity(x, z)).map(([x, z, st, colour, name]) => ({ x, z, st, colour, name }));
+  const todo = S.entrances.filter(([x, z]) => inCity(x, z)).map(([x, z, st, colour, name, sign]) => ({ x, z, st, colour, name, sign: sign || 0 }));
   for (const s of stations) {
     if (!todo.some((e) => e.st === s[2] && Math.hypot(e.x - s[0], e.z - s[1]) < 400)) todo.push({ x: s[0], z: s[1], st: s[2], colour: s[3], name: '', fromStation: true });
   }
@@ -1300,6 +1365,7 @@ function buildEntrances(group, colliders) {
     site.y = blockAt(site.x, site.z) ? SWH : 0;
     site.name = name;
     site.colour = colour;
+    site.sign = e.sign || 0; // (0 the insignia pylon, 1-2 the older lantern: tools/geo-subway.mjs LANTERNS)
     site.curbSide = { x: -R.nx, z: -R.nz };
     placed.push(site);
     if (site.kind === 'stair') stairs++;
@@ -1337,7 +1403,7 @@ function buildEntrances(group, colliders) {
     const py = blockAt(px, pz) ? SWH : 0;
     let yaw = Math.atan2(tx, tz);
     if (Math.cos(yaw) * -p.curbSide.x - Math.sin(yaw) * -p.curbSide.z < 0) yaw += Math.PI;
-    pylons.push({ x: px, y: py, z: pz, yaw, station: p.name, colour: p.colour });
+    pylons.push({ x: px, y: py, z: pz, yaw, station: p.name, colour: p.colour, sign: p.sign });
     colliders.push({ minX: px - 0.3, maxX: px + 0.3, minZ: pz - 0.3, maxZ: pz + 0.3, maxY: py + 4.0 });
   }
   const wallMat = createConcreteMaterial(0x8f8a83);
@@ -1469,7 +1535,7 @@ function createSubway(scene) {
   }
 
   const cutInfo = SUBWAY_CUTS.map((C, i) => `${C.groups.map((G) => `${Math.round(G.t1 - G.t0)} m`).join(' + ')} at x ${Math.round(C.world(C.len / 2, 0).x)} (${cutStats[i].portals} portals, decks: ${cutStats[i].decks.join(', ') || 'none'})`).join('; ');
-  console.info(`[subway] ${VIADUCTS.length} viaduct (${VIADUCTS.map((V) => `${Math.round(V.len)} m, lower deck at ${Math.round(V.railY * 10) / 10} m, ${piers} piers`).join('; ')}), ${SUBWAY_CUTS.length} open cuts (${cutInfo}), ${COVERED.length} covered bridge (${COVERED.map((V, i) => `${Math.round(V.len)} m, ${coveredStats[i].piers} piers`).join('; ')}), ${nParked} trains laid up, ${routes.length} train routes; ${ent.stairs} stair entrances & ${ent.signs} pylons alone at ${new Set(ent.sites.map((s) => s.name)).size} stations (${ent.skipped} left out)`);
+  console.info(`[subway] ${VIADUCTS.length} viaduct (${VIADUCTS.map((V) => `${Math.round(V.len)} m, lower deck at ${Math.round(V.railY * 10) / 10} m, ${piers} piers`).join('; ')}), ${SUBWAY_CUTS.length} open cuts (${cutInfo}), ${COVERED.length} covered bridge (${COVERED.map((V, i) => (V.atGrade ? `${Math.round(V.len)} m at grade, its top ${V.top.toFixed(1)} m up, over a road cut ${(-V.floor).toFixed(1)} m down (${coveredStats[i].piers} pilasters, ${coveredStats[i].fascia} m of fascia)` : `${Math.round(V.len)} m, ${coveredStats[i].piers} piers`)).join('; ')}), ${nParked} trains laid up, ${routes.length} train routes; ${ent.stairs} stair entrances & ${ent.signs} pylons alone at ${new Set(ent.sites.map((s) => s.name)).size} stations (${ent.skipped} left out)`);
   return api;
 }
 

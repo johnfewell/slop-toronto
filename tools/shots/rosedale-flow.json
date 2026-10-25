@@ -1,0 +1,9 @@
+[
+ {
+  "name": "flow-rosedale",
+  "mode": "person",
+  "time": "midday",
+  "wait": 42000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;app.teleportTo(1450,-2900,0);app.cameraSystem.cinema=()=>({pos:[1600,60,-2760],look:[1641,0,-2686],fov:50});const seg=[[1545,-2728],[1730,-2627]];const inBox=(v)=>v.x>1545&&v.x<1730&&v.z>-2735&&v.z<-2620&&Math.abs((v.y||0))<9;let n=0,stop=0,sum=0,ids=new Set();const t0=performance.now();const id=setInterval(()=>{const t=(performance.now()-t0)/1000;if(t<5)return;for(const v of [...app.trafficSystem.cars,...app.trafficSystem.buses]){if(v.active===false||!inBox(v))continue;n++;sum+=(v.speed||0);if((v.speed||0)<0.5)stop++;ids.add(v);}if(t>40){clearInterval(id);console.log('[flow] samples '+n+' vehicles '+ids.size+' mean speed '+(sum/Math.max(1,n)).toFixed(2)+' stopped '+(100*stop/Math.max(1,n)).toFixed(1)+'%');}},250);})()"
+ }
+]

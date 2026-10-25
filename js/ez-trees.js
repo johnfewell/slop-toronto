@@ -142,13 +142,15 @@ async function buildEzTrees(scene, generated) {
 
   // Sites: the City's street trees, then the invented ones as the nearest EZ-Tree model
   const sites = [];
+  // (a tree on a road cut's grassed bank, city-config.js treeOffRail lets it stand there: down on the slope)
+  const cutDown = (x, z) => Math.min(0, window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0);
   const ST = GEO.streetTrees || [];
   let offRail = 0;
   for (let i = 0; i < ST.length; i += 4) {
     const x = ST[i], z = ST[i + 1];
     // (none in the rail corridor, on its embankments or under its bridges: city-config.js treeOffRail)
     if (!window.CITY.treeOffRail(x, z)) { offRail++; continue; }
-    sites.push({ x, y: blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0, z, model: ST[i + 2], height: ST[i + 3] / 10, tier: 1 });
+    sites.push({ x, y: (blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0) + cutDown(x, z), z, model: ST[i + 2], height: ST[i + 3] / 10, tier: 1 });
   }
   const genModel = (sp, h) => {
     const big = h > 15 ? 2 : h > 9 ? 1 : 0;
@@ -158,7 +160,26 @@ async function buildEzTrees(scene, generated) {
   };
   for (const t of generated) {
     const h = t.scale * slopHeight;
-    sites.push({ x: t.x, y: t.y || 0, z: t.z, model: genModel(t.species || 0, h), height: h, tier: t.tier || 0 });
+    sites.push({ x: t.x, y: (t.y || 0) + cutDown(t.x, t.z), z: t.z, model: genModel(t.species || 0, h), height: h, tier: t.tier || 0 });
+  }
+  // a few on the road cuts' grassed banks (Rosedale Valley Road: the ravine's wooded sides), every ~11 m where a bank is
+  // over 6 m wide, partway up it (11 m or more from the road's middle)
+  let onBanks = 0;
+  for (const c of window.CITY.ROAD_CUTS || []) {
+    if (!c.bankSt) continue;
+    for (let s = 6; s < c.len; s += 11) {
+      for (const sg of [1, -1]) {
+        const bk = window.CITY.cutBankAt(c, s, sg);
+        if (!bk || bk.w < 6) continue;
+        const r = Math.abs(Math.sin(s * 12.9898 + sg * 78.233) * 43758.5453) % 1;
+        const q = window.CITY.cutAxisAt(c, s + (r - 0.5) * 4), o = c.half + 0.3 + bk.w * (0.35 + 0.35 * r);
+        const x = q.x + q.nx * sg * o, z = q.z + q.nz * sg * o;
+        if (!window.CITY.treeOffRail(x, z)) continue;
+        const height = 9 + 6 * r;
+        sites.push({ x, y: (blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0) + cutDown(x, z), z, model: genModel(onBanks % 3, height), height, tier: 0 });
+        onBanks++;
+      }
+    }
   }
 
   const group = new THREE.Group();
@@ -332,7 +353,7 @@ async function buildEzTrees(scene, generated) {
     mesh.instanceMatrix.needsUpdate = true;
   });
   scene.add(group);
-  console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards), ${ids.length} models`);
+  console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards, ${onBanks} on road cuts' banks), ${ids.length} models`);
   return { group, update };
 }
 

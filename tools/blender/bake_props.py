@@ -276,6 +276,179 @@ if KIND == 'ttc-pylon':
     export(obj2, os.path.join(WORK, 'ttc-pylon-drawing.glb'))
     sys.exit(0)
 
+# ---------------------------------------------------------------- ttc-lantern: modelled from Street View, no source mesh
+# The TTC's older subway entrance sign, still at many stations (2026 Street View: Osgoode NW & SW, St Patrick NE & NW,
+# Chester, Ossington, Wellesley...): a square lantern, a frustum wider at the top (its corners chamfered), painted cream,
+# lit from inside through four translucent white faces each printed with the TTC logo, the logo larger than the face so
+# its wings run out to the corners and seem to wrap round them; a flared rim round the top, a recessed tray on top, a
+# square block under it, on a brushed stainless pole. Two mountings, two objects in one GLB: 'ttc-lantern-top' (the
+# lantern on the pole's top, Osgoode NW, Chester) and 'ttc-lantern-arm' (hung from an arm off the pole's top, reaching
+# out to +x, St Patrick NW, Ossington). No station name: the real lanterns carry only the logo.
+# Each side is folded: the logo's shield on a flat middle facet, its wings on facets angled back (Chester E, St Patrick
+# NE), the cream corners between the sides. The printed facets' UVs run over each side's panel unfolded (u 0..1 across
+# its top width, v 0..1 up), so js/ttc-pylons.js maps the logo onto it with LANTERN_LOGO's scale (printed below); the preview GLB carries the panel
+# drawn with the logo (<workdir>/ttc-lantern-face.png). Sizes: from Street View at Osgoode NW (a person beside the pole:
+# the lantern ~0.65 m tall & as wide at the top, its bottom ~3.5 m up) and close-ups at Chester W & St Patrick NE (the
+# body 0.52 m, the hood 0.12 m, the bottom 0.68 of the top's width, the block). SRC is the logo image (the preview's
+# only); <workdir>/ttc-lantern-head-preview.glb is the lantern alone, no pole, for the comparison with Street View.
+if KIND == 'ttc-lantern':
+    PR = 0.052                               # pole radius (as the insignia pylon's)
+    BASE = [(0.32, 0.0), (0.32, 0.025), (0.11, 0.04), (0.09, 0.10), (0.07, 0.115), (PR, 0.12)]
+    BH, HB, HT = 0.52, 0.21, 0.31            # the body's height, its half width at the bottom & top
+    # a side's plan (half width 1, the -y side, left to right from outside): the shield's facet flat across the middle,
+    # the wings' facets folded back 40 degrees; then the corner: a post standing out between the sides (Chester W)
+    SHW, WING, FOLD = 0.42, 0.28, math.radians(40)
+    we = (SHW + WING * math.cos(FOLD), -1 + WING * math.sin(FOLD))
+    POST = 0.10                              # the corner posts stand out this far (along the diagonal) past the wings' ends
+    pa = (we[0] + POST * 0.7071, we[1] - POST * 0.7071)
+    SIDE = [(-we[0], we[1]), (-SHW, -1.0), (SHW, -1.0), we, pa, (-pa[1], -pa[0])]  # (then the next side's first)
+    UNF = [-(SHW + WING), -SHW, SHW, SHW + WING]  # each point's unfolded distance from the side's middle
+    STRIP = 0.04                             # the frame's band above & below each face's panel
+    RIM, FLARE, LIP, TRAY = 0.12, 0.02, 0.045, 0.05   # the hood round the top: its height & flare; the lip, the tray's depth
+    BLK, BLKH = 0.15, 0.12                   # the block under the body: half width, height
+    LOGO_H = 0.40                            # the logo's printed height on a side (its width 2.546x)
+    LOGO_AR = 960 / 377
+    PW = 2 * (SHW + WING) * HT               # a side's printed strip, unfolded: its top width ...
+    PH = BH - 2 * STRIP                      # ... and height
+    print('LANTERN_LOGO', {'sx': round(PW / (LOGO_H * LOGO_AR), 4), 'sy': round(PH / LOGO_H, 4)})
+    MATS = ['ttc-lantern-face', 'ttc-lantern-frame', 'ttc-lantern-metal']
+    COL = {'ttc-lantern-face': ((0.96, 0.95, 0.92), 0.35, 0.0), 'ttc-lantern-frame': ((0xd6 / 255, 0xd2 / 255, 0xc6 / 255), 0.55, 0.0),
+           'ttc-lantern-metal': ((0x9a / 255, 0xa0 / 255, 0xa5 / 255), 0.3, 0.85)}
+    def lin(c): return tuple(x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in c)
+    mats = []
+    for name in MATS:
+        m = bpy.data.materials.new(name); m.use_nodes = True
+        b = m.node_tree.nodes['Principled BSDF']; c, r, mt = COL[name]
+        b.inputs['Base Color'].default_value = (*lin(c), 1.0); b.inputs['Roughness'].default_value = r; b.inputs['Metallic'].default_value = mt
+        mats.append(m)
+    def build(name, arm, head=False):
+        bm = bmesh.new(); uvl = bm.loops.layers.uv.new('UVMap')
+        def face(ps, mat, uvs=None, toward=None):
+            if toward is not None:
+                n = Vector((0, 0, 0))
+                for i in range(len(ps)):
+                    a, b = Vector(ps[i]), Vector(ps[(i + 1) % len(ps)])
+                    n += Vector(((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y)))
+                if n.dot(Vector(toward)) < 0:
+                    ps = ps[::-1]
+                    if uvs: uvs = uvs[::-1]
+            f = bm.faces.new([bm.verts.new(p) for p in ps]); f.material_index = MATS.index(mat); f.smooth = False
+            if uvs:
+                for lp, uv in zip(f.loops, uvs): lp[uvl].uv = uv
+            return f
+        def box(x0, x1, y0, y1, z0, z1, mat, faces='xXyYzZ'):
+            for k, ps, t in (('x', ((x0, y0, z0), (x0, y1, z0), (x0, y1, z1), (x0, y0, z1)), (-1, 0, 0)), ('X', ((x1, y0, z0), (x1, y1, z0), (x1, y1, z1), (x1, y0, z1)), (1, 0, 0)),
+                             ('y', ((x0, y0, z0), (x1, y0, z0), (x1, y0, z1), (x0, y0, z1)), (0, -1, 0)), ('Y', ((x0, y1, z0), (x1, y1, z0), (x1, y1, z1), (x0, y1, z1)), (0, 1, 0)),
+                             ('Z', ((x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)), (0, 0, 1)), ('z', ((x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)), (0, 0, -1))):
+                if k in faces: face(list(ps), mat, toward=t)
+        def lathe(prof, n=16, mat='ttc-lantern-metal', cx=0.0):
+            for (ra, za), (rb, zb) in zip(prof, prof[1:]):
+                for i in range(n):
+                    a0, a1 = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n; am = (a0 + a1) / 2
+                    p = lambda r, z, a: (cx + r * math.cos(a), r * math.sin(a), z)
+                    face([p(ra, za, a0), p(ra, za, a1), p(rb, zb, a1), p(rb, zb, a0)], mat, toward=(math.cos(am) * (zb - za), math.sin(am) * (zb - za), ra - rb))
+        # the plan at half width h: 24 points counter-clockwise, 6 a side (from the -y side's left: its left wing's end,
+        # the folds either side of the shield, its right wing's end, the corner post's two outer edges); each side's
+        # first 3 facets are printed (the logo folded round them: u runs on unfolded), the post's 3 are the frame
+        def plan(h, cx):
+            out = []
+            for k in range(4):
+                c, s_ = (0, 1, 0, -1)[k], (1, 0, -1, 0)[k]  # cos, sin of k * 90 degrees (counter-clockwise from above)
+                for x, y in SIDE:
+                    out.append((cx + (x * c - y * s_) * h, (x * s_ + y * c) * h))
+            return out
+        cx = 0.62 if arm else 0.0
+        zb = 3.65 if arm else 3.50           # the body's bottom (the block under it)
+        zt = zb + BH
+        # the block, and (on a pole's top) the collar the pole goes into
+        box(cx - BLK, cx + BLK, -BLK, BLK, zb - BLKH, zb, 'ttc-lantern-frame', 'xXyYz')
+        # the body: the printed facets (frame bands above & below their panels) & the corners; its bottom
+        rings = [(zb, HB), (zb + STRIP, HB + (HT - HB) * STRIP / BH), (zt - STRIP, HB + (HT - HB) * (BH - STRIP) / BH), (zt, HT)]
+        O = [plan(h, cx) for _, h in rings]
+        for i in range(24):
+            j = (i + 1) % 24
+            for r in range(3):
+                (za, ha), (zc, hc) = rings[r], rings[r + 1]
+                a0, a1, b1, b0 = O[r][i], O[r][j], O[r + 1][j], O[r + 1][i]
+                ps = [(a0[0], a0[1], za), (a1[0], a1[1], za), (b1[0], b1[1], zc), (b0[0], b0[1], zc)]
+                t = ((a0[0] + a1[0]) / 2 - cx, (a0[1] + a1[1]) / 2, 0.0)
+                if i % 6 < 3 and r == 1:
+                    # a printed facet: u the unfolded distance from its side's middle (seen from outside), v up
+                    U0, U1 = UNF[i % 6], UNF[(i % 6) + 1]
+                    uv = lambda U, h, z: (0.5 + U * h / PW, (z - (zb + STRIP)) / PH)
+                    face(ps, 'ttc-lantern-face', [uv(U0, ha, za), uv(U1, ha, za), uv(U1, hc, zc), uv(U0, hc, zc)], toward=t)
+                else:
+                    face(ps, 'ttc-lantern-frame', toward=t)
+        face([(x, y, zb) for x, y in O[0]], 'ttc-lantern-frame', toward=(0, 0, -1))
+        # the hood: a square band flaring out round the top (over the posts), its underside, its lip, the tray sunk in it
+        sq = lambda h: [(cx - h, -h), (cx + h, -h), (cx + h, h), (cx - h, h)]
+        H0, H1, Hin = sq(HT), sq(HT + FLARE), sq(HT + FLARE - LIP)
+        face([(x, y, zt) for x, y in H0], 'ttc-lantern-frame', toward=(0, 0, -1))
+        for i in range(4):
+            j = (i + 1) % 4
+            mx, my = (H0[i][0] + H0[j][0]) / 2 - cx, (H0[i][1] + H0[j][1]) / 2
+            face([(*H0[i], zt), (*H0[j], zt), (*H1[j], zt + RIM), (*H1[i], zt + RIM)], 'ttc-lantern-frame', toward=(mx, my, 0.0))
+            face([(*H1[i], zt + RIM), (*H1[j], zt + RIM), (*Hin[j], zt + RIM), (*Hin[i], zt + RIM)], 'ttc-lantern-frame', toward=(0, 0, 1))
+            face([(*Hin[i], zt + RIM), (*Hin[j], zt + RIM), (*Hin[j], zt + RIM - TRAY), (*Hin[i], zt + RIM - TRAY)], 'ttc-lantern-frame', toward=(-mx, -my, 0.0))
+        face([(x, y, zt + RIM - TRAY) for x, y in Hin], 'ttc-lantern-frame', toward=(0, 0, 1))
+        if head: pass
+        elif not arm:
+            lathe(BASE + [(PR, zb - BLKH - 0.12)])
+            lathe([(PR, zb - BLKH - 0.12), (0.075, zb - BLKH - 0.10), (0.075, zb - BLKH + 0.001)])
+        else:
+            pt = zt + RIM + 0.28             # the pole's top, its cap
+            lathe(BASE + [(PR, pt)])
+            lathe([(PR, pt), (0.065, pt), (0.065, pt + 0.04), (0.0001, pt + 0.06)])
+            za = pt - 0.10                   # the arm: a square tube out to past the lantern's middle
+            box(0.0, cx + 0.16, -0.035, 0.035, za, za + 0.07, 'ttc-lantern-metal', 'XyYzZ')
+            box(cx - 0.02, cx + 0.02, -0.02, 0.02, zt + RIM - TRAY, za, 'ttc-lantern-metal', 'xXyY')   # the hanger
+            # the brace, pole to arm
+            p0, p1 = Vector((PR, 0, za - 0.38)), Vector((cx * 0.62, 0, za))
+            d = (p1 - p0).normalized(); nrm = Vector((-d.z, 0, d.x)) * 0.018
+            for s in (-1, 1):
+                q = [p0 - nrm, p1 - nrm, p1 + nrm, p0 + nrm]
+                face([(v.x, s * 0.018, v.z) for v in q], 'ttc-lantern-metal', toward=(0, s, 0))
+            for s in (-1, 1):
+                a, b = p0 + nrm * s, p1 + nrm * s
+                face([(a.x, -0.018, a.z), (b.x, -0.018, b.z), (b.x, 0.018, b.z), (a.x, 0.018, a.z)], 'ttc-lantern-metal', toward=(nrm.x * s, 0, nrm.z * s))
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+        me = bpy.data.meshes.new(name); bm.normal_update(); bm.to_mesh(me); bm.free()
+        for m in mats: me.materials.append(m)
+        me.set_sharp_from_angle(angle=math.radians(40))
+        obj = bpy.data.objects.new(name, me); bpy.context.scene.collection.objects.link(obj)
+        print('LOW', name, sum(len(p.vertices) - 2 for p in me.polygons), 'tris; size', [round(v, 3) for v in obj.dimensions])
+        return obj
+    objs = [build('ttc-lantern-top', False), build('ttc-lantern-arm', True)]
+    def export(sel, path):
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in sel: o.select_set(True)
+        bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True, export_apply=True, export_yup=True,
+                                  export_normals=True, export_texcoords=True, export_tangents=False, export_materials='EXPORT', export_image_format='AUTO')
+        print('WROTE', path)
+    export(objs, OUT)
+    # the preview: the panel drawn white with the logo over it, as js/ttc-pylons.js prints it
+    img = bpy.data.images.load(SRC)
+    lw, lh = img.size
+    L = np.array(img.pixels[:], dtype=np.float32).reshape(lh, lw, 4)  # rows bottom-up
+    TW = 512; TH = int(round(TW * PH / PW))
+    us = (np.arange(TW) + 0.5) / TW; vs = (np.arange(TH) + 0.5) / TH
+    lu = 0.5 + (us - 0.5) * PW / (LOGO_H * LOGO_AR); lv = 0.5 + (vs - 0.5) * PH / LOGO_H
+    xi = np.clip((lu * lw).astype(int), 0, lw - 1); yi = np.clip((lv * lh).astype(int), 0, lh - 1)
+    inside = ((lv >= 0) & (lv <= 1))[:, None] & ((lu >= 0) & (lu <= 1))[None, :]
+    P = L[yi][:, xi]
+    a = P[..., 3:4] * inside[..., None]
+    white = np.array(COL['ttc-lantern-face'][0], np.float32)  # (8-bit images' pixels are sRGB values)
+    out = np.concatenate([P[..., :3] * a + white * (1 - a), np.ones((TH, TW, 1), np.float32)], axis=2)
+    face_img = bpy.data.images.new('ttc-lantern-face', TW, TH); face_img.pixels = out.ravel()
+    face_img.filepath_raw = os.path.join(WORK, 'ttc-lantern-face.png'); face_img.file_format = 'PNG'; face_img.save()
+    nt = mats[0].node_tree
+    t = nt.nodes.new('ShaderNodeTexImage'); t.image = face_img; t.extension = 'EXTEND'; nt.nodes.active = t
+    nt.links.new(t.outputs[0], nt.nodes['Principled BSDF'].inputs['Base Color'])
+    export([objs[0]], os.path.join(WORK, 'ttc-lantern-top-preview.glb'))
+    export([objs[1]], os.path.join(WORK, 'ttc-lantern-arm-preview.glb'))
+    export([build('ttc-lantern-head', False, head=True)], os.path.join(WORK, 'ttc-lantern-head-preview.glb'))
+    sys.exit(0)
+
 # ---------------------------------------------------------------- tags: (texel density, keep bake 0..1, AO strength, roughness, metallic, emission, flat colour override sRGB)
 if KIND == 'shelter':
     HEIGHT, ATLAS, MR_SIZE = 2.5, 1024, 512

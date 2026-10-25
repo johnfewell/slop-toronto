@@ -15,6 +15,8 @@ const {
   GEO,
   blockAt,
   ROAD_CUTS,
+  cutLocal,
+  cutBankAt,
   cutAt
 } = window.CITY;
 const {
@@ -510,9 +512,59 @@ function maskedByWater(mat, M) {
 // The road cuts (city-config.js ROAD_CUTS) and the subway's open cuts (subway.js SUBWAY_CUT_RECTS: Line 2's trenches
 // in the west end) masked out of a street-level material: its fragments over a cut are discarded (in the shadow maps
 // too), city-grid.js & subway.js build the cuts in their place. Each an oblong: t along (ux, uz) from (x0, z0) to len,
-// l across from l0 to l1
+// l across from l0 to l1. A road cut's polyline axis gives one oblong per straight run (its segments merged while they
+// turn less than 2 degrees), each run a little past its joints so a bend leaves no gap
 function cutRects() {
-  return [...ROAD_CUTS.map((c) => ({ x0: c.x0, z0: c.z0, ux: c.ux, uz: c.uz, len: c.len, l0: -c.half, l1: c.half })), ...(window.CITY.SUBWAY_CUT_RECTS || [])];
+  const out = [];
+  for (const c of ROAD_CUTS) {
+    let run = null;
+    const flush = (last) => {
+      if (!run) return;
+      const L = Math.hypot(run.b.x - run.a.x, run.b.z - run.a.z) || 1e-6, ux = (run.b.x - run.a.x) / L, uz = (run.b.z - run.a.z) / L;
+      const e0 = run.first ? 0 : 1.5, e1 = last ? 0 : 1.5;
+      out.push({ x0: run.a.x - ux * e0, z0: run.a.z - uz * e0, ux, uz, len: L + e0 + e1, l0: -c.half, l1: c.half });
+    };
+    c.segs.forEach((g, k) => {
+      if (run && Math.abs(Math.atan2(g.ux * run.uz - g.uz * run.ux, g.ux * run.ux + g.uz * run.uz)) < 0.035) { run.b = g.b; return; }
+      flush(false);
+      run = { a: g.a, b: g.b, ux: g.ux, uz: g.uz, first: k === 0 };
+    });
+    flush(true);
+  }
+  return [...out, ...(window.CITY.SUBWAY_CUT_RECTS || [])];
+}
+// The road cuts' grassed banks (city-config.js cutBankAt) as a mask texture over their footprint, 0.5 m a texel (their
+// outline curves and narrows where a bank is cut short: no oblong fits), grown a texel so no street level shows over
+// a bank's edge (the bank's lawn strip along its top covers the rest)
+let bankMask;
+function cutBankMask() {
+  if (bankMask !== undefined) return bankMask;
+  bankMask = null;
+  const cuts = ROAD_CUTS.filter((c) => c.bankSt && c.maxBank > 0);
+  if (!cuts.length) return bankMask;
+  const R = 0.5;
+  const x0 = Math.min(...cuts.map((c) => c.box.x0)) - 1, z0 = Math.min(...cuts.map((c) => c.box.z0)) - 1;
+  const W = Math.ceil((Math.max(...cuts.map((c) => c.box.x1)) + 1 - x0) / R), H = Math.ceil((Math.max(...cuts.map((c) => c.box.z1)) + 1 - z0) / R);
+  const on = new Uint8Array(W * H);
+  for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) {
+    const x = x0 + (i + 0.5) * R, z = z0 + (j + 0.5) * R;
+    for (const c of cuts) {
+      const p = cutLocal(c, x, z);
+      if (p && p.bank && cutBankAt(c, p.s, p.l >= 0 ? 1 : -1).w > 0) { on[j * W + i] = 1; break; }
+    }
+  }
+  const data = new Uint8Array(W * H);
+  for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) {
+    let v = 0;
+    for (let b = -1; b <= 1 && !v; b++) for (let a = -1; a <= 1; a++) if (on[(j + b) * W + i + a]) { v = 255; break; }
+    data[j * W + i] = v;
+  }
+  const tex = new THREE.DataTexture(data, W, H, THREE.RedFormat, THREE.UnsignedByteType);
+  tex.magFilter = tex.minFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  tex.needsUpdate = true;
+  bankMask = { tex, x0, z0, w: W * R, h: H * R };
+  return bankMask;
 }
 function maskRoadCuts(mat) {
   const rects = cutRects();
@@ -524,6 +576,12 @@ function maskRoadCuts(mat) {
     const t = dot(d, vec2(c.ux, c.uz)), l = dot(d, vec2(-c.uz, c.ux));
     const inC = t.greaterThan(0.0).and(t.lessThan(c.len)).and(l.greaterThan(c.l0)).and(l.lessThan(c.l1));
     inside = inside ? inside.or(inC) : inC;
+  }
+  const bm = cutBankMask();
+  if (bm) {
+    const { texture } = window.CITY.TSL;
+    const onBank = texture(bm.tex, positionWorld.xz.sub(vec2(bm.x0, bm.z0)).div(vec2(bm.w, bm.h))).r.greaterThan(0.5);
+    inside = inside.or(onBank);
   }
   mat.maskNode = mat.maskNode ? mat.maskNode.and(inside.not()) : inside.not();
   mat.userData.roadCutMask = true;
@@ -1089,8 +1147,10 @@ function buildCityGrid(scene) {
   // 6. ROAD CUTS (city-config.js ROAD_CUTS: Strachan Ave dipping under the railway): the street level, curb islands,
   //    walls & streams above the cut are masked out (maskRoadCuts), and the cut is built in their place: its roadway on
   //    the profile, kerbs, sidewalks 0.22 m up from it, the medians, and concrete retaining walls at its sides with a
-  //    parapet at the top (the player's colliders, top & bottom). The traffic follows the profile through the street
-  //    graph (road-network.js, negative heights), the walkers by cutAt (traffic.js), the player by getGroundHeight.
+  //    parapet at the top (the player's colliders, top & bottom); a cut with banks (Rosedale Valley Road) has the parks'
+  //    lawn sloping up from its sidewalks instead, a short wall at the foot where a bank is cut short. The traffic
+  //    follows the profile through the street graph (road-network.js, negative heights), the walkers by cutAt
+  //    (traffic.js), the player by getGroundHeight.
   // ===================================================================================================================
   group.traverse((o) => {
     for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) maskRoadCuts(m);
@@ -1104,16 +1164,25 @@ function buildCityGrid(scene) {
       accQuad(A, P[0], P[1], P[2], P[3], f, P.map((p) => [p[0], p[2] + p[1]]));
     };
     const PARAPET = 1.05, THICK = 0.3;
-    let nWalls = 0;
+    const bankAcc = makeAcc();
+    let nWalls = 0, nBank = 0;
     for (const c of ROAD_CUTS) {
-      const nx = -c.uz, nz = c.ux;
-      // stations every 2 m and at every break of slope; at each, the kerb either side (the first island that isn't a
-      // median, walking out from the axis)
+      // stations every 2 m along the axis (a polyline) and at each of its points (the breaks of slope among them); at
+      // each, its normal (at a point between two segments, the mean of theirs) and the kerb either side (the first
+      // island that isn't a median, walking out from the axis)
       const ts = [...new Set([...Array.from({ length: Math.ceil(c.len / 2) }, (_, i) => i * 2), ...c.s, c.len])].sort((a, b) => a - b);
       const st = ts.map((t) => {
-        const x = c.x0 + c.ux * t, z = c.z0 + c.uz * t;
-        let h = 0;
-        for (let k = 0; k + 1 < c.pts.length; k++) if (t >= c.s[k] && t <= c.s[k + 1]) h = c.pts[k].h + ((c.pts[k + 1].h - c.pts[k].h) * (t - c.s[k])) / (c.s[k + 1] - c.s[k] || 1);
+        let k = 0;
+        while (k < c.segs.length - 1 && t > c.segs[k].s0 + c.segs[k].len) k++;
+        const g = c.segs[k], f = Math.max(0, Math.min(1, (t - g.s0) / g.len));
+        const x = g.a.x + (g.b.x - g.a.x) * f, z = g.a.z + (g.b.z - g.a.z) * f, h = g.a.h + (g.b.h - g.a.h) * f;
+        let ux = g.ux, uz = g.uz;
+        const j = Math.abs(t - g.s0) < 1e-6 ? k - 1 : Math.abs(t - g.s0 - g.len) < 1e-6 ? k + 1 : -1;
+        if (j >= 0 && j < c.segs.length) {
+          const L = Math.hypot(ux + c.segs[j].ux, uz + c.segs[j].uz) || 1;
+          ux = (ux + c.segs[j].ux) / L; uz = (uz + c.segs[j].uz) / L;
+        }
+        const nx = -uz, nz = ux;
         const kerb = (sg) => {
           for (let l = 0.5; l < c.half - 0.5; l += 0.25) {
             const b = blockAt(x + nx * l * sg, z + nz * l * sg);
@@ -1121,26 +1190,38 @@ function buildCityGrid(scene) {
           }
           return c.half - 0.3;
         };
-        return { t, x, z, h, k: { 1: kerb(1), '-1': kerb(-1) } };
+        return { t, x, z, h, nx, nz, k: { 1: kerb(1), '-1': kerb(-1) } };
       });
-      const P = (q, l, y) => [q.x + nx * l, y, q.z + nz * l];
+      const P = (q, l, y) => [q.x + q.nx * l, y, q.z + q.nz * l];
       for (let i = 0; i + 1 < st.length; i++) {
         const a = st[i], b = st[i + 1];
         quad(road, P(a, -a.k[-1], a.h), P(b, -b.k[-1], b.h), P(b, b.k[1], b.h), P(a, a.k[1], a.h), [0, 1, 0]);
         for (const sg of [1, -1]) {
           const ka = a.k[sg] * sg, kb = b.k[sg] * sg, wa = c.half * sg, wb = c.half * sg, ow = (c.half + THICK) * sg;
           const sw = SW_TOP;
+          const nx = (a.nx + b.nx) / 2, nz = (a.nz + b.nz) / 2;
           quad(curb, P(a, ka, a.h), P(b, kb, b.h), P(b, kb, b.h + sw), P(a, ka, a.h + sw), [-nx * sg, 0, -nz * sg]);
           quad(walk, P(a, ka, a.h + sw), P(b, kb, b.h + sw), P(b, wb, b.h + sw), P(a, wa, a.h + sw), [0, 1, 0]);
-          // the retaining wall, its parapet rising with the depth (none at street level)
-          const ta = sw + Math.min(PARAPET, -a.h * 2), tb = sw + Math.min(PARAPET, -b.h * 2);
+          // the retaining wall, its parapet rising with the depth (none at street level); with banks (city-config.js
+          // cutBankAt), a short wall up to the bank's foot (a full one with its parapet where there's no bank), the
+          // grassed bank up to the street level, and a strip of lawn along its top (over the mask's ragged edge)
+          const bA = c.bankSt ? cutBankAt(c, a.t, sg) : null, bB = c.bankSt ? cutBankAt(c, b.t, sg) : null;
+          const footA = bA ? bA.top : sw - 0.05, footB = bB ? bB.top : sw - 0.05;
+          const capA = bA && bA.w >= 0.5 ? 0.12 : Math.min(PARAPET, -a.h * 2), capB = bB && bB.w >= 0.5 ? 0.12 : Math.min(PARAPET, -b.h * 2);
+          const ta = (bA ? Math.max(bA.top, a.h + sw) : sw) + capA, tb = (bB ? Math.max(bB.top, b.h + sw) : sw) + capB;
           quad(wall, P(a, wa, a.h + sw), P(b, wb, b.h + sw), P(b, wb, tb), P(a, wa, ta), [-nx * sg, 0, -nz * sg]);
-          quad(wall, P(a, ow, sw - 0.05), P(b, ow, sw - 0.05), P(b, ow, tb), P(a, ow, ta), [nx * sg, 0, nz * sg]);
+          quad(wall, P(a, ow, footA), P(b, ow, footB), P(b, ow, tb), P(a, ow, ta), [nx * sg, 0, nz * sg]);
           quad(wall, P(a, wa, ta), P(b, wb, tb), P(b, ow, tb), P(a, ow, ta), [0, 1, 0]);
-          // its collider: the wall's thickness from the floor to the parapet's top, where the cut is a step down
-          if (Math.max(-a.h, -b.h) > 0.25) {
+          if (bA && (bA.w > 0 || bB.w > 0)) {
+            const oa = (c.half + THICK + bA.w) * sg, ob = (c.half + THICK + bB.w) * sg;
+            quad(bankAcc, P(a, ow, bA.top), P(b, ow, bB.top), P(b, ob, bB.base), P(a, oa, bA.base), [-nx * sg * 0.5, 1, -nz * sg * 0.5]);
+            quad(bankAcc, P(a, oa, bA.base - 0.02), P(b, ob, bB.base - 0.02), P(b, ob + 1.2 * sg, bB.base - 0.02), P(a, oa + 1.2 * sg, bA.base - 0.02), [0, 1, 0]);
+            nBank += (b.t - a.t) / 2;
+          }
+          // its collider: the wall's thickness from the floor to its top, where the cut is a step down
+          if (Math.min(ta, tb) - Math.max(a.h, b.h) - sw > 0.25) {
             const L = b.t - a.t, cx = (a.x + b.x) / 2 + nx * (c.half + THICK / 2) * sg, cz = (a.z + b.z) / 2 + nz * (c.half + THICK / 2) * sg;
-            const hx = THICK / 2 + 0.05, hz = L / 2 + 0.05, cs = c.uz, sn = c.ux;
+            const hx = THICK / 2 + 0.05, hz = L / 2 + 0.05, cs = -nx, sn = nz; // (along the wall: (nz, -nx))
             const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
             colliders.push({ minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, minY: Math.min(a.h, b.h) - 1, maxY: Math.min(ta, tb), obb: { cx, cz, hx, hz, cs, sn } });
             nWalls++;
@@ -1150,9 +1231,8 @@ function buildCityGrid(scene) {
       // the medians inside the cut: their outline every 1.5 m, lowered with the floor under it (kerb faces & top)
       for (const bl of BLOCKS) {
         if (!bl.median) continue;
-        const mx = bl.poly.reduce((t, p) => t + p.x, 0) / bl.poly.length - c.x0, mz = bl.poly.reduce((t, p) => t + p.z, 0) / bl.poly.length - c.z0;
-        const mt = mx * c.ux + mz * c.uz;
-        if (mt <= 0 || mt >= c.len || Math.abs(-mx * c.uz + mz * c.ux) > c.half) continue;
+        const mx = bl.poly.reduce((t, p) => t + p.x, 0) / bl.poly.length, mz = bl.poly.reduce((t, p) => t + p.z, 0) / bl.poly.length;
+        if (!cutLocal(c, mx, mz)) continue;
         const ring = [];
         for (let i = 0; i < bl.poly.length; i++) {
           const p = bl.poly[i], q = bl.poly[(i + 1) % bl.poly.length];
@@ -1175,18 +1255,19 @@ function buildCityGrid(scene) {
         }
       }
     }
-    const mats = [[road, createRoadSurfaceMaterial(), 'RoadCutRoadway'], [walk, createSidewalkMaterial(), 'RoadCutSidewalks'], [curb, createCurbMaterial(), 'RoadCutKerbs'], [wall, window.CITY.createConcreteMaterial ? window.CITY.createConcreteMaterial() : new THREE.MeshStandardNodeMaterial({ color: 0xa8a297, roughness: 0.88 }), 'RoadCutWalls']];
+    // (the banks: the parks' lawn, its own instance: the street level's carries the mask, which would cut the banks away)
+    const mats = [[bankAcc, createParkLawnMaterial(false), 'RoadCutBanks'], [road, createRoadSurfaceMaterial(), 'RoadCutRoadway'], [walk, createSidewalkMaterial(), 'RoadCutSidewalks'], [curb, createCurbMaterial(), 'RoadCutKerbs'], [wall, window.CITY.createConcreteMaterial ? window.CITY.createConcreteMaterial() : new THREE.MeshStandardNodeMaterial({ color: 0xa8a297, roughness: 0.88 }), 'RoadCutWalls']];
     for (const [A, mat, name] of mats) {
       const g = accGeometry(A);
       if (!g) continue;
       g.computeVertexNormals();
       const m = new THREE.Mesh(g, mat);
       m.receiveShadow = true;
-      m.castShadow = name === 'RoadCutWalls';
+      m.castShadow = name === 'RoadCutWalls' || name === 'RoadCutBanks';
       m.name = name;
       group.add(m);
     }
-    if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] ${ROAD_CUTS.length} road cuts (${ROAD_CUTS.map((c) => `${c.name} ${Math.round(-Math.min(...c.pts.map((p) => p.h)) * 10) / 10} m down`).join(', ')}), ${nWalls} wall colliders`);
+    if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] ${ROAD_CUTS.length} road cuts (${ROAD_CUTS.map((c) => `${c.name} ${Math.round(-Math.min(...c.pts.map((p) => p.h)) * 10) / 10} m down${c.bankSt ? `, grassed banks 1:${c.bank} up to ${c.maxBank.toFixed(1)} m wide` : ''}`).join(', ')}), ${nWalls} wall colliders, ${Math.round(nBank)} m of banks`);
   }
 
   // Every road, the expressways and the flyovers included, carries the street traffic (road-network.js): no separate

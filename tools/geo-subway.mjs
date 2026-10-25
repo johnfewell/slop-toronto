@@ -5,8 +5,9 @@
 //   ways: [name, flags (1 bridge, 2 tunnel, 4 covered, 8 viaduct), layer, service, [x, z, ...]]  (every subway way
 //         reaching within MARGIN of the detailed city, tunnels too: the trains run on into them; simplified to 0.3 m)
 //   stations: [x, z, name, line colour, accessible (1: wheelchair=yes, its pylons get the accessibility symbol)]
-//   entrances: [x, z, station name, line colour, entrance name]  (street level only: none mapped below ground or
-//              indoors, the PATH's & the malls' doors)
+//   entrances: [x, z, station name, line colour, entrance name, sign]  (street level only: none mapped below ground or
+//              indoors, the PATH's & the malls' doors; sign: 0 the insignia pylon, 1 the older square lantern on its
+//              pole's top, 2 the lantern hung from an arm off its pole, from LANTERNS below)
 import { toWorld, rdp, load, log } from './geo-base.mjs';
 
 // the detailed city (as tools/geo-roads.mjs DETAIL; not imported: that module builds the whole road network)
@@ -70,6 +71,28 @@ const streetLevel = (t) => {
   const levels = String(t.level ?? '0').split(/[;,]/).map(parseFloat).filter((v) => !Number.isNaN(v));
   return !levels.length || levels.some((v) => v >= 0);
 };
+// The entrances that still have the TTC's older sign: the square, lit "TTC" lantern on a stainless pole (on its top, or
+// hung from an arm off it), by OpenStreetMap node id, with the Street View evidence (Google pano id, its date). From a
+// survey of every entrance in the detailed city (2026-10-25, Google-captured panos, zoomed on the sign). Every other
+// entrance keeps the insignia pylon (js/ttc-pylons.js), including where the survey was unclear. Seen as insignia (not
+// lanterns): Bedford Rd (Ok2KtclgczMwBG4Z69arUw 2026-05), Osgoode's second SW node 4061861175 (93sGfKrsnEUdSrc0bD0mJw
+// 2026-08), St Patrick SE, Queen's Park NW, St Andrew SE, King SW & SE, Queen NE, College (Yonge & Carlton SE).
+const LANTERNS = {
+  89447064: [1, 'aBRRZOuMF30E_GVhTu-fPA', '2026-08', "Queen's Park, University / College NE"],
+  89447068: [2, 'XOaIQu7HJ_0fL9eaT8nHNw', '2026-08', "Queen's Park, University / College SW"],
+  281660487: [1, 'hvODrX54j6LJHc9VJqq0zg', '2026-08', 'Osgoode, University / Queen NW'],
+  281660489: [1, 'QgauYMBH6hnKQJJRrJg8Kg', '2026-08', 'Osgoode, University / Queen SW (by the Rexall)'],
+  424028674: [2, 'Zz3MsW8upUVqkbsMrS8-Yg', '2026-05', 'Jane, Armdale Ave'],
+  2792724745: [2, '6RCELAY9UuDmBuD48kKiWw', '2022-09', 'Lansdowne, Lansdowne Ave (hung under the canopy)'],
+  3712907644: [1, 'pnIyve5y6jwm7WRbFZtDkA', '2026-04', 'St Patrick, University / Dundas NE'],
+  3712907651: [2, 'Jy-5r-t17uvDvZqrQHsYog', '2026-04', 'St Patrick, University / Dundas NW'],
+  4454371823: [2, 'wPibV8BmsfT5zwc-Xl2nNg', '2024-07', 'St George, St George St'],
+  6481906883: [2, 'yKanKAhh0hf-_jIh2wTXTg', '2026-05', 'Dundas West, Dundas St W'],
+  8834295949: [1, 't-0d0O6TvIChllhSAQSWoA', '2026-04', 'Chester East'],
+  8834295950: [1, 'kQhlfmeI5f-0NqrW9u1zCA', '2026-04', 'Chester West'],
+  9951289154: [2, 'hot53l0vEVCS5xzBb7_FPQ', '2024-08', 'Ossington, Ossington Ave'],
+  11267842959: [2, 'MXJD9uPhFfbrK3rUzHtuAQ', '2026-08', 'Wellesley, Wellesley St E (hung under the canopy)']
+};
 export const entrances = [];
 let below = 0;
 for (const e of nodes) {
@@ -83,7 +106,7 @@ for (const e of nodes) {
     const d = Math.hypot(s[0] - x, s[1] - z);
     if (d < sd) { sd = d; st = s; }
   }
-  entrances.push([q(x), q(z), st ? st[2] : '', st ? st[3] : colourOf(t, x, z), t.name || '']);
+  entrances.push([q(x), q(z), st ? st[2] : '', st ? st[3] : colourOf(t, x, z), t.name || '', LANTERNS[e.id] ? LANTERNS[e.id][0] : 0]);
 }
 
 const km = Math.round(ways.filter((w) => !(w[1] & 2)).reduce((t, w) => {
@@ -91,4 +114,4 @@ const km = Math.round(ways.filter((w) => !(w[1] & 2)).reduce((t, w) => {
   for (let i = 2; i < f.length; i += 2) t += Math.hypot(f[i] - f[i - 2], f[i + 1] - f[i - 1]);
   return t;
 }, 0)) / 1000;
-log(`subway: ${ways.length} ways (${ways.filter((w) => !(w[1] & 2)).length} out of the tunnels, ${km} km), ${stations.length} stations, ${entrances.length} street entrances (${below} below ground or indoors left out)`);
+log(`subway: ${ways.length} ways (${ways.filter((w) => !(w[1] & 2)).length} out of the tunnels, ${km} km), ${stations.length} stations, ${entrances.length} street entrances (${below} below ground or indoors left out; ${entrances.filter((e) => e[5]).length} with the older lantern)`);

@@ -429,24 +429,135 @@ function railSpanAt(x, z) {
 // its axis at the breaks of slope (heights below street level) and the half width of its carriageways & sidewalks; the
 // retaining walls stand at that half width. cutAt(x, z) is the floor's height there (the road's: the sidewalks are
 // SIDEWALK_HEIGHT up from it), 0 outside the cuts. city-grid.js builds them and masks the street level over them.
-const ROAD_CUTS = (GEO.roadCuts || []).map(([name, half, flat]) => {
+// The axis is a polyline (a curving street's centreline, Rosedale Valley Road; Strachan's is straight): s the distance
+// along it at each point, `segs` its segments.
+// A cut with a `bank` (John, 2026-10-25: Rosedale Valley Road, a ravine, not a trench) has grassed banks instead of
+// walls: past its retaining walls' line the ground slopes up `bank` metres out per metre, from the cut's sidewalks to
+// the street level round it. Where a bank would run into something (a curb island that isn't parkland, another street,
+// a building, a flyover deck's piers, the subway's covered box), it is cut short (tapering in at 45 degrees) and a short
+// retaining wall at its foot makes up the rest of the depth; right beside them, a full wall as before.
+const CUT_WALL = 0.3; // (city-grid.js THICK: the retaining wall's thickness)
+const BANK_STEP = 2; // the banks' profile stations along the axis
+const ROAD_CUTS = (GEO.roadCuts || []).map(([name, half, flat, bank = 0]) => {
   const pts = [];
   for (let i = 0; i < flat.length; i += 3) pts.push({ x: flat[i], z: flat[i + 1], h: flat[i + 2] });
+  const s = [0], segs = [];
+  for (let k = 1; k < pts.length; k++) {
+    const a = pts[k - 1], b = pts[k], L = Math.hypot(b.x - a.x, b.z - a.z) || 1e-6;
+    segs.push({ a, b, ux: (b.x - a.x) / L, uz: (b.z - a.z) / L, len: L, s0: s[k - 1] });
+    s.push(s[k - 1] + L);
+  }
   const a = pts[0], b = pts[pts.length - 1];
-  const len = Math.hypot(b.x - a.x, b.z - a.z) || 1;
-  const ux = (b.x - a.x) / len, uz = (b.z - a.z) / len;
-  return { name, half, pts, x0: a.x, z0: a.z, ux, uz, len, s: pts.map((p) => (p.x - a.x) * ux + (p.z - a.z) * uz) };
+  const c = { name, half, bank, pts, s, segs, len: s[s.length - 1], x0: a.x, z0: a.z, ux: segs[0].ux, uz: segs[0].uz, end: b, maxBank: 0 };
+  if (bank > 0) bankProfile(c);
+  const xs = pts.map((p) => p.x), zs = pts.map((p) => p.z), r = half + (bank > 0 ? CUT_WALL + c.maxBank + 1 : 0);
+  c.box = { x0: Math.min(...xs) - r, x1: Math.max(...xs) + r, z0: Math.min(...zs) - r, z1: Math.max(...zs) + r };
+  return c;
 });
+/** A point on cut `c`'s axis `s` metres along it: { x, z, h, nx, nz } (n the normal, to the left) */
+function cutAxisAt(c, s) {
+  let k = 0;
+  while (k < c.segs.length - 1 && s > c.segs[k].s0 + c.segs[k].len) k++;
+  const g = c.segs[k], f = Math.max(0, Math.min(1, (s - g.s0) / g.len));
+  return { x: g.a.x + (g.b.x - g.a.x) * f, z: g.a.z + (g.b.z - g.a.z) * f, h: g.a.h + (g.b.h - g.a.h) * f, nx: -g.uz, nz: g.ux };
+}
+// The banks' profile, every BANK_STEP metres, each side (1 the left, -1 the right): w the bank's width (from the wall's
+// outer face), top the wall's top (the bank's foot), base the street level at the bank's top
+function bankProfile(c) {
+  const SWH = CITY_BOUNDS.sidewalkHeight;
+  const near = (x, z, m) => x > c.minX - m && x < c.maxX + m && z > c.minZ - m && z < c.maxZ + m;
+  c.minX = Math.min(...c.pts.map((p) => p.x)); c.maxX = Math.max(...c.pts.map((p) => p.x));
+  c.minZ = Math.min(...c.pts.map((p) => p.z)); c.maxZ = Math.max(...c.pts.map((p) => p.z));
+  const M = c.half + 40;
+  const roads = ROADS.filter((r) => r.name !== c.name && !r.raised && r.pts.some((p) => near(p.x, p.z, M)));
+  const decks = DECKS.filter((d) => d.pts.some((p) => near(p.x, p.z, M)));
+  const builds = (GEO.buildings || []).filter((q) => near(q[0], q[1], M + 60));
+  const S = window.CITY.GEO_SUBWAY || { ways: [] };
+  const boxes = S.ways.filter((w) => (w[1] & 5) === 5 && !(w[1] & 10)).map((w) => w[4]).filter((f) => { for (let i = 0; i < f.length; i += 2) if (near(f[i], f[i + 1], M)) return true; return false; });
+  const segD = (x, z, ax, az, bx, bz) => {
+    const ex = bx - ax, ez = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / (ex * ex + ez * ez || 1)));
+    return Math.hypot(ax + ex * t - x, az + ez * t - z);
+  };
+  const blocked = (x, z) => {
+    const bl = blockAt(x, z);
+    if (bl && !bl.park && !bl.wild) return true; // (a curb island that isn't parkland: a sidewalk, a plaza, a median)
+    for (const r of roads) for (let i = 1; i < r.pts.length; i++) if (segD(x, z, r.pts[i - 1].x, r.pts[i - 1].z, r.pts[i].x, r.pts[i].z) < r.w / 2 + 1) return true;
+    for (const d of decks) for (let i = 1; i < d.pts.length; i++) if (Math.max(d.pts[i - 1].h, d.pts[i].h) > 0.3 && segD(x, z, d.pts[i - 1].x, d.pts[i - 1].z, d.pts[i].x, d.pts[i].z) < d.w / 2 + 2.5) return true;
+    for (const f of boxes) for (let i = 2; i < f.length; i += 2) if (segD(x, z, f[i - 2], f[i - 1], f[i], f[i + 1]) < 7.5) return true; // (the box & its abutments)
+    for (const [bx, bz, ang, parts] of builds) {
+      const cs = Math.cos(ang), sn = Math.sin(ang), dx = x - bx, dz = z - bz, u = dx * cs - dz * sn, v = dx * sn + dz * cs;
+      for (const [u0, u1, v0, v1] of parts) if (u > u0 - 1 && u < u1 + 1 && v > v0 - 1 && v < v1 + 1) return true;
+    }
+    return false;
+  };
+  const st = [];
+  for (let s = 0; s <= c.len + BANK_STEP - 1e-6; s += BANK_STEP) {
+    const q = cutAxisAt(c, Math.min(s, c.len));
+    const e = { s: Math.min(s, c.len), x: q.x, z: q.z, h: q.h };
+    for (const sg of [1, -1]) {
+      const foot = q.h + SWH, o = c.half + CUT_WALL;
+      const at = (l) => [q.x + q.nx * l * sg, q.z + q.nz * l * sg];
+      // the street level up there, the bank it would need, and how far out it is clear
+      let base = 0;
+      const want = (bb) => Math.max(0, bb - foot) * c.bank;
+      { const [x, z] = at(o + want(SWH)); base = blockAt(x, z) ? SWH : 0; }
+      const W = want(base);
+      let clear = W;
+      for (let l = 0.5; l <= W + 1; l += 0.5) { const [x, z] = at(o + l); if (blocked(x, z)) { clear = l - 1; break; } }
+      e[sg] = { w: Math.max(0, Math.min(W, clear)), base };
+    }
+    st.push(e);
+  }
+  // cut short, a bank tapers in at 45 degrees (no sudden step from a full bank to a wall); too narrow, no bank at all
+  for (const sg of [1, -1]) {
+    for (let i = 1; i < st.length; i++) st[i][sg].w = Math.min(st[i][sg].w, st[i - 1][sg].w + BANK_STEP);
+    for (let i = st.length - 2; i >= 0; i--) st[i][sg].w = Math.min(st[i][sg].w, st[i + 1][sg].w + BANK_STEP);
+    for (const e of st) {
+      if (e[sg].w < 1.5) e[sg].w = 0;
+      e[sg].top = Math.max(e.h + SWH, e[sg].base - e[sg].w / c.bank);
+      c.maxBank = Math.max(c.maxBank, e[sg].w);
+    }
+  }
+  c.bankSt = st;
+}
+/** Cut `c`'s bank `s` metres along it, side sg (1 left, -1 right): { w, top, base } (interpolated), or null (no banks) */
+function cutBankAt(c, s, sg) {
+  if (!c.bankSt) return null;
+  const st = c.bankSt, f = Math.max(0, Math.min(st.length - 1, s / BANK_STEP)), i = Math.min(st.length - 2, Math.floor(f)), t = f - i;
+  const A = st[i][sg], B = st[i + 1][sg];
+  return { w: A.w + (B.w - A.w) * t, top: A.top + (B.top - A.top) * t, base: A.base + (B.base - A.base) * t };
+}
+/** Where (x, z) lies in road cut `c`: { s along its axis, l across (+ to the left of the way along), h its floor (or on a
+ *  bank: the bank's height over the street level there, its curb island's or 0), bank (true on a bank or its wall's
+ *  top), into (metres up the bank from its foot) }, or null outside it (beyond its ends, or past its banks) */
+function cutLocal(c, x, z) {
+  const B = c.box;
+  if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) return null;
+  const reach = c.half + (c.bankSt ? CUT_WALL + c.maxBank : 0);
+  let best = null;
+  for (let k = 0; k < c.segs.length; k++) {
+    const g = c.segs[k], dx = x - g.a.x, dz = z - g.a.z;
+    const t = dx * g.ux + dz * g.uz;
+    if ((k === 0 && t <= 0) || (k === c.segs.length - 1 && t >= g.len)) continue; // (beyond the cut's ends)
+    const tc = Math.max(0, Math.min(g.len, t));
+    const d = Math.hypot(dx - g.ux * tc, dz - g.uz * tc);
+    if (d <= reach && (!best || d < best.d)) best = { d, s: g.s0 + tc, l: -dx * g.uz + dz * g.ux, h: g.a.h + ((g.b.h - g.a.h) * tc) / g.len };
+  }
+  if (!best || best.d <= c.half) return best;
+  const bk = cutBankAt(c, best.s, best.l >= 0 ? 1 : -1);
+  if (!bk || best.d > c.half + CUT_WALL + bk.w) return null;
+  const into = Math.max(0, best.d - c.half - CUT_WALL);
+  const y = bk.w > 0 ? bk.top + ((bk.base - bk.top) * into) / bk.w : bk.top;
+  best.h = y - (blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0);
+  best.bank = true;
+  best.into = into;
+  return best;
+}
 /** The floor of a road cut at (x, z) (negative), or 0 outside the cuts */
 function cutAt(x, z) {
   for (const c of ROAD_CUTS) {
-    const dx = x - c.x0, dz = z - c.z0;
-    const t = dx * c.ux + dz * c.uz;
-    if (t <= 0 || t >= c.len || Math.abs(-dx * c.uz + dz * c.ux) > c.half) continue;
-    for (let k = 0; k + 1 < c.pts.length; k++) {
-      if (t > c.s[k + 1]) continue;
-      return c.pts[k].h + ((c.pts[k + 1].h - c.pts[k].h) * (t - c.s[k])) / (c.s[k + 1] - c.s[k] || 1);
-    }
+    const p = cutLocal(c, x, z);
+    if (p) return p.h;
   }
   return 0;
 }
@@ -495,7 +606,8 @@ for (const [kind, , , flags, flat] of GEO.rails || []) {
 }
 /** Whether a tree may stand at (x, z): clear of the rail corridor & the subway's open cuts */
 function treeOffRail(x, z) {
-  if (cutAt(x, z) < 0) return false; // (nor down in a road cut)
+  // (nor down in a road cut; on its grassed banks, yes, up from their foot: js/ez-trees.js sets them on the slope)
+  if (cutAt(x, z) < 0 && !ROAD_CUTS.some((c) => { const p = c.bankSt && cutLocal(c, x, z); return p && p.bank && p.into > 2.5; })) return false;
   if (window.CITY.subwayCutAt && window.CITY.subwayCutAt(x, z, 2)) return false; // (nor in the subway's trenches, subway.js)
   const r = 7 + 1.6 * railLiftAt(x, z), c = Math.ceil(r / 8);
   for (let a = -c; a <= c; a++) for (let b = -c; b <= c; b++) {
@@ -767,6 +879,9 @@ Object.assign(window.CITY, {
   RAIL_LIFTS,
   treeOffRail,
   ROAD_CUTS,
+  cutLocal,
+  cutBankAt,
+  cutAxisAt,
   cutAt,
   getLocationLabel,
   worldFromLatLon,

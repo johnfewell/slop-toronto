@@ -73,6 +73,12 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   ID Sign") and Street View (`tools/blender/bake_props.py ttc-pylon`). TTC logo and subway signage design: Toronto
   Transit Commission (trademark), used to depict the real street signage; logo file supplied by John. The station
   names, lines and accessibility are from OpenStreetMap.
+- **TTC subway lantern** (`assets/props/ttc-lantern.glb`): the TTC's older square lit "TTC" lantern on its stainless
+  pole (on the pole's top, or hung from an arm), at the entrances that still have one, modelled in Blender from
+  measured Street View references (Osgoode, Chester, St Patrick; `tools/blender/bake_props.py ttc-lantern`), printed at
+  runtime with the TTC logo above. Lantern and logo design: Toronto Transit Commission (trademark), used to depict the
+  real street signage. Which entrances have one: a Street View survey, its evidence in `tools/geo-subway.mjs`
+  (LANTERNS); the entrances themselves from OpenStreetMap.
 - **CN Tower model** (`assets/landmarks/cn-tower.glb`): "CN Tower low poly model base mesh" by C.J..Goldman
   (https://sketchfab.com/C.J..Goldman),
   https://sketchfab.com/3d-models/cn-tower-low-poly-model-base-mesh-da7bbf4926de434cb5ef8d0e0bea9d59, licensed CC BY 4.0

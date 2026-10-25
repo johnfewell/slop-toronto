@@ -1,0 +1,44 @@
+[
+ {
+  "name": "cmp-osgoode-nw",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-335.3,-726.4,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[-317.5,cut(-317.5,-750.5)+1.6,-750.5],look:[-311.6,cut(-311.6,-758.5)+3.3,-758.5],fov:44};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "cmp-stpatrick-nw",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-343.4,-1181.5,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[-323.5,cut(-323.5,-1204)+1.6,-1204],look:[-315.44,cut(-315.44,-1213.12)+3.3,-1213.12],fov:42};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "cmp-king-sw-pylon",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(326.3,-315.6,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[304.8,cut(304.8,-336.6)+1.5,-336.6],look:[300.5,cut(300.5,-340.8)+2.3,-340.8],fov:62};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "cmp-rosedale-street-w90",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1530.6,-2733.2,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1558.2,cut(1558.2,-2721.4)+1.6,-2721.4],look:[1641,cut(1641,-2686)+1.0,-2686],fov:58};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "cmp-rosedale-street-w45",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1572.0,-2715.5,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1599.6,cut(1599.6,-2703.7)+1.6,-2703.7],look:[1641,cut(1641,-2686)+1.0,-2686],fov:58};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "cmp-rosedale-above",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1706.6,-2590.0,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1690,cut(1690,-2615)+70,-2615],look:[1640,cut(1640,-2690)+-2,-2690],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ }
+]

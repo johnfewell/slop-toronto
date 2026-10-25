@@ -1,0 +1,44 @@
+[
+ {
+  "name": "hero-rosedale-ravine-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1560.7,-2722.9,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1588,cut(1588,-2710.4)+1.6,-2710.4],look:[1641,cut(1641,-2686)+4.0,-2686],fov:56};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "hero-rosedale-ravine2-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1542.6,-2730.3,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1570,cut(1570,-2718)+1.5,-2718],look:[1641,cut(1641,-2686)+2.5,-2686],fov:50};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "hero-rosedale-east-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1728.2,-2637.4,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1702,cut(1702,-2652)+1.6,-2652],look:[1641,cut(1641,-2686)+4.5,-2686],fov:58};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "hero-rosedale-bank-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1570.5,-2733.8,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1596,cut(1596,-2718)+3.0,-2718],look:[1641,cut(1641,-2690)+1.0,-2690],fov:58};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "hero-rosedale-oblique-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1578.3,-2613.4,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1598,cut(1598,-2636)+16,-2636],look:[1645,cut(1645,-2690)+-5,-2690],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "hero-rosedale-ramp-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1504.5,-2744.9,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1532,cut(1532,-2733)+1.6,-2733],look:[1641,cut(1641,-2686)+-3.5,-2686],fov:52};app.cameraSystem.cinema=()=>cam;})()"
+ }
+]
