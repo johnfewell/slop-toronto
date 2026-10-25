@@ -740,10 +740,13 @@ async function initApp() {
     const nodes = renderer._nodes, pipes = renderer._pipelines;
     const label = (ro) => `${ro.object.name || ro.object.parent?.name || ro.object.type}|${ro.material.name || ro.material.type}|ctx${ro.context?.id}${ro.context?.depth === false ? '' : ''}`;
     const create = nodes._createNodeBuilder.bind(nodes);
-    nodes._createNodeBuilder = (ro, mat) => { const b = create(ro, mat); b.__t0 = performance.now(); b.__ro = ro; return b; };
+    nodes._createNodeBuilder = (ro, mat) => {
+      const b = create(ro, mat); b.__t0 = performance.now(); b.__ro = ro;
+      return b;
+    };
     const state = nodes._createNodeBuilderState.bind(nodes);
     nodes._createNodeBuilderState = (b) => {
-      if (window.__CITY_APP && window.__CITY_APP.ready) compileLog.push({ t: Math.round(performance.now()), kind: 'node', what: b.__ro ? label(b.__ro) : '?', ms: +(performance.now() - b.__t0).toFixed(1) });
+      compileLog.push({ t: Math.round(performance.now()), kind: 'node', ready: !!(window.__CITY_APP && window.__CITY_APP.ready), what: b.__ro ? label(b.__ro) : '?', ms: +(performance.now() - b.__t0).toFixed(1) });
       return state(b);
     };
     // vertex & index buffers first uploaded mid-ride (the warm-up frame skips chunks that share a pipeline)
@@ -761,7 +764,7 @@ async function initApp() {
     pipes._getRenderPipeline = (ro, ...rest) => {
       const t = performance.now();
       const r = pipe(ro, ...rest);
-      if (window.__CITY_APP && window.__CITY_APP.ready) compileLog.push({ t: Math.round(t), kind: 'pipeline', what: label(ro), ms: +(performance.now() - t).toFixed(1), async: !!rest[3] });
+      compileLog.push({ t: Math.round(t), kind: 'pipeline', ready: !!(window.__CITY_APP && window.__CITY_APP.ready), what: label(ro), ms: +(performance.now() - t).toFixed(1), async: !!rest[3] });
       return r;
     };
   }
@@ -873,6 +876,11 @@ async function initApp() {
         setLoadingProgress(done / jobs.length);
       }
     };
+    // One shadow-receiving object alone first: its build sets up the sun's shadow node, which bumps the light node's
+    // version, part of every material's cache key (three's LightsNode.customCacheKey). Built in parallel, the objects
+    // started before that bump got a key the frames never use, and the warm-up frame built ~75 of them again
+    const first = jobs.find((j) => j[0].receiveShadow);
+    if (first) await compile(first[0]);
     await Promise.all(Array.from({ length: COMPILE_POOL }, worker));
     renderer.setMRT(null);
     renderer.setRenderTarget(null);
