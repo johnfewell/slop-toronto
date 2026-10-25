@@ -1,0 +1,92 @@
+[
+ {
+  "name": "c3-A-above",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-6620,-2800,0);app.cameraSystem.cinema=()=>({pos:[-6620,50,-2800],look:[-6700,-4,-2895],fov:55});app.subway.placeTrain(2,0.5);})();"
+ },
+ {
+  "name": "c3-A-deck-west",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-6694,-2896,0);app.cameraSystem.cinema=()=>({pos:[-6694,1.9,-2896],look:[-6780,-5,-2890],fov:60});app.subway.placeTrain(3,0.5);})();"
+ },
+ {
+  "name": "c3-B-incut",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-5640,-2906,0);app.cameraSystem.cinema=()=>({pos:[-5640,-4.5,-2906],look:[-5678,-4,-2913],fov:60});})();"
+ },
+ {
+  "name": "c3-C-road",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1720,-2640,0);app.cameraSystem.cinema=()=>({pos:[1720,1.8,-2640],look:[1640,5,-2690],fov:65});})();"
+ },
+ {
+  "name": "c3-C-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1630,-2745,0);app.cameraSystem.cinema=()=>({pos:[1630,2,-2745],look:[1640,6,-2688],fov:65});})();"
+ },
+ {
+  "name": "c3-C-above",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1560,-2770,0);app.cameraSystem.cinema=()=>({pos:[1560,40,-2770],look:[1640,3,-2690],fov:55});})();"
+ },
+ {
+  "name": "r1-cyclist-clendenan",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 9000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.cameraSystem.cinema = null; app.selectMode('cyclist'); app.teleportTo(-6687, -2960, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null, minY = 1e9, maxY = -1e9; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; minY = Math.min(minY, e.position.y); maxY = Math.max(maxY, e.position.y); if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] r1-cyclist-clendenan t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' overCut ' + C.subwayCutAt(e.position.x, e.position.z) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' yRange ' + minY.toFixed(2) + '..' + maxY.toFixed(2)); } if (t > 8.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "r2-cyclist-indian",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 9000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.cameraSystem.cinema = null; app.selectMode('cyclist'); app.teleportTo(-5563.5, -2955, 3.14159); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null, minY = 1e9, maxY = -1e9; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; minY = Math.min(minY, e.position.y); maxY = Math.max(maxY, e.position.y); if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] r2-cyclist-indian t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' overCut ' + C.subwayCutAt(e.position.x, e.position.z) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' yRange ' + minY.toFixed(2) + '..' + maxY.toFixed(2)); } if (t > 8.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "r3-walk-to-fence-A",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.cameraSystem.cinema = null; app.selectMode('person'); app.teleportTo(-6646.2, -2915.5, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null, minY = 1e9, maxY = -1e9; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; minY = Math.min(minY, e.position.y); maxY = Math.max(maxY, e.position.y); if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] r3-walk-to-fence-A t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' overCut ' + C.subwayCutAt(e.position.x, e.position.z) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' yRange ' + minY.toFixed(2) + '..' + maxY.toFixed(2)); } if (t > 8.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "r4-walk-to-fence-B",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.cameraSystem.cinema = null; app.selectMode('person'); app.teleportTo(-5647.8, -2888.6, 3.14159); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null, minY = 1e9, maxY = -1e9; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; minY = Math.min(minY, e.position.y); maxY = Math.max(maxY, e.position.y); if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] r4-walk-to-fence-B t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' overCut ' + C.subwayCutAt(e.position.x, e.position.z) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' yRange ' + minY.toFixed(2) + '..' + maxY.toFixed(2)); } if (t > 8.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "r5-car-indian",
+  "mode": "car",
+  "time": "midday",
+  "wait": 8000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.cameraSystem.cinema = null; app.selectMode('car'); app.teleportTo(-5563.5, -2960, 3.14159); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null, minY = 1e9, maxY = -1e9; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; minY = Math.min(minY, e.position.y); maxY = Math.max(maxY, e.position.y); if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] r5-car-indian t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' overCut ' + C.subwayCutAt(e.position.x, e.position.z) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' yRange ' + minY.toFixed(2) + '..' + maxY.toFixed(2)); } if (t > 7.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "r6-cyclist-rosedale",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 8000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.cameraSystem.cinema = null; app.selectMode('cyclist'); app.teleportTo(1721, -2637, -2.166); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null, minY = 1e9, maxY = -1e9; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; minY = Math.min(minY, e.position.y); maxY = Math.max(maxY, e.position.y); if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] r6-cyclist-rosedale t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' overCut ' + C.subwayCutAt(e.position.x, e.position.z) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' yRange ' + minY.toFixed(2) + '..' + maxY.toFixed(2)); } if (t > 7.5) clearInterval(id); }, 50); })()"
+ }
+]

@@ -8,17 +8,26 @@
 //   abutments at either end, where the tracks run into their tunnel portals (Castle Frank in the west, Broadview in the
 //   east). Toronto Rocket trains (six stainless cars, black window band, red accents) cross it both ways, coming out
 //   of one portal and gone into the other.
+// - Line 2 out in the open in the west end (Runnymede to High Park, Keele to Dundas West beside Vincent Yard): the
+//   flat city puts it in open cuts, concrete-walled trenches with the streets crossing on decks at grade (Clendenan
+//   Ave, Indian Rd) and tunnel portals at their ends (and at Keele station's building over the tracks), a chain-link
+//   fence on the walls' upstand round the top; the street level is masked out over them (city-grid.js
+//   maskRoadCuts). Trains run both ways through them, two more stand on Vincent Yard's sidings.
+// - The covered bridge over the Rosedale Valley west of Castle Frank: an enclosed concrete box over Rosedale Valley
+//   Road on blade piers, between grassed mounds (the valley's sides, which the flat city leaves out).
 // - Every station's street entrances (OpenStreetMap railway=subway_entrance, or the station's node where none is
 //   mapped): a stairway going down, set along the street on its sidewalk (beyond the sidewalk where the node lies in
 //   open ground; else against the building line, clear of the inner walking line), its low walls & rail round it, and
 //   the TTC's insignia pylon at the curb abreast of its open end (js/ttc-pylons.js draws them: the insignia, the entry
 //   ID sign with the station's name & lines). An entrance in a building gets the pylon alone, at the curb. The stairs are a flat decal at the sidewalk drawn as a pit
 //   (the view ray traced through the stairwell in the shader): the sidewalk itself stays whole.
-// - Colliders for the player (the piers & abutments, the stair walls & the pylons); the trains sound like the
+// - Colliders for the player (the piers & abutments, the cuts' fences & the decks' parapets, the covered bridge's
+//   piers & mounds, the stair walls & pylons); the trains sound like the
 //   streetcars (window.CITY.Audio.addStreetcars: whine, rolling, joint clacks).
-// - Cost: a few merged static meshes, three instanced meshes for the cars; quality.js `subway` (x trains per hour).
+// - Cost: a few merged static meshes per structure, two instanced meshes for the cars; quality.js `subway` (x trains
+//   per hour).
 
-const { THREE, GEO, QUALITY, blockAt, deckHeightAt, waterAt, nearestRoads, CITY_BOUNDS, cityUniforms } = window.CITY;
+const { THREE, GEO, QUALITY, ROADS, blockAt, deckHeightAt, waterAt, nearestRoads, CITY_BOUNDS, cityUniforms } = window.CITY;
 const { Fn, color, mix, step, smoothstep, abs, fract, floor, positionWorld, positionGeometry, normalGeometry, float, vec2, vec3, sin, dot, attribute, cameraPosition, select, min, max, exp, uv, texture } = window.CITY.TSL;
 const S = window.CITY.GEO_SUBWAY || { ways: [], stations: [], entrances: [] };
 
@@ -113,6 +122,301 @@ const VIADUCTS = (() => {
   return out;
 })();
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The open cuts: Line 2 out of its tunnels in the west end (OpenStreetMap: its ways neither in a tunnel, covered nor on
+// the viaduct, inside the city). There the real line runs at grade or bridges the streets in their valleys; the city
+// is flat, so it runs in a trench instead and the streets cross it on decks at grade (the mapped crossings: Clendenan
+// Ave between Runnymede & High Park, Indian Rd by Vincent Yard). Each trench lies along its main tracks' principal
+// axis (t metres along, l across: l = -dx uz + dz ux, as city-config.js cutAt) and is cut, metre by metre, into
+// open spans (concrete walls at the outermost tracks + CUT_CLEAR, the street level masked out over them, city-grid.js
+// maskRoadCuts), decks (a street over it) and covered stretches (a building over the tracks, Keele station's: the
+// trench ends in a tunnel portal at its face, as it does where the tunnels go on).
+// ---------------------------------------------------------------------------------------------------------------------
+const CUT_RAIL = -6.2; // rail top under the street level
+const CUT_FLOOR = CUT_RAIL - 0.55; // the ballast floor between the tracks
+const CUT_FOOT = CUT_FLOOR - 0.1;
+const CUT_CLEAR = 2.6; // an outer track's centre to its wall (the car's side 1.55 m out, a walkway beyond)
+const CUT_WALL = 0.4;
+const CUT_UPSTAND = 0.6; // the walls' concrete top over the ground, the chain-link fence on it
+const CUT_FENCE = 1.5;
+const CUT_DECK = -1.15; // a street deck's soffit
+const CUT_LINING = 24; // a portal's tunnel lining (a black end beyond: the cars are hidden past it)
+const CUT_MIN_OPEN = 25; // a shorter open stretch stays in the tunnel
+const CUT_HOLE_TOP = CUT_RAIL + 4.6;
+const GAUGE_HALF = 0.7475; // the TTC's 1495 mm gauge
+
+// True if polyline P comes within d of polyline Q
+function polyNear(P, Q, d) {
+  for (const p of P) for (let i = 1; i < Q.length; i++) if (segDist(p.x, p.z, Q[i - 1], Q[i]) < d) return true;
+  return false;
+}
+// Ways end to end into the longest runs, going straight on at a junction (as rail-corridor.js chain)
+function chainWays(ways) {
+  const key = (p) => `${Math.round(p.x)},${Math.round(p.z)}`;
+  const ends = new Map();
+  ways.forEach((w, i) => {
+    for (const [k, atStart] of [[key(w[0]), true], [key(w[w.length - 1]), false]]) (ends.get(k) || ends.set(k, []).get(k)).push({ w: i, atStart });
+  });
+  const used = new Set();
+  const dir = (a, b) => {
+    const L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+    return [(b.x - a.x) / L, (b.z - a.z) / L];
+  };
+  const extend = (c) => {
+    for (;;) {
+      const d = dir(c[c.length - 2], c[c.length - 1]);
+      let best = null, bd = 0.8;
+      for (const e of ends.get(key(c[c.length - 1])) || []) {
+        if (used.has(e.w)) continue;
+        const pts = e.atStart ? ways[e.w] : ways[e.w].slice().reverse();
+        const nd = dir(pts[0], pts[1]);
+        if (d[0] * nd[0] + d[1] * nd[1] > bd) { bd = d[0] * nd[0] + d[1] * nd[1]; best = { e, pts }; }
+      }
+      if (!best) return;
+      used.add(best.e.w);
+      c.push(...best.pts.slice(1));
+    }
+  };
+  const out = [];
+  for (const i of ways.map((w, j) => j).sort((a, b) => lenOf(ways[b]) - lenOf(ways[a]))) {
+    if (used.has(i)) continue;
+    used.add(i);
+    const c = ways[i].slice();
+    extend(c);
+    c.reverse();
+    extend(c);
+    out.push(c.reverse());
+  }
+  return out;
+}
+// A polyline in a cut's frame ({t, l}) clipped to ta <= t <= tb (it runs along t)
+function clipT(Q, ta, tb) {
+  const out = [];
+  const lerp = (a, b, t) => ({ t, l: a.l + ((b.l - a.l) * (t - a.t)) / (b.t - a.t || 1) });
+  for (let i = 0; i < Q.length; i++) {
+    const p = Q[i];
+    const inside = p.t >= ta && p.t <= tb;
+    if (i > 0) {
+      const a = Q[i - 1];
+      for (const edge of [ta, tb]) if ((a.t - edge) * (p.t - edge) < 0) out.push(lerp(a, p, edge));
+    }
+    if (inside) out.push(p);
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+
+const SUBWAY_CUTS = (() => {
+  const B = CITY_BOUNDS;
+  const SWW = (GEO.frame && GEO.frame.sidewalk) || 4.6;
+  const inCity = (P) => P.every((p) => p.x > B.minX + 30 && p.x < B.maxX - 30 && p.z > B.minZ + 30 && p.z < B.maxZ - 30);
+  const ways = S.ways.filter((w) => !(w[1] & (2 | 4 | 8))).map((w) => ({ service: w[3], P: toPts(w[4]) })).filter((w) => w.P.length > 1 && inCity(w.P));
+  // the ways in groups (within 30 m of one another)
+  const groups = [];
+  for (const w of ways) {
+    const hits = groups.filter((g) => g.some((o) => polyNear(o.P, w.P, 30) || polyNear(w.P, o.P, 30)));
+    const g = [w];
+    for (const h of hits) {
+      g.push(...h);
+      groups.splice(groups.indexOf(h), 1);
+    }
+    groups.push(g);
+  }
+  const out = [];
+  for (const g of groups) {
+    const mains = g.filter((w) => !w.service);
+    const pts = mains.flatMap((w) => w.P);
+    if (pts.length < 2) continue;
+    // the axis: the main tracks' principal direction, pointing east
+    let cx = 0, cz = 0;
+    for (const p of pts) { cx += p.x / pts.length; cz += p.z / pts.length; }
+    let sxx = 0, sxz = 0, szz = 0;
+    for (const p of pts) { sxx += (p.x - cx) ** 2; sxz += (p.x - cx) * (p.z - cz); szz += (p.z - cz) ** 2; }
+    const ang = 0.5 * Math.atan2(2 * sxz, sxx - szz);
+    let ux = Math.cos(ang), uz = Math.sin(ang);
+    if (ux < 0) { ux = -ux; uz = -uz; }
+    let tA = Infinity, tB = -Infinity;
+    for (const p of pts) { const t = (p.x - cx) * ux + (p.z - cz) * uz; tA = Math.min(tA, t); tB = Math.max(tB, t); }
+    const ox = cx + ux * tA, oz = cz + uz * tA, len = tB - tA;
+    const local = (p) => ({ t: (p.x - ox) * ux + (p.z - oz) * uz, l: -(p.x - ox) * uz + (p.z - oz) * ux });
+    const world = (t, l) => ({ x: ox + ux * t - uz * l, z: oz + uz * t + ux * l });
+    // the main tracks end to end (one each way: the south one eastbound, as the TTC keeps right), the yard's sidings
+    // & crossovers
+    const chains = chainWays(mains.map((w) => w.P)).map((P) => {
+      let Q = P.map(local);
+      if (Q[0].t > Q[Q.length - 1].t) { P = P.slice().reverse(); Q = Q.reverse(); }
+      return { P, Q, l: Q.reduce((s, q) => s + q.l, 0) / Q.length };
+    }).filter((c) => c.Q[c.Q.length - 1].t - c.Q[0].t > 50).sort((a, b) => a.l - b.l);
+    if (chains.length < 2) continue;
+    const tracks = [...chains.map((c) => ({ Q: c.Q, main: true })), ...chainWays(g.filter((w) => w.service).map((w) => w.P)).map((P) => {
+      const Q = P.map(local);
+      return { Q: Q[0].t > Q[Q.length - 1].t ? Q.reverse() : Q, main: false };
+    })];
+    // every metre along: the outermost tracks either side
+    const N = Math.ceil(len);
+    const lo = new Float64Array(N + 1).fill(Infinity), hi = new Float64Array(N + 1).fill(-Infinity);
+    for (const tr of tracks) {
+      for (let i = 1; i < tr.Q.length; i++) {
+        const a = tr.Q[i - 1], b = tr.Q[i];
+        for (let k = Math.max(0, Math.ceil(Math.min(a.t, b.t))); k <= Math.min(N, Math.floor(Math.max(a.t, b.t))); k++) {
+          const l = a.t === b.t ? a.l : a.l + ((b.l - a.l) * (k - a.t)) / (b.t - a.t);
+          lo[k] = Math.min(lo[k], l);
+          hi[k] = Math.max(hi[k], l);
+        }
+      }
+    }
+    for (let k = 0; k <= N; k++) if (!Number.isFinite(lo[k])) { lo[k] = k ? lo[k - 1] : chains[0].Q[0].l; hi[k] = k ? hi[k - 1] : chains[chains.length - 1].Q[0].l; }
+    // covered where a building stands over the trench (its walls & a margin)
+    const mid = world(len / 2, 0);
+    const near = (GEO.buildings || []).filter((b) => Math.hypot(b[0] - mid.x, b[1] - mid.z) < len / 2 + 150).map(([bx, bz, a, parts]) => ({ bx, bz, cs: Math.cos(a), sn: Math.sin(a), parts })).filter((b) => {
+      const q = local({ x: b.bx, z: b.bz });
+      return q.t > -60 && q.t < len + 60 && Math.abs(q.l) < 90;
+    });
+    const inBuilding = (x, z) => {
+      for (const { bx, bz, cs, sn, parts } of near) {
+        const dx = x - bx, dz = z - bz, u = dx * cs - dz * sn, v = dx * sn + dz * cs;
+        for (const [u0, u1, v0, v1] of parts) if (u > u0 - 0.4 && u < u1 + 0.4 && v > v0 - 0.4 && v < v1 + 0.4) return true;
+      }
+      return false;
+    };
+    const kind = new Uint8Array(N + 1); // 0 open, 1 deck, 2 covered
+    for (let k = 0; k <= N; k++) {
+      const a = lo[k] - CUT_CLEAR - CUT_WALL, b = hi[k] + CUT_CLEAR + CUT_WALL;
+      for (let l = a; l < b + 0.999; l += 1) {
+        const p = world(k + 0.5, Math.min(l, b));
+        if (inBuilding(p.x, p.z)) { kind[k] = 2; break; }
+      }
+    }
+    // the streets crossing it (at grade), each on a deck: its carriageway & sidewalks, skewed across the trench
+    const decks = [];
+    for (const r of ROADS) {
+      if (r.raised) continue;
+      for (let i = 1; i < r.pts.length; i++) {
+        const a = local(r.pts[i - 1]), b = local(r.pts[i]);
+        if (a.l * b.l > 0 || a.l === b.l) continue;
+        const tc = a.t + ((b.t - a.t) * a.l) / (a.l - b.l);
+        if (tc < 0 || tc > len) continue;
+        const L = Math.hypot(b.t - a.t, b.l - a.l) || 1;
+        const sn = Math.abs(b.l - a.l) / L, cs = Math.abs(b.t - a.t) / L;
+        if (sn < 0.35) continue; // (running along it: not a crossing)
+        const k = Math.round(tc);
+        const W = Math.max(Math.abs(lo[k]), Math.abs(hi[k])) + CUT_CLEAR + CUT_WALL;
+        const half = (r.w / 2 + SWW + 0.6) / sn + (cs / sn) * W;
+        decks.push({ name: r.name, tc, t0: tc - half, t1: tc + half });
+        for (let j = Math.max(0, Math.floor(tc - half)); j <= Math.min(N, Math.ceil(tc + half) - 1); j++) if (kind[j] !== 2) kind[j] = 1;
+      }
+    }
+    // runs of a kind; the open stretches between covered ones (a deck at an end of one stays covered)
+    const runs = [];
+    for (let k = 0; k <= N; k++) {
+      const r = runs[runs.length - 1];
+      if (r && r.k === kind[k]) r.t1 = Math.min(len, k + 1);
+      else runs.push({ k: kind[k], t0: k, t1: Math.min(len, k + 1) });
+    }
+    const opens = [];
+    let cur = [];
+    for (const r of [...runs, { k: 2 }]) {
+      if (r.k !== 2) { cur.push(r); continue; }
+      while (cur.length && cur[0].k === 1) cur.shift();
+      while (cur.length && cur[cur.length - 1].k === 1) cur.pop();
+      if (cur.filter((s) => s.k === 0).reduce((t, s) => t + s.t1 - s.t0, 0) >= CUT_MIN_OPEN) opens.push(cur);
+      cur = [];
+    }
+    if (!opens.length) continue;
+    const spans = (G) => {
+      const sp = G.map((r) => {
+        let l0 = Infinity, l1 = -Infinity;
+        for (let k = r.t0; k < r.t1 && k <= N; k++) { l0 = Math.min(l0, lo[k] - CUT_CLEAR); l1 = Math.max(l1, hi[k] + CUT_CLEAR); }
+        return { deck: r.k === 1, t0: r.t0, t1: r.t1, l0, l1 };
+      });
+      sp.forEach((s, i) => {
+        if (!s.deck) return;
+        s.l0 = Math.min(s.l0, sp[i - 1].l0, sp[i + 1].l0);
+        s.l1 = Math.max(s.l1, sp[i - 1].l1, sp[i + 1].l1);
+        s.name = (decks.find((d) => d.tc > s.t0 && d.tc < s.t1) || {}).name || '';
+      });
+      return sp;
+    };
+    const cut = {
+      ox, oz, ux, uz, len, local, world, chains, tracks,
+      groups: opens.map((G) => ({ t0: G[0].t0, t1: G[G.length - 1].t1, spans: spans(G) }))
+    };
+    cut.rects = cut.groups.flatMap((G) => G.spans.filter((s) => !s.deck).map((s) => ({ x0: ox + ux * s.t0, z0: oz + uz * s.t0, ux, uz, len: s.t1 - s.t0, l0: s.l0, l1: s.l1 })));
+    out.push(cut);
+  }
+  return out;
+})();
+// The open spans' footprints, for the street level's mask (city-grid.js maskRoadCuts): { x0, z0, ux, uz, len, l0, l1 }
+const SUBWAY_CUT_RECTS = SUBWAY_CUTS.flatMap((c) => c.rects);
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The covered bridges (OpenStreetMap covered=yes bridges off the viaduct: Line 2's crossing of the Rosedale Valley west
+// of Castle Frank, an enclosed concrete box over Rosedale Valley Road). The valley isn't in the flat city (Bloor St
+// crosses it on a flyover deck beside it): the box stands on blade piers between two grassed mounds, the valley's
+// sides, each faced with a concrete headwall where the box goes in. Nothing of the trains shows.
+// ---------------------------------------------------------------------------------------------------------------------
+const CB_SOFFIT = 4.9; // over the road
+const CB_H = 5.0;
+const CB_HALF = 4.9;
+const CB_ABUT = 10; // a mound's flat top behind its headwall
+const CB_SLOPE = 1.6; // its grassed sides: out per metre up
+const COVERED = (() => {
+  const B = CITY_BOUNDS;
+  const ways = S.ways.filter((w) => (w[1] & 5) === 5 && !(w[1] & 10)).map((w) => toPts(w[4])).filter((P) => P.length > 1 && P.every((p) => p.x > B.minX && p.x < B.maxX && p.z > B.minZ && p.z < B.maxZ));
+  const groups = [];
+  for (const P of ways) {
+    const g = groups.find((q) => q.some((o) => polyNear(o, P, 20)));
+    if (g) g.push(P);
+    else groups.push([P]);
+  }
+  return groups.map((g) => {
+    // its tracks' centre line, resampled every ~10 m
+    const ref = g[0];
+    const ws = g.map((P) => (Math.hypot(P[0].x - ref[0].x, P[0].z - ref[0].z) > Math.hypot(P[P.length - 1].x - ref[0].x, P[P.length - 1].z - ref[0].z) ? P.slice().reverse() : P));
+    const L = Math.max(...ws.map(lenOf));
+    const n = Math.max(1, Math.round(L / 10));
+    const pts = [];
+    for (let k = 0; k <= n; k++) {
+      let x = 0, z = 0;
+      for (const P of ws) {
+        const p = at(P, (lenOf(P) * k) / n);
+        x += p.x / ws.length;
+        z += p.z / ws.length;
+      }
+      pts.push({ x, z });
+    }
+    const len = lenOf(pts);
+    const top = CB_SOFFIT + CB_H;
+    const W = CB_HALF + 0.6, Sp = top * CB_SLOPE;
+    // each end: its point, the way out (away from the valley), the mound's footprint
+    const ends = [0, 1].map((end) => {
+      const e = at(pts, end ? len : 0);
+      const d = end ? 1 : -1;
+      return { x: e.x, z: e.z, tx: e.tx * d, tz: e.tz * d };
+    });
+    return { pts, len, top, W, Sp, ends };
+  }).filter((c) => c.len > 30);
+})();
+// (x, z) in an end's frame: a metres out from its headwall, c across
+const endLocal = (e, x, z) => ({ a: (x - e.x) * e.tx + (z - e.z) * e.tz, c: -(x - e.x) * e.tz + (z - e.z) * e.tx });
+
+/** True if (x, z) lies over a subway structure at grade, `m` metres round: a trench (its open spans, & its decks
+ *  unless `decks` is false: they carry the streets; walls included) or a covered bridge (its box & mounds) */
+function subwayCutAt(x, z, m = 0, decks = true) {
+  for (const C of SUBWAY_CUTS) {
+    const { t, l } = C.local({ x, z });
+    if (t < -m - 30 || t > C.len + m + 30) continue;
+    for (const G of C.groups) for (const s of G.spans) if ((decks || !s.deck) && t > s.t0 - m && t < s.t1 + m && l > s.l0 - CUT_WALL - m && l < s.l1 + CUT_WALL + m) return true;
+  }
+  for (const V of COVERED) {
+    for (let i = 1; i < V.pts.length; i++) if (segDist(x, z, V.pts[i - 1], V.pts[i]) < CB_HALF + 0.5 + m) return true;
+    for (const e of V.ends) {
+      const { a, c } = endLocal(e, x, z);
+      if (a > -0.5 - m && a < CB_ABUT + V.Sp + m && Math.abs(c) < V.W + V.Sp + m) return true;
+    }
+  }
+  return false;
+}
+
 /** True where the flyover decks' plain piers (city-grid.js) must not stand: under a subway viaduct or its abutments */
 function subwayKeepsClear(x, z) {
   for (const V of VIADUCTS) {
@@ -176,15 +480,38 @@ function meshOf(pos, mat, name, { cast = true, receive = true, extra = null } = 
 const hash2 = (p, k) => fract(sin(dot(floor(p), vec2(12.9898 * k, 78.233))).mul(43758.5453));
 
 // The piers & abutments: pale poured concrete in 1.5 m lifts, darker toward the ground
-function createConcreteMaterial(base = 0xb7b0a4) {
+function createConcreteMaterial(base = 0xb7b0a4, y0 = 0) {
   const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.9, metalness: 0 });
   mat.colorNode = Fn(() => {
     const p = positionWorld;
     const n = hash2(p.xz.mul(1.3).add(p.y.mul(0.7)), 1);
     const lift = smoothstep(0.0, 0.03, fract(p.y.div(1.5)));
-    const grime = smoothstep(0.0, 5.0, p.y);
+    const grime = smoothstep(y0, y0 + 5.0, p.y);
     const streak = fract(sin(floor(p.x.add(p.z).mul(1.1)).mul(91.7)).mul(437.5)).mul(0.08);
     return color(base).mul(mix(float(0.7), float(1.0), grime)).mul(n.mul(0.06).add(0.94)).mul(lift.mul(0.12).add(0.88)).sub(streak.mul(float(1).sub(grime)));
+  })();
+  return mat;
+}
+// A trench's retaining walls: board-formed concrete in 6 m bays, weathered: rain streaks down from the coping, a dark
+// splash band along the foot, the bays' tones a little apart
+function createCutWallMaterial() {
+  const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.92, metalness: 0 });
+  mat.colorNode = Fn(() => {
+    const p = positionWorld;
+    const h = p.x.add(p.z);
+    const bay = fract(sin(floor(h.div(6.0)).mul(57.31)).mul(4375.85));
+    const joint = smoothstep(0.0, 0.012, fract(h.div(6.0))).mul(float(1).sub(smoothstep(0.988, 1.0, fract(h.div(6.0)))));
+    const board = smoothstep(0.0, 0.06, fract(p.y.div(0.3))).mul(0.04).add(0.96);
+    // (soft mottling: two waves, not a blocky hash)
+    const n = sin(h.mul(0.83).add(sin(p.y.mul(0.61)).mul(2.0))).mul(sin(p.y.mul(0.97).add(sin(h.mul(0.37)).mul(2.0)))).mul(0.5).add(0.5);
+    // the streaks: thin & thick, longer under the coping's drips
+    const s1 = fract(sin(floor(h.mul(1.7)).mul(91.7)).mul(437.5));
+    const s2 = fract(sin(floor(h.mul(0.45)).mul(13.3)).mul(271.9));
+    const fromTop = float(CITY_BOUNDS.sidewalkHeight + CUT_UPSTAND).sub(p.y).max(0);
+    const streak = smoothstep(0.55, 1.0, s1).mul(float(1).sub(smoothstep(0.0, mix(float(1.5), float(5.5), s2), fromTop))).mul(0.22);
+    const foot = float(1).sub(smoothstep(CUT_FOOT, CUT_FOOT + 1.6, p.y)).mul(0.3);
+    const base = mix(color(0x6f685d), color(0x847c70), bay.mul(0.7).add(n.mul(0.3)));
+    return base.mul(board).mul(joint.mul(0.16).add(0.84)).mul(float(1).sub(streak).sub(foot)).add(color(0x1a2410).mul(foot.mul(0.25)));
   })();
   return mat;
 }
@@ -503,6 +830,293 @@ function sample(route, s, out) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// The open cuts: walls, floor & tracks, the decks under the streets, the portals, the fence round the top
+// ---------------------------------------------------------------------------------------------------------------------
+// A collider for the player: a box `halfAlong` either side of (cx, cz) along (tx, tz), `halfAcross` across it
+function obbCollider(colliders, cx, cz, tx, tz, halfAlong, halfAcross, maxY) {
+  const hx = halfAcross, hz = halfAlong, cs = tz, sn = tx;
+  const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
+  colliders.push({ minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, maxY, obb: { cx, cz, hx, hz, cs, sn } });
+}
+// Chain-link, galvanised: the diamond mesh cut out of a plane (uv in metres), its wires thickening with distance so
+// it keeps its weight far off
+function createChainLinkMaterial() {
+  const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.45, metalness: 0.75, side: THREE.DoubleSide });
+  mat.alphaTest = 0.5;
+  const s = 0.075;
+  const p = uv();
+  const d = positionWorld.sub(cameraPosition).length();
+  const k = min(max(d.mul(0.006), float(0.09)), float(0.3));
+  const f1 = fract(p.x.add(p.y).div(s)), f2 = fract(p.x.sub(p.y).div(s));
+  const w1 = step(min(f1, float(1).sub(f1)), k), w2 = step(min(f2, float(1).sub(f2)), k);
+  mat.colorNode = color(0x8f9599);
+  mat.opacityNode = max(w1, w2);
+  return mat;
+}
+
+function buildCut(C, parent, colliders, mats) {
+  const group = new THREE.Group();
+  group.name = 'SubwayCut';
+  parent.add(group);
+  const SWH = CITY_BOUNDS.sidewalkHeight;
+  const TOP = SWH + CUT_UPSTAND; // the walls' top
+  const { ox, oz, ux, uz } = C;
+  const nx = -uz, nz = ux;
+  const P = (t, l, y) => [ox + ux * t + nx * l, y, oz + uz * t + nz * l];
+  const box = (A, t0, t1, l0, l1, y0, y1, faces) => obox(A, ox, oz, ux, uz, t0, t1, l0, l1, y0, y1, faces);
+  const concrete = [], floor = [], bed = [], bedUv = [], rails = [], lining = [], dark = [], fence = [], steel = [];
+  const fenceAlong = (t0, t1, l) => {
+    // along the trench, on a wall's top from t0 to t1
+    quad(fence, P(t0, l, TOP), P(t1, l, TOP), P(t1, l, TOP + CUT_FENCE), P(t0, l, TOP + CUT_FENCE), nx, 0, nz);
+    box(steel, t0, t1, l - 0.025, l + 0.025, TOP + CUT_FENCE - 0.05, TOP + CUT_FENCE, 1 | 2 | 4 | 8);
+    const n = Math.max(1, Math.round((t1 - t0) / 3));
+    for (let i = 0; i <= n; i++) {
+      const t = t0 + ((t1 - t0) * i) / n;
+      box(steel, t - 0.03, t + 0.03, l - 0.03, l + 0.03, TOP, TOP + CUT_FENCE + 0.04, 1 | 4 | 8 | 16 | 32);
+    }
+    const c = P((t0 + t1) / 2, l, 0);
+    obbCollider(colliders, c[0], c[2], ux, uz, (t1 - t0) / 2 + 0.1, 0.35, TOP + CUT_FENCE + 1);
+  };
+  const fenceAcross = (t, l0, l1) => {
+    quad(fence, P(t, l0, TOP), P(t, l1, TOP), P(t, l1, TOP + CUT_FENCE), P(t, l0, TOP + CUT_FENCE), ux, 0, uz);
+    box(steel, t - 0.025, t + 0.025, l0, l1, TOP + CUT_FENCE - 0.05, TOP + CUT_FENCE, 1 | 2 | 16 | 32);
+    const n = Math.max(1, Math.round((l1 - l0) / 3));
+    for (let i = 0; i <= n; i++) {
+      const l = l0 + ((l1 - l0) * i) / n;
+      box(steel, t - 0.03, t + 0.03, l - 0.03, l + 0.03, TOP, TOP + CUT_FENCE + 0.04, 1 | 4 | 8 | 16 | 32);
+    }
+    const c = P(t, (l0 + l1) / 2, 0);
+    obbCollider(colliders, c[0], c[2], nx, nz, (l1 - l0) / 2 + 0.1, 0.35, TOP + CUT_FENCE + 1);
+  };
+  const trackLAt = (Q, t) => {
+    for (let i = 1; i < Q.length; i++) if ((Q[i - 1].t - t) * (Q[i].t - t) <= 0 && Q[i].t !== Q[i - 1].t) return Q[i - 1].l + ((Q[i].l - Q[i - 1].l) * (t - Q[i - 1].t)) / (Q[i].t - Q[i - 1].t);
+    return null;
+  };
+  const stats = { decks: [], portals: 0 };
+  for (const G of C.groups) {
+    const S0 = G.spans[0], S1 = G.spans[G.spans.length - 1];
+    // Walls, floor & decks, span by span
+    G.spans.forEach((s, i) => {
+      const yTop = s.deck ? CUT_DECK : TOP;
+      box(concrete, s.t0, s.t1, s.l0 - CUT_WALL, s.l0, CUT_FOOT, yTop, s.deck ? 8 : 1 | 4 | 8);
+      box(concrete, s.t0, s.t1, s.l1, s.l1 + CUT_WALL, CUT_FOOT, yTop, s.deck ? 4 : 1 | 4 | 8);
+      quad(floor, P(s.t0, s.l0, CUT_FLOOR), P(s.t1, s.l0, CUT_FLOOR), P(s.t1, s.l1, CUT_FLOOR), P(s.t0, s.l1, CUT_FLOOR), 0, 1, 0);
+      if (!s.deck) {
+        fenceAlong(s.t0, s.t1, s.l0 - CUT_WALL / 2);
+        fenceAlong(s.t0, s.t1, s.l1 + CUT_WALL / 2);
+        return;
+      }
+      // a street's deck: its soffit, a parapet at either end (its outer face the deck's fascia, down to the soffit),
+      // and where the trench is wider under it, the step in the walls below the soffit
+      box(concrete, s.t0, s.t1, s.l0 - CUT_WALL, s.l1 + CUT_WALL, CUT_DECK, -0.02, 2);
+      for (const [ta, tb] of [[s.t0, s.t0 + 0.35], [s.t1 - 0.35, s.t1]]) {
+        box(concrete, ta, tb, s.l0 - CUT_WALL, s.l1 + CUT_WALL, CUT_DECK, SWH + 0.85, 1 | 4 | 8 | 16 | 32);
+        const tm = (ta + tb) / 2;
+        box(steel, tm - 0.04, tm + 0.04, s.l0 - CUT_WALL, s.l1 + CUT_WALL, SWH + 1.3, SWH + 1.36, 1 | 2 | 16 | 32);
+        for (let l = s.l0 - CUT_WALL + 0.1; l < s.l1 + CUT_WALL; l += 1.6) box(steel, tm - 0.03, tm + 0.03, l - 0.03, l + 0.03, SWH + 0.85, SWH + 1.3, 4 | 8 | 16 | 32);
+        const c = P((ta + tb) / 2, (s.l0 + s.l1) / 2, 0);
+        obbCollider(colliders, c[0], c[2], nx, nz, (s.l1 - s.l0) / 2 + CUT_WALL + 0.1, 0.3, SWH + 3);
+      }
+      for (const [nb, t, f] of [[G.spans[i - 1], s.t0, -1], [G.spans[i + 1], s.t1, 1]]) {
+        if (nb.l0 > s.l0 + 0.01) quad(concrete, P(t, s.l0, CUT_FOOT), P(t, nb.l0, CUT_FOOT), P(t, nb.l0, CUT_DECK), P(t, s.l0, CUT_DECK), ux * f, 0, uz * f);
+        if (nb.l1 < s.l1 - 0.01) quad(concrete, P(t, nb.l1, CUT_FOOT), P(t, s.l1, CUT_FOOT), P(t, s.l1, CUT_DECK), P(t, nb.l1, CUT_DECK), ux * f, 0, uz * f);
+      }
+      stats.decks.push(s.name);
+    });
+    // Portals at the trench's ends: a headwall round the opening over the main tracks, a frame standing proud of it,
+    // the tunnel lining and its dark end; the fence along the headwall's top
+    for (const [s, t, f] of [[S0, G.t0, 1], [S1, G.t1, -1]]) {
+      // f: the way into the trench
+      const ls = C.chains.map((c) => trackLAt(c.Q, t)).filter((v) => v !== null);
+      const h0 = Math.max(s.l0 + 0.2, Math.min(...ls) - 2.3), h1 = Math.min(s.l1 - 0.2, Math.max(...ls) + 2.3);
+      const back = t - f * 0.8;
+      const fx = ux * f, fz = uz * f;
+      const W0 = s.l0 - CUT_WALL, W1 = s.l1 + CUT_WALL;
+      quad(concrete, P(t, W0, CUT_FOOT), P(t, h0, CUT_FOOT), P(t, h0, TOP), P(t, W0, TOP), fx, 0, fz);
+      quad(concrete, P(t, h1, CUT_FOOT), P(t, W1, CUT_FOOT), P(t, W1, TOP), P(t, h1, TOP), fx, 0, fz);
+      quad(concrete, P(t, h0, CUT_HOLE_TOP), P(t, h1, CUT_HOLE_TOP), P(t, h1, TOP), P(t, h0, TOP), fx, 0, fz);
+      quad(concrete, P(t, W0, TOP), P(t, W1, TOP), P(back, W1, TOP), P(back, W0, TOP), 0, 1, 0);
+      // the frame (its sides & lintel 0.6 m wide, 0.35 m proud) and a cornice along the top
+      const fr = t + f * 0.35;
+      const tA = Math.min(t, fr), tB = Math.max(t, fr), ends = f > 0 ? 1 | 4 | 8 | 32 : 1 | 4 | 8 | 16;
+      box(concrete, tA, tB, h0 - 0.6, h0, CUT_FLOOR, CUT_HOLE_TOP + 0.6, ends);
+      box(concrete, tA, tB, h1, h1 + 0.6, CUT_FLOOR, CUT_HOLE_TOP + 0.6, ends);
+      box(concrete, tA, tB, h0, h1, CUT_HOLE_TOP, CUT_HOLE_TOP + 0.6, ends | 2);
+      box(concrete, tA, tB, W0, W1, TOP - 0.45, TOP, ends | 2);
+      // the lining
+      const e = t - f * CUT_LINING;
+      const a0 = Math.min(t, e), a1 = Math.max(t, e);
+      box(lining, a0, a1, h0 - 0.3, h0, CUT_FLOOR - 0.02, CUT_HOLE_TOP + 0.3);
+      box(lining, a0, a1, h1, h1 + 0.3, CUT_FLOOR - 0.02, CUT_HOLE_TOP + 0.3);
+      box(lining, a0, a1, h0, h1, CUT_HOLE_TOP, CUT_HOLE_TOP + 0.3);
+      box(lining, a0, a1, h0, h1, CUT_FLOOR - 0.3, CUT_FLOOR - 0.02, 1);
+      quad(dark, P(e, h0, CUT_FLOOR - 0.02), P(e, h1, CUT_FLOOR - 0.02), P(e, h1, CUT_HOLE_TOP), P(e, h0, CUT_HOLE_TOP), fx, 0, fz);
+      fenceAcross(t - f * 0.4, W0, W1);
+      stats.portals++;
+    }
+    // Tracks: the main ones on through the portals into the linings, the yard's sidings & crossovers within the
+    // trench (a buffer stop where one ends short of a headwall)
+    for (const tr of C.tracks) {
+      let Q = tr.Q;
+      if (tr.main) Q = [{ t: Math.min(Q[0].t, 0) - CUT_LINING, l: Q[0].l }, ...Q, { t: Math.max(Q[Q.length - 1].t, C.len) + CUT_LINING, l: Q[Q.length - 1].l }];
+      const ta = tr.main ? G.t0 - CUT_LINING + 4 : G.t0 + 0.5, tb = tr.main ? G.t1 + CUT_LINING - 4 : G.t1 - 4;
+      const R = clipT(Q, ta, tb);
+      if (R.length < 2) continue;
+      const W = R.map((q) => C.world(q.t, q.l));
+      const TL = lenOf(W);
+      const m = Math.max(1, Math.ceil(TL / 3));
+      const yBed = CUT_FLOOR + (tr.main ? 0.14 : 0.12);
+      for (let i = 0; i < m; i++) {
+        const s0 = (TL * i) / m, s1 = (TL * (i + 1)) / m;
+        const p0 = at(W, s0), p1 = at(W, s1);
+        const Cn = (p, c, y) => [p.x - p.tz * c, y, p.z + p.tx * c];
+        bed.push(...Cn(p0, -1.4, yBed), ...Cn(p1, 1.4, yBed), ...Cn(p1, -1.4, yBed), ...Cn(p0, -1.4, yBed), ...Cn(p0, 1.4, yBed), ...Cn(p1, 1.4, yBed));
+        bedUv.push(0, s0, 1, s1, 0, s1, 0, s0, 1, s0, 1, s1);
+        for (const g of [-GAUGE_HALF, GAUGE_HALF]) {
+          const a = Cn(p0, g, CUT_RAIL), b = Cn(p1, g, CUT_RAIL);
+          quad(rails, [a[0], CUT_RAIL - 0.17, a[2]], [b[0], CUT_RAIL - 0.17, b[2]], [b[0], CUT_RAIL, b[2]], [a[0], CUT_RAIL, a[2]], -p0.tz, 0, p0.tx);
+          quad(rails, [a[0] - p0.tz * 0.035, CUT_RAIL, a[2] + p0.tx * 0.035], [b[0] - p0.tz * 0.035, CUT_RAIL, b[2] + p0.tx * 0.035], [b[0] + p0.tz * 0.035, CUT_RAIL, b[2] - p0.tx * 0.035], [a[0] + p0.tz * 0.035, CUT_RAIL, a[2] - p0.tx * 0.035], 0, 1, 0);
+        }
+      }
+      if (!tr.main && tr.Q[tr.Q.length - 1].t > tb - 0.5) {
+        const e = at(W, TL);
+        obox(steel, e.x, e.z, e.tx, e.tz, -0.3, 0.3, -1.0, 1.0, CUT_RAIL - 0.2, CUT_RAIL + 1.1);
+      }
+    }
+  }
+  // uv from the positions (quad() may wind a face either way): the floor's (shoulder, metres along), the fence's
+  // (metres along its line, metres up)
+  const uvOf = (pos, f) => {
+    const out = [];
+    for (let i = 0; i < pos.length; i += 3) {
+      const dx = pos[i] - ox, dz = pos[i + 2] - oz;
+      out.push(...f(dx * ux + dz * uz, dx * nx + dz * nz, pos[i + 1]));
+    }
+    return out;
+  };
+  const floorUv = uvOf(floor, (t) => [1, t]), fenceUv = uvOf(fence, (t, l, y) => [t + l, y]);
+  const out = [
+    meshOf(concrete, mats.cutConcrete, 'SubwayCutWalls'),
+    meshOf(floor, mats.ballast, 'SubwayCutFloor', { cast: false, extra: { uv: [floorUv, 2] } }),
+    meshOf(bed, mats.ballast, 'SubwayCutTrackBed', { cast: false, extra: { uv: [bedUv, 2] } }),
+    meshOf(rails, mats.rails, 'SubwayCutRails', { cast: false }),
+    meshOf(lining, mats.lining, 'SubwayCutTunnelLining'),
+    meshOf(dark, mats.dark, 'SubwayCutTunnelEnd', { cast: false, receive: false }),
+    meshOf(fence, mats.chainLink, 'SubwayCutFence', { cast: false, extra: { uv: [fenceUv, 2] } }),
+    meshOf(steel, mats.fenceSteel, 'SubwayCutFenceSteel')
+  ].filter(Boolean);
+  for (const m of out) group.add(m);
+  return stats;
+}
+
+// A covered bridge: the box (pilasters every 6 m, a cornice), blade piers clear of the road under it, and at each end
+// a concrete headwall with its wing walls holding a grassed mound
+function buildCovered(V, parent, colliders, mats) {
+  const group = new THREE.Group();
+  group.name = 'SubwayCoveredBridge';
+  parent.add(group);
+  const concrete = [], grass = [];
+  const { pts, len, top, W, Sp } = V;
+  const y0 = CB_SOFFIT;
+  // the box, every ~6 m
+  const n = Math.max(1, Math.round(len / 6));
+  for (let i = 0; i < n; i++) {
+    const s0 = (len * i) / n, s1 = (len * (i + 1)) / n;
+    const p0 = at(pts, s0), p1 = at(pts, s1);
+    const C = (p, c, y) => [p.x - p.tz * c, y, p.z + p.tx * c];
+    quad(concrete, C(p0, -CB_HALF, top), C(p1, -CB_HALF, top), C(p1, CB_HALF, top), C(p0, CB_HALF, top), 0, 1, 0);
+    quad(concrete, C(p0, -CB_HALF, y0), C(p1, -CB_HALF, y0), C(p1, CB_HALF, y0), C(p0, CB_HALF, y0), 0, -1, 0);
+    for (const sg of [-1, 1]) quad(concrete, C(p0, CB_HALF * sg, y0), C(p1, CB_HALF * sg, y0), C(p1, CB_HALF * sg, top), C(p0, CB_HALF * sg, top), -p0.tz * sg, 0, p0.tx * sg);
+    // a pilaster at each bay's joint, the cornice along the top, a drip band along the soffit
+    if (i) for (const sg of [-1, 1]) obox(concrete, p0.x, p0.z, p0.tx, p0.tz, -0.3, 0.3, sg > 0 ? CB_HALF : -CB_HALF - 0.18, sg > 0 ? CB_HALF + 0.18 : -CB_HALF, y0 - 0.25, top, sg > 0 ? 1 | 2 | 8 | 16 | 32 : 1 | 2 | 4 | 16 | 32);
+    obox(concrete, p0.x, p0.z, p0.tx, p0.tz, 0, s1 - s0, -CB_HALF - 0.35, CB_HALF + 0.35, top, top + 0.45, 1 | 2 | 4 | 8);
+    obox(concrete, p0.x, p0.z, p0.tx, p0.tz, 0, s1 - s0, -CB_HALF - 0.12, CB_HALF + 0.12, y0 - 0.25, y0, 2 | 4 | 8);
+  }
+  // piers about every 30 m, each moved along (up to 10 m) to stand clear of the streets under it, else left out
+  const roads = ROADS.filter((r) => !r.raised && r.pts.some((p) => pts.some((q) => Math.hypot(p.x - q.x, p.z - q.z) < len + 40)));
+  const clear = (x, z) => {
+    for (const r of roads) for (let i = 1; i < r.pts.length; i++) if (segDist(x, z, r.pts[i - 1], r.pts[i]) < r.w / 2 + 2.5) return false;
+    return true;
+  };
+  const m = Math.max(1, Math.round(len / 30));
+  let piers = 0;
+  for (let i = 1; i < m; i++) {
+    for (const d of [0, 3, -3, 6, -6, 10, -10]) {
+      const p = at(pts, (len * i) / m + d);
+      if (![-4.4, 0, 4.4].every((c) => [-0.8, 0.8].every((a) => clear(p.x + p.tx * a - p.tz * c, p.z + p.tz * a + p.tx * c)))) continue;
+      obox(concrete, p.x, p.z, p.tx, p.tz, -0.7, 0.7, -4.2, 4.2, -0.3, y0 - 0.25, 4 | 8 | 16 | 32);
+      obox(concrete, p.x, p.z, p.tx, p.tz, -1.0, 1.0, -4.8, 4.8, y0 - 0.85, y0 - 0.25, 1 | 2 | 4 | 8 | 16 | 32);
+      obbCollider(colliders, p.x, p.z, p.tx, p.tz, 0.8, 4.3, y0);
+      piers++;
+      break;
+    }
+  }
+  // the ends: headwall (its cornice), wing walls, the mound
+  for (const e of V.ends) {
+    const P = (a, c, y) => [e.x + e.tx * a - e.tz * c, y, e.z + e.tz * a + e.tx * c];
+    const Ht = top + 0.2, A = CB_ABUT;
+    quad(concrete, P(0, -W - 0.4, -0.3), P(0, W + 0.4, -0.3), P(0, W + 0.4, Ht + 0.5), P(0, -W - 0.4, Ht + 0.5), -e.tx, 0, -e.tz);
+    obox(concrete, e.x, e.z, e.tx, e.tz, -0.45, 0.3, -W - 0.4, W + 0.4, Ht + 0.5, Ht + 0.85, 1 | 2 | 4 | 8 | 16 | 32);
+    for (const sg of [-1, 1]) {
+      // the wing wall, stepping down beside the mound's side, its face toward the valley
+      const c0 = (W + 0.4) * sg, c1 = (W + Sp) * sg;
+      quad(concrete, P(0, c0, -0.3), P(0, c1, -0.3), P(0, c1, 0.4), P(0, c0, Ht + 0.5), -e.tx, 0, -e.tz);
+      obox(concrete, e.x, e.z, e.tx, e.tz, 0, 0.45, Math.min(c0, c1), Math.max(c0, c1), -0.3, 0.4, 1 | 4 | 8);
+      quad(concrete, P(0.45, c0, Ht + 0.5), P(0.45, c1, 0.4), P(0, c1, 0.4), P(0, c0, Ht + 0.5), 0, 1, 0);
+      // the mound's side
+      quad(grass, P(0.45, W * sg, Ht), P(A, W * sg, Ht), P(A, (W + Sp) * sg, 0), P(0.45, (W + Sp) * sg, 0), -e.tz * sg, 1, e.tx * sg);
+      // its corner
+      const tri = [P(A, W * sg, Ht), P(A + Sp, W * sg, 0), P(A, (W + Sp) * sg, 0)];
+      quad(grass, tri[0], tri[1], tri[2], tri[2], e.tx - e.tz * sg, 1, e.tz + e.tx * sg);
+    }
+    quad(grass, P(0.45, -W, Ht), P(A, -W, Ht), P(A, W, Ht), P(0.45, W, Ht), 0, 1, 0);
+    quad(grass, P(A, -W, Ht), P(A, W, Ht), P(A + Sp, W, 0), P(A + Sp, -W, 0), e.tx, 1, e.tz);
+    // the player's collider: the mound out to where it's ~1 m high
+    const R = A + Sp * 0.88;
+    obbCollider(colliders, e.x + (e.tx * R) / 2, e.z + (e.tz * R) / 2, e.tx, e.tz, R / 2, W + Sp * 0.88, Ht + 1);
+  }
+  for (const m2 of [meshOf(concrete, mats.coveredConcrete, 'SubwayCoveredBridge'), meshOf(grass, mats.mound, 'SubwayCoveredMounds')].filter(Boolean)) group.add(m2);
+  return { piers };
+}
+
+// Train routes through a trench: on the main tracks (eastbound on the south one), EXT m on into the tunnels at
+// either end; shown between the outermost portals' tunnel linings
+function cutRoutes(C, k) {
+  const routes = [];
+  const T0 = Math.min(...C.groups.map((G) => G.t0)), T1 = Math.max(...C.groups.map((G) => G.t1));
+  for (const [c, dirn] of [[C.chains[C.chains.length - 1], 1], [C.chains[0], -1]]) {
+    const a = c.P[0], b = c.P[c.P.length - 1];
+    let line = [{ x: a.x - C.ux * EXT, z: a.z - C.uz * EXT }, ...c.P, { x: b.x + C.ux * EXT, z: b.z + C.uz * EXT }];
+    if (dirn < 0) line = line.reverse();
+    const cum = [0];
+    for (let i = 1; i < line.length; i++) cum.push(cum[i - 1] + Math.hypot(line[i].x - line[i - 1].x, line[i].z - line[i - 1].z));
+    const len = cum[cum.length - 1];
+    // route distance at trench position t (the chain runs along t)
+    const sAt = (t) => (dirn > 0 ? EXT + t - c.Q[0].t : EXT + c.Q[c.Q.length - 1].t - t);
+    const [o0, o1] = [sAt(T0), sAt(T1)].sort((p, q) => p - q);
+    routes.push({ pts: line, cum, len, y: CUT_RAIL, show0: o0 - CUT_LINING + 0.5, show1: o1 + CUT_LINING - 0.5, open0: o0, open1: o1, phase: (0.23 + 0.31 * k + (dirn > 0 ? 0 : 0.5)) % 1 });
+  }
+  return routes;
+}
+// Trains laid up in the yard: on its longest sidings, nosed up to the buffer stops at the trench's east end
+function parkedTrains(C) {
+  const out = [];
+  const G = C.groups[C.groups.length - 1];
+  const sidings = C.tracks.filter((tr) => !tr.main).map((tr) => clipT(tr.Q, G.t0 + 0.5, G.t1 - 4)).filter((R) => R.length > 1).map((R) => R.map((q) => C.world(q.t, q.l))).filter((W) => lenOf(W) > TRAIN_LEN + 8).sort((a, b) => lenOf(b) - lenOf(a));
+  for (const W of sidings.slice(0, 2)) {
+    const TL = lenOf(W);
+    const cars = [];
+    for (let i = 0; i < CARS; i++) {
+      const front = TL - 3 - i * (CAR_LEN + CAR_GAP), back = front - CAR_LEN;
+      const A = at(W, front), Bk = at(W, back);
+      cars.push({ x: (A.x + Bk.x) / 2, z: (A.z + Bk.z) / 2, yaw: Math.atan2(A.x - Bk.x, A.z - Bk.z) + (i === CARS - 1 ? Math.PI : 0), cab: i === 0 || i === CARS - 1 });
+    }
+    out.push(cars);
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Station entrances
 // ---------------------------------------------------------------------------------------------------------------------
 // The stairwell, traced in the shader: from the decal's point at the sidewalk the view ray runs down into a box
@@ -603,7 +1217,7 @@ function buildEntrances(group, colliders) {
     for (const a of [-0.5, -0.25, 0, 0.25, 0.5]) {
       for (const c of [-1, 0, 1]) {
         const x = cx + tx * a * (ST_LEN + 0.6) + nx * c * (ST_HALF + 0.1), z = cz + tz * a * (ST_LEN + 0.6) + nz * c * (ST_HALF + 0.1);
-        if (blockAt(x, z) !== blk || inBuilding(x, z, 0.3)) return false;
+        if (blockAt(x, z) !== blk || inBuilding(x, z, 0.3) || subwayCutAt(x, z, 1)) return false;
         if (c === 0 && nearProp(x, z, 1.4)) return false;
       }
     }
@@ -666,7 +1280,7 @@ function buildEntrances(group, colliders) {
       const lat = R.curb + 0.65;
       for (const d of [0, 1.5, -1.5, 3, -3, 5, -5]) {
         const x = R.px + R.nx * lat + tx * d, z = R.pz + R.nz * lat + tz * d;
-        if (blockAt(x, z) && !nearProp(x, z, 0.4) && !inBuilding(x, z, 0.3) && !placed.some((p) => Math.hypot(p.x - x, p.z - z) < 3)) { site = { x, z, tx, tz, kind: 'sign' }; break; }
+        if (blockAt(x, z) && !nearProp(x, z, 0.4) && !inBuilding(x, z, 0.3) && !subwayCutAt(x, z, 0.5) && !placed.some((p) => Math.hypot(p.x - x, p.z - z) < 3)) { site = { x, z, tx, tz, kind: 'sign' }; break; }
       }
     }
     if (!site) { skipped++; continue; }
@@ -744,15 +1358,31 @@ function createSubway(scene) {
   const colliders = [];
   let piers = 0;
   for (const V of VIADUCTS) piers += buildViaduct(V, group, colliders).supports;
+  // the open cuts in the west end
+  const cutMats = {
+    cutConcrete: createCutWallMaterial(),
+    ballast: window.CITY.createBallastMaterial ? window.CITY.createBallastMaterial() : createBedMaterial(),
+    rails: new THREE.MeshStandardNodeMaterial({ color: 0x8e8a84, roughness: 0.35, metalness: 0.85 }),
+    lining: new THREE.MeshBasicNodeMaterial({ color: 0x0e0f10 }),
+    dark: new THREE.MeshBasicNodeMaterial({ color: 0x000000 }),
+    chainLink: createChainLinkMaterial(),
+    fenceSteel: new THREE.MeshStandardNodeMaterial({ color: 0x7d8387, roughness: 0.4, metalness: 0.8 })
+  };
+  const cutStats = SUBWAY_CUTS.map((C) => buildCut(C, group, colliders, cutMats));
+  // the covered bridge over the Rosedale Valley
+  const coveredMats = { coveredConcrete: createConcreteMaterial(0xa9a295), mound: window.CITY.createEmbankmentGrassMaterial ? window.CITY.createEmbankmentGrassMaterial() : new THREE.MeshStandardNodeMaterial({ color: 0x44552c, roughness: 0.95 }) };
+  const coveredStats = COVERED.map((V) => buildCovered(V, group, colliders, coveredMats));
   const ent = buildEntrances(group, colliders);
   scene.add(group);
 
-  // The trains
-  const routes = VIADUCTS.flatMap(viaductRoutes);
+  // The trains: over the viaduct, through the cuts, and laid up in Vincent Yard
+  const routes = [...VIADUCTS.flatMap(viaductRoutes), ...SUBWAY_CUTS.flatMap((C, k) => cutRoutes(C, k))];
+  const parked = SUBWAY_CUTS.map((C) => ({ C, mid: C.world(C.len / 2, 0), trains: parkedTrains(C) })).filter((p) => p.trains.length);
+  const nParked = parked.reduce((t, p) => t + p.trains.length, 0);
   const k = QUALITY.subway ?? 1;
   const headway = HEADWAY / Math.max(0.1, k);
-  const cabs = new THREE.InstancedMesh(carGeometry(true), createCarMaterial(true), Math.max(1, routes.length * 4));
-  const mids = new THREE.InstancedMesh(carGeometry(false), createCarMaterial(false), Math.max(1, routes.length * 8));
+  const cabs = new THREE.InstancedMesh(carGeometry(true), createCarMaterial(true), Math.max(1, routes.length * 4 + nParked * 2));
+  const mids = new THREE.InstancedMesh(carGeometry(false), createCarMaterial(false), Math.max(1, routes.length * 8 + nParked * (CARS - 2)));
   for (const m of [cabs, mids]) {
     m.name = 'SubwayTrains';
     m.castShadow = true;
@@ -766,14 +1396,16 @@ function createSubway(scene) {
   const sounding = []; // the trains in the open, for the audio (streetcar-like voices)
   const trains = routes.map(() => [0, 1].map(() => ({ speed: SPEED, y: 0, sections: Array.from({ length: CARS }, () => ({ x: 0, z: 0, yaw: 0 })) })));
   let shift = 0, last = 0, held = null;
-  // (for screenshots: route `ri`'s train with its middle `frac` of the way over the viaduct, held there if `hold`)
+  // (for screenshots: route `ri`'s train with its middle `frac` of the way along its open stretch (over the viaduct,
+  // or between a cut's portals), held there if `hold`)
   const placeTrain = (ri, frac, hold = true) => {
     const r = routes[ri], cycle = headway * SPEED;
-    const target = EXT + frac * (r.len - 2 * EXT) + TRAIN_LEN / 2;
+    const o0 = r.open0 ?? EXT, o1 = r.open1 ?? r.len - EXT;
+    const target = o0 + frac * (o1 - o0) + TRAIN_LEN / 2;
     shift = ((((target - (last * SPEED + r.phase * cycle)) / SPEED) % headway) + headway) % headway;
     held = hold ? last + shift : null;
   };
-  const api = { group, colliders, cars: sounding, update, routes, entrances: ent, placeTrain };
+  const api = { group, colliders, cars: sounding, update, routes, entrances: ent, placeTrain, cuts: SUBWAY_CUTS };
 
   function update(time, camera) {
     last = time;
@@ -781,6 +1413,19 @@ function createSubway(scene) {
     let nc = 0, nm = 0;
     sounding.length = 0;
     const camX = camera ? camera.position.x : 0, camZ = camera ? camera.position.z : 0;
+    // the yard's laid-up trains, when near
+    for (const p of parked) {
+      if (Math.hypot(p.mid.x - camX, p.mid.z - camZ) > 2500) continue;
+      for (const cars of p.trains) {
+        for (const c of cars) {
+          dummy.position.set(c.x, CUT_RAIL, c.z);
+          dummy.rotation.set(0, c.yaw, 0);
+          dummy.updateMatrix();
+          if (c.cab) cabs.setMatrixAt(nc++, dummy.matrix);
+          else mids.setMatrixAt(nm++, dummy.matrix);
+        }
+      }
+    }
     routes.forEach((r, ri) => {
       // far away: nothing to draw
       if (Math.hypot(r.pts[r.pts.length >> 1].x - camX, r.pts[r.pts.length >> 1].z - camZ) > 3000) return;
@@ -823,9 +1468,10 @@ function createSubway(scene) {
     }
   }
 
-  console.info(`[subway] ${VIADUCTS.length} viaduct (${VIADUCTS.map((V) => `${Math.round(V.len)} m, lower deck at ${Math.round(V.railY * 10) / 10} m, ${piers} piers`).join('; ')}), ${routes.length} train routes; ${ent.stairs} stair entrances & ${ent.signs} pylons alone at ${new Set(ent.sites.map((s) => s.name)).size} stations (${ent.skipped} left out)`);
+  const cutInfo = SUBWAY_CUTS.map((C, i) => `${C.groups.map((G) => `${Math.round(G.t1 - G.t0)} m`).join(' + ')} at x ${Math.round(C.world(C.len / 2, 0).x)} (${cutStats[i].portals} portals, decks: ${cutStats[i].decks.join(', ') || 'none'})`).join('; ');
+  console.info(`[subway] ${VIADUCTS.length} viaduct (${VIADUCTS.map((V) => `${Math.round(V.len)} m, lower deck at ${Math.round(V.railY * 10) / 10} m, ${piers} piers`).join('; ')}), ${SUBWAY_CUTS.length} open cuts (${cutInfo}), ${COVERED.length} covered bridge (${COVERED.map((V, i) => `${Math.round(V.len)} m, ${coveredStats[i].piers} piers`).join('; ')}), ${nParked} trains laid up, ${routes.length} train routes; ${ent.stairs} stair entrances & ${ent.signs} pylons alone at ${new Set(ent.sites.map((s) => s.name)).size} stations (${ent.skipped} left out)`);
   return api;
 }
 
-Object.assign(window.CITY, { createSubway, subwayKeepsClear, SUBWAY_VIADUCTS: VIADUCTS });
+Object.assign(window.CITY, { createSubway, subwayKeepsClear, subwayCutAt, SUBWAY_VIADUCTS: VIADUCTS, SUBWAY_CUTS, SUBWAY_CUT_RECTS, SUBWAY_COVERED: COVERED });
 })();

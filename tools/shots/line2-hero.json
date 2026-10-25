@@ -1,0 +1,37 @@
+[
+ {
+  "name": "hero-high-park-cut-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-6694,-2896,0);app.cameraSystem.cinema=()=>({pos:[-6694,2.3,-2896],look:[-6780,-4.5,-2891],fov:58});if(app.subway.routes.length>3)app.subway.placeTrain(3,0.45);})();"
+ },
+ {
+  "name": "hero-vincent-yard-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-5480,-2960,0);app.cameraSystem.cinema=()=>({pos:[-5480,40,-2960],look:[-5570,-5,-2905],fov:55});if(app.subway.routes.length>4)app.subway.placeTrain(4,0.5);})();"
+ },
+ {
+  "name": "hero-indian-rd-deck-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-5576,-2905,0);app.cameraSystem.cinema=()=>({pos:[-5576,2.3,-2905],look:[-5670,-4,-2912],fov:60});if(app.subway.routes.length>5)app.subway.placeTrain(5,0.45);})();"
+ },
+ {
+  "name": "hero-vincent-yard-low-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-5500,-2935,0);app.cameraSystem.cinema=()=>({pos:[-5500,9,-2935],look:[-5600,-4,-2903],fov:58});if(app.subway.routes.length>4)app.subway.placeTrain(4,0.62);})();"
+ },
+ {
+  "name": "hero-rosedale-covered-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1700,-2650,0);app.cameraSystem.cinema=()=>({pos:[1700,2,-2650],look:[1630,6,-2695],fov:62});})();"
+ }
+]

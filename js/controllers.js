@@ -430,6 +430,7 @@ class ThirdPersonControllerManager {
       pz = Math.max(CITY_BOUNDS.minZ - m, Math.min(CITY_BOUNDS.maxZ + m, pz));
       px = Math.max(CITY_BOUNDS.minX - m, Math.min(CITY_BOUNDS.maxX + m, px));
       if (!heli && waterAt(px, pz)) return null; // not in a lake
+      if (!heli && window.CITY.subwayCutAt && window.CITY.subwayCutAt(px, pz, 1, false)) return null; // nor down a subway cut (subway.js)
       return { x: px, z: pz };
     };
     const clear = (p) => {
