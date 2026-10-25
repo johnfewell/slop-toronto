@@ -189,19 +189,27 @@ function chirp(ctx) {
   }, 0.45);
 }
 
-// A wheel over a rail joint: a dull thump with the rail's ring over it
-function railClack(ctx, seed) {
+// A wheel over a rail joint, the streetcar's "dunk" (John, who hears them every day: "gadunk, gadunk, kadunka dunk"):
+// a heavy, low knock of the truck and the car body, its pitch dropping as it rings out (130 -> 55 Hz), a wooden mid
+// knock over it and only a trace of the rail's ring; `heavy` 0 is the lighter "ka" of a truck's leading axle
+function railClack(ctx, seed, heavy = 1) {
   const random = randomSource(seed);
-  const lowC = 1 - Math.exp(-TAU * 260 / ctx.sampleRate);
-  let low = 0;
-  const modes = [820, 1650, 2900].map((f, i) => ({ f: f * (0.94 + random() * 0.12), decay: 0.03 - i * 0.007, level: [1, 0.6, 0.35][i] }));
-  return makeBuffer(ctx, 0.12, (t) => {
+  const lowC = 1 - Math.exp(-TAU * 180 / ctx.sampleRate);
+  let low = 0, phase = 0, knockPhase = 0;
+  const f0 = 125 + random() * 20, f1 = 52 + random() * 8, knock = 290 + random() * 60, ring = 1900 + random() * 400;
+  const bodyDecay = 0.07 + 0.05 * heavy;
+  return makeBuffer(ctx, 0.32, (t) => {
     const noise = random() * 2 - 1;
     low += (noise - low) * lowC;
-    let ring = 0;
-    for (const m of modes) ring += Math.sin(TAU * m.f * t) * Math.exp(-t / m.decay) * m.level;
-    return low * 3.2 * (1 - Math.exp(-t * 2000)) * Math.exp(-t / 0.025) + ring * 0.35 * (1 - Math.exp(-t * 4000));
-  }, 0.6);
+    phase += (f1 + (f0 - f1) * Math.exp(-t / 0.035)) / ctx.sampleRate;
+    knockPhase += knock / ctx.sampleRate;
+    const attack = 1 - Math.exp(-t * 1500);
+    const body = Math.sin(TAU * phase) * Math.exp(-t / bodyDecay) * (0.7 + 0.3 * heavy);
+    const mid = Math.sin(TAU * knockPhase) * Math.exp(-t / 0.03) * 0.35;
+    const thud = low * 2.2 * Math.exp(-t / 0.018);
+    const tink = Math.sin(TAU * ring * t) * Math.exp(-t / 0.012) * 0.06;
+    return attack * (body + mid + thud) + tink;
+  }, 0.6 + 0.3 * heavy);
 }
 
 // Control loops at a low rate for the lake: `swell`, the water rising and falling at the wall (uneven waves 2-4.5 s
@@ -252,7 +260,7 @@ function torontoBuffers(ctx) {
     hiss: [airHiss(ctx, 51), airHiss(ctx, 52)],
     cuckoo: cuckoo(ctx),
     chirp: chirp(ctx),
-    clacks: [railClack(ctx, 61), railClack(ctx, 62), railClack(ctx, 63)],
+    clacks: [railClack(ctx, 61, 0), railClack(ctx, 62, 0), railClack(ctx, 63, 1), railClack(ctx, 64, 1)], // ka, ka, dunk, dunk
     ...lakeBuffers(ctx)
   };
 }
@@ -394,11 +402,11 @@ function createStreetcarVoice(context, resources, output) {
   let previousTime = -1, travel = 0, nextJoint = 8;
   const random = randomSource(Math.floor(Math.random() * 1e6));
 
-  function clack(when, level) {
+  function clack(when, level, heavy) {
     const source = context.createBufferSource();
     const envelope = context.createGain();
-    source.buffer = toronto.clacks[Math.floor(random() * toronto.clacks.length)];
-    source.playbackRate.value = 0.9 + random() * 0.2;
+    source.buffer = toronto.clacks[(heavy ? 2 : 0) + (random() < 0.5 ? 0 : 1)];
+    source.playbackRate.value = 0.94 + random() * 0.12;
     envelope.gain.value = level;
     source.connect(envelope).connect(clackGain);
     shots.add(source);
@@ -430,8 +438,9 @@ function createStreetcarVoice(context, resources, output) {
     const f = (95 + speed * 92) * pitch;
     whineFrequency(f, now);
     octaveFrequency(f * 2 + 6, now);
-    whineLevel((0.014 + 0.05 * effort) * moving, now);
-    octaveLevel((0.006 + 0.02 * effort) * moving, now);
+    // (under the wheels: the whine is there pulling away and braking, but it's the knocking you hear)
+    whineLevel((0.004 + 0.018 * effort) * moving, now);
+    octaveLevel((0.002 + 0.007 * effort) * moving, now);
     carrierFrequency(1050 * pitch, now);
     carrierLevel(0.012 * effort * (1 - smoothstep(2, 6, speed)) * smoothstep(0.05, 0.5, speed + effort), now);
     gearFrequency(Math.max(20, speed * 21) * pitch, now);
@@ -449,16 +458,21 @@ function createStreetcarVoice(context, resources, output) {
     squealPitch((4100 + waver) * (0.97 + variation * 0.06) * doppler, now);
     squealPitchB((6230 + waver * 1.5) * (0.97 + variation * 0.06) * doppler, now);
     noiseRate((0.9 + Math.min(1, rolling) * 0.2) * doppler, now);
-    // Rail joints every 14-30 m: each bogie's two axles clack over them in turn
+    // Rail joints, welds & worn spots in the street track every 5-11 m: each truck's two axles go over in turn, the
+    // leading one lighter ("ka-dunk"), so a passing car is "ka-dunk ... ka-dunk, kadunka-dunk" as its trucks follow
     if (speed > 1.2 && dt > 0) {
       const before = travel;
       travel += speed * dt;
-      if (travel >= nextJoint && shots.size < 24) {
-        const level = 0.1 * Math.min(1.2, (speed / 10) ** 0.7);
+      if (travel >= nextJoint && shots.size < 40) {
+        const level = 0.32 * Math.min(1.25, (speed / 10) ** 0.6) * (0.75 + random() * 0.5);
         const at = now + Math.max(0, (nextJoint - before) / speed);
-        for (const d of JOINT_AXLES) clack(at + d / speed, level * (0.8 + random() * 0.4));
+        JOINT_AXLES.forEach((d, i) => {
+          const heavy = i % 2 === 1;
+          const jitter = (random() - 0.5) * 0.012;
+          clack(at + d / speed + jitter, level * (heavy ? 1 : 0.6) * (0.85 + random() * 0.3), heavy);
+        });
       }
-      if (travel >= nextJoint) nextJoint = travel + 14 + random() * 16;
+      if (travel >= nextJoint) nextJoint = travel + 5 + random() * 6;
     }
   }
 
