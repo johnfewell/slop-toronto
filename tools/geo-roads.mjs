@@ -127,6 +127,20 @@ function crossesRoad(w) {
   }
   return false;
 }
+// Named underpasses: streets OSM maps bridging the railway that the city builds the other way round, the street under
+// the tracks (John, 2026-10-25: Strachan Avenue's underpass at both its crossings, the Kitchener line & the Lakeshore
+// West). Their bridge ways stay on the ground; tools/geo-rails.mjs lifts the tracks over them.
+const RAIL_UNDERPASSES = [{ name: 'Strachan Avenue', x0: -2600, x1: -2460, z0: -260, z1: 140 }];
+for (const w of ways) {
+  if (!w.bridge) continue;
+  const u = RAIL_UNDERPASSES.find((o) => o.name === w.name && w.pts.every(([x, z]) => x > o.x0 && x < o.x1 && z > o.z0 && z < o.z1));
+  if (!u) continue;
+  w.bridge = false;
+  w.layer = 0;
+  w.railUnder = true;
+}
+log(`named underpasses: ${ways.filter((w) => w.railUnder).length} bridge ways of ${RAIL_UNDERPASSES.map((o) => o.name).join(', ')} kept on the ground under the tracks`);
+
 // The heavy-rail tracks (railway=rail, not in a tunnel; osm_rails.json from tools/fetch-osm.mjs ONLY=rails). Their
 // node ids come from another run of the fetch than the roads', so a level crossing (a node shared with a road) is
 // found by its coordinates

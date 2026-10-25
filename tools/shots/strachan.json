@@ -1,0 +1,38 @@
+[
+ {
+  "name": "st1-strachan-under-north",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2503, -235, 0); app.cameraSystem.cinema = () => ({ pos: [-2533, 1.6, -235], look: [-2531, 3.5, -170], fov: 60 }); })()"
+ },
+ {
+  "name": "st2-strachan-under-south",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2501, 0, 0); app.cameraSystem.cinema = () => ({ pos: [-2531, 1.6, 0], look: [-2529, 3.5, 60], fov: 60 }); })()"
+ },
+ {
+  "name": "st3-strachan-above",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2500, -60, 0); app.cameraSystem.cinema = () => ({ pos: [-2700, 110, 260], look: [-2531, 0, -40], fov: 55 }); })()"
+ },
+ {
+  "name": "gs7-bathurst-bridge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.teleportTo(-1720, 40, 0); const y0 = C.deckHeightAt(-1750, 40, 20, 20); app.cameraSystem.cinema = () => ({ pos: [-1750, y0 + 3.2, 40], look: [-1500, y0 + -4, 60], fov: 55 }); })()"
+ },
+ {
+  "name": "ride5-strachan-under",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 30000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = -2532, Z = -280;  app.selectMode('cyclist'); app.teleportTo(X, Z, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride5-strachan-under t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' track ' + C.railLiftAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3)); } if (t > 29.5) clearInterval(id); }, 50); })()"
+ }
+]

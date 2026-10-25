@@ -20,6 +20,7 @@
 //     street, its sidewalks & the abutments either side, then down at 2% (a heavy-rail grade). Lifts less than FILL
 //     apart along the corridor are joined by a fill (their hull, level at the lower deck): the embankment carries on
 //     between them instead of dipping;
+//     (and the named underpasses, tools/geo-roads.mjs RAIL_UNDERPASSES: Strachan Ave, mapped as bridges);
 //   - a shared node, or neither way bridged / tunnelled / layered: a level crossing (in the city, two yard roads
 //     north of Fort York & a boat-launch spur): rails flush in the road.
 //   railLifts: [deck height, half width (the road & the tracks' spread across it), x0, z0, x1, z1 (the street's centre
@@ -120,7 +121,7 @@ for (const e of elements) {
           seen.add(w);
           const shared = own.has(key(...w.pts[j])) || own.has(key(...w.pts[j + 1]));
           const roadOver = w.elevated && !(rb && rl >= w.layer);
-          const railOver = !roadOver && ((rb && !(w.bridge && w.layer >= rl)) || w.tunnel || w.layer < rl);
+          const railOver = !roadOver && ((rb && !(w.bridge && w.layer >= rl)) || w.tunnel || w.layer < rl || w.railUnder);
           if (shared && !roadOver) level.push({ x: c.x, z: c.z, name: w.name || w.cls });
           else if (roadOver) over.push({ x: c.x, z: c.z, name: w.name || w.cls });
           else if (railOver && (w.cls !== 'service' || rb)) {
