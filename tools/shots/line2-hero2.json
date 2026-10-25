@@ -1,0 +1,30 @@
+[
+ {
+  "name": "hero-indian-rd-deck-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-5576,-2905,0);app.cameraSystem.cinema=()=>({pos:[-5576,2.3,-2905],look:[-5670,-4,-2912],fov:60});if(app.subway.routes.length>5)app.subway.placeTrain(5,0.45);})();"
+ },
+ {
+  "name": "hero-vincent-yard-low-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-5500,-2935,0);app.cameraSystem.cinema=()=>({pos:[-5500,9,-2935],look:[-5600,-4,-2903],fov:58});if(app.subway.routes.length>4)app.subway.placeTrain(4,0.62);})();"
+ },
+ {
+  "name": "hero-rosedale-covered-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1625,-2752,0);app.cameraSystem.cinema=()=>({pos:[1625,2.2,-2752],look:[1645,7,-2690],fov:62});})();"
+ },
+ {
+  "name": "hero-rosedale-covered-high",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1560,-2775,0);app.cameraSystem.cinema=()=>({pos:[1560,28,-2775],look:[1640,5,-2690],fov:55});})();"
+ }
+]

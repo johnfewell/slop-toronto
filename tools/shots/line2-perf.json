@@ -1,0 +1,57 @@
+[
+ {
+  "name": "p-spawn",
+  "wait": 9500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-spawn '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-north",
+  "x": 330.4,
+  "z": -1080,
+  "heading": 0,
+  "wait": 9500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-north '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-king-yonge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(365,-200,0);app.cameraSystem.cinema=()=>({pos:[355,1.7,-185],look:[380,3,-260],fov:60});})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-king-yonge '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-bloor-yonge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(390,-2810,0);app.cameraSystem.cinema=()=>({pos:[380,1.7,-2800],look:[440,3,-2850],fov:60});})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-bloor-yonge '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-viaduct-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(2240,-2700,0);app.cameraSystem.cinema=()=>({pos:[2240,1.7,-2690],look:[2240,14,-2805],fov:65});})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-viaduct-side '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-west-clendenan",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-6694,-2896,0);app.cameraSystem.cinema=()=>({pos:[-6694,1.9,-2896],look:[-6780,-5,-2890],fov:60});})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-west-clendenan '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-west-yard",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-5559,-2900,0);app.cameraSystem.cinema=()=>({pos:[-5559,1.9,-2900],look:[-5440,-5,-2902],fov:60});})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-west-yard '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-west-aerial",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-5480,-2960,0);app.cameraSystem.cinema=()=>({pos:[-5480,40,-2960],look:[-5570,-5,-2905],fov:60});})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-west-aerial '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ }
+]

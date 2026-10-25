@@ -34,7 +34,7 @@ const TIERS = {
     cars: 200, buses: 12, peds: 340, // (12 buses: mostly private cars, mrdoob's a1866b7)
     streetcarSpacing: 500, // streetcars.js: one car per this many metres of track (TTC Flexity Outlooks)
     trains: 1, // rail-corridor.js: x the GO trains on the Union Station Rail Corridor
-    subway: 1, // subway.js: x the Line 2 trains over the Bloor Viaduct
+    subway: 1, // subway.js: x the Line 2 trains (over the Bloor Viaduct, through the west end's open cuts)
     farCity: 1, // surroundings.js: share of the far city's blocks built up
     lightPool: 1, // x the night's street light & headlight spot pools
     // the city's sound (audio-system.js): running vehicle voices, sirens & one-shot events at once, HRTF panning (else

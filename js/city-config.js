@@ -493,9 +493,10 @@ for (const [kind, , , flags, flat] of GEO.rails || []) {
     }
   }
 }
-/** Whether a tree may stand at (x, z): clear of the rail corridor */
+/** Whether a tree may stand at (x, z): clear of the rail corridor & the subway's open cuts */
 function treeOffRail(x, z) {
   if (cutAt(x, z) < 0) return false; // (nor down in a road cut)
+  if (window.CITY.subwayCutAt && window.CITY.subwayCutAt(x, z, 2)) return false; // (nor in the subway's trenches, subway.js)
   const r = 7 + 1.6 * railLiftAt(x, z), c = Math.ceil(r / 8);
   for (let a = -c; a <= c; a++) for (let b = -c; b <= c; b++) {
     const L = RAIL_PTS.get((Math.floor(x / 8) + a) * 100000 + Math.floor(z / 8) + b);

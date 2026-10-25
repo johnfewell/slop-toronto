@@ -443,16 +443,22 @@ function maskedByWater(mat, M) {
   return mat;
 }
 
-// The road cuts (city-config.js ROAD_CUTS) masked out of a street-level material: its fragments over a cut are
-// discarded (in the shadow maps too), city-grid.js builds the cut in their place
+// The road cuts (city-config.js ROAD_CUTS) and the subway's open cuts (subway.js SUBWAY_CUT_RECTS: Line 2's trenches
+// in the west end) masked out of a street-level material: its fragments over a cut are discarded (in the shadow maps
+// too), city-grid.js & subway.js build the cuts in their place. Each an oblong: t along (ux, uz) from (x0, z0) to len,
+// l across from l0 to l1
+function cutRects() {
+  return [...ROAD_CUTS.map((c) => ({ x0: c.x0, z0: c.z0, ux: c.ux, uz: c.uz, len: c.len, l0: -c.half, l1: c.half })), ...(window.CITY.SUBWAY_CUT_RECTS || [])];
+}
 function maskRoadCuts(mat) {
-  if (!ROAD_CUTS.length || !mat || !mat.isNodeMaterial || mat.userData.roadCutMask) return mat;
-  const { positionWorld, vec2, abs, dot } = window.CITY.TSL;
+  const rects = cutRects();
+  if (!rects.length || !mat || !mat.isNodeMaterial || mat.userData.roadCutMask) return mat;
+  const { positionWorld, vec2, dot } = window.CITY.TSL;
   let inside = null;
-  for (const c of ROAD_CUTS) {
+  for (const c of rects) {
     const d = positionWorld.xz.sub(vec2(c.x0, c.z0));
     const t = dot(d, vec2(c.ux, c.uz)), l = dot(d, vec2(-c.uz, c.ux));
-    const inC = t.greaterThan(0.0).and(t.lessThan(c.len)).and(abs(l).lessThan(c.half));
+    const inC = t.greaterThan(0.0).and(t.lessThan(c.len)).and(l.greaterThan(c.l0)).and(l.lessThan(c.l1));
     inside = inside ? inside.or(inC) : inC;
   }
   mat.maskNode = mat.maskNode ? mat.maskNode.and(inside.not()) : inside.not();
@@ -875,10 +881,10 @@ function buildCityGrid(scene) {
   //    parapet at the top (the player's colliders, top & bottom). The traffic follows the profile through the street
   //    graph (road-network.js, negative heights), the walkers by cutAt (traffic.js), the player by getGroundHeight.
   // ===================================================================================================================
+  group.traverse((o) => {
+    for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) maskRoadCuts(m);
+  });
   if (ROAD_CUTS.length) {
-    group.traverse((o) => {
-      for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) maskRoadCuts(m);
-    });
     const road = makeAcc(), walk = makeAcc(), curb = makeAcc(), wall = makeAcc();
     const quad = (A, p0, p1, p2, p3, f) => {
       const ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2], vx = p2[0] - p0[0], vy = p2[1] - p0[1], vz = p2[2] - p0[2];

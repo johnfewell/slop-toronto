@@ -718,5 +718,5 @@ function createRailCorridor(scene, trafficSystem) {
   return { group, update, trains, routes, colliders };
 }
 
-Object.assign(window.CITY, { createRailCorridor, createConcreteMaterial });
+Object.assign(window.CITY, { createRailCorridor, createConcreteMaterial, createBallastMaterial, createEmbankmentGrassMaterial });
 })();
