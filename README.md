@@ -7,6 +7,23 @@ its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
 
 **Live: https://slop-toronto.cloud6711.workers.dev/explore.html**
 
+![A Line 2 subway train crossing the Don Valley on the Bloor Viaduct's lower deck at golden hour](docs/images/hero-bloor-viaduct.jpg)
+
+## What's in it
+
+- **The TTC subway:** Line 2 Toronto Rockets cross the Don Valley on the Bloor Viaduct's lower deck and run through
+  the open cuts in the west end (Runnymede to High Park, Keele past Vincent Yard). 27 stations have their stairways on
+  the street and the TTC insignia pylon at 86 entrances, each with the station's name, lines and accessibility.
+- **Streetcars and GO trains:** TTC streetcars on the real streetcar network (no buses on streetcar routes), and GO
+  trains on real bridges and embankments over the streets, from OpenStreetMap. Union Station has an open train shed
+  over its platforms, and Strachan Avenue dips under the tracks in a cutting.
+- **Street furniture from the City's data:** the City of Toronto's park name signs at 240 parks, each with its own
+  name and address, plus hydrants, bike rings, transit shelters, litter bins and post boxes where the City says they stand.
+- **Sky and sound:** volumetric clouds with golden hour, sunset and night, and a city that sounds like one: traffic,
+  streetcars, the lake.
+
+![The Osgoode pylon at dusk, a park sign at Trinity Bellwoods, Strachan Avenue's underpass, Line 2 by Vincent Yard](docs/images/grid.jpg)
+
 ## Run it
 
 No build step for development: `npm run dev` (or `python3 -m http.server 5530 --bind 127.0.0.1`) and open
