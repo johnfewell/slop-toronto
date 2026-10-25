@@ -57,11 +57,13 @@ async function initApp() {
   }
 
   // 1. Initialize Three.js WebGPURenderer with 32-bit float reversedDepthBuffer. MSAA & the render resolution (a share
-  //    of the CSS pixels) by quality tier (quality.js)
+  //    of the CSS pixels) by quality tier (quality.js). ?webgl=1 forces three's WebGL2 backend (same TSL, compiled to
+  //    GLSL), to compare the two
   const renderer = new THREE.WebGPURenderer({
     antialias: QUALITY.aa === 'msaa',
     powerPreference: 'high-performance',
-    reversedDepthBuffer: true
+    reversedDepthBuffer: true,
+    forceWebGL: new URLSearchParams(location.search).get('webgl') === '1'
   });
   renderer.setPixelRatio(QUALITY.scale);
   renderer.setSize(window.innerWidth, window.innerHeight);

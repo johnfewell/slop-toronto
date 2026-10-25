@@ -1,0 +1,8 @@
+[
+ {"name": "bench-spawn", "mode": "person", "time": "golden", "wait": 9000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});const R=window.__CITY_APP&&window.__CITY_APP.renderer;console.log('[bench] spawn '+((performance.now()-t)/n).toFixed(2)+' ms '+(R&&R.backend&&R.backend.isWebGPUBackend?'webgpu':'webgl2'))})()"},
+ {"name": "bench-king", "mode": "person", "time": "golden", "wait": 9000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(400,-130,0);const cam={pos:[352, 1.7, -290],look:[340, 2, -330],fov:55};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[bench] king '+((performance.now()-t)/n).toFixed(2)+' ms')})()"},
+ {"name": "bench-skyline", "mode": "person", "time": "golden", "wait": 9000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-600,1900,0);app.cameraSystem.cinema=()=>({pos:[-600,25,1900],look:[0,60,0],fov:55});})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[bench] skyline '+((performance.now()-t)/n).toFixed(2)+' ms')})()"}
+]
