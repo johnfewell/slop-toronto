@@ -288,7 +288,7 @@ function withTorontoEvents(resources) {
   return {
     ...resources,
     eventPlayers,
-    eventLevels: { bell: 0.3, bikebell: 0.2, gull: 0.14, hiss: 0.12 }
+    eventLevels: { bell: 0.3, bikebell: 0.2, gull: 0.5, hiss: 0.12 }
   };
 }
 
@@ -545,8 +545,8 @@ function createLakeVoice(ctx, resources, output) {
       // Strong at the water's edge, gone a street or two inland and high above it
       const near = clamp(exposure) ** 0.8 * Math.exp(-Math.max(0, finite(altitude) - 3) / 70) * (1 - clamp(enclosure) * 0.6);
       for (const channel of channels) {
-        channel.lap(near * 0.11, now);
-        channel.fizz(near * 0.035, now);
+        channel.lap(near * 0.32, now);
+        channel.fizz(near * 0.1, now);
       }
     },
     dispose() {
@@ -562,7 +562,7 @@ function createLakeVoice(ctx, resources, output) {
 }
 
 // How much of the listener's surroundings is lake, 0-1, from three rings of waterAt() probes (25, 60 & 120 m out,
-// the nearest weighing most) twice a second; the wet probes beyond the first ring are where the gulls call from
+// the nearest weighing most) twice a second; the wet probes are where the gulls call from
 const RINGS = [[25, 0.5], [60, 0.3], [120, 0.2]];
 class WaterfrontProbe {
   constructor() {
@@ -586,7 +586,7 @@ class WaterfrontProbe {
         const x = this.x + Math.cos(angle) * r, z = this.z + Math.sin(angle) * r;
         if (!waterAt(x, z)) continue;
         wet += weight / 8;
-        if (r > 25) this.points.push({ x, z });
+        this.points.push({ x, z });
       }
     }
     this.exposure = wet;

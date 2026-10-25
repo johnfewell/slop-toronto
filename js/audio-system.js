@@ -51,7 +51,7 @@ const EVENT_SPACE = {
   signal: [1.8, 35, 0, false],
   bell: [7, 170, 1.2, true],
   bikebell: [2.5, 50, 0.4, false],
-  gull: [6, 320, 0, false],
+  gull: [12, 320, 0, false],
   hiss: [4, 90, 0.4, false]
 };
 const FOLLOWS = new Set(['talk', 'horn', 'bell']); // events that move with their source
@@ -753,7 +753,7 @@ class CityAudioSystem {
         const p = points[Math.floor(hash(1) * points.length)];
         const roll = hash(2);
         const call = roll < 0.3 ? 'long' : roll < 0.55 ? 'laugh' : 'mew';
-        this.emit('gull', { id: this.waterfront, x: p.x + (hash(3) - 0.5) * 30, y: 10 + hash(4) * 20, z: p.z + (hash(5) - 0.5) * 30,
+        this.emit('gull', { id: this.waterfront, x: p.x + (hash(3) - 0.5) * 30, y: 6 + hash(4) * 20, z: p.z + (hash(5) - 0.5) * 30,
           seed: ++this.gullSequence }, { call, intensity: 0.55 + hash(6) * 0.45 });
       }
       this.nextGull = now + (night > 0.5 ? 30 + hash(7) * 50 : 3 + hash(7) * 9) / Math.min(1, exposure * 2);

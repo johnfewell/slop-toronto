@@ -9,6 +9,9 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   https://github.com/mrdoob/slop-newyork
 - **Abuja Tour** (abujatour.site), the Slop New York fork this was forked from, including the landing page's layout
   and styles (`css/landing.css`). MIT, © Mr.doob.
+- **City audio** (`js/audio-*.js`): mrdoob's synthesized spatial audio from Slop New York (MIT, above), with the
+  player car's tyre squeal and engine revs from aalghooneh's slop-toronto fork (MIT, © Slop Toronto contributors).
+  https://github.com/aalghooneh/slop-toronto. Every sound is synthesized in code; no recordings.
 - **three.js**, WebGPURenderer and TSL, loaded from jsDelivr at a pinned dev-branch commit. MIT.
   https://threejs.org/
 - **Stylized water** (`js/stylized-water.js`, built from `vendor/stylized-water`): John Fewell's three.js port of
