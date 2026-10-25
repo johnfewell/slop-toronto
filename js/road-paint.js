@@ -1,8 +1,9 @@
 (function () {
 // js/road-paint.js
 // Road markings generated from the drivable road network (js/road-network.js), so the paint matches where traffic
-// actually drives and stops, in Nigeria's white markings: dashed lane lines, a broken white centre line on two-way
-// roads, and at the signalised junctions stop bars at the stop lines and zebra crossings across every approach. The
+// actually drives and stops, in Ontario's markings: dashed white lane lines, a yellow centre line between opposing
+// traffic (broken on two-lane streets, a solid double yellow on the multi-lane arterials), and at the signalised
+// junctions white stop bars at the stop lines and zebra crossings across every approach. The
 // paint rides the flyovers' decks & ramps (road-network.js edgeY). It covers every street as built (the network's
 // paintEdges, dead ends included), and a line carries on through a street's bends, joined at a bounded mitre with its
 // dashes in phase (mrdoob's 30096be).
@@ -10,6 +11,7 @@
 const { THREE, CROSSWALK, createRoadPaintMaterial, edgeY } = window.CITY;
 
 const WHITE = new THREE.Color(0xe6e2d6);
+const YELLOW = new THREE.Color(0xe0b12e); // Ontario's centre lines: yellow between opposing traffic
 const HEIGHT = 0.012; // above the asphalt
 
 function buildRoadPaint(scene, network) {
@@ -81,8 +83,9 @@ function buildRoadPaint(scene, network) {
     if (back) for (const o of back.lanes) lanes.push({ o: -o, dir: -1 });
     lanes.sort((p, q) => p.o - q.o);
 
-    // Dashed white between lanes going the same way, a broken white centre line between opposing ones
-    // (nothing across a median or a lane closed off by an obstacle)
+    // Dashed white between lanes going the same way; between opposing ones yellow, broken where each way has one lane
+    // and a solid double yellow on the wider roads (nothing across a median or a lane closed off by an obstacle)
+    const multiLane = lanes.filter((l) => l.dir === 1).length > 1 || lanes.filter((l) => l.dir === -1).length > 1;
     for (let k = 0; k + 1 < lanes.length; k++) {
       const p = lanes[k];
       const q = lanes[k + 1];
@@ -90,8 +93,11 @@ function buildRoadPaint(scene, network) {
       if (q.o - p.o > 4.5 && (p.dir === q.dir || !clearCentre(e, mid))) continue;
       if (p.dir === q.dir) {
         along(e, mid, 0.13, WHITE, 12, 0.25);
+      } else if (multiLane) {
+        along(e, mid - 0.11, 0.1, YELLOW);
+        along(e, mid + 0.11, 0.1, YELLOW);
       } else {
-        along(e, mid, 0.12, WHITE, 9, 0.35);
+        along(e, mid, 0.12, YELLOW, 9, 0.35);
       }
     }
 
