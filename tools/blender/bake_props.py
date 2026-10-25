@@ -13,6 +13,7 @@
 # their own unrolled UVs, so a barrel or the ring's lettering bakes without a seam on every facet.
 # usage: Blender --background --factory-startup --python tools/blender/bake_props.py -- shelter|bin|hydrant|postbox|bikering <src.glb> <out.glb> <workdir>
 #   park-sign <face-template.jpg> <out.glb> <workdir>: modelled from measurements, no source mesh (see its block below)
+#   ttc-pylon <ttc-logo.webp> <out.glb> <workdir> [id-face.png]: the TTC's insignia pylon, modelled from its drawing
 #   sources (John's Meshy originals, tools/prop-src/, gitignored): shelter s-orig.glb, bin b-orig.glb, hydrant h-orig.glb
 #   (Rusted_Hydrant_with_C), postbox p-orig.glb (Graffiti_Mailbox_by_C), bikering cand-calga.glb (From_Toronto_to_Calga)
 import bpy, bmesh, sys, os, math, mathutils, numpy as np
@@ -118,6 +119,161 @@ if KIND == 'park-sign':
     bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index != 0], context='FACES')
     bm.to_mesh(me); bm.free()
     export(os.path.join(WORK, 'park-sign-face.glb'))
+    sys.exit(0)
+
+# ---------------------------------------------------------------- ttc-pylon: modelled from its drawing, no source mesh
+# The TTC's subway entrance pylon as adopted (the City/TTC "Insignia Pylon, w/ Entry ID Sign" John supplied; seen in
+# 2026 Street View at King & Yonge): a slim dark round pole on a flat base plate, topped by the TTC insignia, a thick
+# lit sign cut to the logo's own outline (traced here from the logo file's alpha), and lower on the same pole a black
+# horizontal entry ID sign on a mounting collar, reaching out to the pole's +x side. The insignia's faces carry the logo
+# (UVs 0..1 over the logo image, glTF v down from its top; the back's u mirrored so it reads right from behind); the ID
+# sign's faces carry each station's name (UVs 0..1 over the face), printed at runtime by js/ttc-pylons.js.
+# Sizes: the insignia 1.25 m wide (the logo's 1920 x 753), 0.22 m deep, its bottom 3.55 m up; pole 0.104 m (0.083 of
+# the insignia, as drawn), base plate 0.64 m; the ID sign 1.30 x 0.30 x 0.07 m (as long as the insignia, 4.3 : 1),
+# its bottom 2.25 m up (clear of heads). SRC is the logo image (the preview's texture & the outline's source);
+# <workdir>/ttc-pylon-preview.glb carries the logo, <workdir>/ttc-pylon-drawing.glb is the drawing's own layout (the
+# pole shortened at its break mark, the ID sign standing off to the right) for the comparison against it.
+if KIND == 'ttc-pylon':
+    LW, LD, LB = 1.25, 0.22, 3.55            # insignia: width, depth, bottom
+    IW, IH, ID, IB = 1.30, 0.30, 0.07, 2.25  # entry ID sign: width, height, depth, bottom
+    PR = 0.052                               # pole radius
+    BASE = [(0.32, 0.0), (0.32, 0.025), (0.11, 0.04), (0.09, 0.10), (0.07, 0.115), (PR, 0.12)]  # (r, z): plate, foot
+    MATS = ['ttc-pylon-logo', 'ttc-pylon-id', 'ttc-pylon-edge', 'ttc-pylon-metal']
+    # the logo's outline: its alpha, downsampled, traced round (Moore neighbours), simplified
+    img = bpy.data.images.load(SRC)
+    IWpx, IHpx = img.size
+    A = np.array(img.pixels[:], dtype=np.float32).reshape(IHpx, IWpx, 4)[::-1, :, 3]  # rows top-down
+    K = 5
+    h, w = IHpx // K, IWpx // K
+    M = A[:h * K, :w * K].reshape(h, K, w, K).mean(axis=(1, 3)) > 0.5
+    M = np.pad(M, 1)
+    ys, xs = np.nonzero(M)
+    start = (ys[0], xs[0])
+    nb = [(-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1)]  # clockwise from NW
+    path = [start]; cur = start; back = 7  # entered from the west
+    for _ in range(100000):
+        found = False
+        for k in range(8):
+            d = (back + 1 + k) % 8
+            ny, nx = cur[0] + nb[d][0], cur[1] + nb[d][1]
+            if M[ny, nx]:
+                back = (d + 4) % 8; cur = (ny, nx); found = True; break
+        if not found or cur == start: break
+        path.append(cur)
+    def rdp(pts, eps):
+        if len(pts) < 3: return pts
+        a, b = np.array(pts[0], float), np.array(pts[-1], float)
+        ab = b - a; L = np.hypot(*ab) or 1.0
+        d = [abs(np.cross(ab, np.array(p, float) - a)) / L for p in pts[1:-1]]
+        i = int(np.argmax(d)) + 1
+        if d[i - 1] > eps: return rdp(pts[:i + 1], eps)[:-1] + rdp(pts[i:], eps)
+        return [pts[0], pts[-1]]
+    half = len(path) // 2
+    outline = rdp(path[:half + 1], 0.9)[:-1] + rdp(path[half:] + [path[0]], 0.9)[:-1]
+    # px (padded, downsampled) -> metres: x across, z up; and the logo UV (u, v up)
+    S = LW / w
+    OUT2D = [((x - 1 + 0.5) * S - LW / 2, (h - (y - 1 + 0.5)) * S) for y, x in outline]
+    UV2D = [((x - 1 + 0.5) / w, 1 - (y - 1 + 0.5) / h) for y, x in outline]
+    LH = h * S
+    def build(layout):
+        bm = bmesh.new(); uvl = bm.loops.layers.uv.new('UVMap')
+        def face(ps, mat, uvs=None, toward=None):
+            if toward is not None:
+                n = Vector((0, 0, 0))
+                for i in range(len(ps)):  # Newell's normal (an ngon may be concave)
+                    a, b = Vector(ps[i]), Vector(ps[(i + 1) % len(ps)])
+                    n += Vector(((a.y - b.y) * (a.z + b.z), (a.z - b.z) * (a.x + b.x), (a.x - b.x) * (a.y + b.y)))
+                if n.dot(Vector(toward)) < 0:
+                    ps = ps[::-1]
+                    if uvs: uvs = uvs[::-1]
+            f = bm.faces.new([bm.verts.new(p) for p in ps]); f.material_index = MATS.index(mat); f.smooth = False
+            if uvs:
+                for lp, uv in zip(f.loops, uvs): lp[uvl].uv = uv
+            return f
+        def box(x0, x1, y0, y1, z0, z1, mat):
+            for ps, t in ((((x0, y0, z0), (x0, y1, z0), (x0, y1, z1), (x0, y0, z1)), (-1, 0, 0)), (((x1, y0, z0), (x1, y1, z0), (x1, y1, z1), (x1, y0, z1)), (1, 0, 0)),
+                          (((x0, y0, z0), (x1, y0, z0), (x1, y0, z1), (x0, y0, z1)), (0, -1, 0)), (((x0, y1, z0), (x1, y1, z0), (x1, y1, z1), (x0, y1, z1)), (0, 1, 0)),
+                          (((x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)), (0, 0, 1)), (((x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)), (0, 0, -1))):
+                face(list(ps), mat, toward=t)
+        def lathe(prof, n=16):
+            for (ra, za), (rb, zb) in zip(prof, prof[1:]):
+                for i in range(n):
+                    a0, a1 = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n; am = (a0 + a1) / 2
+                    p = lambda r, z, a: (r * math.cos(a), r * math.sin(a), z)
+                    face([p(ra, za, a0), p(ra, za, a1), p(rb, zb, a1), p(rb, zb, a0)], 'ttc-pylon-metal', toward=(math.cos(am) * (zb - za), math.sin(am) * (zb - za), ra - rb))
+        lb = layout['logo_bottom']
+        # the insignia: its outline extruded, both faces printed, the sides its dark edge
+        for s in (-1, 1):
+            ps = [(x, s * LD / 2, lb + z) for x, z in OUT2D]
+            uvs = [(u if s < 0 else 1 - u, v) for u, v in UV2D]
+            face(ps, 'ttc-pylon-logo', uvs, toward=(0, s, 0))
+        for i in range(len(OUT2D)):
+            (ax, az), (bx, bz) = OUT2D[i], OUT2D[(i + 1) % len(OUT2D)]
+            mx, mz = (ax + bx) / 2, (az + bz) / 2
+            nx, nz = (bz - az), -(bx - ax)  # (a normal; flipped below if it points into the outline's centroid side)
+            face([(ax, -LD / 2, lb + az), (bx, -LD / 2, lb + bz), (bx, LD / 2, lb + bz), (ax, LD / 2, lb + az)], 'ttc-pylon-edge', toward=(nx * layout['wind'], 0, nz * layout['wind']))
+        # the pole on its base, up into the insignia
+        lathe(BASE + [(PR, layout['pole_top'])])
+        # the entry ID sign: its faces printed, its edges the metal; on its collar & two brackets (when on the pole)
+        ix0 = layout['id_x0']; ix1 = ix0 + IW; ib = layout['id_bottom']
+        for s in (-1, 1):
+            y = s * ID / 2
+            P = [(ix0, y, ib), (ix1, y, ib), (ix1, y, ib + IH), (ix0, y, ib + IH)]
+            face(P, 'ttc-pylon-id', [(0, 0), (1, 0), (1, 1), (0, 1)] if s < 0 else [(1, 0), (0, 0), (0, 1), (1, 1)], toward=(0, s, 0))
+        for ps, t in ((((ix0, -ID / 2, ib), (ix0, ID / 2, ib), (ix0, ID / 2, ib + IH), (ix0, -ID / 2, ib + IH)), (-1, 0, 0)),
+                      (((ix1, -ID / 2, ib), (ix1, ID / 2, ib), (ix1, ID / 2, ib + IH), (ix1, -ID / 2, ib + IH)), (1, 0, 0)),
+                      (((ix0, -ID / 2, ib + IH), (ix1, -ID / 2, ib + IH), (ix1, ID / 2, ib + IH), (ix0, ID / 2, ib + IH)), (0, 0, 1)),
+                      (((ix0, -ID / 2, ib), (ix1, -ID / 2, ib), (ix1, ID / 2, ib), (ix0, ID / 2, ib)), (0, 0, -1))):
+            face(list(ps), 'ttc-pylon-metal', toward=t)
+        if layout['collar']:
+            lathe([(0.0001, ib - 0.07), (0.085, ib - 0.07), (0.085, ib + IH + 0.07), (0.0001, ib + IH + 0.07)])
+            for zc in (ib + 0.05, ib + IH - 0.09):
+                box(0.06, ix0 + 0.02, -0.025, 0.025, zc, zc + 0.04, 'ttc-pylon-metal')
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+        me = bpy.data.meshes.new('ttc-pylon'); bm.normal_update(); bm.to_mesh(me); bm.free()
+        obj = bpy.data.objects.new('ttc-pylon', me); bpy.context.scene.collection.objects.link(obj)
+        return obj, me
+    # which way round the outline runs (its signed area): the edge faces must face out
+    area = sum(OUT2D[i][0] * OUT2D[(i + 1) % len(OUT2D)][1] - OUT2D[(i + 1) % len(OUT2D)][0] * OUT2D[i][1] for i in range(len(OUT2D)))
+    WIND = 1 if area < 0 else -1
+    COL = {  # sRGB, roughness, metallic
+        'ttc-pylon-logo': ((1.0, 1.0, 1.0), 0.35, 0.0),
+        'ttc-pylon-id': ((0.08, 0.08, 0.08), 0.4, 0.0),
+        'ttc-pylon-edge': ((0x2a / 255, 0x2b / 255, 0x2d / 255), 0.5, 0.2),
+        'ttc-pylon-metal': ((0x3a / 255, 0x3c / 255, 0x3f / 255), 0.45, 0.4),
+    }
+    def lin(c): return tuple(x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in c)
+    mats = []
+    for name in MATS:
+        m = bpy.data.materials.new(name); m.use_nodes = True
+        b = m.node_tree.nodes['Principled BSDF']; c, r, mt = COL[name]
+        b.inputs['Base Color'].default_value = (*lin(c), 1.0); b.inputs['Roughness'].default_value = r; b.inputs['Metallic'].default_value = mt
+        mats.append(m)
+    def export(obj, path):
+        bpy.ops.object.select_all(action='DESELECT'); obj.select_set(True)
+        bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True, export_apply=True, export_yup=True,
+                                  export_normals=True, export_texcoords=True, export_tangents=False, export_materials='EXPORT', export_image_format='AUTO')
+        print('WROTE', path)
+    def finish(obj, me):
+        for m in mats: me.materials.append(m)
+        me.set_sharp_from_angle(angle=math.radians(40))
+        print('LOW', sum(len(p.vertices) - 2 for p in me.polygons), 'tris; outline', len(OUT2D), 'points; size', [round(v, 3) for v in obj.dimensions])
+    REAL = {'logo_bottom': LB, 'pole_top': LB + 0.15, 'id_x0': 0.10, 'id_bottom': IB, 'collar': True, 'wind': WIND}
+    obj, me = build(REAL); finish(obj, me)
+    export(obj, OUT)
+    nt = mats[0].node_tree
+    t = nt.nodes.new('ShaderNodeTexImage'); t.image = img; nt.nodes.active = t
+    nt.links.new(t.outputs[0], nt.nodes['Principled BSDF'].inputs['Base Color'])
+    if len(argv) > 4:  # an ID face image for the preview
+        nt2 = mats[1].node_tree; t2 = nt2.nodes.new('ShaderNodeTexImage'); t2.image = bpy.data.images.load(argv[4]); nt2.nodes.active = t2
+        nt2.links.new(t2.outputs[0], nt2.nodes['Principled BSDF'].inputs['Base Color'])
+    export(obj, os.path.join(WORK, 'ttc-pylon-preview.glb'))
+    bpy.data.objects.remove(obj)
+    # the drawing's layout (4x drawing px / insignia 360 px wide): pole 640 px to the insignia, ID sign x 375-745 & y 705-785
+    k = LW / 360
+    DRAW = {'logo_bottom': (985 - 345) * k + 0.12, 'pole_top': (985 - 345) * k + 0.25, 'id_x0': (375 - 320) * k, 'id_bottom': (1000 - 785) * k, 'collar': False, 'wind': WIND}
+    obj2, me2 = build(DRAW); finish(obj2, me2)
+    export(obj2, os.path.join(WORK, 'ttc-pylon-drawing.glb'))
     sys.exit(0)
 
 # ---------------------------------------------------------------- tags: (texel density, keep bake 0..1, AO strength, roughness, metallic, emission, flat colour override sRGB)

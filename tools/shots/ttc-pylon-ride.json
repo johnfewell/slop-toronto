@@ -1,0 +1,10 @@
+[
+ {
+  "name": "ride-pylon",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 6500,
+  "hold": "KeyW",
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-376,e.z+338);if(d<bd){bd=d;p=e}}const tx=Math.sin(p.yaw),tz=Math.cos(p.yaw);const sx=p.x-tx*12,sz=p.z-tz*12;app.teleportTo(sx,sz,Math.atan2(tx,tz));app.cameraSystem.cinema=()=>({pos:[sx+tz*8,3,sz-tx*8],look:[p.x,1.5,p.z],fov:60});const log=[];const t0=performance.now();(function f(){const q=app.controllerManager.getActiveEntity().position;log.push(Math.round(((q.x-p.x)*tx+(q.z-p.z)*tz)*10)/10);if(performance.now()-t0<6000)setTimeout(f,500);else console.log('[ride] along-from-pylon '+JSON.stringify(log))})();})()"
+ }
+]

@@ -1,0 +1,66 @@
+[
+ {
+  "name": "p1-king-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons,S=app.subway.entrances.sites;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-(376),e.z-(-338));if(d<bd){bd=d;p=e}}let s=S[0],sd=1e9;for(const e of S){const d=Math.hypot(e.pylon.x-p.x,e.pylon.z-p.z);if(d<sd){sd=d;s=e}}const tx=s.tx,tz=s.tz,cx=-s.curbSide.x,cz=-s.curbSide.z;const px=p.x-tx*9+cx*1.6,pz=p.z-tz*9+cz*1.6;app.teleportTo(px-tx*30,pz-tz*30,0);const cam={pos:[px,p.y+1.6,pz],look:[p.x+cx*0.6,p.y+2.2,p.z+cz*0.6],fov:55};app.cameraSystem.cinema=()=>cam;console.log('[cam] p1-king-golden '+p.station+' '+JSON.stringify(cam));})()",
+  "hold": "KeyH"
+ },
+ {
+  "name": "p2-standrew-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons,S=app.subway.entrances.sites;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-(-229),e.z-(-337));if(d<bd){bd=d;p=e}}let s=S[0],sd=1e9;for(const e of S){const d=Math.hypot(e.pylon.x-p.x,e.pylon.z-p.z);if(d<sd){sd=d;s=e}}const tx=s.tx,tz=s.tz,cx=-s.curbSide.x,cz=-s.curbSide.z;const px=p.x-tx*9+cx*1.6,pz=p.z-tz*9+cz*1.6;app.teleportTo(px-tx*30,pz-tz*30,0);const cam={pos:[px,p.y+1.6,pz],look:[p.x+cx*0.6,p.y+2.2,p.z+cz*0.6],fov:55};app.cameraSystem.cinema=()=>cam;console.log('[cam] p2-standrew-golden '+p.station+' '+JSON.stringify(cam));})()"
+ },
+ {
+  "name": "p3-osgoode",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons,S=app.subway.entrances.sites;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-(-315),e.z-(-712));if(d<bd){bd=d;p=e}}let s=S[0],sd=1e9;for(const e of S){const d=Math.hypot(e.pylon.x-p.x,e.pylon.z-p.z);if(d<sd){sd=d;s=e}}const tx=s.tx,tz=s.tz,cx=-s.curbSide.x,cz=-s.curbSide.z;const px=p.x-tx*9+cx*1.6,pz=p.z-tz*9+cz*1.6;app.teleportTo(px-tx*30,pz-tz*30,0);const cam={pos:[px,p.y+1.6,pz],look:[p.x+cx*0.6,p.y+2.2,p.z+cz*0.6],fov:55};app.cameraSystem.cinema=()=>cam;console.log('[cam] p3-osgoode '+p.station+' '+JSON.stringify(cam));})()"
+ },
+ {
+  "name": "p4-bloor-yonge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons,S=app.subway.entrances.sites;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-(460),e.z-(-2813));if(d<bd){bd=d;p=e}}let s=S[0],sd=1e9;for(const e of S){const d=Math.hypot(e.pylon.x-p.x,e.pylon.z-p.z);if(d<sd){sd=d;s=e}}const tx=s.tx,tz=s.tz,cx=-s.curbSide.x,cz=-s.curbSide.z;const px=p.x-tx*9+cx*1.6,pz=p.z-tz*9+cz*1.6;app.teleportTo(px-tx*30,pz-tz*30,0);const cam={pos:[px,p.y+1.6,pz],look:[p.x+cx*0.6,p.y+2.2,p.z+cz*0.6],fov:55};app.cameraSystem.cinema=()=>cam;console.log('[cam] p4-bloor-yonge '+p.station+' '+JSON.stringify(cam));})()"
+ },
+ {
+  "name": "p5-king-yonge-sign",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons,S=app.subway.entrances.sites;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-(325),e.z-(-266));if(d<bd){bd=d;p=e}}let s=S[0],sd=1e9;for(const e of S){const d=Math.hypot(e.pylon.x-p.x,e.pylon.z-p.z);if(d<sd){sd=d;s=e}}const tx=s.tx,tz=s.tz,cx=-s.curbSide.x,cz=-s.curbSide.z;const px=p.x-tx*9+cx*1.6,pz=p.z-tz*9+cz*1.6;app.teleportTo(px-tx*30,pz-tz*30,0);const cam={pos:[px,p.y+1.6,pz],look:[p.x+cx*0.6,p.y+2.2,p.z+cz*0.6],fov:55};app.cameraSystem.cinema=()=>cam;console.log('[cam] p5-king-yonge-sign '+p.station+' '+JSON.stringify(cam));})()"
+ },
+ {
+  "name": "p6-standrew-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons,S=app.subway.entrances.sites;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-(-229),e.z-(-337));if(d<bd){bd=d;p=e}}let s=S[0],sd=1e9;for(const e of S){const d=Math.hypot(e.pylon.x-p.x,e.pylon.z-p.z);if(d<sd){sd=d;s=e}}const tx=s.tx,tz=s.tz,cx=-s.curbSide.x,cz=-s.curbSide.z;const px=p.x-tx*9+cx*1.6,pz=p.z-tz*9+cz*1.6;app.teleportTo(px-tx*30,pz-tz*30,0);const cam={pos:[px,p.y+1.6,pz],look:[p.x+cx*0.6,p.y+2.2,p.z+cz*0.6],fov:55};app.cameraSystem.cinema=()=>cam;console.log('[cam] p6-standrew-twilight '+p.station+' '+JSON.stringify(cam));})()"
+ },
+ {
+  "name": "p7-close-face",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons,S=app.subway.entrances.sites;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-(376),e.z-(-338));if(d<bd){bd=d;p=e}}let s=S[0],sd=1e9;for(const e of S){const d=Math.hypot(e.pylon.x-p.x,e.pylon.z-p.z);if(d<sd){sd=d;s=e}}const tx=s.tx,tz=s.tz,cx=-s.curbSide.x,cz=-s.curbSide.z;const px=p.x-tx*3.2+cx*0.4,pz=p.z-tz*3.2+cz*0.4;app.teleportTo(px-tx*30,pz-tz*30,0);const cam={pos:[px,p.y+2.3,pz],look:[p.x+cx*0.6,p.y+2.9,p.z+cz*0.6],fov:50};app.cameraSystem.cinema=()=>cam;console.log('[cam] p7-close-face '+p.station+' '+JSON.stringify(cam));})()"
+ },
+ {
+  "name": "p8-st-george",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons,S=app.subway.entrances.sites;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-(-586),e.z-(-2891));if(d<bd){bd=d;p=e}}let s=S[0],sd=1e9;for(const e of S){const d=Math.hypot(e.pylon.x-p.x,e.pylon.z-p.z);if(d<sd){sd=d;s=e}}const tx=s.tx,tz=s.tz,cx=-s.curbSide.x,cz=-s.curbSide.z;const px=p.x-tx*9+cx*1.6,pz=p.z-tz*9+cz*1.6;app.teleportTo(px-tx*30,pz-tz*30,0);const cam={pos:[px,p.y+1.6,pz],look:[p.x+cx*0.6,p.y+2.2,p.z+cz*0.6],fov:55};app.cameraSystem.cinema=()=>cam;console.log('[cam] p8-st-george '+p.station+' '+JSON.stringify(cam));})()"
+ },
+ {
+  "name": "p9-castle-frank",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;const P=app.subway.entrances.pylons,S=app.subway.entrances.sites;let p=P[0],bd=1e9;for(const e of P){const d=Math.hypot(e.x-(1834),e.z-(-2773));if(d<bd){bd=d;p=e}}let s=S[0],sd=1e9;for(const e of S){const d=Math.hypot(e.pylon.x-p.x,e.pylon.z-p.z);if(d<sd){sd=d;s=e}}const tx=s.tx,tz=s.tz,cx=-s.curbSide.x,cz=-s.curbSide.z;const px=p.x-tx*9+cx*1.6,pz=p.z-tz*9+cz*1.6;app.teleportTo(px-tx*30,pz-tz*30,0);const cam={pos:[px,p.y+1.6,pz],look:[p.x+cx*0.6,p.y+2.2,p.z+cz*0.6],fov:55};app.cameraSystem.cinema=()=>cam;console.log('[cam] p9-castle-frank '+p.station+' '+JSON.stringify(cam));})()"
+ }
+]

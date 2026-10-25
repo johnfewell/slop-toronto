@@ -4,7 +4,7 @@
 // on the Prince Edward Viaduct's lower deck over the Don, the entrances on the sidewalks.
 //   ways: [name, flags (1 bridge, 2 tunnel, 4 covered, 8 viaduct), layer, service, [x, z, ...]]  (every subway way
 //         reaching within MARGIN of the detailed city, tunnels too: the trains run on into them; simplified to 0.3 m)
-//   stations: [x, z, name, line colour]
+//   stations: [x, z, name, line colour, accessible (1: wheelchair=yes, its pylons get the accessibility symbol)]
 //   entrances: [x, z, station name, line colour, entrance name]  (street level only: none mapped below ground or
 //              indoors, the PATH's & the malls' doors)
 import { toWorld, rdp, load, log } from './geo-base.mjs';
@@ -61,7 +61,7 @@ for (const e of nodes) {
   if (t.railway !== 'station') continue;
   const [x, z] = toWorld(e.lon, e.lat);
   if (!near(x, z, 200)) continue;
-  stations.push([q(x), q(z), cleanName(t.name), colourOf(t, x, z)]);
+  stations.push([q(x), q(z), cleanName(t.name), colourOf(t, x, z), t.wheelchair === 'yes' ? 1 : 0]);
 }
 
 // Below the street (level -1, the PATH's & the malls' doors) or indoors: not a street entrance

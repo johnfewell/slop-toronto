@@ -146,6 +146,8 @@ async function initApp() {
   // the TTC subway where it shows: Line 2 on the Bloor Viaduct, the station entrances (subway.js)
   const subway = window.CITY.createSubway(scene);
   allColliders.push(...subway.colliders);
+  // the TTC's subway pylons at the entrances (ttc-pylons.js; their colliders are subway.js's)
+  if (window.CITY.buildTtcPylons) await window.CITY.buildTtcPylons(scene, subway.entrances.pylons);
   if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(subway);
   markInit('streetcars');
   // --- end Toronto layer ---

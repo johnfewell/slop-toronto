@@ -11,10 +11,10 @@
 // - Every station's street entrances (OpenStreetMap railway=subway_entrance, or the station's node where none is
 //   mapped): a stairway going down, set along the street on its sidewalk (beyond the sidewalk where the node lies in
 //   open ground; else against the building line, clear of the inner walking line), its low walls & rail round it, and
-//   a TTC sign on a post at its open end (a red roundel and the station's name with its line's colour). An entrance
-//   in a building gets the sign post alone, at the curb. The stairs are a flat decal at the sidewalk drawn as a pit
+//   the TTC's insignia pylon at the curb abreast of its open end (js/ttc-pylons.js draws them: the insignia, the entry
+//   ID sign with the station's name & lines). An entrance in a building gets the pylon alone, at the curb. The stairs are a flat decal at the sidewalk drawn as a pit
 //   (the view ray traced through the stairwell in the shader): the sidewalk itself stays whole.
-// - Colliders for the player (the piers & abutments, the stair walls & sign posts); the trains sound like the
+// - Colliders for the player (the piers & abutments, the stair walls & the pylons); the trains sound like the
 //   streetcars (window.CITY.Audio.addStreetcars: whine, rolling, joint clacks).
 // - Cost: a few merged static meshes, three instanced meshes for the cars; quality.js `subway` (x trains per hour).
 
@@ -40,6 +40,7 @@ const ST_HALF = 1.2; // a stairway's walls, centre to outer face (2 m clear betw
 const ST_IN = 1.0;
 const ST_LEN = 6.4; // the open stairwell
 const WALL_T = 0.2, WALL_H = 0.95;
+const PYLON_CURB = 0.75; // a pylon's pole, in from the curb
 const RISE = 0.17, TREAD = 0.28, SLOPE = RISE / TREAD;
 
 const toPts = (flat) => {
@@ -504,59 +505,6 @@ function sample(route, s, out) {
 // ---------------------------------------------------------------------------------------------------------------------
 // Station entrances
 // ---------------------------------------------------------------------------------------------------------------------
-// The signs: one canvas, the roundel in its first cell, each station's name panel (its line's disc, then the name)
-const LINE_COLOURS = { yellow: ['#f8c300', '1', '#1a1a1a'], green: ['#00923f', '2', '#ffffff'], purple: ['#a21a68', '4', '#ffffff'], orange: ['#ff8000', '5', '#1a1a1a'], grey: ['#808080', '6', '#ffffff'] };
-function buildSignAtlas(names) {
-  const CW = 512, CH = 128;
-  const rows = 2 + Math.ceil(names.length / 2);
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = Math.pow(2, Math.ceil(Math.log2(rows * CH)));
-  const g = canvas.getContext('2d');
-  g.fillStyle = '#1e2225';
-  g.fillRect(0, 0, canvas.width, canvas.height);
-  // the roundel (256 x 256 at the top left): a red disc in a white ring, TTC in white
-  g.fillStyle = '#ffffff';
-  g.beginPath(); g.arc(128, 128, 126, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#da291c';
-  g.beginPath(); g.arc(128, 128, 112, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#ffffff';
-  g.font = 'bold 96px "Helvetica Neue", Helvetica, Arial, sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText('TTC', 128, 136);
-  // (a plain white panel for the roundel's back & the post's cap)
-  g.fillStyle = '#ffffff';
-  g.fillRect(256, 0, 64, 64);
-  const cells = new Map();
-  names.forEach(([name, colour], i) => {
-    const x = (i % 2) * CW, y = (2 + Math.floor(i / 2)) * CH;
-    g.fillStyle = '#1e2225';
-    g.fillRect(x, y, CW, CH);
-    const [bg, num, fg] = LINE_COLOURS[colour] || LINE_COLOURS.yellow;
-    g.fillStyle = bg;
-    g.beginPath(); g.arc(x + 66, y + 64, 44, 0, Math.PI * 2); g.fill();
-    g.fillStyle = fg;
-    g.font = 'bold 60px "Helvetica Neue", Helvetica, Arial, sans-serif';
-    g.textAlign = 'center';
-    g.fillText(num, x + 66, y + 68);
-    g.fillStyle = '#ffffff';
-    g.textAlign = 'left';
-    let size = 62;
-    do {
-      g.font = `bold ${size}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
-      size -= 2;
-    } while (g.measureText(name).width > CW - 140 && size > 28);
-    g.fillText(name, x + 124, y + 68);
-    cells.set(name + '|' + colour, [x / canvas.width, 1 - (y + CH) / canvas.height, (x + CW) / canvas.width, 1 - y / canvas.height]);
-  });
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 8;
-  tex.generateMipmaps = true;
-  return { tex, cells, roundel: [0, 1 - 256 / canvas.height, 256 / canvas.width, 1], white: [260 / canvas.width, 1 - 60 / canvas.height, 316 / canvas.width, 1 - 4 / canvas.height] };
-}
-
 // The stairwell, traced in the shader: from the decal's point at the sidewalk the view ray runs down into a box
 // ST_IN wide either side & ST_LEN long whose floor is the flight of stairs (RISE / TREAD) and whose far wall opens into
 // the dark passage to the station. Treads & risers, the yellow nosings, tiled walls with their handrails
@@ -605,15 +553,6 @@ function createStairwellMaterial() {
   mat.emissiveNode = albedo.mul(night.mul(0.7));
   return mat;
 }
-function createSignMaterial(tex) {
-  const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.4, metalness: 0.05 });
-  const t = texture(tex, uv());
-  mat.colorNode = t.rgb;
-  const night = smoothstep(0.6, 1.15, cityUniforms.uInteriorGlow);
-  mat.emissiveNode = t.rgb.mul(night.mul(0.85).add(0.06));
-  return mat;
-}
-
 function buildEntrances(group, colliders) {
   const SW = (GEO.frame && GEO.frame.sidewalk) || 4.6;
   const SWH = CITY_BOUNDS.sidewalkHeight;
@@ -731,6 +670,19 @@ function buildEntrances(group, colliders) {
       }
     }
     if (!site) { skipped++; continue; }
+    // the pylon: at the curb abreast of the stairway's open end (a sign-only site's own spot), clear of the street's
+    // furniture & the other pylons; else beside the opening
+    if (site.kind === 'stair') {
+      const a0 = (site.x - R.px) * tx + (site.z - R.pz) * tz - ST_LEN / 2 - 0.4, lat = R.curb + PYLON_CURB;
+      for (const d of [0, -1, 1, -2, 2, -3, 3]) {
+        const x = R.px + R.nx * lat + tx * (a0 + d), z = R.pz + R.nz * lat + tz * (a0 + d);
+        if (blockAt(x, z) && !nearProp(x, z, 0.5) && !inBuilding(x, z, 0.4) && !placed.some((p) => p.pylon && Math.hypot(p.pylon.x - x, p.pylon.z - z) < 2.5)) { site.pylon = { x, z }; break; }
+      }
+      if (!site.pylon) {
+        const sd = Math.sign(-R.nx * -tz + -R.nz * tx) || 1; // (the stairway's curb side)
+        site.pylon = { x: site.x - tx * (ST_LEN / 2 + 0.35) - tz * sd * (ST_HALF + 0.4), z: site.z - tz * (ST_LEN / 2 + 0.35) + tx * sd * (ST_HALF + 0.4) };
+      }
+    } else site.pylon = { x: site.x, z: site.z };
     site.y = blockAt(site.x, site.z) ? SWH : 0;
     site.name = name;
     site.colour = colour;
@@ -741,20 +693,11 @@ function buildEntrances(group, colliders) {
   }
 
   // Geometry
-  const names = [...new Set(placed.map((p) => p.name + '|' + p.colour))].map((k) => k.split('|'));
-  const atlas = buildSignAtlas(names);
-  const walls = [], metal = [], pit = [], pitFrame = [], sign = [], signUv = [];
-  const uvQuad = (pos, uvs, p0, p1, p2, p3, r, fx, fy, fz) => {
-    // p0 bottom-left, p1 bottom-right, p2 top-right, p3 top-left as seen from the front (fx, fy, fz)
-    pos.push(...p0, ...p1, ...p2, ...p0, ...p2, ...p3);
-    uvs.push(r[0], r[1], r[2], r[1], r[2], r[3], r[0], r[1], r[2], r[3], r[0], r[3]);
-  };
+  const walls = [], metal = [], pit = [], pitFrame = [];
+  const pylons = [];
   for (const p of placed) {
     const { tx, tz, y } = p;
     const nx = -tz, nz = tx;
-    // the sign post's corner: at the open end, on the curb side
-    const cside = Math.sign(p.curbSide.x * nx + p.curbSide.z * nz) || 1;
-    let px, pz;
     if (p.kind === 'stair') {
       const ox = p.x - tx * (ST_LEN / 2), oz = p.z - tz * (ST_LEN / 2); // the opening's middle
       // the stairwell decal
@@ -773,59 +716,25 @@ function buildEntrances(group, colliders) {
       const hx = ST_HALF, hz = (ST_LEN + WALL_T) / 2, cx = ox + tx * hz, cz = oz + tz * hz, cs = tz, sn = tx;
       const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
       colliders.push({ minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, maxY: y + WALL_H + 0.26, obb: { cx, cz, hx, hz, cs, sn } });
-      px = ox - tx * 0.35 + nx * cside * (ST_HALF + 0.15);
-      pz = oz - tz * 0.35 + nz * cside * (ST_HALF + 0.15);
-    } else {
-      px = p.x;
-      pz = p.z;
     }
-    // the sign post: a dark pole, the roundel on top, the name panel under it, both facing along the street
-    obox(metal, px, pz, tx, tz, -0.05, 0.05, -0.05, 0.05, y, y + 3.25, 4 | 8 | 16 | 32);
-    const R0 = 0.42, Y0 = y + 3.0;
-    const segs = 20;
-    for (const f of [-1, 1]) {
-      for (let i = 0; i < segs; i++) {
-        const a0 = (i / segs) * Math.PI * 2, a1 = ((i + 1) / segs) * Math.PI * 2;
-        const pt = (a) => [px + nx * Math.cos(a) * R0 * f - tx * 0.075 * f, Y0 + Math.sin(a) * R0, pz + nz * Math.cos(a) * R0 * f - tz * 0.075 * f];
-        const t = (a) => [atlas.roundel[0] + (atlas.roundel[2] - atlas.roundel[0]) * (0.5 + 0.5 * Math.cos(a)), atlas.roundel[1] + (atlas.roundel[3] - atlas.roundel[1]) * (0.5 + 0.5 * Math.sin(a))];
-        const c0 = [px - tx * 0.075 * f, Y0, pz - tz * 0.075 * f];
-        const tc = [(atlas.roundel[0] + atlas.roundel[2]) / 2, (atlas.roundel[1] + atlas.roundel[3]) / 2];
-        sign.push(...c0, ...pt(a0), ...pt(a1));
-        signUv.push(...tc, ...t(a0), ...t(a1));
-      }
-    }
-    // the roundel's rim
-    for (let i = 0; i < segs; i++) {
-      const a0 = (i / segs) * Math.PI * 2, a1 = ((i + 1) / segs) * Math.PI * 2;
-      const pt = (a, f) => [px + nx * Math.cos(a) * R0 - tx * 0.075 * f, Y0 + Math.sin(a) * R0, pz + nz * Math.cos(a) * R0 - tz * 0.075 * f];
-      const w = atlas.white;
-      uvQuad(sign, signUv, pt(a0, -1), pt(a1, -1), pt(a1, 1), pt(a0, 1), w, 0, 0, 0);
-    }
-    const cell = atlas.cells.get(p.name + '|' + p.colour);
-    const PW = 0.7, PH = 0.175, PY = y + 2.36;
-    for (const f of [-1, 1]) {
-      // as seen from its front (along -f t), left is -f n
-      const L = (c, yy) => [px + nx * c * f - tx * 0.075 * f, yy, pz + nz * c * f - tz * 0.075 * f];
-      uvQuad(sign, signUv, L(-PW, PY - PH), L(PW, PY - PH), L(PW, PY + PH), L(-PW, PY + PH), cell, 0, 0, 0);
-    }
-    // the panel's edges & a bracket
-    obox(metal, px, pz, tx, tz, -0.08, 0.08, -PW, PW, PY + PH, PY + PH + 0.03);
-    obox(metal, px, pz, tx, tz, -0.08, 0.08, -PW, PW, PY - PH - 0.03, PY - PH);
-    colliders.push({ minX: px - 0.15, maxX: px + 0.15, minZ: pz - 0.15, maxZ: pz + 0.15, maxY: y + 3.3 });
+    // the pylon (js/ttc-pylons.js), its faces along the street, its entry ID sign (the model's +x) reaching away from
+    // the curb over the sidewalk; its pole & base the rider's collider (the signs overhead clear a rider)
+    const { x: px, z: pz } = p.pylon;
+    const py = blockAt(px, pz) ? SWH : 0;
+    let yaw = Math.atan2(tx, tz);
+    if (Math.cos(yaw) * -p.curbSide.x - Math.sin(yaw) * -p.curbSide.z < 0) yaw += Math.PI;
+    pylons.push({ x: px, y: py, z: pz, yaw, station: p.name, colour: p.colour });
+    colliders.push({ minX: px - 0.3, maxX: px + 0.3, minZ: pz - 0.3, maxZ: pz + 0.3, maxY: py + 4.0 });
   }
   const wallMat = createConcreteMaterial(0x8f8a83);
   const metalMat = new THREE.MeshStandardNodeMaterial({ color: 0x9aa0a5, roughness: 0.3, metalness: 0.85 });
   const out = [
     meshOf(walls, wallMat, 'SubwayEntranceWalls'),
     meshOf(metal, metalMat, 'SubwayEntranceMetal'),
-    meshOf(pit, createStairwellMaterial(), 'SubwayStairwells', { cast: false, extra: { stairFrame: [pitFrame, 4] } }),
-    meshOf(sign, createSignMaterial(atlas.tex), 'SubwaySigns', { extra: { uv: [signUv, 2] } })
+    meshOf(pit, createStairwellMaterial(), 'SubwayStairwells', { cast: false, extra: { stairFrame: [pitFrame, 4] } })
   ].filter(Boolean);
-  // (the signs' faces wind both ways: their normals from the geometry, both sides drawn)
-  const sm = out.find((m) => m.name === 'SubwaySigns');
-  if (sm) sm.material.side = THREE.DoubleSide;
   for (const m of out) group.add(m);
-  return { stairs, signs, skipped, sites: placed };
+  return { stairs, signs, skipped, sites: placed, pylons };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -914,7 +823,7 @@ function createSubway(scene) {
     }
   }
 
-  console.info(`[subway] ${VIADUCTS.length} viaduct (${VIADUCTS.map((V) => `${Math.round(V.len)} m, lower deck at ${Math.round(V.railY * 10) / 10} m, ${piers} piers`).join('; ')}), ${routes.length} train routes; ${ent.stairs} stair entrances & ${ent.signs} sign posts at ${new Set(ent.sites.map((s) => s.name)).size} stations (${ent.skipped} left out)`);
+  console.info(`[subway] ${VIADUCTS.length} viaduct (${VIADUCTS.map((V) => `${Math.round(V.len)} m, lower deck at ${Math.round(V.railY * 10) / 10} m, ${piers} piers`).join('; ')}), ${routes.length} train routes; ${ent.stairs} stair entrances & ${ent.signs} pylons alone at ${new Set(ent.sites.map((s) => s.name)).size} stations (${ent.skipped} left out)`);
   return api;
 }
 

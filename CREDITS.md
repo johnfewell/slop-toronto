@@ -68,6 +68,11 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   (`tools/blender/bake_props.py park-sign`); its blank face is his photo straightened, the name and address painted out
   with Nano Banana Pro (Gemini) and flattened. The sign's design, its pet icons and the Toronto logo are the City of
   Toronto's. Each park's name and address (drawn on the face in the browser) are from OpenStreetMap.
+- **TTC subway pylon** (`assets/props/ttc-pylon.glb`, `assets/props/ttc-logo.webp`): the TTC's insignia pylon with
+  its entry ID sign at the subway entrances, modelled in Blender from the City/TTC drawing ("Insignia Pylon, w/ Entry
+  ID Sign") and Street View (`tools/blender/bake_props.py ttc-pylon`). TTC logo and subway signage design: Toronto
+  Transit Commission (trademark), used to depict the real street signage; logo file supplied by John. The station
+  names, lines and accessibility are from OpenStreetMap.
 - **CN Tower model** (`assets/landmarks/cn-tower.glb`): "CN Tower low poly model base mesh" by C.J..Goldman
   (https://sketchfab.com/C.J..Goldman),
   https://sketchfab.com/3d-models/cn-tower-low-poly-model-base-mesh-da7bbf4926de434cb5ef8d0e0bea9d59, licensed CC BY 4.0
