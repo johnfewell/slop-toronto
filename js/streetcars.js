@@ -186,6 +186,37 @@ function nearAlong(track, G, reach) {
   return best;
 }
 
+// The traffic's roads the streetcars run along get e.tram (John: "there shouldn't be buses on streetcar routes": the
+// TTC runs streetcars there, not buses; traffic.js keeps its buses off them): most of the road's length, from 20% to 80%
+// along its middle, within its half-width (+1.5 m) of a track
+function markStreetcarStreets(network, tracks) {
+  const pts = [];
+  for (const t of tracks) for (let i = 0; i < t.pts.length; i += 2) if (t.pts[i].y > -1) pts.push(t.pts[i]);
+  const G = pointGrid(pts, 20);
+  const nearTrack = (x, z, reach) => {
+    const ix = Math.floor(x / G.cell), iz = Math.floor(z / G.cell);
+    for (let a = -1; a <= 1; a++) {
+      for (let c = -1; c <= 1; c++) {
+        for (const p of G.grid.get((ix + a) * 100000 + iz + c) || []) if (Math.hypot(p.x - x, p.z - z) < reach) return true;
+      }
+    }
+    return false;
+  };
+  let marked = 0;
+  for (const e of (network && network.edges) || []) {
+    if (!(e.len > 0)) continue;
+    const reach = (e.half || 6) + 1.5;
+    let hits = 0;
+    for (let k = 1; k <= 5; k++) {
+      const s = e.len * (0.1 + 0.15 * k);
+      if (nearTrack(e.sx + e.dx * s, e.sz + e.dz * s, reach)) hits++;
+    }
+    e.tram = hits >= 3;
+    if (e.tram) marked++;
+  }
+  console.info(`[streetcars] ${marked} road links carry streetcars (no buses on them)`);
+}
+
 function buildTracks(network) {
   const ways = [];
   for (const [kind, service, name, flags, flat] of GEO.rails || []) {
@@ -476,6 +507,7 @@ function createStreetcars(scene, trafficSystem) {
   trackGroup.name = 'StreetcarTracks';
   const trackTiles = buildTrackwork(trackGroup, tracks);
   group.add(trackGroup);
+  markStreetcarStreets(network, tracks);
 
   // The fleet: one car per `streetcarSpacing` m of track (quality.js), spread out along it
   const spacing = QUALITY.streetcarSpacing || 500;
