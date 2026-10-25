@@ -5,8 +5,8 @@
 // (L, T & U plans), as tall as mapped or estimated. Most of the city is one and two-storey houses & low blocks of
 // rendered, painted concrete behind compound walls, with hipped roofs of stone-coated steel or aluminium sheets; the
 // Central Business District and the Three Arms Zone rise higher, some in curtain-wall glass.
-// A quadtree streams the close-up detail around the camera: overhead water tanks on their stands, split air-
-// conditioner condensers on the walls and satellite dishes.
+// A quadtree streams the close-up detail around the camera: fire escapes, the odd air conditioner on a side wall and
+// satellite dish.
 
 const { THREE } = window.CITY;
 const { mergeGeometries } = window.CITY.Addons;
@@ -349,21 +349,11 @@ function buildCityBlocks(scene) {
     }
     // --- end fire escapes
     if (kind <= 2 || kind === 6 || kind === 7) {
-      if (rnd() < 0.8) {
-        const tankCol = Math.floor(rnd() * 4);
-        if (roof === 0 && kind !== 3) {
-          const [tx, tz] = local(u0 + (u1 - u0) * (0.2 + rnd() * 0.6), v0 + (v1 - v0) * (0.2 + rnd() * 0.6));
-          detail.tanks.push({ x: tx, y: topY, z: tz, stand: 1.2 + rnd() * 1.2, col: tankCol });
-        } else if (roof === 1) {
-          // on a steel stand just off the house's back corner, as high as the eaves or a little higher
-          const back = front === 3 ? 2 : front === 2 ? 3 : front === 0 ? 1 : 0;
-          const off = 2.2;
-          const [tx, tz] = back < 2 ? local(back === 0 ? u0 - off : u1 + off, v0 + (v1 - v0) * 0.25) : local(u0 + (u1 - u0) * 0.25, back === 2 ? v0 - off : v1 + off);
-          detail.tanks.push({ x: tx, y: CITY_BOUNDS.sidewalkHeight, z: tz, stand: Math.max(3, topY - 0.5 + rnd() * 2), col: tankCol });
-        }
-      }
-      // split-AC condensers: on the side walls (not the street front), at the upper floors
-      const n = kind === 0 ? 1 + Math.floor(rnd() * 2) : 2 + Math.floor(rnd() * 4);
+      // (no overhead water tanks: they were Abuja's, polyethylene drums on stands; Toronto's buildings have none.
+      // John: "Toronto doesn't really have water towers")
+      // an air conditioner on a side wall (not the street front), at the upper floors: in Toronto a few, not Abuja's
+      // split units on every wall
+      const n = rnd() < 0.2 ? 1 : 0;
       for (let k = 0; k < n; k++) {
         const side = [0, 1, 2, 3].filter((f) => f !== front)[Math.floor(rnd() * 3)];
         const floors = Math.max(1, Math.round((topY - 0.6) / 3.4));
@@ -375,7 +365,7 @@ function buildCityBlocks(scene) {
         const [ax, az] = local(lu, lv);
         detail.acs.push({ x: ax, y, z: az, ry: ang + rot });
       }
-      if (rnd() < 0.55) {
+      if (rnd() < 0.05) { // the odd satellite dish
         const [dx, dz] = local(u0 + (u1 - u0) * (0.1 + rnd() * 0.8), v0 + (v1 - v0) * (0.1 + rnd() * 0.8));
         detail.dishes.push({ x: dx, y: topY + (roof === 1 ? 0.2 : 0), z: dz, ry: rnd() * Math.PI * 2 });
       }
