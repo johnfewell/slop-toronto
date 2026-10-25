@@ -58,6 +58,18 @@ async function setupClouds(renderer) {
   // CLOUD_CLOCK times real time so a few minutes' ride sees it change (a cell's life: 600 s of cloud time). The whole
   // sky still drifts with the local weather's velocity. ?cloudSpeed=<n> sets the clock, 0 holds the sky still
   ctx.experimental = { evolvingWeather: true, windReprojection: true };
+  // The clouds' shadow cascades are fitted to the camera's frustum by unprojecting its NDC corners, assuming near at
+  // z 0 & far at z 1; the city's reversed depth buffer swaps them, so cascade 0 (the near one) was fitted to the far
+  // end of the view: 143 km wide, 560 m texels, which showed as flat dark rectangles across the cloud base, and the
+  // far cascade missed the distant clouds. The cascades get a copy of the camera with an ordinary projection
+  const shadowFitCamera = new THREE.PerspectiveCamera();
+  const updateShadowMaps = ctx.updateShadowMaps.bind(ctx);
+  ctx.updateShadowMaps = (cam) => {
+    if (!cam.reversedDepth) return updateShadowMaps(cam);
+    shadowFitCamera.copy(cam, false);
+    shadowFitCamera.updateProjectionMatrix();
+    return updateShadowMaps(shadowFitCamera);
+  };
   ctx.stbnTexture = Clouds.createJitterTexture();
   Clouds.loadBakedCloudTextures({
     localWeather: Clouds.DEFAULT_LOCAL_WEATHER_URL,
