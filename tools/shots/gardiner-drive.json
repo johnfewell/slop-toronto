@@ -1,0 +1,32 @@
+[
+ {
+  "name": "gdr1-gardiner-drive",
+  "mode": "car",
+  "time": "golden",
+  "wait": 6000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, G = window.CITY.GEO; let best = null, nxt = null;\nfor (const d of G.decks) if (d[0] === 'Gardiner Expressway') { const a = d[3]; for (let i = 0; i + 3 < a.length; i += 3) if (a[i + 2] > 6 && (!best || Math.abs(a[i] - -1300) < Math.abs(best[0] - -1300))) { best = [a[i], a[i + 1], a[i + 2]]; nxt = [a[i + 3], a[i + 4]]; } }\nconst [gx, gz, gh] = best; const h = Math.atan2(nxt[0] - gx, nxt[1] - gz);\napp.teleportTo(gx, gz, h); const e = app.controllerManager.getActiveEntity(); e.position.y = gh;\nsetTimeout(() => { const p = e.position; const cars = app.trafficSystem.cars.filter((v) => v.edge && (v.y || 0) > 5 && Math.hypot(v.x - p.x, v.z - p.z) < 400);\nconsole.log('[shot] gdr1: player y ' + p.y.toFixed(1) + ' (deck ' + window.CITY.deckHeightAt(p.x, p.z, 60, 0).toFixed(1) + '), speed ' + (e.speed * 3.6).toFixed(0) + ' km/h, ' + cars.length + ' traffic cars up on decks within 400 m'); }, 5500); })()"
+ },
+ {
+  "name": "gdr2-dvp-drive",
+  "mode": "car",
+  "time": "golden",
+  "wait": 6000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, G = window.CITY.GEO; let best = null, nxt = null;\nfor (const d of G.decks) if (d[0] === 'Don Valley Parkway') { const a = d[3]; for (let i = 0; i + 3 < a.length; i += 3) if (a[i + 2] > 6 && (!best || Math.abs(a[i] - 2400) < Math.abs(best[0] - 2400))) { best = [a[i], a[i + 1], a[i + 2]]; nxt = [a[i + 3], a[i + 4]]; } }\nconst [gx, gz, gh] = best; const h = Math.atan2(nxt[0] - gx, nxt[1] - gz);\napp.teleportTo(gx, gz, h); const e = app.controllerManager.getActiveEntity(); e.position.y = gh;\nsetTimeout(() => { const p = e.position; const cars = app.trafficSystem.cars.filter((v) => v.edge && (v.y || 0) > 5 && Math.hypot(v.x - p.x, v.z - p.z) < 400);\nconsole.log('[shot] gdr2: player y ' + p.y.toFixed(1) + ' (deck ' + window.CITY.deckHeightAt(p.x, p.z, 60, 0).toFixed(1) + '), speed ' + (e.speed * 3.6).toFixed(0) + ' km/h, ' + cars.length + ' traffic cars up on decks within 400 m'); }, 5500); })()"
+ },
+ {
+  "name": "gd1-on-deck-spadina",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const G = window.CITY.GEO; let best = null, nxt = null;\nfor (const d of G.decks) if (d[0] === 'Gardiner Expressway') { const a = d[3]; for (let i = 0; i + 3 < a.length; i += 3) if (!best || Math.abs(a[i] - -1300) < Math.abs(best[0] - -1300)) { best = [a[i], a[i + 1], a[i + 2]]; nxt = [a[i + 3], a[i + 4]]; } }\nconst [gx, gz, gh] = best; let ux = nxt[0] - gx, uz = nxt[1] - gz; const L = Math.hypot(ux, uz); ux /= L; uz /= L;\nwindow.__CITY_APP.teleportTo(gx + uz * 40, gz - ux * 40, 0);\nconst px = gx - ux * 0 + uz * 0, pz = gz - uz * 0 - ux * 0;\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [px, gh + 2.4, pz], look: [px + ux * 120, gh + 2.4 + 0, pz + uz * 120], fov: 60 });\n})()"
+ },
+ {
+  "name": "gd3-under-lakeshore-spadina",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const G = window.CITY.GEO; let best = null, nxt = null;\nfor (const d of G.decks) if (d[0] === 'Gardiner Expressway') { const a = d[3]; for (let i = 0; i + 3 < a.length; i += 3) if (!best || Math.abs(a[i] - -1300) < Math.abs(best[0] - -1300)) { best = [a[i], a[i + 1], a[i + 2]]; nxt = [a[i + 3], a[i + 4]]; } }\nconst [gx, gz, gh] = best; let ux = nxt[0] - gx, uz = nxt[1] - gz; const L = Math.hypot(ux, uz); ux /= L; uz /= L;\nwindow.__CITY_APP.teleportTo(gx + uz * 40, gz - ux * 40, 0);\nconst px = gx - ux * 0 + uz * -22, pz = gz - uz * 0 - ux * -22;\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [px, gh + -10.3, pz], look: [px + ux * 120, gh + -10.3 + 3, pz + uz * 120], fov: 60 });\n})()"
+ }
+]

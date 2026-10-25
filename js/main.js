@@ -99,6 +99,8 @@ async function initApp() {
   const lakeWater = window.CITY.setupLakeWater(scene, renderer, lightingSystem);
   markInit('cityGrid');
   const boroughs = buildTerrain(scene);
+  // Toronto layer: the rest of the city beyond the detailed one, on the terrain (surroundings.js)
+  window.CITY.buildSurroundings(scene, boroughs.group, QUALITY);
   markInit('terrain');
   const { colliders: landmarkColliders } = buildLandmarks(scene);
   markInit('landmarks');
@@ -132,6 +134,8 @@ async function initApp() {
   const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
   // the Union Station Rail Corridor's tracks & GO trains (rail-corridor.js)
   const railCorridor = window.CITY.createRailCorridor(scene, trafficSystem);
+  // the streetcars' sounds (audio branch: reads streetcars.cars, safe before the audio exists)
+  if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(streetcars);
   markInit('streetcars');
   // --- end Toronto layer ---
   buildRoadPaint(scene, trafficSystem.network);

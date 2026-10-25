@@ -1402,6 +1402,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // every 3 m, on the curb island (city-config.js blockAt) and clear of obstacles
   const { blockAt } = window.CITY;
   function sidewalkTrack(e) {
+    if ((e.h0 || 0) > 2 || (e.h1 || 0) > 2) return false; // (Toronto layer) never along the Gardiner's deck or a flyover
     const off = (Math.random() < 0.5 ? 1 : -1) * (e.half + 1.4 + Math.random() * 2.6);
     const ax = e.sx + e.rx * off;
     const az = e.sz + e.rz * off;

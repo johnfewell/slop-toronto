@@ -24,6 +24,9 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
     Outlook model & livery) and the traffic keeping behind them (the streetcars block in `js/traffic.js`), the paved
     rights-of-way (`js/city-grid.js`);
   - the Union Station Rail Corridor's ballast and rails (`js/rail-corridor.js`; the GO trains are this project's own);
+  - the rest of Toronto around the detailed city (`js/surroundings.js`): the procedural ground on the terrain, the
+    land-use map, the far house rows, mid-rise & high-rise clusters, the Hearn's stack, Casa Loma, Gibraltar Point's
+    lighthouse;
   - the facade colours measured from Wikimedia Commons photos: `tools/commons-palette.py`,
     `tools/data/commons_palette.json` (used in `js/buildings.js`) and the photo credits below.
 
