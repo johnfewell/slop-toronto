@@ -835,6 +835,7 @@ function buildCityGrid(scene) {
             if (h < 4.6) break;
             const x = a.x + ((b.x - a.x) * tt) / L, z = a.z + ((b.z - a.z) * tt) / L;
             if (onGroundRoad(x, z, 1.2) || onRail(x, z, 3.2)) continue;
+            if (window.CITY.subwayKeepsClear && window.CITY.subwayKeepsClear(x, z)) continue; // (subway.js: its own piers)
             piers.push({ x, z, h: h - 1.25, w: Math.min(d.w * 0.7, 9), ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
             break;
           }
