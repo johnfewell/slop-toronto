@@ -79,9 +79,10 @@ if (PROFILE && PROFILE !== 'shots') await startProfile();
 // & script that allocated it (heap.txt), and the JS heap size
 const HEAP = process.env.CAPTURE_HEAP;
 const hcdp = HEAP ? await page.context().newCDPSession(page) : null;
-if (HEAP) { await hcdp.send('HeapProfiler.enable'); await hcdp.send('HeapProfiler.startSampling', { samplingInterval: 32768 }); }
+// (CAPTURE_HEAP=alloc: from the shots on, every allocation sampled, garbage included: what the frames allocate)
+if (HEAP && HEAP !== 'alloc') { await hcdp.send('HeapProfiler.enable'); await hcdp.send('HeapProfiler.startSampling', { samplingInterval: 32768 }); }
 const stopHeap = async () => {
-  await hcdp.send('HeapProfiler.collectGarbage');
+  if (HEAP !== 'alloc') await hcdp.send('HeapProfiler.collectGarbage');
   const { profile } = await hcdp.send('HeapProfiler.getSamplingProfile');
   const bySite = new Map(), byScript = new Map();
   const walk = (n, stack) => {
@@ -139,6 +140,10 @@ try {
 log.push(`[capture] ready after ${Date.now() - t0} ms`);
 if (PROFILE && PROFILE !== 'shots') await stopProfile();
 if (PROFILE === 'shots') await startProfile();
+if (HEAP === 'alloc') {
+  await hcdp.send('HeapProfiler.enable');
+  await hcdp.send('HeapProfiler.startSampling', { samplingInterval: 8192, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
+}
 
 for (const s of shots) {
   await page.evaluate((s) => {
