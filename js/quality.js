@@ -42,7 +42,6 @@ const TIERS = {
     // main.js: once the city is on screen, drop the CPU copies of what the GPU already holds (static vertex & index
     // arrays, the name boards' canvases): hundreds of MB the phone needs
     lean: false,
-    hideDarkLights: false, // main.js: pooled lights that are off leave the clustered lighting's list each frame
     // the city's sound (audio-system.js): running vehicle voices, sirens & one-shot events at once, HRTF panning (else
     // plain stereo, far cheaper on the audio thread)
     audio: { motors: 8, sirens: 2, events: 8, hrtf: true }
@@ -52,7 +51,7 @@ const TIERS = {
     shadowTile: 2048, shadowFar: 0.75,
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85,
     cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, subway: 1, farCity: 0.6, lightPool: 0.6,
-    signRes: 1, lean: true, hideDarkLights: true,
+    signRes: 1, lean: true,
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
@@ -60,7 +59,7 @@ const TIERS = {
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7,
     cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
-    signRes: 0.5, lean: true, hideDarkLights: true,
+    signRes: 0.5, lean: true,
     // (measured on the Pixel 8, which is CPU-bound: every shadow caster is drawn again in both cascades) no kerb
     // shadows (~1 ms a frame, unseen at phone size) and an even 30 fps. (Shadows to 100 m instead of 150 m saved under
     // 1 ms in a paired A/B on the phone and lost the far buildings' shadows: not taken)

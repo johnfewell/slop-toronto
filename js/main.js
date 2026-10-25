@@ -940,7 +940,7 @@ async function initApp() {
   // the clustered (shadowless point & spot) lights, for the dark-light pass in the loop (after the warm-up frame)
   let darkLights = null;
   const collectDarkLights = () => {
-    if (!QUALITY.hideDarkLights || !ClusteredLighting || !(renderer.lighting instanceof ClusteredLighting)) return;
+    if (!ClusteredLighting || !(renderer.lighting instanceof ClusteredLighting)) return;
     darkLights = [];
     scene.traverse((o) => { if ((o.isSpotLight || o.isPointLight) && !o.castShadow) darkLights.push(o); });
   };
@@ -1008,11 +1008,11 @@ async function initApp() {
     cityAudio.update(dt, elapsed);
     if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
 
-    // The phone tiers: the pooled street, head & police lights that are off (intensity 0, parked underground) leave
-    // the clustered lighting's list, so by day its per-frame cluster pass has no lights to sort and test (quality.js)
+    // The pooled street, head & police lights that are off (intensity 0, parked underground) leave the clustered
+    // lighting's list, so by day its per-frame cluster pass has no lights to sort and test
     if (darkLights) for (const l of darkLights) l.visible = l.intensity > 0;
-    // (the phone tiers walk the scene's matrices once a frame here, not in each of the frame's three scene renders: the
-    // view & the two shadow cascades, see the warm-up below)
+    // (the scene's matrices are walked once a frame here, not in each of the frame's three scene renders: the view &
+    // the two shadow cascades, see the warm-up below)
     if (!scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();
 
     // Render frame via TSL RenderPipeline (SSR + Bloom)
@@ -1032,7 +1032,7 @@ async function initApp() {
       markInit('warmup');
       if (QUALITY.lean) tourGuide.warmGraphics(false);
       collectDarkLights();
-      if (QUALITY.lean) scene.matrixWorldAutoUpdate = false;
+      scene.matrixWorldAutoUpdate = false;
     }
     const cpu1 = cpuTimes ? performance.now() : 0;
     renderPipeline.render();

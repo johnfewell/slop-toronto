@@ -290,10 +290,10 @@ function setupSceneCulling(scene, roots, shadow = null) {
       stats.proxiedMeshes++;
     }
 
-    // The phone tiers keep the stand-ins in one group: hidden while the view renders (they only draw in the shadow
-    // cascades, so three's walk of the view's scene skips ~1,400 of them) and never touched by the per-frame matrix walk
-    const proxyGroup = Q.lean ? new THREE.Group() : null;
-    if (proxyGroup) proxyGroup.name = 'ShadowProxies';
+    // The stand-ins live in one group: hidden while the view renders (they only draw in the shadow cascades, so
+    // three's walk of the view's scene skips ~1,400 of them) and never touched by the per-frame matrix walk
+    const proxyGroup = new THREE.Group();
+    proxyGroup.name = 'ShadowProxies';
     const firstProxy = new Map(); // material + kind -> the stand-in that compiles their shared pipeline
     const addProxy = (mesh, tris) => {
       mesh.name = 'ShadowProxy';
@@ -305,7 +305,7 @@ function setupSceneCulling(scene, roots, shadow = null) {
       const kind = mesh.material.uuid + (mesh.isInstancedMesh ? ':i' : ':m');
       if (firstProxy.has(kind)) mesh.userData.sharesPipelineWith = firstProxy.get(kind);
       else firstProxy.set(kind, mesh);
-      (proxyGroup || scene).add(mesh);
+      proxyGroup.add(mesh);
       stats.proxies++;
       stats.proxyTriangles += tris;
     };
@@ -328,17 +328,15 @@ function setupSceneCulling(scene, roots, shadow = null) {
       }
     }
     for (const cam of cams) cam.layers.enable(SHADOW_PROXY_LAYER);
-    if (proxyGroup) {
-      scene.add(proxyGroup);
-      proxyGroup.updateMatrixWorld(true);
-      proxyGroup.updateMatrixWorld = () => {};
-      const shadowCams = new Set(cams);
-      const before = scene.onBeforeRender;
-      scene.onBeforeRender = function (renderer, s, camera, ...rest) {
-        proxyGroup.visible = shadowCams.has(camera);
-        return before.call(this, renderer, s, camera, ...rest);
-      };
-    }
+    scene.add(proxyGroup);
+    proxyGroup.updateMatrixWorld(true);
+    proxyGroup.updateMatrixWorld = () => {};
+    const shadowCams = new Set(cams);
+    const before = scene.onBeforeRender;
+    scene.onBeforeRender = function (renderer, s, camera, ...rest) {
+      proxyGroup.visible = shadowCams.has(camera);
+      return before.call(this, renderer, s, camera, ...rest);
+    };
   }
 
   // 3. The big batches kept at any distance that cast no shadow (the casters have their stand-ins above): cells of a
@@ -351,14 +349,14 @@ function setupSceneCulling(scene, roots, shadow = null) {
   }
 
   state.culled = culled;
-  state.buckets = Q.lean ? bucketCulled(culled) : null;
-  if (state.buckets) stats.buckets = state.buckets.length;
+  state.buckets = bucketCulled(culled);
+  stats.buckets = state.buckets.length;
   return stats;
 }
 
 const state = { culled: [], buckets: null };
 
-// The phone tiers (quality.js lean): the culled chunks gathered into groups of BUCKET x BUCKET m under their parent, so
+// The culled chunks gathered into groups of BUCKET x BUCKET m under their parent, so
 // a far group hides whole and three's scene walk skips it. CityStreetProps alone holds ~8,400 chunks, nearly all hidden,
 // which every scene render (the view & the two shadow cascades) otherwise visits one by one
 const BUCKET = 600;
