@@ -766,9 +766,11 @@ for (const [key, id] of Object.entries(TELEPORT_TARGETS)) {
   }
   TELEPORT_LOCATIONS.humberArch = { x: Math.round(a.x * 10) / 10, z: Math.round(a.z * 10) / 10, heading: Math.atan2(CN[0] - a.x, CN[1] - a.z), road: 'Martin Goodman Trail' };
 }
-// The start: Yonge Street just south of Dundas, in the northbound lanes, Sankofa Square (Yonge-Dundas Square until
+// Yonge Street just south of Dundas (the start until 2026-10-25), in the northbound lanes, Sankofa Square (Yonge-Dundas Square until
 // 2024) on the right and the intersection ahead (Yonge's centre line runs x 327.3 -> 325.8 from z -1002 to -1182)
 TELEPORT_LOCATIONS.yongeDundas = { x: 330.4, z: -1080, heading: Math.atan2(-1.5, -180.5), road: 'Yonge Street' };
+// The start (John, 2026-10-25): Sugar Beach's lawn by the water, facing the CN Tower and the skyline across the slip
+TELEPORT_LOCATIONS.start = { x: 970.7, z: 575.9, heading: Math.atan2(CN[0] - 970.7, CN[1] - 575.9), road: 'Sugar Beach' };
 if (!TELEPORT_LOCATIONS.cnTower) {
   const p = arrivalFor(CN[0], CN[1], 40);
   if (p) TELEPORT_LOCATIONS.cnTower = p;

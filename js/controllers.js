@@ -10,7 +10,7 @@
 const { THREE } = window.CITY;
 const { CITY_BOUNDS, TELEPORT_LOCATIONS, isTypingInField, blockAt, waterAt, terrainHeightAt, deckHeightAt } = window.CITY;
 // Start on Yonge Street by Sankofa Square, heading north to Dundas (city-config.js TELEPORT_LOCATIONS)
-const SPAWN = (TELEPORT_LOCATIONS && TELEPORT_LOCATIONS.yongeDundas) || { x: 0, z: 140, heading: Math.PI };
+const SPAWN = (TELEPORT_LOCATIONS && TELEPORT_LOCATIONS.start) || { x: 0, z: 140, heading: Math.PI };
 const {
   cityUniforms,
   createCarPaintMaterial,
