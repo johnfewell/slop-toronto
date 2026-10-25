@@ -272,6 +272,109 @@ function buildUnionTrainShed(group, colliders) {
     group.add(m);
   }
   console.info(`[landmarks] Union train shed: ${n} tracks, ${st.length} stations, ${steelParts.length} steel members`);
+  return steelMat;
+}
+
+// The head house's south wall: once the shed stood open (above) it showed as a blank 230 m face over the trains, and
+// at Bay St the massing has no east end at all (it ran on into the shed), so from the street one looked into the
+// building at the backs of its walls & roof. Both are dressed as the station is: the same Indiana limestone as the
+// Front St front, pilasters between window bays and a cornice along the top. The south wall: a tall window to the
+// platforms under the shed roof, a storey of windows above it, a ledge where the roof meets the wall; the Great Hall's
+// south face above it: tall clerestory windows. The east end: a wall closing the building with three storeys of
+// windows over a plinth. ~1,600 triangles in the massing's own limestone and the shed's dark steel for the glass (no new
+// material), laid on the wall the massing actually has (its south faces, sampled per bay).
+function buildUnionSouthFace(group, pos, idx, stone, glass, baseY) {
+  // the massing's south-facing triangles round the head house's south wall, for "how far south is the wall at (x, y)"
+  const faces = [];
+  for (let t = 0; t < idx.length; t += 3) {
+    const a = idx[t] * 3, b = idx[t + 1] * 3, c = idx[t + 2] * 3;
+    const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
+    const vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const L = Math.hypot(nx, ny, nz);
+    const zc = (pos[a + 2] + pos[b + 2] + pos[c + 2]) / 3;
+    if (L < 1e-6 || Math.abs(nz) / L < 0.95 || zc < 24 || zc > 41.5) continue;
+    faces.push([pos[a], pos[a + 1], pos[b], pos[b + 1], pos[c], pos[c + 1], zc]);
+  }
+  const wallZ = (x, y) => {
+    let best = -Infinity;
+    for (const [ax, ay, bx, by, cx, cy, z] of faces) {
+      if (z <= best) continue;
+      const d1 = (bx - ax) * (y - ay) - (by - ay) * (x - ax), d2 = (cx - bx) * (y - by) - (cy - by) * (x - bx), d3 = (ax - cx) * (y - cy) - (ay - cy) * (x - cx);
+      if ((d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0)) best = z;
+    }
+    return best;
+  };
+  const S = [], G = [];
+  // a wall's own frame: u along it, y up, w out of it; `map` turns (u, y, w) into the world (a rotation, so the faces
+  // keep their winding: fronts face +w)
+  const face = (map, wallAt, x0, x1, bay, sampleY, windows, py0, py1, cornice, ledges = [], minFront = -Infinity) => {
+    const quad = (out, a, b, c, d) => { for (const p of [a, b, c, a, c, d]) out.push(...map(...p)); };
+    const proud = (u0, u1, y0, y1, wb, wf) => {
+      quad(S, [u0, y0, wf], [u1, y0, wf], [u1, y1, wf], [u0, y1, wf]);
+      quad(S, [u0, y0, wb], [u0, y0, wf], [u0, y1, wf], [u0, y1, wb]);
+      quad(S, [u1, y0, wf], [u1, y0, wb], [u1, y1, wb], [u1, y1, wf]);
+      quad(S, [u0, y1, wf], [u1, y1, wf], [u1, y1, wb], [u0, y1, wb]);
+      quad(S, [u0, y0, wb], [u1, y0, wb], [u1, y0, wf], [u0, y0, wf]); // (the underside: a cornice's, from below)
+    };
+    const n = Math.max(1, Math.round((x1 - x0) / bay)), w = (x1 - x0) / n;
+    const clampU = (u) => Math.min(x1 - 0.3, Math.max(x0 + 0.3, u));
+    let wMax = -Infinity;
+    for (let i = 0; i <= n; i++) wMax = Math.max(wMax, wallAt(clampU(x0 + i * w), sampleY));
+    if (!isFinite(wMax)) return;
+    for (let i = 0; i < n; i++) {
+      const cu = x0 + (i + 0.5) * w;
+      for (const [y0, y1, ww] of windows) {
+        const z = wallAt(cu, (y0 + y1) / 2);
+        if (!isFinite(z)) continue;
+        quad(G, [cu - ww / 2, y0, z + 0.04], [cu + ww / 2, y0, z + 0.04], [cu + ww / 2, y1, z + 0.04], [cu - ww / 2, y1, z + 0.04]);
+        // its stone mullion & transom (fronts only): the window in four lights, not a dark hole
+        const ym = y0 + (y1 - y0) * 0.62, zf = z + 0.09;
+        quad(S, [cu - 0.07, y0, zf], [cu + 0.07, y0, zf], [cu + 0.07, y1, zf], [cu - 0.07, y1, zf]);
+        quad(S, [cu - ww / 2, ym - 0.07, zf], [cu + ww / 2, ym - 0.07, zf], [cu + ww / 2, ym + 0.07, zf], [cu - ww / 2, ym + 0.07, zf]);
+        quad(S, [cu - ww / 2 - 0.12, y0 - 0.16, zf], [cu + ww / 2 + 0.12, y0 - 0.16, zf], [cu + ww / 2 + 0.12, y0, zf], [cu - ww / 2 - 0.12, y0, zf]); // the sill
+      }
+    }
+    for (let i = 0; i <= n; i++) {
+      const pu = x0 + i * w, hw = i === 0 || i === n ? 0.6 : 0.45;
+      const z = wallAt(clampU(pu), (py0 + py1) / 2);
+      if (isFinite(z)) proud(Math.max(x0, pu - hw), Math.min(x1, pu + hw), py0, py1, z - 0.05, z + 0.28);
+    }
+    proud(x0 - 0.3, x1 + 0.3, cornice[0], cornice[1], wMax - 0.05, wMax + cornice[2]);
+    for (const [y0, y1, d] of ledges) proud(x0, x1, y0, y1, wMax - 0.05, Math.max(wMax + d, minFront));
+    return quad;
+  };
+  const south = (u, y, w) => [u, y, w];
+  // the head house's south wall (to the top of its office floors, 18.5 m), over the shed: its ends where the massing's are
+  let wx0 = Infinity, wx1 = -Infinity;
+  for (let x = -130; x <= 130; x += 0.5) if (wallZ(x, 16.5) > 36) { wx0 = Math.min(wx0, x); wx1 = Math.max(wx1, x); }
+  if (!isFinite(wx0)) return;
+  face(south, wallZ, wx0 + 0.5, wx1 - 0.5, 5.2, 16.5,
+    [[8.0, 12.6, 2.4], [14.9, 17.2, 2.8]], // the tall window to the platforms; the office storey over the shed roof
+    6.2, 17.7, [17.7, 18.55, 0.6], [[13.25, 13.75, 0.5]], UNION_SHED.z0 + 0.15); // pilasters from the track bed; the ledge closes the gap to the roof
+  // the Great Hall's south face, up over the head house's roof (x -40..39, 18.6 to 29.2 m)
+  face(south, wallZ, -39.5, 38.5, 6.5, 24, [[20.0, 27.3, 3.2]], 18.6, 28.3, [28.3, 29.25, 0.7]);
+  // the east end on Bay St, from the Front St front (z -10.5) to the south wall: u runs north along it (u = -z), w east
+  const ex = wx1 + 0.5, zs = wallZ(wx1 - 1, 9), zn = -10.5;
+  const east = (u, y, w) => [ex + w, y, -u];
+  const quadE = face(east, () => 0, -zs + 0.3, -zn - 0.3, 5.0, 9,
+    [[1.6, 4.8, 2.2], [7.2, 10.6, 2.0], [12.4, 15.8, 2.0]], 1.0, 17.7, [17.7, 18.55, 0.6], [[0, 1.0, 0.2], [6.0, 6.4, 0.18]]);
+  if (quadE) quadE(S, [-zs, 0, 0], [-zn, 0, 0], [-zn, 19.4, 0], [-zs, 19.4, 0]); // the wall itself (two-sided stone)
+  const mk = (arr, mat, name) => {
+    if (!arr.length) return;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, mat);
+    m.position.y = baseY;
+    m.name = name;
+    m.castShadow = true;
+    m.receiveShadow = true;
+    group.add(m);
+  };
+  mk(S, stone, 'UnionSouthFace_stone');
+  mk(G, glass, 'UnionSouthFace_windows');
+  console.info(`[landmarks] Union's south wall x ${wx0} to ${wx1} & its Bay St end at x ${ex}: ${(S.length + G.length) / 9} triangles`);
 }
 
 function buildLandmarks(scene) {
@@ -416,10 +519,11 @@ function buildLandmarks(scene) {
       if (id === 'unionStation') {
         // the head house only (one box over the whole site walled off York St & Bay St under the tracks): its main
         // block, the west wing beyond York St, and the bridge over York St (open beneath)
-        colliders.push({ minX: -119, maxX: 110, minZ: -22, maxZ: 41, maxY: 34.3 });
+        colliders.push({ minX: -119, maxX: 114.5, minZ: -22, maxZ: 41, maxY: 34.3 }); // (to the Bay St end buildUnionSouthFace closes)
         colliders.push({ minX: -180.5, maxX: -154.5, minZ: 24, maxZ: 42, maxY: 18 });
         colliders.push({ minX: -154.5, maxX: -119, minZ: 28, maxZ: 41, minY: 4.7, maxY: 14.1 });
-        buildUnionTrainShed(group, colliders);
+        const shedSteel = buildUnionTrainShed(group, colliders);
+        buildUnionSouthFace(group, g.attributes.position.array, idx, mesh.material, shedSteel || glassDark, SW_Y);
       } else if (s && s.w) {
         g.computeBoundingBox();
         boxCollider(s.x, s.z, s.w / 2, s.d / 2, s.ang || 0, g.boundingBox.max.y);
