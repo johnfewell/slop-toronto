@@ -57,7 +57,8 @@ for (const e of [...osmLand.elements, ...osmPlaces.elements]) {
     const [cx, cz] = centroid(ring);
     if (!inDetail(cx, cz, 3000)) continue;
     const area = Math.abs(ringArea(ring));
-    if (area < (kind === 'water' ? 150 : 400)) continue;
+    // (a named park keeps down to 80 m²: the City's smallest parkettes, a bench & a bed at a corner, are parks too)
+    if (area < (kind === 'water' ? 150 : kind === 'park' && t.name ? 80 : 400)) continue;
     let s = rdpRing(ring, kind.startsWith('zone') ? 2 : 0.8);
     if (s.length < 3) continue;
     if (ringArea(s) > 0) s.reverse();

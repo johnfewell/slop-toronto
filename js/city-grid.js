@@ -269,6 +269,70 @@ function pointInPolygonXZ(pts, x, z) {
   return inside;
 }
 
+// --- Toronto layer: polygon intersection for the small parks' lawns & paths (city-grid.js, 2. CURB ISLANDS). Both
+// polygons are cut into triangles and every overlapping pair clipped (Sutherland-Hodgman, convex by convex): the
+// pieces are convex polygons [[x, z], ...] covering exactly the overlap, whatever the two outlines' shapes ---
+function trianglesXZ(pts) { // [{x, z}] (or [[x, z]]) -> [[[x, z] x 3] with a positive (x, z) cross product, bounds]
+  const v = pts.map((p) => (Array.isArray(p) ? new THREE.Vector2(p[0], p[1]) : new THREE.Vector2(p.x, p.z)));
+  const out = [];
+  for (const [i, j, k] of THREE.ShapeUtils.triangulateShape(v, [])) {
+    let a = v[i], b = v[j], c = v[k];
+    const cr = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    if (Math.abs(cr) < 1e-6) continue;
+    if (cr < 0) [b, c] = [c, b];
+    const t = [[a.x, a.y], [b.x, b.y], [c.x, c.y]];
+    t.x0 = Math.min(a.x, b.x, c.x); t.x1 = Math.max(a.x, b.x, c.x);
+    t.z0 = Math.min(a.y, b.y, c.y); t.z1 = Math.max(a.y, b.y, c.y);
+    out.push(t);
+  }
+  return out;
+}
+function clipConvex(subject, clip) { // both convex with a positive (x, z) cross product
+  let out = subject;
+  for (let e = 0; e < clip.length && out.length; e++) {
+    const [px, pz] = clip[e], [qx, qz] = clip[(e + 1) % clip.length];
+    const side = (p) => (qx - px) * (p[1] - pz) - (qz - pz) * (p[0] - px);
+    const input = out;
+    out = [];
+    for (let i = 0; i < input.length; i++) {
+      const a = input[i], b = input[(i + 1) % input.length];
+      const sa = side(a), sb = side(b);
+      if (sa >= 0) out.push(a);
+      if ((sa >= 0) !== (sb >= 0)) {
+        const t = sa / (sa - sb);
+        out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+      }
+    }
+  }
+  return out.length >= 3 ? out : null;
+}
+function intersectXZ(trisA, trisB) {
+  const out = [];
+  for (const a of trisA) {
+    for (const b of trisB) {
+      if (a.x1 < b.x0 || a.x0 > b.x1 || a.z1 < b.z0 || a.z0 > b.z1) continue;
+      const piece = clipConvex(a, b);
+      if (piece) out.push(piece);
+    }
+  }
+  return out;
+}
+/** Flat, upward-facing geometry (position, normal, uv) of convex pieces [[x, z], ...] at height y */
+function flatPiecesGeometry(pieces, y) {
+  const pos = [];
+  for (const p of pieces) {
+    for (let i = 1; i + 1 < p.length; i++) pos.push(p[0][0], y, p[0][1], p[i + 1][0], y, p[i + 1][1], p[i][0], y, p[i][1]);
+  }
+  if (!pos.length) return null;
+  const n = pos.length / 3, nor = new Float32Array(n * 3), uv = new Float32Array(n * 2);
+  for (let i = 0; i < n; i++) { nor[3 * i + 1] = 1; uv[2 * i] = pos[3 * i]; uv[2 * i + 1] = -pos[3 * i + 2]; }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return g;
+}
+
 /** Polygon offset by d (d > 0 inward, d < 0 outward), mitred corners clamped to 3|d|; null if it degenerates */
 function offsetPolygon(pts, d) {
   if (d > 0) return offsetPolygonInward(pts, d);
@@ -627,6 +691,144 @@ function buildCityGrid(scene) {
     const built = blockBuilt.get(b);
     return cover > 0.25 || (cover > 0.1 && (built ? built.n : 0) < (b.area / 10000) * 1.5);
   };
+  // The small parks: a parkette is a corner of an island that is mostly not park (Ritchie Avenue Parkette is a tenth
+  // of its island), and the island's yard (concrete downtown, front yards elsewhere) used to run over it. Each park
+  // outline on such an island gets its lawn, cut to the island's yard; the paths that cross it (GEO.parkPaths) in
+  // concrete; and a few trees, each in a ring of mulch (the trees: window.CITY.parketteTrees, planted by
+  // street-details.js). All in the materials the islands already use.
+  const parksOn = new Map(); // block -> the park outlines over it
+  for (const a of window.CITY.AREAS) {
+    if (a.kind !== 'park') continue;
+    for (const b of window.CITY.blocksInRect(a.minX, a.maxX, a.minZ, a.maxZ)) {
+      if (b.median || b.park > 0.6 || b.maxX < a.minX || b.minX > a.maxX || b.maxZ < a.minZ || b.minZ > a.maxZ) continue;
+      if (!parksOn.has(b)) parksOn.set(b, []);
+      parksOn.get(b).push(a);
+    }
+  }
+  const cellKey = (x, z, c) => Math.floor(x / c) * 100003 + Math.floor(z / c);
+  const gridAdd = (g, k, v) => { const l = g.get(k); if (l) l.push(v); else g.set(k, [v]); };
+  const pathGrid = new Map(); // 20 m cells -> [x0, z0, x1, z1, half width]
+  for (const [w, ...flat] of GEO.parkPaths || []) {
+    for (let i = 2; i < flat.length; i += 2) {
+      const seg = [flat[i - 2], flat[i - 1], flat[i], flat[i + 1], w / 2];
+      for (let ix = Math.floor(Math.min(seg[0], seg[2]) / 20); ix <= Math.floor(Math.max(seg[0], seg[2]) / 20); ix++) {
+        for (let iz = Math.floor(Math.min(seg[1], seg[3]) / 20); iz <= Math.floor(Math.max(seg[1], seg[3]) / 20); iz++) gridAdd(pathGrid, ix * 100003 + iz, seg);
+      }
+    }
+  }
+  const segDist = (x, z, s) => {
+    const dx = s[2] - s[0], dz = s[3] - s[1], L2 = dx * dx + dz * dz || 1e-9;
+    const t = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L2));
+    return Math.hypot(s[0] + dx * t - x, s[1] + dz * t - z);
+  };
+  const pathsNear = (x0, x1, z0, z1) => {
+    const out = new Set();
+    for (let ix = Math.floor(x0 / 20); ix <= Math.floor(x1 / 20); ix++) for (let iz = Math.floor(z0 / 20); iz <= Math.floor(z1 / 20); iz++) for (const sg of pathGrid.get(ix * 100003 + iz) || []) out.add(sg);
+    return [...out];
+  };
+  // what a park tree keeps clear of: the houses (2.5 m), the City's own trees (6 m), the park signs (6 m: their faces
+  // stay open, park-signs.js) and the paths
+  let bGrid = null;
+  const clearOfHouses = (x, z) => {
+    if (!bGrid) {
+      bGrid = new Map();
+      GEO.buildings.forEach((bl, i) => gridAdd(bGrid, cellKey(bl[0], bl[1], 50), i));
+    }
+    for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) {
+      for (const i of bGrid.get((Math.floor(x / 50) + a) * 100003 + Math.floor(z / 50) + c) || []) {
+        const [cx, cz, ang, parts] = GEO.buildings[i];
+        const cs = Math.cos(ang), sn = Math.sin(ang), dx = x - cx, dz = z - cz;
+        const u = dx * cs - dz * sn, v = dx * sn + dz * cs;
+        for (const [u0, u1, v0, v1] of parts) if (u > u0 - 2.5 && u < u1 + 2.5 && v > v0 - 2.5 && v < v1 + 2.5) return false;
+      }
+    }
+    return true;
+  };
+  const keepOut = new Map(); // 10 m cells -> [x, z, r]
+  const ST = GEO.streetTrees || [];
+  for (let i = 0; i + 1 < ST.length; i += 4) gridAdd(keepOut, cellKey(ST[i], ST[i + 1], 10), [ST[i], ST[i + 1], 6]);
+  for (const [x, z] of (GEO.props && GEO.props.parkSign) || []) gridAdd(keepOut, cellKey(x, z, 10), [x, z, 6]);
+  const keptOut = (x, z) => {
+    for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) {
+      for (const [px, pz, r] of keepOut.get((Math.floor(x / 10) + a) * 100003 + Math.floor(z / 10) + c) || []) if (Math.hypot(px - x, pz - z) < r) return true;
+    }
+    return false;
+  };
+  const hash = (x, z, k) => { const h = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return h - Math.floor(h); };
+  const boxOf = (p) => {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const [x, z] of p) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z; }
+    p.x0 = x0; p.x1 = x1; p.z0 = z0; p.z1 = z1;
+    return p;
+  };
+  const inPieces = (pieces, x, z) => pieces.some((p) => {
+    if (x < p.x0 || x > p.x1 || z < p.z0 || z > p.z1) return false;
+    for (let i = 0; i < p.length; i++) {
+      const a = p[i], c = p[(i + 1) % p.length];
+      if ((c[0] - a[0]) * (z - a[1]) - (c[1] - a[1]) * (x - a[0]) < 0) return false;
+    }
+    return true;
+  });
+  const parketteTrees = [];
+  const BED_R = 1.3;
+  let parketteCount = 0;
+  // the lawn, path & bed geometry of an island's small parks (null: none), cut to its yard `prop`
+  const parkettesOf = (b, prop) => {
+    const parks = parksOn.get(b);
+    if (!parks) return null;
+    const propTris = trianglesXZ(prop);
+    const lawn = [], paths = [], beds = [];
+    for (const a of parks) {
+      const pieces = intersectXZ(trianglesXZ(a.pts), propTris);
+      if (!pieces.length) continue;
+      let area = 0;
+      for (const p of pieces) for (let i = 1; i + 1 < p.length; i++) area += ((p[i][0] - p[0][0]) * (p[i + 1][1] - p[0][1]) - (p[i][1] - p[0][1]) * (p[i + 1][0] - p[0][0])) / 2;
+      if (area < 20) continue;
+      pieces.forEach(boxOf);
+      parketteCount++;
+      lawn.push(...pieces);
+      const segs = pathsNear(a.minX, a.maxX, a.minZ, a.maxZ);
+      for (const sg of segs) {
+        const L = Math.hypot(sg[2] - sg[0], sg[3] - sg[1]);
+        if (L < 0.05) continue;
+        const ux = (sg[2] - sg[0]) / L, uz = (sg[3] - sg[1]) / L, h = sg[4];
+        // the segment as a quad run on half a width past each end (so the runs' corners close), positive winding
+        const ax = sg[0] - ux * h, az = sg[1] - uz * h, bx = sg[2] + ux * h, bz = sg[3] + uz * h;
+        const quad = [[ax + uz * h, az - ux * h], [bx + uz * h, bz - ux * h], [bx - uz * h, bz + ux * h], [ax - uz * h, az + ux * h]];
+        const cr = (quad[1][0] - quad[0][0]) * (quad[2][1] - quad[0][1]) - (quad[1][1] - quad[0][1]) * (quad[2][0] - quad[0][0]);
+        if (cr < 0) quad.reverse();
+        boxOf(quad);
+        for (const t of propTris) {
+          if (quad.x1 < t.x0 || quad.x0 > t.x1 || quad.z1 < t.z0 || quad.z0 > t.z1) continue;
+          const piece = clipConvex(quad, t);
+          if (piece) paths.push(piece);
+        }
+      }
+      // trees: about one per 110 m² of lawn (at most 10), 7 m apart, 2.2 m in from the lawn's edge
+      const want = Math.min(10, Math.floor(area / 110));
+      const placed = [];
+      const step = 5;
+      for (let x = a.minX + step / 2; x < a.maxX && placed.length < want; x += step) {
+        for (let z = a.minZ + step / 2; z < a.maxZ && placed.length < want; z += step) {
+          const px = x + (hash(x, z, 1) - 0.5) * step * 0.8, pz = z + (hash(x, z, 2) - 0.5) * step * 0.8;
+          if (hash(px, pz, 3) < 0.35) continue;
+          if (![[0, 0], [2.2, 0], [-2.2, 0], [0, 2.2], [0, -2.2]].every(([ox, oz]) => inPieces(pieces, px + ox, pz + oz))) continue;
+          if (placed.some(([qx, qz]) => Math.hypot(qx - px, qz - pz) < 7)) continue;
+          if (segs.some((sg) => segDist(px, pz, sg) < sg[4] + BED_R + 0.6)) continue;
+          if (keptOut(px, pz) || !clearOfHouses(px, pz)) continue;
+          placed.push([px, pz]);
+        }
+      }
+      for (const [px, pz] of placed) {
+        parketteTrees.push({ x: px, z: pz, r: hash(px, pz, 4), s: hash(px, pz, 5) });
+        const ring = [];
+        for (let k = 0; k < 8; k++) ring.push([px + Math.cos((k * Math.PI) / 4) * BED_R, pz + Math.sin((k * Math.PI) / 4) * BED_R]);
+        beds.push(ring); // (positive winding in (x, z): counter-clockwise from +x towards +z)
+      }
+    }
+    if (!lawn.length) return null;
+    return { lawn: flatPiecesGeometry(lawn, SW_TOP + 0.004), paths: flatPiecesGeometry(paths, SW_TOP + 0.008), beds: flatPiecesGeometry(beds, SW_TOP + 0.011) };
+  };
   // --- end Toronto layer ---
   for (const b of BLOCKS) {
     // kerb ring under the slab (the slab is inset 0.25 m, so the kerb's top & face show)
@@ -644,6 +846,12 @@ function buildCityGrid(scene) {
       ring.holes.push(new THREE.Path(prop.map((p) => new THREE.Vector2(p.x, -p.z))));
       geos.walk.push(extrude(ring, 0.03, SW_TOP - 0.03));
       geos[yard].push(flatShape(prop, SW_TOP - 0.002));
+      const pk = yard === 'paved' || yard === 'plot' ? parkettesOf(b, prop) : null; // (Toronto layer: the small parks)
+      if (pk) {
+        geos.lawn.push(pk.lawn);
+        if (pk.paths) geos.paved.push(pk.paths);
+        if (pk.beds) geos.rail.push(pk.beds);
+      }
     } else {
       geos.walk.push(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03));
     }
@@ -680,7 +888,10 @@ function buildCityGrid(scene) {
   mergeInto(geos.plot, plotMat, false, 'Yards');
   mergeInto(geos.paved, createForecourtMaterial(), false, 'Forecourts');
   mergeInto(geos.wild, wildMat, false, 'OpenLand');
+  // (the rail lands' gravel bed is also the small parks' mulch, so the beds add no material: Toronto layer)
   mergeInto(geos.rail, new THREE.MeshStandardNodeMaterial({ color: 0x5f5850, roughness: 0.97 }), false, 'RailLands'); // Toronto layer
+  window.CITY.parketteTrees = parketteTrees; // (street-details.js plants them)
+  console.info(`[cityGrid] ${parketteCount} small parks laid in lawn, ${parketteTrees.length} trees in their beds`);
 
   // ===================================================================================================================
   // 3. STREAMS & RIVERS (the Wupa, the Jabi, Lobito Creek...): water channels across the islands (culverted under

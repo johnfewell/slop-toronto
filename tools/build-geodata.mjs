@@ -2,7 +2,7 @@
 // usage: node --max-old-space-size=8192 tools/build-geodata.mjs [out.js]
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { geo, toWorld, toLonLat, log, load } from './geo-base.mjs';
+import { geo, toWorld, toLonLat, log, load, osmRoads, pointInRing, bbox, centroid } from './geo-base.mjs';
 import { DETAIL, buildRoadGraph, deckOut, roadLines, roadCutOut } from './geo-roads.mjs';
 import { areas, streams, walls, isWater, waterRings, islandRings, lake } from './geo-land.mjs';
 import { Raster } from './geo-base.mjs';
@@ -135,6 +135,64 @@ const cnTower = toWorld(-79.387057, 43.642566);
 // the City's park name signs at the parks' entrances, clear of the street props & the City's trees (tools/geo-parksigns.mjs)
 props.parkSign = parkSigns(props, streetTrees);
 
+// The paths through the small parks (the parkettes on islands that are mostly not park: city-grid.js lays their lawns
+// and these paths on the islands' yards). OpenStreetMap's footways, paths & pedestrian ways (not the sidewalks or the
+// crossings), cut to each park's outline: [width, x, z, ...] per run inside a park
+const parkPaths = (() => {
+  const byLab = new Map(blocks.map((b) => [b._lab, b]));
+  const R = blockRaster;
+  const blockOf = (x, z) => {
+    const i = Math.floor((x - R.x0) / R.res), j = Math.floor((z - R.z0) / R.res);
+    return i < 0 || j < 0 || i >= R.w || j >= R.h ? null : byLab.get(blockLabels[j * R.w + i]) || null;
+  };
+  const small = areas.filter((a) => a.kind === 'park' && a.area < 60000 && [centroid(a.ring), ...a.ring].some(([x, z]) => {
+    const b = blockOf(x, z);
+    return b && !b.median && (b.park || 0) <= 0.6;
+  })).map((a) => ({ ring: a.ring, b: bbox(a.ring) }));
+  const out = [];
+  for (const e of osmRoads.elements) {
+    const t = e.tags || {};
+    if (!/^(footway|path|pedestrian)$/.test(t.highway || '') || t.area === 'yes' || !e.geometry || e.geometry.length < 2) continue;
+    if (/^(sidewalk|crossing|traffic_island)$/.test(t.footway || '') || t.tunnel === 'yes' || t.bridge === 'yes' || t.layer && t.layer !== '0') continue;
+    const w = Math.min(5, parseFloat(t.width) || (t.highway === 'pedestrian' ? 4 : t.highway === 'path' ? 1.6 : 2));
+    const pts = e.geometry.map((g) => toWorld(g.lon, g.lat));
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const [x, z] of pts) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    for (const { ring, b } of small) {
+      if (x1 < b.x0 || x0 > b.x1 || z1 < b.z0 || z0 > b.z1) continue;
+      let run = [];
+      const flush = () => { if (run.length >= 2) out.push([w, ...run.flatMap(([x, z]) => [q(x), q(z)])]); run = []; };
+      for (let s = 0; s + 1 < pts.length; s++) {
+        const a = pts[s], c = pts[s + 1];
+        // the segment's crossings of the outline, in order along it; a piece is in the park if its midpoint is
+        const ts = [0, 1];
+        for (let k = 0, j = ring.length - 1; k < ring.length; j = k++) {
+          const p = ring[j], r = ring[k];
+          const rx = c[0] - a[0], rz = c[1] - a[1], sx = r[0] - p[0], sz = r[1] - p[1];
+          const den = rx * sz - rz * sx;
+          if (Math.abs(den) < 1e-9) continue;
+          const u = ((p[0] - a[0]) * sz - (p[1] - a[1]) * sx) / den, v = ((p[0] - a[0]) * rz - (p[1] - a[1]) * rx) / den;
+          if (u > 0 && u < 1 && v >= 0 && v <= 1) ts.push(u);
+        }
+        ts.sort((m, n) => m - n);
+        const at = (u) => [a[0] + (c[0] - a[0]) * u, a[1] + (c[1] - a[1]) * u];
+        for (let k = 0; k + 1 < ts.length; k++) {
+          if (ts[k + 1] - ts[k] < 1e-6) continue;
+          const [mx, mz] = at((ts[k] + ts[k + 1]) / 2);
+          if (!pointInRing(mx, mz, ring)) { flush(); continue; }
+          const p0 = at(ts[k]), p1 = at(ts[k + 1]);
+          const last = run[run.length - 1];
+          if (!last || Math.hypot(last[0] - p0[0], last[1] - p0[1]) > 0.05) { flush(); run.push(p0); }
+          run.push(p1);
+        }
+      }
+      flush();
+    }
+  }
+  log(`park paths: ${out.length} runs through ${small.length} small parks`);
+  return out;
+})();
+
 const GEO = {
   version: 1,
   city: 'Toronto',
@@ -170,6 +228,8 @@ const GEO = {
   // Curb islands: [outline, lot rects [x0, x1, z0, z1], park share, park name, rectangular, median, wild share]
   blocks: blocks.map((b) => [flat(b.poly), b.rects.map((r) => r.map(q)), b.park || 0, b.parkName || '', b.rect ? 1 : 0, b.median ? 1 : 0, b.wild || 0]),
   // Land cover: [kind, name, outline, holes (Lake Ontario's islands) [outline, ...]]
+  // The paths through the small parks: [width, x, z, ...] (see parkPaths above)
+  parkPaths,
   areas: areas.filter((a) => !a.kind.startsWith('zone') || a.area > 20000).map((a) => (a.holes ? [a.kind, a.name, flat(a.ring), a.holes.map(flat)] : [a.kind, a.name, flat(a.ring)])),
   // Streams & rivers: [name, channel width, kind, centre line]; compound walls mapped: [height, line]
   streams: streams.map((s) => [s.name, s.w, s.kind, flat(s.pts)]),

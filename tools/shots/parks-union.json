@@ -1,0 +1,100 @@
+[
+ {
+  "name": "ritchie-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(-5027.2,-2506.7,0);app.cameraSystem.cinema=()=>({pos:[-5027.2,1.7,-2506.7],look:[-5018.2,0.5,-2488.1],fov:62});})()"
+ },
+ {
+  "name": "ritchie-above",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(-5038.4,-2510.3,0);app.cameraSystem.cinema=()=>({pos:[-5038.4,32,-2510.3],look:[-5018.2,0,-2488.1],fov:55});})()"
+ },
+ {
+  "name": "alexander-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(396.1,-1946.8,0);app.cameraSystem.cinema=()=>({pos:[396.1,1.7,-1946.8],look:[397.2,0.5,-1975.2],fov:62});})()"
+ },
+ {
+  "name": "alexander-above",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(397.2,-1945.2,0);app.cameraSystem.cinema=()=>({pos:[397.2,32,-1945.2],look:[397.2,0,-1975.2],fov:55});})()"
+ },
+ {
+  "name": "mccaul-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(-553,-1605.6,0);app.cameraSystem.cinema=()=>({pos:[-553,1.7,-1605.6],look:[-523.3,0.5,-1613.4],fov:62});})()"
+ },
+ {
+  "name": "mccaul-above",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(-553.3,-1613.1,0);app.cameraSystem.cinema=()=>({pos:[-553.3,32,-1613.1],look:[-523.3,0,-1613.4],fov:55});})()"
+ },
+ {
+  "name": "union-bay",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(150,25,0);app.cameraSystem.cinema=()=>({pos:[150,1.7,25],look:[60,10,130],fov:60});})()"
+ },
+ {
+  "name": "union-above",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(139,110,0);app.cameraSystem.cinema=()=>({pos:[60,30,110],look:[0,16,38],fov:55});})()"
+ },
+ {
+  "name": "union-above-wide",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(40,175,0);app.cameraSystem.cinema=()=>({pos:[40,70,175],look:[0,12,40],fov:50});})()"
+ },
+ {
+  "name": "ritchie-hero",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(-4999.3,-2500.9,0);app.cameraSystem.cinema=()=>({pos:[-4999.3,1.6,-2500.9],look:[-5049.2,3,-2483.8],fov:60});})()"
+ },
+ {
+  "name": "alexander-hero",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(391.1,-1960.8,0);app.cameraSystem.cinema=()=>({pos:[391.1,1.6,-1960.8],look:[427.2,2,-1980],fov:60});})()"
+ },
+ {
+  "name": "mccaul-hero",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(-544.8,-1597.4,0);app.cameraSystem.cinema=()=>({pos:[-544.8,1.6,-1597.4],look:[-500.2,2,-1618.7],fov:60});})()"
+ },
+ {
+  "name": "union-hero",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(168,-30,0);app.cameraSystem.cinema=()=>({pos:[155,1.7,-15],look:[100,10,25],fov:58});})()"
+ },
+ {
+  "name": "union-hero-shed",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();document.querySelectorAll('.location-prompt,[class*=locate],[class*=geoloc]').forEach(e=>e.style.visibility='hidden');app.teleportTo(60,100,0);app.cameraSystem.cinema=()=>({pos:[60,24,100],look:[-60,18,38],fov:55});})()"
+ }
+]
