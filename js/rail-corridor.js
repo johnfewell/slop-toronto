@@ -333,7 +333,7 @@ function buildTrackwork(group) {
       km += L;
     }
   });
-  // colliders as the player's turned rectangles (controllers.js buildingContact)
+  // colliders as the player's turned rectangles (js/world-collision.js)
   const boxes = colliders.map((c) => {
     c.cx = c.x0 + (c.tx * c.len) / 2;
     c.cz = c.z0 + (c.tz * c.len) / 2;

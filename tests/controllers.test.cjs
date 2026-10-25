@@ -4,7 +4,8 @@ const { join } = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 
-const source = readFileSync(join(__dirname, '../js/controllers.js'), 'utf8');
+// (the controllers' contact geometry, js/world-collision.js, loads first, as in explore.html)
+const source = readFileSync(join(__dirname, '../js/world-collision.js'), 'utf8') + '\n' + readFileSync(join(__dirname, '../js/controllers.js'), 'utf8');
 
 function eventTarget() {
   const listeners = new Map();
@@ -160,6 +161,8 @@ function advanceWithTouch(mode, strength, reverse) {
   controller.entities = { [mode.toLowerCase()]: entity };
   controller.getGroundHeight = () => 0;
   controller.resolveHorizontalCollision = () => {};
+  controller.moveBody = () => {};
+  controller.nearColliders = () => [];
   controller.setTouchInput(reverse ? 'backward' : 'forward', strength);
   controller.setTouchInput(reverse ? 'right' : 'left', strength);
   if (mode === 'Helicopter') controller.setTouchInput(reverse ? 'down' : 'up', strength);
@@ -378,4 +381,16 @@ test('player clearance respects altitude and permits a ground arrival under an a
   assert.equal(ent.position.y, 0.22);
   helicopter.position.y = 1;
   assert.notDeepEqual({ ...controller.teleportActiveTo(0, 0) }, { x: 0, z: 0 }, 'a helicopter parked at street level must be avoided');
+});
+
+test('fast bodies stop at a thin wall instead of passing through it when frames are long', () => {
+  // a 0.4 m wall (a road cut's retaining wall) across the way, met at top speed at 20 frames a second
+  const wall = { minX: -0.2, maxX: 0.2, minZ: -50, maxZ: 50, maxY: 3 };
+  for (const [mode, speed] of [['car', 64], ['cyclist', 19], ['person', 8.2], ['helicopter', 52]]) {
+    const { controller, ent } = teleportHarness(mode, [{ ...wall, maxY: mode === 'helicopter' ? 200 : 3 }]);
+    Object.assign(ent.position, { x: -8, y: mode === 'helicopter' ? 20 : 0, z: 0 });
+    Object.assign(ent, { heading: Math.PI / 2, speed, vx: 0, vz: 0, angularVel: 0 });
+    for (let i = 0; i < 12; i++) controller.moveBody(ent, mode, 0.05);
+    assert.ok(ent.position.x < -0.2, `the ${mode} stays on its side of the wall (x ${ent.position.x.toFixed(2)})`);
+  }
 });

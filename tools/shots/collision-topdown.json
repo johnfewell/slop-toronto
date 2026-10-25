@@ -1,0 +1,10 @@
+[
+ {"name": "ctop1-rogers", "mode": "person", "time": "midday", "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP, s = window.CITY.LANDMARK_SITES.rogersCentre; app.selectMode('person'); app.teleportTo(s.x, s.z, 0); app.cameraSystem.cinema = () => ({ pos: [s.x + 1, 330, s.z + 1], look: [s.x, 0, s.z], fov: 50 }); })()"},
+ {"name": "ctop2-rom", "mode": "person", "time": "midday", "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP, s = window.CITY.LANDMARK_SITES.rom; app.selectMode('person'); app.teleportTo(s.x, s.z, 0); app.cameraSystem.cinema = () => ({ pos: [s.x + 1, 190, s.z + 1], look: [s.x, 0, s.z], fov: 50 }); })()"},
+ {"name": "ctop3-cn-tower", "mode": "person", "time": "midday", "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, s = { x: C.GEO.points.cnTower[0], z: C.GEO.points.cnTower[1] }; app.selectMode('person'); app.teleportTo(s.x, s.z, 0); app.cameraSystem.cinema = () => ({ pos: [s.x + 30, 120, s.z + 30], look: [s.x, 0, s.z], fov: 50 }); })()"},
+ {"name": "ctop4-city-hall", "mode": "person", "time": "midday", "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP, s = window.CITY.LANDMARK_SITES.cityHall; app.selectMode('person'); app.teleportTo(s.x, s.z, 0); app.cameraSystem.cinema = () => ({ pos: [s.x + 1, 260, s.z + 1], look: [s.x, 0, s.z], fov: 50 }); })()"}
+]
