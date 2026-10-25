@@ -45,14 +45,18 @@ function buildSignage(scene) {
   group.name = 'CitySignage';
   const signs = signList();
 
-  // Text atlases: cells of 512 x 64 px, 8 x 64 cells to a 4096 x 4096 atlas
+  // Text atlases: cells of 512 x 64 px, 8 x 64 cells to a 4096 x 4096 atlas. The phone tier draws them at half that
+  // (quality.js signRes: 2048 x 2048 atlases, a quarter of the memory; 17 full ones are 1.4 GB of GPU memory) with the
+  // same layout, scaled
   const CW = 512, CH = 64, COLS = 8, ROWS = 64, PER = COLS * ROWS;
+  const RES = window.CITY.QUALITY.signRes || 1;
   const atlases = [];
   const quads = []; // per atlas: { pos, uv, nor }
   for (let k = 0; k < signs.length; k += PER) {
     const c = document.createElement('canvas');
-    c.width = CW * COLS;
-    c.height = CH * ROWS;
+    c.width = CW * COLS * RES;
+    c.height = CH * ROWS * RES;
+    if (RES !== 1) c.getContext('2d').setTransform(RES, 0, 0, RES, 0, 0);
     atlases.push(c);
     quads.push({ pos: [], uv: [], nor: [] });
   }
@@ -107,8 +111,8 @@ function buildSignage(scene) {
     const px = wx + nx * 0.09, pz = wz + nz * 0.09;
     const Q = quads[atlas];
     const corners = [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]];
-    const U0 = ox / atlases[atlas].width, U1 = (ox + usedW) / atlases[atlas].width;
-    const V1 = 1 - oy / atlases[atlas].height, V0 = 1 - (oy + CH) / atlases[atlas].height;
+    const U0 = ox / (CW * COLS), U1 = (ox + usedW) / (CW * COLS);
+    const V1 = 1 - oy / (CH * ROWS), V0 = 1 - (oy + CH) / (CH * ROWS);
     for (const [a, b] of corners) {
       Q.pos.push(px + tx * a * bw / 2, y + b * bh / 2, pz + tz * a * bw / 2);
       Q.nor.push(nx, 0, nz);
@@ -117,6 +121,7 @@ function buildSignage(scene) {
     placed++;
   });
 
+  const textures = [];
   atlases.forEach((c, i) => {
     const Q = quads[i];
     if (!Q.pos.length) return;
@@ -125,6 +130,7 @@ function buildSignage(scene) {
     geo.setAttribute('normal', new THREE.Float32BufferAttribute(Q.nor, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(Q.uv, 2));
     const tex = new THREE.CanvasTexture(c);
+    textures.push(tex);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 8;
     const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.55, metalness: 0.05 });
@@ -140,7 +146,7 @@ function buildSignage(scene) {
 
   console.info(`[signage] ${placed} name boards on ${signs.length} named buildings`);
   scene.add(group);
-  return { group, count: placed };
+  return { group, count: placed, textures };
 }
 
 Object.assign(window.CITY, { buildSignage, SIGN_STYLE });

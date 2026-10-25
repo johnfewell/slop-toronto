@@ -42,7 +42,8 @@ function setupLakeWater(scene, renderer, lightingSystem) {
     return { water: pbr, pbr, update() {} };
   }
   const SW = window.CITY.StylizedWater;
-  if (!lake || !SW) return { update() {} };
+  // (?lakewater=0: the lake keeps mrdoob's water, to measure the stylized water's cost)
+  if (!lake || !SW || new URLSearchParams(location.search).get('lakewater') === '0') return { update() {} };
   const { pmremTexture, float } = TSL;
   const sky = (dir) => pmremTexture(scene.environment, dir, float(0.0)).rgb;
   const w = SW.createStylizedWater(LAKE_ENTRY, { sky, reversedDepth: true /* main.js: reversedDepthBuffer */ });

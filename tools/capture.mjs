@@ -7,7 +7,8 @@
 // Phone-like runs: CAPTURE_VIEWPORT=412x915 (CSS px), CAPTURE_DPR=2.625, CAPTURE_MOBILE=1 (isMobile & hasTouch, so the
 // auto quality tier & the touch UI kick in), CAPTURE_CPU_THROTTLE=4 (the page's main thread that many times slower);
 // CAPTURE_UNCAPPED=1 lifts vsync & the frame rate limit, so frame times under 16.7 ms show; CAPTURE_TAG=<t> prefixes
-// the screenshots' names (one shot list for several runs).
+// the screenshots' names (one shot list for several runs). CAPTURE_HEAP=1 writes heap.txt: what stays alive on the JS
+// heap after the shots, by allocating function & script (a sampling heap profile).
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
@@ -33,7 +34,9 @@ fs.mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({
   channel: 'chromium',
   args: ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist',
-    ...(process.env.CAPTURE_UNCAPPED ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : [])]
+    ...(process.env.CAPTURE_UNCAPPED ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : []),
+    // CAPTURE_HEAP=1 also exposes gc(), so ?memlog=1 reads the heap after a full collection
+    ...(process.env.CAPTURE_HEAP ? ['--js-flags=--expose-gc'] : [])]
 });
 const [VW, VH] = (process.env.CAPTURE_VIEWPORT || '1600x900').split('x').map(Number);
 const MOBILE = !!process.env.CAPTURE_MOBILE;
@@ -72,6 +75,37 @@ const stopProfile = async () => {
   fs.writeFileSync(path.join(OUT, 'profile.txt'), top.join('\n') + '\n');
 };
 if (PROFILE && PROFILE !== 'shots') await startProfile();
+// CAPTURE_HEAP=1: a sampling heap profile from the load to the end of the shots: what is still alive, by the function
+// & script that allocated it (heap.txt), and the JS heap size
+const HEAP = process.env.CAPTURE_HEAP;
+const hcdp = HEAP ? await page.context().newCDPSession(page) : null;
+// (CAPTURE_HEAP=alloc: from the shots on, every allocation sampled, garbage included: what the frames allocate)
+if (HEAP && HEAP !== 'alloc') { await hcdp.send('HeapProfiler.enable'); await hcdp.send('HeapProfiler.startSampling', { samplingInterval: 32768 }); }
+const stopHeap = async () => {
+  if (HEAP !== 'alloc') await hcdp.send('HeapProfiler.collectGarbage');
+  const { profile } = await hcdp.send('HeapProfiler.getSamplingProfile');
+  const bySite = new Map(), byScript = new Map();
+  const walk = (n, stack) => {
+    const f = n.callFrame;
+    const here = `${f.functionName || '(anon)'} ${f.url.split('/').pop().split('?')[0]}:${f.lineNumber + 1}`;
+    const st = [...stack, here];
+    if (n.selfSize) {
+      // the allocation site & its two callers, so builders are told apart
+      const k = st.slice(-3).reverse().join(' < ');
+      bySite.set(k, (bySite.get(k) || 0) + n.selfSize);
+      const sc = f.url.split('/').pop().split('?')[0] || '(native)';
+      byScript.set(sc, (byScript.get(sc) || 0) + n.selfSize);
+    }
+    for (const c of n.children) walk(c, st);
+  };
+  walk(profile.head, []);
+  const mb = (b) => (b / 1048576).toFixed(1).padStart(7) + ' MB';
+  const used = await page.evaluate(() => performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null);
+  const total = [...byScript.values()].reduce((a, b) => a + b, 0);
+  fs.writeFileSync(path.join(OUT, `${TAG}heap.txt`), [`usedJSHeapSize ${used} MB, sampled live ${mb(total)}`, '', 'by script:',
+    ...[...byScript].sort((a, b) => b[1] - a[1]).slice(0, 25).map(([k, v]) => `${mb(v)}  ${k}`), '', 'by site:',
+    ...[...bySite].sort((a, b) => b[1] - a[1]).slice(0, 80).map(([k, v]) => `${mb(v)}  ${k}`)].join('\n') + '\n');
+};
 const t0 = Date.now();
 await page.goto(`${BASE}/${process.env.CAPTURE_PAGE || 'explore.html'}${process.env.CAPTURE_QUERY || ''}`, { waitUntil: 'load' });
 const flush = () => fs.writeFileSync(path.join(OUT, `${TAG}console.log`), log.join('\n') + '\n');
@@ -106,6 +140,10 @@ try {
 log.push(`[capture] ready after ${Date.now() - t0} ms`);
 if (PROFILE && PROFILE !== 'shots') await stopProfile();
 if (PROFILE === 'shots') await startProfile();
+if (HEAP === 'alloc') {
+  await hcdp.send('HeapProfiler.enable');
+  await hcdp.send('HeapProfiler.startSampling', { samplingInterval: 8192, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
+}
 
 for (const s of shots) {
   await page.evaluate((s) => {
@@ -124,6 +162,7 @@ for (const s of shots) {
   log.push(`[capture] ${TAG}${s.name} fps ${Math.round(fps)}`);
 }
 if (PROFILE === 'shots') await stopProfile();
+if (HEAP) await stopHeap();
 flush();
 console.log(log.filter((l) => l.startsWith('[capture]') || l.includes('error')).join('\n'));
 await browser.close();

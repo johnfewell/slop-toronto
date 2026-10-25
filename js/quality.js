@@ -5,7 +5,8 @@
 // - ?quality=low|medium|high, else from capability probes: the WebGPU adapter explore.html requested before loading
 //   the scripts (a GPU without the desktop BC texture formats is a mobile one; its vendor & fallback flag), a coarse
 //   primary pointer without hover (a touch screen), the screen's short side, navigator.deviceMemory & the core count.
-//   Desktops are `high`: today's settings exactly.
+//   By default only a touch screen on a mobile GPU (a phone or tablet) is detected; everything else is `high`, today's
+//   settings exactly. ?quality=auto runs the detection on any device.
 // - attach() (main.js, once the city is on screen) starts the safety net: frame times are taken over 2 s windows from
 //   5 s after the start, and a tier still running well under 30 fps steps its draw distances (shadows, props) down a
 //   rung at a time, and back up when there is headroom; a rung that had to be left again soon after stepping up
@@ -37,6 +38,10 @@ const TIERS = {
     subway: 1, // subway.js: x the Line 2 trains (over the Bloor Viaduct, through the west end's open cuts)
     farCity: 1, // surroundings.js: share of the far city's blocks built up
     lightPool: 1, // x the night's street light & headlight spot pools
+    signRes: 1, // signage.js: the name boards' lettering resolution (1: 4096 x 4096 atlases)
+    // main.js: once the city is on screen, drop the CPU copies of what the GPU already holds (static vertex & index
+    // arrays, the name boards' canvases): hundreds of MB the phone needs
+    lean: false,
     // the city's sound (audio-system.js): running vehicle voices, sirens & one-shot events at once, HRTF panning (else
     // plain stereo, far cheaper on the audio thread)
     audio: { motors: 8, sirens: 2, events: 8, hrtf: true }
@@ -46,6 +51,7 @@ const TIERS = {
     shadowTile: 2048, shadowFar: 0.75,
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85,
     cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, subway: 1, farCity: 0.6, lightPool: 0.6,
+    signRes: 1, lean: true,
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
@@ -53,6 +59,11 @@ const TIERS = {
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7,
     cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
+    signRes: 0.5, lean: true,
+    // (measured on the Pixel 8, which is CPU-bound: every shadow caster is drawn again in both cascades) no kerb
+    // shadows (~1 ms a frame, unseen at phone size) and an even 30 fps. (Shadows to 100 m instead of 150 m saved under
+    // 1 ms in a paired A/B on the phone and lost the far buildings' shadows: not taken)
+    kerbShadows: false, maxFps: 30,
     audio: { motors: 4, sirens: 1, events: 5, hrtf: false }
   }
 };
@@ -60,9 +71,6 @@ const TIERS = {
 function chooseTier() {
   const forced = params.get('quality');
   if (TIERS[forced]) return { tier: forced, reason: '?quality' };
-  // Until the phone tiers are proven on a real phone (low froze John's Pixel 8, 2026-10-24), everyone gets high unless
-  // ?quality=auto asks for the detection below
-  if (forced !== 'auto') return { tier: 'high', reason: 'default (?quality=auto detects)' };
   const adapter = window.CITY.gpuAdapter; // explore.html
   const info = (adapter && adapter.info) || {};
   const gpu = `${info.vendor || ''} ${info.architecture || ''} ${info.description || ''}`.toLowerCase();
@@ -76,6 +84,10 @@ function chooseTier() {
   const software = !!info.isFallbackAdapter || /swiftshader|llvmpipe|software/.test(gpu);
   const why = [touch && 'touch screen', `${shortSide} px screen`, mobileGPU && 'mobile GPU', gpu.trim() || 'no adapter info',
     navigator.deviceMemory && `${memory} GB`, `${cores} cores`].filter(Boolean).join(', ');
+  // By default (John, 2026-10-25) only phones & tablets are detected: a touch screen on a mobile GPU gets its tier
+  // below; every other device keeps high, today's look exactly (?quality=auto runs the full detection anywhere,
+  // ?quality=high forces high)
+  if (forced !== 'auto' && !(touch && mobileGPU)) return { tier: 'high', reason: 'default (?quality=auto detects)' };
   if (software) return { tier: 'low', reason: `software GPU (${why})` };
   if ((touch || mobileGPU) && (shortSide <= 600 || memory <= 4)) return { tier: 'low', reason: `phone (${why})` };
   if (touch || mobileGPU) return { tier: 'medium', reason: `tablet (${why})` };
@@ -84,7 +96,24 @@ function chooseTier() {
 }
 
 const { tier, reason } = chooseTier();
-const QUALITY = { tier, reason, ...TIERS[tier], dist: 1 };
+const QUALITY = {
+  tier, reason,
+  shadows: true, // the sun's shadow cascades
+  kerbShadows: true, // city-grid.js: the kerbs cast sun shadows (~400k triangles in the cascades)
+  shadowEvery: 1, // main.js: the sun's shadow maps are redrawn every this many frames
+  shadowType: 'pcf', // main.js: 'pcf' (filtered) or 'basic' (one tap)
+  maxFps: 0, // main.js: frames that come early are skipped (0: every display refresh)
+  clusterGrid: [256, 32, 28, 48], // main.js ClusteredLighting: max lights, screen tile px, depth slices, lights per cluster
+  ...TIERS[tier], dist: 1
+};
+// Profiling knobs: ?q.<key>=<value> overrides one of the tier's settings (numbers, true/false, else the string), e.g.
+// ?q.bloom=false&q.shadows=false, so each setting's cost can be measured on its own (nothing sets them by default)
+for (const [k, v] of params) {
+  if (!k.startsWith('q.') || !(k.slice(2) in QUALITY)) continue;
+  const key = k.slice(2);
+  QUALITY[key] = Array.isArray(QUALITY[key]) ? v.split(',').map(Number) // e.g. ?q.clusterGrid=128,64,16,24
+    : v === 'true' ? true : v === 'false' ? false : Number.isFinite(Number(v)) ? Number(v) : v;
+}
 const forcedScale = parseFloat(params.get('scale'));
 if (forcedScale >= 0.25 && forcedScale <= 2) QUALITY.scale = forcedScale;
 console.info(`[quality] ${tier}: ${reason}`);
@@ -158,7 +187,8 @@ function attach(app) {
     const median = frames[frames.length >> 1];
     frames.length = 0;
     slow = median > SLOW_MS ? slow + 1 : 0;
-    fast = median < FAST_MS ? fast + 1 : 0;
+    // (held at maxFps, a window that keeps up with the cap is as good as it gets: room to step back up)
+    fast = median < (QUALITY.maxFps ? Math.max(FAST_MS, 1000 / QUALITY.maxFps + 2) : FAST_MS) ? fast + 1 : 0;
     let next = rung;
     if (slow >= SLOW_WINDOWS && rung < RUNGS.length - 1) {
       // stepping down again soon after stepping up: the rung being left can't hold, it stays out of reach

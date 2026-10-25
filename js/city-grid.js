@@ -940,7 +940,7 @@ function buildCityGrid(scene) {
     }
   };
   // islands sorted along x so each merged batch is a compact strip (the culling & the frustum can skip batches)
-  mergeInto(geos.curb, curbMat, true, 'Kerbs');
+  mergeInto(geos.curb, curbMat, window.CITY.QUALITY.kerbShadows !== false, 'Kerbs'); // (none on the phone tier)
   mergeInto(geos.walk, sidewalkMat, false, 'Walkways');
   mergeInto(geos.lawn, lawnMat, false, 'Lawns');
   mergeInto(geos.plot, plotMat, false, 'Yards');

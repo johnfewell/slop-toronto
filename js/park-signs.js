@@ -242,7 +242,7 @@ async function buildParkSigns(scene) {
   scene.add(group);
   window.CITY.parkSignSites = sites;
   console.info(`[parkSigns] ${n} park signs (atlas ${atlas.W} x ${atlas.H})`);
-  return { group, colliders, count: n };
+  return { group, colliders, count: n, textures: [atlas.tex] };
 }
 
 // The invented parkland & yard trees (street-details.js; the City's own street trees stay) keep out of a sign's way:
