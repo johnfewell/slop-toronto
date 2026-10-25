@@ -14,9 +14,9 @@
 //   fence on the walls' upstand round the top; the street level is masked out over them (city-grid.js
 //   maskRoadCuts). Trains run both ways through them, two more stand on Vincent Yard's sidings.
 // - The covered bridge over the Rosedale Valley west of Castle Frank: an enclosed concrete box at about ground level,
-//   Rosedale Valley Road dipping under it in a cut (city-config.js cutAt, tools/geo-roads.mjs ROAD_CUTS: the flat city
-//   leaves the valley out), its fascia & corner pilasters where the road passes under, grassed mounds where it goes in
-//   at either end. (Without the cut in the geodata: the box raised on blade piers over the road, as before.)
+//   Rosedale Valley Road dipping under it between grassed banks, a ravine (city-config.js cutAt & cutBankAt,
+//   tools/geo-roads.mjs ROAD_CUTS: the flat city leaves the valley out), its fascia & corner pilasters where the road
+//   passes under, short abutment walls either side of it, grassed mounds where it goes in at either end. (Without the cut in the geodata: the box raised on blade piers over the road, as before.)
 // - Every station's street entrances (OpenStreetMap railway=subway_entrance, or the station's node where none is
 //   mapped): a stairway going down, set along the street on its sidewalk (beyond the sidewalk where the node lies in
 //   open ground; else against the building line, clear of the inner walking line), its low walls & rail round it, and

@@ -138,11 +138,12 @@ function crossesRoad(w) {
 // the subway's covered bridge instead (OpenStreetMap railway=subway, covered & bridge), which js/subway.js then sets
 // down on the ground over the cut as a covered concrete box; `box`: the box's half width, so the floor runs on under
 // all of it however skewed the crossing. `follow`: the cut follows the street's own centreline (a curving street: its
-// walls stay at the street's sides), not one straight axis.
+// walls stay at the street's sides), not one straight axis. `bank`: grassed banks instead of walls (out per metre up;
+// js/city-config.js cuts them short at whatever stands in their way).
 const SIDEWALK_W = 4.6; // (tools/geo-blocks.mjs SIDEWALK: the curb to the property line)
 const ROAD_CUTS = [
   { name: 'Strachan Avenue', x0: -2600, x1: -2460, z0: -330, z1: 240, depth: 6.2, maxGrade: 0.1, minGrade: 0.05, clear: 16 },
-  { name: 'Rosedale Valley Road', x0: 1520, x1: 1760, z0: -2760, z1: -2600, depth: 7.2, maxGrade: 0.09, minGrade: 0.08, clear: 16, under: 'subway', box: 5.4, follow: true }
+  { name: 'Rosedale Valley Road', x0: 1520, x1: 1760, z0: -2760, z1: -2600, depth: 7.2, maxGrade: 0.09, minGrade: 0.08, clear: 16, under: 'subway', box: 5.4, follow: true, bank: 2 }
 ];
 for (const w of ways) {
   const u = ROAD_CUTS.find((o) => o.name === w.name && w.pts.some(([x, z]) => x > o.x0 && x < o.x1 && z > o.z0 && z < o.z1));
@@ -388,7 +389,7 @@ for (let pass = 0; pass < 8; pass++) {
 // The ways get a vertex at every break of slope (where tools/geo-roads.mjs's street graph puts a node, so the traffic
 // follows the profile) and their heights (negative: below street level). The cut's axis (js/city-config.js reads it as
 // a polyline) is the straight line through the breaks, or with `follow` the street's own centreline, every vertex.
-export const roadCutOut = []; // [name, half width (carriageways & sidewalks), [x, z, h, ...] the axis (polyline)]
+export const roadCutOut = []; // [name, half width (carriageways & sidewalks), [x, z, h, ...] the axis (polyline), bank?]
 for (const C of ROAD_CUTS) {
   const W = ways.filter((w) => w.cut === C);
   if (!W.length) continue;
@@ -497,7 +498,7 @@ for (const C of ROAD_CUTS) {
       axis = [...seen.values()].sort((a, b) => a[3] - b[3]).flatMap(([x, z, h]) => [x, z, h]);
       half = Math.max(...W.map((w) => w.w / 2));
     }
-    roadCutOut.push([C.name, Math.round((half + SIDEWALK_W) * 10) / 10, axis.map((v) => Math.round(v * 100) / 100)]);
+    roadCutOut.push([C.name, Math.round((half + SIDEWALK_W) * 10) / 10, axis.map((v) => Math.round(v * 100) / 100), ...(C.bank ? [C.bank] : [])]);
     log(`road cut ${C.name}: ${Math.round(a)}..${Math.round(b)} m along it, ${D.toFixed(1)} m down (${C.under ? `under the ${C.under}` : `the tracks ${(C.depth - D).toFixed(1)} m up`}), ramps ${Math.round(f0 - r0)} m & ${Math.round(r1 - f1)} m, ${(half + SIDEWALK_W).toFixed(1)} m either side`);
   }
 }
