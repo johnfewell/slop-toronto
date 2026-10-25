@@ -184,7 +184,8 @@ function attach(app) {
     const median = frames[frames.length >> 1];
     frames.length = 0;
     slow = median > SLOW_MS ? slow + 1 : 0;
-    fast = median < FAST_MS ? fast + 1 : 0;
+    // (held at maxFps, a window that keeps up with the cap is as good as it gets: room to step back up)
+    fast = median < (QUALITY.maxFps ? Math.max(FAST_MS, 1000 / QUALITY.maxFps + 2) : FAST_MS) ? fast + 1 : 0;
     let next = rung;
     if (slow >= SLOW_WINDOWS && rung < RUNGS.length - 1) {
       // stepping down again soon after stepping up: the rung being left can't hold, it stays out of reach
