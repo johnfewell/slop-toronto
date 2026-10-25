@@ -137,6 +137,7 @@ async function setupClouds(renderer) {
   let camera = null, lightingSystem = null;
   // ?atmosphere=1 state, made in attach()
   const nightGlow = TSL.uniform(0);
+  let starsNode = null;
   const camProjInv = TSL.uniform(new THREE.Matrix4());
   const camWorld = TSL.uniform(new THREE.Matrix4());
   return {
@@ -159,6 +160,8 @@ async function setupClouds(renderer) {
         const p = lighting.activePreset;
         if (lighting.uFogDensity && p) lighting.uFogDensity.value = p.fogDensity * (ATMO_CITY_FOG[p.id] ?? 0);
         nightGlow.value = (p && ATMO_NIGHT_GLOW[p.id]) || 0;
+        // the catalogue is drawn under the sky whatever the sun's height: at night only, or it shows through the day
+        if (starsNode) starsNode.intensity.value = p && p.id === 'midnight' ? numParam('atmoStars', 1e7) : 0;
       };
       lighting.applyPreset(lighting.activePresetId, true);
     },
@@ -179,7 +182,9 @@ async function setupClouds(renderer) {
       skyNode.moonScattering = true;
       // the catalogue served from here, not from GitHub's media host (CREDITS.md)
       skyNode.starsNode = new Atmosphere.StarsNode('./assets/atmosphere/stars.bin');
-      skyNode.starsNode.intensity.value = numParam('atmoStars', 1000);
+      // (takram's 1000 leaves them below the city's night exposure and glow: 1e7 gives a sparse, light-polluted sky)
+      starsNode = skyNode.starsNode;
+      starsNode.intensity.value = lightingSystem && lightingSystem.activePresetId === 'midnight' ? numParam('atmoStars', 1e7) : 0;
       // The city's night-sky gradient (its preset sky colours) under the physical sky after dark: the stars and the
       // moon sit on the glow of a lit city, and the skyline keeps a horizon to stand against
       const glow = Fn(() => {
