@@ -280,6 +280,8 @@ function buildStreetDetails(scene) {
     return mix(color(0x14181e), mix(color(0x2bff8a), color(0xff3a2a), isRed).mul(1.3), on);
   })();
   const poleMatrices = [], armMatrices = [], headMatrices = [], aveLensMatrices = [], streetLensMatrices = [];
+  // audio: where the crossing signals sound (audio-sources.js): { x, y, z, isAvenue | crossing, ns (crossing N-S) }
+  const audioSignals = [];
   {
     const RG = GEO.roadGraph;
     const nodeLinks = new Map();
@@ -334,6 +336,8 @@ function buildStreetDetails(scene) {
         if (!pole) continue;
         addPole(pole.x, pole.z);
         addFootprint(pole.x, pole.z, 0.4, 0.4);
+        // (people here cross the road ahead, walking with this approach's traffic)
+        audioSignals.push({ x: pole.x, y: SW_Y + 1.1, z: pole.z, isAvenue: isMajor(a), ns: Math.abs(a.uz) > Math.abs(a.ux) }); // audio
         const yaw = Math.atan2(a.ux, a.uz); // heads face the approaching traffic (lenses on both faces anyway)
         dummy.rotation.set(0, 0, 0);
         dummy.position.set(pole.x, SW_Y + 3.1, pole.z);
@@ -382,6 +386,7 @@ function buildStreetDetails(scene) {
         if (!pole) continue;
         addPole(pole.x, pole.z);
         addFootprint(pole.x, pole.z, 0.3, 0.3);
+        audioSignals.push({ x: pole.x, y: SW_Y + 1.1, z: pole.z, crossing: true, ns: Math.abs(nz) > Math.abs(nx) }); // audio
         dummy.rotation.set(0, 0, 0);
         dummy.position.set(pole.x, SW_Y + 1.6, pole.z);
         dummy.scale.set(0.06, 3.2, 0.06);
@@ -695,7 +700,7 @@ function buildStreetDetails(scene) {
   }
 
   scene.add(group);
-  return { group, footprints, signalClock, update, treePositions, addFallbackTrees };
+  return { group, footprints, signalClock, audioSignals, update, treePositions, addFallbackTrees };
 }
 
 Object.assign(window.CITY, { buildStreetDetails });

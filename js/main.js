@@ -327,8 +327,8 @@ async function initApp() {
   // Keyboard guide for each mode: [keys, action]
   const controlHints = {
     person: [[['W', 'S'], 'Walk'], [['A', 'D'], 'Turn'], [['Shift'], 'Sprint'], [['Space'], 'Jump'], [['Drag'], 'Orbit']],
-    car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Floor it'], [['Space'], 'Handbrake'], [['Drag'], 'Orbit']],
-    cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['Drag'], 'Orbit']],
+    car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Floor it'], [['Space'], 'Handbrake'], [['B'], 'Horn'], [['Drag'], 'Orbit']],
+    cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['B'], 'Bell'], [['Drag'], 'Orbit']],
     helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']]
   };
   // Top speeds in km/h (controllers.js: 8.2, 19 & 52 m/s; the car runs out of power against the air near 230): full
@@ -546,6 +546,9 @@ async function initApp() {
 
   // The tour guide: search, directions, navigation & Tour Drive (tour-guide.js)
   const tourGuide = createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode });
+
+  // The city's sound (audio-system.js): from the first click or key; [N] mutes, [B] horn / bike bell
+  const cityAudio = window.CITY.createCityAudio({ controllerManager, trafficSystem, highwayTraffic, streetDetails, cameraSystem, lightingSystem, mapSystem });
 
   // Help: every control at a glance ([?] / F1)
   const helpModal = document.getElementById('help-modal');
@@ -843,6 +846,7 @@ async function initApp() {
     mapSystem.update();
     tourGuide.update(dt, elapsed);
     renderCarCondition();
+    cityAudio.update(dt, elapsed);
     if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
 
     // Render frame via TSL RenderPipeline (SSR + Bloom)

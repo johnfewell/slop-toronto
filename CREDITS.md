@@ -17,6 +17,9 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   `js/pedestrians.js`, the knock-downs in `js/traffic.js`, the driving in `js/controllers.js`). MIT, © Mr.doob & Slop
   Toronto contributors.
   https://github.com/aalghooneh/slop-toronto
+- **City audio** (`js/audio-*.js`): mrdoob's synthesized spatial audio from Slop New York (MIT, above), with the
+  player car's tyre squeal and engine revs from aalghooneh's slop-toronto fork (MIT, © Slop Toronto contributors).
+  https://github.com/aalghooneh/slop-toronto. Every sound is synthesized in code; no recordings.
 - **three.js**, WebGPURenderer and TSL, loaded from jsDelivr at a pinned dev-branch commit. MIT.
   https://threejs.org/
 - **Stylized water** (`js/stylized-water.js`, built from `vendor/stylized-water`): John Fewell's three.js port of

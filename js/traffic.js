@@ -80,6 +80,16 @@ const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 function createTrafficSystem(scene, sidewalks, obstacles) {
   const group = new THREE.Group();
   group.name = 'TrafficAndPedestrians';
+  // --- audio: crash sounds (audio-system.js listens). Synchronous: listeners copy what they keep; normal b -> a
+  let collisionListener = null;
+  const collisionEvent = { a: null, b: null, kind: 'vehicle', x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, speed: 0 };
+  const setCollisionListener = (listener) => { collisionListener = typeof listener === 'function' ? listener : null; };
+  function reportCollision(a, b, x, y, z, nx, nz, speed) {
+    if (!collisionListener || speed <= 0.5) return;
+    Object.assign(collisionEvent, { a, b, x, y, z, nx, nz, speed });
+    collisionListener(collisionEvent);
+  }
+  // --- /audio
 
   const dummy = new THREE.Object3D();
   const zero = new THREE.Matrix4().makeScale(0, 0, 0);
@@ -1175,6 +1185,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       const nz = dz / dist;
       const relVn = (v.vx - o.vx) * nx + (v.vz - o.vz) * nz;
       if (relVn <= 0.5) continue;
+      reportCollision(o, v, (v.x + o.x) * 0.5, (v.y || 0) + 0.56, (v.z + o.z) * 0.5, nx, nz, // audio
+        (v.tx * v.speed + v.vx - o.tx * o.speed - o.vx) * nx + (v.tz * v.speed + v.vz - o.tz * o.speed - o.vz) * nz);
       const transfer = relVn * 0.68;
       o.vx += nx * transfer;
       o.vz += nz * transfer;
@@ -1298,6 +1310,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     const contactLocalZ = clamp(localZ, -halfL, halfL);
     const contactX = v.x + contactLocalX * cosY + contactLocalZ * sinY;
     const contactZ = v.z - contactLocalX * sinY + contactLocalZ * cosY;
+    if (pe.type !== 'person') reportCollision(pe, v, contactX, (v.y || 0) + (v.bus ? 0.65 : 0.58), contactZ, nx, nz, approachSpeed); // audio
 
     if (typeof pe.speed === 'number') {
       const headOnDot = Math.abs(pSin * nx + pCos * nz);
@@ -2257,6 +2270,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   return {
     group,
     update,
+    setCollisionListener, // audio
     cars,
     buses,
     peds,
@@ -2316,7 +2330,8 @@ function createHighwayTraffic(scene, lanes) {
       const kind = h < 0.20 ? 'taxi' : h < 0.65 ? 'sedan' : 'suv'; // mostly private cars (mrdoob's a1866b7)
       const col = new THREE.Color(PALETTES[kind][Math.floor(rand() * PALETTES[kind].length)]);
       // (float32 values, so update() can tell whether an instance slot's paint changes by comparing with the buffer)
-      const car = { lane, kind, u, v: lane.speed, acc: 0, seg: 0, col: [Math.fround(col.r), Math.fround(col.g), Math.fround(col.b)] };
+      // (x, y, z, yaw & placed: the world pose, kept for the audio even when the car isn't drawn)
+      const car = { lane, kind, u, v: lane.speed, acc: 0, seg: 0, placed: false, x: 0, y: -1000, z: 0, yaw: 0, col: [Math.fround(col.r), Math.fround(col.g), Math.fround(col.b)] };
       lane.cars.push(car);
       cars.push(car);
       counts[kind]++;
@@ -2497,6 +2512,7 @@ function createHighwayTraffic(scene, lanes) {
       const toEnd = lane.len - c.u;
       const dip = c.u < toEnd ? c.u : toEnd;
       const y = a.y + (b.y - a.y) * t - 2.4 * (1 - ease(dip));
+      c.x = x; c.y = y; c.z = z; c.yaw = lane.yaw[i]; c.placed = true; // audio: the pose, drawn or not
       const dx = x - cam.x;
       const dz = z - cam.z;
       const dy = y - cam.y;
