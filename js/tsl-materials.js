@@ -1969,6 +1969,7 @@ function getWaterWaveTexture() {
   _waterWaveTexture = tex;
   return tex;
 }
+window.CITY.getWaterWaveTexture = getWaterWaveTexture; // (pbr-water.js)
 
 /**
  * Lake Ontario, the harbour, ponds & streams: Physically Based Fresh Water TSL Material

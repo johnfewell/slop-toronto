@@ -1,0 +1,86 @@
+[
+ {
+  "name": "midnight-trail-city1",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 9000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(-7100,-527,0);app.cameraSystem.cinema=()=>({pos:[-7100,3,-527],look:[-591,40,141],fov:50});})();;window.CITY.lakePBR.uniforms.nightCity.value=1;"
+ },
+ {
+  "name": "midnight-sugar-city1",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();;window.CITY.lakePBR.uniforms.nightCity.value=1;"
+ },
+ {
+  "name": "midnight-ferry-city1",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[-60,5,1500],look:[-200,60,200],fov:56});})();;window.CITY.lakePBR.uniforms.nightCity.value=1;"
+ },
+ {
+  "name": "midnight-harbour-city1",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[300,180,1750],look:[-300,0,450],fov:56});})();;window.CITY.lakePBR.uniforms.nightCity.value=1;"
+ },
+ {
+  "name": "midnight-trail-city2.5",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(-7100,-527,0);app.cameraSystem.cinema=()=>({pos:[-7100,3,-527],look:[-591,40,141],fov:50});})();;window.CITY.lakePBR.uniforms.nightCity.value=2.5;"
+ },
+ {
+  "name": "midnight-sugar-city2.5",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();;window.CITY.lakePBR.uniforms.nightCity.value=2.5;"
+ },
+ {
+  "name": "midnight-ferry-city2.5",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[-60,5,1500],look:[-200,60,200],fov:56});})();;window.CITY.lakePBR.uniforms.nightCity.value=2.5;"
+ },
+ {
+  "name": "midnight-harbour-city2.5",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[300,180,1750],look:[-300,0,450],fov:56});})();;window.CITY.lakePBR.uniforms.nightCity.value=2.5;"
+ },
+ {
+  "name": "midnight-trail-city4",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(-7100,-527,0);app.cameraSystem.cinema=()=>({pos:[-7100,3,-527],look:[-591,40,141],fov:50});})();;window.CITY.lakePBR.uniforms.nightCity.value=4;"
+ },
+ {
+  "name": "midnight-sugar-city4",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();;window.CITY.lakePBR.uniforms.nightCity.value=4;"
+ },
+ {
+  "name": "midnight-ferry-city4",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[-60,5,1500],look:[-200,60,200],fov:56});})();;window.CITY.lakePBR.uniforms.nightCity.value=4;"
+ },
+ {
+  "name": "midnight-harbour-city4",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[300,180,1750],look:[-300,0,450],fov:56});})();;window.CITY.lakePBR.uniforms.nightCity.value=4;"
+ }
+]

@@ -1,0 +1,16 @@
+[
+ {
+  "name": "midnight-sugar",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 4500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();"
+ },
+ {
+  "name": "midday-sugar",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();"
+ }
+]

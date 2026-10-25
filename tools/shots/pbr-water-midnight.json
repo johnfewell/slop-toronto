@@ -1,0 +1,30 @@
+[
+ {
+  "name": "midnight-trail",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 4500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(-7100,-527,0);app.cameraSystem.cinema=()=>({pos:[-7100,3,-527],look:[-591,40,141],fov:50});})();"
+ },
+ {
+  "name": "midnight-sugar",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 4500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();"
+ },
+ {
+  "name": "midnight-ferry",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 4500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[-60,5,1500],look:[-200,60,200],fov:56});})();"
+ },
+ {
+  "name": "midnight-harbour",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 4500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[300,180,1750],look:[-300,0,450],fov:56});})();"
+ }
+]

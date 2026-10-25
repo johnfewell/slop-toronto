@@ -1,0 +1,86 @@
+[
+ {
+  "name": "midday-sugar-a",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#0e3236\");window.CITY.lakePBR.uniforms.light.value.set(\"#17474a\");"
+ },
+ {
+  "name": "midday-sugar-b",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#0b2338\");window.CITY.lakePBR.uniforms.light.value.set(\"#123552\");"
+ },
+ {
+  "name": "midday-sugar-c",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#15302a\");window.CITY.lakePBR.uniforms.light.value.set(\"#24432f\");"
+ },
+ {
+  "name": "midday-sugar-ny",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(1012,672,0);app.cameraSystem.cinema=()=>({pos:[1050,3,980],look:[-300,80,150],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#162d2c\");window.CITY.lakePBR.uniforms.light.value.set(\"#2e3f36\");"
+ },
+ {
+  "name": "golden-ferry-a",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[-60,5,1500],look:[-200,60,200],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#0e3236\");window.CITY.lakePBR.uniforms.light.value.set(\"#17474a\");"
+ },
+ {
+  "name": "golden-ferry-b",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[-60,5,1500],look:[-200,60,200],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#0b2338\");window.CITY.lakePBR.uniforms.light.value.set(\"#123552\");"
+ },
+ {
+  "name": "golden-ferry-c",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[-60,5,1500],look:[-200,60,200],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#15302a\");window.CITY.lakePBR.uniforms.light.value.set(\"#24432f\");"
+ },
+ {
+  "name": "golden-ferry-ny",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[-60,5,1500],look:[-200,60,200],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#162d2c\");window.CITY.lakePBR.uniforms.light.value.set(\"#2e3f36\");"
+ },
+ {
+  "name": "midday-harbour-a",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[300,180,1750],look:[-300,0,450],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#0e3236\");window.CITY.lakePBR.uniforms.light.value.set(\"#17474a\");"
+ },
+ {
+  "name": "midday-harbour-b",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[300,180,1750],look:[-300,0,450],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#0b2338\");window.CITY.lakePBR.uniforms.light.value.set(\"#123552\");"
+ },
+ {
+  "name": "midday-harbour-c",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[300,180,1750],look:[-300,0,450],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#15302a\");window.CITY.lakePBR.uniforms.light.value.set(\"#24432f\");"
+ },
+ {
+  "name": "midday-harbour-ny",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains(\"hud-minimized\"))document.getElementById(\"btn-toggle-hud\").click();app.teleportTo(236,650,0);app.cameraSystem.cinema=()=>({pos:[300,180,1750],look:[-300,0,450],fov:56});})();;window.CITY.lakePBR.uniforms.deep.value.set(\"#162d2c\");window.CITY.lakePBR.uniforms.light.value.set(\"#2e3f36\");"
+ }
+]
