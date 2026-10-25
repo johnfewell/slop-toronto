@@ -804,8 +804,8 @@ function buildCityGrid(scene) {
           if (piece) paths.push(piece);
         }
       }
-      // trees: about one per 110 m² of lawn (at most 10), 7 m apart, 2.2 m in from the lawn's edge
-      const want = Math.min(10, Math.floor(area / 110));
+      // trees: about one per 200 m² of lawn (at most 4), 7 m apart, 2.2 m in from the lawn's edge
+      const want = Math.min(4, Math.floor(area / 200));
       const placed = [];
       const step = 5;
       for (let x = a.minX + step / 2; x < a.maxX && placed.length < want; x += step) {
