@@ -96,6 +96,9 @@ const { tier, reason } = chooseTier();
 const QUALITY = {
   tier, reason,
   shadows: true, // the sun's shadow cascades
+  kerbShadows: true, // city-grid.js: the kerbs cast sun shadows (~400k triangles in the cascades)
+  shadowEvery: 1, // main.js: the sun's shadow maps are redrawn every this many frames
+  shadowType: 'pcf', // main.js: 'pcf' (filtered) or 'basic' (one tap)
   clusterGrid: [256, 32, 28, 48], // main.js ClusteredLighting: max lights, screen tile px, depth slices, lights per cluster
   ...TIERS[tier], dist: 1
 };

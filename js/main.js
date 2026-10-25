@@ -70,6 +70,7 @@ async function initApp() {
   renderer.setPixelRatio(QUALITY.scale);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
+  if (QUALITY.shadowType === 'basic') renderer.shadowMap.type = THREE.BasicShadowMap;
   if (ClusteredLighting && !new URLSearchParams(location.search).has('nocl')) {
     // (max lights, screen tile px, depth slices, lights per cluster: the phone tier's coarser grid, quality.js)
     renderer.lighting = new ClusteredLighting(...QUALITY.clusterGrid);
@@ -937,6 +938,7 @@ async function initApp() {
   let lastTime = performance.now();
   let elapsed = 0;
   let frameCount = 0;
+  let shadowFrame = 0;
   let fpsTimer = 0;
   let nextPlayerSave = 0;
   let warmedUp = false; // see the first frame below
@@ -977,6 +979,12 @@ async function initApp() {
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);
     for (const l of staticLights) { l.updateMatrixWorld(); if (l.target) l.target.updateMatrixWorld(); }
     lightingSystem.update(cameraSystem.currentPos);
+    // the phone tier redraws the sun's shadow maps every shadowEvery frames (their matrices stay with the map drawn)
+    if (QUALITY.shadowEvery > 1) {
+      const sh = lightingSystem.sunLight.shadow;
+      sh.autoUpdate = false;
+      if (++shadowFrame % QUALITY.shadowEvery === 0 || !warmedUp) sh.needsUpdate = true;
+    }
     lakeWater.update(elapsed);
     if (skyClouds) skyClouds.update(dt);
     mapSystem.update();
