@@ -1,0 +1,58 @@
+[
+ {
+  "name": "sc1-king-street",
+  "mode": "person",
+  "time": "golden",
+  "wait": 9000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6466, -79.3895);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) < 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target, speed ' + best.speed.toFixed(1));\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 20 + rx * 5.5, n.y + 1.6, n.z + fz * 20 + rz * 5.5], look: [m.x, m.y + 1.8, m.z], fov: 55 }; };\n})()"
+ },
+ {
+  "name": "sc2-spadina-row",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6505, -79.3972);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) > 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target, speed ' + best.speed.toFixed(1));\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 26 + rx * -7.5, n.y + 1.6, n.z + fz * 26 + rz * -7.5], look: [m.x, m.y + 1.8, m.z], fov: 55 }; };\n})()"
+ },
+ {
+  "name": "sc3-king-aerial",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6447, -79.399);\nconst n = C.nearestRoads(t.x, t.z, 80).find((r) => r.road.name === 'King Street West'); const p = n.road.pts; let ux = 1, uz = 0;\nfor (let i = 0; i + 1 < p.length; i++) { const L = Math.hypot(p[i + 1].x - p[i].x, p[i + 1].z - p[i].z); if (Math.hypot(p[i].x - n.px, p[i].z - n.pz) < L + 1) { ux = (p[i + 1].x - p[i].x) / L; uz = (p[i + 1].z - p[i].z) / L; } }\nif (ux < 0) { ux = -ux; uz = -uz; }\napp.teleportTo(n.px, n.pz, 0); app.cameraSystem.cinema = () => ({ pos: [n.px - ux * 60, 32, n.pz - uz * 60], look: [n.px + ux * 380, 0, n.pz + uz * 380], fov: 50 }); })()"
+ },
+ {
+  "name": "sc3b-king-rails",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6463, -79.392);\nconst n = C.nearestRoads(t.x, t.z, 80).find((r) => r.road.name === 'King Street West'); const p = n.road.pts; let ux = 1, uz = 0;\nfor (let i = 0; i + 1 < p.length; i++) { const L = Math.hypot(p[i + 1].x - p[i].x, p[i + 1].z - p[i].z); if (Math.hypot(p[i].x - n.px, p[i].z - n.pz) < L + 1) { ux = (p[i + 1].x - p[i].x) / L; uz = (p[i + 1].z - p[i].z) / L; } }\nif (ux < 0) { ux = -ux; uz = -uz; }\napp.teleportTo(n.px, n.pz, 0); app.cameraSystem.cinema = () => ({ pos: [n.px - ux * 0, 2.2, n.pz - uz * 0], look: [n.px + ux * 40, 0.3, n.pz + uz * 40], fov: 60 }); })()"
+ },
+ {
+  "name": "sc4-queen-night",
+  "mode": "person",
+  "time": "night",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6512, -79.387);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) < 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target, speed ' + best.speed.toFixed(1));\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 20 + rx * 4.5, n.y + 1.6, n.z + fz * 20 + rz * 4.5], look: [m.x, m.y + 1.8, m.z], fov: 55 }; };\n})()"
+ },
+ {
+  "name": "sc5-queen-don-bridge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6568, -79.359), b = C.worldFromLatLon(43.6588, -79.353);\napp.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 8, a.z], look: [b.x, 6, b.z], fov: 55 }); })()"
+ },
+ {
+  "name": "sc6-queens-quay",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6403, -79.38);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) < 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target, speed ' + best.speed.toFixed(1));\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 25 + rx * -8, n.y + 1.6, n.z + fz * 25 + rz * -8], look: [m.x, m.y + 1.8, m.z], fov: 55 }; };\n})()"
+ },
+ {
+  "name": "sc7-queen-west-humber",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6385, -79.45);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) < 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target, speed ' + best.speed.toFixed(1));\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 20 + rx * 5, n.y + 1.6, n.z + fz * 20 + rz * 5], look: [m.x, m.y + 1.8, m.z], fov: 55 }; };\n})()"
+ }
+]

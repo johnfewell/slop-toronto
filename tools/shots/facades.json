@@ -1,0 +1,39 @@
+[
+ {
+  "name": "fa1-yonge-north",
+  "x": 330.4,
+  "z": -1080,
+  "heading": 0,
+  "mode": "cyclist",
+  "time": "golden",
+  "wait": 6000
+ },
+ {
+  "name": "fa2-cabbagetown-houses",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6648, -79.3618), b = C.worldFromLatLon(43.6668, -79.3626); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 1.7, a.z], look: [b.x, 3, b.z], fov: 60 }); })()"
+ },
+ {
+  "name": "fa3-trinity-bellwoods-aerial",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6440, -79.4250), b = C.worldFromLatLon(43.6500, -79.4150); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 60, a.z], look: [b.x, 0, b.z], fov: 55 }); })()"
+ },
+ {
+  "name": "fa4-king-west-lofts",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6440, -79.4010), b = C.worldFromLatLon(43.6452, -79.3960); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 2, a.z], look: [b.x, 8, b.z], fov: 60 }); })()"
+ },
+ {
+  "name": "fa5-financial-district",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6440, -79.3740), b = C.worldFromLatLon(43.6485, -79.3815); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 70, a.z], look: [b.x, 60, b.z], fov: 55 }); })()"
+ }
+]

@@ -1,0 +1,30 @@
+[
+ {
+  "name": "su1-cn-tower-north",
+  "mode": "person",
+  "time": "golden",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6426, -79.3871), b = C.worldFromLatLon(43.7000, -79.4000); app.teleportTo(a.x, a.z + 60, 0); app.cameraSystem.cinema = () => ({ pos: [a.x - (b.x - a.x) / Math.hypot(b.x - a.x, b.z - a.z) * 140, 340, a.z - (b.z - a.z) / Math.hypot(b.x - a.x, b.z - a.z) * 140], look: [b.x, 0, b.z], fov: 60 }); })()"
+ },
+ {
+  "name": "su2-cn-tower-west",
+  "mode": "person",
+  "time": "golden",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6426, -79.3871), b = C.worldFromLatLon(43.6500, -79.4800); app.cameraSystem.cinema = () => ({ pos: [a.x - (b.x - a.x) / Math.hypot(b.x - a.x, b.z - a.z) * 140, 340, a.z - (b.z - a.z) / Math.hypot(b.x - a.x, b.z - a.z) * 140], look: [b.x, 0, b.z], fov: 60 }); })()"
+ },
+ {
+  "name": "su3-drone-bloor-north",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6640, -79.3950), b = C.worldFromLatLon(43.6900, -79.3950); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 120, a.z], look: [b.x, 0, b.z], fov: 55 }); })()"
+ },
+ {
+  "name": "su4-hearn-portlands",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6450, -79.3600), b = C.worldFromLatLon(43.6431, -79.3381); app.cameraSystem.cinema = () => ({ pos: [a.x, 60, a.z], look: [b.x, 80, b.z], fov: 55 }); })()"
+ }
+]

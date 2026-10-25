@@ -100,6 +100,8 @@ async function initApp() {
   const lakeWater = window.CITY.setupLakeWater(scene, renderer, lightingSystem);
   markInit('cityGrid');
   const boroughs = buildTerrain(scene);
+  // Toronto layer: the rest of the city beyond the detailed one, on the terrain (surroundings.js)
+  window.CITY.buildSurroundings(scene, boroughs.group, QUALITY);
   markInit('terrain');
   const { colliders: landmarkColliders } = buildLandmarks(scene);
   markInit('landmarks');
@@ -129,6 +131,14 @@ async function initApp() {
   ]);
   markInit('traffic');
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
+  // --- Toronto layer (after aalghooneh/slop-toronto): the TTC's streetcars, which the traffic keeps behind ---
+  const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
+  // the Union Station Rail Corridor's tracks & GO trains (rail-corridor.js)
+  const railCorridor = window.CITY.createRailCorridor(scene, trafficSystem);
+  // the streetcars' sounds (audio branch: reads streetcars.cars, safe before the audio exists)
+  if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(streetcars);
+  markInit('streetcars');
+  // --- end Toronto layer ---
   buildRoadPaint(scene, trafficSystem.network);
   markInit('roadPaint');
 
@@ -700,6 +710,8 @@ async function initApp() {
     quadtree: cityBlocks.quadtree,
     trafficSystem,
     highwayTraffic,
+    streetcars, // Toronto layer
+    railCorridor, // Toronto layer
     controllerManager,
     touchControls,
     gamepadControls,
@@ -836,6 +848,8 @@ async function initApp() {
       savePlayerState();
       nextPlayerSave = now + 5000;
     }
+    streetcars.update(dt, elapsed, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
+    railCorridor.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);

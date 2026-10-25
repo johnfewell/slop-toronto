@@ -11,6 +11,7 @@ import { buildings, districts, districtBounds, landmarks } from './geo-features.
 import { buildTerrain } from './geo-terrain.mjs';
 import { props } from './geo-props.mjs';
 import { streetTrees, TREE_MODELS } from './geo-trees.mjs';
+import { rails, tramStops } from './geo-rails.mjs';
 
 const inRing = (x, z, r) => {
   let inside = false;
@@ -178,6 +179,10 @@ const GEO = {
   treeModels: TREE_MODELS.map(([id, h]) => [id, h]),
   // Street props where they stand: { hydrant, bikeRing, postBox: [x, z, ...] } (tools/geo-props.mjs)
   props,
+  // Railways (tools/geo-rails.mjs): streetcar & heavy-rail tracks [kind 0 tram / 1 rail, service, name, flags
+  // (1 bridge, 2 tunnel), [x, z, ...]] and the streetcar stops [x, z, name, ...]
+  rails,
+  tramStops,
   // Water under the street level (see waterMask above)
   waterMask,
   // Relief above the local plain (decimetres, Int16 little-endian, base64), rows of z from z0, columns of x from x0

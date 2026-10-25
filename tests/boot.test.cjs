@@ -42,7 +42,7 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
     }
   };
   // (no WebGPU here: the module's capability probe awaits nothing and the loader runs straight on)
-  const context = vm.createContext({ window, document, navigator: {}, THREE, TSL: {}, StylizedWater: {}, ...imports });
+  const context = vm.createContext({ window, document, navigator: {}, THREE, TSL: {}, StylizedWater: {}, setTimeout, ...imports });
   vm.runInContext(preloadScript[1], context);
   assert.equal(scripts.length, 0);
   // every script the loader lists, once (the count follows the list: scripts are added often)
@@ -55,6 +55,7 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   await vm.runInContext(`(async () => {${moduleScript[1].replace(/^\s*import .+;$/gm, '')}})()`, context);
   assert.deepEqual(scripts, links);
   assert.match(scripts[0], /\/quality\.js\?v=/); // the tier is chosen before anything is built
+  assert.match(scripts[1], /\/toronto-geodata\.js\?v=/);
   assert.match(scripts.at(-1), /\/main\.js\?v=/);
   assert.equal(new Set(scripts.map((src) => src.split('?v=')[1])).size, 1);
 });

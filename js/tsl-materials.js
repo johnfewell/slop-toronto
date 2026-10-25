@@ -1089,7 +1089,11 @@ function createRenderedFacadeMaterial(opts = {}) {
   const { isRoof, uCoord, vCoord, gridV, cellId, cellUV, fw, bayWidth, isGroundFloor, solid, door, tone, floor0, coping } = facade;
   const paintAttr = attribute('paint', 'vec4');
   const paint = paintAttr.xyz;
-  const glassStyle = paintAttr.w;
+  // --- Toronto layer: paint.w >= 2 marks a brick building (its glass style in the fraction), the brick & stone colours
+  // measured from Wikimedia Commons photos (buildings.js TORONTO_MASONRY, after aalghooneh/slop-toronto) ---
+  const isBrick = step(1.5, paintAttr.w);
+  const glassStyle = fract(paintAttr.w);
+  // --- end Toronto layer ---
   const open = float(1.0).sub(solid).mul(float(1.0).sub(door));
   const effHalfX = mix(float(halfWinX), float(0.07), isGroundFloor);
   const effHalfY = mix(float(halfWinY), float(0.1), isGroundFloor);
@@ -1108,7 +1112,7 @@ function createRenderedFacadeMaterial(opts = {}) {
   const cGlass = mix(mix(color(0x3b2d22), color(0x24413f), step(0.36, glassStyle)), color(0x161b20), step(0.74, glassStyle));
   // floor-slab bands: white trim on most buildings, a darker shade of the paint on the rest
   const bandCol = mix(color(0xf0ece4), paint.mul(0.72), step(0.55, fract(tone.mul(5.3))));
-  const hasBands = step(0.35, fract(tone.mul(3.1)));
+  const hasBands = step(0.35, fract(tone.mul(3.1))).mul(float(1.0).sub(isBrick)); // (no slab bands on brick)
 
   // Shared masks
   const masks = () => {
@@ -1121,7 +1125,7 @@ function createRenderedFacadeMaterial(opts = {}) {
       max(lineAA(fract(winUV.x.mul(3.0)).sub(0.5), 0.03), lineAA(winUV.y.sub(0.78), 0.02)).mul(isGroundFloor)
     ), 0.0, 1.0);
     // burglary bars on the ground-floor windows of the residential walls
-    const bars = lineAA(fract(winUV.x.mul(7.0)).sub(0.5), 0.07).mul(floor0).mul(float(1.0).sub(isGroundFloor));
+    const bars = lineAA(fract(winUV.x.mul(7.0)).sub(0.5), 0.07).mul(floor0).mul(float(1.0).sub(isGroundFloor)).mul(float(1.0).sub(isBrick));
     const opening = inX.mul(inY).mul(float(1.0).sub(isRoof)).mul(float(1.0).sub(band));
     return { opening, band, frames, bars };
   };
@@ -1136,7 +1140,19 @@ function createRenderedFacadeMaterial(opts = {}) {
       .mul(smoothstep(0.35, 0.75, noise2D(vec2(uCoord.mul(3.0), 2.7)))).mul(0.16);
     const dust = smoothstep(1.1, 0.0, vCoord).mul(noise2D(vec2(uCoord.mul(0.9), 1.3)).mul(0.5).add(0.5)).mul(0.5);
     let wall = paint.mul(mottle).mul(float(1.0).sub(underSill));
-    wall = mix(wall, color(0x9a5a38), dust);
+    // --- Toronto layer: running-bond brickwork (stylised 0.26 x 0.1 m courses, faded out once a course is under a
+    // few pixels so it never shimmers), each brick a shade off the building's colour, in pale lime mortar; street grime
+    // at the foot of the wall instead of Abuja's red laterite dust ---
+    const rowC = vCoord.div(0.1);
+    const row = floor(rowC);
+    const colC = uCoord.div(0.26).add(mod(row, 2.0).mul(0.5));
+    const brickFade = float(1.0).sub(smoothstep(0.3, 0.7, max(fwidth(rowC), fwidth(colC)))).mul(isBrick);
+    const mortar = max(gridLine(colC.mul(0.26), 0.26, 0.012), gridLine(vCoord, 0.1, 0.012)).mul(brickFade).mul(float(1.0).sub(coping));
+    const brickTone = hash2D(vec2(floor(colC), row).add(vec2(uSeed, 3.1))).sub(0.5).mul(0.18).mul(brickFade).add(1.0);
+    wall = mix(wall, wall.mul(brickTone), isBrick);
+    wall = mix(wall, paint.mul(0.5).add(color(0x9a958c).mul(0.5)), mortar.mul(0.65));
+    wall = mix(wall, color(0x4a443d), dust.mul(0.6));
+    // --- end Toronto layer ---
     wall = mix(wall, bandCol, band);
     wall = mix(wall, paint.mul(0.9), coping);
     // Roof slabs: weathered concrete & waterproofing

@@ -534,7 +534,7 @@ function buildCityGrid(scene) {
   const wildMat = createTerrainMaterial();
   const blockSidewalks = []; // { cx, cz, w, d, block, cover } axis-aligned cover of each island (street-details.js)
   const roadSidewalks = []; // rectangles inside the curbs that bound the roads (road-network.js)
-  const geos = { curb: [], walk: [], lawn: [], plot: [], wild: [], paved: [] };
+  const geos = { curb: [], walk: [], lawn: [], plot: [], wild: [], paved: [], rail: [] };
   // Downtown is concrete to the building line: the core from Spadina to Parliament between the lake & Bloor, and
   // anywhere else a block holds towers or big buildings. Houses keep their front lawns.
   const blockBuilt = new Map(); // block -> { n, area, top }
@@ -567,17 +567,53 @@ function buildCityGrid(scene) {
     g.translate(0, y, 0);
     return g;
   };
+  // --- Toronto layer: the medians the streetcars run along (Spadina Ave's & Queens Quay's rights-of-way, GEO.rails)
+  // are paved, not grassed (after aalghooneh/slop-toronto) ---
+  const tramMedians = new Set();
+  for (const [kind, , , flags, flat] of GEO.rails || []) {
+    if (kind !== 0 || flags & 2) continue;
+    for (let i = 2; i < flat.length; i += 2) {
+      const ax = flat[i - 2], az = flat[i - 1], bx = flat[i], bz = flat[i + 1];
+      const steps = Math.ceil(Math.hypot(bx - ax, bz - az) / 4);
+      for (let k = 0; k <= steps; k++) {
+        const b = blockAt(ax + ((bx - ax) * k) / steps, az + ((bz - az) * k) / steps);
+        if (b && b.median) tramMedians.add(b);
+      }
+    }
+  }
+  // ...and the rail lands (the Union Station Rail Corridor & its yards: islands mostly covered by heavy-rail tracks,
+  // ~4.5 m of land per metre of track) are a gravel bed under the tracks rail-corridor.js lays, not lawn or paving
+  const railLen = new Map();
+  for (const [kind, , , flags, flat] of GEO.rails || []) {
+    if (kind !== 1 || flags & 2) continue;
+    for (let i = 2; i < flat.length; i += 2) {
+      const ax = flat[i - 2], az = flat[i - 1], bx = flat[i], bz = flat[i + 1];
+      const L = Math.hypot(bx - ax, bz - az);
+      const steps = Math.ceil(L / 4);
+      for (let k = 0; k < steps; k++) {
+        const b = blockAt(ax + ((bx - ax) * (k + 0.5)) / steps, az + ((bz - az) * (k + 0.5)) / steps);
+        if (b && !b.median) railLen.set(b, (railLen.get(b) || 0) + L / steps);
+      }
+    }
+  }
+  // (a quarter covered, or a tenth where the island holds few buildings: the corridor's big islands round Union)
+  const isRailLand = (b) => {
+    const cover = ((railLen.get(b) || 0) * 4.5) / b.area;
+    const built = blockBuilt.get(b);
+    return cover > 0.25 || (cover > 0.1 && (built ? built.n : 0) < (b.area / 10000) * 1.5);
+  };
+  // --- end Toronto layer ---
   for (const b of BLOCKS) {
     // kerb ring under the slab (the slab is inset 0.25 m, so the kerb's top & face show)
     geos.curb.push(extrude(createWorldXZShape(b.poly), 0.0, 0.18));
     const inner = offsetPolygonInward(b.poly, 0.25);
     if (!inner) continue;
     if (b.median) {
-      geos.lawn.push(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03));
+      geos[tramMedians.has(b) ? 'paved' : 'lawn'].push(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03));
       continue;
     }
     const prop = b.area > 400 ? offsetPolygonInward(b.poly, SW) : null;
-    const yard = b.park > 0.6 ? 'lawn' : b.wild > 0.5 ? 'wild' : isPaved(b) ? 'paved' : 'plot';
+    const yard = isRailLand(b) ? 'rail' : b.park > 0.6 ? 'lawn' : b.wild > 0.5 ? 'wild' : isPaved(b) ? 'paved' : 'plot'; // (rail: Toronto layer)
     if (prop) {
       const ring = createWorldXZShape(inner);
       ring.holes.push(new THREE.Path(prop.map((p) => new THREE.Vector2(p.x, -p.z))));
@@ -619,6 +655,7 @@ function buildCityGrid(scene) {
   mergeInto(geos.plot, plotMat, false, 'Yards');
   mergeInto(geos.paved, createForecourtMaterial(), false, 'Forecourts');
   mergeInto(geos.wild, wildMat, false, 'OpenLand');
+  mergeInto(geos.rail, new THREE.MeshStandardNodeMaterial({ color: 0x5f5850, roughness: 0.97 }), false, 'RailLands'); // Toronto layer
 
   // ===================================================================================================================
   // 3. STREAMS & RIVERS (the Wupa, the Jabi, Lobito Creek...): water channels across the islands (culverted under

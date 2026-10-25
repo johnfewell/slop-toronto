@@ -1,0 +1,16 @@
+[
+ {
+  "name": "perf-king-streetcars",
+  "mode": "cyclist",
+  "time": "golden",
+  "wait": 12000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6466, -79.3895);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) < 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target, speed ' + best.speed.toFixed(1));\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 20 + rx * 5.5, n.y + 1.6, n.z + fz * 20 + rz * 5.5], look: [m.x, m.y + 1.8, m.z], fov: 55 }; };\n})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));const app=window.__CITY_APP;const run=async(label)=>{await sleep(1200);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<3000)requestAnimationFrame(f);else res()})()});console.log('[perf] '+label+' '+((performance.now()-t)/n).toFixed(1)+' ms');};await sleep(2500);await run('layer-on');app.streetcars.group.visible=false;app.railCorridor.group.visible=false;await run('layer-hidden');app.streetcars.group.visible=true;app.railCorridor.group.visible=true;})()"
+ },
+ {
+  "name": "perf-corridor",
+  "mode": "cyclist",
+  "time": "golden",
+  "wait": 12000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6408, -79.401), b = C.worldFromLatLon(43.644, -79.383);\napp.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 45, a.z], look: [b.x, 0, b.z], fov: 50 }); })();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));const app=window.__CITY_APP;const run=async(label)=>{await sleep(1200);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<3000)requestAnimationFrame(f);else res()})()});console.log('[perf] '+label+' '+((performance.now()-t)/n).toFixed(1)+' ms');};await sleep(2500);await run('layer-on');app.streetcars.group.visible=false;app.railCorridor.group.visible=false;await run('layer-hidden');app.streetcars.group.visible=true;app.railCorridor.group.visible=true;})()"
+ }
+]

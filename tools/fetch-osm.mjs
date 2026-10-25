@@ -3,6 +3,7 @@
 // when Overpass is down or too slow; tools/overpass.sh + tools/data/q_*.overpassql remain the other way in.
 // Needs GDAL's ogr2ogr (OSM driver) and tools/osmconf.ini (every tag as JSON).
 // usage: GEO_DATA=~/.cache/slop-toronto/osm node --max-old-space-size=12288 tools/fetch-osm.mjs <ontario-latest.osm.pbf>
+// (ONLY=rails | lake | postboxes writes just that file)
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
@@ -99,6 +100,17 @@ if (process.env.ONLY === 'postboxes') {
   postBoxesOut(nodes(await ogr('points', CITY)));
   process.exit(0);
 }
+// Railways: the streetcar tracks (railway=tram), the heavy-rail lines of the Union Station Rail Corridor (GO, VIA,
+// UP Express) and the streetcar stops (railway=tram_stop & the TTC's platforms on the right-of-way)
+const railsOut = async () => {
+  const L = ways(await ogr('lines', CITY)).filter((e) => /^(tram|rail|light_rail|subway)$/.test(e.tags.railway || ''));
+  const P = nodes(await ogr('points', CITY)).filter((e) => e.tags.railway === 'tram_stop' || (e.tags.public_transport === 'stop_position' && e.tags.tram === 'yes'));
+  write('osm_rails.json', [...L, ...P]);
+};
+if (process.env.ONLY === 'rails') {
+  await railsOut();
+  process.exit(0);
+}
 if (process.env.ONLY === 'lake') {
   await lakeOut();
   process.exit(0);
@@ -116,6 +128,7 @@ write('osm_land.json', [
   ...lines.filter((e) => e.tags.waterway || e.tags.man_made || e.tags.natural || e.tags.barrier === 'wall')
 ]);
 await lakeOut();
+await railsOut();
 const PLACE_AMENITY = /^(townhall|courthouse|fountain|ferry_terminal)$/;
 const placeLike = (t) => t.place === 'square' || t.tourism || t.historic || (t.name && (PLACE_AMENITY.test(t.amenity || '') || t.landuse || t.leisure || /^(tower|pier|breakwater)$/.test(t.man_made || '')));
 write('osm_places.json', [

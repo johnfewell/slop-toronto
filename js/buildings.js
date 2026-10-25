@@ -121,9 +121,20 @@ class CityQuadtree {
 }
 
 // Paint (sRGB hex, weight): walls, hipped roofs, curtain-wall glass
-const WALL_PAINT = [[0xeadfc6, 6], [0xf2eee6, 5], [0xd9c6a0, 5], [0xccb088, 4], [0xe5b996, 2], [0xe8d79c, 2], [0xcfccc4, 3],
-  [0xbf6f47, 1], [0xb9c7a8, 1], [0xb8c9d6, 1], [0x9c7458, 1]];
-const ROOF_PAINT = [[0x8f3524, 5], [0x5f1d22, 3], [0x2c2e31, 3], [0x2a4a72, 3], [0x35552f, 2], [0x5a3b28, 3], [0xa9adb0, 3], [0x7a2c22, 2]];
+// --- Toronto layer: the walls' colours measured from ~430 freely licensed photos of Toronto on Wikimedia Commons
+// (tools/commons-palette.py -> tools/data/commons_palette.json, every photo credited in tools/data/commons_photos.md;
+// after aalghooneh/slop-toronto, MIT), weighted by how often each turned up: red-brown, dark brown, orange-red
+// Victorian & buff ("white") brick. Brick buildings are flagged to the facade shader by paint.w >= 2 (tsl-materials.js)
+const TORONTO_MASONRY = [[0x7c6154, 37], [0x5a463f, 26], [0x9c7a62, 21], [0xae987e, 14], [0xc07e55, 2]];
+// rendered, painted & precast walls (the palette's pale concrete #9ca0a2, stucco & painted siding)
+const TORONTO_RENDER = [[0xcfccc4, 4], [0xe6e1d6, 3], [0x9ca0a2, 3], [0xb9b4aa, 2], [0xae987e, 1]];
+// stone for the churches (Credit Valley sandstone & grey limestone)
+const TORONTO_STONE = [[0xae987e, 3], [0x9c9a92, 2], [0x7d6f60, 1]];
+// share of each kind of building in brick: 0 houses, 1 low-rise, 2 mid-rise (its non-glass ones), 6 worship, 7 civic
+const BRICK_SHARE = { 0: 0.85, 1: 0.65, 2: 0.4, 6: 0.55, 7: 0.7 };
+// hipped roofs: asphalt shingles, charcoal, grey & brown (not Abuja's coloured steel)
+const ROOF_PAINT = [[0x3b3b3d, 5], [0x2c2d30, 4], [0x4e4035, 3], [0x6a6762, 2], [0x5a2f27, 1]];
+// --- end Toronto layer ---
 const SHEET_PAINT = [[0x9aa0a3, 3], [0x8a5a3c, 2], [0x6e7275, 2], [0x2f4f78, 1]]; // corrugated sheets: galvanised, rusted, painted
 const RAW_BLOCK = [[0xa29c90, 3], [0x8f897d, 2], [0xb3a993, 1]]; // unpainted sandcrete blockwork (huts, sheds)
 const weighted = (table, r) => {
@@ -244,9 +255,12 @@ function buildCityBlocks(scene) {
   const materials = [
     createRenderedFacadeMaterial({ windowWidth: 3.1, floorHeight: 3.4, windowRatioX: 0.44, windowRatioY: 0.48, seed: 13.0 }),
     createRenderedFacadeMaterial({ windowWidth: 2.4, floorHeight: 3.6, windowRatioX: 0.6, windowRatioY: 0.56, litProbability: 0.5, warmth: 0.6, seed: 29.0, cornerPier: 0.5 }),
-    createCurtainWallMaterial({ glassTint: 0x234c55, frameTint: 0x8c979c, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.55, reflectivity: 0.92, seed: 41.0, boxLocal: true }),
-    createCurtainWallMaterial({ glassTint: 0x3a2b20, frameTint: 0x4a3b2c, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.6, reflectivity: 0.9, seed: 57.0, boxLocal: true }),
-    createCurtainWallMaterial({ glassTint: 0x1f3550, frameTint: 0xb0bac4, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.5, reflectivity: 0.94, seed: 73.0, boxLocal: true })
+    // (Toronto layer: the Commons palette's glass, its hue & chroma kept at the darkness the glass shader expects, as
+    // aalghooneh/slop-toronto does: blue-grey condo glass with pale slab edges, the Financial District's dark teal-grey,
+    // newer grey-green condo glass with white spandrels)
+    createCurtainWallMaterial({ glassTint: 0x2a3744, frameTint: 0x9a9ea0, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.55, reflectivity: 0.92, seed: 41.0, boxLocal: true }),
+    createCurtainWallMaterial({ glassTint: 0x1e2326, frameTint: 0x3a3e40, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.6, reflectivity: 0.9, seed: 57.0, boxLocal: true }),
+    createCurtainWallMaterial({ glassTint: 0x3d4245, frameTint: 0xb4b8ba, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.5, reflectivity: 0.94, seed: 73.0, boxLocal: true })
   ];
   const buckets = materials.map(() => []);
   const roofTiles = { pos: [], nor: [], uv: [], col: [] };
@@ -273,8 +287,11 @@ function buildCityBlocks(scene) {
     const shopFront = kind === 2 || (kind === 1 && rnd() < 0.25);
     const faces = [WALL_KINDS.rear, WALL_KINDS.rear, WALL_KINDS.rear, WALL_KINDS.rear];
     faces[front] = shopFront ? WALL_KINDS.shop : WALL_KINDS.entry;
-    const paintHex = kind === 4 ? weighted(RAW_BLOCK, rnd()) : kind === 5 ? 0x9b9890 : weighted(WALL_PAINT, rnd());
-    const paint = [...linear(paintHex), kind === 5 ? 0.95 : rnd()];
+    // (Toronto layer: brick or render by kind, colours from the Commons palette)
+    const brick = mat < 2 && rnd() < (BRICK_SHARE[kind] || 0);
+    const paintHex = kind === 4 ? weighted(RAW_BLOCK, rnd()) : kind === 5 ? 0x9b9890 : brick ? weighted(TORONTO_MASONRY, rnd())
+      : kind === 6 ? weighted(TORONTO_STONE, rnd()) : weighted(TORONTO_RENDER, rnd());
+    const paint = [...linear(paintHex), (kind === 5 ? 0.95 : rnd()) + (brick ? 2 : 0)];
     const tone = rnd();
     let topY = 0;
     for (const [u0, u1, v0, v1] of parts) {
