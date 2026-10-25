@@ -34,3 +34,5 @@ licences: see [CREDITS.md](CREDITS.md). In short: City of Toronto Open Data (Ope
 `node tools/build-geodata.mjs` rebuilds `js/toronto-geodata.js` from the raw downloads (`tools/fetch-*.mjs`: OSM via
 the Geofabrik Ontario extract and GDAL, the City of Toronto Open Data sets, AWS terrain tiles), with `GEO_DATA`
 pointing at the downloaded folder.
+The subway (lines, stations, street entrances) is its own file: `node tools/build-subway.mjs` writes
+`js/toronto-subway.js` (`tools/fetch-osm.mjs` with `ONLY=rails` and `ONLY=subway` fetch its inputs).

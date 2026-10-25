@@ -138,6 +138,10 @@ async function initApp() {
   allColliders.push(...railCorridor.colliders); // the raised tracks' embankments (the player's only)
   // the streetcars' sounds (audio branch: reads streetcars.cars, safe before the audio exists)
   if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(streetcars);
+  // the TTC subway where it shows: Line 2 on the Bloor Viaduct, the station entrances (subway.js)
+  const subway = window.CITY.createSubway(scene);
+  allColliders.push(...subway.colliders);
+  if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(subway);
   markInit('streetcars');
   // --- end Toronto layer ---
   buildRoadPaint(scene, trafficSystem.network);
@@ -713,6 +717,7 @@ async function initApp() {
     highwayTraffic,
     streetcars, // Toronto layer
     railCorridor, // Toronto layer
+    subway, // Toronto layer
     controllerManager,
     touchControls,
     gamepadControls,
@@ -851,6 +856,7 @@ async function initApp() {
     }
     streetcars.update(dt, elapsed, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
     railCorridor.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
+    subway.update(elapsed, cameraSystem.camera); // Toronto layer
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);

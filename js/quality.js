@@ -34,6 +34,7 @@ const TIERS = {
     cars: 200, buses: 12, peds: 340, // (12 buses: mostly private cars, mrdoob's a1866b7)
     streetcarSpacing: 500, // streetcars.js: one car per this many metres of track (TTC Flexity Outlooks)
     trains: 1, // rail-corridor.js: x the GO trains on the Union Station Rail Corridor
+    subway: 1, // subway.js: x the Line 2 trains over the Bloor Viaduct
     farCity: 1, // surroundings.js: share of the far city's blocks built up
     lightPool: 1, // x the night's street light & headlight spot pools
     // the city's sound (audio-system.js): running vehicle voices, sirens & one-shot events at once, HRTF panning (else
@@ -44,14 +45,14 @@ const TIERS = {
     scale: 1, aa: 'msaa', ssr: false, bloom: true, clouds: 'medium', cloudScale: 0.75,
     shadowTile: 2048, shadowFar: 0.75,
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85,
-    cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, farCity: 0.6, lightPool: 0.6,
+    cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, subway: 1, farCity: 0.6, lightPool: 0.6,
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
     scale: 1, aa: 'fxaa', ssr: false, bloom: true, clouds: 'low', cloudScale: 0.5,
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7,
-    cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, farCity: 0.35, lightPool: 0.4,
+    cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
     audio: { motors: 4, sirens: 1, events: 5, hrtf: false }
   }
 };
