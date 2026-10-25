@@ -596,7 +596,12 @@ function buildCityGrid(scene) {
       }
     }
   }
-  const isRailLand = (b) => (railLen.get(b) || 0) * 4.5 > b.area * 0.3;
+  // (a quarter covered, or a tenth where the island holds few buildings: the corridor's big islands round Union)
+  const isRailLand = (b) => {
+    const cover = ((railLen.get(b) || 0) * 4.5) / b.area;
+    const built = blockBuilt.get(b);
+    return cover > 0.25 || (cover > 0.1 && (built ? built.n : 0) < (b.area / 10000) * 1.5);
+  };
   // --- end Toronto layer ---
   for (const b of BLOCKS) {
     // kerb ring under the slab (the slab is inset 0.25 m, so the kerb's top & face show)
