@@ -31,7 +31,7 @@ import { inDetail, ways as roadWays } from './geo-roads.mjs';
 
 export const RAIL_CLEAR = 6.2; // bed top above the street under it (a 4.9 m clearance under the 1.3 m deck)
 export const RAIL_GRADE = 0.02;
-export const LIFT_PLATEAU = 4 + 6; // level past the road's edge: its sidewalk (4 m) & the abutment (6 m)
+export const LIFT_PLATEAU = 5 + 6; // level past the road's edge: its sidewalk (4.6 m) & the abutment (6 m)
 const FILL = 800;
 
 const q = (v) => Math.round(v * 10) / 10;

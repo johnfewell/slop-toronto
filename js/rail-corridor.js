@@ -258,9 +258,12 @@ function buildTrackwork(group) {
           continue;
         }
         // Raised: the embankment (or bridge deck) across to the neighbouring tracks, walled where it's an outer edge
-        const span = !!(railSpanAt(mx, mz) || waterAt(mx, mz));
         const rl = reach(mx, mz, tx, tz, w, 1), rr = reach(mx, mz, tx, tz, w, -1);
         const hl = rl || EMB_HALF, hr = rr || EMB_HALF;
+        // a span over the street (and where a skewed crossing's embankment would stand in its sidewalk, with the
+        // headroom to bridge it: the skewed bridge runs longer), or over water
+        const span = !!(railSpanAt(mx, mz) || waterAt(mx, mz)) || (Math.min(ya, yb) > 5.2 &&
+          (onRoad(mx + nx * hl, mz + nz * hl, 4.8) || onRoad(mx - nx * hr, mz - nz * hr, 4.8)));
         const A = (o, yy) => [ax + nx * o, yy, az + nz * o];
         const B = (o, yy) => [bx + nx * o, yy, bz + nz * o];
         // the top (ballast-coloured, its uv.x 0: no sleepers; fills meeting from neighbouring tracks agree)
@@ -332,7 +335,7 @@ function buildTrackwork(group) {
   for (const l of RAIL_LIFTS) {
     const L = Math.hypot(l.x1 - l.x0, l.z1 - l.z0) || 1;
     const ux = (l.x1 - l.x0) / L, uz = (l.z1 - l.z0) / L;
-    const ex = 3, half = l.hw + 4;
+    const ex = 3, half = l.hw + 5;
     const y = Math.max(0, l.H - 6.2) + CITY_BOUNDS.sidewalkHeight + 0.04;
     const ax = l.x0 - ux * ex, az = l.z0 - uz * ex, bx = l.x1 + ux * ex, bz = l.z1 + uz * ex;
     quad(shade, [ax - uz * half, y, az + ux * half], [bx - uz * half, y, bz + ux * half], [bx + uz * half, y, bz - ux * half], [ax + uz * half, y, az - ux * half], 0, 1, 0);

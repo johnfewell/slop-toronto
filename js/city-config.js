@@ -378,7 +378,7 @@ for (const d of DECKS) {
 // at, one field for every track (parallel tracks & crossovers agree). A lift is a street the tracks bridge: level over
 // the street, its sidewalks & abutments, then down at 2%; a fill joins two lifts (level inside its hull, down at 2%
 // outside). railSpanAt says whether (x, z) is over the street itself (an open bridge span, not embankment).
-const RAIL_GRADE = 0.02, LIFT_PLATEAU = 10, SPAN_SIDEWALK = 4; // (as tools/geo-rails.mjs)
+const RAIL_GRADE = 0.02, LIFT_PLATEAU = 11, SPAN_SIDEWALK = 5; // (as tools/geo-rails.mjs; the sidewalk runs 4.6 m in from the curb)
 const RAIL_LIFTS = (GEO.railLifts || []).map(([H, hw, x0, z0, x1, z1]) => ({ H, hw, x0, z0, x1, z1 }));
 const RAIL_FILLS = (GEO.railFills || []).map(([H, ...c]) => ({ H, pts: [[c[0], c[1]], [c[2], c[3]], [c[4], c[5]], [c[6], c[7]]] }));
 const LIFT_CELL = 50;
