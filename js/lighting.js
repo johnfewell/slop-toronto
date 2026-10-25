@@ -75,7 +75,7 @@ const SUN = (() => {
     const p = solarPosition(watDate(h));
     return { h, ...p, dir: worldDirection(p.azimuth, p.elevation) };
   };
-  return { golden: at(golden), midday: at(midday), sunset: at(sunset) };
+  return { golden: at(golden), midday: at(midday), sunset: at(sunset), night: at(23) };
 })();
 // Night: moonlight from high in the east-south-east (a generic direction, not today's moon)
 const MOON_DIR = worldDirection(115, 55);
@@ -168,6 +168,9 @@ const TIME_PRESETS = {
     id: 'midnight',
     name: 'Night · 23:00',
     sunDir: MOON_DIR,
+    // (?atmosphere=1, sky-clouds.js: the physical sky takes the real sun, well below the horizon at 23:00, & the moon)
+    trueSunDir: SUN.night.dir,
+    moonDir: MOON_DIR,
     sunColor: 0x8cb0e8,
     sunIntensity: 1.45,
     hemiSky: 0x263a62,
@@ -328,6 +331,7 @@ class LightingSystem {
       return;
     }
     this.activePresetId = p.id;
+    this.activePreset = p;
 
     this.sunLight.color.setHex(p.sunColor);
     this.sunLight.intensity = p.sunIntensity;

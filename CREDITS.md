@@ -83,6 +83,9 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   It is not covered by this project's MIT License.
 - **Cloud noise textures** (`assets/shape.bin`, `assets/shape_detail.bin`, `assets/turbulence.png`,
   `assets/local_weather.png`) come with three-clouds-webgpu / takram (MIT).
+- **Star catalogue** (`assets/atmosphere/stars.bin`, the `?atmosphere=1` night sky) comes with @takram/three-atmosphere
+  (MIT, © takram): the 9,096 stars of the Yale Bright Star Catalog version 5 (public domain) as directions, magnitudes and
+  colours.
 - **Water textures** (`assets/water/`) come with Uber Stylized Water (MIT, © MatrixRex / norio).
 
 ## Not affiliated

@@ -1,0 +1,9 @@
+[
+ {
+  "name": "islands-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const p=window.CITY.worldFromLatLon(43.6215,-79.3772);const cn=window.CITY.GEO.points.cnTower;const L=[cn[0],150,cn[1]];app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,4.0,p.z],look:L,fov:46});})()"
+ }
+]
