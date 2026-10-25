@@ -429,24 +429,43 @@ function railSpanAt(x, z) {
 // its axis at the breaks of slope (heights below street level) and the half width of its carriageways & sidewalks; the
 // retaining walls stand at that half width. cutAt(x, z) is the floor's height there (the road's: the sidewalks are
 // SIDEWALK_HEIGHT up from it), 0 outside the cuts. city-grid.js builds them and masks the street level over them.
+// The axis is a polyline (a curving street's centreline, Rosedale Valley Road; Strachan's is straight): s the distance
+// along it at each point, `segs` its segments.
 const ROAD_CUTS = (GEO.roadCuts || []).map(([name, half, flat]) => {
   const pts = [];
   for (let i = 0; i < flat.length; i += 3) pts.push({ x: flat[i], z: flat[i + 1], h: flat[i + 2] });
+  const s = [0], segs = [];
+  for (let k = 1; k < pts.length; k++) {
+    const a = pts[k - 1], b = pts[k], L = Math.hypot(b.x - a.x, b.z - a.z) || 1e-6;
+    segs.push({ a, b, ux: (b.x - a.x) / L, uz: (b.z - a.z) / L, len: L, s0: s[k - 1] });
+    s.push(s[k - 1] + L);
+  }
   const a = pts[0], b = pts[pts.length - 1];
-  const len = Math.hypot(b.x - a.x, b.z - a.z) || 1;
-  const ux = (b.x - a.x) / len, uz = (b.z - a.z) / len;
-  return { name, half, pts, x0: a.x, z0: a.z, ux, uz, len, s: pts.map((p) => (p.x - a.x) * ux + (p.z - a.z) * uz) };
+  const xs = pts.map((p) => p.x), zs = pts.map((p) => p.z);
+  return { name, half, pts, s, segs, len: s[s.length - 1], x0: a.x, z0: a.z, ux: segs[0].ux, uz: segs[0].uz, end: b,
+    box: { x0: Math.min(...xs) - half, x1: Math.max(...xs) + half, z0: Math.min(...zs) - half, z1: Math.max(...zs) + half } };
 });
+/** Where (x, z) lies in road cut `c`: { s along its axis, l across (+ to the left of the way along), h its floor }, or
+ *  null outside it (beyond its ends, or more than its half width from the axis) */
+function cutLocal(c, x, z) {
+  const B = c.box;
+  if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) return null;
+  let best = null;
+  for (let k = 0; k < c.segs.length; k++) {
+    const g = c.segs[k], dx = x - g.a.x, dz = z - g.a.z;
+    const t = dx * g.ux + dz * g.uz;
+    if ((k === 0 && t <= 0) || (k === c.segs.length - 1 && t >= g.len)) continue; // (beyond the cut's ends)
+    const tc = Math.max(0, Math.min(g.len, t));
+    const d = Math.hypot(dx - g.ux * tc, dz - g.uz * tc);
+    if (d <= c.half && (!best || d < best.d)) best = { d, s: g.s0 + tc, l: -dx * g.uz + dz * g.ux, h: g.a.h + ((g.b.h - g.a.h) * tc) / g.len };
+  }
+  return best;
+}
 /** The floor of a road cut at (x, z) (negative), or 0 outside the cuts */
 function cutAt(x, z) {
   for (const c of ROAD_CUTS) {
-    const dx = x - c.x0, dz = z - c.z0;
-    const t = dx * c.ux + dz * c.uz;
-    if (t <= 0 || t >= c.len || Math.abs(-dx * c.uz + dz * c.ux) > c.half) continue;
-    for (let k = 0; k + 1 < c.pts.length; k++) {
-      if (t > c.s[k + 1]) continue;
-      return c.pts[k].h + ((c.pts[k + 1].h - c.pts[k].h) * (t - c.s[k])) / (c.s[k + 1] - c.s[k] || 1);
-    }
+    const p = cutLocal(c, x, z);
+    if (p) return p.h;
   }
   return 0;
 }
@@ -767,6 +786,7 @@ Object.assign(window.CITY, {
   RAIL_LIFTS,
   treeOffRail,
   ROAD_CUTS,
+  cutLocal,
   cutAt,
   getLocationLabel,
   worldFromLatLon,

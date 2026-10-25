@@ -15,6 +15,7 @@ const {
   GEO,
   blockAt,
   ROAD_CUTS,
+  cutLocal,
   cutAt
 } = window.CITY;
 const {
@@ -446,9 +447,26 @@ function maskedByWater(mat, M) {
 // The road cuts (city-config.js ROAD_CUTS) and the subway's open cuts (subway.js SUBWAY_CUT_RECTS: Line 2's trenches
 // in the west end) masked out of a street-level material: its fragments over a cut are discarded (in the shadow maps
 // too), city-grid.js & subway.js build the cuts in their place. Each an oblong: t along (ux, uz) from (x0, z0) to len,
-// l across from l0 to l1
+// l across from l0 to l1. A road cut's polyline axis gives one oblong per straight run (its segments merged while they
+// turn less than 2 degrees), each run a little past its joints so a bend leaves no gap
 function cutRects() {
-  return [...ROAD_CUTS.map((c) => ({ x0: c.x0, z0: c.z0, ux: c.ux, uz: c.uz, len: c.len, l0: -c.half, l1: c.half })), ...(window.CITY.SUBWAY_CUT_RECTS || [])];
+  const out = [];
+  for (const c of ROAD_CUTS) {
+    let run = null;
+    const flush = (last) => {
+      if (!run) return;
+      const L = Math.hypot(run.b.x - run.a.x, run.b.z - run.a.z) || 1e-6, ux = (run.b.x - run.a.x) / L, uz = (run.b.z - run.a.z) / L;
+      const e0 = run.first ? 0 : 1.5, e1 = last ? 0 : 1.5;
+      out.push({ x0: run.a.x - ux * e0, z0: run.a.z - uz * e0, ux, uz, len: L + e0 + e1, l0: -c.half, l1: c.half });
+    };
+    c.segs.forEach((g, k) => {
+      if (run && Math.abs(Math.atan2(g.ux * run.uz - g.uz * run.ux, g.ux * run.ux + g.uz * run.uz)) < 0.035) { run.b = g.b; return; }
+      flush(false);
+      run = { a: g.a, b: g.b, ux: g.ux, uz: g.uz, first: k === 0 };
+    });
+    flush(true);
+  }
+  return [...out, ...(window.CITY.SUBWAY_CUT_RECTS || [])];
 }
 function maskRoadCuts(mat) {
   const rects = cutRects();
@@ -895,14 +913,22 @@ function buildCityGrid(scene) {
     const PARAPET = 1.05, THICK = 0.3;
     let nWalls = 0;
     for (const c of ROAD_CUTS) {
-      const nx = -c.uz, nz = c.ux;
-      // stations every 2 m and at every break of slope; at each, the kerb either side (the first island that isn't a
-      // median, walking out from the axis)
+      // stations every 2 m along the axis (a polyline) and at each of its points (the breaks of slope among them); at
+      // each, its normal (at a point between two segments, the mean of theirs) and the kerb either side (the first
+      // island that isn't a median, walking out from the axis)
       const ts = [...new Set([...Array.from({ length: Math.ceil(c.len / 2) }, (_, i) => i * 2), ...c.s, c.len])].sort((a, b) => a - b);
       const st = ts.map((t) => {
-        const x = c.x0 + c.ux * t, z = c.z0 + c.uz * t;
-        let h = 0;
-        for (let k = 0; k + 1 < c.pts.length; k++) if (t >= c.s[k] && t <= c.s[k + 1]) h = c.pts[k].h + ((c.pts[k + 1].h - c.pts[k].h) * (t - c.s[k])) / (c.s[k + 1] - c.s[k] || 1);
+        let k = 0;
+        while (k < c.segs.length - 1 && t > c.segs[k].s0 + c.segs[k].len) k++;
+        const g = c.segs[k], f = Math.max(0, Math.min(1, (t - g.s0) / g.len));
+        const x = g.a.x + (g.b.x - g.a.x) * f, z = g.a.z + (g.b.z - g.a.z) * f, h = g.a.h + (g.b.h - g.a.h) * f;
+        let ux = g.ux, uz = g.uz;
+        const j = Math.abs(t - g.s0) < 1e-6 ? k - 1 : Math.abs(t - g.s0 - g.len) < 1e-6 ? k + 1 : -1;
+        if (j >= 0 && j < c.segs.length) {
+          const L = Math.hypot(ux + c.segs[j].ux, uz + c.segs[j].uz) || 1;
+          ux = (ux + c.segs[j].ux) / L; uz = (uz + c.segs[j].uz) / L;
+        }
+        const nx = -uz, nz = ux;
         const kerb = (sg) => {
           for (let l = 0.5; l < c.half - 0.5; l += 0.25) {
             const b = blockAt(x + nx * l * sg, z + nz * l * sg);
@@ -910,15 +936,16 @@ function buildCityGrid(scene) {
           }
           return c.half - 0.3;
         };
-        return { t, x, z, h, k: { 1: kerb(1), '-1': kerb(-1) } };
+        return { t, x, z, h, nx, nz, k: { 1: kerb(1), '-1': kerb(-1) } };
       });
-      const P = (q, l, y) => [q.x + nx * l, y, q.z + nz * l];
+      const P = (q, l, y) => [q.x + q.nx * l, y, q.z + q.nz * l];
       for (let i = 0; i + 1 < st.length; i++) {
         const a = st[i], b = st[i + 1];
         quad(road, P(a, -a.k[-1], a.h), P(b, -b.k[-1], b.h), P(b, b.k[1], b.h), P(a, a.k[1], a.h), [0, 1, 0]);
         for (const sg of [1, -1]) {
           const ka = a.k[sg] * sg, kb = b.k[sg] * sg, wa = c.half * sg, wb = c.half * sg, ow = (c.half + THICK) * sg;
           const sw = SW_TOP;
+          const nx = (a.nx + b.nx) / 2, nz = (a.nz + b.nz) / 2;
           quad(curb, P(a, ka, a.h), P(b, kb, b.h), P(b, kb, b.h + sw), P(a, ka, a.h + sw), [-nx * sg, 0, -nz * sg]);
           quad(walk, P(a, ka, a.h + sw), P(b, kb, b.h + sw), P(b, wb, b.h + sw), P(a, wa, a.h + sw), [0, 1, 0]);
           // the retaining wall, its parapet rising with the depth (none at street level)
@@ -929,7 +956,7 @@ function buildCityGrid(scene) {
           // its collider: the wall's thickness from the floor to the parapet's top, where the cut is a step down
           if (Math.max(-a.h, -b.h) > 0.25) {
             const L = b.t - a.t, cx = (a.x + b.x) / 2 + nx * (c.half + THICK / 2) * sg, cz = (a.z + b.z) / 2 + nz * (c.half + THICK / 2) * sg;
-            const hx = THICK / 2 + 0.05, hz = L / 2 + 0.05, cs = c.uz, sn = c.ux;
+            const hx = THICK / 2 + 0.05, hz = L / 2 + 0.05, cs = -nx, sn = nz; // (along the wall: (nz, -nx))
             const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
             colliders.push({ minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, minY: Math.min(a.h, b.h) - 1, maxY: Math.min(ta, tb), obb: { cx, cz, hx, hz, cs, sn } });
             nWalls++;
@@ -939,9 +966,8 @@ function buildCityGrid(scene) {
       // the medians inside the cut: their outline every 1.5 m, lowered with the floor under it (kerb faces & top)
       for (const bl of BLOCKS) {
         if (!bl.median) continue;
-        const mx = bl.poly.reduce((t, p) => t + p.x, 0) / bl.poly.length - c.x0, mz = bl.poly.reduce((t, p) => t + p.z, 0) / bl.poly.length - c.z0;
-        const mt = mx * c.ux + mz * c.uz;
-        if (mt <= 0 || mt >= c.len || Math.abs(-mx * c.uz + mz * c.ux) > c.half) continue;
+        const mx = bl.poly.reduce((t, p) => t + p.x, 0) / bl.poly.length, mz = bl.poly.reduce((t, p) => t + p.z, 0) / bl.poly.length;
+        if (!cutLocal(c, mx, mz)) continue;
         const ring = [];
         for (let i = 0; i < bl.poly.length; i++) {
           const p = bl.poly[i], q = bl.poly[(i + 1) % bl.poly.length];

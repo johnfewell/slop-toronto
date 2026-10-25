@@ -1,0 +1,44 @@
+[
+ {
+  "name": "p-osgoode",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-336.7,-721.1,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[-320,cut(-320,-746)+1.6,-746],look:[-311.6,cut(-311.6,-758.5)+3.2,-758.5],fov:60};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-osgoode '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-king",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(358.2,-319.7,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[330,cut(330,-330)+1.7,-330],look:[300,cut(300,-341)+3,-341],fov:60};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-king '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-rosedale",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1572.0,-2715.5,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1599.6,cut(1599.6,-2703.7)+1.6,-2703.7],look:[1641,cut(1641,-2686)+1.0,-2686],fov:60};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-rosedale '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-rosedale-above",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1706.6,-2590.0,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1690,cut(1690,-2615)+70,-2615],look:[1640,cut(1640,-2690)+-2,-2690],fov:60};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-rosedale-above '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-kingyonge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(345.5,-156.5,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[355,cut(355,-185)+1.7,-185],look:[380,cut(380,-260)+3,-260],fov:60};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-kingyonge '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "p-stpatrick",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9500,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(-338.9,-1175.5,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[-323,cut(-323,-1201)+1.6,-1201],look:[-315.44,cut(-315.44,-1213.12)+3.2,-1213.12],fov:60};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(3000);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] p-stpatrick '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ }
+]
