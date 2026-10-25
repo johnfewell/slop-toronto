@@ -1,0 +1,16 @@
+[
+ {
+  "name": "queen-e2-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const W=window.CITY.worldFromLatLon;const p=W(43.6529,-79.3745);const q=W(43.6568,-79.353);app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,1.7,p.z],look:[q.x,260,q.z],fov:60});})()"
+ },
+ {
+  "name": "queen-e3-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const W=window.CITY.worldFromLatLon;const p=W(43.6536,-79.3705);const q=W(43.658,-79.348);app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,1.7,p.z],look:[q.x,500,q.z],fov:60});})()"
+ }
+]

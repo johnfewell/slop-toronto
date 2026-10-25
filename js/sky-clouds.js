@@ -98,18 +98,8 @@ async function setupClouds(renderer) {
       ctx.moonGain = numParam('atmoMoon', 3e5);
       ctx.moonColor.set(0.72, 0.8, 1);
     }
-    // The clouds' shadow cascades are fitted to the camera's frustum by unprojecting its NDC corners, assuming near at
-    // z 0 & far at z 1; the city's reversed depth buffer swaps them, so cascade 0 (the near one) was fitted to the far
-    // end of the view: 143 km wide, 560 m texels, which showed as flat dark rectangles across the cloud base, and the
-    // far cascade missed the distant clouds. The cascades get a copy of the camera with an ordinary projection
-    const shadowFitCamera = new THREE.PerspectiveCamera();
-    const updateShadowMaps = ctx.updateShadowMaps.bind(ctx);
-    ctx.updateShadowMaps = (cam) => {
-      if (!cam.reversedDepth) return updateShadowMaps(cam);
-      shadowFitCamera.copy(cam, false);
-      shadowFitCamera.updateProjectionMatrix();
-      return updateShadowMaps(shadowFitCamera);
-    };
+    // (The city's reversed depth buffer: the library fits its shadow cascades & reads the scene depth the reversed way
+    // itself since PR #382 (tools/build-clouds.mjs), so the ordinary-depth camera copy f0b2133 handed it is gone)
     ctx.stbnTexture = Clouds.createJitterTexture();
     Clouds.loadBakedCloudTextures({
       localWeather: Clouds.DEFAULT_LOCAL_WEATHER_URL,

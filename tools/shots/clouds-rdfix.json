@@ -1,0 +1,23 @@
+[
+ {
+  "name": "queen-e-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const W=window.CITY.worldFromLatLon;const p=W(43.6547,-79.3712);const q=W(43.6590,-79.3500);app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,1.7,p.z],look:[q.x,60,q.z],fov:60});})()"
+ },
+ {
+  "name": "queen-e-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const W=window.CITY.worldFromLatLon;const p=W(43.6547,-79.3712);const q=W(43.6590,-79.3500);app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,1.7,p.z],look:[q.x,60,q.z],fov:60});})()"
+ },
+ {
+  "name": "islands-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const p=window.CITY.worldFromLatLon(43.6215,-79.3772);const cn=window.CITY.GEO.points.cnTower;const L=[cn[0],150,cn[1]];app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,4.0,p.z],look:L,fov:46});})()"
+ }
+]
