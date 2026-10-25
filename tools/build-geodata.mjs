@@ -11,6 +11,7 @@ import { buildings, districts, districtBounds, landmarks } from './geo-features.
 import { buildTerrain } from './geo-terrain.mjs';
 import { props } from './geo-props.mjs';
 import { streetTrees, TREE_MODELS } from './geo-trees.mjs';
+import { parkSigns } from './geo-parksigns.mjs';
 import { rails, tramStops, railLifts, railFills } from './geo-rails.mjs';
 
 const inRing = (x, z, r) => {
@@ -130,6 +131,9 @@ const waterMask = (() => {
 })();
 const [olon, olat] = toLonLat(0, 0);
 const cnTower = toWorld(-79.387057, 43.642566);
+
+// the City's park name signs at the parks' entrances, clear of the street props & the City's trees (tools/geo-parksigns.mjs)
+props.parkSign = parkSigns(props, streetTrees);
 
 const GEO = {
   version: 1,

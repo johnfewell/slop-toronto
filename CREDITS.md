@@ -63,6 +63,11 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   surfaces in the ROM model. https://polyhaven.com/
 - **Street props** (hydrant, mailbox, bike ring, transit shelter, litter & recycling bin: `assets/props/`) by John
   Fewell, simplified for the city (meshoptimizer, textures cut to 512–1024 px).
+- **Park name sign** (`assets/props/park-sign.glb`, `assets/props/park-sign-face.webp`): the City of Toronto's "A City
+  Within a Park" sign, modelled in Blender from John Fewell's photo of the Ritchie Avenue Parkette sign
+  (`tools/blender/bake_props.py park-sign`); its blank face is his photo straightened, the name and address painted out
+  with Nano Banana Pro (Gemini) and flattened. The sign's design, its pet icons and the Toronto logo are the City of
+  Toronto's. Each park's name and address (drawn on the face in the browser) are from OpenStreetMap.
 - **CN Tower model** (`assets/landmarks/cn-tower.glb`): "CN Tower low poly model base mesh" by C.J..Goldman
   (https://sketchfab.com/C.J..Goldman),
   https://sketchfab.com/3d-models/cn-tower-low-poly-model-base-mesh-da7bbf4926de434cb5ef8d0e0bea9d59, licensed CC BY 4.0

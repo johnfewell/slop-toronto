@@ -1,0 +1,65 @@
+[
+ {
+  "name": "perf-spawn",
+  "mode": "cyclist",
+  "time": "midday",
+  "camera": "chase",
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-spawn \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ },
+ {
+  "name": "perf-queen",
+  "mode": "cyclist",
+  "time": "midday",
+  "camera": "chase",
+  "x": 330.4,
+  "z": -1080,
+  "heading": 0,
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-queen \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ },
+ {
+  "name": "perf-berczy",
+  "mode": "cyclist",
+  "time": "midday",
+  "x": 456.33,
+  "z": -198.47,
+  "heading": 0.0066,
+  "camera": "chase",
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-berczy \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ },
+ {
+  "name": "perf-trinity",
+  "mode": "cyclist",
+  "time": "midday",
+  "x": -2577.93,
+  "z": -1348.18,
+  "heading": -0.0196,
+  "camera": "chase",
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-trinity \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ },
+ {
+  "name": "perf-ritchie",
+  "mode": "cyclist",
+  "time": "midday",
+  "x": -5031.47,
+  "z": -2506.9,
+  "heading": 0.7376,
+  "camera": "chase",
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-ritchie \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ },
+ {
+  "name": "perf-allan-gardens",
+  "mode": "cyclist",
+  "time": "midday",
+  "x": 1044.66,
+  "z": -1500.74,
+  "heading": -3.1376,
+  "camera": "chase",
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-allan-gardens \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ }
+]
