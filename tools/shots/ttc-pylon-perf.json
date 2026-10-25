@@ -1,0 +1,16 @@
+[
+ {
+  "name": "perf-king",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(400,-130,0);const cam={pos:[352, 1.7, -290],look:[340, 2, -330],fov:55};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-king '+((performance.now()-t)/n).toFixed(1)+' ms')})()"
+ },
+ {
+  "name": "perf-osgoode",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-248,-614,0);const cam={pos:[-300, 1.7, -690],look:[-313, 3, -709],fov:55};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-osgoode '+((performance.now()-t)/n).toFixed(1)+' ms')})()"
+ }
+]

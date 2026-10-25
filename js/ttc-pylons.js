@@ -151,9 +151,9 @@ function pylonMaterial(logoTex, atlas, colours) {
   mat.alphaTest = 0.5;
   mat.roughnessNode = mix(float(0.45), float(0.3), lit);
   mat.metalnessNode = mix(float(0.4), float(0.0), lit);
-  // lit acrylic: a little by day, glowing after dark
+  // lit acrylic: lit by day too (it reads in a shaded street), glowing after dark
   const night = smoothstep(0.6, 1.15, cityUniforms.uInteriorGlow);
-  mat.emissiveNode = printed.mul(lit).mul(night.mul(0.9).add(0.05));
+  mat.emissiveNode = printed.mul(lit).mul(night.mul(0.8).add(0.18));
   return mat;
 }
 
@@ -218,7 +218,9 @@ async function buildTtcPylons(scene, pylons) {
   });
   geo.setAttribute('pylonCell', new THREE.InstancedBufferAttribute(cellAttr, 2));
   mesh.instanceMatrix.needsUpdate = true;
-  mesh.castShadow = true;
+  // (no shadows: one city-wide instanced mesh can't be culled by the shadow cascades, and drawing all 86 alpha-cut
+  // pylons into both of them cost ~3-4 ms a frame on the M4 mini; a thin pole's shadow hardly reads)
+  mesh.castShadow = false;
   mesh.receiveShadow = true;
   mesh.computeBoundingSphere();
   group.add(mesh);
