@@ -57,10 +57,13 @@ const TIERS = {
   },
   low: {
     scale: 1, aa: 'fxaa', ssr: false, bloom: true, clouds: 'low', cloudScale: 0.5,
-    shadowTile: 1024, shadowFar: 0.5,
+    shadowTile: 1024, shadowFar: 0.33,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7,
     cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
     signRes: 0.5, lean: true, hideDarkLights: true,
+    // (measured on the Pixel 8, which is CPU-bound: every shadow caster is drawn again in both cascades) no kerb
+    // shadows, the sun's shadows to 100 m at street level, and an even 30 fps
+    kerbShadows: false, maxFps: 30,
     audio: { motors: 4, sirens: 1, events: 5, hrtf: false }
   }
 };
