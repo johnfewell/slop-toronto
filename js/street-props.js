@@ -117,7 +117,8 @@ async function buildStreetProps(scene) {
         yaw = facing === 'along' ? Math.atan2(-road.dz, road.dx) : Math.atan2(tx, tz) + (facing === 'back' ? Math.PI : 0);
         if (key !== 'shelter') yaw += (hash(x, z) - 0.5) * 0.12; // (a shelter stays square to the curb)
       } else yaw = hash(x, z) * Math.PI * 2;
-      p.set(x, blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0, z);
+      // (down a road cut's sidewalks too: city-config.js cutAt, Strachan Ave under the railway)
+      p.set(x, (blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0) + (window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0), z);
       q.setFromAxisAngle(up, yaw);
       m.compose(p, q, sc);
       for (const mesh of meshes) mesh.setMatrixAt(i, m);

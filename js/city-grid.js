@@ -13,7 +13,9 @@ const {
   STREAMS,
   DECKS,
   GEO,
-  blockAt
+  blockAt,
+  ROAD_CUTS,
+  cutAt
 } = window.CITY;
 const {
   createRoadSurfaceMaterial,
@@ -441,6 +443,23 @@ function maskedByWater(mat, M) {
   return mat;
 }
 
+// The road cuts (city-config.js ROAD_CUTS) masked out of a street-level material: its fragments over a cut are
+// discarded (in the shadow maps too), city-grid.js builds the cut in their place
+function maskRoadCuts(mat) {
+  if (!ROAD_CUTS.length || !mat || !mat.isNodeMaterial || mat.userData.roadCutMask) return mat;
+  const { positionWorld, vec2, abs, dot } = window.CITY.TSL;
+  let inside = null;
+  for (const c of ROAD_CUTS) {
+    const d = positionWorld.xz.sub(vec2(c.x0, c.z0));
+    const t = dot(d, vec2(c.ux, c.uz)), l = dot(d, vec2(-c.uz, c.ux));
+    const inC = t.greaterThan(0.0).and(t.lessThan(c.len)).and(abs(l).lessThan(c.half));
+    inside = inside ? inside.or(inC) : inC;
+  }
+  mat.maskNode = mat.maskNode ? mat.maskNode.and(inside.not()) : inside.not();
+  mat.userData.roadCutMask = true;
+  return mat;
+}
+
 function buildCityGrid(scene) {
   const group = new THREE.Group();
   group.name = 'CityGround';
@@ -848,6 +867,110 @@ function buildCityGrid(scene) {
     if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] ${DECKS.length} flyover decks & ramps, ${piers.length} piers`);
   }
 
+  // ===================================================================================================================
+  // 6. ROAD CUTS (city-config.js ROAD_CUTS: Strachan Ave dipping under the railway): the street level, curb islands,
+  //    walls & streams above the cut are masked out (maskRoadCuts), and the cut is built in their place: its roadway on
+  //    the profile, kerbs, sidewalks 0.22 m up from it, the medians, and concrete retaining walls at its sides with a
+  //    parapet at the top (the player's colliders, top & bottom). The traffic follows the profile through the street
+  //    graph (road-network.js, negative heights), the walkers by cutAt (traffic.js), the player by getGroundHeight.
+  // ===================================================================================================================
+  if (ROAD_CUTS.length) {
+    group.traverse((o) => {
+      for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) maskRoadCuts(m);
+    });
+    const road = makeAcc(), walk = makeAcc(), curb = makeAcc(), wall = makeAcc();
+    const quad = (A, p0, p1, p2, p3, f) => {
+      const ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2], vx = p2[0] - p0[0], vy = p2[1] - p0[1], vz = p2[2] - p0[2];
+      const flip = (uy * vz - uz * vy) * f[0] + (uz * vx - ux * vz) * f[1] + (ux * vy - uy * vx) * f[2] < 0;
+      const P = flip ? [p0, p3, p2, p1] : [p0, p1, p2, p3];
+      accQuad(A, P[0], P[1], P[2], P[3], f, P.map((p) => [p[0], p[2] + p[1]]));
+    };
+    const PARAPET = 1.05, THICK = 0.3;
+    let nWalls = 0;
+    for (const c of ROAD_CUTS) {
+      const nx = -c.uz, nz = c.ux;
+      // stations every 2 m and at every break of slope; at each, the kerb either side (the first island that isn't a
+      // median, walking out from the axis)
+      const ts = [...new Set([...Array.from({ length: Math.ceil(c.len / 2) }, (_, i) => i * 2), ...c.s, c.len])].sort((a, b) => a - b);
+      const st = ts.map((t) => {
+        const x = c.x0 + c.ux * t, z = c.z0 + c.uz * t;
+        let h = 0;
+        for (let k = 0; k + 1 < c.pts.length; k++) if (t >= c.s[k] && t <= c.s[k + 1]) h = c.pts[k].h + ((c.pts[k + 1].h - c.pts[k].h) * (t - c.s[k])) / (c.s[k + 1] - c.s[k] || 1);
+        const kerb = (sg) => {
+          for (let l = 0.5; l < c.half - 0.5; l += 0.25) {
+            const b = blockAt(x + nx * l * sg, z + nz * l * sg);
+            if (b && !b.median) return l;
+          }
+          return c.half - 0.3;
+        };
+        return { t, x, z, h, k: { 1: kerb(1), '-1': kerb(-1) } };
+      });
+      const P = (q, l, y) => [q.x + nx * l, y, q.z + nz * l];
+      for (let i = 0; i + 1 < st.length; i++) {
+        const a = st[i], b = st[i + 1];
+        quad(road, P(a, -a.k[-1], a.h), P(b, -b.k[-1], b.h), P(b, b.k[1], b.h), P(a, a.k[1], a.h), [0, 1, 0]);
+        for (const sg of [1, -1]) {
+          const ka = a.k[sg] * sg, kb = b.k[sg] * sg, wa = c.half * sg, wb = c.half * sg, ow = (c.half + THICK) * sg;
+          const sw = SW_TOP;
+          quad(curb, P(a, ka, a.h), P(b, kb, b.h), P(b, kb, b.h + sw), P(a, ka, a.h + sw), [-nx * sg, 0, -nz * sg]);
+          quad(walk, P(a, ka, a.h + sw), P(b, kb, b.h + sw), P(b, wb, b.h + sw), P(a, wa, a.h + sw), [0, 1, 0]);
+          // the retaining wall, its parapet rising with the depth (none at street level)
+          const ta = sw + Math.min(PARAPET, -a.h * 2), tb = sw + Math.min(PARAPET, -b.h * 2);
+          quad(wall, P(a, wa, a.h + sw), P(b, wb, b.h + sw), P(b, wb, tb), P(a, wa, ta), [-nx * sg, 0, -nz * sg]);
+          quad(wall, P(a, ow, sw - 0.05), P(b, ow, sw - 0.05), P(b, ow, tb), P(a, ow, ta), [nx * sg, 0, nz * sg]);
+          quad(wall, P(a, wa, ta), P(b, wb, tb), P(b, ow, tb), P(a, ow, ta), [0, 1, 0]);
+          // its collider: the wall's thickness from the floor to the parapet's top, where the cut is a step down
+          if (Math.max(-a.h, -b.h) > 0.25) {
+            const L = b.t - a.t, cx = (a.x + b.x) / 2 + nx * (c.half + THICK / 2) * sg, cz = (a.z + b.z) / 2 + nz * (c.half + THICK / 2) * sg;
+            const hx = THICK / 2 + 0.05, hz = L / 2 + 0.05, cs = c.uz, sn = c.ux;
+            const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
+            colliders.push({ minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, minY: Math.min(a.h, b.h) - 1, maxY: Math.min(ta, tb), obb: { cx, cz, hx, hz, cs, sn } });
+            nWalls++;
+          }
+        }
+      }
+      // the medians inside the cut: their outline every 1.5 m, lowered with the floor under it (kerb faces & top)
+      for (const bl of BLOCKS) {
+        if (!bl.median) continue;
+        const mx = bl.poly.reduce((t, p) => t + p.x, 0) / bl.poly.length - c.x0, mz = bl.poly.reduce((t, p) => t + p.z, 0) / bl.poly.length - c.z0;
+        const mt = mx * c.ux + mz * c.uz;
+        if (mt <= 0 || mt >= c.len || Math.abs(-mx * c.uz + mz * c.ux) > c.half) continue;
+        const ring = [];
+        for (let i = 0; i < bl.poly.length; i++) {
+          const p = bl.poly[i], q = bl.poly[(i + 1) % bl.poly.length];
+          const n = Math.max(1, Math.ceil(Math.hypot(q.x - p.x, q.z - p.z) / 1.5));
+          for (let k = 0; k < n; k++) ring.push({ x: p.x + ((q.x - p.x) * k) / n, z: p.z + ((q.z - p.z) * k) / n });
+        }
+        for (const p of ring) p.y = cutAt(p.x, p.z);
+        const tris = THREE.ShapeUtils.triangulateShape(ring.map((p) => new THREE.Vector2(p.x, p.z)), []);
+        for (const [i0, i1, i2] of tris) {
+          const v = [ring[i0], ring[i1], ring[i2]].map((p) => [p.x, p.y + SW_TOP, p.z]);
+          quad(walk, v[0], v[1], v[2], v[0], [0, 1, 0]);
+        }
+        for (let i = 0; i < ring.length; i++) {
+          const p = ring[i], q = ring[(i + 1) % ring.length];
+          const L = Math.hypot(q.x - p.x, q.z - p.z) || 1;
+          // (facing out of the island: its outline's winding decides)
+          const area = ring.reduce((t, r, j) => t + r.x * ring[(j + 1) % ring.length].z - ring[(j + 1) % ring.length].x * r.z, 0);
+          const o = area > 0 ? 1 : -1;
+          quad(curb, [p.x, p.y, p.z], [q.x, q.y, q.z], [q.x, q.y + SW_TOP, q.z], [p.x, p.y + SW_TOP, p.z], [((q.z - p.z) / L) * o, 0, (-(q.x - p.x) / L) * o]);
+        }
+      }
+    }
+    const mats = [[road, createRoadSurfaceMaterial(), 'RoadCutRoadway'], [walk, createSidewalkMaterial(), 'RoadCutSidewalks'], [curb, createCurbMaterial(), 'RoadCutKerbs'], [wall, window.CITY.createConcreteMaterial ? window.CITY.createConcreteMaterial() : new THREE.MeshStandardNodeMaterial({ color: 0xa8a297, roughness: 0.88 }), 'RoadCutWalls']];
+    for (const [A, mat, name] of mats) {
+      const g = accGeometry(A);
+      if (!g) continue;
+      g.computeVertexNormals();
+      const m = new THREE.Mesh(g, mat);
+      m.receiveShadow = true;
+      m.castShadow = name === 'RoadCutWalls';
+      m.name = name;
+      group.add(m);
+    }
+    if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] ${ROAD_CUTS.length} road cuts (${ROAD_CUTS.map((c) => `${c.name} ${Math.round(-Math.min(...c.pts.map((p) => p.h)) * 10) / 10} m down`).join(', ')}), ${nWalls} wall colliders`);
+  }
+
   // Every road, the expressways and the flyovers included, carries the street traffic (road-network.js): no separate
   // highway lanes
   const highwayLanes = [];
@@ -857,5 +980,5 @@ function buildCityGrid(scene) {
   return { group, sidewalks: roadSidewalks, footprints, highwayLanes, colliders };
 }
 
-Object.assign(window.CITY, { buildCityGrid, batchStaticGroupMeshes, offsetPolygonInward, createExtrudedPolygonMesh, createFlatPolygonMesh, createWorldXZShape });
+Object.assign(window.CITY, { buildCityGrid, maskRoadCuts, batchStaticGroupMeshes, offsetPolygonInward, createExtrudedPolygonMesh, createFlatPolygonMesh, createWorldXZShape });
 })();

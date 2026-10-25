@@ -1,38 +1,76 @@
 [
  {
-  "name": "st1-strachan-under-north",
+  "name": "st1-strachan-north-dip",
   "mode": "person",
   "time": "midday",
   "wait": 8000,
-  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2503, -235, 0); app.cameraSystem.cinema = () => ({ pos: [-2533, 1.6, -235], look: [-2531, 3.5, -170], fov: 60 }); })()"
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.teleportTo(-2503, -245, 0); app.cameraSystem.cinema = () => ({ pos: [-2533, 1.6, -245], look: [-2531, 0.5, -150], fov: 60 }); })()"
  },
  {
-  "name": "st2-strachan-under-south",
+  "name": "st2-strachan-deep-dip",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.teleportTo(-2501, -50, 0); app.cameraSystem.cinema = () => ({ pos: [-2531, 1.6, -50], look: [-2529, -3.5, 60], fov: 60 }); })()"
+ },
+ {
+  "name": "st4-strachan-sidewalk",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.teleportTo(-2491.5, 20, 0); app.cameraSystem.cinema = () => ({ pos: [-2521.5, C.cutAt(-2521.5, 20) + 1.8, 20], look: [-2527, C.cutAt(-2527, 80) + 1.5, 80], fov: 60 }); })()"
+ },
+ {
+  "name": "st5-strachan-from-south",
   "mode": "person",
   "time": "golden",
   "wait": 8000,
-  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2501, 0, 0); app.cameraSystem.cinema = () => ({ pos: [-2531, 1.6, 0], look: [-2529, 3.5, 60], fov: 60 }); })()"
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.teleportTo(-2501, 170, 0); app.cameraSystem.cinema = () => ({ pos: [-2531, 1.6, 170], look: [-2529, -4, 60], fov: 60 }); })()"
+ },
+ {
+  "name": "st6-strachan-in-cut",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.teleportTo(-2497, 5, 0); app.cameraSystem.cinema = () => ({ pos: [-2527, C.cutAt(-2527, 5) + 1.6, 5], look: [-2529, C.cutAt(-2529, 90) + 1.5, 90], fov: 60 }); })()"
  },
  {
   "name": "st3-strachan-above",
   "mode": "person",
   "time": "midday",
   "wait": 8000,
-  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2500, -60, 0); app.cameraSystem.cinema = () => ({ pos: [-2700, 110, 260], look: [-2531, 0, -40], fov: 55 }); })()"
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2500, -60, 0); app.cameraSystem.cinema = () => ({ pos: [-2590, 38, 110], look: [-2529, -5, 40], fov: 55 }); })()"
  },
  {
-  "name": "gs7-bathurst-bridge",
-  "mode": "person",
-  "time": "midday",
-  "wait": 7000,
-  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.teleportTo(-1720, 40, 0); const y0 = C.deckHeightAt(-1750, 40, 20, 20); app.cameraSystem.cinema = () => ({ pos: [-1750, y0 + 3.2, 40], look: [-1500, y0 + -4, 60], fov: 55 }); })()"
- },
- {
-  "name": "ride5-strachan-under",
+  "name": "ride5-cyclist-strachan",
   "mode": "cyclist",
+  "time": "midday",
+  "wait": 40000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = -2532, Z = -290;  app.cameraSystem.cinema = null; app.selectMode('cyclist'); app.teleportTo(X, Z, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride5-cyclist-strachan t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' cut ' + C.cutAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' near ' + [...app.trafficSystem.cars, ...app.trafficSystem.buses].filter((v) => v.active !== false && Math.hypot(v.x - e.position.x, v.z - e.position.z) < 12).map((v) => (v.z - e.position.z).toFixed(0) + '/' + (v.speed || 0).toFixed(1) + '/y' + (v.y || 0).toFixed(1)).join(',')); } if (t > 39.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "ride6-car-strachan",
+  "mode": "car",
+  "time": "midday",
+  "wait": 25000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = -2531.5, Z = -30;  app.cameraSystem.cinema = null; app.selectMode('car'); app.teleportTo(X, Z, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride6-car-strachan t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' cut ' + C.cutAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' near ' + [...app.trafficSystem.cars, ...app.trafficSystem.buses].filter((v) => v.active !== false && Math.hypot(v.x - e.position.x, v.z - e.position.z) < 12).map((v) => (v.z - e.position.z).toFixed(0) + '/' + (v.speed || 0).toFixed(1) + '/y' + (v.y || 0).toFixed(1)).join(',')); } if (t > 24.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "ride7-walk-strachan",
+  "mode": "person",
   "time": "midday",
   "wait": 30000,
   "hold": "KeyW",
-  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = -2532, Z = -280;  app.selectMode('cyclist'); app.teleportTo(X, Z, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride5-strachan-under t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' track ' + C.railLiftAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3)); } if (t > 29.5) clearInterval(id); }, 50); })()"
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = -2521, Z = -60;  app.cameraSystem.cinema = null; app.selectMode('person'); app.teleportTo(X, Z, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride7-walk-strachan t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' cut ' + C.cutAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' near ' + [...app.trafficSystem.cars, ...app.trafficSystem.buses].filter((v) => v.active !== false && Math.hypot(v.x - e.position.x, v.z - e.position.z) < 12).map((v) => (v.z - e.position.z).toFixed(0) + '/' + (v.speed || 0).toFixed(1) + '/y' + (v.y || 0).toFixed(1)).join(',')); } if (t > 29.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "ride8-cyclist-deep-cut",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 25000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = -2531.5, Z = -30;  app.cameraSystem.cinema = null; app.selectMode('cyclist'); app.teleportTo(X, Z, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride8-cyclist-deep-cut t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' cut ' + C.cutAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3) + ' near ' + [...app.trafficSystem.cars, ...app.trafficSystem.buses].filter((v) => v.active !== false && Math.hypot(v.x - e.position.x, v.z - e.position.z) < 12).map((v) => (v.z - e.position.z).toFixed(0) + '/' + (v.speed || 0).toFixed(1) + '/y' + (v.y || 0).toFixed(1)).join(',')); } if (t > 24.5) clearInterval(id); }, 50); })()"
  }
 ]

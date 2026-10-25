@@ -20,7 +20,7 @@
 // - Cost: track tiles (ballast, rails, concrete) hidden beyond ~1.4 km, trains drawn within ~1.8 km, train count by
 //   quality tier (`trains`).
 
-const { THREE, GEO, QUALITY, blockAt, railLiftAt, railSpanAt, RAIL_LIFTS, waterAt, CITY_BOUNDS } = window.CITY;
+const { THREE, GEO, QUALITY, blockAt, railLiftAt, railSpanAt, RAIL_LIFTS, waterAt, cutAt, CITY_BOUNDS } = window.CITY;
 const { Fn, color, mix, step, smoothstep, abs, fract, floor, uv, positionWorld, positionGeometry, normalGeometry, float, vec2, sin, dot } = window.CITY.TSL;
 const { cityUniforms, createParkLawnMaterial } = window.CITY;
 const { mrt, vec4 } = window.CITY.TSL;
@@ -230,6 +230,7 @@ function buildTrackwork(group) {
     let wasSpan = null; // the previous piece: on a bridge span (true), on the embankment (false), at grade (null)
     let col = null; // the collider being grown along the embankment
     const sloped = { 1: false, '-1': false }; // the previous piece's sides: grassed (true) or walled
+    let edge = null; // the previous raised piece's half widths & height (for a deck's end)
     for (let i = 0; i + 1 < P.length; i++) {
       const a = P[i], b = P[i + 1];
       const L = Math.hypot(b.x - a.x, b.z - a.z);
@@ -245,11 +246,18 @@ function buildTrackwork(group) {
         const block = blockAt(mx, mz) ? CITY_BOUNDS.sidewalkHeight : 0;
         const ya = Math.max(railLiftAt(ax, az), block), yb = Math.max(railLiftAt(bx, bz), block);
         const T = tileOf(mx, mz);
-        const raised = Math.max(ya, yb) > 0.4;
+        // (a bridge at grade over a road cut, city-config.js cutAt, counts as raised: a deck on its own)
+        const overCut = cutAt(mx, mz) < -0.5;
+        const raised = Math.max(ya, yb) > 0.4 || overCut;
         const street = !raised && onRoad(mx, mz, 1.0);
         if (!street) strip(T.bed, T.bedUv, ax, ya + 0.02, az, bx, yb + 0.02, bz, BED_HALF, s, s + seg);
         const y = street ? 0.012 : 0.04;
         for (const o of [-RAIL_GAUGE / 2, RAIL_GAUGE / 2]) rail(T.rail, ax + nx * o, ya + y, az + nz * o, bx + nx * o, yb + y, bz + nz * o, street ? 0 : 0.14);
+        // the end of a deck that comes down to the ground (a bridge at grade over a road cut)
+        if (!raised && wasSpan === true && edge) {
+          const E = (o, yy) => [ax + nx * o, yy, az + nz * o];
+          quad(T.wall, E(-edge.hr, edge.y - DECK_DEPTH), E(edge.hl, edge.y - DECK_DEPTH), E(edge.hl, edge.y), E(-edge.hr, edge.y), tx, 0, tz);
+        }
         if (!raised) {
           wasSpan = null;
           col = null;
@@ -262,7 +270,7 @@ function buildTrackwork(group) {
         const hl = rl || EMB_HALF, hr = rr || EMB_HALF;
         // a span over the street (and where a skewed crossing's embankment would stand in its sidewalk, with the
         // headroom to bridge it: the skewed bridge runs longer), or over water
-        const span = !!(railSpanAt(mx, mz) || waterAt(mx, mz)) || (Math.min(ya, yb) > 5.2 &&
+        const span = overCut || !!(railSpanAt(mx, mz) || waterAt(mx, mz)) || (Math.min(ya, yb) > 5.2 &&
           (onRoad(mx + nx * hl, mz + nz * hl, 4.8) || onRoad(mx - nx * hr, mz - nz * hr, 4.8)));
         const A = (o, yy) => [ax + nx * o, yy, az + nz * o];
         const B = (o, yy) => [bx + nx * o, yy, bz + nz * o];
@@ -304,7 +312,9 @@ function buildTrackwork(group) {
           const f = span ? 1 : -1;
           quad(T.wall, A(-hr, 0), A(hl, 0), A(hl, ya), A(-hr, ya), tx * f, 0, tz * f);
         }
+        if (wasSpan === null && span) quad(T.wall, A(-hr, ya - DECK_DEPTH), A(hl, ya - DECK_DEPTH), A(hl, ya), A(-hr, ya), -tx, 0, -tz);
         wasSpan = span;
+        edge = { hl, hr, y: yb };
         // the player's collider: the embankment's body, in pieces of up to 12 m (none under a span or where it's low
         // enough to step onto)
         if (span || Math.min(ya, yb) < 0.6) col = null;
@@ -336,7 +346,7 @@ function buildTrackwork(group) {
     const L = Math.hypot(l.x1 - l.x0, l.z1 - l.z0) || 1;
     const ux = (l.x1 - l.x0) / L, uz = (l.z1 - l.z0) / L;
     const ex = 3, half = l.hw + 5;
-    const y = Math.max(0, l.H - 6.2) + CITY_BOUNDS.sidewalkHeight + 0.04;
+    const y = l.road + CITY_BOUNDS.sidewalkHeight + 0.04; // (the street's height under it: below 0 in a road cut)
     const ax = l.x0 - ux * ex, az = l.z0 - uz * ex, bx = l.x1 + ux * ex, bz = l.z1 + uz * ex;
     quad(shade, [ax - uz * half, y, az + ux * half], [bx - uz * half, y, bz + ux * half], [bx + uz * half, y, bz - ux * half], [ax + uz * half, y, az - ux * half], 0, 1, 0);
   }
@@ -708,5 +718,5 @@ function createRailCorridor(scene, trafficSystem) {
   return { group, update, trains, routes, colliders };
 }
 
-Object.assign(window.CITY, { createRailCorridor });
+Object.assign(window.CITY, { createRailCorridor, createConcreteMaterial });
 })();

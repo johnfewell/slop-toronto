@@ -379,7 +379,7 @@ for (const d of DECKS) {
 // the street, its sidewalks & abutments, then down at 2%; a fill joins two lifts (level inside its hull, down at 2%
 // outside). railSpanAt says whether (x, z) is over the street itself (an open bridge span, not embankment).
 const RAIL_GRADE = 0.02, LIFT_PLATEAU = 11, SPAN_SIDEWALK = 5; // (as tools/geo-rails.mjs; the sidewalk runs 4.6 m in from the curb)
-const RAIL_LIFTS = (GEO.railLifts || []).map(([H, hw, x0, z0, x1, z1]) => ({ H, hw, x0, z0, x1, z1 }));
+const RAIL_LIFTS = (GEO.railLifts || []).map(([H, hw, x0, z0, x1, z1, road = 0]) => ({ H, hw, x0, z0, x1, z1, road }));
 const RAIL_FILLS = (GEO.railFills || []).map(([H, ...c]) => ({ H, pts: [[c[0], c[1]], [c[2], c[3]], [c[4], c[5]], [c[6], c[7]]] }));
 const LIFT_CELL = 50;
 const LIFT_GRID = new Map();
@@ -425,8 +425,34 @@ function railSpanAt(x, z) {
   }
   return null;
 }
+// Road cuts (GEO.roadCuts, tools/geo-roads.mjs): streets dipping under the railway in a cutting, Strachan Ave. Each is
+// its axis at the breaks of slope (heights below street level) and the half width of its carriageways & sidewalks; the
+// retaining walls stand at that half width. cutAt(x, z) is the floor's height there (the road's: the sidewalks are
+// SIDEWALK_HEIGHT up from it), 0 outside the cuts. city-grid.js builds them and masks the street level over them.
+const ROAD_CUTS = (GEO.roadCuts || []).map(([name, half, flat]) => {
+  const pts = [];
+  for (let i = 0; i < flat.length; i += 3) pts.push({ x: flat[i], z: flat[i + 1], h: flat[i + 2] });
+  const a = pts[0], b = pts[pts.length - 1];
+  const len = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+  const ux = (b.x - a.x) / len, uz = (b.z - a.z) / len;
+  return { name, half, pts, x0: a.x, z0: a.z, ux, uz, len, s: pts.map((p) => (p.x - a.x) * ux + (p.z - a.z) * uz) };
+});
+/** The floor of a road cut at (x, z) (negative), or 0 outside the cuts */
+function cutAt(x, z) {
+  for (const c of ROAD_CUTS) {
+    const dx = x - c.x0, dz = z - c.z0;
+    const t = dx * c.ux + dz * c.uz;
+    if (t <= 0 || t >= c.len || Math.abs(-dx * c.uz + dz * c.ux) > c.half) continue;
+    for (let k = 0; k + 1 < c.pts.length; k++) {
+      if (t > c.s[k + 1]) continue;
+      return c.pts[k].h + ((c.pts[k + 1].h - c.pts[k].h) * (t - c.s[k])) / (c.s[k + 1] - c.s[k] || 1);
+    }
+  }
+  return 0;
+}
+
 // ...and the raised tracks are decks too (sampled across the track bed, every 2 m): the player can climb the
-// embankment where it starts and walk along it
+// embankment where it starts and walk along it (and a bridge over a road cut, at grade, keeps the player up on it)
 for (const [kind, , , flags, flat] of GEO.rails || []) {
   if (kind !== 1 || flags & 2) continue;
   const deck = { rail: true };
@@ -437,8 +463,9 @@ for (const [kind, , , flags, flat] of GEO.rails || []) {
     const ux = (bx - ax) / (L || 1), uz = (bz - az) / (L || 1);
     for (let k = 0; k <= n; k++) {
       const cx = ax + ((bx - ax) * k) / n, cz = az + ((bz - az) * k) / n;
-      const h = railLiftAt(cx, cz);
-      if (h < 0.3) continue;
+      let h = railLiftAt(cx, cz);
+      if (h < 0.3 && cutAt(cx, cz) < -0.5) h = Math.max(h, 0.25);
+      else if (h < 0.3) continue;
       for (const o of [-2, 0, 2]) {
         const x = cx - uz * o, z = cz + ux * o;
         const key = Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL);
@@ -468,6 +495,7 @@ for (const [kind, , , flags, flat] of GEO.rails || []) {
 }
 /** Whether a tree may stand at (x, z): clear of the rail corridor */
 function treeOffRail(x, z) {
+  if (cutAt(x, z) < 0) return false; // (nor down in a road cut)
   const r = 7 + 1.6 * railLiftAt(x, z), c = Math.ceil(r / 8);
   for (let a = -c; a <= c; a++) for (let b = -c; b <= c; b++) {
     const L = RAIL_PTS.get((Math.floor(x / 8) + a) * 100000 + Math.floor(z / 8) + b);
@@ -737,6 +765,8 @@ Object.assign(window.CITY, {
   railSpanAt,
   RAIL_LIFTS,
   treeOffRail,
+  ROAD_CUTS,
+  cutAt,
   getLocationLabel,
   worldFromLatLon,
   latLonFromWorld,

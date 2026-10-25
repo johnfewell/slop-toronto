@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { geo, toWorld, toLonLat, log, load } from './geo-base.mjs';
-import { DETAIL, buildRoadGraph, deckOut, roadLines } from './geo-roads.mjs';
+import { DETAIL, buildRoadGraph, deckOut, roadLines, roadCutOut } from './geo-roads.mjs';
 import { areas, streams, walls, isWater, waterRings, islandRings, lake } from './geo-land.mjs';
 import { Raster } from './geo-base.mjs';
 import { blocks, SIDEWALK, blockRaster, blockLabels } from './geo-blocks.mjs';
@@ -160,6 +160,9 @@ const GEO = {
   fct,
   // Flyover decks & their ramps: [name, width, rank, [x, z, height, ...]]
   decks: deckOut,
+  // Road cuts, streets dipping under the railway (tools/geo-roads.mjs): [name, half width (carriageways & sidewalks),
+  // [x, z, height, ...] the street's axis at each break of slope (heights below street level)]
+  roadCuts: roadCutOut,
   // Curb islands: [outline, lot rects [x0, x1, z0, z1], park share, park name, rectangular, median, wild share]
   blocks: blocks.map((b) => [flat(b.poly), b.rects.map((r) => r.map(q)), b.park || 0, b.parkName || '', b.rect ? 1 : 0, b.median ? 1 : 0, b.wild || 0]),
   // Land cover: [kind, name, outline, holes (Lake Ontario's islands) [outline, ...]]
@@ -183,7 +186,8 @@ const GEO = {
   // (1 bridge, 2 tunnel), [x, z, ...]] and the streetcar stops [x, z, name, ...]
   rails,
   tramStops,
-  // Grade separation (tools/geo-rails.mjs): the streets the tracks bridge [deck height, half width, x0, z0, x1, z1] and
+  // Grade separation (tools/geo-rails.mjs): the streets the tracks bridge [deck height, half width, x0, z0, x1, z1, the
+  // street's height under it] and
   // the embankments between them [deck height, four corners x, z]
   railLifts,
   railFills,

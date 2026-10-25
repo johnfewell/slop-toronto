@@ -865,9 +865,13 @@ class ThirdPersonControllerManager {
   // deck or ramp where whoever is at height y can step or drive onto it (y unknown: at street level)
   getGroundHeight(x, z, mode = 'person', y = null) {
     let ground = mode === 'person' && this.isPointOnSidewalk(x, z) ? CITY_BOUNDS.sidewalkHeight : 0.0;
-    ground = Math.max(ground, terrainHeightAt(x, z));
+    // down in a road cut (city-config.js cutAt: Strachan Ave under the railway), else up on the hills
+    const cut = window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0;
+    if (cut < 0) ground += cut;
+    else ground = Math.max(ground, terrainHeightAt(x, z));
+    // (a deck only counts where one is in reach: deckHeightAt's 0 is "none", not the street level)
     const deck = deckHeightAt(x, z, y === null ? ground : y, mode === 'car' ? 0.9 : 0.6);
-    return Math.max(ground, deck);
+    return deck > 0 ? Math.max(ground, deck) : ground;
   }
 
   // The colliders whose bounds come within `r` of (x, z), in their original order. They never move, so they are

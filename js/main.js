@@ -100,6 +100,8 @@ async function initApp() {
   const lakeWater = window.CITY.setupLakeWater(scene, renderer, lightingSystem);
   markInit('cityGrid');
   const boroughs = buildTerrain(scene);
+  // (the near terrain sinks 3 m under the street level: not over a road cut, which goes deeper; city-grid.js)
+  scene.getObjectByName('Terrain')?.traverse((o) => { if (o.isMesh && !Array.isArray(o.material)) window.CITY.maskRoadCuts(o.material); });
   // Toronto layer: the rest of the city beyond the detailed one, on the terrain (surroundings.js)
   window.CITY.buildSurroundings(scene, boroughs.group, QUALITY);
   markInit('terrain');

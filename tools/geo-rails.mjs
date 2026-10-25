@@ -20,7 +20,8 @@
 //     street, its sidewalks & the abutments either side, then down at 2% (a heavy-rail grade). Lifts less than FILL
 //     apart along the corridor are joined by a fill (their hull, level at the lower deck): the embankment carries on
 //     between them instead of dipping;
-//     (and the named underpasses, tools/geo-roads.mjs RAIL_UNDERPASSES: Strachan Ave, mapped as bridges);
+//     (and the road cuts, tools/geo-roads.mjs ROAD_CUTS: Strachan Ave dipping under the tracks, which stay at grade
+//     on a bridge, or rise what the cut can't go down: RAIL_CLEAR above the street's floor);
 //   - a shared node, or neither way bridged / tunnelled / layered: a level crossing (in the city, two yard roads
 //     north of Fort York & a boat-launch spur): rails flush in the road.
 //   railLifts: [deck height, half width (the road & the tracks' spread across it), x0, z0, x1, z1 (the street's centre
@@ -161,7 +162,7 @@ const lifts = [];
       }
       const dl = Math.hypot(dx, dz) || 1;
       dx /= dl; dz /= dl;
-      let a0 = Infinity, a1 = -Infinity, lat = 0, h = 0, hw = 0;
+      let a0 = Infinity, a1 = -Infinity, lat = 0, h = -Infinity, hw = 0;
       for (const c of g) {
         const a = (c.x - cx) * dx + (c.z - cz) * dz;
         a0 = Math.min(a0, a); a1 = Math.max(a1, a);
@@ -169,7 +170,7 @@ const lifts = [];
         h = Math.max(h, c.h);
         hw = Math.max(hw, c.w.w / 2);
       }
-      lifts.push({ name, H: h + RAIL_CLEAR, hw: lat + hw, x0: cx + dx * (a0 - 2), z0: cz + dz * (a0 - 2), x1: cx + dx * (a1 + 2), z1: cz + dz * (a1 + 2), cx, cz, n: g.length });
+      lifts.push({ name, H: Math.max(0, h + RAIL_CLEAR), road: h, /* (a road cut's floor: below 0) */ hw: lat + hw, x0: cx + dx * (a0 - 2), z0: cz + dz * (a0 - 2), x1: cx + dx * (a1 + 2), z1: cz + dz * (a1 + 2), cx, cz, n: g.length });
     }
   }
 }
@@ -251,7 +252,7 @@ log(`rail grade separation: ${lifts.length} streets under the tracks (${under.le
 log(`  under: ${lifts.map((l) => `${l.name} ${Math.round(l.H * 10) / 10} m`).join(', ')}`);
 log(`  over: ${[...new Set(over.map((o) => o.name))].join(', ')}`);
 if (clash.length) log(`  WARNING: tracks lifted under ${clash.length} road bridges: ${clash.map((o) => `${o.name} (${Math.round(liftAt(o.x, o.z) * 10) / 10} m)`).join(', ')}`);
-export const railLifts = lifts.map((l) => [q(l.H), q(l.hw), q(l.x0), q(l.z0), q(l.x1), q(l.z1)]);
+export const railLifts = lifts.map((l) => [q(l.H), q(l.hw), q(l.x0), q(l.z0), q(l.x1), q(l.z1), q(l.road)]); // (+ the street's height under the bridge)
 export const railFills = fills.map((f) => [q(f.H), ...f.pts.flat().map(q)]);
 
 export const tramStops = [];

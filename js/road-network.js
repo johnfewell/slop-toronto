@@ -329,7 +329,8 @@ function buildRoadNetwork(sidewalks, obstacles) {
         const s = sum.get(r) || { x: 0, z: 0, n: 0, h: 0, rim: false };
         s.x += pos[i].x;
         s.z += pos[i].z;
-        s.h = Math.max(s.h, pos[i].h);
+        // (the height farthest from the street level: up on a deck, or down in a road cut)
+        if (Math.abs(pos[i].h) > Math.abs(s.h)) s.h = pos[i].h;
         s.rim = s.rim || !!pos[i].rim;
         s.n++;
         sum.set(r, s);
@@ -384,7 +385,7 @@ function buildRoadNetwork(sidewalks, obstacles) {
         node = { x, z, hx: 0, hz: 0, signal: false, in: [], out: [], general: true };
         nodes.push(node);
       }
-      node.h = Math.max(node.h || 0, s.h);
+      if (Math.abs(s.h) > Math.abs(node.h || 0)) node.h = s.h;
       if (s.rim) node.rim = true; // a road's end at the edge of the city: traffic turns round there
       junctions.set(r, node);
       return node;
@@ -1216,7 +1217,7 @@ function largestComponent(list, next) {
   return new Set(list.filter((_, i) => comp[i] === best));
 }
 
-// Road height at distance s past edge e's start stop line (the decks & ramps; 0 on the ground)
+// Road height at distance s past edge e's start stop line (the decks & ramps; 0 on the ground; below 0 in a road cut)
 function edgeY(e, s) {
   if (!e.h0 && !e.h1) return 0;
   return e.h0 + (e.h1 - e.h0) * Math.min(1, Math.max(0, ((e.b0 || 0) + s) / e.span));

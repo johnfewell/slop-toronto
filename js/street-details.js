@@ -426,6 +426,8 @@ function buildStreetDetails(scene) {
     armMatrices.push(dummy.matrix.clone());
   };
   let medianPoles = 0, roadPoles = 0;
+  // (down a road cut's sidewalks too: city-config.js cutAt, Strachan Ave under the railway)
+  const cutAt = window.CITY.cutAt || (() => 0);
   for (const b of BLOCKS) {
     if (b.median) {
       // the median's mean width (2 area / perimeter): a pole down its middle every ~36 m, an arm over each roadway
@@ -442,14 +444,14 @@ function buildStreetDetails(scene) {
         addPole(px, pz);
         addFootprint(px, pz, 0.45, 0.45);
         dummy.rotation.set(0, 0, 0);
-        dummy.position.set(px, SW_Y + 5.5, pz);
+        dummy.position.set(px, SW_Y + cutAt(px, pz) + 5.5, pz);
         dummy.scale.set(0.12, 11, 0.12);
         dummy.updateMatrix();
         poleMatrices.push(dummy.matrix.clone());
         for (const sgn of [1, -1]) {
           const reach = width * 0.5 + 1.6;
-          placeArm(px, pz, inx * sgn, inz * sgn, reach, SW_Y + 10.8);
-          placeLuminaire(px, pz, px + inx * sgn * reach, pz + inz * sgn * reach, SW_Y + 10.75, Math.atan2(ux, uz));
+          placeArm(px, pz, inx * sgn, inz * sgn, reach, SW_Y + cutAt(px, pz) + 10.8);
+          placeLuminaire(px, pz, px + inx * sgn * reach, pz + inz * sgn * reach, SW_Y + cutAt(px, pz) + 10.75, Math.atan2(ux, uz));
         }
         medianPoles++;
       });
@@ -469,16 +471,16 @@ function buildStreetDetails(scene) {
       addPole(px, pz);
       addFootprint(px, pz, 0.4, 0.4);
       dummy.rotation.set(0, 0, 0);
-      dummy.position.set(px, SW_Y + 4.5, pz);
+      dummy.position.set(px, SW_Y + cutAt(px, pz) + 4.5, pz);
       dummy.scale.set(0.1, 9, 0.1);
       dummy.updateMatrix();
       poleMatrices.push(dummy.matrix.clone());
       const reach = Math.min(2.6, r.w * 0.3 + 1);
-      placeArm(px, pz, -inx, -inz, reach, SW_Y + 8.9);
-      placeLuminaire(px, pz, px - inx * reach, pz - inz * reach, SW_Y + 8.85, Math.atan2(ux, uz));
+      placeArm(px, pz, -inx, -inz, reach, SW_Y + cutAt(px, pz) + 8.9);
+      placeLuminaire(px, pz, px - inx * reach, pz - inz * reach, SW_Y + cutAt(px, pz) + 8.85, Math.atan2(ux, uz));
       if (hashPos(px, 4.4, pz) < 0.5) {
         // a solar panel tilted on top
-        dummy.position.set(px, SW_Y + 9.35, pz);
+        dummy.position.set(px, SW_Y + cutAt(px, pz) + 9.35, pz);
         dummy.rotation.set(0.35, Math.atan2(inx, inz), 0);
         dummy.scale.set(1.2, 0.05, 0.9);
         dummy.updateMatrix();

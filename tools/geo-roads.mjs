@@ -127,19 +127,26 @@ function crossesRoad(w) {
   }
   return false;
 }
-// Named underpasses: streets OSM maps bridging the railway that the city builds the other way round, the street under
-// the tracks (John, 2026-10-25: Strachan Avenue's underpass at both its crossings, the Kitchener line & the Lakeshore
-// West). Their bridge ways stay on the ground; tools/geo-rails.mjs lifts the tracks over them.
-const RAIL_UNDERPASSES = [{ name: 'Strachan Avenue', x0: -2600, x1: -2460, z0: -260, z1: 140 }];
+// Road cuts (underpasses): streets the city takes down under the railway in a cutting (John, 2026-10-25: Strachan
+// Avenue at both its crossings, the Kitchener line & the Lakeshore West; OSM maps it on bridges over them). The named
+// ways inside the box stay on the ground (their mapped bridges too) and the street dips: see the profile below, after
+// the ramps. `depth`: the floor under the tracks, at its full depth the tracks stay at grade (RAIL_CLEAR in
+// tools/geo-rails.mjs); ramps no steeper than `maxGrade`, no gentler than `minGrade`, ending `clear` metres short of the
+// cross streets' junctions, which stay at their own grade. Where that leaves too little room the cut is shallower and
+// tools/geo-rails.mjs lifts the tracks the rest of the way.
+const SIDEWALK_W = 4.6; // (tools/geo-blocks.mjs SIDEWALK: the curb to the property line)
+const ROAD_CUTS = [{ name: 'Strachan Avenue', x0: -2600, x1: -2460, z0: -330, z1: 240, depth: 6.2, maxGrade: 0.1, minGrade: 0.05, clear: 16 }];
 for (const w of ways) {
-  if (!w.bridge) continue;
-  const u = RAIL_UNDERPASSES.find((o) => o.name === w.name && w.pts.every(([x, z]) => x > o.x0 && x < o.x1 && z > o.z0 && z < o.z1));
+  const u = ROAD_CUTS.find((o) => o.name === w.name && w.pts.some(([x, z]) => x > o.x0 && x < o.x1 && z > o.z0 && z < o.z1));
   if (!u) continue;
-  w.bridge = false;
-  w.layer = 0;
-  w.railUnder = true;
+  w.cut = u;
+  w.railUnder = true; // (tools/geo-rails.mjs: the railway passes over it)
+  if (w.bridge) {
+    w.bridge = false;
+    w.layer = 0;
+  }
 }
-log(`named underpasses: ${ways.filter((w) => w.railUnder).length} bridge ways of ${RAIL_UNDERPASSES.map((o) => o.name).join(', ')} kept on the ground under the tracks`);
+log(`road cuts: ${ways.filter((w) => w.cut).length} ways of ${ROAD_CUTS.map((o) => o.name).join(', ')} go under the tracks`);
 
 // The heavy-rail tracks (railway=rail, not in a tunnel; osm_rails.json from tools/fetch-osm.mjs ONLY=rails). Their
 // node ids come from another run of the fetch than the roads', so a level crossing (a node shared with a road) is
@@ -362,6 +369,102 @@ for (let pass = 0; pass < 8; pass++) {
   if (!changed) break;
 }
 
+// The road cuts' profiles. Along each named street's axis (its points' principal direction, s metres along it): the
+// railway's crossings, grouped (a corridor's parallel tracks); each group's floor runs under its tracks, 3.5 m past the
+// outer ones either way, with a ramp up to street level at either end clear of the nearest cross street's junction.
+// The ways get a vertex at every break of slope (where tools/geo-roads.mjs's street graph puts a node, so the traffic
+// follows the profile) and their heights (negative: below street level).
+export const roadCutOut = []; // [name, half width (carriageways & sidewalks), [x, z, h, ...] the axis at the breaks]
+for (const C of ROAD_CUTS) {
+  const W = ways.filter((w) => w.cut === C);
+  if (!W.length) continue;
+  const P = W.flatMap((w) => w.pts.filter(([x, z]) => x > C.x0 && x < C.x1 && z > C.z0 && z < C.z1));
+  const cx = P.reduce((t, p) => t + p[0], 0) / P.length, cz = P.reduce((t, p) => t + p[1], 0) / P.length;
+  let sxx = 0, sxz = 0, szz = 0;
+  for (const [x, z] of P) { sxx += (x - cx) ** 2; sxz += (x - cx) * (z - cz); szz += (z - cz) ** 2; }
+  const ang = 0.5 * Math.atan2(2 * sxz, sxx - szz);
+  const ux = Math.cos(ang), uz = Math.sin(ang);
+  const along = ([x, z]) => (x - cx) * ux + (z - cz) * uz;
+  const across = ([x, z]) => -(x - cx) * uz + (z - cz) * ux;
+  // the railway's crossings
+  const hits = [];
+  for (const w of W) {
+    for (let i = 0; i + 1 < w.pts.length; i++) {
+      const p0 = w.pts[i], p1 = w.pts[i + 1];
+      for (let ix = Math.floor(Math.min(p0[0], p1[0]) / SEG_CELL); ix <= Math.floor(Math.max(p0[0], p1[0]) / SEG_CELL); ix++) {
+        for (let iz = Math.floor(Math.min(p0[1], p1[1]) / SEG_CELL); iz <= Math.floor(Math.max(p0[1], p1[1]) / SEG_CELL); iz++) {
+          for (const [r, j] of railGrid.get(segKey(ix, iz)) || []) {
+            const t = crossT(p0, p1, r.pts[j], r.pts[j + 1]);
+            if (t >= 0) hits.push(along([p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t]));
+          }
+        }
+      }
+    }
+  }
+  hits.sort((a, b) => a - b);
+  const groups = [];
+  for (const h of hits) {
+    if (groups.length && h - groups[groups.length - 1][1] < 40) groups[groups.length - 1][1] = h;
+    else groups.push([h, h]);
+  }
+  // the cross streets' junctions: a node the street shares with a road of another name (or an unnamed one, not a lane)
+  const junctions = [];
+  for (const w of W) {
+    w.nodes.forEach((n, i) => {
+      if (n === null) return;
+      if ((byNode.get(n) || []).some((o) => o.w.cut !== C && o.w.cls !== 'service' && !o.w.under)) junctions.push(along(w.pts[i]));
+    });
+  }
+  for (const [a, b] of groups) {
+    const f0 = a - 3.5, f1 = b + 3.5;
+    const north = Math.max(-Infinity, ...junctions.filter((j) => j < f0)) + C.clear;
+    const south = Math.min(Infinity, ...junctions.filter((j) => j > f1)) - C.clear;
+    const D = Math.min(C.depth, C.maxGrade * (f0 - north), C.maxGrade * (south - f1));
+    if (!(D > 0.5)) {
+      log(`road cut ${C.name} at ${Math.round(a)}..${Math.round(b)}: no room for it between the junctions`);
+      continue;
+    }
+    const r0 = f0 - D / Math.max(C.minGrade, D / (f0 - north)), r1 = f1 + D / Math.max(C.minGrade, D / (south - f1));
+    const prof = [[r0, 0], [f0, -D], [f1, -D], [r1, 0]];
+    const hAt = (t) => {
+      if (t <= r0 || t >= r1) return 0;
+      for (let k = 0; k + 1 < prof.length; k++) {
+        const [s0, h0] = prof[k], [s1, h1] = prof[k + 1];
+        if (t <= s1) return h0 + ((h1 - h0) * (t - s0)) / (s1 - s0 || 1);
+      }
+      return 0;
+    };
+    let half = 0;
+    for (const w of W) {
+      // a vertex at every break of slope, then the heights
+      for (const [t] of prof) {
+        for (let i = 0; i + 1 < w.pts.length; i++) {
+          const ta = along(w.pts[i]), tb = along(w.pts[i + 1]);
+          if ((ta - t) * (tb - t) >= 0 || Math.abs(ta - t) < 0.5 || Math.abs(tb - t) < 0.5) continue;
+          const f = (t - ta) / (tb - ta);
+          const p = [w.pts[i][0] + (w.pts[i + 1][0] - w.pts[i][0]) * f, w.pts[i][1] + (w.pts[i + 1][1] - w.pts[i][1]) * f];
+          w.pts.splice(i + 1, 0, p);
+          w.nodes.splice(i + 1, 0, null);
+          w.h.splice(i + 1, 0, 0);
+          (w.cutBreaks || (w.cutBreaks = new Set())).add(p);
+          break;
+        }
+      }
+      w.pts.forEach((p, i) => {
+        const t = along(p);
+        if (t < r0 || t > r1) return;
+        // (a vertex within half a metre of a break is the break)
+        if (prof.some(([b]) => Math.abs(b - t) < 0.5)) (w.cutBreaks || (w.cutBreaks = new Set())).add(p);
+        w.h[i] = Math.min(w.h[i], hAt(t));
+        half = Math.max(half, Math.abs(across(p)) + w.w / 2);
+      });
+    }
+    const pt = (t, h) => [cx + ux * t, cz + uz * t, h];
+    roadCutOut.push([C.name, Math.round((half + SIDEWALK_W) * 10) / 10, prof.flatMap(([t, h]) => pt(t, h)).map((v) => Math.round(v * 100) / 100)]);
+    log(`road cut ${C.name}: ${Math.round(a)}..${Math.round(b)} m along it, ${D.toFixed(1)} m down (the tracks ${(C.depth - D).toFixed(1)} m up), ramps ${Math.round(f0 - r0)} m & ${Math.round(r1 - f1)} m, ${(half + SIDEWALK_W).toFixed(1)} m either side`);
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Runs: each way split into at-grade runs (on the ground) and raised runs (decks & ramps)
 // ---------------------------------------------------------------------------------------------------------------------
@@ -375,7 +478,8 @@ for (const w of ways) {
   for (let i = 0; i + 1 < w.pts.length; i++) {
     const raised = w.h[i] > 0.05 || w.h[i + 1] > 0.05;
     const kind = raised ? 'deck' : 'ground';
-    if (!cur || cur.kind !== kind) {
+    // (a road cut's break of slope ends a run: the street graph puts a node there)
+    if (!cur || cur.kind !== kind || (i > 0 && w.cutBreaks && w.cutBreaks.has(w.pts[i]))) {
       cur = { kind, way: w, pts: [w.pts[i]], nodes: [w.nodes[i]], h: [w.h[i]] };
       (raised ? decks : groundRuns).push(cur);
     }
@@ -438,9 +542,9 @@ export function buildRoadGraph(crossable = () => true) {
         // simplify in plan, keeping every point where the height changes (the ramps' profile)
         const seg = r.pts.slice(start, i + 1).map((p, k) => [p[0], p[1], r.h[start + k]]);
         const keep = new Set(rdp(seg.map(([x, z]) => [x, z]), 0.4).map(([x, z]) => `${x},${z}`));
-        const pts = seg.filter(([x, z, h], k) => k === 0 || k === seg.length - 1 || keep.has(`${x},${z}`) || (h > 0.05 && Math.abs(h - seg[k - 1][2]) > 0.3));
+        const pts = seg.filter(([x, z, h], k) => k === 0 || k === seg.length - 1 || keep.has(`${x},${z}`) || (Math.abs(h) > 0.05 && Math.abs(h - seg[k - 1][2]) > 0.3));
         const inner = pts.slice(1, -1);
-        const raised = pts.some(([, , h]) => h > 0.05);
+        const raised = pts.some(([, , h]) => Math.abs(h) > 0.05); // (a deck, or a road cut's dip)
         links.push([a, b, nameId(w.name), w.w, w.lanes, w.dir, inner.flatMap(([x, z]) => [q(x), q(z)]), w.rank, raised ? inner.map(([, , h]) => q(h)) : 0]);
       }
       start = i;
@@ -479,11 +583,11 @@ export function buildRoadGraph(crossable = () => true) {
     const joined = new Set();
     let healed = 0;
     for (const [n, d] of deg) {
-      if (d !== 1 || joined.has(n) || nodeH[n] > 0.05) continue;
+      if (d !== 1 || joined.has(n) || Math.abs(nodeH[n]) > 0.05) continue;
       const end = ends.get(n), l = links[end.i];
       let pick = null;
       for (const [m, dist] of near(n, 12)) {
-        if (nodeH[m] > 0.05 || joined.has(m)) continue;
+        if (Math.abs(nodeH[m]) > 0.05 || joined.has(m)) continue;
         if (deg.get(m) === 1) {
           const o = ends.get(m), ol = links[o.i];
           if (ol[2] !== l[2] || ol === l) continue; // the same road only
@@ -564,7 +668,7 @@ export function buildRoadGraph(crossable = () => true) {
   }
   // node heights: only the raised ones, as [node, height, ...]
   const raisedNodes = [];
-  nodeH.forEach((h, i) => { if (h > 0.05) raisedNodes.push(i, h); });
+  nodeH.forEach((h, i) => { if (Math.abs(h) > 0.05) raisedNodes.push(i, h); }); // (negative: down in a road cut)
   log(`road graph: ${nodes.length / 2} nodes (${raisedNodes.length / 2} raised), ${links.length} links, ${names.length} names`);
   return { nodes, links, names, raised: raisedNodes, rim: rimNodes };
 }

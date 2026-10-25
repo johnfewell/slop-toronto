@@ -1962,11 +1962,13 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // with 2 m of sidewalk (the rig steps down and up the curbs)
   const SIDEWALK_Y = 0.22;
   const CROSSWALK_Y = 0.012;
+  // (down a road cut's sidewalks too: city-config.js cutAt, Strachan Ave under the railway)
+  const cutAt = window.CITY.cutAt || (() => 0);
   function pedGround(p, x, z) {
     if (p.knock) return groundAt(x, z); // thrown off its track: the sidewalk or the road
-    if (!p.node) return SIDEWALK_Y;
+    if (!p.node) return SIDEWALK_Y + cutAt(x, z);
     const t = (x - p.ax) * p.ux + (z - p.az) * p.uz;
-    return t > 2 && t < p.len - 2 ? CROSSWALK_Y : SIDEWALK_Y;
+    return (t > 2 && t < p.len - 2 ? CROSSWALK_Y : SIDEWALK_Y) + cutAt(x, z);
   }
 
   // Every rig's gait advances every frame; only those the camera may see (or whose shadow it may see) solve their
@@ -1987,7 +1989,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // where they were going. Below ~10 km/h they only stumble out of the way. The vehicle loses the momentum it hands over.
   // ---------------------------------------------------------------------------------------------------------------
   const PED_MASS = 75;
-  const groundAt = (x, z) => (blockAt(x, z) ? SIDEWALK_Y : 0);
+  const groundAt = (x, z) => (blockAt(x, z) ? SIDEWALK_Y : 0) + cutAt(x, z);
   // The player's car as a solid for the ragdoll: its body's top along its length (bumper & bonnet, the windscreen's
   // slope, the roof, the tailgate), particles inside pushed out the shortest way
   function carBodyTop(along) {
