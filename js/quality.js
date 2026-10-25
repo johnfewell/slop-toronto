@@ -5,7 +5,8 @@
 // - ?quality=low|medium|high, else from capability probes: the WebGPU adapter explore.html requested before loading
 //   the scripts (a GPU without the desktop BC texture formats is a mobile one; its vendor & fallback flag), a coarse
 //   primary pointer without hover (a touch screen), the screen's short side, navigator.deviceMemory & the core count.
-//   Desktops are `high`: today's settings exactly.
+//   By default only a touch screen on a mobile GPU (a phone or tablet) is detected; everything else is `high`, today's
+//   settings exactly. ?quality=auto runs the detection on any device.
 // - attach() (main.js, once the city is on screen) starts the safety net: frame times are taken over 2 s windows from
 //   5 s after the start, and a tier still running well under 30 fps steps its draw distances (shadows, props) down a
 //   rung at a time, and back up when there is headroom; a rung that had to be left again soon after stepping up
@@ -60,9 +61,6 @@ const TIERS = {
 function chooseTier() {
   const forced = params.get('quality');
   if (TIERS[forced]) return { tier: forced, reason: '?quality' };
-  // Until the phone tiers are proven on a real phone (low froze John's Pixel 8, 2026-10-24), everyone gets high unless
-  // ?quality=auto asks for the detection below
-  if (forced !== 'auto') return { tier: 'high', reason: 'default (?quality=auto detects)' };
   const adapter = window.CITY.gpuAdapter; // explore.html
   const info = (adapter && adapter.info) || {};
   const gpu = `${info.vendor || ''} ${info.architecture || ''} ${info.description || ''}`.toLowerCase();
@@ -76,6 +74,10 @@ function chooseTier() {
   const software = !!info.isFallbackAdapter || /swiftshader|llvmpipe|software/.test(gpu);
   const why = [touch && 'touch screen', `${shortSide} px screen`, mobileGPU && 'mobile GPU', gpu.trim() || 'no adapter info',
     navigator.deviceMemory && `${memory} GB`, `${cores} cores`].filter(Boolean).join(', ');
+  // By default (John, 2026-10-25) only phones & tablets are detected: a touch screen on a mobile GPU gets its tier
+  // below; every other device keeps high, today's look exactly (?quality=auto runs the full detection anywhere,
+  // ?quality=high forces high)
+  if (forced !== 'auto' && !(touch && mobileGPU)) return { tier: 'high', reason: 'default (?quality=auto detects)' };
   if (software) return { tier: 'low', reason: `software GPU (${why})` };
   if ((touch || mobileGPU) && (shortSide <= 600 || memory <= 4)) return { tier: 'low', reason: `phone (${why})` };
   if (touch || mobileGPU) return { tier: 'medium', reason: `tablet (${why})` };
