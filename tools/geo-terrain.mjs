@@ -1,14 +1,15 @@
 // Part 6: the terrain around and inside the city: the ravines, the old Lake Iroquois shore, the rise to the north.
 // The streets are built flat (y = 0, like the engine's whole road and traffic model), so the terrain is the height of
 // the land ABOVE ITS LOCAL PLAIN: the DEM minus its morphological opening (the lowest ground within 900 m, smoothed),
-// i.e. inselbergs and ridges keep their true relief from the ground around them. Wherever the city is built (a road or
-// a building within ~60 m) the terrain is held at street level.
+// i.e. inselbergs and ridges keep their true relief from the ground around them. Wherever the city is built (a road,
+// a railway track or a building within ~60 m) the terrain is held at street level.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { toLonLat, toWorld, load, log } from './geo-base.mjs';
 import { rasterRoads, inDetail } from './geo-roads.mjs';
 import { buildings } from './geo-features.mjs';
+import { rails } from './geo-rails.mjs';
 import { isWater } from './geo-land.mjs';
 
 export const TERRAIN = { x0: -26000, z0: -26000, size: 52000, step: 60 };
@@ -89,6 +90,14 @@ export function buildTerrain() {
     for (let i = 0; i <= k; i++) mark(s.x0 + ((s.x1 - s.x0) * i) / k, s.z0 + ((s.z1 - s.z0) * i) / k);
   }
   for (const b of buildings) mark(b[0], b[1]);
+  // (the tracks run at street level too, or on the embankments js/rail-corridor.js raises from it)
+  for (const [, , , , flat] of rails) {
+    for (let i = 2; i < flat.length; i += 2) {
+      const L = Math.hypot(flat[i] - flat[i - 2], flat[i + 1] - flat[i - 1]);
+      const k = Math.max(1, Math.ceil(L / (step / 2)));
+      for (let j = 0; j <= k; j++) mark(flat[i - 2] + ((flat[i] - flat[i - 2]) * j) / k, flat[i - 1] + ((flat[i + 1] - flat[i - 1]) * j) / k);
+    }
+  }
   const grown = new Uint8Array(n * n);
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
     let v = 0;

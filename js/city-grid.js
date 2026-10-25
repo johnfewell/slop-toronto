@@ -748,6 +748,28 @@ function buildCityGrid(scene) {
       }
       return false;
     };
+    // ...and the heavy-rail tracks (a road bridge over the rail corridor stands its piers between them)
+    const railSegs = new Map();
+    for (const [kind, , , flags, flat] of GEO.rails || []) {
+      if (kind !== 1 || flags & 2) continue;
+      for (let i = 2; i < flat.length; i += 2) {
+        const a = { x: flat[i - 2], z: flat[i - 1] }, b = { x: flat[i], z: flat[i + 1] };
+        for (let ix = Math.floor(Math.min(a.x, b.x) / 40); ix <= Math.floor(Math.max(a.x, b.x) / 40); ix++) {
+          for (let iz = Math.floor(Math.min(a.z, b.z) / 40); iz <= Math.floor(Math.max(a.z, b.z) / 40); iz++) {
+            const k = ix * 100000 + iz;
+            (railSegs.get(k) || railSegs.set(k, []).get(k)).push([a, b, 0]);
+          }
+        }
+      }
+    }
+    const onRail = (x, z, m) => {
+      for (const [a, b] of railSegs.get(Math.floor(x / 40) * 100000 + Math.floor(z / 40)) || []) {
+        const ex = b.x - a.x, ez = b.z - a.z;
+        const t = Math.max(0, Math.min(1, ((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez || 1)));
+        if (Math.hypot(a.x + ex * t - x, a.z + ez * t - z) < m) return true;
+      }
+      return false;
+    };
     const top = makeAcc();
     const faces = makeAcc();
     const piers = [];
@@ -793,7 +815,7 @@ function buildCityGrid(scene) {
             const h = a.h + ((b.h - a.h) * tt) / L;
             if (h < 4.6) break;
             const x = a.x + ((b.x - a.x) * tt) / L, z = a.z + ((b.z - a.z) * tt) / L;
-            if (onGroundRoad(x, z, 1.2)) continue;
+            if (onGroundRoad(x, z, 1.2) || onRail(x, z, 3.2)) continue;
             piers.push({ x, z, h: h - 1.25, w: Math.min(d.w * 0.7, 9), ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
             break;
           }

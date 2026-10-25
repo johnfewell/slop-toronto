@@ -1438,7 +1438,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       if (player.active && Math.hypot(x - player.x, z - player.z) < 25) continue;
       if (!laneClear(e.occ[lane], s, v.half + 8)) continue;
       // --- Streetcars: never spawn on one ---
-      if (movers.some((o) => Math.abs(o.x - x) < o.halfL + v.half + 8 && Math.abs(o.z - z) < o.halfL + v.half + 8)) continue;
+      if (movers.some((o) => Math.abs(o.x - x) < o.halfL + v.half + 8 && Math.abs(o.z - z) < o.halfL + v.half + 8 && Math.abs((o.y || 0) - edgeY(e, s)) < 2.5)) continue;
       place(v, e, lane, s);
       return true;
     }

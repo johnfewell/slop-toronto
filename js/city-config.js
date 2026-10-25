@@ -374,6 +374,83 @@ for (const d of DECKS) {
     }
   }
 }
+// The railway's grade separations (GEO.railLifts & railFills, tools/geo-rails.mjs): the height the heavy-rail tracks run
+// at, one field for every track (parallel tracks & crossovers agree). A lift is a street the tracks bridge: level over
+// the street, its sidewalks & abutments, then down at 2%; a fill joins two lifts (level inside its hull, down at 2%
+// outside). railSpanAt says whether (x, z) is over the street itself (an open bridge span, not embankment).
+const RAIL_GRADE = 0.02, LIFT_PLATEAU = 10, SPAN_SIDEWALK = 4; // (as tools/geo-rails.mjs)
+const RAIL_LIFTS = (GEO.railLifts || []).map(([H, hw, x0, z0, x1, z1]) => ({ H, hw, x0, z0, x1, z1 }));
+const RAIL_FILLS = (GEO.railFills || []).map(([H, ...c]) => ({ H, pts: [[c[0], c[1]], [c[2], c[3]], [c[4], c[5]], [c[6], c[7]]] }));
+const LIFT_CELL = 50;
+const LIFT_GRID = new Map();
+for (const l of [...RAIL_LIFTS, ...RAIL_FILLS]) {
+  const xs = l.pts ? l.pts.map((p) => p[0]) : [l.x0, l.x1], zs = l.pts ? l.pts.map((p) => p[1]) : [l.z0, l.z1];
+  const r = (l.hw || 0) + LIFT_PLATEAU + l.H / RAIL_GRADE;
+  for (let ix = Math.floor((Math.min(...xs) - r) / LIFT_CELL); ix <= Math.floor((Math.max(...xs) + r) / LIFT_CELL); ix++) {
+    for (let iz = Math.floor((Math.min(...zs) - r) / LIFT_CELL); iz <= Math.floor((Math.max(...zs) + r) / LIFT_CELL); iz++) {
+      const k = ix * 100000 + iz;
+      (LIFT_GRID.get(k) || LIFT_GRID.set(k, []).get(k)).push(l);
+    }
+  }
+}
+function segDist(x, z, ax, az, bx, bz) {
+  const ex = bx - ax, ez = bz - az;
+  const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / (ex * ex + ez * ez || 1)));
+  return Math.hypot(ax + ex * t - x, az + ez * t - z);
+}
+/** Height of the heavy-rail track bed at (x, z) (0: at grade) */
+function railLiftAt(x, z) {
+  let best = 0;
+  for (const l of LIFT_GRID.get(Math.floor(x / LIFT_CELL) * 100000 + Math.floor(z / LIFT_CELL)) || []) {
+    if (!l.pts) {
+      best = Math.max(best, l.H - RAIL_GRADE * Math.max(0, segDist(x, z, l.x0, l.z0, l.x1, l.z1) - l.hw - LIFT_PLATEAU));
+      continue;
+    }
+    let side = 0, d = Infinity, inside = true;
+    for (let i = 0; i < 4; i++) {
+      const [ax, az] = l.pts[i], [bx, bz] = l.pts[(i + 1) % 4];
+      d = Math.min(d, segDist(x, z, ax, az, bx, bz));
+      const c = Math.sign((bx - ax) * (z - az) - (bz - az) * (x - ax));
+      if (!side) side = c;
+      else if (c && c !== side) inside = false;
+    }
+    best = Math.max(best, l.H - RAIL_GRADE * (inside ? 0 : d));
+  }
+  return best;
+}
+/** The street a rail bridge spans at (x, z): its lift, or null (embankment, or no bridge) */
+function railSpanAt(x, z) {
+  for (const l of LIFT_GRID.get(Math.floor(x / LIFT_CELL) * 100000 + Math.floor(z / LIFT_CELL)) || []) {
+    if (!l.pts && segDist(x, z, l.x0, l.z0, l.x1, l.z1) < l.hw + SPAN_SIDEWALK) return l;
+  }
+  return null;
+}
+// ...and the raised tracks are decks too (sampled across the track bed, every 2 m): the player can climb the
+// embankment where it starts and walk along it
+for (const [kind, , , flags, flat] of GEO.rails || []) {
+  if (kind !== 1 || flags & 2) continue;
+  const deck = { rail: true };
+  for (let i = 2; i < flat.length; i += 2) {
+    const ax = flat[i - 2], az = flat[i - 1], bx = flat[i], bz = flat[i + 1];
+    const L = Math.hypot(bx - ax, bz - az);
+    const n = Math.max(1, Math.ceil(L / 2));
+    const ux = (bx - ax) / (L || 1), uz = (bz - az) / (L || 1);
+    for (let k = 0; k <= n; k++) {
+      const cx = ax + ((bx - ax) * k) / n, cz = az + ((bz - az) * k) / n;
+      const h = railLiftAt(cx, cz);
+      if (h < 0.3) continue;
+      for (const o of [-2, 0, 2]) {
+        const x = cx - uz * o, z = cz + ux * o;
+        const key = Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL);
+        let list = DECK_GRID.get(key);
+        if (!list) DECK_GRID.set(key, (list = []));
+        const same = list.find((e) => e.deck === deck);
+        if (same) same.h = Math.max(same.h, h);
+        else list.push({ h, deck });
+      }
+    }
+  }
+}
 /** The deck surface under (x, z) that something at height y can stand on (stepping up at most `step`), or 0 */
 function deckHeightAt(x, z, y = 0, step = 0.6) {
   const list = DECK_GRID.get(Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL));
@@ -632,6 +709,9 @@ Object.assign(window.CITY, {
   terrainHeightAt,
   terrainRawAt,
   deckHeightAt,
+  railLiftAt,
+  railSpanAt,
+  RAIL_LIFTS,
   getLocationLabel,
   worldFromLatLon,
   latLonFromWorld,

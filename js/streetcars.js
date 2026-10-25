@@ -14,7 +14,7 @@
 // - Cost: the trackwork is cut into 700 m tiles hidden beyond ~1.2 km; only the cars within DRAW_RADIUS are drawn (all
 //   of them run). Fleet size by quality tier (quality.js `streetcarSpacing`).
 
-const { THREE, GEO, QUALITY, blockAt, deckHeightAt, signalPhase, ROADS, cityUniforms } = window.CITY;
+const { THREE, GEO, QUALITY, blockAt, deckHeightAt, railLiftAt, railSpanAt, signalPhase, ROADS, cityUniforms } = window.CITY;
 const { Fn, color, mix, step, smoothstep, abs, uv, positionGeometry, normalGeometry, float } = window.CITY.TSL;
 const { mergeGeometries } = window.CITY.Addons;
 
@@ -371,6 +371,8 @@ function buildTrackwork(group, tracks) {
     pos.push(ax - nx, ay, az - nz, bx + nx, by, bz + nz, bx - nx, by, bz - nz, ax - nx, ay, az - nz, ax + nx, ay, az + nz, bx + nx, by, bz + nz);
     uvs.push(u0, 0, u1, 1, u0, 1, u0, 0, u1, 0, u1, 1);
   };
+  // the contact wire, dropped to clear the soffit where the street passes under a rail bridge (King & Queen St W...)
+  const wireY = (p) => (railSpanAt(p.x, p.z) ? Math.min(p.y + WIRE_Y, railLiftAt(p.x, p.z) - 1.6) : p.y + WIRE_Y);
   for (const t of tracks) {
     const P = t.pts;
     for (let i = 0; i + 1 < P.length; i++) {
@@ -388,7 +390,7 @@ function buildTrackwork(group, tracks) {
       }
       if (i % 4 === 0) {
         const c = P[Math.min(P.length - 1, i + 4)];
-        T.wire.push(a.x, a.y + WIRE_Y, a.z, c.x, c.y + WIRE_Y, c.z);
+        T.wire.push(a.x, wireY(a), a.z, c.x, wireY(c), c.z);
       }
     }
   }

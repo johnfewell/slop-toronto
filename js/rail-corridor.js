@@ -4,14 +4,23 @@
 // tools/geo-rails.mjs: the Lakeshore West & East, Kitchener, Barrie & Richmond Hill lines, the yards and crossovers),
 // after aalghooneh/slop-toronto's rail corridor (MIT), and GO Transit trains running on it.
 // - Track: every track as a ballast bed with its sleepers (one strip each, the stones & sleepers worked out in the
-//   shader), two steel rails on top; flush with the asphalt where a street crosses (the city is flat: the real streets
-//   bridge the corridor or pass under it).
+//   shader), two steel rails on top; flush with the asphalt only at the few real level crossings (yard roads).
+// - Grade separations, as mapped (tools/geo-rails.mjs; the city itself is flat): where the streets bridge the corridor
+//   (Spadina, Bathurst, Strachan, Dufferin...) they ride flyover decks (tools/geo-roads.mjs, city-grid.js) and the
+//   tracks stay down; where the railway bridges the streets (York, Bay & Yonge under Union Station, Jarvis to Cherry,
+//   King & Queen St W, Bloor St W, the Kingston line's streets east of the Don...) the tracks climb at 2% onto an
+//   embankment (city-config.js railLiftAt: one height field, so parallel tracks & crossovers agree) and cross each
+//   street on a concrete deck with parapets between abutments, the street under it in shade. The embankment's top runs
+//   across to the neighbouring tracks; only its outer edges get retaining walls (and colliders for the player). The
+//   raised tracks are decks too (city-config.js DECK_GRID): the player can walk up the embankment where it starts.
 // - Trains: GO Transit consists (an MP40 locomotive and bilevel coaches, green & white) on the main lines, cruising
-//   out in the city, slowing through the corridor and stopping at Union Station. They push the player aside, and the
-//   traffic (traffic.js setObstacles) waits for them where a street crosses the tracks.
-// - Cost: track tiles hidden beyond ~1.4 km, trains drawn within ~1.8 km, train count by quality tier (`trains`).
+//   out in the city, slowing through the corridor and stopping at Union Station (up on the embankment over York & Bay).
+//   They push the player aside when level with them, and the traffic (traffic.js setObstacles, which skips anything
+//   2.5 m above or below) keeps clear of them at a level crossing; over or under a bridge nobody waits.
+// - Cost: track tiles (ballast, rails, concrete) hidden beyond ~1.4 km, trains drawn within ~1.8 km, train count by
+//   quality tier (`trains`).
 
-const { THREE, GEO, QUALITY, blockAt, deckHeightAt, nearestRoads, CITY_BOUNDS } = window.CITY;
+const { THREE, GEO, QUALITY, blockAt, railLiftAt, railSpanAt, RAIL_LIFTS, waterAt, CITY_BOUNDS } = window.CITY;
 const { Fn, color, mix, step, smoothstep, abs, fract, floor, uv, positionWorld, positionGeometry, normalGeometry, float, vec2, sin, dot } = window.CITY.TSL;
 const { cityUniforms } = window.CITY;
 
@@ -21,6 +30,10 @@ const DRAW_RADIUS = 1800;
 const NEAR = 500; // trains within this of the camera are obstacles to the traffic & push the player
 const RAIL_GAUGE = 1.435;
 const BED_HALF = 1.7; // ballast shoulder to shoulder 3.4 m
+const EMB_HALF = 2.6; // a raised track's embankment or deck, centre to an outer edge
+const NEIGHBOUR = 9.5; // a track this near abreast shares the embankment (its top runs across, no wall between)
+const DECK_DEPTH = 1.3; // a rail bridge's deck, top to soffit
+const PARAPET = 1.1;
 const LOCO_LEN = 21.4; // MP40PH-3C
 const COACH_LEN = 25.9; // Bombardier BiLevel
 const COUPLER = 0.9;
@@ -82,13 +95,29 @@ function createBallastMaterial() {
   return mat;
 }
 
+// The bridges, abutments & retaining walls: poured concrete, weathered darker toward the ground
+function createConcreteMaterial() {
+  const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.88, metalness: 0.0 });
+  mat.colorNode = Fn(() => {
+    const p = positionWorld;
+    const n = fract(sin(dot(floor(p.xz.mul(1.7).add(p.y.mul(0.9))), vec2(12.9898, 78.233))).mul(43758.5453));
+    const grime = smoothstep(0.0, 2.4, p.y);
+    // the pour's panel joints every 4 m, and its lifts every 1.5 m up
+    const along = fract(p.x.add(p.z).div(4.0));
+    const joint = smoothstep(0.0, 0.015, along).mul(float(1.0).sub(smoothstep(0.985, 1.0, along)));
+    const lift = smoothstep(0.0, 0.02, fract(p.y.div(1.5)));
+    return mix(color(0x4a463f), color(0x8c877d), grime).mul(n.mul(0.08).add(0.94)).mul(joint.mul(lift).mul(0.18).add(0.82));
+  })();
+  return mat;
+}
+
 function buildTrackwork(group) {
   const onRoad = buildRoadTest();
   const tiles = new Map();
   const tileOf = (x, z) => {
     const k = Math.floor(x / TILE) * 100000 + Math.floor(z / TILE);
     let t = tiles.get(k);
-    if (!t) tiles.set(k, (t = { bed: [], bedUv: [], rail: [], x: (Math.floor(x / TILE) + 0.5) * TILE, z: (Math.floor(z / TILE) + 0.5) * TILE }));
+    if (!t) tiles.set(k, (t = { bed: [], bedUv: [], rail: [], wall: [], x: (Math.floor(x / TILE) + 0.5) * TILE, z: (Math.floor(z / TILE) + 0.5) * TILE }));
     return t;
   };
   // a flat strip, wound counter-clockwise from above; uv.x 0..1 across, uv.y metres along (s0..s1)
@@ -111,39 +140,152 @@ function buildTrackwork(group) {
       else pos.push(ex, ay, ez, fx, by, fz, fx, by + h, fz, ex, ay, ez, fx, by + h, fz, ex, ay + h, ez);
     }
   };
+  // a quad p0 p1 p2 p3 (in order round its edge) facing (fx, fy, fz)
+  const quad = (pos, p0, p1, p2, p3, fx, fy, fz) => {
+    const ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2], vx = p2[0] - p0[0], vy = p2[1] - p0[1], vz = p2[2] - p0[2];
+    const flip = (uy * vz - uz * vy) * fx + (uz * vx - ux * vz) * fy + (ux * vy - uy * vx) * fz < 0;
+    const P = flip ? [p0, p3, p2, p1] : [p0, p1, p2, p3];
+    for (const i of [0, 1, 2, 0, 2, 3]) pos.push(P[i][0], P[i][1], P[i][2]);
+  };
+  // Where each track's neighbours run: every track sampled every 3 m in 10 m cells, to find the nearest one abreast
+  // on either side (the embankment's top runs across to it, with no wall in between)
+  const samples = new Map();
+  const heavy = (GEO.rails || []).filter((r) => r[0] === 1);
+  heavy.forEach(([, , , , flat], w) => {
+    for (let i = 2; i < flat.length; i += 2) {
+      const ax = flat[i - 2], az = flat[i - 1], bx = flat[i], bz = flat[i + 1];
+      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 3));
+      for (let k = 0; k <= n; k++) {
+        const x = ax + ((bx - ax) * k) / n, z = az + ((bz - az) * k) / n;
+        const key = Math.floor(x / 10) * 100000 + Math.floor(z / 10);
+        (samples.get(key) || samples.set(key, []).get(key)).push(x, z, w);
+      }
+    }
+  });
+  const reach = (mx, mz, tx, tz, w, side) => {
+    let best = NEIGHBOUR;
+    for (let ix = Math.floor((mx - NEIGHBOUR) / 10); ix <= Math.floor((mx + NEIGHBOUR) / 10); ix++) {
+      for (let iz = Math.floor((mz - NEIGHBOUR) / 10); iz <= Math.floor((mz + NEIGHBOUR) / 10); iz++) {
+        const L = samples.get(ix * 100000 + iz);
+        if (!L) continue;
+        for (let i = 0; i < L.length; i += 3) {
+          if (L[i + 2] === w) continue;
+          const dx = L[i] - mx, dz = L[i + 1] - mz;
+          if (Math.abs(dx * tx + dz * tz) > 2.2) continue;
+          const o = (-dx * tz + dz * tx) * side;
+          if (o > 1 && o < best) best = o;
+        }
+      }
+    }
+    return best < NEIGHBOUR ? best / 2 + 0.15 : 0; // half way across to it, or 0: none (an outer edge)
+  };
+  const colliders = [];
+  const shade = [];
   let km = 0;
-  for (const [kind, , , , flat] of GEO.rails || []) {
-    if (kind !== 1) continue;
+  heavy.forEach(([, , , flags, flat], w) => {
+    if (flags & 2) return;
     const P = toPts(flat);
     let s = 0;
-    let deck = 0;
+    let wasSpan = null; // the previous piece: on a bridge span (true), on the embankment (false), at grade (null)
+    let col = null; // the collider being grown along the embankment
     for (let i = 0; i + 1 < P.length; i++) {
       const a = P[i], b = P[i + 1];
       const L = Math.hypot(b.x - a.x, b.z - a.z);
+      if (L < 0.01) continue;
+      const tx = (b.x - a.x) / L, tz = (b.z - a.z) / L;
+      const nx = -tz, nz = tx; // left
       const n = Math.max(1, Math.ceil(L / 3));
+      const seg = L / n;
       for (let k = 0; k < n; k++) {
-        const ax = a.x + ((b.x - a.x) * k) / n, az = a.z + ((b.z - a.z) * k) / n;
-        const bx = a.x + ((b.x - a.x) * (k + 1)) / n, bz = a.z + ((b.z - a.z) * (k + 1)) / n;
+        const ax = a.x + tx * seg * k, az = a.z + tz * seg * k;
+        const bx = ax + tx * seg, bz = az + tz * seg;
         const mx = (ax + bx) / 2, mz = (az + bz) / 2;
-        deck = deckHeightAt(mx, mz, deck, 0.45);
-        const ground = Math.max(deck, blockAt(mx, mz) ? CITY_BOUNDS.sidewalkHeight : 0);
+        const block = blockAt(mx, mz) ? CITY_BOUNDS.sidewalkHeight : 0;
+        const ya = Math.max(railLiftAt(ax, az), block), yb = Math.max(railLiftAt(bx, bz), block);
         const T = tileOf(mx, mz);
-        const seg = L / n;
-        const street = !deck && onRoad(mx, mz, 1.0);
-        if (!street) strip(T.bed, T.bedUv, ax, ground + 0.02, az, bx, ground + 0.02, bz, BED_HALF, s, s + seg);
-        const rx = -(bz - az) / seg, rz = (bx - ax) / seg;
-        const y = street ? ground + 0.012 : ground + 0.04;
-        for (const o of [-RAIL_GAUGE / 2, RAIL_GAUGE / 2]) rail(T.rail, ax + rx * o, y, az + rz * o, bx + rx * o, y, bz + rz * o, street ? 0 : 0.14);
+        const raised = Math.max(ya, yb) > 0.4;
+        const street = !raised && onRoad(mx, mz, 1.0);
+        if (!street) strip(T.bed, T.bedUv, ax, ya + 0.02, az, bx, yb + 0.02, bz, BED_HALF, s, s + seg);
+        const y = street ? 0.012 : 0.04;
+        for (const o of [-RAIL_GAUGE / 2, RAIL_GAUGE / 2]) rail(T.rail, ax + nx * o, ya + y, az + nz * o, bx + nx * o, yb + y, bz + nz * o, street ? 0 : 0.14);
+        if (!raised) {
+          wasSpan = null;
+          col = null;
+          s += seg;
+          continue;
+        }
+        // Raised: the embankment (or bridge deck) across to the neighbouring tracks, walled where it's an outer edge
+        const span = !!(railSpanAt(mx, mz) || waterAt(mx, mz));
+        const rl = reach(mx, mz, tx, tz, w, 1), rr = reach(mx, mz, tx, tz, w, -1);
+        const hl = rl || EMB_HALF, hr = rr || EMB_HALF;
+        const A = (o, yy) => [ax + nx * o, yy, az + nz * o];
+        const B = (o, yy) => [bx + nx * o, yy, bz + nz * o];
+        // the top (ballast-coloured, its uv.x 0: no sleepers; fills meeting from neighbouring tracks agree)
+        T.bed.push(...A(-hr, ya), ...B(hl, yb), ...B(-hr, yb), ...A(-hr, ya), ...A(hl, ya), ...B(hl, yb));
+        T.bedUv.push(0, s, 0, s, 0, s, 0, s, 0, s, 0, s);
+        const base = (yy) => (span ? yy - DECK_DEPTH : 0);
+        for (const [o, outer, sg] of [[hl, !rl, 1], [-hr, !rr, -1]]) {
+          if (!outer) continue;
+          // the retaining wall (embankment) or the deck's edge beam (span), and on a span its parapet
+          quad(T.wall, A(o, base(ya)), B(o, base(yb)), B(o, yb), A(o, ya), nx * sg, 0, nz * sg);
+          if (span) {
+            const i0 = o - 0.3 * sg;
+            quad(T.wall, A(o, ya), B(o, yb), B(o, yb + PARAPET), A(o, ya + PARAPET), nx * sg, 0, nz * sg);
+            quad(T.wall, A(i0, ya), B(i0, yb), B(i0, yb + PARAPET), A(i0, ya + PARAPET), -nx * sg, 0, -nz * sg);
+            quad(T.wall, A(i0, ya + PARAPET), B(i0, yb + PARAPET), B(o, yb + PARAPET), A(o, ya + PARAPET), 0, 1, 0);
+          }
+        }
+        if (span) {
+          // the soffit
+          quad(T.wall, A(-hr, ya - DECK_DEPTH), B(-hr, yb - DECK_DEPTH), B(hl, yb - DECK_DEPTH), A(hl, ya - DECK_DEPTH), 0, -1, 0);
+        }
+        // the abutment where the embankment meets a span: its face toward the street, from the ground to the deck
+        if (wasSpan !== null && wasSpan !== span) {
+          const f = span ? 1 : -1;
+          quad(T.wall, A(-hr, 0), A(hl, 0), A(hl, ya), A(-hr, ya), tx * f, 0, tz * f);
+        }
+        wasSpan = span;
+        // the player's collider: the embankment's body, in pieces of up to 12 m (none under a span or where it's low
+        // enough to step onto)
+        if (span || Math.min(ya, yb) < 0.6) col = null;
+        else {
+          const off = (hl - hr) / 2, hx = (hl + hr) / 2;
+          // (its top a little under the surface: whoever walks up the ramp stands above it)
+          const top = Math.min(ya, yb) - 0.25;
+          if (col && col.i === i && col.len + seg <= 12.01 && Math.abs(col.hx - hx) < 0.3) {
+            col.len += seg;
+            col.maxY = Math.min(col.maxY, top);
+            col.hx = Math.max(col.hx, hx);
+          } else colliders.push((col = { i, x0: ax + nx * off, z0: az + nz * off, len: seg, hx, tx, tz, maxY: top }));
+        }
         s += seg;
       }
       km += L;
     }
+  });
+  // colliders as the player's turned rectangles (controllers.js buildingContact)
+  const boxes = colliders.map((c) => {
+    c.cx = c.x0 + (c.tx * c.len) / 2;
+    c.cz = c.z0 + (c.tz * c.len) / 2;
+    const hz = c.len / 2 + 0.05, cs = c.tz, sn = c.tx;
+    const ex = Math.abs(cs) * c.hx + Math.abs(sn) * hz, ez = Math.abs(sn) * c.hx + Math.abs(cs) * hz;
+    return { minX: c.cx - ex, maxX: c.cx + ex, minZ: c.cz - ez, maxZ: c.cz + ez, maxY: c.maxY, obb: { cx: c.cx, cz: c.cz, hx: c.hx, hz, cs, sn } };
+  });
+  // The shade under the bridges: a dark veil over each street the tracks cross, its sidewalks & under the decks' edges
+  for (const l of RAIL_LIFTS) {
+    const L = Math.hypot(l.x1 - l.x0, l.z1 - l.z0) || 1;
+    const ux = (l.x1 - l.x0) / L, uz = (l.z1 - l.z0) / L;
+    const ex = 3, half = l.hw + 4;
+    const y = Math.max(0, l.H - 6.2) + CITY_BOUNDS.sidewalkHeight + 0.04;
+    const ax = l.x0 - ux * ex, az = l.z0 - uz * ex, bx = l.x1 + ux * ex, bz = l.z1 + uz * ex;
+    quad(shade, [ax - uz * half, y, az + ux * half], [bx - uz * half, y, bz + ux * half], [bx + uz * half, y, bz - ux * half], [ax + uz * half, y, az - ux * half], 0, 1, 0);
   }
   const bedMat = createBallastMaterial();
   const railMat = new THREE.MeshStandardNodeMaterial({ color: 0x8e8a84, roughness: 0.35, metalness: 0.85 });
+  const wallMat = createConcreteMaterial();
   const first = {};
   const out = [];
-  const mesh = (pos, uvs, mat, name) => {
+  const mesh = (pos, uvs, mat, name, cast) => {
     if (!pos.length) return null;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -154,15 +296,21 @@ function buildTrackwork(group) {
     const m = new THREE.Mesh(g, mat);
     m.name = name;
     m.receiveShadow = true;
+    m.castShadow = !!cast;
     if (first[name]) m.userData.sharesPipelineWith = first[name];
     else first[name] = m;
     group.add(m);
     return m;
   };
   for (const T of tiles.values()) {
-    out.push({ x: T.x, z: T.z, meshes: [mesh(T.bed, T.bedUv, bedMat, 'RailBallast'), mesh(T.rail, null, railMat, 'RailRails')].filter(Boolean) });
+    out.push({ x: T.x, z: T.z, meshes: [mesh(T.bed, T.bedUv, bedMat, 'RailBallast'), mesh(T.rail, null, railMat, 'RailRails'), mesh(T.wall, null, wallMat, 'RailBridges', true)].filter(Boolean) });
   }
-  return { tiles: out, km: km / 1000 };
+  if (shade.length) {
+    const veil = mesh(shade, null, new THREE.MeshBasicNodeMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false }), 'RailBridgeShade');
+    veil.receiveShadow = false;
+    veil.renderOrder = 1;
+  }
+  return { tiles: out, km: km / 1000, colliders: boxes };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -227,11 +375,7 @@ function makeRoute(src) {
   }
   const cum = [0];
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
-  let deck = 0;
-  for (const p of pts) {
-    deck = deckHeightAt(p.x, p.z, deck, 0.6);
-    p.y = Math.max(deck, blockAt(p.x, p.z) ? CITY_BOUNDS.sidewalkHeight : 0) + 0.18; // on the rails
-  }
+  for (const p of pts) p.y = Math.max(railLiftAt(p.x, p.z), blockAt(p.x, p.z) ? CITY_BOUNDS.sidewalkHeight : 0) + 0.18; // on the rails
   const route = { pts, cum, len: cum[cum.length - 1], union: -1 };
   // Union Station's platforms: the point of the route nearest them, if it passes within 60 m
   let best = 60;
@@ -329,7 +473,7 @@ function createRailCorridor(scene, trafficSystem) {
   group.name = 'RailCorridor';
   const trackGroup = new THREE.Group();
   trackGroup.name = 'RailTracks';
-  const { tiles, km } = buildTrackwork(trackGroup);
+  const { tiles, km, colliders } = buildTrackwork(trackGroup);
   group.add(trackGroup);
 
   // Routes: the main lines (no yard, siding or crossover), at least 1.5 km long
@@ -496,8 +640,8 @@ function createRailCorridor(scene, trafficSystem) {
     if (ground.speed) ground.speed *= 0.3;
   }
 
-  console.info(`[rail] ${Math.round(km * 10) / 10} km of track in ${tiles.length} tiles, ${routes.length} train routes, ${trains.length} GO trains`);
-  return { group, update, trains, routes };
+  console.info(`[rail] ${Math.round(km * 10) / 10} km of track in ${tiles.length} tiles, ${RAIL_LIFTS.length} streets bridged, ${colliders.length} embankment colliders, ${routes.length} train routes, ${trains.length} GO trains`);
+  return { group, update, trains, routes, colliders };
 }
 
 Object.assign(window.CITY, { createRailCorridor });

@@ -1,0 +1,34 @@
+[
+ {
+  "name": "ride1-spadina-bridge",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 16000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = -1121, Z = -130;  app.selectMode('cyclist'); app.teleportTo(X, Z, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride1-spadina-bridge t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' track ' + C.railLiftAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3)); } if (t > 15.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "ride2-yonge-under",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = 328, Z = 0;  app.selectMode('cyclist'); app.teleportTo(X, Z, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride2-yonge-under t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' track ' + C.railLiftAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3)); } if (t > 11.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "ride3-up-the-embankment",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 20000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = -760, Z = 90; let best = null, bd = 1e9; for (const r of C.GEO.rails) { if (r[0] !== 1 || r[1]) continue; const f = r[4]; for (let i = 0; i < f.length; i += 2) { const d = Math.hypot(f[i] - X, f[i + 1] - Z); if (d < bd) { bd = d; best = [f[i], f[i + 1]]; } } } X = best[0]; Z = best[1]; app.selectMode('cyclist'); app.teleportTo(X, Z, 1.5708); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride3-up-the-embankment t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' track ' + C.railLiftAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3)); } if (t > 19.5) clearInterval(id); }, 50); })()"
+ },
+ {
+  "name": "ride4-bathurst-bridge",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 16000,
+  "hold": "KeyW",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; let X = -1756, Z = -110;  app.selectMode('cyclist'); app.teleportTo(X, Z, 0); const e = app.controllerManager.getActiveEntity(); const t0 = performance.now(); let last = -1, maxDy = 0, py = null; const id = setInterval(() => { const t = (performance.now() - t0) / 1000; if (py !== null) maxDy = Math.max(maxDy, Math.abs(e.position.y - py)); py = e.position.y; if (Math.floor(t * 2) !== last) { last = Math.floor(t * 2); console.log('[ride] ride4-bathurst-bridge t ' + t.toFixed(1) + ' x ' + e.position.x.toFixed(1) + ' z ' + e.position.z.toFixed(1) + ' y ' + e.position.y.toFixed(2) + ' track ' + C.railLiftAt(e.position.x, e.position.z).toFixed(2) + ' v ' + (e.speed || 0).toFixed(1) + ' maxStep ' + maxDy.toFixed(3)); } if (t > 15.5) clearInterval(id); }, 50); })()"
+ }
+]

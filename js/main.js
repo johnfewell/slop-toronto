@@ -135,6 +135,7 @@ async function initApp() {
   const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
   // the Union Station Rail Corridor's tracks & GO trains (rail-corridor.js)
   const railCorridor = window.CITY.createRailCorridor(scene, trafficSystem);
+  allColliders.push(...railCorridor.colliders); // the raised tracks' embankments (the player's only)
   // the streetcars' sounds (audio branch: reads streetcars.cars, safe before the audio exists)
   if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(streetcars);
   markInit('streetcars');

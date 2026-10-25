@@ -1,10 +1,13 @@
 // Part 2: Toronto's roads from OpenStreetMap, in the world frame.
 // - Every highway=* way that carries traffic, with its class, carriageway width, travel lanes and direction
-// - Grade separation: a bridge (or layer > 0) way that actually crosses another road in plan is a flyover, raised on
-//   a deck; the roads it joins at either end climb to it on ramps (5.5% grade). Tunnels under roads are dropped.
+// - Grade separation: a bridge (or layer > 0) way that actually crosses another road, or a heavy-rail track at grade
+//   (Spadina, Bathurst, Strachan, Dufferin, Dundas St W... over the rail corridor), in plan is a flyover, raised on a
+//   deck; the roads it joins at either end climb to it on ramps (5.5% grade). Tunnels under roads are dropped. (The
+//   streets the railway crosses over, York, Bay, Yonge, Jarvis, King & Queen St W..., stay on the ground: the tracks
+//   climb over them, tools/geo-rails.mjs.)
 // - The street graph (js/road-network.js builds lanes, junctions & turns from it) with the heights of the decks & ramps,
 //   the decks & ramps themselves (city-grid.js builds them), and every road for the maps & labels
-import { toWorld, rdp, log, osmRoads } from './geo-base.mjs';
+import { toWorld, rdp, log, load, osmRoads } from './geo-base.mjs';
 
 // Detailed city (world frame, metres): the Humber to Cherry Beach, the lake to Bloor
 export const DETAIL = { x0: -7900, x1: 3700, z0: -3000, z1: 3600 };
@@ -50,7 +53,7 @@ const num = (v) => {
   const f = parseFloat(String(v || '').replace(',', '.'));
   return Number.isFinite(f) ? f : null;
 };
-const ways = [];
+export const ways = [];
 for (const e of osmRoads.elements) {
   const t = e.tags || {};
   const cls = t.highway;
@@ -72,7 +75,7 @@ for (const e of osmRoads.elements) {
   const bridge = !!t.bridge && t.bridge !== 'no';
   const tunnel = !!t.tunnel && t.tunnel !== 'no' && t.tunnel !== 'culvert';
   const layer = Math.round(num(t.layer) || 0);
-  ways.push({ id: e.id, nodes: e.nodes, pts, cls, rank, dir, lanes, w: Math.round(w * 10) / 10, name: cleanName(t.name), ref: t.ref || '', bridge, tunnel, layer, elevated: false, under: false });
+  ways.push({ id: e.id, nodes: e.nodes, pts, cls, rank, dir, lanes, w: Math.round(w * 10) / 10, name: cleanName(t.name), ref: t.ref || '', bridge, tunnel, layer, viaduct: t.bridge === 'viaduct', elevated: false, under: false });
 }
 log(`${ways.length} road ways`);
 
@@ -124,19 +127,64 @@ function crossesRoad(w) {
   }
   return false;
 }
-let nElev = 0, nUnder = 0;
+// The heavy-rail tracks (railway=rail, not in a tunnel; osm_rails.json from tools/fetch-osm.mjs ONLY=rails). Their
+// node ids come from another run of the fetch than the roads', so a level crossing (a node shared with a road) is
+// found by its coordinates
+const railKey = (x, z) => `${Math.round(x * 100)},${Math.round(z * 100)}`;
+const railGrid = new Map();
+const railAt = new Set();
+{
+  let elements = [];
+  try { elements = load('osm_rails.json').elements; } catch { /* no rails: no rail bridges */ }
+  for (const e of elements) {
+    const t = e.tags || {};
+    if (e.type !== 'way' || !e.geometry || t.railway !== 'rail' || (t.tunnel && t.tunnel !== 'no')) continue;
+    const r = { bridge: !!t.bridge && t.bridge !== 'no', layer: Math.round(num(t.layer) || 0), pts: e.geometry.map((g) => toWorld(g.lon, g.lat)) };
+    for (const [x, z] of r.pts) railAt.add(railKey(x, z));
+    for (let i = 0; i + 1 < r.pts.length; i++) {
+      const [ax, az] = r.pts[i], [bx, bz] = r.pts[i + 1];
+      for (let ix = Math.floor(Math.min(ax, bx) / SEG_CELL); ix <= Math.floor(Math.max(ax, bx) / SEG_CELL); ix++) {
+        for (let iz = Math.floor(Math.min(az, bz) / SEG_CELL); iz <= Math.floor(Math.max(az, bz) / SEG_CELL); iz++) {
+          const k = segKey(ix, iz);
+          if (!railGrid.has(k)) railGrid.set(k, []);
+          railGrid.get(k).push([r, i]);
+        }
+      }
+    }
+  }
+}
+// A road bridge passing over a track below it (a track at grade, or on a lower layer), not meeting it at a level crossing
+function crossesRail(w) {
+  for (let i = 0; i + 1 < w.pts.length; i++) {
+    const p0 = w.pts[i], p1 = w.pts[i + 1];
+    if (railAt.has(railKey(...p0)) || railAt.has(railKey(...p1))) continue;
+    for (let ix = Math.floor(Math.min(p0[0], p1[0]) / SEG_CELL); ix <= Math.floor(Math.max(p0[0], p1[0]) / SEG_CELL); ix++) {
+      for (let iz = Math.floor(Math.min(p0[1], p1[1]) / SEG_CELL); iz <= Math.floor(Math.max(p0[1], p1[1]) / SEG_CELL); iz++) {
+        for (const [r, j] of railGrid.get(segKey(ix, iz)) || []) {
+          if (r.bridge && r.layer >= w.layer) continue;
+          if (crossT(p0, p1, r.pts[j], r.pts[j + 1]) >= 0) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+let nElev = 0, nUnder = 0, nRail = 0;
 for (const w of ways) {
   if ((w.bridge || w.layer > 0) && crossesRoad(w)) { w.elevated = true; nElev++; }
+  else if ((w.bridge || w.layer > 0) && crossesRail(w)) { w.elevated = true; nElev++; nRail++; }
   else if ((w.tunnel || w.layer < 0) && crossesRoad(w)) { w.under = true; nUnder++; }
 }
-log(`${nElev} flyover ways (bridges crossing roads), ${nUnder} underpasses dropped`);
+log(`${nElev} flyover ways (bridges crossing roads, ${nRail} of them over the railway alone), ${nUnder} underpasses dropped`);
 
-// Toronto's Gardiner Expressway stands on one continuous viaduct from Dufferin Street to the Don Roadway, about 12 m up.
+// Toronto's Gardiner Expressway stands on one continuous viaduct from east of Dufferin Street to the Don Roadway, about 12 m up.
 // OSM's layers along it (1-4) are stacking order, not height, and its stretches between the tagged bridges sit at
 // grade: taken literally they make a 22.5 m roller coaster that drops to the ground and climbs again. Every Gardiner
 // way between the two ends goes on the viaduct, and the elevated slip roads joining it (on through the elevated ways
 // they join in turn) meet it at its height; past either end it ramps down to the ground as any deck does.
-const GARDINER = { name: 'Gardiner Expressway', x0: -3950, x1: 2950, h: 12 };
+// (Its west end: the mapped viaduct begins east of Dufferin St, x -3513; Dufferin's bridge crosses the rail corridor and
+// the expressway still at grade, so the viaduct's ramp down must end before Dufferin.)
+const GARDINER = { name: 'Gardiner Expressway', x0: -3600, x1: 2950, h: 12 };
 const midX = (w) => w.pts.reduce((a, [x]) => a + x, 0) / w.pts.length;
 const viaduct = [];
 for (const w of ways) {
@@ -165,6 +213,48 @@ for (const w of ways) {
     }
   }
   log(`Gardiner viaduct: ${viaduct.length} ways at ${GARDINER.h} m, ${joined} elevated ways joining it levelled to it`);
+}
+
+// OSM's layers are stacking order too: Dufferin St's bridge (layer 4) passes over the rail corridor and the Gardiner
+// beside it at grade, one deck up, not four (30 m: it dragged the Exhibition's streets up to 24 m). A bridge that
+// crosses no other flyover is one deck up; the viaducts (bridge=viaduct: Bloor's over the Don) keep their layers.
+{
+  const elevGrid = new Map();
+  for (const w of ways) {
+    if (!w.elevated) continue;
+    for (let i = 0; i + 1 < w.pts.length; i++) {
+      const [ax, az] = w.pts[i], [bx, bz] = w.pts[i + 1];
+      for (let ix = Math.floor(Math.min(ax, bx) / SEG_CELL); ix <= Math.floor(Math.max(ax, bx) / SEG_CELL); ix++) {
+        for (let iz = Math.floor(Math.min(az, bz) / SEG_CELL); iz <= Math.floor(Math.max(az, bz) / SEG_CELL); iz++) {
+          const k = segKey(ix, iz);
+          if (!elevGrid.has(k)) elevGrid.set(k, []);
+          elevGrid.get(k).push([w, i]);
+        }
+      }
+    }
+  }
+  const overFlyover = (w) => {
+    const own = new Set(w.nodes);
+    for (let i = 0; i + 1 < w.pts.length; i++) {
+      const p0 = w.pts[i], p1 = w.pts[i + 1];
+      for (let ix = Math.floor(Math.min(p0[0], p1[0]) / SEG_CELL); ix <= Math.floor(Math.max(p0[0], p1[0]) / SEG_CELL); ix++) {
+        for (let iz = Math.floor(Math.min(p0[1], p1[1]) / SEG_CELL); iz <= Math.floor(Math.max(p0[1], p1[1]) / SEG_CELL); iz++) {
+          for (const [o, j] of elevGrid.get(segKey(ix, iz)) || []) {
+            if (o === w || own.has(o.nodes[j]) || own.has(o.nodes[j + 1])) continue;
+            if (crossT(p0, p1, o.pts[j], o.pts[j + 1]) >= 0) return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+  const flat = [];
+  for (const w of ways) {
+    if (!w.elevated || w.deckH || w.layer < 2 || w.viaduct || overFlyover(w)) continue;
+    w.layer = 1;
+    flat.push(w.name || w.cls);
+  }
+  log(`${flat.length} bridges mapped above layer 1 cross no other flyover: one deck up (${[...new Set(flat)].join(', ')})`);
 }
 
 // Per-vertex heights: decks at DECK_H per layer (the Gardiner's at its own), ramps down the roads continuing straight on
