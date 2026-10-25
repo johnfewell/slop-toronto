@@ -959,6 +959,9 @@ async function initApp() {
   // One frame of the city. Film mode (below) passes a fixed step: the simulation then advances exactly 1 / fps per
   // frame however long the frame takes to render, so recorded footage plays back perfectly smooth
   function frame(now, fixedDt = null) {
+    // The phone tier holds an even frame rate (QUALITY.maxFps, 30): a frame that comes early is skipped whole, so the
+    // ride paces at a steady 33 ms instead of jumping between 17, 33 & 50, and the phone runs cooler
+    if (QUALITY.maxFps && fixedDt === null && warmedUp && now - lastTime < 1000 / QUALITY.maxFps - 4) return;
     const cpu0 = cpuTimes ? performance.now() : 0;
     const rawDt = fixedDt !== null ? fixedDt : (now - lastTime) * 0.001;
     lastTime = now;
@@ -1063,6 +1066,7 @@ async function initApp() {
     }
 
     if (fixedDt === null && warmedUp) qualityNet.tick(Math.max(0, rawDt));
+    window.__CITY_APP.frameNo = (window.__CITY_APP.frameNo || 0) + 1; // (rendered frames, for profiling)
     if (gpuTimes && warmedUp) gpuTimes.collect();
 
     // Telemetry uses wall time, not the clamped simulation step, so slow frames and high-refresh displays report
