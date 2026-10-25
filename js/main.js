@@ -888,6 +888,7 @@ async function initApp() {
     for (const o of culled) o.frustumCulled = true;
   }
 
+  if (QUALITY.lean) tourGuide.warmGraphics(true); // (taken away again after the warm-up frame)
   await precompileShaders();
   markInit('compile');
 
@@ -925,6 +926,16 @@ async function initApp() {
     };
   })() : null;
   window.__CITY_APP.gpuTimes = () => (gpuTimes ? gpuTimes.read() : null);
+  // ?cputime=1: the main thread's time per frame, in the simulation (everything before the render) & in the render's
+  // submission (three's scene walk, culling, bindings & draw encoding), averaged since the last read
+  const cpuTimes = new URLSearchParams(location.search).get('cputime') === '1' ? (() => {
+    let n = 0, sim = 0, draw = 0, worst = 0;
+    return {
+      add(a, b) { n++; sim += a; draw += b; worst = Math.max(worst, a + b); },
+      read() { const r = { frames: n, simMs: +(sim / Math.max(1, n)).toFixed(1), renderCpuMs: +(draw / Math.max(1, n)).toFixed(1), worstMs: Math.round(worst) }; n = sim = draw = worst = 0; return r; }
+    };
+  })() : null;
+  window.__CITY_APP.cpuTimes = () => (cpuTimes ? cpuTimes.read() : null);
 
   // the clustered (shadowless point & spot) lights, for the dark-light pass in the loop (after the warm-up frame)
   let darkLights = null;
@@ -948,6 +959,7 @@ async function initApp() {
   // One frame of the city. Film mode (below) passes a fixed step: the simulation then advances exactly 1 / fps per
   // frame however long the frame takes to render, so recorded footage plays back perfectly smooth
   function frame(now, fixedDt = null) {
+    const cpu0 = cpuTimes ? performance.now() : 0;
     const rawDt = fixedDt !== null ? fixedDt : (now - lastTime) * 0.001;
     lastTime = now;
     const dt = fixedDt !== null ? fixedDt : Math.min(Math.max(rawDt, 0.001), 0.05);
@@ -1012,9 +1024,12 @@ async function initApp() {
       renderPipeline.render();
       for (const o of culled) o.frustumCulled = true;
       markInit('warmup');
+      if (QUALITY.lean) tourGuide.warmGraphics(false);
       collectDarkLights();
     }
+    const cpu1 = cpuTimes ? performance.now() : 0;
     renderPipeline.render();
+    if (cpuTimes && warmedUp) cpuTimes.add(cpu1 - cpu0, performance.now() - cpu1);
     if (!warmedUp) {
       warmedUp = true;
       markInit('firstFrame');

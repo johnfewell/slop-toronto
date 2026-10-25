@@ -992,6 +992,13 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     setTravel,
     teleportToPlace,
     get route() { return route; },
+    // a stand-in route for the start-up shader compile (main.js, phone tiers): the ribbon, beacon & ring materials
+    // compile behind the loading screen instead of freezing the first Tour Drive or directions
+    warmGraphics(on) {
+      if (!on) { graphics.setRoute(route); return; }
+      const p = playerPos();
+      graphics.setRoute({ mode: 'cycle', points: [[p.x, 0, p.z, 0], [p.x + 2, 0, p.z, 0], [p.x + 4, 0, p.z, 0]], cum: [0, 2, 4] });
+    },
     get navigation() { return nav; },
     plan,
     setFrom: (p) => { from = p; },
