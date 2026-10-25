@@ -62,6 +62,7 @@
     await run(30); // the jump places everyone, then they settle
     const last = new Map(), trips = [];
     const tripOf = (v) => last.get(v);
+    const reasons = {};
     let samples = 0, queuedShare = 0, stoppedShare = 0, pedWaits = [], pedState = new Map(), sumStop = 0, sumKm = 0;
     await run(seconds, (i) => {
       for (const v of vehicles()) {
@@ -78,6 +79,21 @@
         sumKm += moved / 1000;
         if (v.speed < 0.3) { tr.stop += DT; sumStop += DT; }
         tr.x = v.x; tr.z = v.z;
+      }
+      if (i % 30 === 0) {
+        // why each stopped vehicle stands: at a red, queued behind another, first in line at a green / at an
+        // unsignalised junction (waiting to get in), or elsewhere
+        for (const v of vehicles()) {
+          if (!v.edge || v.speed >= 0.3) continue;
+          const e = v.edge;
+          let r;
+          if (v.conn) r = v.yielding ? 'inside-turning' : 'inside-blocked';
+          else if (v.gap < 6) r = e.to.signal && stateOf(e, elapsed) !== 'green' ? 'queue-at-red' : 'queue';
+          else if (e.len - v.s - v.half > 12) r = 'midblock-other';
+          else if (e.to.signal) r = stateOf(e, elapsed) === 'green' ? 'front-green-blocked' : 'front-red';
+          else r = 'front-unsignalised';
+          reasons[r] = (reasons[r] || 0) + 1;
+        }
       }
       if (i % 15 === 0) {
         let act = 0, q = 0, st = 0;
@@ -101,7 +117,7 @@
     });
     for (const tr of last.values()) if (tr.km > 0.3) trips.push(tr.stop / tr.km);
     const placed = T.peds.filter((p) => p.placed);
-    log({ kind: 'fleet', spot: spot.name, seed, seconds, cars: T.cars.length, buses: T.buses.length, active: vehicles().filter((v) => v.edge).length, peds: placed.length, pedsAtCrossings: placed.filter((p) => p.node).length, stopPerKm: sumStop / Math.max(1e-6, sumKm), tripMean: mean(trips), tripP95: pct(trips, 0.95), trips: trips.length, km: sumKm, queuedAtRed: queuedShare / samples, stopped: stoppedShare / samples, pedWaitMean: mean(pedWaits), pedWaitP95: pct(pedWaits, 0.95), pedWaits: pedWaits.length, updateMs: updateMs / updates });
+    log({ kind: 'fleet', spot: spot.name, seed, seconds, cars: T.cars.length, buses: T.buses.length, active: vehicles().filter((v) => v.edge).length, peds: placed.length, pedsAtCrossings: placed.filter((p) => p.node).length, stopPerKm: sumStop / Math.max(1e-6, sumKm), tripMean: mean(trips), tripP95: pct(trips, 0.95), trips: trips.length, km: sumKm, queuedAtRed: queuedShare / samples, stopped: stoppedShare / samples, pedWaitMean: mean(pedWaits), pedWaitP95: pct(pedWaits, 0.95), pedWaits: pedWaits.length, updateMs: updateMs / updates, reasons });
     updateMs = 0; updates = 0;
   }
 
@@ -164,7 +180,10 @@
       }
       if (i % 150 === 149) await yieldUI();
     }
-    log({ kind: 'probe', route: route.name, seed, travel: tEnd !== null ? tEnd - tStart : null, stops, stopTime: stopT, off, km: Math.abs(u1 - u0) / 1000 });
+    // (in the time allowed: how far it got along the route past the start, and its mean speed there)
+    const made = Math.max(0, Math.min(Math.abs(u1 - u0), (u(v.x, v.z) - u0) * Math.sign(u1 - u0)));
+    const timeOn = tStart !== null ? (tEnd !== null ? tEnd : elapsed) - tStart : 0;
+    log({ kind: 'probe', route: route.name, seed, travel: tEnd !== null ? tEnd - tStart : null, stops, stopTime: stopT, off, km: Math.abs(u1 - u0) / 1000, madeKm: made / 1000, kmh: timeOn ? (made / timeOn) * 3.6 : 0 });
   }
 
   // --- C. The rider at a red: a player car standing at the stop line, how long until its light turns green ---
@@ -227,7 +246,7 @@
       { name: 'strachan-nb-at-manitoba', x: -2531, z: 295, ux: 0, uz: -1 },
       { name: 'lakeshore-eb-at-strachan', x: -2522, z: 482, ux: 1, uz: 0 }
     ];
-    if (opts.rider !== false) for (const r of riders) await rider(r, opts.trials || 8, 21);
+    if (opts.rider !== false) for (const seed of opts.riderSeeds || [21]) for (const r of riders) await rider(r, opts.trials || 8, seed);
     log({ kind: 'done', wallSeconds: (performance.now() - t0) / 1000 });
     app.film.stop();
   };

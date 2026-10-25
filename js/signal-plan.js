@@ -140,8 +140,9 @@ for (const j of J) {
   const axes = [[ax / L, az / L]];
   // the other arms, most important first, join the nearest axis within 30 degrees or found their own
   const rest = j.arms.filter((a) => a.road !== lead.road).sort((p, q) => q.rank - p.rank || q.w - p.w);
+  // (an unnamed arm, a slip lane or a ramp, runs with the nearest phase: it never takes time of its own)
   for (const a of rest) {
-    if (axes.some(([x, z]) => Math.abs(x * a.ux + z * a.uz) > PHASE_SPLIT)) continue;
+    if (!a.named || axes.some(([x, z]) => Math.abs(x * a.ux + z * a.uz) > PHASE_SPLIT)) continue;
     if (axes.length < 3) axes.push([a.ux, a.uz]);
   }
   // two phases: the crossing phase's axis square to the coordinated road unless a crossing arm says otherwise

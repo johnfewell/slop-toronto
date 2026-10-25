@@ -662,8 +662,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   }
 
   // The detectors of the lights around the player (signal-plan.js actuates them): a vehicle within DETECT m of a stop
-  // line, the player's own vehicle there, people waiting at a curb call their phase; people on a crosswalk keep the
-  // phase they walk with from ending
+  // line (unless it stands there with nowhere to go), the player's own vehicle there, people waiting at a curb call
+  // their phase; people on a crosswalk keep the phase they walk with from ending
   const DETECT = 45;
   function detectSignals() {
     for (const j of nearJunctions) {
@@ -672,7 +672,12 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
           for (let k = list.length - 1; k >= 0; k--) {
             const o = list[k];
             if (o.s > e.len) continue; // already crossing
-            if (e.len - o.s < DETECT + o.v.half) SIGNALS.call(j, e.sigP);
+            if (e.len - o.s >= DETECT + o.v.half) break;
+            // (queue-aware: a vehicle standing at its line with no room beyond the junction can't use a green, so it
+            // doesn't ask for one, and the light gives the time to a road that can move)
+            const u = o.v, m = u.move, out = m ? m.out[u.lane] : -1;
+            if (u.speed < 0.5 && e.len - o.s - u.half < 4 && (out < 0 || !room(m.to, out, u))) break;
+            SIGNALS.call(j, e.sigP);
             break;
           }
         }
