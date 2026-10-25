@@ -1,0 +1,57 @@
+[
+ {
+  "name": "hero-ritchie-golden",
+  "mode": "person",
+  "time": "golden",
+  "x": -5028.3,
+  "z": -2500.59,
+  "heading": 1.0879,
+  "camera": "pov",
+  "wait": 7000,
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "hero-ritchie-midday",
+  "mode": "person",
+  "time": "midday",
+  "x": -5028.3,
+  "z": -2500.59,
+  "heading": 1.0879,
+  "camera": "pov",
+  "wait": 6000,
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "hero-trinity-golden",
+  "mode": "person",
+  "time": "golden",
+  "x": -2576.71,
+  "z": -1338.75,
+  "heading": -0.315,
+  "camera": "pov",
+  "wait": 7000,
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "hero-berczy-golden",
+  "mode": "person",
+  "time": "golden",
+  "x": 458.58,
+  "z": -190.48,
+  "heading": -0.3449,
+  "camera": "pov",
+  "wait": 7000,
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "hero-trinity-ride",
+  "mode": "cyclist",
+  "time": "golden",
+  "x": -2569.07,
+  "z": -1340.5,
+  "heading": -1.5904,
+  "camera": "chase",
+  "wait": 7000,
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ }
+]

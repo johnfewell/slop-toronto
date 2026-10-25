@@ -12,6 +12,7 @@
 # Round props (the hydrant, the post-and-ring bike stand, the post box's feet) are lathes & a bent band whose strips carry
 # their own unrolled UVs, so a barrel or the ring's lettering bakes without a seam on every facet.
 # usage: Blender --background --factory-startup --python tools/blender/bake_props.py -- shelter|bin|hydrant|postbox|bikering <src.glb> <out.glb> <workdir>
+#   park-sign <face-template.jpg> <out.glb> <workdir>: modelled from measurements, no source mesh (see its block below)
 #   sources (John's Meshy originals, tools/prop-src/, gitignored): shelter s-orig.glb, bin b-orig.glb, hydrant h-orig.glb
 #   (Rusted_Hydrant_with_C), postbox p-orig.glb (Graffiti_Mailbox_by_C), bikering cand-calga.glb (From_Toronto_to_Calga)
 import bpy, bmesh, sys, os, math, mathutils, numpy as np
@@ -21,6 +22,103 @@ argv = sys.argv[sys.argv.index('--') + 1:]
 KIND, SRC, OUT, WORK = argv[0], argv[1], argv[2], argv[3]
 os.makedirs(WORK, exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
+
+# ---------------------------------------------------------------- park-sign: modelled from its measurements, no source mesh
+# The City's park name sign ("A CITY WITHIN A PARK"): two square blue posts on base collars, an arched aluminium panel
+# between them with a thin silver trim along the arch, a plain aluminium back. The printed face is its own material with
+# UVs 0..1 over the blank face template's whole 2048 x 1072 rectangle (glTF v down from the template's top row), cut to
+# the template's arch, so the template (and each park's name & address, js/park-signs.js) lands on it exactly.
+# SRC is the face template image: OUT ships without it (the page draws the face), <workdir>/park-sign-preview.glb carries
+# it for the comparisons. Sizes: John's photo & Street View (Ritchie Avenue & Beaty Avenue Parkettes), see PROVENANCE.json.
+if KIND == 'park-sign':
+    FACE_W, TPL_W, TPL_H = 1.75, 2048, 1072
+    S = FACE_W / TPL_W                       # metres per template pixel
+    PB = 1.60                                # the panel's bottom edge above the ground
+    PW, CW, CH = 0.15, 0.21, 0.28            # post, base collar (square) and collar height
+    YF, YB, YT = -0.026, 0.026, 0.034        # face & back planes, the trim's half depth (Blender -y is the front)
+    TOP = PB + TPL_H * S                     # the arch's apex
+    # the template's arch: its white cut-off, measured from the centre out (px from centre, px down from the top)
+    ARCH = [(0, 0), (128, 0.5), (256, 3), (384, 14), (512, 29), (640, 50), (768, 77), (832, 93), (896, 111), (960, 131.5), (1024, 155)]
+    def arch_px(d):
+        d = abs(d)
+        for (d0, y0), (d1, y1) in zip(ARCH, ARCH[1:]):
+            if d <= d1: return y0 + (y1 - y0) * (d - d0) / (d1 - d0)
+        return ARCH[-1][1]
+    XS = sorted({-d for d, _ in ARCH} | {d for d, _ in ARCH})   # template px from the centre, left to right
+    INSET = 2.0                                                  # px under the cut-off, so no white shows
+    bm = bmesh.new(); uvl = bm.loops.layers.uv.new('UVMap')
+    MATS = ['park-sign-face', 'park-sign-post', 'park-sign-trim', 'park-sign-back']
+    def quad(vs, mat, uvs=None):
+        f = bm.faces.new(vs); f.material_index = MATS.index(mat); f.smooth = False
+        if uvs:
+            for lp, uv in zip(f.loops, uvs): lp[uvl].uv = uv
+        return f
+    def box(x0, x1, y0, y1, z0, z1, mat, bottom=False):
+        v = [bm.verts.new((x, y, z)) for x in (x0, x1) for y in (y0, y1) for z in (z0, z1)]
+        V = lambda i, j, k: v[i * 4 + j * 2 + k]
+        quad([V(0,0,0), V(0,0,1), V(0,1,1), V(0,1,0)], mat); quad([V(1,0,0), V(1,1,0), V(1,1,1), V(1,0,1)], mat)
+        quad([V(0,0,0), V(1,0,0), V(1,0,1), V(0,0,1)], mat); quad([V(0,1,0), V(0,1,1), V(1,1,1), V(1,1,0)], mat)
+        quad([V(0,0,1), V(1,0,1), V(1,1,1), V(0,1,1)], mat)
+        if bottom: quad([V(0,0,0), V(0,1,0), V(1,1,0), V(1,0,0)], mat)
+    zt = lambda d, inset=INSET: TOP - (arch_px(d) + inset) * S
+    # face (front, -y) and back (+y): one quad per arch step from the bottom edge up to the arch
+    for a, b in zip(XS, XS[1:]):
+        xa, xb = a * S, b * S
+        ua, ub = (a + TPL_W / 2) / TPL_W, (b + TPL_W / 2) / TPL_W
+        va, vb = 1 - (arch_px(a) + INSET) / TPL_H, 1 - (arch_px(b) + INSET) / TPL_H
+        fa = [bm.verts.new(p) for p in ((xa, YF, PB), (xb, YF, PB), (xb, YF, zt(b)), (xa, YF, zt(a)))]
+        quad(fa, 'park-sign-face', [(ua, 0), (ub, 0), (ub, vb), (ua, va)])
+        ba = [bm.verts.new(p) for p in ((xa, YB, PB), (xa, YB, zt(a)), (xb, YB, zt(b)), (xb, YB, PB))]
+        quad(ba, 'park-sign-back')
+        # the panel's bottom edge
+        quad([bm.verts.new(p) for p in ((xa, YF, PB), (xa, YB, PB), (xb, YB, PB), (xb, YF, PB))], 'park-sign-back')
+    # the trim: a thin silver channel capping the arch, a little proud of the face and the back
+    TH = 0.014
+    for a, b in zip(XS, XS[1:]):
+        xa, xb = a * S, b * S
+        za, zb = zt(a, 0), zt(b, 0)
+        quad([bm.verts.new(p) for p in ((xa, -YT, za - TH), (xb, -YT, zb - TH), (xb, -YT, zb + TH), (xa, -YT, za + TH))], 'park-sign-trim')
+        quad([bm.verts.new(p) for p in ((xa, -YT, za + TH), (xb, -YT, zb + TH), (xb, YT, zb + TH), (xa, YT, za + TH))], 'park-sign-trim')
+        quad([bm.verts.new(p) for p in ((xa, YT, za - TH), (xa, YT, za + TH), (xb, YT, zb + TH), (xb, YT, zb - TH))], 'park-sign-trim')
+    # posts (their inner faces 1 cm over the panel's ends) up to the arch's corners, on their base collars
+    ZC = zt(1024, 0)
+    for sgn in (-1, 1):
+        cx = sgn * (FACE_W / 2 + PW / 2 - 0.01)
+        box(cx - PW / 2, cx + PW / 2, -PW / 2, PW / 2, 0.0, ZC, 'park-sign-post')
+        box(cx - CW / 2, cx + CW / 2, -CW / 2, CW / 2, 0.0, CH, 'park-sign-post')
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+    me = bpy.data.meshes.new('park-sign'); bm.normal_update(); bm.to_mesh(me); bm.free()
+    obj = bpy.data.objects.new('park-sign', me); bpy.context.scene.collection.objects.link(obj)
+    print('LOW', sum(len(p.vertices) - 2 for p in me.polygons), 'tris; size', [round(v, 3) for v in obj.dimensions])
+    COL = {  # sRGB, roughness, metallic
+        'park-sign-face': ((0.83, 0.84, 0.86), 0.55, 0.0),
+        'park-sign-post': ((0x2F / 255, 0x7D / 255, 0xC0 / 255), 0.5, 0.0),
+        'park-sign-trim': ((0.80, 0.81, 0.83), 0.35, 0.6),
+        'park-sign-back': ((0.62, 0.64, 0.66), 0.5, 0.4),
+    }
+    def lin(c): return tuple(x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in c)
+    for name in MATS:
+        m = bpy.data.materials.new(name); m.use_nodes = True; me.materials.append(m)
+        b = m.node_tree.nodes['Principled BSDF']; c, r, mt = COL[name]
+        b.inputs['Base Color'].default_value = (*lin(c), 1.0); b.inputs['Roughness'].default_value = r; b.inputs['Metallic'].default_value = mt
+    me.set_sharp_from_angle(angle=math.radians(30))
+    def export(path):
+        bpy.ops.object.select_all(action='DESELECT'); obj.select_set(True)
+        bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True, export_apply=True, export_yup=True,
+                                  export_normals=True, export_texcoords=True, export_tangents=False, export_materials='EXPORT', export_image_format='AUTO')
+        print('WROTE', path)
+    export(OUT)
+    # the preview: the blank face template printed on the face
+    fm = bpy.data.materials['park-sign-face']; nt = fm.node_tree
+    t = nt.nodes.new('ShaderNodeTexImage'); t.image = bpy.data.images.load(SRC); nt.nodes.active = t
+    nt.links.new(t.outputs[0], nt.nodes['Principled BSDF'].inputs['Base Color'])
+    export(os.path.join(WORK, 'park-sign-preview.glb'))
+    # the face alone (its outline & print against the template)
+    bm = bmesh.new(); bm.from_mesh(me)
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index != 0], context='FACES')
+    bm.to_mesh(me); bm.free()
+    export(os.path.join(WORK, 'park-sign-face.glb'))
+    sys.exit(0)
 
 # ---------------------------------------------------------------- tags: (texel density, keep bake 0..1, AO strength, roughness, metallic, emission, flat colour override sRGB)
 if KIND == 'shelter':

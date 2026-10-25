@@ -1,0 +1,62 @@
+[
+ {
+  "name": "ps1-ritchie-close",
+  "mode": "person",
+  "time": "midday",
+  "x": -5026.19,
+  "z": -2500.35,
+  "heading": 0.8756,
+  "camera": "pov",
+  "wait": 5000
+ },
+ {
+  "name": "ps2-ritchie-photo-angle",
+  "mode": "person",
+  "time": "midday",
+  "x": -5024.54,
+  "z": -2500.91,
+  "heading": 0.375,
+  "camera": "pov",
+  "wait": 5000
+ },
+ {
+  "name": "ps3-beaty",
+  "mode": "person",
+  "time": "midday",
+  "x": -4865.98,
+  "z": -658.58,
+  "heading": -1.8376,
+  "camera": "pov",
+  "wait": 5000
+ },
+ {
+  "name": "ps4-alexander",
+  "mode": "person",
+  "time": "midday",
+  "x": 397.62,
+  "z": -1950.84,
+  "heading": 2.8481,
+  "camera": "pov",
+  "wait": 5000
+ },
+ {
+  "name": "ps5-berczy",
+  "mode": "person",
+  "time": "midday",
+  "x": 454.37,
+  "z": -191.46,
+  "heading": 0.2849,
+  "camera": "pov",
+  "wait": 5000
+ },
+ {
+  "name": "ps6-trinity-bellwoods",
+  "mode": "person",
+  "time": "midday",
+  "x": -2576.06,
+  "z": -1341.14,
+  "heading": -0.2979,
+  "camera": "pov",
+  "wait": 5000
+ }
+]

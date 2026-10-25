@@ -115,10 +115,13 @@ async function initApp() {
   markInit('streetDetails');
   // Trees: the City's street trees & the parkland ones in John's EZ-Tree models (ez-trees.js), else mrdoob's
   const treeMode = new URLSearchParams(location.search).get('trees'); // ?trees=slop: mrdoob's trees (comparison)
+  if (window.CITY.clearParkSignTrees) window.CITY.clearParkSignTrees(streetDetails.treePositions); // (park-signs.js)
   if (treeMode === 'slop' || !(await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees();
   markInit('trees');
   // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
   await window.CITY.buildStreetProps(scene);
+  // the City's park name signs at the parks' entrances, each with its park's name & address (park-signs.js)
+  if (window.CITY.buildParkSigns) allColliders.push(...(await window.CITY.buildParkSigns(scene)).colliders);
   // Yonge & Dundas: the screens round Sankofa Square (yonge-dundas.js)
   window.CITY.buildYongeDundas(scene);
   markInit('streetProps');
@@ -184,7 +187,7 @@ async function initApp() {
 
   // City-wide static geometry: chunk & distance-cull the small props, shadow stand-ins for the big casters
   // (scene-culling.js)
-  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityLandmarks', 'Terrain']
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityLandmarks', 'Terrain']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
