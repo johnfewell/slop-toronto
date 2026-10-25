@@ -1,0 +1,388 @@
+# Photos measured for the facade colours
+
+The facade base colours in `js/buildings.js` and `js/towers.js` were measured from these photos on Wikimedia Commons (by `tools/commons-palette.py`). The photos are not part of this repository; only colours derived from them are.
+
+- [1 Bloor East - Toronto - 2018 (41653078474).jpg](https://commons.wikimedia.org/wiki/File:1_Bloor_East_-_Toronto_-_2018_(41653078474).jpg) by Enoch Leung from Canada, CC BY-SA 2.0
+- [1 Bloor East Toronto 2010.jpg](https://commons.wikimedia.org/wiki/File:1_Bloor_East_Toronto_2010.jpg) by Loozrboy from Toronto, Canada, CC BY-SA 2.0
+- [1 Granite Court, Toronto 2026.jpg](https://commons.wikimedia.org/wiki/File:1_Granite_Court,_Toronto_2026.jpg) by Chicken4War, CC BY-SA 4.0
+- [107 Shaw Street in Toronto, August 26 2026 (01).jpg](https://commons.wikimedia.org/wiki/File:107_Shaw_Street_in_Toronto,_August_26_2026_(01).jpg) by Dillan Payne, CC BY-SA 4.0
+- [108 Stayner front 2010.jpg](https://commons.wikimedia.org/wiki/File:108_Stayner_front_2010.jpg) by FVolpe, Public domain
+- [11 and 13 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:11_and_13_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [119 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:119_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [120 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:120_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [121 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:121_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [123 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:123_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [125 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:125_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [125 House on Ward Island.jpg](https://commons.wikimedia.org/wiki/File:125_House_on_Ward_Island.jpg) by XeresNelro, CC BY-SA 4.0
+- [127 and 129 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:127_and_129_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [131 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:131_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [133 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:133_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [135 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:135_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [139 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:139_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [14 Glen Road (38571640081).jpg](https://commons.wikimedia.org/wiki/File:14_Glen_Road_(38571640081).jpg) by Jeff Hitchcock from Seattle, WA, USA, CC BY 2.0
+- [141 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:141_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [148 Morse Street (38667549931).jpg](https://commons.wikimedia.org/wiki/File:148_Morse_Street_(38667549931).jpg) by Jeff Hitchcock from Seattle, WA, USA, CC BY 2.0
+- [15 Howland Ave., Toronto, Canada.jpg](https://commons.wikimedia.org/wiki/File:15_Howland_Ave.,_Toronto,_Canada.jpg) by Arthur Gron, CC0
+- [15 Howland Ave., Toronto.jpg](https://commons.wikimedia.org/wiki/File:15_Howland_Ave.,_Toronto.jpg) by Arthur Gron, CC0
+- [15 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:15_Howland_Ave.jpg) by Arthur Gron, CC0
+- [15 South Kingsway, Toronto ON 2023.jpg](https://commons.wikimedia.org/wiki/File:15_South_Kingsway,_Toronto_ON_2023.jpg) by Chicken4War, CC BY-SA 4.0
+- [15 and 17 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:15_and_17_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [150 and 152 Lansdowne Avenue, Toronto.jpg](https://commons.wikimedia.org/wiki/File:150_and_152_Lansdowne_Avenue,_Toronto.jpg) by Qviri, CC BY-SA 4.0
+- [172 St. George Street.JPG](https://commons.wikimedia.org/wiki/File:172_St._George_Street.JPG) by SimonP, CC BY-SA 3.0
+- [18 Yonge.jpg](https://commons.wikimedia.org/wiki/File:18_Yonge.jpg) by SimonP, CC BY-SA 3.0
+- [181 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:181_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [185 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:185_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [185 and a half Beverley Street, Toronto.jpg](https://commons.wikimedia.org/wiki/File:185_and_a_half_Beverley_Street,_Toronto.jpg) by Qviri, CC BY-SA 4.0
+- [187 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:187_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [189 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:189_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [19 and 21 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:19_and_21_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [191 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:191_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [193 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:193_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [195 and 197 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:195_and_197_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [199 and 201 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:199_and_201_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [1BloorEast Toronto JAN2013 Foundations.JPG](https://commons.wikimedia.org/wiki/File:1BloorEast_Toronto_JAN2013_Foundations.JPG) by Jetam2, CC BY-SA 3.0
+- [20020615 14 the Beaches, Toronto, ON (8409031567).jpg](https://commons.wikimedia.org/wiki/File:20020615_14_the_Beaches,_Toronto,_ON_(8409031567).jpg) by David Wilson from Oak Park, Illinois, USA, CC BY 2.0
+- [2014-02-16 Stereoscopy - Parkdale - 05 Icicle.jpg](https://commons.wikimedia.org/wiki/File:2014-02-16_Stereoscopy_-_Parkdale_-_05_Icicle.jpg) by Arthur Gron, CC BY-SA 3.0
+- [20171216 112531 Howland 107.jpg](https://commons.wikimedia.org/wiki/File:20171216_112531_Howland_107.jpg) by Arthur Gron, CC0
+- [20171216 112620 Howland 111.jpg](https://commons.wikimedia.org/wiki/File:20171216_112620_Howland_111.jpg) by Arthur Gron, CC0
+- [20171216 112723 Howland 113 115 117.jpg](https://commons.wikimedia.org/wiki/File:20171216_112723_Howland_113_115_117.jpg) by Arthur Gron, CC0
+- [20171216 112810 Howland 121 123.jpg](https://commons.wikimedia.org/wiki/File:20171216_112810_Howland_121_123.jpg) by Arthur Gron, CC0
+- [20171216 112914 Howland 125 127.jpg](https://commons.wikimedia.org/wiki/File:20171216_112914_Howland_125_127.jpg) by Arthur Gron, CC0
+- [20171216 113008 Howland 129 131.jpg](https://commons.wikimedia.org/wiki/File:20171216_113008_Howland_129_131.jpg) by Arthur Gron, CC0
+- [20171216 113051 Howland 133 135.jpg](https://commons.wikimedia.org/wiki/File:20171216_113051_Howland_133_135.jpg) by Arthur Gron, CC0
+- [20171216 113127 Howland 137 139.jpg](https://commons.wikimedia.org/wiki/File:20171216_113127_Howland_137_139.jpg) by Arthur Gron, CC0
+- [20171216 121126 Howland 145 147.jpg](https://commons.wikimedia.org/wiki/File:20171216_121126_Howland_145_147.jpg) by Arthur Gron, CC0
+- [20171216 121227 Howland 149 151.jpg](https://commons.wikimedia.org/wiki/File:20171216_121227_Howland_149_151.jpg) by Arthur Gron, CC0
+- [2020-09-09 35 High Point Road (Toronto) 001.jpg](https://commons.wikimedia.org/wiki/File:2020-09-09_35_High_Point_Road_(Toronto)_001.jpg) by Thomas1313, CC BY-SA 4.0
+- [21 Historic Row Houses.jpg](https://commons.wikimedia.org/wiki/File:21_Historic_Row_Houses.jpg) by XeresNelro, CC BY-SA 4.0
+- [211 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:211_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [213 and 215 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:213_and_215_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [225 and 227 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:225_and_227_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [23 and 25 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:23_and_25_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [231 College Street in Toronto, October 12 2026.jpg](https://commons.wikimedia.org/wiki/File:231_College_Street_in_Toronto,_October_12_2026.jpg) by Dillan Payne, CC BY-SA 4.0
+- [233 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:233_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [235 and 237 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:235_and_237_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [239 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:239_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [245 and 247 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:245_and_247_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [249 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:249_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [25 Howland Ave., Toronto.jpg](https://commons.wikimedia.org/wiki/File:25_Howland_Ave.,_Toronto.jpg) by Arthur Gron, CC0
+- [255 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:255_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [256 and 258 Howland Aveune Toronto.jpg](https://commons.wikimedia.org/wiki/File:256_and_258_Howland_Aveune_Toronto.jpg) by Arthur Gron, CC0
+- [257 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:257_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [259 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:259_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [261 and 263 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:261_and_263_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [265 and 267 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:265_and_267_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [269 and 271 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:269_and_271_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [29 Howland Ave., Toronto.jpg](https://commons.wikimedia.org/wiki/File:29_Howland_Ave.,_Toronto.jpg) by Arthur Gron, CC0
+- [294 Carlton Street (24604448298).jpg](https://commons.wikimedia.org/wiki/File:294_Carlton_Street_(24604448298).jpg) by Jeff Hitchcock from Seattle, WA, USA, CC BY 2.0
+- [30, 32, 34, 36 Grenadier Road, Toronto.jpg](https://commons.wikimedia.org/wiki/File:30,_32,_34,_36_Grenadier_Road,_Toronto.jpg) by Qviri, CC BY-SA 4.0
+- [31 and 33 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:31_and_33_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [321 Palmerston Boulevard in Toronto, October 12 2026.jpg](https://commons.wikimedia.org/wiki/File:321_Palmerston_Boulevard_in_Toronto,_October_12_2026.jpg) by Dillan Payne, CC BY-SA 4.0
+- [35 Mariner, Harbourview Estates.jpg](https://commons.wikimedia.org/wiki/File:35_Mariner,_Harbourview_Estates.jpg) by Benny Lin from Mississauga, Ontario, Canada, CC BY 2.0
+- [359 Palmerston Boulevard in Toronto, October 12 2026.jpg](https://commons.wikimedia.org/wiki/File:359_Palmerston_Boulevard_in_Toronto,_October_12_2026.jpg) by Dillan Payne, CC BY-SA 4.0
+- [37 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:37_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [37-43ElmStreetToronto.jpg](https://commons.wikimedia.org/wiki/File:37-43ElmStreetToronto.jpg) by Alaney2k, CC BY 4.0
+- [38 and 44 Grenadier Road, Toronto.jpg](https://commons.wikimedia.org/wiki/File:38_and_44_Grenadier_Road,_Toronto.jpg) by Qviri, CC BY-SA 4.0
+- [39 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:39_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [39 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:39_Howland_Ave.jpg) by Arthur Gron, CC0
+- [40 Sussex Avenue.JPG](https://commons.wikimedia.org/wiki/File:40_Sussex_Avenue.JPG) by SimonP, CC BY-SA 3.0
+- [41 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:41_Howland_Ave.jpg) by Arthur Gron, CC0
+- [41 and 43 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:41_and_43_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [43 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:43_Howland_Ave.jpg) by Arthur Gron, CC0
+- [45 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:45_Howland_Ave.jpg) by Arthur Gron, CC0
+- [475-479 Roncesvalles Avenue in Toronto, August 15 2026.jpg](https://commons.wikimedia.org/wiki/File:475-479_Roncesvalles_Avenue_in_Toronto,_August_15_2026.jpg) by Dillan Payne, CC BY-SA 4.0
+- [5-min break (34564633504).jpg](https://commons.wikimedia.org/wiki/File:5-min_break_(34564633504).jpg) by VV Nincic from Toronto, Canada, CC BY 2.0
+- [51 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:51_Howland_Ave.jpg) by Arthur Gron, CC0
+- [51 and 53 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:51_and_53_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [55 and 57 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:55_and_57_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [57 Howland.jpg](https://commons.wikimedia.org/wiki/File:57_Howland.jpg) by Arthur Gron, CC0
+- [59 and 61 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:59_and_61_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [65 Alberta Avenue (37512979092).jpg](https://commons.wikimedia.org/wiki/File:65_Alberta_Avenue_(37512979092).jpg) by Jeff Hitchcock from Seattle, WA, USA, CC BY 2.0
+- [65 and 67 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:65_and_67_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [67 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:67_Howland_Ave.jpg) by Arthur Gron, CC0
+- [7 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:7_Howland_Ave.jpg) by Arthur Gron, CC0
+- [713 Spadina Avenue.JPG](https://commons.wikimedia.org/wiki/File:713_Spadina_Avenue.JPG) by SimonP, CC BY-SA 3.0
+- [73 and 75 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:73_and_75_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [75 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:75_Howland_Ave.jpg) by Arthur Gron, CC0
+- [77 and 79 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:77_and_79_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [777 Bay Street, Toronto.jpg](https://commons.wikimedia.org/wiki/File:777_Bay_Street,_Toronto.jpg) by Maksim Sokolov (Maxergon), CC BY-SA 4.0
+- [8 Elm Street Toronto construction 2025.jpg](https://commons.wikimedia.org/wiki/File:8_Elm_Street_Toronto_construction_2025.jpg) by Transportfan70, CC BY 4.0
+- [83 and 85 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:83_and_85_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [85 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:85_Howland_Ave.jpg) by Arthur Gron, CC BY-SA 4.0
+- [89 Howland Ave.jpg](https://commons.wikimedia.org/wiki/File:89_Howland_Ave.jpg) by Arthur Gron, CC BY-SA 4.0
+- [9 Albany Ave Annex Toronto.jpg](https://commons.wikimedia.org/wiki/File:9_Albany_Ave_Annex_Toronto.jpg) by Arthur Gron, CC0
+- [9 and 11 Spadina Road in Toronto, July 29 2026.jpg](https://commons.wikimedia.org/wiki/File:9_and_11_Spadina_Road_in_Toronto,_July_29_2026.jpg) by Dillan Payne, CC BY-SA 4.0
+- [90 Asquith Avenue (24604300608).jpg](https://commons.wikimedia.org/wiki/File:90_Asquith_Avenue_(24604300608).jpg) by Jeff Hitchcock from Seattle, WA, USA, CC BY 2.0
+- [92 College Street.JPG](https://commons.wikimedia.org/wiki/File:92_College_Street.JPG) by SimonP, CC BY-SA 3.0
+- [A Nice Place (8637887483).jpg](https://commons.wikimedia.org/wiki/File:A_Nice_Place_(8637887483).jpg) by Michael from Calgary, AB, Canada, CC BY 2.0
+- [A Toronto Special building in High Park.jpg](https://commons.wikimedia.org/wiki/File:A_Toronto_Special_building_in_High_Park.jpg) by Ysh.cabana, CC BY-SA 4.0
+- [A lovely cottage on Ward's Island (27864695136).jpg](https://commons.wikimedia.org/wiki/File:A_lovely_cottage_on_Ward%27s_Island_(27864695136).jpg) by shankar s. from Dubai, united arab emirates, CC BY 2.0
+- [A typically English looking cottage (27287270983).jpg](https://commons.wikimedia.org/wiki/File:A_typically_English_looking_cottage_(27287270983).jpg) by shankar s. from Dubai, united arab emirates, CC BY 2.0
+- [A view from the Back Campus of the University of Toronto.jpg](https://commons.wikimedia.org/wiki/File:A_view_from_the_Back_Campus_of_the_University_of_Toronto.jpg) by Maksim Sokolov (Maxergon), CC BY-SA 4.0
+- [Alberta Avenue Wychwood Toronto.jpg](https://commons.wikimedia.org/wiki/File:Alberta_Avenue_Wychwood_Toronto.jpg) by GTD Aquitaine, Public domain
+- [Alexander Muirhead house.JPG](https://commons.wikimedia.org/wiki/File:Alexander_Muirhead_house.JPG) by SimonP, CC BY-SA 3.0
+- [Allandale, Toronto.jpg](https://commons.wikimedia.org/wiki/File:Allandale,_Toronto.jpg) by SimonP, CC BY-SA 3.0
+- [Andrews Avenue, Toronto, ON - May 2021.jpg](https://commons.wikimedia.org/wiki/File:Andrews_Avenue,_Toronto,_ON_-_May_2021.jpg) by M Canzi, CC BY-SA 2.0
+- [Annex houses 2.JPG](https://commons.wikimedia.org/wiki/File:Annex_houses_2.JPG) by SimonP, CC BY-SA 3.0
+- [Annex houses.JPG](https://commons.wikimedia.org/wiki/File:Annex_houses.JPG) by SimonP, CC BY-SA 3.0
+- [Another delightful cottage amidst the trees (27899862865).jpg](https://commons.wikimedia.org/wiki/File:Another_delightful_cottage_amidst_the_trees_(27899862865).jpg) by shankar s. from Dubai, united arab emirates, CC BY 2.0
+- [Apartment building at 2269 Lake Shore Blvd W, Toronto 2026.jpg](https://commons.wikimedia.org/wiki/File:Apartment_building_at_2269_Lake_Shore_Blvd_W,_Toronto_2026.jpg) by Chicken4War, CC BY-SA 4.0
+- [Armour Heights houses.JPG](https://commons.wikimedia.org/wiki/File:Armour_Heights_houses.JPG) by SimonP, CC BY-SA 3.0
+- [Aura Basement Arcade 2022.jpg](https://commons.wikimedia.org/wiki/File:Aura_Basement_Arcade_2022.jpg) by Canmenwalker, CC BY 4.0
+- [Aura College Park 2025-05-18.jpg](https://commons.wikimedia.org/wiki/File:Aura_College_Park_2025-05-18.jpg) by JK Liu, CC BY-SA 4.0
+- [Aura Condo at College Park.JPG](https://commons.wikimedia.org/wiki/File:Aura_Condo_at_College_Park.JPG) by Howard64NH, CC BY-SA 3.0
+- [Aura Retail facade 2022.jpg](https://commons.wikimedia.org/wiki/File:Aura_Retail_facade_2022.jpg) by Canmenwalker, CC BY 4.0
+- [Aura at College Park Condos in Toronto.jpg](https://commons.wikimedia.org/wiki/File:Aura_at_College_Park_Condos_in_Toronto.jpg) by TensaZ, CC BY-SA 4.0
+- [Aura at College Park, Toronto - 2017.jpg](https://commons.wikimedia.org/wiki/File:Aura_at_College_Park,_Toronto_-_2017.jpg) by Sikander, CC BY-SA 4.0
+- [Aura building Toronto 388 Yonge St.jpg](https://commons.wikimedia.org/wiki/File:Aura_building_Toronto_388_Yonge_St.jpg) by Nusaybah, CC BY-SA 4.0
+- [Aura skyscraper in Toronto.jpg](https://commons.wikimedia.org/wiki/File:Aura_skyscraper_in_Toronto.jpg) by Maksim Sokolov (maxergon.com), CC BY-SA 4.0
+- [Aura skyscraper of Toronto.jpg](https://commons.wikimedia.org/wiki/File:Aura_skyscraper_of_Toronto.jpg) by Moskito The Great, CC BY-SA 4.0
+- [Bancroft Building.JPG](https://commons.wikimedia.org/wiki/File:Bancroft_Building.JPG) by SimonP, CC BY-SA 3.0
+- [Bay Adelaide Centre stump 2005.jpg](https://commons.wikimedia.org/wiki/File:Bay_Adelaide_Centre_stump_2005.jpg) by The original uploader was SimonP at English Wikipedia., CC BY-SA 3.0
+- [Bay Wellington Tower.jpg](https://commons.wikimedia.org/wiki/File:Bay_Wellington_Tower.jpg) by SimonP at English Wikipedia, CC BY-SA 3.0
+- [Bay-and-gable 2.JPG](https://commons.wikimedia.org/wiki/File:Bay-and-gable_2.JPG) by SimonP, CC BY-SA 3.0
+- [Beaches Houses Toronto 2010 (1).jpg](https://commons.wikimedia.org/wiki/File:Beaches_Houses_Toronto_2010_(1).jpg) by Josh Evnin from Chicago, IL, USA, CC BY-SA 2.0
+- [Bendale.JPG](https://commons.wikimedia.org/wiki/File:Bendale.JPG) by SimonP, CC BY-SA 3.0
+- [Berkeley Street, Cabbagetown Southwest District.png](https://commons.wikimedia.org/wiki/File:Berkeley_Street,_Cabbagetown_Southwest_District.png) by StudioLAND, CC BY-SA 4.0
+- [Berkeley Street.jpg](https://commons.wikimedia.org/wiki/File:Berkeley_Street.jpg) by StudioLAND, CC BY-SA 4.0
+- [Bloor Walk or corture.JPG](https://commons.wikimedia.org/wiki/File:Bloor_Walk_or_corture.JPG) by Terramorphous, CC BY-SA 3.0
+- [Bloor condos - 20250311.jpg](https://commons.wikimedia.org/wiki/File:Bloor_condos_-_20250311.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [Bloor-Yonge Skyline, October 10 2025 (01).jpg](https://commons.wikimedia.org/wiki/File:Bloor-Yonge_Skyline,_October_10_2025_(01).jpg) by Dillan Payne, CC BY-SA 4.0
+- [Bostwick House, King and Yonge, York, Upper Canada, 1812.jpg](https://commons.wikimedia.org/wiki/File:Bostwick_House,_King_and_Yonge,_York,_Upper_Canada,_1812.jpg) by Geo Swan (talk), Public domain
+- [Boulder Sierra Buff Blend - 2013 - 9 Adair Rd. - Vic Park & St. Clair - Toronto (9411648870).jpg](https://commons.wikimedia.org/wiki/File:Boulder_Sierra_Buff_Blend_-_2013_-_9_Adair_Rd._-_Vic_Park_%26_St._Clair_-_Toronto_(9411648870).jpg) by Randy White, CC BY-SA 2.0
+- [Brick (51064560242).jpg](https://commons.wikimedia.org/wiki/File:Brick_(51064560242).jpg) by Sajith T S, CC BY-SA 2.0
+- [Brock Bike Lane.jpg](https://commons.wikimedia.org/wiki/File:Brock_Bike_Lane.jpg) by Nate Wessel, CC BY-SA 4.0
+- [Budgell Terrace, Toronto 2026.jpg](https://commons.wikimedia.org/wiki/File:Budgell_Terrace,_Toronto_2026.jpg) by Chicken4War, CC BY-SA 4.0
+- [Buildings West of Bathurst Yard.jpg](https://commons.wikimedia.org/wiki/File:Buildings_West_of_Bathurst_Yard.jpg) by TooMuchFrixion, CC BY-SA 4.0
+- [Burano Condos 2023.jpg](https://commons.wikimedia.org/wiki/File:Burano_Condos_2023.jpg) by Canmenwalker, CC BY 4.0
+- [Burano Cropped.JPG](https://commons.wikimedia.org/wiki/File:Burano_Cropped.JPG) by Terramorphous, CC BY-SA 3.0
+- [Burano glasshouse inside 2024.jpg](https://commons.wikimedia.org/wiki/File:Burano_glasshouse_inside_2024.jpg) by Canmenwalker, CC BY 4.0
+- [CN Tower Toronto 1978 (28).jpg](https://commons.wikimedia.org/wiki/File:CN_Tower_Toronto_1978_(28).jpg) by Barry Lewis, CC BY 2.0
+- [CN Tower Toronto 1978 (5).jpg](https://commons.wikimedia.org/wiki/File:CN_Tower_Toronto_1978_(5).jpg) by Barry Lewis, CC BY 2.0
+- [CabbagetownBuildings2004.jpg](https://commons.wikimedia.org/wiki/File:CabbagetownBuildings2004.jpg) by Moncrief at English Wikipedia, Public domain
+- [CabbagetownHouseColour.jpg](https://commons.wikimedia.org/wiki/File:CabbagetownHouseColour.jpg) by Alexia from Toronto, Canada, CC BY 2.0
+- [Calm After the Storm.jpg](https://commons.wikimedia.org/wiki/File:Calm_After_the_Storm.jpg) by Joe Howell, CC BY 2.0
+- [Can you believe that Spadina Ave.- the street of Chinatown is so quiet and peaceful at the other end? (27621510000).jpg](https://commons.wikimedia.org/wiki/File:Can_you_believe_that_Spadina_Ave.-_the_street_of_Chinatown_is_so_quiet_and_peaceful_at_the_other_end%3F_(27621510000).jpg) by shankar s. from Dubai, united arab emirates, CC BY 2.0
+- [Canada Day (2630267258).jpg](https://commons.wikimedia.org/wiki/File:Canada_Day_(2630267258).jpg) by Steve Harris from Toronto, Canada, CC BY 2.0
+- [Canada Trust Tower (Toronto) - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Canada_Trust_Tower_(Toronto)_-_panoramio.jpg) by Leno89, CC BY 3.0
+- [Canada-toronto-integral-ho.jpg](https://commons.wikimedia.org/wiki/File:Canada-toronto-integral-ho.jpg) by David e cooper, CC BY-SA 4.0
+- [CarlawHouses.jpg](https://commons.wikimedia.org/wiki/File:CarlawHouses.jpg) by Skeezix1000, CC BY-SA 3.0
+- [CeI 24 - Pena de jardín (13646645143).jpg](https://commons.wikimedia.org/wiki/File:CeI_24_-_Pena_de_jard%C3%ADn_(13646645143).jpg) by David Ceballos from Madrid, España, CC BY 2.0
+- [CeI 27 - Casona (13646602705).jpg](https://commons.wikimedia.org/wiki/File:CeI_27_-_Casona_(13646602705).jpg) by David Ceballos from Madrid, España, CC BY 2.0
+- [Chalmers house, toronto (25100549561).jpg](https://commons.wikimedia.org/wiki/File:Chalmers_house,_toronto_(25100549561).jpg) by VV Nincic from Toronto, Canada, CC BY 2.0
+- [Chick-fil-A at Yonge and Bloor - 01.jpg](https://commons.wikimedia.org/wiki/File:Chick-fil-A_at_Yonge_and_Bloor_-_01.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [Chick-fil-A at Yonge and Bloor - 04.jpg](https://commons.wikimedia.org/wiki/File:Chick-fil-A_at_Yonge_and_Bloor_-_04.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [Christmas Lights (51796303030).jpg](https://commons.wikimedia.org/wiki/File:Christmas_Lights_(51796303030).jpg) by M Canzi, CC BY-SA 2.0
+- [Christmas Lights (51796307335).jpg](https://commons.wikimedia.org/wiki/File:Christmas_Lights_(51796307335).jpg) by M Canzi, CC BY-SA 2.0
+- [Christmas lights (10966837206).jpg](https://commons.wikimedia.org/wiki/File:Christmas_lights_(10966837206).jpg) by Toronto History from Toronto, Canada, CC BY 2.0
+- [Cineforum.JPG](https://commons.wikimedia.org/wiki/File:Cineforum.JPG) by The original uploader was SimonP at English Wikipedia., CC BY-SA 3.0
+- [Cinema Condos.jpg](https://commons.wikimedia.org/wiki/File:Cinema_Condos.jpg) by Terramorphous, CC BY-SA 4.0
+- [CityPlace Montage.JPG](https://commons.wikimedia.org/wiki/File:CityPlace_Montage.JPG) by SimonP, CC BY-SA 3.0
+- [Clairlea.JPG](https://commons.wikimedia.org/wiki/File:Clairlea.JPG) by SimonP, CC BY-SA 3.0
+- [Clarence Square row houses.JPG](https://commons.wikimedia.org/wiki/File:Clarence_Square_row_houses.JPG) by Secondarywaltz, CC BY-SA 3.0
+- [Cliffside.JPG](https://commons.wikimedia.org/wiki/File:Cliffside.JPG) by SimonP, CC BY-SA 3.0
+- [Colours (51795942964).jpg](https://commons.wikimedia.org/wiki/File:Colours_(51795942964).jpg) by M Canzi, CC BY-SA 2.0
+- [Commerce Court North and West.jpg](https://commons.wikimedia.org/wiki/File:Commerce_Court_North_and_West.jpg) by basic_sounds, CC BY-SA 2.0
+- [Commerce Court.jpg](https://commons.wikimedia.org/wiki/File:Commerce_Court.jpg) by The original uploader was SimonP at English Wikipedia., CC BY-SA 3.0
+- [Compact under-floor niche for the canoes! (27864684356).jpg](https://commons.wikimedia.org/wiki/File:Compact_under-floor_niche_for_the_canoes!_(27864684356).jpg) by shankar s. from Dubai, united arab emirates, CC BY 2.0
+- [Concord Canada House 1.jpg](https://commons.wikimedia.org/wiki/File:Concord_Canada_House_1.jpg) by Transportfan70, CC BY 4.0
+- [Concord Canada House 2.jpg](https://commons.wikimedia.org/wiki/File:Concord_Canada_House_2.jpg) by Transportfan70, CC BY 4.0
+- [Concord Canada House.jpg](https://commons.wikimedia.org/wiki/File:Concord_Canada_House.jpg) by Transportfan70, CC0
+- [Concord Sky and 8 Elm, May 22 2026 (02).jpg](https://commons.wikimedia.org/wiki/File:Concord_Sky_and_8_Elm,_May_22_2026_(02).jpg) by Dillan Payne, CC BY-SA 4.0
+- [Condos at The Queensway and Windermere, Toronto 2025.jpg](https://commons.wikimedia.org/wiki/File:Condos_at_The_Queensway_and_Windermere,_Toronto_2025.jpg) by Chicken4War, CC BY-SA 4.0
+- [Condos from Humber River Recreational Trail, Toronto 2026.jpg](https://commons.wikimedia.org/wiki/File:Condos_from_Humber_River_Recreational_Trail,_Toronto_2026.jpg) by Chicken4War, CC BY-SA 4.0
+- [Condos on The Queensway from across Grenadier Pond, Toronto 2026 (01).jpg](https://commons.wikimedia.org/wiki/File:Condos_on_The_Queensway_from_across_Grenadier_Pond,_Toronto_2026_(01).jpg) by Chicken4War, CC BY-SA 4.0
+- [Constructing the Berczy, 2013 01 07 (7).jpg](https://commons.wikimedia.org/wiki/File:Constructing_the_Berczy,_2013_01_07_(7).jpg) by booledozer, Public domain
+- [Construction of 8 Elm in Toronto, August 26 2025 (01).jpg](https://commons.wikimedia.org/wiki/File:Construction_of_8_Elm_in_Toronto,_August_26_2025_(01).jpg) by Dillan Payne, CC BY-SA 4.0
+- [Construction of 8 Elm in Toronto, October 10 2025 (01).jpg](https://commons.wikimedia.org/wiki/File:Construction_of_8_Elm_in_Toronto,_October_10_2025_(01).jpg) by Dillan Payne, CC BY-SA 4.0
+- [Construction of the Bay Adelaide Centre, 2014 07 08 (4).JPG - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Construction_of_the_Bay_Adelaide_Centre,_2014_07_08_(4).JPG_-_panoramio.jpg) by OldYorkGuy, CC BY-SA 3.0
+- [Construction of the Bay Adelaide Centre, 2014 07 08 (5).JPG - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Construction_of_the_Bay_Adelaide_Centre,_2014_07_08_(5).JPG_-_panoramio.jpg) by OldYorkGuy, CC BY-SA 3.0
+- [Construction of the Bay Adelaide East Centre, 2015 01 25.JPG - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Construction_of_the_Bay_Adelaide_East_Centre,_2015_01_25.JPG_-_panoramio.jpg) by OldYorkGuy, CC BY-SA 3.0
+- [Consulate General of Italy in Toronto.jpg](https://commons.wikimedia.org/wiki/File:Consulate_General_of_Italy_in_Toronto.jpg) by GTD Aquitaine, Public domain
+- [Corinth Gardens.jpg](https://commons.wikimedia.org/wiki/File:Corinth_Gardens.jpg) by Jamie, CC BY 2.0
+- [Corktown (51795942029).jpg](https://commons.wikimedia.org/wiki/File:Corktown_(51795942029).jpg) by M Canzi, CC BY-SA 2.0
+- [Corktown, Toronto.jpg](https://commons.wikimedia.org/wiki/File:Corktown,_Toronto.jpg) by SimonP, CC BY-SA 3.0
+- [Daniel Flynn House.jpg](https://commons.wikimedia.org/wiki/File:Daniel_Flynn_House.jpg) by Gary J. Wood from Toronto, ON, Canada, CC BY-SA 2.0
+- [Daniel Stong Loghouse.jpg](https://commons.wikimedia.org/wiki/File:Daniel_Stong_Loghouse.jpg) by John Griffiths from London, United Kingdom, CC BY-SA 2.0
+- [David Duncan House.JPG](https://commons.wikimedia.org/wiki/File:David_Duncan_House.JPG) by SimonP, CC BY-SA 3.0
+- [Davis House.JPG](https://commons.wikimedia.org/wiki/File:Davis_House.JPG) by SimonP, CC BY-SA 3.0
+- [Derelict House -P6077556- c. 1899 (3608939566).jpg](https://commons.wikimedia.org/wiki/File:Derelict_House_-P6077556-_c._1899_(3608939566).jpg) by Randolph Croft, CC BY 2.0
+- [Derelict House -P6077558- c. 1899 (3608126113).jpg](https://commons.wikimedia.org/wiki/File:Derelict_House_-P6077558-_c._1899_(3608126113).jpg) by Randolph Croft, CC BY 2.0
+- [Derelict homes (53162925858).jpg](https://commons.wikimedia.org/wiki/File:Derelict_homes_(53162925858).jpg) by Can Pac Swire from Toronto, Canada, CC BY-SA 2.0
+- [Disorganised bookshelf.jpg](https://commons.wikimedia.org/wiki/File:Disorganised_bookshelf.jpg) by hobvias sudoneighm from Edmonton, Canada, CC BY-SA 2.0
+- [Distant view of the Burano, 2017 05 12 -b (34457508872).jpg](https://commons.wikimedia.org/wiki/File:Distant_view_of_the_Burano,_2017_05_12_-b_(34457508872).jpg) by booledozer, CC0
+- [Distant view of the Burano, 2017 05 12 -c (34619361565).jpg](https://commons.wikimedia.org/wiki/File:Distant_view_of_the_Burano,_2017_05_12_-c_(34619361565).jpg) by booledozer, CC0
+- [Distant view of the Burano, 2017 05 12 -e (34619356665).jpg](https://commons.wikimedia.org/wiki/File:Distant_view_of_the_Burano,_2017_05_12_-e_(34619356665).jpg) by booledozer, CC0
+- [Distant view of the Burano, 2017 05 12 -f (34457490282).jpg](https://commons.wikimedia.org/wiki/File:Distant_view_of_the_Burano,_2017_05_12_-f_(34457490282).jpg) by booledozer, CC0
+- [Distant view of the Burano, 2017 05 12 -g (34488839061).jpg](https://commons.wikimedia.org/wiki/File:Distant_view_of_the_Burano,_2017_05_12_-g_(34488839061).jpg) by booledozer, CC0
+- [Do you want a ride??? (1418954326).jpg](https://commons.wikimedia.org/wiki/File:Do_you_want_a_ride%3F%3F%3F_(1418954326).jpg) by Diego Torres Silvestre from Sao Paulo, Brazil, CC BY 2.0
+- [Dorset Park houses.JPG](https://commons.wikimedia.org/wiki/File:Dorset_Park_houses.JPG) by SimonP, CC BY-SA 3.0
+- [Dorval Road in Toronto, August 15 2026.jpg](https://commons.wikimedia.org/wiki/File:Dorval_Road_in_Toronto,_August_15_2026.jpg) by Dillan Payne, CC BY-SA 4.0
+- [Downtown toronto ontario canada.JPG](https://commons.wikimedia.org/wiki/File:Downtown_toronto_ontario_canada.JPG) by Iago f, CC BY-SA 3.0
+- [Dufferin3.jpg](https://commons.wikimedia.org/wiki/File:Dufferin3.jpg) by anon1248, CC BY-SA 3.0
+- [Duffgrove.jpg](https://commons.wikimedia.org/wiki/File:Duffgrove.jpg) by anon1248, CC BY-SA 3.0
+- [E Condos.jpg](https://commons.wikimedia.org/wiki/File:E_Condos.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [EQ1 Condo Towers, April 18 2026.jpg](https://commons.wikimedia.org/wiki/File:EQ1_Condo_Towers,_April_18_2026.jpg) by Dillan Payne, CC BY-SA 4.0
+- [EQ1 Condo Towers, July 8 2026 (01).jpg](https://commons.wikimedia.org/wiki/File:EQ1_Condo_Towers,_July_8_2026_(01).jpg) by Dillan Payne, CC BY-SA 4.0
+- [East Don Parkland - 20230129A.jpg](https://commons.wikimedia.org/wiki/File:East_Don_Parkland_-_20230129A.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [East Don Parkland - 20230129B.jpg](https://commons.wikimedia.org/wiki/File:East_Don_Parkland_-_20230129B.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [Elderslie.JPG](https://commons.wikimedia.org/wiki/File:Elderslie.JPG) by SimonP, CC BY-SA 3.0
+- [Englemount-Lawrence off Ranee.jpg](https://commons.wikimedia.org/wiki/File:Englemount-Lawrence_off_Ranee.jpg) by GTD Aquitaine, Public domain
+- [Equinox I Condo Tower, April 18 2026.jpg](https://commons.wikimedia.org/wiki/File:Equinox_I_Condo_Tower,_April_18_2026.jpg) by Dillan Payne, CC BY-SA 4.0
+- [EtobicokeSixPointsHistoricHome.JPG](https://commons.wikimedia.org/wiki/File:EtobicokeSixPointsHistoricHome.JPG) by JosephIWMolto, Public domain
+- [FarhanThawar.JPG](https://commons.wikimedia.org/wiki/File:FarhanThawar.JPG) by Raysonho @ Open Grid Scheduler / Grid Engine, CC0
+- [Financial District Toronto May 2012.jpg](https://commons.wikimedia.org/wiki/File:Financial_District_Toronto_May_2012.jpg) by Tyler. Chris Tyler from Toronto, Canada, CC BY-SA 2.0
+- [First period play gets a little rowdy.jpg](https://commons.wikimedia.org/wiki/File:First_period_play_gets_a_little_rowdy.jpg) by KatieThebeau, CC BY 2.0
+- [Flemingdon Park buildings.jpg](https://commons.wikimedia.org/wiki/File:Flemingdon_Park_buildings.jpg) by SimonP, CC BY-SA 3.0
+- [Flickr - paul bica - up.jpg](https://commons.wikimedia.org/wiki/File:Flickr_-_paul_bica_-_up.jpg) by paul (dex) bica from toronto, canada, CC BY 2.0
+- [Flickr - paul bica - vanishing point.jpg](https://commons.wikimedia.org/wiki/File:Flickr_-_paul_bica_-_vanishing_point.jpg) by paul (dex) bica from toronto, canada, CC BY 2.0
+- [Flickr - paul bica - vertical limit.jpg](https://commons.wikimedia.org/wiki/File:Flickr_-_paul_bica_-_vertical_limit.jpg) by paul (dex) bica from toronto, canada, CC BY 2.0
+- [Future Site of One Bloor East Toronto.jpg](https://commons.wikimedia.org/wiki/File:Future_Site_of_One_Bloor_East_Toronto.jpg) by GTD Aquitaine at English Wikipedia, Public domain
+- [Glass facades in downtown Toronto (in sepia).jpg](https://commons.wikimedia.org/wiki/File:Glass_facades_in_downtown_Toronto_(in_sepia).jpg) by Maksim Sokolov (Maxergon), CC BY-SA 4.0
+- [Glass facades in downtown Toronto.jpg](https://commons.wikimedia.org/wiki/File:Glass_facades_in_downtown_Toronto.jpg) by Maksim Sokolov (Maxergon), CC BY-SA 4.0
+- [Gooderham Building in Berczy Park (53692312890).jpg](https://commons.wikimedia.org/wiki/File:Gooderham_Building_in_Berczy_Park_(53692312890).jpg) by Geo Swan from Toronto, Canada, CC0
+- [Gooderham House.jpg](https://commons.wikimedia.org/wiki/File:Gooderham_House.jpg) by SimonP, CC BY-SA 3.0
+- [Governor's Bridge, Toronto.JPG](https://commons.wikimedia.org/wiki/File:Governor%27s_Bridge,_Toronto.JPG) by SimonP, CC BY-SA 3.0
+- [Harbord Village.JPG](https://commons.wikimedia.org/wiki/File:Harbord_Village.JPG) by SimonP, CC BY-SA 3.0
+- [IKEA at Aura Toronto, August 26 2025.jpg](https://commons.wikimedia.org/wiki/File:IKEA_at_Aura_Toronto,_August_26_2025.jpg) by Dillan Payne, CC BY-SA 4.0
+- [Imperial Oil Building.JPG](https://commons.wikimedia.org/wiki/File:Imperial_Oil_Building.JPG) by unknown, CC BY 3.0
+- [Imperial Oil Buildinga1.JPG](https://commons.wikimedia.org/wiki/File:Imperial_Oil_Buildinga1.JPG) by unknown, CC BY 3.0
+- [In front of the Union Station. (43332907).jpg](https://commons.wikimedia.org/wiki/File:In_front_of_the_Union_Station._(43332907).jpg) by Diego Torres Silvestre from Sao Paulo, Brazil, CC BY 2.0
+- [Intersection of Church and Front, 2014 12 24 (1) (15914042300).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(1)_(15914042300).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (11) (15915221009).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(11)_(15915221009).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (13) (15915554327).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(13)_(15915554327).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (14) (15913965208).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(14)_(15913965208).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (15) (16075523596).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(15)_(16075523596).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (3) (16101453445).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(3)_(16101453445).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (4) (15915684717).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(4)_(15915684717).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (5) (16099446611).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(5)_(16099446611).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (6) (15915253189).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(6)_(15915253189).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (7) (15479063834).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(7)_(15479063834).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (8) (16100580012).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(8)_(16100580012).jpg) by booledozer, Public domain
+- [Intersection of Church and Front, 2014 12 24 (9) (15915223299).jpg](https://commons.wikimedia.org/wiki/File:Intersection_of_Church_and_Front,_2014_12_24_(9)_(15915223299).jpg) by booledozer, Public domain
+- [Joy Gas Station Lake Shore.jpg](https://commons.wikimedia.org/wiki/File:Joy_Gas_Station_Lake_Shore.jpg) by City of Toronto Planning and Development Department, CC BY 2.0
+- [KPMGBayAdelaide.jpg](https://commons.wikimedia.org/wiki/File:KPMGBayAdelaide.jpg) by Raysonho @ Open Grid Scheduler / Grid Engine, CC0
+- [Kirche und Hochhaus Toronto Kanada.jpg](https://commons.wikimedia.org/wiki/File:Kirche_und_Hochhaus_Toronto_Kanada.jpg) by Grossbildjaeger, CC BY-SA 3.0
+- [Leslie Street - 20230609A.jpg](https://commons.wikimedia.org/wiki/File:Leslie_Street_-_20230609A.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [Leslie Street - 20230609B.jpg](https://commons.wikimedia.org/wiki/File:Leslie_Street_-_20230609B.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [Liberty Village, Toronto, June 24 2025 (09).jpg](https://commons.wikimedia.org/wiki/File:Liberty_Village,_Toronto,_June_24_2025_(09).jpg) by Dillan Payne, CC BY-SA 4.0
+- [Looking east on Adelaide.jpg](https://commons.wikimedia.org/wiki/File:Looking_east_on_Adelaide.jpg) by Skeezix1000, CC BY-SA 3.0
+- [Looking east towards Commerce Court.jpg](https://commons.wikimedia.org/wiki/File:Looking_east_towards_Commerce_Court.jpg) by Steve Harris from Toronto, Canada, CC BY 2.0
+- [M5V cropped.JPG](https://commons.wikimedia.org/wiki/File:M5V_cropped.JPG) by Terramorphous, CC BY-SA 3.0
+- [MLS South Cropped.JPG](https://commons.wikimedia.org/wiki/File:MLS_South_Cropped.JPG) by Terramorphous, CC BY-SA 3.0
+- [Maple Leaf Square 2021.jpg](https://commons.wikimedia.org/wiki/File:Maple_Leaf_Square_2021.jpg) by Canmenwalker, CC BY 4.0
+- [Maple Leaf Square 2025-05-06.jpg](https://commons.wikimedia.org/wiki/File:Maple_Leaf_Square_2025-05-06.jpg) by JK Liu, CC BY-SA 4.0
+- [Maple Leaf Square North Tower Cropped.JPG](https://commons.wikimedia.org/wiki/File:Maple_Leaf_Square_North_Tower_Cropped.JPG) by Terramorphous, CC BY-SA 3.0
+- [Maple Leaf Square Shopping Arcade-1 2021.jpg](https://commons.wikimedia.org/wiki/File:Maple_Leaf_Square_Shopping_Arcade-1_2021.jpg) by Canmenwalker, CC BY 4.0
+- [Maple Leaf Square Shopping Arcade.jpg](https://commons.wikimedia.org/wiki/File:Maple_Leaf_Square_Shopping_Arcade.jpg) by Canmenwalker, CC BY 4.0
+- [Maple Leaf Square, North Tower.jpg](https://commons.wikimedia.org/wiki/File:Maple_Leaf_Square,_North_Tower.jpg) by SimonP, CC BY-SA 3.0
+- [Maple Leaf Square.jpg](https://commons.wikimedia.org/wiki/File:Maple_Leaf_Square.jpg) by SimonP, CC BY-SA 3.0
+- [MapleLeafSquare.jpg](https://commons.wikimedia.org/wiki/File:MapleLeafSquare.jpg) by Raysonho @ Open Grid Scheduler / Grid Engine, CC0
+- [MarshallsToronto.jpg](https://commons.wikimedia.org/wiki/File:MarshallsToronto.jpg) by Raysonho @ Open Grid Scheduler / Grid Engine, CC0
+- [Minto Midtown open space 2023.jpg](https://commons.wikimedia.org/wiki/File:Minto_Midtown_open_space_2023.jpg) by Canmenwalker, CC BY 4.0
+- [Minto Midtown.JPG](https://commons.wikimedia.org/wiki/File:Minto_Midtown.JPG) by SimonP, CC BY-SA 3.0
+- [Mirabella Condominiums West Tower, Toronto 2026.jpg](https://commons.wikimedia.org/wiki/File:Mirabella_Condominiums_West_Tower,_Toronto_2026.jpg) by Chicken4War, CC BY-SA 4.0
+- [Murano Condos 2024.jpg](https://commons.wikimedia.org/wiki/File:Murano_Condos_2024.jpg) by Canmenwalker, CC BY 4.0
+- [Murano South Cropped.JPG](https://commons.wikimedia.org/wiki/File:Murano_South_Cropped.JPG) by Terramorphous, CC BY-SA 3.0
+- [Murano, Toronto.JPG](https://commons.wikimedia.org/wiki/File:Murano,_Toronto.JPG) by SimonP, CC BY-SA 3.0
+- [North facade of the Burano, 2017 05 12 -a (33776584084).jpg](https://commons.wikimedia.org/wiki/File:North_facade_of_the_Burano,_2017_05_12_-a_(33776584084).jpg) by booledozer, CC0
+- [North facade of the Burano, 2017 05 12 -b (34489019991).jpg](https://commons.wikimedia.org/wiki/File:North_facade_of_the_Burano,_2017_05_12_-b_(34489019991).jpg) by booledozer, CC0
+- [Nuit Blanche Toronto (5048360811).jpg](https://commons.wikimedia.org/wiki/File:Nuit_Blanche_Toronto_(5048360811).jpg) by JasonParis from Toronto, Canada, CC BY 2.0
+- [Number One Bloor site.jpg](https://commons.wikimedia.org/wiki/File:Number_One_Bloor_site.jpg) by Neal Jennings from Vancouver, BC, Canada, CC BY-SA 2.0
+- [NumberOneBloorConstruction.jpg](https://commons.wikimedia.org/wiki/File:NumberOneBloorConstruction.jpg) by Raysonho @ Open Grid Scheduler / Grid Engine, CC0
+- [One Bloor - 2019.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor_-_2019.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [One Bloor 2022.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor_2022.jpg) by Canmenwalker, CC BY 4.0
+- [One Bloor East - Panorama - 2018.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor_East_-_Panorama_-_2018.jpg) by Sikander, CC BY-SA 4.0
+- [One Bloor East 2025-05-18.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor_East_2025-05-18.jpg) by JK Liu, CC BY-SA 4.0
+- [One Bloor at night during WikiConference North America 2023.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor_at_night_during_WikiConference_North_America_2023.jpg) by Sdkb, CC BY-SA 4.0
+- [One Bloor during WikiConference North America 2023.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor_during_WikiConference_North_America_2023.jpg) by Sdkb, CC BY-SA 4.0
+- [One Bloor in Toronto - 2018.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor_in_Toronto_-_2018.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [One Bloor in the pink.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor_in_the_pink.jpg) by Russell Sutherland, Public domain
+- [One Bloor picture.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor_picture.jpg) by Paperfire, CC BY-SA 4.0
+- [One Bloor, Toronto, Ontario (29709467780).jpg](https://commons.wikimedia.org/wiki/File:One_Bloor,_Toronto,_Ontario_(29709467780).jpg) by Ken Lund from Reno, Nevada, USA, CC BY-SA 2.0
+- [One Bloor, Toronto.jpg](https://commons.wikimedia.org/wiki/File:One_Bloor,_Toronto.jpg) by Maksim Sokolov (Maxergon), CC BY-SA 4.0
+- [OneBloorEastToronto2018.jpg](https://commons.wikimedia.org/wiki/File:OneBloorEastToronto2018.jpg) by Alex Laney, CC BY-SA 4.0
+- [Pano of construction near the Jarvis slip, 2017 07 15 -g (45283832754).jpg](https://commons.wikimedia.org/wiki/File:Pano_of_construction_near_the_Jarvis_slip,_2017_07_15_-g_(45283832754).jpg) by booledozer, CC0
+- [Panorama of construction east of Sherbourne Commons, 2016 06 01 (4) (27419709175).jpg](https://commons.wikimedia.org/wiki/File:Panorama_of_construction_east_of_Sherbourne_Commons,_2016_06_01_(4)_(27419709175).jpg) by booledozer, Public domain
+- [Parade Towers, Concord CityPlace, Toronto, Ontario, 2025-08-25.jpg](https://commons.wikimedia.org/wiki/File:Parade_Towers,_Concord_CityPlace,_Toronto,_Ontario,_2025-08-25.jpg) by Chris Woodrich, CC BY-SA 4.0
+- [Party on! (36637753471).jpg](https://commons.wikimedia.org/wiki/File:Party_on!_(36637753471).jpg) by VV Nincic from Toronto, Canada, CC BY 2.0
+- [Picasso 2.jpg](https://commons.wikimedia.org/wiki/File:Picasso_2.jpg) by Mtlfiredude, CC BY-SA 3.0
+- [Picasso Condominiums, Toronto 2026.jpg](https://commons.wikimedia.org/wiki/File:Picasso_Condominiums,_Toronto_2026.jpg) by Chicken4War, CC BY-SA 4.0
+- [Pinacle A.jpg](https://commons.wikimedia.org/wiki/File:Pinacle_A.jpg) by SimonP, CC BY-SA 3.0
+- [Pinnacle Centre 2018.jpg](https://commons.wikimedia.org/wiki/File:Pinnacle_Centre_2018.jpg) by kevinfarrugia, Public domain
+- [Powercut-deerpark-52.JPG](https://commons.wikimedia.org/wiki/File:Powercut-deerpark-52.JPG) by Ashleystruan at English Wikipedia, Public domain
+- [Premium gas station, Lake Shore Road.jpg](https://commons.wikimedia.org/wiki/File:Premium_gas_station,_Lake_Shore_Road.jpg) by Toronto History, CC BY 2.0
+- [RBC Waterpark Place.jpg](https://commons.wikimedia.org/wiki/File:RBC_Waterpark_Place.jpg) by Terramorphous, CC BY-SA 4.0
+- [RCMI.jpg](https://commons.wikimedia.org/wiki/File:RCMI.jpg) by Terramorphous, CC BY-SA 4.0
+- [Reach (358924511).jpg](https://commons.wikimedia.org/wiki/File:Reach_(358924511).jpg) by paul bica from toronto, canada, CC BY 2.0
+- [Residences of College Park.JPG](https://commons.wikimedia.org/wiki/File:Residences_of_College_Park.JPG) by No machine-readable author provided. SimonP assumed (based on copyright claims)., CC BY-SA 3.0
+- [Richmond Street West August 2017 01.jpg](https://commons.wikimedia.org/wiki/File:Richmond_Street_West_August_2017_01.jpg) by Arild Vågen, CC BY-SA 4.0
+- [Richmond Street West August 2017 02.jpg](https://commons.wikimedia.org/wiki/File:Richmond_Street_West_August_2017_02.jpg) by Arild Vågen, CC BY-SA 4.0
+- [SP!RE June 2009 Toronto.jpg](https://commons.wikimedia.org/wiki/File:SP!RE_June_2009_Toronto.jpg) by Skeezix1000, CC BY-SA 3.0
+- [SP!RE June 2009.jpg](https://commons.wikimedia.org/wiki/File:SP!RE_June_2009.jpg) by Skeezix1000, CC BY-SA 3.0
+- [SW corner of Church and Front, 2013 10 03 -a.jpg](https://commons.wikimedia.org/wiki/File:SW_corner_of_Church_and_Front,_2013_10_03_-a.jpg) by booledozer, Public domain
+- [SW corner of Church and Front, 2013 10 03 -b.jpg](https://commons.wikimedia.org/wiki/File:SW_corner_of_Church_and_Front,_2013_10_03_-b.jpg) by booledozer, Public domain
+- [SW corner of Church and Front, 2013 10 03 -c.jpg](https://commons.wikimedia.org/wiki/File:SW_corner_of_Church_and_Front,_2013_10_03_-c.jpg) by booledozer, Public domain
+- [Scanning the Burano, from the SE, 2017 05 12 -e (33776552724).jpg](https://commons.wikimedia.org/wiki/File:Scanning_the_Burano,_from_the_SE,_2017_05_12_-e_(33776552724).jpg) by booledozer, CC0
+- [Scanning the Burano, from the SE, 2017 05 12 -f (34619534955).jpg](https://commons.wikimedia.org/wiki/File:Scanning_the_Burano,_from_the_SE,_2017_05_12_-f_(34619534955).jpg) by booledozer, CC0
+- [Scanning the Burano, from the SE, 2017 05 12 -g (34619531985).jpg](https://commons.wikimedia.org/wiki/File:Scanning_the_Burano,_from_the_SE,_2017_05_12_-g_(34619531985).jpg) by booledozer, CC0
+- [Scanning the Burano, from the SE, 2017 05 12 -h (34619529465).jpg](https://commons.wikimedia.org/wiki/File:Scanning_the_Burano,_from_the_SE,_2017_05_12_-h_(34619529465).jpg) by booledozer, CC0
+- [Scanning the Burano, from the SE, 2017 05 12 -j (34488999631).jpg](https://commons.wikimedia.org/wiki/File:Scanning_the_Burano,_from_the_SE,_2017_05_12_-j_(34488999631).jpg) by booledozer, CC0
+- [Shops at Maple Leaf Square.JPG](https://commons.wikimedia.org/wiki/File:Shops_at_Maple_Leaf_Square.JPG) by Wikiworld2, CC BY-SA 3.0
+- [Skyline of The Queensway Humber Bay, Toronto 2026.jpg](https://commons.wikimedia.org/wiki/File:Skyline_of_The_Queensway_Humber_Bay,_Toronto_2026.jpg) by Chicken4War, CC BY-SA 4.0
+- [Skyscrapers in Toronto, Canada1.jpg](https://commons.wikimedia.org/wiki/File:Skyscrapers_in_Toronto,_Canada1.jpg) by Diego Delso, CC BY-SA 3.0
+- [Spire, Toronto.jpg](https://commons.wikimedia.org/wiki/File:Spire,_Toronto.jpg) by SimonP, CC BY-SA 3.0
+- [Street corner, Windermere and Lake Shore Blvd, Toronto 2025.jpg](https://commons.wikimedia.org/wiki/File:Street_corner,_Windermere_and_Lake_Shore_Blvd,_Toronto_2025.jpg) by Chicken4War, CC BY-SA 4.0
+- [Success Tower.JPG](https://commons.wikimedia.org/wiki/File:Success_Tower.JPG) by SimonP, CC BY-SA 3.0
+- [Sun Life East Tower.JPG](https://commons.wikimedia.org/wiki/File:Sun_Life_East_Tower.JPG) by Terramorphous, CC BY-SA 3.0
+- [TD Waterhouse Tower.JPG](https://commons.wikimedia.org/wiki/File:TD_Waterhouse_Tower.JPG) by SimonP, CC BY-SA 3.0
+- [THEY'RE TAKIN' OVER (245677407).jpg](https://commons.wikimedia.org/wiki/File:THEY%27RE_TAKIN%27_OVER_(245677407).jpg) by aka Tman from Guelph.........Ontario, CANADA, CC BY 2.0
+- [Tableau 3.jpg](https://commons.wikimedia.org/wiki/File:Tableau_3.jpg) by Mtlfiredude, CC BY-SA 3.0
+- [Ten York 2025-04-17.jpg](https://commons.wikimedia.org/wiki/File:Ten_York_2025-04-17.jpg) by JK Liu, CC BY-SA 4.0
+- [The Aura building, 2014 01 03 (1).JPG - panoramio.jpg](https://commons.wikimedia.org/wiki/File:The_Aura_building,_2014_01_03_(1).JPG_-_panoramio.jpg) by OldYorkGuy, CC BY-SA 3.0
+- [The Aura building, 2014 01 03 (2).JPG - panoramio.jpg](https://commons.wikimedia.org/wiki/File:The_Aura_building,_2014_01_03_(2).JPG_-_panoramio.jpg) by OldYorkGuy, CC BY-SA 3.0
+- [The Aura building, at sunrise, Toronto, 2014 06 27 -b.JPG - panoramio.jpg](https://commons.wikimedia.org/wiki/File:The_Aura_building,_at_sunrise,_Toronto,_2014_06_27_-b.JPG_-_panoramio.jpg) by OldYorkGuy, CC BY-SA 3.0
+- [The Aura building, at sunrise, Toronto, 2014 06 27 -c.JPG - panoramio.jpg](https://commons.wikimedia.org/wiki/File:The_Aura_building,_at_sunrise,_Toronto,_2014_06_27_-c.JPG_-_panoramio.jpg) by OldYorkGuy, CC BY-SA 3.0
+- [The Berczy and the 'L' building, from Church and Front, 2014 05 02 (1) (13906793018).jpg](https://commons.wikimedia.org/wiki/File:The_Berczy_and_the_%27L%27_building,_from_Church_and_Front,_2014_05_02_(1)_(13906793018).jpg) by booledozer, Public domain
+- [The One - 20230501.jpg](https://commons.wikimedia.org/wiki/File:The_One_-_20230501.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [The Onemay2018.jpg](https://commons.wikimedia.org/wiki/File:The_Onemay2018.jpg) by Rstein35, CC BY-SA 4.0
+- [The Queensway at South Kingsway, Toronto 2026.jpg](https://commons.wikimedia.org/wiki/File:The_Queensway_at_South_Kingsway,_Toronto_2026.jpg) by Chicken4War, CC BY-SA 4.0
+- [The Queensway scene near High Park, Toronto 2026.jpg](https://commons.wikimedia.org/wiki/File:The_Queensway_scene_near_High_Park,_Toronto_2026.jpg) by Chicken4War, CC BY-SA 4.0
+- [The Residences at 488 University Avenue, Toronto.jpg](https://commons.wikimedia.org/wiki/File:The_Residences_at_488_University_Avenue,_Toronto.jpg) by Richard Eriksson, CC BY 2.0
+- [The condo beside the CN Tower. (2123167854).jpg](https://commons.wikimedia.org/wiki/File:The_condo_beside_the_CN_Tower._(2123167854).jpg) by veggiefrog from Toronto, Canada, CC BY 2.0
+- [The setting sun being doubly reflected of glass clad highrises on Toronto's waterfront - more dramatic to the naked eye, 2015 01 30 (5).JPG - panoramio.jpg](https://commons.wikimedia.org/wiki/File:The_setting_sun_being_doubly_reflected_of_glass_clad_highrises_on_Toronto%27s_waterfront_-_more_dramatic_to_the_naked_eye,_2015_01_30_(5).JPG_-_panoramio.jpg) by OldYorkGuy, CC BY-SA 3.0
+- [TheOne-SlipForm.jpg](https://commons.wikimedia.org/wiki/File:TheOne-SlipForm.jpg) by Quist, CC BY-SA 4.0
+- [Theater Park.jpg](https://commons.wikimedia.org/wiki/File:Theater_Park.jpg) by Terramorphous, CC BY-SA 4.0
+- [Toronto (34199959951).jpg](https://commons.wikimedia.org/wiki/File:Toronto_(34199959951).jpg) by Sebastiaan ter Burg from Utrecht, The Netherlands, CC BY 2.0
+- [Toronto - ON - Commerce Court West.jpg](https://commons.wikimedia.org/wiki/File:Toronto_-_ON_-_Commerce_Court_West.jpg) by Taxiarchos228, CC BY 3.0
+- [Toronto Boat Tour (2) (22457361473).jpg](https://commons.wikimedia.org/wiki/File:Toronto_Boat_Tour_(2)_(22457361473).jpg) by Larry Koester, CC BY 2.0
+- [Toronto Centered.jpg](https://commons.wikimedia.org/wiki/File:Toronto_Centered.jpg) by Owen Byrne, CC BY 2.0
+- [Toronto Cloud.jpg](https://commons.wikimedia.org/wiki/File:Toronto_Cloud.jpg) by Brian, CC BY-SA 2.0
+- [Toronto Downtown IKEA at Aura 2022.jpg](https://commons.wikimedia.org/wiki/File:Toronto_Downtown_IKEA_at_Aura_2022.jpg) by Canmenwalker, CC BY 4.0
+- [Toronto June 2025.jpg](https://commons.wikimedia.org/wiki/File:Toronto_June_2025.jpg) by Erik Drost, CC BY 4.0
+- [Toronto Pei Commerce Court.JPG](https://commons.wikimedia.org/wiki/File:Toronto_Pei_Commerce_Court.JPG) by unknown, CC BY-SA 3.0
+- [Toronto Skyscrapers - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Toronto_Skyscrapers_-_panoramio.jpg) by Leno89, CC BY 3.0
+- [Toronto iron building.jpg](https://commons.wikimedia.org/wiki/File:Toronto_iron_building.jpg) by Felix55kerstan, CC BY-SA 4.0
+- [Toronto rally for Palestine - 20231028-181935.jpg](https://commons.wikimedia.org/wiki/File:Toronto_rally_for_Palestine_-_20231028-181935.jpg) by Sikander Iqbal, CC BY-SA 4.0
+- [Toronto s Aura building, on the NW corner of Yonge and Gerrard, 2017 07 31 (44158560600).jpg](https://commons.wikimedia.org/wiki/File:Toronto_s_Aura_building,_on_the_NW_corner_of_Yonge_and_Gerrard,_2017_07_31_(44158560600).jpg) by booledozer, CC0
+- [Toronto skyline 2025.jpg](https://commons.wikimedia.org/wiki/File:Toronto_skyline_2025.jpg) by Erik Drost, CC BY 4.0
+- [Toronto, Canada (20370818442).jpg](https://commons.wikimedia.org/wiki/File:Toronto,_Canada_(20370818442).jpg) by Rick Ligthelm from Rotterdam, The Netherlands, CC BY 2.0
+- [Toronto, Financial District - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Toronto,_Financial_District_-_panoramio.jpg) by Vlad Podvorny, CC BY-SA 3.0
+- [Toronto- Downtown rocks.jpg](https://commons.wikimedia.org/wiki/File:Toronto-_Downtown_rocks.jpg) by fishwasher, CC BY-SA 3.0
+- [Toronto-01 (xndr).jpg](https://commons.wikimedia.org/wiki/File:Toronto-01_(xndr).jpg) by No machine-readable author provided. Svdmolen assumed (based on copyright claims, CC BY 2.5
+- [Toronto-Laslovarga.JPG](https://commons.wikimedia.org/wiki/File:Toronto-Laslovarga.JPG) by Laslovarga, CC BY-SA 4.0
+- [Trump tower 2013 complete.JPG](https://commons.wikimedia.org/wiki/File:Trump_tower_2013_complete.JPG) by Terramorphous, CC BY-SA 3.0
+- [Two new condos in Toronto's Distillery District, 2014 01 03 (4).jpg](https://commons.wikimedia.org/wiki/File:Two_new_condos_in_Toronto%27s_Distillery_District,_2014_01_03_(4).jpg) by booledozer, Public domain
+- [U Condominiums Toronto.jpg](https://commons.wikimedia.org/wiki/File:U_Condominiums_Toronto.jpg) by Adam Bishop, CC BY-SA 4.0
+- [Verve, Toronto.jpg](https://commons.wikimedia.org/wiki/File:Verve,_Toronto.jpg) by SimonP, CC BY-SA 3.0
+- [Victoria College University of Toronto.jpg](https://commons.wikimedia.org/wiki/File:Victoria_College_University_of_Toronto.jpg) by Adam Bishop, CC BY-SA 4.0
+- [View from Victoria University Garden, Toronto.jpg](https://commons.wikimedia.org/wiki/File:View_from_Victoria_University_Garden,_Toronto.jpg) by Maksim Sokolov (Maxergon), CC BY-SA 4.0
+- [View of One Bloor West along Yonge Street, October 10 2025 (07).jpg](https://commons.wikimedia.org/wiki/File:View_of_One_Bloor_West_along_Yonge_Street,_October_10_2025_(07).jpg) by Dillan Payne, CC BY-SA 4.0
+- [Viewing the Berczy from Front and Church, 2013-02-26 -abc (10587433645).jpg](https://commons.wikimedia.org/wiki/File:Viewing_the_Berczy_from_Front_and_Church,_2013-02-26_-abc_(10587433645).jpg) by booledozer, CC0
+- [Water fountain next to Toronto's Aqualina, 2020 04 09 (49758661952).jpg](https://commons.wikimedia.org/wiki/File:Water_fountain_next_to_Toronto%27s_Aqualina,_2020_04_09_(49758661952).jpg) by booledozer, CC0
+- [Waterclub Condominiums Toronto, September 11 2026 (02).jpg](https://commons.wikimedia.org/wiki/File:Waterclub_Condominiums_Toronto,_September_11_2026_(02).jpg) by Dillan Payne, CC BY-SA 4.0
+- [Waterclub Condominiums in front of the CN Tower - panoramio.jpg](https://commons.wikimedia.org/wiki/File:Waterclub_Condominiums_in_front_of_the_CN_Tower_-_panoramio.jpg) by atomboy, CC BY 3.0
+- [Waterpark city Neptune.jpg](https://commons.wikimedia.org/wiki/File:Waterpark_city_Neptune.jpg) by Cltjames, CC BY-SA 4.0
+- [Xcondo.jpg](https://commons.wikimedia.org/wiki/File:Xcondo.jpg) by HBW 40, Public domain
+- [Yonge and Bloor - 20221230.jpg](https://commons.wikimedia.org/wiki/File:Yonge_and_Bloor_-_20221230.jpg) by Sikander, CC BY-SA 4.0
+- [Yonge and Bloor Toronto May 2012.jpg](https://commons.wikimedia.org/wiki/File:Yonge_and_Bloor_Toronto_May_2012.jpg) by Loozrboy from Toronto, Canada, CC BY-SA 2.0

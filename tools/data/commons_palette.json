@@ -1,0 +1,67 @@
+{
+  "source": "Wikimedia Commons, freely licensed photos (see commons_photos.md)",
+  "masonry": [
+    {
+      "hex": "#7c6154",
+      "share": 0.369,
+      "photos": 89,
+      "lightness": 43.5
+    },
+    {
+      "hex": "#5a463f",
+      "share": 0.257,
+      "photos": 62,
+      "lightness": 31.6
+    },
+    {
+      "hex": "#9c7a62",
+      "share": 0.212,
+      "photos": 51,
+      "lightness": 53.9
+    },
+    {
+      "hex": "#ae987e",
+      "share": 0.141,
+      "photos": 34,
+      "lightness": 64.1
+    },
+    {
+      "hex": "#c07e55",
+      "share": 0.021,
+      "photos": 5,
+      "lightness": 58.8
+    }
+  ],
+  "glass": [
+    {
+      "hex": "#63696e",
+      "share": 0.295,
+      "photos": 62,
+      "lightness": 44.1
+    },
+    {
+      "hex": "#788287",
+      "share": 0.248,
+      "photos": 52,
+      "lightness": 53.7
+    },
+    {
+      "hex": "#48555b",
+      "share": 0.2,
+      "photos": 42,
+      "lightness": 35.3
+    },
+    {
+      "hex": "#4e657d",
+      "share": 0.143,
+      "photos": 30,
+      "lightness": 41.9
+    },
+    {
+      "hex": "#9ca0a2",
+      "share": 0.114,
+      "photos": 24,
+      "lightness": 65.6
+    }
+  ]
+}
