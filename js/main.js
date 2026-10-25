@@ -63,7 +63,9 @@ async function initApp() {
     antialias: QUALITY.aa === 'msaa',
     powerPreference: 'high-performance',
     reversedDepthBuffer: true,
-    forceWebGL: new URLSearchParams(location.search).get('webgl') === '1'
+    forceWebGL: new URLSearchParams(location.search).get('webgl') === '1',
+    // ?gputime=1: GPU timestamp queries per pass, for profiling (window.__CITY_APP.gpuTimes())
+    trackTimestamp: new URLSearchParams(location.search).get('gputime') === '1'
   });
   renderer.setPixelRatio(QUALITY.scale);
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -837,6 +839,41 @@ async function initApp() {
   await precompileShaders();
   markInit('compile');
 
+  // ?gputime=1: each pass's GPU time (timestamp queries), averaged per render context since the last read
+  const gpuTimes = renderer.backend.trackTimestamp ? (() => {
+    const sums = new Map();
+    let frames = 0, busy = false;
+    const pool = () => renderer.backend.timestampQueryPool || {};
+    return {
+      collect() {
+        if (busy) return;
+        busy = true;
+        Promise.all([renderer.resolveTimestampsAsync('render'), renderer.resolveTimestampsAsync('compute')]).then(() => {
+          busy = false;
+          frames++;
+          for (const type of ['render', 'compute']) {
+            const p = pool()[type];
+            if (!p || !p.timestamps) continue;
+            const seen = new Map();
+            for (const [uid, ms] of p.timestamps) {
+              const key = type[0] + ':' + uid.replace(/:f\d+$/, '');
+              seen.set(key, (seen.get(key) || 0) + ms);
+            }
+            for (const [k, ms] of seen) sums.set(k, (sums.get(k) || 0) + ms);
+          }
+        }).catch(() => { busy = false; });
+      },
+      read() {
+        const out = { frames, render: +(renderer.info.render.timestamp || 0).toFixed(2), compute: +(renderer.info.compute.timestamp || 0).toFixed(2), passes: {} };
+        for (const [k, ms] of [...sums].sort((a, b) => b[1] - a[1])) out.passes[k] = +(ms / Math.max(1, frames)).toFixed(2);
+        sums.clear();
+        frames = 0;
+        return out;
+      }
+    };
+  })() : null;
+  window.__CITY_APP.gpuTimes = () => (gpuTimes ? gpuTimes.read() : null);
+
   // 6. Animation Loop
   let lastTime = performance.now();
   let elapsed = 0;
@@ -924,6 +961,7 @@ async function initApp() {
     }
 
     if (fixedDt === null && warmedUp) qualityNet.tick(Math.max(0, rawDt));
+    if (gpuTimes && warmedUp) gpuTimes.collect();
 
     // Telemetry uses wall time, not the clamped simulation step, so slow frames and high-refresh displays report
     // their actual frame rate (updates DOM every 250ms).

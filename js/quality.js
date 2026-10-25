@@ -84,7 +84,13 @@ function chooseTier() {
 }
 
 const { tier, reason } = chooseTier();
-const QUALITY = { tier, reason, ...TIERS[tier], dist: 1 };
+const QUALITY = { tier, reason, shadows: true /* the sun's shadow cascades */, ...TIERS[tier], dist: 1 };
+// Profiling knobs: ?q.<key>=<value> overrides one of the tier's settings (numbers, true/false, else the string), e.g.
+// ?q.bloom=false&q.shadows=false, so each setting's cost can be measured on its own (nothing sets them by default)
+for (const [k, v] of params) {
+  if (!k.startsWith('q.') || !(k.slice(2) in QUALITY)) continue;
+  QUALITY[k.slice(2)] = v === 'true' ? true : v === 'false' ? false : Number.isFinite(Number(v)) ? Number(v) : v;
+}
 const forcedScale = parseFloat(params.get('scale'));
 if (forcedScale >= 0.25 && forcedScale <= 2) QUALITY.scale = forcedScale;
 console.info(`[quality] ${tier}: ${reason}`);

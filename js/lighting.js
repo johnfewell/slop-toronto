@@ -263,7 +263,7 @@ class LightingSystem {
     // Shines from its position vector toward the origin (no .target needed)
     this.sunLight = new SunLight(0xffca92, 5.8);
     this.sunLight.position.copy(TIME_PRESETS.golden.sunDir);
-    this.sunLight.castShadow = true;
+    this.sunLight.castShadow = window.CITY.QUALITY.shadows !== false; // (?q.shadows=false: none, to measure them)
     // 3072x3072 per cascade = 6144x3072 2-cascade shadow atlas (an 8192x4096 one cost ~20% fps and caused hitches),
     // 2048 where the device allows less. The near cascade spans ~0.35-80 m of the view at street level (see update)
     const maxTex = (renderer && renderer.backend && renderer.backend.device && renderer.backend.device.limits.maxTextureDimension2D) || 4096;
