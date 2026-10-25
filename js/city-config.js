@@ -451,6 +451,30 @@ for (const [kind, , , flags, flat] of GEO.rails || []) {
     }
   }
 }
+// No tree in the rail corridor: none within 7 m of a heavy-rail track (the beds, between the tracks, the yards), nor on
+// a raised track's embankment or under its bridge (1.6 m more per metre up: its grassed sides,
+// js/rail-corridor.js SLOPE)
+const RAIL_PTS = new Map(); // 8 m cells -> track points every 3 m [x, z, ...]
+for (const [kind, , , flags, flat] of GEO.rails || []) {
+  if (kind !== 1 || flags & 2) continue;
+  for (let i = 2; i < flat.length; i += 2) {
+    const n = Math.max(1, Math.ceil(Math.hypot(flat[i] - flat[i - 2], flat[i + 1] - flat[i - 1]) / 3));
+    for (let k = 0; k <= n; k++) {
+      const x = flat[i - 2] + ((flat[i] - flat[i - 2]) * k) / n, z = flat[i - 1] + ((flat[i + 1] - flat[i - 1]) * k) / n;
+      const key = Math.floor(x / 8) * 100000 + Math.floor(z / 8);
+      (RAIL_PTS.get(key) || RAIL_PTS.set(key, []).get(key)).push(x, z);
+    }
+  }
+}
+/** Whether a tree may stand at (x, z): clear of the rail corridor */
+function treeOffRail(x, z) {
+  const r = 7 + 1.6 * railLiftAt(x, z), c = Math.ceil(r / 8);
+  for (let a = -c; a <= c; a++) for (let b = -c; b <= c; b++) {
+    const L = RAIL_PTS.get((Math.floor(x / 8) + a) * 100000 + Math.floor(z / 8) + b);
+    for (let i = 0; L && i < L.length; i += 2) if (Math.hypot(L[i] - x, L[i + 1] - z) < r) return false;
+  }
+  return true;
+}
 /** The deck surface under (x, z) that something at height y can stand on (stepping up at most `step`), or 0 */
 function deckHeightAt(x, z, y = 0, step = 0.6) {
   const list = DECK_GRID.get(Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL));
@@ -712,6 +736,7 @@ Object.assign(window.CITY, {
   railLiftAt,
   railSpanAt,
   RAIL_LIFTS,
+  treeOffRail,
   getLocationLabel,
   worldFromLatLon,
   latLonFromWorld,

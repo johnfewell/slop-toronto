@@ -577,6 +577,12 @@ function buildStreetDetails(scene) {
     }
   }
   palms.length = 0; // Toronto: no palms (the Abuja verges' royal palms)
+  // Toronto: none of these in the rail corridor (its yards & wild verges are islands too: city-config.js treeOffRail)
+  {
+    const kept = treePositions.filter((t) => window.CITY.treeOffRail(t.x, t.z));
+    treePositions.length = 0;
+    treePositions.push(...kept);
+  }
   console.info(`[streetDetails] ${treePositions.length} trees`);
 
   // Palms: two instanced meshes (trunk, fronds)

@@ -143,8 +143,11 @@ async function buildEzTrees(scene, generated) {
   // Sites: the City's street trees, then the invented ones as the nearest EZ-Tree model
   const sites = [];
   const ST = GEO.streetTrees || [];
+  let offRail = 0;
   for (let i = 0; i < ST.length; i += 4) {
     const x = ST[i], z = ST[i + 1];
+    // (none in the rail corridor, on its embankments or under its bridges: city-config.js treeOffRail)
+    if (!window.CITY.treeOffRail(x, z)) { offRail++; continue; }
     sites.push({ x, y: blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0, z, model: ST[i + 2], height: ST[i + 3] / 10, tier: 1 });
   }
   const genModel = (sp, h) => {
@@ -329,7 +332,7 @@ async function buildEzTrees(scene, generated) {
     mesh.instanceMatrix.needsUpdate = true;
   });
   scene.add(group);
-  console.info(`[ezTrees] ${N} trees (${ST.length / 4} from the City's inventory, ${generated.length} in parks & yards), ${ids.length} models`);
+  console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards), ${ids.length} models`);
   return { group, update };
 }
 
