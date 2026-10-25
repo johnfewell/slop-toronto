@@ -353,5 +353,55 @@ function updateSceneCulling(cameraPosition) {
   }
 }
 
-Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, SHADOW_PROXY_LAYER });
+// The phone tiers (quality.js lean): once the GPU holds a static vertex or index array, its CPU copy only costs memory
+// (three keeps it for re-uploads that never come). Only plain attributes not updated since they were built (version 0,
+// or 1 after computeVertexNormals; not instanced, not storage, static usage) that the WebGPU backend has already uploaded; the array becomes an empty one
+// of the same type (the pipelines read its type, the draws its count). Bounds are computed first (frustum culling
+// computes them lazily from the array). Canvases & data textures already uploaded shrink the same way. Returns MB freed
+function releaseCpuCopies(renderer, roots, textures = []) {
+  const backend = renderer.backend;
+  if (!backend.isWebGPUBackend) return 0;
+  let bytes = 0;
+  const done = new Set();
+  const release = (attr) => {
+    if (!attr || done.has(attr) || attr.isInterleavedBufferAttribute || attr.isInstancedBufferAttribute ||
+      attr.isStorageBufferAttribute || attr.isStorageInstancedBufferAttribute || attr.version > 1 ||
+      attr.usage !== THREE.StaticDrawUsage || !attr.array || attr.array.length === 0) return;
+    done.add(attr);
+    if (backend.get(attr).buffer === undefined) return; // not on the GPU yet: it still needs its data
+    bytes += attr.array.byteLength;
+    attr.array = new attr.array.constructor(0);
+  };
+  // bounds first, for every geometry: chunks share their source's attributes (scene-culling's chunkInstancedMesh)
+  const geos = [];
+  for (const root of roots) {
+    if (!root) continue;
+    root.traverse((o) => {
+      const g = o.geometry;
+      if (!g || !g.isBufferGeometry || g.morphAttributes.position) return;
+      if (!g.boundingSphere) g.computeBoundingSphere();
+      if (!g.boundingBox) g.computeBoundingBox();
+      if (o.isInstancedMesh && !o.boundingSphere) o.computeBoundingSphere();
+      geos.push(g);
+    });
+  }
+  for (const g of geos) {
+    for (const name in g.attributes) release(g.attributes[name]);
+    release(g.index);
+  }
+  for (const t of textures) {
+    const img = t && t.image;
+    if (!img || t.version === 0 || !backend.get(t).texture) continue;
+    if (typeof HTMLCanvasElement !== 'undefined' && img instanceof HTMLCanvasElement && img.width > 1) {
+      bytes += img.width * img.height * 4;
+      img.width = img.height = 1; // (the texture keeps its size: three only reads the image to upload it)
+    } else if (img.data && img.data.byteLength) {
+      bytes += img.data.byteLength;
+      img.data = null;
+    }
+  }
+  return Math.round(bytes / 1048576);
+}
+
+Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, SHADOW_PROXY_LAYER, releaseCpuCopies });
 })();

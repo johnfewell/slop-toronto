@@ -71,16 +71,20 @@ async function initApp() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   if (ClusteredLighting && !new URLSearchParams(location.search).has('nocl')) {
-    renderer.lighting = new ClusteredLighting(256, 32, 28, 48);
+    // (max lights, screen tile px, depth slices, lights per cluster: the phone tier's coarser grid, quality.js)
+    renderer.lighting = new ClusteredLighting(...QUALITY.clusterGrid);
   }
   container.appendChild(renderer.domElement);
 
   // Start-up phase timings (logged once as "[init] ...") to keep load-time regressions traceable
   let initTimings = [];
   let initMark = performance.now();
+  // ?memlog=1: the JS heap after each phase too (Chrome's performance.memory), to see which phase holds what
+  const memLog = new URLSearchParams(location.search).get('memlog') === '1' && performance.memory;
+  const heapMB = () => { if (window.gc) window.gc(); return Math.round(performance.memory.usedJSHeapSize / 1048576); };
   const markInit = (label) => {
     const now = performance.now();
-    initTimings.push(`${label} ${Math.round(now - initMark)}ms`);
+    initTimings.push(`${label} ${Math.round(now - initMark)}ms${memLog ? ` (${heapMB()} MB)` : ''}`);
     initMark = now;
   };
 
@@ -113,7 +117,8 @@ async function initApp() {
   markInit('landmarks');
   const cityBlocks = buildCityBlocks(scene);
   markInit('blocks');
-  buildSignage(scene);
+  const signage = buildSignage(scene);
+  const uploadedTextures = [...signage.textures]; // (the phone tiers drop their CPU copies once on screen, see below)
   markInit('signage');
   const allColliders = [...landmarkColliders, ...cityBlocks.colliders, ...boroughs.colliders, ...(cityGrid.colliders || [])];
 
@@ -127,7 +132,11 @@ async function initApp() {
   // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
   await window.CITY.buildStreetProps(scene);
   // the City's park name signs at the parks' entrances, each with its park's name & address (park-signs.js)
-  if (window.CITY.buildParkSigns) allColliders.push(...(await window.CITY.buildParkSigns(scene)).colliders);
+  if (window.CITY.buildParkSigns) {
+    const parkSigns = await window.CITY.buildParkSigns(scene);
+    allColliders.push(...parkSigns.colliders);
+    if (parkSigns.textures) uploadedTextures.push(...parkSigns.textures);
+  }
   // Yonge & Dundas: the screens round Sankofa Square (yonge-dundas.js)
   window.CITY.buildYongeDundas(scene);
   markInit('streetProps');
@@ -724,6 +733,39 @@ async function initApp() {
     loadingStatus.textContent = 'Compiling Shaders & Render Pipelines...';
   }
 
+  // ?compilelog=1: every shader build & render pipeline made after the loading screen (the on-demand compiles that
+  // freeze the ride), with its object, material & pass, in window.__CITY_APP.compileLog
+  const compileLog = new URLSearchParams(location.search).get('compilelog') === '1' ? [] : null;
+  if (compileLog) {
+    const nodes = renderer._nodes, pipes = renderer._pipelines;
+    const label = (ro) => `${ro.object.name || ro.object.parent?.name || ro.object.type}|${ro.material.name || ro.material.type}|ctx${ro.context?.id}${ro.context?.depth === false ? '' : ''}`;
+    const create = nodes._createNodeBuilder.bind(nodes);
+    nodes._createNodeBuilder = (ro, mat) => { const b = create(ro, mat); b.__t0 = performance.now(); b.__ro = ro; return b; };
+    const state = nodes._createNodeBuilderState.bind(nodes);
+    nodes._createNodeBuilderState = (b) => {
+      if (window.__CITY_APP && window.__CITY_APP.ready) compileLog.push({ t: Math.round(performance.now()), kind: 'node', what: b.__ro ? label(b.__ro) : '?', ms: +(performance.now() - b.__t0).toFixed(1) });
+      return state(b);
+    };
+    // vertex & index buffers first uploaded mid-ride (the warm-up frame skips chunks that share a pipeline)
+    const be = renderer.backend;
+    for (const fn of ['createAttribute', 'createIndexAttribute']) {
+      const orig = be[fn].bind(be);
+      be[fn] = (attr, ...rest) => {
+        const t = performance.now();
+        const r = orig(attr, ...rest);
+        if (window.__CITY_APP && window.__CITY_APP.ready) compileLog.push({ t: Math.round(t), kind: 'upload', what: `${attr.name || ''}${attr.array ? (attr.array.byteLength / 1048576).toFixed(2) + 'MB' : ''}`, ms: +(performance.now() - t).toFixed(1) });
+        return r;
+      };
+    }
+    const pipe = pipes._getRenderPipeline.bind(pipes);
+    pipes._getRenderPipeline = (ro, ...rest) => {
+      const t = performance.now();
+      const r = pipe(ro, ...rest);
+      if (window.__CITY_APP && window.__CITY_APP.ready) compileLog.push({ t: Math.round(t), kind: 'pipeline', what: label(ro), ms: +(performance.now() - t).toFixed(1), async: !!rest[3] });
+      return r;
+    };
+  }
+
   // Expose programmatic API for testing & inspection
   let currentFps = 60;
   window.__CITY_APP = {
@@ -752,6 +794,7 @@ async function initApp() {
     tourGuide,
     teleportTo,
     quality: QUALITY,
+    compileLog,
     getFps: () => currentFps
   };
   // The quality safety net & the ?fps=1 readout (quality.js), fed every real-time frame
@@ -874,6 +917,14 @@ async function initApp() {
   })() : null;
   window.__CITY_APP.gpuTimes = () => (gpuTimes ? gpuTimes.read() : null);
 
+  // the clustered (shadowless point & spot) lights, for the dark-light pass in the loop (after the warm-up frame)
+  let darkLights = null;
+  const collectDarkLights = () => {
+    if (!QUALITY.hideDarkLights || !ClusteredLighting || !(renderer.lighting instanceof ClusteredLighting)) return;
+    darkLights = [];
+    scene.traverse((o) => { if ((o.isSpotLight || o.isPointLight) && !o.castShadow) darkLights.push(o); });
+  };
+
   // 6. Animation Loop
   let lastTime = performance.now();
   let elapsed = 0;
@@ -926,6 +977,10 @@ async function initApp() {
     cityAudio.update(dt, elapsed);
     if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
 
+    // The phone tiers: the pooled street, head & police lights that are off (intensity 0, parked underground) leave
+    // the clustered lighting's list, so by day its per-frame cluster pass has no lights to sort and test (quality.js)
+    if (darkLights) for (const l of darkLights) l.visible = l.intensity > 0;
+
     // Render frame via TSL RenderPipeline (SSR + Bloom)
     if (!warmedUp) {
       // First frame = pipeline warm-up behind the loading screen, for what precompileShaders() can't reach (the shadow
@@ -941,6 +996,7 @@ async function initApp() {
       renderPipeline.render();
       for (const o of culled) o.frustumCulled = true;
       markInit('warmup');
+      collectDarkLights();
     }
     renderPipeline.render();
     if (!warmedUp) {
@@ -957,6 +1013,21 @@ async function initApp() {
         setLoadingProgress(1);
         window.__CITY_APP.ready = true;
         openDeepLink();
+        // The phone tiers: the CPU copies of what the GPU now holds go (scene-culling.js), a second pass a little later
+        // for what the first frames uploaded
+        if (QUALITY.lean) {
+          const LEAN_ROOTS = new Set(['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns',
+            'CityLandmarks', 'Terrain', 'CitySignage', 'RoadMarkings', 'Trees', 'RailCorridor', 'Streetcars', 'Subway', 'ShadowProxy']);
+          const release = () => {
+            // the static city's groups (only their vertex data: the trains & streetcars move by their matrices)
+            const roots = scene.children.filter((o) => LEAN_ROOTS.has(o.name));
+            const mb = window.CITY.releaseCpuCopies(renderer, roots, uploadedTextures);
+            const heap = performance.memory ? `, JS heap ${Math.round(performance.memory.usedJSHeapSize / 1048576)} MB` : '';
+            console.info(`[mem] released ${mb} MB of CPU copies${heap}`);
+          };
+          release();
+          setTimeout(release, 15000);
+        }
       });
     }
 

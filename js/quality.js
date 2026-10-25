@@ -38,6 +38,11 @@ const TIERS = {
     subway: 1, // subway.js: x the Line 2 trains (over the Bloor Viaduct, through the west end's open cuts)
     farCity: 1, // surroundings.js: share of the far city's blocks built up
     lightPool: 1, // x the night's street light & headlight spot pools
+    signRes: 1, // signage.js: the name boards' lettering resolution (1: 4096 x 4096 atlases)
+    // main.js: once the city is on screen, drop the CPU copies of what the GPU already holds (static vertex & index
+    // arrays, the name boards' canvases): hundreds of MB the phone needs
+    lean: false,
+    hideDarkLights: false, // main.js: pooled lights that are off leave the clustered lighting's list each frame
     // the city's sound (audio-system.js): running vehicle voices, sirens & one-shot events at once, HRTF panning (else
     // plain stereo, far cheaper on the audio thread)
     audio: { motors: 8, sirens: 2, events: 8, hrtf: true }
@@ -47,6 +52,7 @@ const TIERS = {
     shadowTile: 2048, shadowFar: 0.75,
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85,
     cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, subway: 1, farCity: 0.6, lightPool: 0.6,
+    signRes: 1, lean: true, hideDarkLights: true,
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
@@ -54,6 +60,7 @@ const TIERS = {
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7,
     cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
+    signRes: 0.5, lean: true, hideDarkLights: true,
     audio: { motors: 4, sirens: 1, events: 5, hrtf: false }
   }
 };
@@ -86,12 +93,19 @@ function chooseTier() {
 }
 
 const { tier, reason } = chooseTier();
-const QUALITY = { tier, reason, shadows: true /* the sun's shadow cascades */, ...TIERS[tier], dist: 1 };
+const QUALITY = {
+  tier, reason,
+  shadows: true, // the sun's shadow cascades
+  clusterGrid: [256, 32, 28, 48], // main.js ClusteredLighting: max lights, screen tile px, depth slices, lights per cluster
+  ...TIERS[tier], dist: 1
+};
 // Profiling knobs: ?q.<key>=<value> overrides one of the tier's settings (numbers, true/false, else the string), e.g.
 // ?q.bloom=false&q.shadows=false, so each setting's cost can be measured on its own (nothing sets them by default)
 for (const [k, v] of params) {
   if (!k.startsWith('q.') || !(k.slice(2) in QUALITY)) continue;
-  QUALITY[k.slice(2)] = v === 'true' ? true : v === 'false' ? false : Number.isFinite(Number(v)) ? Number(v) : v;
+  const key = k.slice(2);
+  QUALITY[key] = Array.isArray(QUALITY[key]) ? v.split(',').map(Number) // e.g. ?q.clusterGrid=128,64,16,24
+    : v === 'true' ? true : v === 'false' ? false : Number.isFinite(Number(v)) ? Number(v) : v;
 }
 const forcedScale = parseFloat(params.get('scale'));
 if (forcedScale >= 0.25 && forcedScale <= 2) QUALITY.scale = forcedScale;
