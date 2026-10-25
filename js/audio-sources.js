@@ -8,7 +8,7 @@
 // sends its skid (entity.skid, else a proxy from its sideways slip and how hard it corners) and its revs when the car
 // model has an engine (entity.rpm, aalghooneh's slop-toronto powertrain); mid-block crossings walk on their own phase.
 
-const { signalPhase, walkSignal, SIGNAL_TIMING } = window.CITY;
+const { SIGNALS } = window.CITY;
 
 const MOTOR_RANGE = 180;
 const SIREN_RANGE = 220;
@@ -192,7 +192,7 @@ class CityAudioSources {
       if (d2 <= MOTOR_RANGE * MOTOR_RANGE) {
         this.snapshot.traffic += (1 - d2 / (MOTOR_RANGE * MOTOR_RANGE)) * (0.2 + 0.8 * unit(v.speed / 12));
       }
-      const green = !v.edge.to.signal || signalPhase(elapsed, v.edge.axisIndex === 0) === 'green';
+      const green = !v.edge.to.signal || SIGNALS.state(v.edge.to.sigJ, v.edge.sigP, elapsed) === 'green';
       const blocked = v.wait > 2 && v.speed < 0.5 && v.gap < 8 && v.leaderSpeed < 0.5 && green && !v.conn && !v.yielding;
       this.motor(v, v.bus ? 'bus' : v.isSUV ? 'suv' : 'sedan', v.x, y, v.z,
         v.speed, roadLoad(v.speed, v.acc, v.driver.a), v.yaw + v.yawOffset, !!v.isPolice, false, seedAt(seedOffset + i), blocked);
@@ -283,7 +283,6 @@ class CityAudioSources {
       const y = ped.node && t > 2 && t < ped.len - 2 ? 0.012 : 0.22;
       this.person(ped, ped.x, y, ped.z, ped.v, true, ped.rig);
     }
-    const { cycle, avenueRed, walk } = SIGNAL_TIMING;
     for (let i = 0; i < this.signalSites.length; i++) {
       const site = this.signalSites[i];
       const d2 = this.distanceSq(site.x, site.y, site.z);
@@ -294,8 +293,8 @@ class CityAudioSources {
       item.x = site.x;
       item.y = site.y;
       item.z = site.z;
-      // A mid-block crossing's green man lights a second after its road turns red (street-details.js pedLensMat)
-      item.walk = site.crossing ? (((elapsed - avenueRed - 1) % cycle) + cycle) % cycle < walk : walkSignal(elapsed, site.isAvenue);
+      // a mid-block crossing's green man (street-details.js pedLensMat), or the WALK of the phase people there walk with
+      item.walk = site.crossing !== undefined ? SIGNALS.crossingWalk(site.crossing, elapsed) : SIGNALS.walk(site.j, site.p, elapsed);
       item.ns = !!site.ns;
       item.seed = seedAt(10000 + i);
     }

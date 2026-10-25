@@ -2,46 +2,41 @@
 // js/street-details.js
 // Abuja's street furniture & greenery, on the real streets & blocks (city-config.js):
 // - Traffic signals where OpenStreetMap maps them (city-config.js SIGNAL_JUNCTIONS): a pole on the near-right corner of
-//   every approach, three-aspect heads facing the traffic, a mast arm over the wide roads, their phases shared with
-//   js/traffic.js (the major road's group 0 first); and at the signalised pedestrian crossings (SIGNAL_CROSSINGS), a
-//   red / green man pole on either kerb
+//   every approach, three-aspect heads facing the traffic, a mast arm over the wide roads, each head lit by its
+//   junction's phase for that approach (js/signal-plan.js, which js/traffic.js obeys too); and at the signalised
+//   pedestrian crossings (SIGNAL_CROSSINGS), a red / green man pole on either kerb
 // - Streetlights: the tall double-arm poles down the medians of the dual carriageways, single-arm poles along the
 //   other roads (some with a solar panel on top), their light pooled around the camera at night
 // - Trees: neem, Indian almond & mango on the verges and in the wide medians, royal palms down the medians of the
 //   ceremonial roads, parkland & savanna trees, and the mango & neem trees in the compound yards
 
 const { THREE } = window.CITY;
-const { Fn, float, color, positionWorld, uniform, mod, step, mix, smoothstep, uv, texture, abs, fract } = window.CITY.TSL;
+const { Fn, float, color, positionWorld, uniform, uniformArray, instancedBufferAttribute, int, mod, step, mix, smoothstep, uv, texture, abs, fract } = window.CITY.TSL;
 const { mergeGeometries } = window.CITY.Addons;
-const { GEO, BLOCKS, ROADS, SIGNAL_TIMING, SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS, nearestRoads, blockAt, pointInPoly, cityUniforms, offsetPolygonInward } = window.CITY;
+const { GEO, BLOCKS, ROADS, SIGNAL_TIMING, SIGNALS, SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS, nearestRoads, blockAt, pointInPoly, cityUniforms, offsetPolygonInward } = window.CITY;
 const { createTreeField } = window.CITY;
 
 
 /**
  * TSL 3-Aspect Traffic Signal Lens Material (Red y=5.78, Amber y=5.42, Green y=5.06)
- * Driven by the shared signal clock and SIGNAL_TIMING (city-config.js), which js/traffic.js obeys.
+ * Each head's instance carries (its junction, the start & end of its phase's green); the junction's clock shift comes
+ * from js/signal-plan.js (SIGNALS.shifts, which the actuated lights near the player move), so the heads show exactly
+ * what js/traffic.js obeys: green in the window, amber for SIGNAL_TIMING.amber s after it, red otherwise.
  */
-function createTrafficSignalLensMaterial(isAvenueHead, clock) {
-  const { cycle, avenueAmber, avenueRed, streetAmber } = SIGNAL_TIMING;
+function createTrafficSignalLensMaterial(clock, shifts, headSignal) {
+  const { cycle, amber } = SIGNAL_TIMING;
   const mat = new THREE.MeshBasicNodeMaterial();
   mat.colorNode = Fn(() => {
-    const t = mod(clock, cycle);
+    const sig = instancedBufferAttribute(headSignal, 'vec3'); // (junction, green start, green end)
+    const t = mod(clock.sub(shifts.element(int(sig.x))), cycle);
     const wy = positionWorld.y;
     const isTopRed = step(5.60, wy);
     const isBottomGreen = float(1.0).sub(step(5.24, wy));
     const isMidAmber = float(1.0).sub(isTopRed).mul(float(1.0).sub(isBottomGreen));
 
-    // Avenue phase: Green, then Amber from avenueAmber, Red from avenueRed
-    // Street phase: Red until avenueRed, then Green, Amber from streetAmber
-    const greenActive = isAvenueHead
-      ? float(1.0).sub(step(avenueAmber, t))
-      : step(avenueRed, t).mul(float(1.0).sub(step(streetAmber, t)));
-    const amberActive = isAvenueHead
-      ? step(avenueAmber, t).mul(float(1.0).sub(step(avenueRed, t)))
-      : step(streetAmber, t);
-    const redActive = isAvenueHead
-      ? step(avenueRed, t)
-      : float(1.0).sub(step(avenueRed, t));
+    const greenActive = step(sig.y, t).mul(float(1.0).sub(step(sig.z, t)));
+    const amberActive = step(sig.z, t).mul(float(1.0).sub(step(sig.z.add(amber), t)));
+    const redActive = float(1.0).sub(greenActive).sub(amberActive);
 
     const activeMask = isTopRed.mul(redActive)
       .add(isMidAmber.mul(amberActive))
@@ -247,8 +242,10 @@ function buildStreetDetails(scene) {
   // Shared materials
   const poleMetalMat = new THREE.MeshStandardNodeMaterial({ color: 0x8e9396, roughness: 0.42, metalness: 0.75 }); // galvanised
   const signalHousingMat = new THREE.MeshStandardNodeMaterial({ color: 0x17191b, roughness: 0.5, metalness: 0.3, side: THREE.DoubleSide });
-  const aveSignalLensMat = createTrafficSignalLensMaterial(true, signalClock);
-  const streetSignalLensMat = createTrafficSignalLensMaterial(false, signalClock);
+  // every junction's clock shift (signal-plan.js steps them; the array is uploaded each frame) and, per head, its
+  // junction & phase window (filled below)
+  const signalShifts = uniformArray(SIGNALS.shifts, 'float');
+  const headSignals = []; // per signal head: junction, green start, green end
   const lampLensGlow = new THREE.MeshBasicNodeMaterial();
   lampLensGlow.colorNode = mix(color(0x8f918c), color(0xfff1d6).mul(2.1), smoothstep(0.4, 1.1, cityUniforms.uInteriorGlow));
   const solarMat = new THREE.MeshStandardNodeMaterial({ color: 0x1b2a44, roughness: 0.18, metalness: 0.6 });
@@ -271,16 +268,22 @@ function buildStreetDetails(scene) {
   // Pedestrian head: two square aspects, red man (y 3.25) over green man (y 2.85); green while the cross traffic holds red
   const pedHousingGeo = new THREE.BoxGeometry(0.34, 0.74, 0.22).toNonIndexed();
   const pedLensGeo = mergeGeometries([0.2, -0.2].flatMap((ly) => bothFaces(new THREE.PlaneGeometry(0.24, 0.24).translate(0, ly, 0.114))));
+  // (each crossing's own clock shift per instance, signal-plan.js: the WALK a second after its road's light turns red,
+  // for SIGNAL_TIMING.walk s, the red man the rest of the cycle)
+  const pedShifts = [];
+  let pedShiftAttr = null; // (built once the crossings are placed, below; the shader reads it when it compiles)
   const pedLensMat = new THREE.MeshBasicNodeMaterial();
   pedLensMat.colorNode = Fn(() => {
-    const t = mod(signalClock, SIGNAL_TIMING.cycle);
+    const shift = instancedBufferAttribute(pedShiftAttr, 'float');
+    const t = mod(signalClock.sub(shift), SIGNAL_TIMING.cycle);
     const isRed = step(3.05, positionWorld.y);
-    const walk = step(SIGNAL_TIMING.avenueRed + 1, t);
+    const walk = step(SIGNALS.CROSSING_WALK_START, t).mul(float(1).sub(step(SIGNALS.CROSSING_WALK_START + SIGNAL_TIMING.walk, t)));
     const on = mix(walk, float(1).sub(walk), isRed);
     return mix(color(0x14181e), mix(color(0x2bff8a), color(0xff3a2a), isRed).mul(1.3), on);
   })();
-  const poleMatrices = [], armMatrices = [], headMatrices = [], aveLensMatrices = [], streetLensMatrices = [];
-  // audio: where the crossing signals sound (audio-sources.js): { x, y, z, isAvenue | crossing, ns (crossing N-S) }
+  const poleMatrices = [], armMatrices = [], headMatrices = [], lensMatrices = [];
+  // audio: where the crossing signals sound (audio-sources.js): { x, y, z, j & p (the junction & phase people there
+  // walk with) | crossing (its index), ns (crossing N-S) }
   const audioSignals = [];
   {
     const RG = GEO.roadGraph;
@@ -291,7 +294,7 @@ function buildStreetDetails(scene) {
     const nodeAt = new Map();
     for (let i = 0; i < RG.nodes.length / 2; i++) nodeAt.set(`${RG.nodes[2 * i]},${RG.nodes[2 * i + 1]}`, i);
     let heads = 0;
-    for (const j of SIGNAL_JUNCTIONS) {
+    SIGNAL_JUNCTIONS.forEach((j, ji) => {
       // the arms leaving the junction's nodes: direction, half width, whether traffic arrives along it, its score
       const arms = [];
       const inJunction = new Set(j.pts.map((p) => `${p.x},${p.z}`));
@@ -316,10 +319,9 @@ function buildStreetDetails(scene) {
           arms.push({ ux: ux / L, uz: uz / L, hw: w / 2, arrives, score: (ave ? 100 : 0) + w / 2, x: p.x, z: p.z, back: nodeHalf + 3 });
         }
       }
-      if (arms.length < 3) continue;
-      // the major road (right of way, group 0): the best-scoring arm and the arm most nearly opposite it
-      const lead = arms.reduce((m, a) => (a.score > m.score ? a : m));
-      const isMajor = (a) => a.ux * lead.ux + a.uz * lead.uz > 0.82 || a.ux * lead.ux + a.uz * lead.uz < -0.82;
+      if (arms.length < 3) return;
+      // each approach's phase at the junction (signal-plan.js), from its direction
+      const windows = SIGNALS.windows(ji);
       for (const a of arms) {
         if (!a.arrives) continue;
         // near-right corner of the approach (traffic heading -u: its right is (u.z, -u.x)), before the crossing road
@@ -337,21 +339,22 @@ function buildStreetDetails(scene) {
         addPole(pole.x, pole.z);
         addFootprint(pole.x, pole.z, 0.4, 0.4);
         // (people here cross the road ahead, walking with this approach's traffic)
-        audioSignals.push({ x: pole.x, y: SW_Y + 1.1, z: pole.z, isAvenue: isMajor(a), ns: Math.abs(a.uz) > Math.abs(a.ux) }); // audio
+        const phase = SIGNALS.phaseForDir(ji, a.ux, a.uz);
+        audioSignals.push({ x: pole.x, y: SW_Y + 1.1, z: pole.z, j: ji, p: phase, ns: Math.abs(a.uz) > Math.abs(a.ux) }); // audio
         const yaw = Math.atan2(a.ux, a.uz); // heads face the approaching traffic (lenses on both faces anyway)
         dummy.rotation.set(0, 0, 0);
         dummy.position.set(pole.x, SW_Y + 3.1, pole.z);
         dummy.scale.set(0.09, 6.2, 0.09);
         dummy.updateMatrix();
         poleMatrices.push(dummy.matrix.clone());
-        const lens = isMajor(a) ? aveLensMatrices : streetLensMatrices;
         const placeHead = (x, z) => {
           dummy.position.set(x, 5.42, z);
           dummy.rotation.set(0, yaw, 0);
           dummy.scale.set(1, 1, 1);
           dummy.updateMatrix();
           headMatrices.push(dummy.matrix.clone());
-          lens.push(dummy.matrix.clone());
+          lensMatrices.push(dummy.matrix.clone());
+          headSignals.push(ji, windows[phase][0], windows[phase][1]);
           heads++;
         };
         placeHead(pole.x - rx * 0.32, pole.z - rz * 0.32);
@@ -366,16 +369,16 @@ function buildStreetDetails(scene) {
           placeHead(pole.x - rx * reach * 0.8, pole.z - rz * reach * 0.8);
         }
       }
-    }
+    });
     console.info(`[streetDetails] ${heads} signal heads at ${SIGNAL_JUNCTIONS.length} signalised junctions`);
   }
 
   // Signalised pedestrian crossings: a pole on either kerb, its red / green man facing the far kerb
   const pedHeadMatrices = [];
   {
-    for (const c of SIGNAL_CROSSINGS) {
+    SIGNAL_CROSSINGS.forEach((c, ci) => {
       const near = nearestRoads(c.x, c.z, 25).find((n) => !n.road.raised);
-      if (!near) continue;
+      if (!near) return;
       const nx = -near.dz, nz = near.dx; // across the road
       for (const sgn of [1, -1]) {
         let pole = null;
@@ -386,7 +389,7 @@ function buildStreetDetails(scene) {
         if (!pole) continue;
         addPole(pole.x, pole.z);
         addFootprint(pole.x, pole.z, 0.3, 0.3);
-        audioSignals.push({ x: pole.x, y: SW_Y + 1.1, z: pole.z, crossing: true, ns: Math.abs(nz) > Math.abs(nx) }); // audio
+        audioSignals.push({ x: pole.x, y: SW_Y + 1.1, z: pole.z, crossing: ci, ns: Math.abs(nz) > Math.abs(nx) }); // audio
         dummy.rotation.set(0, 0, 0);
         dummy.position.set(pole.x, SW_Y + 1.6, pole.z);
         dummy.scale.set(0.06, 3.2, 0.06);
@@ -397,8 +400,9 @@ function buildStreetDetails(scene) {
         dummy.scale.set(1, 1, 1);
         dummy.updateMatrix();
         pedHeadMatrices.push(dummy.matrix.clone());
+        pedShifts.push(SIGNALS.crossingShift[ci]);
       }
-    }
+    });
     console.info(`[streetDetails] ${pedHeadMatrices.length} pedestrian signals at ${SIGNAL_CROSSINGS.length} crossings`);
   }
 
@@ -638,9 +642,9 @@ function buildStreetDetails(scene) {
   addMatrixArrayInstanced(unitBox, poleMetalMat, armMatrices);
   addMatrixArrayInstanced(signalHousingGeo, signalHousingMat, headMatrices);
   addMatrixArrayInstanced(pedHousingGeo, signalHousingMat, pedHeadMatrices);
+  pedShiftAttr = new THREE.InstancedBufferAttribute(new Float32Array(pedShifts.length ? pedShifts : [0]), 1);
   addMatrixArrayInstanced(pedLensGeo, pedLensMat, pedHeadMatrices, false);
-  addMatrixArrayInstanced(signalLensGeo, aveSignalLensMat, aveLensMatrices, false);
-  addMatrixArrayInstanced(signalLensGeo, streetSignalLensMat, streetLensMatrices, false);
+  addMatrixArrayInstanced(signalLensGeo, createTrafficSignalLensMaterial(signalClock, signalShifts, new THREE.InstancedBufferAttribute(new Float32Array(headSignals), 3)), lensMatrices, false);
   addMatrixArrayInstanced(lampHeadGeo, poleMetalMat, lampHeadMatrices);
   addMatrixArrayInstanced(lampLensGeo, lampLensGlow, lampHeadMatrices, false);
   addMatrixArrayInstanced(unitBox, solarMat, solarMatrices);

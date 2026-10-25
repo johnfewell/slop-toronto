@@ -5,7 +5,7 @@
 // ribbon on the road and a beacon over the destination, re-routing when you stray, and Tour Drive: the guide takes the
 // wheel (or the handlebars, or your feet) and brings you there, stopping at red lights.
 
-const { THREE, Navigation, CITY_LANDMARKS, TELEPORT_LOCATIONS, getLocationLabel, districtAt, nearestRoads, blockAt, signalPhase } = window.CITY;
+const { THREE, Navigation, CITY_LANDMARKS, TELEPORT_LOCATIONS, getLocationLabel, districtAt, nearestRoads, blockAt, SIGNALS } = window.CITY;
 const { Fn, uniform, uv, attribute, float, color, mix, step, fract, abs, smoothstep } = window.CITY.TSL;
 const { searchPlaces, findRoute, progressOnRoute, formatDistance, formatDuration, trueBearing, compassWord, CATEGORY_LABEL, locateReal } = Navigation;
 
@@ -804,7 +804,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
   if (trafficSystem && trafficSystem.network) {
     for (const e of trafficSystem.network.edges) {
       if (!e.to || !e.to.signal) continue;
-      signalEdges.push({ x: e.sx + e.dx * e.len, z: e.sz + e.dz * e.len, dx: e.dx, dz: e.dz, axis: e.axisIndex });
+      signalEdges.push({ x: e.sx + e.dx * e.len, z: e.sz + e.dz * e.len, dx: e.dx, dz: e.dz, j: e.to.sigJ, p: e.sigP });
     }
   }
   function redLightAhead(x, z, hx, hz, elapsed) {
@@ -815,7 +815,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
       if (ahead < 0.5 || ahead > 45) continue;
       if (Math.abs(rx * hz - rz * hx) > 6) continue; // not in our lane's line
       if (s.dx * hx + s.dz * hz < 0.8) continue; // a stop line for another approach
-      const phase = signalPhase(elapsed, s.axis === 0);
+      const phase = SIGNALS.state(s.j, s.p, elapsed);
       if (phase === 'green' || (phase === 'amber' && ahead < 12)) continue;
       best = Math.min(best, ahead);
     }

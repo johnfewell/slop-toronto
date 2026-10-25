@@ -1,0 +1,45 @@
+[
+ {
+  "name": "king-tele-0",
+  "mode": "helicopter",
+  "time": "golden",
+  "wait": 25000,
+  "js": "(() => { const app = window.__CITY_APP; const b = document.getElementById('btn-toggle-hud'); b?.click(); if (b) b.style.display = 'none'; app.teleportTo(-1300, -349, 0); app.cameraSystem.cinema = () => ({ pos: [-1160, 11, -352], look: [200, 3.2, -349], fov: 11 }); })()"
+ },
+ {
+  "name": "king-tele-1",
+  "wait": 4000
+ },
+ {
+  "name": "king-tele-2",
+  "wait": 4000
+ },
+ {
+  "name": "king-tele-3",
+  "wait": 4000
+ },
+ {
+  "name": "king-tele-4",
+  "wait": 4000
+ },
+ {
+  "name": "king-tele-5",
+  "wait": 4000
+ },
+ {
+  "name": "king-tele-6",
+  "wait": 4000
+ },
+ {
+  "name": "king-tele-7",
+  "wait": 4000
+ },
+ {
+  "name": "king-tele-8",
+  "wait": 4000
+ },
+ {
+  "name": "king-tele-9",
+  "wait": 4000
+ }
+]

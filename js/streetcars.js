@@ -14,7 +14,7 @@
 // - Cost: the trackwork is cut into 700 m tiles hidden beyond ~1.2 km; only the cars within DRAW_RADIUS are drawn (all
 //   of them run). Fleet size by quality tier (quality.js `streetcarSpacing`).
 
-const { THREE, GEO, QUALITY, blockAt, deckHeightAt, railLiftAt, railSpanAt, signalPhase, ROADS, cityUniforms } = window.CITY;
+const { THREE, GEO, QUALITY, blockAt, deckHeightAt, railLiftAt, railSpanAt, SIGNALS, ROADS, cityUniforms } = window.CITY;
 const { Fn, color, mix, step, smoothstep, abs, uv, positionGeometry, normalGeometry, float } = window.CITY.TSL;
 const { mergeGeometries } = window.CITY.Addons;
 
@@ -306,8 +306,8 @@ function buildTracks(network) {
     t.stops.sort((a, b) => a - b);
   }
 
-  // Signals along each track: the junctions of the road network with a signal the track passes through, the major road
-  // phase (group 0) or the cross road's by the road the track runs along there
+  // Signals along each track: the junctions of the road network with a signal the track passes through, and the phase
+  // there of the road the track runs along (signal-plan.js)
   if (network) {
     const sigGrid = pointGrid(network.nodes.filter((n) => n.signal), 20);
     for (const t of tracks) {
@@ -316,16 +316,16 @@ function buildTracks(network) {
         sample(t, s, tmp);
         const fx = Math.sin(tmp.yaw);
         const fz = Math.cos(tmp.yaw);
-        let major = true;
+        let p = SIGNALS.phaseForDir(n.sigJ, fx, fz);
         let best = 0.8;
         for (const e of n.in || []) {
           const dot = e.dx * fx + e.dz * fz;
-          if (dot > best) {
+          if (dot > best && e.sigP !== undefined) {
             best = dot;
-            major = e.axisIndex === 0;
+            p = e.sigP;
           }
         }
-        t.signals.push({ s, major, half: Math.max(6, (n.hx || 7) + 3) });
+        t.signals.push({ s, j: n.sigJ, p, half: Math.max(6, (n.hx || 7) + 3) });
       }
       t.signals.sort((a, b) => a.s - b.s);
     }
@@ -557,7 +557,8 @@ function createStreetcars(scene, trafficSystem) {
     for (const sg of car.track.signals) {
       const d = sg.s - sg.half - car.s;
       if (d < -1 || d > 60) continue;
-      const ph = signalPhase(elapsed, sg.major);
+      if (d < 50) SIGNALS.call(sg.j, sg.p); // its light's detector sees it coming
+      const ph = SIGNALS.state(sg.j, sg.p, elapsed);
       if (ph === 'red' || (ph === 'amber' && d > 12)) return d;
     }
     return Infinity;

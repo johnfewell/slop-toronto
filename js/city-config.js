@@ -802,26 +802,7 @@ function isTypingInField(e) {
   return e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT');
 }
 
-// Traffic signal cycle shared by the signal heads (street-details.js) and the traffic (traffic.js), in seconds: the
-// major road (right-of-way group 0) green until avenueAmber, amber until avenueRed; the crossing road green from
-// avenueRed until streetAmber, amber until the end of the cycle. Pedestrians cross with the traffic that runs parallel
-// to them, stepping off only on the WALK, the first `walk` seconds of its green.
-const SIGNAL_TIMING = { cycle: 70, avenueAmber: 30, avenueRed: 34, streetAmber: 66, walk: 8 };
-
-// 'green', 'amber' or 'red' for major-road (isAvenue) or crossing-road traffic at a given time
-function signalPhase(time, isAvenue) {
-  const { cycle, avenueAmber, avenueRed, streetAmber } = SIGNAL_TIMING;
-  const t = ((time % cycle) + cycle) % cycle;
-  if (isAvenue) return t < avenueAmber ? 'green' : t < avenueRed ? 'amber' : 'red';
-  return t < avenueRed ? 'red' : t < streetAmber ? 'green' : 'amber';
-}
-
-// Do pedestrians walking alongside major-road (or crossing-road) traffic have the WALK at a given time?
-function walkSignal(time, isAvenue) {
-  const { cycle, avenueRed, walk } = SIGNAL_TIMING;
-  const t = (((time - (isAvenue ? 0 : avenueRed)) % cycle) + cycle) % cycle;
-  return t < walk;
-}
+// (The traffic signals' timing, per junction, is js/signal-plan.js: SIGNAL_TIMING & SIGNALS.)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Real-world positions: WGS84 latitude / longitude <-> world (x, z), with the projection the city was built in
@@ -862,7 +843,6 @@ Object.assign(window.CITY, {
   LANDMARK_SITES,
   TELEPORT_LOCATIONS,
   arrivalFor,
-  SIGNAL_TIMING,
   shortName,
   waterAt,
   isOnLand,
@@ -887,8 +867,6 @@ Object.assign(window.CITY, {
   worldFromLatLon,
   latLonFromWorld,
   geoDistance,
-  isTypingInField,
-  signalPhase,
-  walkSignal
+  isTypingInField
 });
 })();

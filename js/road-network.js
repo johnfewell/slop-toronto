@@ -1121,12 +1121,17 @@ function buildRoadNetwork(sidewalks, obstacles) {
   nodes.forEach((n, i) => (n.id = i));
 
   // 8. Signalised junctions are exactly the mapped ones (city-config.js SIGNAL_JUNCTIONS, whose heads street-details.js
-  //    mounts): every junction node within 12 m of one of their graph nodes
-  for (const j of SIGNAL_JUNCTIONS) {
+  //    mounts): every junction node within 12 m of one of their graph nodes; n.sigJ: which (signal-plan.js runs its lights)
+  SIGNAL_JUNCTIONS.forEach((j, ji) => {
     for (const p of j.pts) {
-      for (const n of nodes) if (!n.shape && Math.abs(n.x - p.x) < 12 && Math.abs(n.z - p.z) < 12 && Math.hypot(n.x - p.x, n.z - p.z) < 12) n.signal = true;
+      for (const n of nodes) {
+        if (!n.shape && Math.abs(n.x - p.x) < 12 && Math.abs(n.z - p.z) < 12 && Math.hypot(n.x - p.x, n.z - p.z) < 12) {
+          n.signal = true;
+          n.sigJ = ji;
+        }
+      }
     }
-  }
+  });
 
   // 9. Sides & right of way at each node, for traffic.js. Its arms are its sides (one crosswalk and approach each): a
   //    grid intersection keeps east 0, west 1, south 2, north 3, any other arm counts from 4. The arms of one road (on

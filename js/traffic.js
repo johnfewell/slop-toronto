@@ -10,7 +10,7 @@
 // - Fixed-size local populations replenish distant roads and sidewalks in every direction, protecting the near view.
 // - The player's vehicle or character pushes and is pushed by the traffic (SAT contact, impulses, sparks).
 
-const { THREE, buildRoadNetwork, edgeY, signalPhase, walkSignal, deckHeightAt } = window.CITY;
+const { THREE, buildRoadNetwork, edgeY, SIGNALS, deckHeightAt } = window.CITY;
 const {
   cityUniforms,
   createContactShadowMaterial,
@@ -130,6 +130,78 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     for (let k = 0; k < n.box.length; k++) if (k !== g && n.box[k] > 0) return true;
     return false;
   };
+
+  // Signals (signal-plan.js): the phase each road at a signalised node runs in, from its direction at the junction;
+  // the phase pedestrians on each crosswalk walk with (the one most nearly square to the road they cross); and the
+  // edges arriving at each junction, for its detectors. Crossing roads at a node must never share a phase (checked).
+  const sigApproaches = new Map(); // junction -> edges arriving at its nodes
+  const signalConflicts = []; // (debug: nodes whose crossing roads would share a phase)
+  {
+    let nodesChecked = 0, conflicts = 0, movedRoads = 0;
+    for (const n of nodes) {
+      if (!n.signal) continue;
+      nodesChecked++;
+      const J = SIGNALS.junctions[n.sigJ];
+      // each road's direction here (folded onto a half-turn), from the edges arriving and leaving along it
+      const dirs = Array.from({ length: n.groupCount }, () => [0, 0]);
+      const add = (g, dx, dz) => {
+        const d = dirs[g];
+        const s = d[0] * dx + d[1] * dz < 0 ? -1 : 1;
+        d[0] += dx * s;
+        d[1] += dz * s;
+      };
+      for (const e of n.in) add(e.axisIndex, e.dx, e.dz);
+      for (const e of n.out) add(e.outArm.group, e.dx, e.dz);
+      n.groupPhase = dirs.map(([dx, dz]) => SIGNALS.phaseForDir(n.sigJ, dx, dz));
+      // Roads crossing here must not share a phase. (Roads meeting at under 45 degrees merge or fork rather than cross,
+      // and two arms of one street that jogs are one road: those may share a green, the box keeps them apart.) A road
+      // that would share its crossing road's phase moves to a phase of the junction nobody crossing it uses here.
+      const unit = dirs.map(([x, z]) => { const L = Math.hypot(x, z); return L ? [x / L, z / L] : null; });
+      const roadOf = unit.map((u) => {
+        if (!u) return null;
+        let best = null, bd = -1;
+        for (const a of J.arms) {
+          const d = Math.abs(a.ux * u[0] + a.uz * u[1]);
+          if (d > bd) { bd = d; best = a.road; }
+        }
+        return best;
+      });
+      const crosses = (g, h) => unit[g] && unit[h] && roadOf[g] !== roadOf[h] && Math.abs(unit[g][0] * unit[h][0] + unit[g][1] * unit[h][1]) < Math.SQRT1_2;
+      for (let g = 0; g < unit.length; g++) {
+        for (let h = g + 1; h < unit.length; h++) {
+          if (n.groupPhase[g] !== n.groupPhase[h] || !crosses(g, h)) continue;
+          let moved = false;
+          for (let q = 0; q < J.phases && !moved; q++) {
+            if (unit.every((_, k) => k === h || n.groupPhase[k] !== q || !crosses(k, h))) {
+              n.groupPhase[h] = q;
+              moved = true;
+              movedRoads++;
+            }
+          }
+          if (moved) continue;
+          conflicts++;
+          signalConflicts.push({ x: Math.round(n.x), z: Math.round(n.z), j: n.sigJ, phases: n.groupPhase.slice(), dirs: dirs.map(([x, z]) => Math.round(Math.atan2(z, x) * 180 / Math.PI)), roads: roadOf });
+        }
+      }
+      const walkPhaseOf = (g) => {
+        const q = n.groupPhase[g];
+        const [dx, dz] = dirs[g];
+        const L = Math.hypot(dx, dz) || 1;
+        let best = q === 0 ? 1 : 0, bd = 2;
+        J.axes.forEach(([ax, az], p) => {
+          const d = Math.abs(ax * dx + az * dz) / L;
+          if (p !== q && d < bd) { bd = d; best = p; }
+        });
+        return best;
+      };
+      n.walkP = n.road.map((r) => (!r ? 0 : walkPhaseOf(r.to === n ? r.inArm.group : r.outArm.group)));
+      for (const e of n.in) {
+        e.sigP = n.groupPhase[e.axisIndex];
+        (sigApproaches.get(n.sigJ) || sigApproaches.set(n.sigJ, []).get(n.sigJ)).push(e);
+      }
+    }
+    (conflicts ? console.error : console.info)(`[signals] ${nodesChecked} signalised nodes: ${conflicts} with crossing roads in the same phase (${movedRoads} roads moved to a phase of their own)`);
+  }
 
   // =========================================================================
   // 1. 3D LOFTED TAXIS, SEDANS & SUVS (200 VEHICLES)
@@ -415,11 +487,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // 4. WHO IS WHERE: LANE OCCUPANCY, INTERSECTIONS, VIEW, PLAYER
   // =========================================================================
   let clock = 0;
-  let avePhase = 'green';
-  let stPhase = 'red';
-  let aveWalk = true;
-  let stWalk = false;
-  const phaseOf = (e) => (e.axisIndex === 0 ? avePhase : stPhase);
+  // 'green' / 'amber' / 'red' for e's traffic at its signal (signal-plan.js: its junction's phase e.sigP, see 4b)
+  const phaseOf = (e) => SIGNALS.state(e.to.sigJ, e.sigP, clock);
   let focusX = 0;
   let focusZ = 140;
   const player = { active: false, entity: null, x: 0, z: 0, vx: 0, vz: 0, halfW: 0.86, halfL: 2.18, push: 0.5 };
@@ -570,6 +639,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // Edges and signalized intersections around the focus, to place vehicles and pedestrians on
   const nearEdges = [];
   const nearSignals = [];
+  const nearJunctions = []; // their junctions (signal-plan.js actuates these)
   let nearX = Infinity;
   let nearZ = Infinity;
   function refreshNear() {
@@ -586,6 +656,41 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     for (const n of nodes) {
       const dx = n.x - focusX, dz = n.z - focusZ;
       if (n.signal && dx * dx + dz * dz < NEAR_RADIUS * NEAR_RADIUS) nearSignals.push(n);
+    }
+    nearJunctions.length = 0;
+    for (const n of nearSignals) if (!nearJunctions.includes(n.sigJ)) nearJunctions.push(n.sigJ);
+  }
+
+  // The detectors of the lights around the player (signal-plan.js actuates them): a vehicle within DETECT m of a stop
+  // line (unless it stands there with nowhere to go), the player's own vehicle there, people waiting at a curb call
+  // their phase; people on a crosswalk keep the phase they walk with from ending
+  const DETECT = 45;
+  function detectSignals() {
+    for (const j of nearJunctions) {
+      for (const e of sigApproaches.get(j) || []) {
+        for (const list of e.occ) {
+          for (let k = list.length - 1; k >= 0; k--) {
+            const o = list[k];
+            if (o.s > e.len) continue; // already crossing
+            if (e.len - o.s >= DETECT + o.v.half) break;
+            // (queue-aware: a vehicle standing at its line with no room beyond the junction can't use a green, so it
+            // doesn't ask for one, and the light gives the time to a road that can move)
+            const u = o.v, m = u.move, out = m ? m.out[u.lane] : -1;
+            if (u.speed < 0.5 && e.len - o.s - u.half < 4 && (out < 0 || !room(m.to, out, u))) break;
+            SIGNALS.call(j, e.sigP);
+            break;
+          }
+        }
+        if (player.active && Math.abs(player.x - e.to.x) < DETECT + 15 && Math.abs(player.z - e.to.z) < DETECT + 15) {
+          const ax = player.x - e.sx, az = player.z - e.sz;
+          const along = ax * e.dx + az * e.dz, side = ax * e.rx + az * e.rz;
+          if (along > e.len - DETECT && along < e.len + 1 && side > e.lanes[0] - 2.2 && side < Math.max(e.lanes[e.lanes.length - 1] + 2.2, e.half || 0) &&
+            player.vx * e.dx + player.vz * e.dz > -1) SIGNALS.call(j, e.sigP);
+        }
+        const n = e.to;
+        for (const p of n.curb) if (p.waiting && p.node === n) SIGNALS.call(j, n.walkP[p.side]);
+        for (const p of n.walkers) SIGNALS.busy(j, n.walkP[p.side]);
+      }
     }
   }
 
@@ -1533,13 +1638,13 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
   // Do people on crosswalk `side` have the WALK? Across the avenue with the cross street's traffic, across the street
   // with the avenue's.
-  const walkOn = (side) => (side >= 2 ? stWalk : aveWalk);
+  const walkOn = (n, side) => SIGNALS.walk(n.sigJ, n.walkP[side], clock);
 
   // May p step off the curb onto its crosswalk? On the WALK (early in the parallel traffic's green, so red for the
   // traffic arriving over it), once no vehicle is crossing it or committed to, and none is too close to stop
   function mayCross(p) {
     const n = p.node;
-    if (!walkOn(p.side) || n.crossing[p.side] > 0) return false;
+    if (!walkOn(n, p.side) || n.crossing[p.side] > 0) return false;
     const e = n.approach[p.side];
     if (!e) return true;
     for (const list of e.occ) {
@@ -1655,7 +1760,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     p.t = t;
     p.x = p.ax + p.ux * t;
     p.z = p.az + p.uz * t;
-    if (p.node && ((t > KERB && t < p.len - KERB) || (p.waiting && walkOn(p.side)))) {
+    if (p.node && ((t > KERB && t < p.len - KERB) || (p.waiting && walkOn(p.node, p.side)))) {
       p.coord = p.side >= 2 ? p.x : p.z;
       if (!p.node.walkers.length) walkedNodes.push(p.node);
       p.node.walkers.push(p);
@@ -2177,10 +2282,6 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
   function update(dt, elapsed, focusPos = null, playerEntity = null, activeMode = 'car', camera = null) {
     clock = elapsed;
-    avePhase = signalPhase(elapsed, true);
-    stPhase = signalPhase(elapsed, false);
-    aveWalk = walkSignal(elapsed, true);
-    stWalk = walkSignal(elapsed, false);
     focusX = focusPos ? focusPos.x : 0;
     focusZ = focusPos ? focusPos.z : 140;
     // a jump of the camera (teleport, first frame): everything far away can be placed anywhere around it
@@ -2220,6 +2321,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       spawnVehicle(v, jump ? 0 : 100, NEAR_RADIUS, !jump);
     }
     buildOccupancy();
+    // the lights around the player see who waits, then step (the rest keep their coordinated timing: nothing to do)
+    detectSignals();
+    SIGNALS.step(elapsed, dt, nearJunctions);
     for (const m of bodyMeshes) m.count = 0;
     litVehicleCount = 0;
     wheelCars = 0;
@@ -2330,6 +2434,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     update,
     setCollisionListener, // audio
     setObstacles, // streetcars.js
+    signalConflicts,
     cars,
     buses,
     peds,
