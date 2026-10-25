@@ -1,12 +1,13 @@
 (function () {
 // js/sky-clouds.js
 // Volumetric clouds over Toronto: John's three-clouds-webgpu (js/clouds.js, bundled from vendor/clouds by
-// tools/build-clouds.mjs), lit by the takram atmosphere it is built on. The city keeps its own sky, lights & fog
-// (lighting.js): the clouds march through the scene pass's depth and composite over its colour before the grade
-// (main.js). The world sits on the globe at Union Station, turned by the street grid's bearing, and the clouds see the
-// same 22 August sun as the city. On by default (about 4-5 fps on the M4 mini); ?clouds=0 turns them off.
+// tools/build-clouds.mjs), lit by the takram atmosphere it is built on. The city keeps its own lights (lighting.js):
+// the clouds march through the scene pass's depth and composite over its colour before the grade (main.js). The world
+// sits on the globe at Union Station, turned by the street grid's bearing, and the clouds see the same 22 August sun as
+// the city. On by default; ?clouds=0 turns them off.
 //
-// ?atmosphere=1 (a spike, off by default): takram's physical sky replaces the city's sky dome, and its aerial
+// The atmosphere (on by default, John 2026-10-25; ?atmosphere=0 brings back the city's own sky dome & fog): takram's
+// physical sky replaces the city's sky dome, and its aerial
 // perspective (the light the air between the camera and a surface scatters in, and the share of the surface's own light
 // it lets through) goes over the whole scene before the clouds composite, in the library's order: scene -> clouds march
 // -> aerial -> clouds composite -> the city's grade. The city keeps its own lights and materials (lighting = false: the
@@ -14,7 +15,8 @@
 // are untouched. Night takes the real 23:00 sun (well below the horizon), the moon where the city's moonlight comes from,
 // the star catalogue and the moonlit clouds, over the city's own night-glow gradient so the skyline keeps a horizon.
 // Knobs: ?atmoHaze=<n> (aerosol multiple, a hazy August day by default), ?atmoGain=<n> (sky & haze brightness, the
-// clouds' gain by default), ?atmoFog=<n> (how much of the city's own fog stays by day; night keeps all of it).
+// clouds' gain by default), ?atmoFog=<n> & ?atmoNightFog=<n> (how much of the city's own fog stays by day & at night),
+// ?atmoMoon=<n> (moonlight on the clouds), ?atmoStars=<n> (the stars' brightness at night).
 
 const { THREE, TSL } = window.CITY;
 const URL_PARAMS = new URLSearchParams(location.search);
@@ -26,18 +28,19 @@ const CLOUD_SPEED = (() => {
 })();
 const ATMOSPHERE = (() => {
   const v = URL_PARAMS.get('atmosphere');
-  return v !== null && v !== '0' && v !== 'false';
+  return v !== '0' && v !== 'false';
 })();
 const numParam = (name, fallback) => {
   const v = parseFloat(URL_PARAMS.get(name));
   return Number.isFinite(v) ? v : fallback;
 };
-// A hazy late-August day over the lake: 10x takram's clear-air aerosol (about 15 km visibility), so the skyline across
+// A hazy late-August day over the lake: 20x takram's clear-air aerosol (about 10 km visibility), so the skyline across
 // the harbour softens and the far city & the lake horizon go warm & blue, while everything within a few hundred metres
-// stays clear (the art bible's rule; the clear default reads as a mountain-air day)
-const ATMO_HAZE = numParam('atmoHaze', 10);
-// The city's own (stylised, sky-coloured) fog kept by day on top of the physical haze, & at each time of day
-const ATMO_CITY_FOG = { golden: numParam('atmoFog', 0), midday: numParam('atmoFog', 0), twilight: numParam('atmoFog', 0.35), midnight: 1 };
+// stays clear (the art bible's rule; the clear default reads as a mountain-air day, 30x goes milky at midday)
+const ATMO_HAZE = numParam('atmoHaze', 20);
+// The city's own (stylised, sky-coloured) fog kept on top of the physical haze, by time of day (at night half of it: the
+// whole of it buried the skyline's lit windows in navy from across the lake)
+const ATMO_CITY_FOG = { golden: numParam('atmoFog', 0), midday: numParam('atmoFog', 0), twilight: numParam('atmoFog', 0.35), midnight: numParam('atmoNightFog', 0.5) };
 // The city's night-sky gradient (its sky colours) under the physical night sky: light pollution over the city
 const ATMO_NIGHT_GLOW = { golden: 0, midday: 0, twilight: 0, midnight: 1 };
 
@@ -138,6 +141,7 @@ async function setupClouds(renderer) {
   // ?atmosphere=1 state, made in attach()
   const nightGlow = TSL.uniform(0);
   let starsNode = null;
+  let skyGlow = null;
   const camProjInv = TSL.uniform(new THREE.Matrix4());
   const camWorld = TSL.uniform(new THREE.Matrix4());
   return {
@@ -168,7 +172,7 @@ async function setupClouds(renderer) {
     pass: cloudsPass,
     context: ctx,
     atmosphere,
-    // The aerial perspective over the scene colour (?atmosphere=1), in the scene pass's depth. three's
+    // The aerial perspective over the scene colour, in the scene pass's depth. three's
     // perspectiveDepthToViewZ follows the renderer's reversed depth, takram's sky test reads it too, and its position
     // reconstruction only needs the view z (the unprojected x, y & z don't depend on the clip z), so the reversed depth
     // buffer needs no workaround here (checked with ?atmoHaze=40: near walls clear, the far city white)
@@ -185,19 +189,25 @@ async function setupClouds(renderer) {
       // (takram's 1000 leaves them below the city's night exposure and glow: 1e7 gives a sparse, light-polluted sky)
       starsNode = skyNode.starsNode;
       starsNode.intensity.value = lightingSystem && lightingSystem.activePresetId === 'midnight' ? numParam('atmoStars', 1e7) : 0;
-      // The city's night-sky gradient (its preset sky colours) under the physical sky after dark: the stars and the
-      // moon sit on the glow of a lit city, and the skyline keeps a horizon to stand against
+      // The city's night-sky gradient (its preset sky colours) after dark, added over every far-plane pixel once the
+      // clouds have composited (composite() below): the stars and the moon sit on the glow of a lit city, the cloud
+      // bases take it too, as clouds over a city do, and the skyline keeps a horizon to stand against (under the sky
+      // alone, the low far clouds hid it and came out as a dark band that swallowed the skyline from the lake)
       const glow = Fn(() => {
         const ndc = vec2(uv().x.mul(2).sub(1), uv().y.oneMinus().mul(2).sub(1));
         const v = camProjInv.mul(vec4(ndc, 0.5, 1));
         const dir = camWorld.mul(vec4(v.xyz.div(v.w), 0)).xyz.normalize();
         const h = max(dir.y, 0);
-        return mix(cityUniforms.uSkyHorizonColor, cityUniforms.uSkyTopColor, pow(h, 0.45)).mul(nightGlow);
+        const far = depthNode.r.lessThanEqual(0).select(1, 0); // (the reversed depth buffer clears to 0)
+        return mix(cityUniforms.uSkyHorizonColor, cityUniforms.uSkyTopColor, pow(h, 0.45)).mul(nightGlow).mul(far);
       })();
-      node.skyNode = skyNode.add(glow);
+      skyGlow = glow;
       return node;
     },
-    composite: (colorNode) => (cloudsPass ? cloudsPass.composite(colorNode) : colorNode),
+    composite: (colorNode) => {
+      const c = cloudsPass ? cloudsPass.composite(colorNode) : colorNode;
+      return skyGlow ? TSL.vec4(c.rgb.add(skyGlow), c.a) : c;
+    },
     resetHistory: () => ctx && ctx.resetHistory(),
     update(dt) {
       // the clouds replace the sky dome's painted ones

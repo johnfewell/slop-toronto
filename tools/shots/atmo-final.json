@@ -1,0 +1,44 @@
+[
+ {
+  "name": "hero-sugarbeach-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 10000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const p=window.CITY.worldFromLatLon(43.6421,-79.3662);const cn=window.CITY.GEO.points.cnTower;const L=[cn[0],140,cn[1]];app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,2.6,p.z],look:L,fov:50});})()"
+ },
+ {
+  "name": "hero-sugarbeach-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 10000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const p=window.CITY.worldFromLatLon(43.6421,-79.3662);const cn=window.CITY.GEO.points.cnTower;const L=[cn[0],140,cn[1]];app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,2.6,p.z],look:L,fov:50});})()"
+ },
+ {
+  "name": "hero-islands-midnight",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 10000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const p=window.CITY.worldFromLatLon(43.6215,-79.3772);const cn=window.CITY.GEO.points.cnTower;const L=[cn[0],150,cn[1]];app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,4.0,p.z],look:L,fov:46});})()"
+ },
+ {
+  "name": "trail-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const p=window.CITY.worldFromLatLon(43.63075,-79.4679);const cn=window.CITY.GEO.points.cnTower;const L=[cn[0],180,cn[1]];app.teleportTo(p.x,p.z,0);app.cameraSystem.cinema=()=>({pos:[p.x,3.2,p.z],look:L,fov:50});})()"
+ },
+ {
+  "name": "skyline-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();const cn=window.CITY.GEO.points.cnTower;app.teleportTo(cn[0],cn[1]+600,0);app.cameraSystem.cinema=()=>({pos:[cn[0]+400,140,cn[1]+4200],look:[cn[0]+600,120,cn[1]],fov:44});})()"
+ },
+ {
+  "name": "king-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(386.5,-343.6,0);app.cameraSystem.cinema=()=>({pos:[386.5, 1.3, -343.6],look:[379.2, 3.0, -339.6],fov:55});})()"
+ }
+]
