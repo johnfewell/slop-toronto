@@ -20,6 +20,9 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 - **City audio** (`js/audio-*.js`): mrdoob's synthesized spatial audio from Slop New York (MIT, above), with the
   player car's tyre squeal and engine revs from aalghooneh's slop-toronto fork (MIT, © Slop Toronto contributors).
   https://github.com/aalghooneh/slop-toronto. Every sound is synthesized in code; no recordings.
+- **Physically based lake water** (`?water=pbr`, `js/pbr-water.js`): mrdoob's "Physically Based Estuary Water" from
+  Slop New York (MIT, above), as also carried by Slop San Francisco by @unable0_ (MIT), refitted to Toronto's
+  waterfront. https://github.com/unable12/slop-sanfrancisco
 - **three.js**, WebGPURenderer and TSL, loaded from jsDelivr at a pinned dev-branch commit. MIT.
   https://threejs.org/
 - **Stylized water** (`js/stylized-water.js`, built from `vendor/stylized-water`): John Fewell's three.js port of
