@@ -29,13 +29,15 @@ const RADIANCE_PER_SUN = { value: 0.13 };
 function setupLakeWater(scene, renderer, lightingSystem) {
   const lake = scene.getObjectByName('LakeOntario');
   const params = new URLSearchParams(location.search);
-  // ?water=pbr (spike): mrdoob's physically based water fitted to Toronto (pbr-water.js) instead, ?waterColour=a|b|c
-  if (params.get('water') === 'pbr' && lake && window.CITY.createPBRLakeWater) {
+  // The lake & harbour: mrdoob's physically based water fitted to Toronto (pbr-water.js), body colour a (clear
+  // blue-green, John's pick 2026-10-25); ?waterColour=a|b|c|ny tries the others, ?water=stylized brings back John's
+  // stylized water
+  if (params.get('water') !== 'stylized' && lake && window.CITY.createPBRLakeWater) {
     const colour = params.get('waterColour') || 'a';
     const pbr = window.CITY.createPBRLakeWater(colour);
     lake.material = pbr.material;
     window.CITY.lakePBR = pbr; // (shot lists & the console tune its uniforms)
-    console.info(`[water] Lake Ontario: physically based (?water=pbr), body colour ${window.CITY.PBR_WATER_COLOURS[colour] ? colour : 'a'}`);
+    console.info(`[water] Lake Ontario: physically based, body colour ${window.CITY.PBR_WATER_COLOURS[colour] ? colour : 'a'}`);
     if (params.has('waterTune')) window.CITY.openPBRTunePanel(pbr, colour);
     // (main.js keeps storing the scene pass's multisampled colour while `water` is set: with it off another pass's
     // load of output-msaa fails WebGPU validation, as it would on main without the stylized water)
