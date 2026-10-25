@@ -45,6 +45,235 @@ function createGothicHallMaterial() {
   return mat;
 }
 
+// =====================================================================================================================
+// UNION STATION'S TRAIN SHED: an override for the south half of the Union Station massing. The City's 3D Massing models
+// the shed (a 1930 Bush shed over the platforms, with a glass atrium over its middle since 2018) as one solid 9 m block
+// down to the street, which buried the platforms and the GO trains up on the embankment. Its triangles are dropped from
+// the massing (unionShedKeep) and the shed is built open instead (buildUnionTrainShed): low roof bays running along the
+// tracks, each sloping up to a smoke slot over a track, on slim steel columns standing on platforms between the tracks,
+// open along the sides and at both ends; a pitched glass atrium across the middle, on the Great Hall's axis. It is laid
+// out from the tracks themselves (GEO.rails), so no column or platform ever stands on a track.
+// =====================================================================================================================
+const UNION_SHED = {
+  x0: -120, x1: 120, // between the York St and Bay St rail bridges (the streets & their abutments stay open)
+  z0: 40.8, z1: 127, // from the head house's south wall to past the last track
+  atrium: 24, // the atrium's half width, about x = 0
+  bed: 6.2, // the track bed up on the embankment (city-config.js railLiftAt: Union's fill)
+  low: 13.4, high: 14.5, deck: 0.3, // a bay's valley (over a platform) & its slot edges (over a track), roof thickness
+  slot: 0.7, // the smoke slot's half width over each track
+  platform: 0.75, edge: 1.85, // platform top above the track bed; its edge from a track's centre line
+  ridge: 20 // the atrium's ridge
+};
+
+// The massing's triangles to keep: everything but the shed (wholly south of the head house's south wall, under 11.5 m)
+function unionShedKeep(pos, idx) {
+  const keep = [];
+  for (let t = 0; t < idx.length; t += 3) {
+    let shed = true, far = false;
+    for (let k = 0; k < 3; k++) {
+      const v = idx[t + k] * 3, y = pos[v + 1], z = pos[v + 2];
+      if (y > 11.5 || z < 36) shed = false;
+      if (z > 40.6) far = true;
+    }
+    if (!(shed && far)) keep.push(idx[t], idx[t + 1], idx[t + 2]);
+  }
+  return new Uint32Array(keep);
+}
+
+function buildUnionTrainShed(group, colliders) {
+  const U = UNION_SHED;
+  // the heavy-rail tracks' centre lines across the shed: sorted z at a given x
+  const segs = [];
+  for (const [kind, , , , flat] of GEO.rails || []) {
+    if (kind !== 1) continue;
+    for (let i = 2; i < flat.length; i += 2) {
+      const ax = flat[i - 2], az = flat[i - 1], bx = flat[i], bz = flat[i + 1];
+      if (Math.max(ax, bx) < U.x0 - 10 || Math.min(ax, bx) > U.x1 + 10 || Math.max(az, bz) < U.z0 || Math.min(az, bz) > U.z1) continue;
+      segs.push([ax, az, bx, bz]);
+    }
+  }
+  const tracksAt = (x) => {
+    const zs = [];
+    for (const [ax, az, bx, bz] of segs) {
+      if ((ax - x) * (bx - x) > 0 || ax === bx) continue;
+      const z = az + ((x - ax) / (bx - ax)) * (bz - az);
+      if (z > U.z0 + 2 && z < U.z1 - 2 && !zs.some((q) => Math.abs(q - z) < 1)) zs.push(z);
+    }
+    return zs.sort((a, b) => a - b);
+  };
+  const n = tracksAt(0).length;
+  if (!n) return;
+  // stations along the shed every 8 m (and at the atrium's edges); where a crossover muddles the count, the last good one
+  const xs = [];
+  for (let x = U.x0; x < U.x1; x += 8) xs.push(x);
+  xs.push(U.x1, -U.atrium, U.atrium);
+  xs.sort((a, b) => a - b);
+  let last = tracksAt(0);
+  const st = xs.filter((x, i) => i === 0 || x - xs[i - 1] > 0.5).map((x) => {
+    const t = tracksAt(x);
+    if (t.length === n) last = t;
+    return { x, t: last };
+  });
+
+  // the roof's cross-section at a station: runs of (z, y) between the slots, the bays low over the platforms
+  const profile = (t) => {
+    const runs = [];
+    runs.push([[U.z0, U.low], [t[0] - U.slot, U.high]]); // the north bay hangs off the head house
+    for (let i = 0; i + 1 < n; i++) {
+      const a = t[i] + U.slot, b = t[i + 1] - U.slot;
+      if (b - a < 0.5) continue;
+      runs.push([[a, U.high], [(a + b) / 2, b - a > 4 ? U.low : U.high - 0.3], [b, U.high]]);
+    }
+    runs.push([[t[n - 1] + U.slot, U.high], [U.z1, U.low]]); // the south eave
+    return runs;
+  };
+  const roof = [], under = [], steelParts = [], slabs = [];
+  const quad = (out, a, b, c, d) => out.push(...a, ...b, ...c, ...a, ...c, ...d);
+  const D = U.deck;
+  for (let s = 0; s + 1 < st.length; s++) {
+    const A = st[s], B = st[s + 1];
+    if (A.x >= -U.atrium && B.x <= U.atrium) continue; // the atrium's span
+    const pa = profile(A.t), pb = profile(B.t);
+    for (let r = 0; r < pa.length; r++) {
+      const ra = pa[r], rb = pb[r];
+      for (let k = 0; k + 1 < ra.length; k++) {
+        const [za0, ya0] = ra[k], [za1, ya1] = ra[k + 1], [zb0, yb0] = rb[k], [zb1, yb1] = rb[k + 1];
+        quad(roof, [A.x, ya0, za0], [A.x, ya1, za1], [B.x, yb1, zb1], [B.x, yb0, zb0]); // top, facing up
+        quad(under, [A.x, ya0 - D, za0], [B.x, yb0 - D, zb0], [B.x, yb1 - D, zb1], [A.x, ya1 - D, za1]); // soffit
+      }
+      // the slot's (and the eaves') edges
+      for (const [k, sgn] of [[0, -1], [ra.length - 1, 1]]) {
+        const [za, ya] = ra[k], [zb, yb] = rb[k];
+        if (sgn < 0) quad(roof, [A.x, ya, za], [B.x, yb, zb], [B.x, yb - D, zb], [A.x, ya - D, za]);
+        else quad(roof, [A.x, ya, za], [A.x, ya - D, za], [B.x, yb - D, zb], [B.x, yb, zb]);
+      }
+    }
+    // the fascia where the roof ends (the shed's open ends, the atrium's sides)
+    for (const [E, p, sgn] of [[A, pa, -1], [B, pb, 1]]) {
+      if (!(E.x === U.x0 || E.x === U.x1 || Math.abs(E.x) === U.atrium)) continue;
+      for (const run of p) {
+        for (let k = 0; k + 1 < run.length; k++) {
+          const [z0, y0] = run[k], [z1, y1] = run[k + 1];
+          if (sgn > 0) quad(roof, [E.x, y0, z0], [E.x, y0 - D, z0], [E.x, y1 - D, z1], [E.x, y1, z1]);
+          else quad(roof, [E.x, y0, z0], [E.x, y1, z1], [E.x, y1 - D, z1], [E.x, y0 - D, z0]);
+        }
+      }
+    }
+  }
+
+  // steel: a column on each platform every 16 m (& a transverse girder across the shed above the trains); the atrium's
+  // ribs every 8 m
+  const box = (out, x, y, z, hx, hy, hz, rot = 0) => {
+    const g = new THREE.BoxGeometry(hx * 2, hy * 2, hz * 2);
+    if (rot) g.rotateX(rot);
+    g.translate(x, y, z);
+    out.push(g);
+  };
+  const girderY = U.low - D - 0.3;
+  for (const S of st) {
+    if (Math.round(S.x - U.x0) % 16 !== 0 || Math.abs(S.x) < U.atrium) continue; // (the atrium is clear inside)
+    const t = S.t;
+    const cols = [];
+    for (let i = 0; i + 1 < n; i++) if (t[i + 1] - t[i] > 2 * U.edge + 2.5) cols.push((t[i] + t[i + 1]) / 2);
+    cols.push(Math.min(U.z1 - 0.6, t[n - 1] + 3.2));
+    const top = U.low - D;
+    for (const z of cols) box(steelParts, S.x, (U.bed + top) / 2, z, 0.18, (top - U.bed) / 2, 0.18);
+    box(steelParts, S.x, girderY, (U.z0 + U.z1) / 2, 0.16, 0.3, (U.z1 - U.z0) / 2); // the girder
+  }
+  // the atrium: two glass slopes from the bays' slot height up to the ridge, on steel ribs
+  const glass = [];
+  const eave = U.high, rise = U.ridge - eave, half = U.atrium;
+  quad(glass, [-half, eave, U.z0], [0, U.ridge, U.z0], [0, U.ridge, U.z1], [-half, eave, U.z1]);
+  quad(glass, [half, eave, U.z0], [half, eave, U.z1], [0, U.ridge, U.z1], [0, U.ridge, U.z0]);
+  const slope = Math.atan2(rise, half), rafter = Math.hypot(half, rise) / 2;
+  for (let z = U.z0 + 2; z <= U.z1; z += 8) {
+    for (const sgn of [-1, 1]) {
+      const g = new THREE.BoxGeometry(rafter * 2, 0.45, 0.25);
+      g.rotateZ(sgn * -slope);
+      g.translate((sgn * half) / 2, eave + rise / 2 - 0.25, z);
+      steelParts.push(g);
+    }
+  }
+  box(steelParts, 0, U.ridge - 0.3, (U.z0 + U.z1) / 2, 0.2, 0.3, (U.z1 - U.z0) / 2); // the ridge beam
+  for (const x of [-half, half]) box(steelParts, x, eave - 0.3, (U.z0 + U.z1) / 2, 0.2, 0.3, (U.z1 - U.z0) / 2);
+
+  // the platforms between the tracks: concrete, a yellow safety strip along each edge
+  const slabCol = [];
+  const yTop = U.bed + U.platform;
+  const pushSlab = (xa, xb, za0, za1, zb0, zb1) => {
+    const strip = 0.6;
+    const bands = [[0, strip, 1], [strip, -strip, 0], [-strip, 0, 1]];
+    for (const [o0, o1, yellow] of bands) {
+      const z0a = o0 >= 0 ? za0 + o0 : za1 + o0, z1a = o1 > 0 ? za0 + o1 : za1 + o1;
+      const z0b = o0 >= 0 ? zb0 + o0 : zb1 + o0, z1b = o1 > 0 ? zb0 + o1 : zb1 + o1;
+      quad(slabs, [xa, yTop, z0a], [xa, yTop, z1a], [xb, yTop, z1b], [xb, yTop, z0b]);
+      const c = yellow ? [0.8, 0.5, 0.02] : [0.17, 0.165, 0.15]; // (linear)
+      for (let k = 0; k < 6; k++) slabCol.push(...c);
+    }
+    const dark = [0.07, 0.07, 0.065];
+    quad(slabs, [xa, yTop, za0], [xb, yTop, zb0], [xb, U.bed, zb0], [xa, U.bed, za0]); // the platform faces
+    quad(slabs, [xa, yTop, za1], [xa, U.bed, za1], [xb, U.bed, zb1], [xb, yTop, zb1]);
+    for (let k = 0; k < 12; k++) slabCol.push(...dark);
+  };
+  for (let i = 0; i + 1 < n; i++) {
+    for (let s = 0; s + 1 < st.length; s++) {
+      const A = st[s], B = st[s + 1];
+      const za0 = A.t[i] + U.edge, za1 = A.t[i + 1] - U.edge, zb0 = B.t[i] + U.edge, zb1 = B.t[i + 1] - U.edge;
+      if (za1 - za0 < 2.5 || zb1 - zb0 < 2.5) continue;
+      pushSlab(A.x, B.x, za0, za1, zb0, zb1);
+    }
+    // up on the embankment the platform is a low wall to the player (rather than something to sink into)
+    const a = st[0].t, b = st[st.length - 1].t;
+    if (a[i + 1] - a[i] - 2 * U.edge >= 2.5) {
+      colliders.push({ minX: U.x0, maxX: U.x1, minZ: Math.min(a[i], b[i]) + U.edge, maxZ: Math.max(a[i + 1], b[i + 1]) - U.edge, minY: U.bed - 0.5, maxY: yTop });
+    }
+  }
+
+  const geo = (arr) => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+    g.computeVertexNormals();
+    return g;
+  };
+  // the roof: weathered warm grey (against the atrium's cool glass), darker seams across it every 2.4 m; its soffit a paler concrete (it's always in shade)
+  const roofMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.85, side: THREE.DoubleSide });
+  roofMat.colorNode = Fn(() => {
+    const seam = step(0.94, fract(positionWorld.x.div(2.4)));
+    const top = mix(color(0x6b665e), color(0x524e48), seam.mul(0.7));
+    return mix(color(0x8c8d8b), top, step(0.0, normalWorldGeometry.y));
+  })();
+  const roofGeo = mergeGeometries([geo(roof), geo(under)]);
+  const roofMesh = new THREE.Mesh(roofGeo, roofMat);
+  roofMesh.name = 'UnionTrainShed_roof';
+  roofMesh.castShadow = true;
+  const steelMat = new THREE.MeshStandardNodeMaterial({ color: 0x3e4449, roughness: 0.55, metalness: 0.6 });
+  const steelMesh = new THREE.Mesh(mergeGeometries(steelParts.map((g) => g.toNonIndexed())), steelMat);
+  steelMesh.name = 'UnionTrainShed_steel';
+  steelMesh.castShadow = true;
+  // the atrium's glass: pale, half see-through, in a grid of glazing bars (no shadow: the platforms under it are sunlit)
+  const glassMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.08, metalness: 0.3, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+  const bars = Fn(() => {
+    const p = positionWorld;
+    const across = step(0.9, fract(p.z.div(2.0)));
+    const along = step(0.95, fract(p.x.abs().div(3.0)));
+    return max(across, along);
+  });
+  glassMat.colorNode = mix(color(0xcfe0e8), color(0xe8eaea), bars());
+  glassMat.opacityNode = mix(float(0.35), float(1.0), bars());
+  const glassMesh = new THREE.Mesh(geo(glass), glassMat);
+  glassMesh.name = 'UnionTrainShed_atrium';
+  const slabGeo = geo(slabs);
+  slabGeo.setAttribute('color', new THREE.Float32BufferAttribute(slabCol, 3));
+  const slabMesh = new THREE.Mesh(slabGeo, new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.9 }));
+  slabMesh.name = 'UnionTrainShed_platforms';
+  slabMesh.castShadow = true;
+  for (const m of [roofMesh, steelMesh, glassMesh, slabMesh]) {
+    m.receiveShadow = true;
+    group.add(m);
+  }
+  console.info(`[landmarks] Union train shed: ${n} tracks, ${st.length} stations, ${steelParts.length} steel members`);
+}
+
 function buildLandmarks(scene) {
   const group = new THREE.Group();
   group.name = 'CityLandmarks';
@@ -173,7 +402,9 @@ function buildLandmarks(scene) {
     for (const [id, m] of Object.entries(window.CITY.LANDMARK_MESHES || {})) {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(decode(m.positions, Float32Array), 3));
-      g.setIndex(new THREE.BufferAttribute(decode(m.indices, Uint32Array), 1));
+      let idx = decode(m.indices, Uint32Array);
+      if (id === 'unionStation') idx = unionShedKeep(g.attributes.position.array, idx); // (the shed: built open below)
+      g.setIndex(new THREE.BufferAttribute(idx, 1));
       g.computeVertexNormals(); // every face has its own vertices: flat-shaded facets
       const mesh = new THREE.Mesh(g, LOOKS[m.look] || LOOKS.limestone);
       mesh.position.y = SW_Y;
@@ -182,7 +413,14 @@ function buildLandmarks(scene) {
       mesh.name = `Landmark_${id}`;
       group.add(mesh);
       const s = S[id];
-      if (s && s.w) {
+      if (id === 'unionStation') {
+        // the head house only (one box over the whole site walled off York St & Bay St under the tracks): its main
+        // block, the west wing beyond York St, and the bridge over York St (open beneath)
+        colliders.push({ minX: -119, maxX: 110, minZ: -22, maxZ: 41, maxY: 34.3 });
+        colliders.push({ minX: -180.5, maxX: -154.5, minZ: 24, maxZ: 42, maxY: 18 });
+        colliders.push({ minX: -154.5, maxX: -119, minZ: 28, maxZ: 41, minY: 4.7, maxY: 14.1 });
+        buildUnionTrainShed(group, colliders);
+      } else if (s && s.w) {
         g.computeBoundingBox();
         boxCollider(s.x, s.z, s.w / 2, s.d / 2, s.ang || 0, g.boundingBox.max.y);
       }
