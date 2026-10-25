@@ -728,7 +728,18 @@ async function initApp() {
   }
 
   // Initialize default selection: the restored player's mode, else the bicycle
+  // a first visit starts on the bike at the start (Sugar Beach), facing the skyline; the idle car & walker wait on the
+  // nearest road (Queens Quay) instead of standing on the lawn in front of the view
+  const startAt = window.CITY.TELEPORT_LOCATIONS.start;
+  if (!restoredPlayer && startAt) {
+    for (const mode of ['car', 'person']) {
+      controllerManager.setMode(mode);
+      const road = controllerManager.findRoadReset();
+      if (road) controllerManager.teleportActiveTo(road.x, road.z, road.heading);
+    }
+  }
   selectMode(restoredPlayer ? controllerManager.activeMode : 'cyclist');
+  if (!restoredPlayer && startAt) controllerManager.teleportActiveTo(startAt.x, startAt.z, startAt.heading);
   selectCamera('chase', true);
   selectTime('golden');
   // the web fonts change the buttons' widths once they arrive

@@ -1084,14 +1084,9 @@ class ThirdPersonControllerManager {
     if (this.activeMode === 'person') {
       this.updatePerson(dt, elapsed);
     } else {
-      // Keep the sidewalk pedestrian walking naturally when not actively controlled
-      const p = this.entities.person;
-      const walkSpeed = 1.48;
-      p.speed = walkSpeed;
-      p.position.x += Math.sin(p.heading) * walkSpeed * dt;
-      p.position.z += Math.cos(p.heading) * walkSpeed * dt;
-      if (p.position.z < -340) p.heading = 0;
-      else if (p.position.z > 340) p.heading = Math.PI;
+      // The walker waits where it was left (New York's paced back & forth along a street between z -340 & 340, which
+      // turned a start far from the origin, Sugar Beach's, round & walked it away)
+      this.entities.person.speed = 0;
     }
 
     if (this.activeMode === 'car') {
