@@ -135,74 +135,20 @@ function crashDamage(speed) {
 }
 // --- end driving
 
-// --- Building contact (mrdoob's 49b2ef2): the player's body against a collider box, shared by movement and the
-// teleport's clearance. A circle for walking, cycling & flying, the car's oriented rectangle (0.86 x 2.18 m half sizes)
-// tested on all four separating axes, so it slides along a wall and round a corner instead of snapping to the nearest
-// face of the box's bounds; only parts whose height range [minY, maxY] meets the body's collide
-function collisionBody(mode, radius, heading, margin = 0) {
-  const car = mode === 'car';
-  const sin = Math.sin(heading), cos = Math.cos(heading);
-  const hx = 0.86 + margin, hz = 2.18 + margin;
-  return {
-    car, sin, cos, hx, hz, radius: radius + margin,
-    extX: car ? Math.abs(cos) * hx + Math.abs(sin) * hz : radius + margin,
-    extZ: car ? Math.abs(sin) * hx + Math.abs(cos) * hz : radius + margin,
-    bottom: mode === 'helicopter' ? -0.25 : 0,
-    top: mode === 'helicopter' ? 3.2 : car ? 1.8 : 1.9
-  };
-}
-
-// World bounds reject distant boxes cheaply; `contact` (if given) gets the push-out normal & depth
-function buildingContact(c, x, y, z, body, contact) {
-  if (y + body.bottom >= c.maxY || y + body.top <= (c.minY ?? 0)) return false;
-  if (x + body.extX <= c.minX || x - body.extX >= c.maxX || z + body.extZ <= c.minZ || z - body.extZ >= c.maxZ) return false;
-  const o = c.obb;
-  const cs = o ? o.cs : 1, sn = o ? o.sn : 0;
-  const hx = o ? o.hx : (c.maxX - c.minX) * 0.5;
-  const hz = o ? o.hz : (c.maxZ - c.minZ) * 0.5;
-  const dx = x - (o ? o.cx : (c.minX + c.maxX) * 0.5);
-  const dz = z - (o ? o.cz : (c.minZ + c.maxZ) * 0.5);
-  const lx = dx * cs - dz * sn, lz = dx * sn + dz * cs;
-  let nx = 0, nz = 0, depth = Infinity;
-  if (body.car) {
-    const ls = body.sin * cs - body.cos * sn, lc = body.sin * sn + body.cos * cs;
-    for (let axis = 0; axis < 4; axis++) {
-      const ax = axis === 0 ? 1 : axis === 1 ? 0 : axis === 2 ? lc : ls;
-      const az = axis === 0 ? 0 : axis === 1 ? 1 : axis === 2 ? -ls : lc;
-      const distance = lx * ax + lz * az;
-      const overlap = hx * Math.abs(ax) + hz * Math.abs(az)
-        + body.hx * Math.abs(ax * lc - az * ls) + body.hz * Math.abs(ax * ls + az * lc) - Math.abs(distance);
-      if (overlap <= 0) return false;
-      if (overlap < depth) {
-        depth = overlap;
-        const sign = distance <= 0 ? -1 : 1;
-        nx = ax * sign; nz = az * sign;
-      }
-    }
-  } else {
-    const qx = lx - Math.max(-hx, Math.min(hx, lx));
-    const qz = lz - Math.max(-hz, Math.min(hz, lz));
-    const distance = Math.hypot(qx, qz);
-    if (distance >= body.radius) return false;
-    if (distance > 0) {
-      nx = qx / distance; nz = qz / distance;
-      depth = body.radius - distance;
-    } else if (hx - Math.abs(lx) <= hz - Math.abs(lz)) {
-      nx = lx <= 0 ? -1 : 1;
-      depth = hx - Math.abs(lx) + body.radius;
-    } else {
-      nz = lz <= 0 ? -1 : 1;
-      depth = hz - Math.abs(lz) + body.radius;
-    }
-  }
-  if (contact) {
-    contact.nx = nx * cs + nz * sn;
-    contact.nz = -nx * sn + nz * cs;
-    contact.depth = depth;
-  }
-  return true;
-}
-// --- end building contact
+// --- World contact (js/world-collision.js, after unable12/slop-sanfrancisco's, MIT): the player's body is the sedan's own
+// tapered outline driving, a circle walking, cycling & flying, against each collider's outline (a landmark's polygon,
+// a turned box, or the bounds). Only parts whose height range [minY, maxY] meets the body's [y + bottom, y + top]
+// collide, so the road cuts, the underpasses, the decks & the tunnels keep working. Movement is cut into substeps no
+// longer than STEP (the car's also bounded by how far its bumper swings turning), so nothing thin is stepped over at
+// speed or when a frame takes long; each contact pushes the body out, takes away the motion into the wall and keeps the
+// motion along it (sliding)
+const G = window.CITY.WorldCollision;
+const BODY_RADIUS = { person: 0.48, cyclist: 0.65, helicopter: 4.5 };
+const HELI_BAND = [-0.25, 3.2], CAR_BAND = [0, 1.8], FOOT_BAND = [0, 1.9];
+const bodyBand = (mode) => (mode === 'helicopter' ? HELI_BAND : mode === 'car' ? CAR_BAND : FOOT_BAND);
+const meets = (c, y, band) => !(y + band[0] >= c.maxY || y + band[1] <= (c.minY ?? 0));
+const STEP = { car: 0.2, person: 0.2, cyclist: 0.25, helicopter: 1.0 };
+// --- end world contact
 
 // Ontario number plate: white, blue lettering, "ONTARIO" along the top and the province's "YOURS TO DISCOVER" along the
 // bottom
@@ -408,13 +354,14 @@ class ThirdPersonControllerManager {
 
   // Find a fully clear arrival before moving the player. Sequential collision pushes can leave a player trapped
   // between overlapping buildings, so test whole candidate footprints instead; retain the old position if none fits.
-  findTeleportPosition(x, z, heading, altitude) {
+  // exact: only (x, z) itself (null if it isn't clear), no search round it
+  findTeleportPosition(x, z, heading, altitude, exact = false) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
     const heli = this.activeMode === 'helicopter';
-    const radius = heli ? 4.5 : this.activeMode === 'person' ? 0.48 : 0.65;
+    const car = this.activeMode === 'car';
+    const radius = BODY_RADIUS[this.activeMode] || 0.48;
     const sinH = Math.sin(heading), cosH = Math.cos(heading);
-    const shape = collisionBody(this.activeMode, radius, heading, 0.1);
-    const reach = Math.max(shape.extX, shape.extZ);
+    const band = bodyBand(this.activeMode);
     const margin = heli ? 6000 : 0;
     const entity = this.getActiveEntity();
     // Conservative body cylinders, including the taxi's corners, bicycle wheels and helicopter tail/rotor.
@@ -445,12 +392,15 @@ class ThirdPersonControllerManager {
         const back = Math.max(0, Math.min(cameraBack, -dx * sinH - dz * cosH));
         if (Math.hypot(dx + sinH * back, dz + cosH * back) < other.radius + Math.max(body[entity.type][0], 0.5) + 0.1) return false;
       }
-      for (const c of this.nearColliders(p.x, p.z, reach)) {
-        if (buildingContact(c, p.x, baseY, p.z, shape)) return false;
+      const shape = car ? (this._arrivalCar = G.carShape(p.x, p.z, heading, 0.1, this._arrivalCar))
+        : (this._arrivalCircle = G.circleShape(p.x, p.z, radius + 0.1, this._arrivalCircle));
+      for (const c of this.nearColliders(p.x, p.z, shape.reach)) {
+        if (meets(c, baseY, band) && G.contact(shape, c)) return false;
       }
       return true;
     };
     const origin = clampPoint(x, z);
+    if (exact) return origin && Math.hypot(origin.x - x, origin.z - z) < 0.01 && clear(origin) ? origin : null;
     if (clear(origin)) return origin;
     // Four-metre rings cover nearby streets and courtyards, with bounded work even for a click inside a large block.
     const cx = origin ? origin.x : Math.max(CITY_BOUNDS.minX + 8, Math.min(CITY_BOUNDS.maxX - 8, x));
@@ -460,6 +410,53 @@ class ThirdPersonControllerManager {
         const angle = i * Math.PI / 16;
         const p = clampPoint(cx + Math.cos(angle) * distance, cz + Math.sin(angle) * distance);
         if (clear(p)) return p;
+      }
+    }
+    return null;
+  }
+
+  // The R key: back onto the nearest road, clear of everything, facing along it: the way it runs if one-way, else the
+  // way nearer the player's heading. Toronto drives on the right: the car in the right-hand lane of a two-way street,
+  // the bicycle and the walker by its right-hand curb. Raised roads (on a deck) don't count, nor, walking or cycling,
+  // the expressways. { x, z, heading }, or null (flying, or nothing clear within 400 m)
+  findRoadReset() {
+    const mode = this.activeMode;
+    if (mode === 'helicopter' || !window.CITY.nearestRoads) return null;
+    const ent = this.getActiveEntity(), x = ent.position.x, z = ent.position.z;
+    const fwdX = Math.sin(ent.heading), fwdZ = Math.cos(ent.heading);
+    const tried = new Set();
+    for (const radius of [40, 120, 400]) {
+      for (const near of window.CITY.nearestRoads(x, z, radius)) {
+        const road = near.road, pts = road.pts;
+        if (tried.has(road) || road.raised || (mode !== 'car' && road.highway) || pts.length < 2) continue;
+        tried.add(road);
+        // the nearest point as a distance along the road, then outward from it both ways, every 3 m up to 60 m
+        const len = [0];
+        let at = 0, best = Infinity;
+        for (let i = 0; i + 1 < pts.length; i++) {
+          const a = pts[i], b = pts[i + 1], dx = b.x - a.x, dz = b.z - a.z, l = Math.hypot(dx, dz) || 1e-9;
+          const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (l * l)));
+          const d = Math.hypot(a.x + dx * t - x, a.z + dz * t - z);
+          if (d < best) { best = d; at = len[i] + t * l; }
+          len.push(len[i] + l);
+        }
+        const half = (road.w || 7) / 2;
+        const lateral = mode === 'car' ? (road.dir ? 0 : Math.min(half * 0.5, 3.6)) : Math.max(0, half - (mode === 'cyclist' ? 1.4 : 1.0));
+        for (let k = 0; k <= 40; k++) {
+          const s = at + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 3;
+          if (s < 0 || s > len[len.length - 1]) continue;
+          let i = 0;
+          while (i + 2 < len.length && len[i + 1] < s) i++;
+          const a = pts[i], b = pts[i + 1], l = len[i + 1] - len[i] || 1e-9, ux = (b.x - a.x) / l, uz = (b.z - a.z) / l;
+          const qx = a.x + ux * (s - len[i]), qz = a.z + uz * (s - len[i]);
+          const back = road.dir < 0 || (!road.dir && ux * fwdX + uz * fwdZ < 0);
+          const fx = back ? -ux : ux, fz = back ? -uz : uz, heading = Math.atan2(fx, fz);
+          for (const off of [lateral, lateral * 0.5, 0]) {
+            const px = qx - fz * off, pz = qz + fx * off; // (to the right of the way it faces)
+            if (this.findTeleportPosition(px, pz, heading, 0, true)) return { x: px, z: pz, heading };
+            if (!off) break;
+          }
+        }
       }
     }
     return null;
@@ -880,6 +877,15 @@ class ThirdPersonControllerManager {
   nearColliders(x, z, r) {
     const CELL = 48;
     const key = (ix, iz) => (ix + 4096) * 8192 + (iz + 4096);
+    // (a model that loaded later replaced its stand-in's colliders: js/world-collision.js swap)
+    if (G && G.changes.length !== (this._changesSeen || 0)) {
+      for (const { remove, add } of G.changes.slice(this._changesSeen || 0)) {
+        const gone = new Set(remove);
+        this.colliders = this.colliders.filter((c) => !gone.has(c)).concat(add);
+      }
+      this._changesSeen = G.changes.length;
+      this._colliderCells = null;
+    }
     if (!this._colliderCells) {
       this._colliderCells = new Map();
       this.colliders.forEach((c, i) => {
@@ -914,9 +920,8 @@ class ThirdPersonControllerManager {
     return out;
   }
 
-  // Keeps pos inside the city & out of the lake and pushes it out of the colliders it overlaps at its height (pos.y);
-  // carEntity: the car, whose rectangle bounces, spins & sparks off what it hits
-  resolveHorizontalCollision(pos, radius, carEntity = null) {
+  // Keeps pos inside the city & out of the lake (ground modes go back to the last dry spot)
+  clampToWorld(pos, carEntity = null) {
     // The detailed city (the helicopter may roam out over the hills around it); no driving or walking into a lake
     const heli = this.activeMode === 'helicopter';
     const m = heli ? 12000 : -8;
@@ -934,66 +939,120 @@ class ThirdPersonControllerManager {
         this._dry = { x: pos.x, z: pos.z };
       }
     }
+  }
 
-    const body = collisionBody(this.activeMode, radius, carEntity ? carEntity.heading : 0);
-    const { sin: sinH, cos: cosH, extX, extZ } = body;
-    const contact = this._buildingContact ??= { nx: 0, nz: 0, depth: 0 };
-
-    const reach = Math.max(extX, extZ) + 6;
-    let gx = pos.x;
-    let gz = pos.z;
-    let near = this.nearColliders(gx, gz, reach);
-    for (let i = 0; i < near.length; i++) {
-      const c = near[i];
-      if (buildingContact(c, pos.x, pos.y, pos.z, body, contact)) {
-        const { nx, nz, depth } = contact;
-        pos.x += nx * depth;
-        pos.z += nz * depth;
-
-        if (carEntity) {
-          const totalVx = sinH * carEntity.speed + (carEntity.vx || 0);
-          const totalVz = cosH * carEntity.speed + (carEntity.vz || 0);
-          const vn = -(totalVx * nx + totalVz * nz);
-          if (vn > 0.5) {
-            carEntity.takeHit?.(vn);
-            const headOn = Math.abs(sinH * nx + cosH * nz);
-            const sideDot = cosH * nx - sinH * nz;
-            carEntity.vx = (carEntity.vx || 0) + nx * vn * 0.42;
-            carEntity.vz = (carEntity.vz || 0) + nz * vn * 0.42;
-            if (headOn > 0.72) {
-              carEntity.speed = -carEntity.speed * 0.25;
-            } else {
-              carEntity.speed *= (1.0 - 0.62 * headOn);
-              carEntity.angularVel = (carEntity.angularVel || 0) + sideDot * (sinH * nx + cosH * nz >= 0 ? -1 : 1) * Math.min(3.2, vn * 0.22);
-            }
-            carEntity.pitchVel = (carEntity.pitchVel || 0) + (sinH * nx + cosH * nz) * Math.min(14.0, vn) * 0.16;
-            carEntity.rollVel = (carEntity.rollVel || 0) - sideDot * Math.min(14.0, vn) * 0.22;
-            carEntity.heaveVel = (carEntity.heaveVel || 0) + Math.min(1.4, vn * 0.11);
-            if (vn > 2.2) {
-              carEntity.lastCollisionSpark = {
-                x: pos.x - nx * extX * 0.92,
-                y: 0.56,
-                z: pos.z - nz * extZ * 0.92,
-                nx,
-                nz,
-                speed: vn
-              };
-            }
-          }
-        }
-
-        // A push that carried it far from where the candidates were gathered (dropped inside a building): gather
-        // them again around where it is now, carrying on in the same order
-        if (Math.abs(pos.x - gx) > 5 || Math.abs(pos.z - gz) > 5) {
-          gx = pos.x;
-          gz = pos.z;
-          const order = c._order;
-          near = this.nearColliders(gx, gz, reach);
-          i = -1;
-          while (i + 1 < near.length && near[i + 1]._order <= order) i++;
-        }
+  // One frame's move of the active body (its position by its speed & heading; the car's by its momentum, turning from
+  // `fromHeading` to its heading), in substeps, each pushed out of what it meets (WORLD CONTACT above)
+  moveBody(ent, mode, dt, fromHeading = ent.heading) {
+    const car = mode === 'car', pos = ent.position, radius = BODY_RADIUS[mode] || 0.48;
+    const toHeading = ent.heading, turn = car ? toHeading - fromHeading : 0;
+    const reach = car ? G.CAR_REACH : radius;
+    const travel = Math.hypot(Math.sin(toHeading) * ent.speed + (car ? ent.vx : 0), Math.cos(toHeading) * ent.speed + (car ? ent.vz : 0)) * dt;
+    const steps = Math.min(64, Math.max(1, Math.ceil((travel + Math.abs(turn) * reach) / STEP[mode])));
+    let gx = pos.x, gz = pos.z;
+    const gather = travel + reach + 2;
+    let near = this.nearColliders(gx, gz, gather).slice();
+    for (let s = 1; s <= steps; s++) {
+      if (car) ent.heading = fromHeading + (turn * s) / steps;
+      const h = ent.heading, k = dt / steps;
+      pos.x += (Math.sin(h) * ent.speed + (car ? ent.vx : 0)) * k;
+      pos.z += (Math.cos(h) * ent.speed + (car ? ent.vz : 0)) * k;
+      // (pushed far from where the candidates were gathered: gather them again)
+      if (Math.abs(pos.x - gx) > gather - reach - 1 || Math.abs(pos.z - gz) > gather - reach - 1) {
+        gx = pos.x;
+        gz = pos.z;
+        near = this.nearColliders(gx, gz, gather).slice();
       }
+      this.solveContacts(pos, mode, radius, ent, near, k);
     }
+    this.clampToWorld(pos, car ? ent : null);
+  }
+
+  // Pushes the body at pos out of the candidates `near` it meets at its height (pos.y), a few passes (a corner has two
+  // walls); `ent` (if given) feels it: the car loses the motion into the wall (a little bounce when it hits hard), spins
+  // if struck off its centre, dips, rolls, sparks and takes damage; the bicycle (and the helicopter) stop when they meet
+  // a wall square on, and glancing along one straighten up along it
+  solveContacts(pos, mode, radius, ent, near, dt) {
+    const band = bodyBand(mode), car = mode === 'car' ? ent : null;
+    let hits = 0;
+    for (let pass = 0; pass < 4; pass++) {
+      let moved = false;
+      let shape = car ? (this._carShape = G.carShape(pos.x, pos.z, car.heading, 0, this._carShape)) : (this._circle = G.circleShape(pos.x, pos.z, radius, this._circle));
+      for (const c of near) {
+        if (!meets(c, pos.y, band)) continue;
+        const hit = G.contact(shape, c);
+        if (!hit || !(hit.depth > 0)) continue;
+        pos.x += hit.nx * (hit.depth + G.SKIN);
+        pos.z += hit.nz * (hit.depth + G.SKIN);
+        moved = true;
+        hits++;
+        this.lastWorldContact = { x: hit.x, z: hit.z, nx: hit.nx, nz: hit.nz, depth: hit.depth, collider: c };
+        this.worldContactCount = (this.worldContactCount || 0) + 1;
+        if (car) this.carHitsWall(car, hit);
+        else if (ent && (mode === 'cyclist' || mode === 'helicopter')) this.riderHitsWall(ent, hit, dt, mode);
+        shape = car ? G.carShape(pos.x, pos.z, car.heading, 0, this._carShape) : G.circleShape(pos.x, pos.z, radius, this._circle);
+      }
+      if (!moved) break;
+    }
+    return hits;
+  }
+
+  carHitsWall(c, hit) {
+    const { nx, nz } = hit;
+    const sinH = Math.sin(c.heading), cosH = Math.cos(c.heading);
+    const vx = sinH * c.speed + (c.vx || 0), vz = cosH * c.speed + (c.vz || 0);
+    const into = -(vx * nx + vz * nz);
+    if (!(into > 0)) return;
+    c.takeHit?.(into);
+    // the motion into the wall goes (and comes back a little from a hard hit); along the wall it carries on
+    const keep = into + (into > 2 ? 0.18 * into : 0);
+    const tx = vx + nx * keep, tz = vz + nz * keep;
+    c.speed = tx * sinH + tz * cosH;
+    c.vx = tx - sinH * c.speed;
+    c.vz = tz - cosH * c.speed;
+    if (into > 0.5) {
+      // struck off its centre it turns (about its centre: r x the push); square on it doesn't
+      if (into > 1.5) {
+        const rx = hit.x - c.position.x, rz = hit.z - c.position.z;
+        c.angularVel = Math.max(-2.5, Math.min(2.5, (c.angularVel || 0) + (rz * nx - rx * nz) * into * 0.12));
+      }
+      const headOn = sinH * nx + cosH * nz, side = cosH * nx - sinH * nz;
+      c.pitchVel = (c.pitchVel || 0) + headOn * Math.min(14.0, into) * 0.16;
+      c.rollVel = (c.rollVel || 0) - side * Math.min(14.0, into) * 0.22;
+      c.heaveVel = (c.heaveVel || 0) + Math.min(1.4, into * 0.11);
+      if (into > 2.2) c.lastCollisionSpark = { x: hit.x, y: c.position.y + 0.56, z: hit.z, nx, nz, speed: into };
+    }
+  }
+
+  riderHitsWall(ent, hit, dt, mode) {
+    if (!ent.speed) return;
+    const dir = Math.sign(ent.speed);
+    const fx = Math.sin(ent.heading) * dir, fz = Math.cos(ent.heading) * dir;
+    const into = -(fx * hit.nx + fz * hit.nz); // (the cosine between the way it goes & the wall's inward normal)
+    if (!(into > 0)) return;
+    if (into > 0.7) {
+      // square on (within 45 degrees): the motion into the wall is lost
+      ent.speed *= Math.sqrt(Math.max(0, 1 - into * into));
+      return;
+    }
+    if (mode !== 'cyclist') return;
+    // glancing: the bicycle turns along the wall (at most 2.5 rad/s)
+    const tx = fx + hit.nx * into, tz = fz + hit.nz * into;
+    let target = Math.atan2(tx, tz);
+    if (dir < 0) target += Math.PI;
+    const d = Math.atan2(Math.sin(target - ent.heading), Math.cos(target - ent.heading));
+    ent.heading += Math.max(-2.5 * dt, Math.min(2.5 * dt, d));
+  }
+
+  // Pushes pos out of the colliders it overlaps at its height (pos.y) and keeps it in the city: one move's worth (the
+  // controllers' own moves go through moveBody); carEntity: the car, which feels the walls it meets.
+  // (resolveHorizontalCollision(pos, radius, y, car) is also taken, as in mrdoob's New York)
+  resolveHorizontalCollision(pos, radius, carEntity = null) {
+    if (carEntity !== null && typeof carEntity !== 'object') carEntity = arguments[3] && typeof arguments[3] === 'object' ? arguments[3] : null;
+    const mode = carEntity ? 'car' : this.activeMode === 'car' ? 'person' : this.activeMode;
+    const reach = carEntity ? G.CAR_REACH : radius;
+    this.solveContacts(pos, mode, carEntity ? 0 : radius, carEntity, this.nearColliders(pos.x, pos.z, reach + 2).slice(), 0);
+    this.clampToWorld(pos, carEntity);
   }
 
   // Pose the skinned characters once every entity has moved: the pedestrian's rig walks (or runs, turns, jumps) it to
@@ -1082,9 +1141,7 @@ class ThirdPersonControllerManager {
 
     p.speed += (targetSpeed - p.speed) * Math.min(1, dt * 10);
 
-    p.position.x += Math.sin(p.heading) * p.speed * dt;
-    p.position.z += Math.cos(p.heading) * p.speed * dt;
-    this.resolveHorizontalCollision(p.position, 0.48);
+    this.moveBody(p, 'person', dt);
 
     const groundY = this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
     if (this.keys.up && p.position.y <= groundY + 0.02) {
@@ -1143,7 +1200,9 @@ class ThirdPersonControllerManager {
     if (!dead && this.keys.forward) throttle = this.keys.forward;
     else if (!dead && this.keys.backward) throttle = -this.keys.backward;
 
-    const braking = c.speed * throttle < 0;
+    // (as driveCar: under 0.3 m/s it isn't braking, it's changing direction; stopped against a wall the car keeps a
+    // speed of ~1e-17 m/s from its momentum's split, and counted as braking, reverse never engaged: stuck there)
+    const braking = c.speed * throttle < 0 && Math.abs(c.speed) > 0.3;
     const previousSpeed = c.speed;
     // the keys press the accelerator most of the way; Shift floors it (a gamepad trigger or the touch stick is analog)
     const pedal = braking ? 0 : Math.min(1, Math.abs(throttle) * (this.keys.boost ? 1 : 0.8));
@@ -1161,6 +1220,7 @@ class ThirdPersonControllerManager {
     // steps out and the car slides; the handbrake (Space) locks the rear for power slides and handbrake turns. The car
     // moves with its momentum (forward speed along the nose + the slide across it in vx/vz), which is split again along
     // the new heading every frame
+    const startHeading = c.heading;
     const handbrake = !dead && !!this.keys.up && Math.hypot(c.speed, c.vx, c.vz) > 2;
     if (handbrake) c.speed = Math.sign(c.speed) * Math.max(0, Math.abs(c.speed) - CAR_POWERTRAIN.handbrake * dt);
     const momentumX = Math.sin(c.heading) * c.speed + c.vx;
@@ -1191,10 +1251,7 @@ class ThirdPersonControllerManager {
 
     const prevX = c.position.x;
     const prevZ = c.position.z;
-    c.position.x += (Math.sin(c.heading) * c.speed + c.vx) * dt;
-    c.position.z += (Math.cos(c.heading) * c.speed + c.vz) * dt;
-
-    this.resolveHorizontalCollision(c.position, 1.35, c);
+    this.moveBody(c, 'car', dt, startHeading);
     c.position.y = this.getGroundHeight(c.position.x, c.position.z, 'car', c.position.y);
 
     // 3-DOF Spring-Damper Chassis Suspension (Pitch, Roll & Vertical Heave)
@@ -1247,9 +1304,7 @@ class ThirdPersonControllerManager {
       b.heading += turnInput * 2.15 * dirSign * dt;
     }
 
-    b.position.x += Math.sin(b.heading) * b.speed * dt;
-    b.position.z += Math.cos(b.heading) * b.speed * dt;
-    this.resolveHorizontalCollision(b.position, 0.65);
+    this.moveBody(b, 'cyclist', dt);
     b.position.y = this.getGroundHeight(b.position.x, b.position.z, 'cyclist', b.position.y);
 
     const targetLean = -turnInput * Math.min(1.0, Math.abs(b.speed) / 9.0) * 0.34;
@@ -1300,12 +1355,21 @@ class ThirdPersonControllerManager {
 
     h.heading += yawInput * 1.45 * dt;
 
-    h.position.x += Math.sin(h.heading) * h.speed * dt;
-    h.position.z += Math.cos(h.heading) * h.speed * dt;
-    h.position.y += h.verticalSpeed * dt;
-
-    h.position.y = Math.max(0.25, Math.min(380, h.position.y));
-    this.resolveHorizontalCollision(h.position, 4.5);
+    // up & down first: coming down onto a roof (or anything solid) it lands on top, instead of being shoved sideways
+    // off it; climbing into something overhead it stops under it
+    const y0 = h.position.y;
+    h.position.y = Math.max(0.25, Math.min(380, y0 + h.verticalSpeed * dt));
+    if (h.position.y !== y0) {
+      const shape = (this._circle = G.circleShape(h.position.x, h.position.z, BODY_RADIUS.helicopter, this._circle));
+      for (const c of this.nearColliders(h.position.x, h.position.z, shape.reach + 1)) {
+        const was = meets(c, y0, HELI_BAND);
+        if (was || !meets(c, h.position.y, HELI_BAND) || !G.contact(shape, c)) continue;
+        if (h.position.y < y0) h.position.y = Math.max(h.position.y, c.maxY - HELI_BAND[0]);
+        else h.position.y = Math.min(h.position.y, (c.minY ?? 0) - HELI_BAND[1]);
+        h.verticalSpeed = 0;
+      }
+    }
+    this.moveBody(h, 'helicopter', dt);
 
     const targetPitch = (h.speed / maxHorizSpeed) * 0.24;
     const targetRoll = -yawInput * 0.28;

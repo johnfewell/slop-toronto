@@ -295,6 +295,21 @@ function buildLandmarks(scene) {
     const ex = Math.abs(cs) * hw + Math.abs(sn) * hd, ez = Math.abs(sn) * hw + Math.abs(cs) * hd;
     colliders.push({ minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, maxY, obb: { cx, cz, hx: hw, hz: hd, cs, sn } });
   }
+  // A landmark's colliders from what is drawn (js/world-collision.js footprintColliders): its outline where the riders
+  // are, convex bands above; its site's turned rectangle if the mesh gives none
+  const WC = window.CITY.WorldCollision;
+  function meshColliders(objects, s, maxY, options) {
+    const t = performance.now();
+    const out = WC ? WC.footprintColliders(objects, options) : [];
+    if (!out.some((c) => c.minY === undefined)) {
+      boxCollider(s.x, s.z, s.w / 2, s.d / 2, s.ang || 0, maxY);
+      return colliders.slice(-1);
+    }
+    colliders.push(...out);
+    footprintMs += performance.now() - t;
+    return out;
+  }
+  let footprintMs = 0;
   // Point in the site's frame (u along its width, v along its depth) -> world
   const at = (s, u, v) => {
     const cs = Math.cos(s.ang || 0), sn = Math.sin(s.ang || 0);
@@ -334,7 +349,7 @@ function buildLandmarks(scene) {
       return m;
     };
     const stand = [shaft, band(24.2, 26.2, 339, 6.5), band(11.2, 11.2, 445, 6)];
-    boxCollider(s.x, s.z, 24, 24, 0, 553);
+    let standColliders = meshColliders(stand, { x: s.x, z: s.z, w: 48, d: 48 }, 553);
     if (window.CITY.Addons.GLTFLoader) {
       const loader = new window.CITY.Addons.GLTFLoader();
       if (window.CITY.Addons.MeshoptDecoder) loader.setMeshoptDecoder(window.CITY.Addons.MeshoptDecoder);
@@ -351,6 +366,9 @@ function buildLandmarks(scene) {
         for (const m of stand) group.remove(m);
         group.add(tower);
         tower.updateMatrixWorld(true); // (the static city's matrices are frozen once built: main.js)
+        // its colliders: the model's own outline, in place of the stand-in's
+        const next = WC ? WC.footprintColliders(tower) : [];
+        if (next.length) { WC.swap(standColliders, next); standColliders = next; }
         console.info('[landmarks] CN Tower model placed');
       }).catch((e) => console.warn('[landmarks] CN Tower model did not load:', e));
     }
@@ -422,7 +440,8 @@ function buildLandmarks(scene) {
         buildUnionTrainShed(group, colliders);
       } else if (s && s.w) {
         g.computeBoundingBox();
-        boxCollider(s.x, s.z, s.w / 2, s.d / 2, s.ang || 0, g.boundingBox.max.y);
+        // (the Cinesphere's dome & the pods stand on columns: their roofs are overhead, not walls)
+        meshColliders(mesh, s, g.boundingBox.max.y + SW_Y, { roof: id !== 'cinesphere' });
       }
       done.add(id);
     }
@@ -435,6 +454,7 @@ function buildLandmarks(scene) {
   if (S.rom && window.CITY.Addons.GLTFLoader) {
     const s = S.rom;
     boxCollider(s.x, s.z, s.w / 2, s.d / 2, s.ang || 0, 36);
+    const romBox = colliders.slice(-1);
     Promise.all([
       fetch('./assets/landmarks/rom-fit.json').then((r) => r.json()),
       new window.CITY.Addons.GLTFLoader().loadAsync('./assets/landmarks/rom.glb')
@@ -451,6 +471,8 @@ function buildLandmarks(scene) {
       });
       group.add(rom);
       rom.updateMatrixWorld(true); // (the static city's matrices are frozen once built: main.js)
+      const next = WC ? WC.footprintColliders(rom) : [];
+      if (next.length) WC.swap(romBox, next); // (the model's outline in place of the site's rectangle)
       console.info('[landmarks] ROM model placed');
     }).catch((e) => console.warn('[landmarks] ROM model did not load:', e));
     done.add('rom');
@@ -641,6 +663,7 @@ function buildLandmarks(scene) {
   });
   scene.add(group);
   console.info(`[landmarks] ${done.size} landmarks built: ${[...done].join(', ')}`);
+  if (footprintMs) console.info(`[landmarks] colliders from the drawn outlines: ${colliders.filter((c) => c.polygon).length} in ${Math.round(footprintMs)} ms`);
   return { group, colliders };
 }
 

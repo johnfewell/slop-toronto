@@ -134,7 +134,7 @@ async function initApp() {
   const trafficSystem = createTrafficSystem(scene, cityGrid.sidewalks, [
     ...cityGrid.footprints,
     ...streetDetails.footprints,
-    ...allColliders.filter((c) => !c.obb)
+    ...allColliders.filter((c) => !c.obb && !c.polygon) // (nor the landmarks' drawn outlines: js/world-collision.js)
   ]);
   markInit('traffic');
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
@@ -360,9 +360,9 @@ async function initApp() {
 
   // Keyboard guide for each mode: [keys, action]
   const controlHints = {
-    person: [[['W', 'S'], 'Walk'], [['A', 'D'], 'Turn'], [['Shift'], 'Sprint'], [['Space'], 'Jump'], [['Drag'], 'Orbit']],
-    car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Floor it'], [['Space'], 'Handbrake'], [['B'], 'Horn'], [['Drag'], 'Orbit']],
-    cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['B'], 'Bell'], [['Drag'], 'Orbit']],
+    person: [[['W', 'S'], 'Walk'], [['A', 'D'], 'Turn'], [['Shift'], 'Sprint'], [['Space'], 'Jump'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
+    car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Floor it'], [['Space'], 'Handbrake'], [['B'], 'Horn'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
+    cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['B'], 'Bell'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
     helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']]
   };
   // Top speeds in km/h (controllers.js: 8.2, 19 & 52 m/s; the car runs out of power against the air near 230): full
@@ -626,7 +626,8 @@ async function initApp() {
     });
   }
 
-  // Global keyboard shortcuts for modes (1-4), cameras (V / 5-0), and HUD (H)
+  // Global keyboard shortcuts for modes (1-4), cameras (V / 5-0), HUD (H), and R: back onto the nearest clear road,
+  // facing along it (walking, driving & cycling; controllers.js findRoadReset)
   window.addEventListener('keydown', (e) => {
     if (isTypingInField(e)) return;
     switch (e.code) {
@@ -666,6 +667,12 @@ async function initApp() {
       case 'KeyH':
         if (hudToggleBtn) hudToggleBtn.click();
         break;
+      case 'KeyR': {
+        if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || mapSystem.isFullMapOpen) break;
+        const road = controllerManager.findRoadReset();
+        if (road) teleportTo(road.x, road.z, road.heading);
+        break;
+      }
       case 'F1':
         e.preventDefault();
         toggleHelp();
@@ -837,6 +844,19 @@ async function initApp() {
   await precompileShaders();
   markInit('compile');
 
+  // ?debug=collisions: the colliders round the player drawn over the city (js/collision-debug.js, loaded only then:
+  // normal play never fetches it)
+  let collisionDebug = null;
+  if (new URLSearchParams(location.search).get('debug') === 'collisions') {
+    await new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = './js/collision-debug.js';
+      s.onload = s.onerror = resolve;
+      document.head.appendChild(s);
+    });
+    if (window.CITY.createCollisionDebug) collisionDebug = window.CITY.createCollisionDebug({ scene, controllerManager });
+  }
+
   // 6. Animation Loop
   let lastTime = performance.now();
   let elapsed = 0;
@@ -858,6 +878,7 @@ async function initApp() {
     // Update 3rd-person controllers, camera, signals, traffic & vehicle collisions, building LODs, and dynamic shadow focus
     gamepadControls.update(dt);
     controllerManager.update(dt, elapsed);
+    if (collisionDebug) collisionDebug.update();
     cameraSystem.update(dt, elapsed);
     streetDetails.signalClock.value = elapsed;
     trafficSystem.update(

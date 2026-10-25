@@ -17,6 +17,11 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   `js/pedestrians.js`, the knock-downs in `js/traffic.js`, the driving in `js/controllers.js`). MIT, © Mr.doob & Slop
   Toronto contributors.
   https://github.com/aalghooneh/slop-toronto
+- **unable12/slop-sanfrancisco** by Kamil (@unable0_), a San Francisco fork of Slop New York: the static world contact
+  (`js/world-collision.js`: the car's tapered footprint with full SAT and concave outlines, circles against the
+  nearest boundary), the substepped movement and wall sliding in `js/controllers.js`, the R key's road reset and the
+  idea of the `?debug=collisions` review (`js/collision-debug.js`), adapted to this city. MIT, © 2026 Mr.doob & Kamil.
+  https://github.com/unable12/slop-sanfrancisco
 - **City audio** (`js/audio-*.js`): mrdoob's synthesized spatial audio from Slop New York (MIT, above), with the
   player car's tyre squeal and engine revs from aalghooneh's slop-toronto fork (MIT, © Slop Toronto contributors).
   https://github.com/aalghooneh/slop-toronto. Every sound is synthesized in code; no recordings.
