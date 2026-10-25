@@ -22,7 +22,8 @@
 
 const { THREE, GEO, QUALITY, blockAt, railLiftAt, railSpanAt, RAIL_LIFTS, waterAt, CITY_BOUNDS } = window.CITY;
 const { Fn, color, mix, step, smoothstep, abs, fract, floor, uv, positionWorld, positionGeometry, normalGeometry, float, vec2, sin, dot } = window.CITY.TSL;
-const { cityUniforms } = window.CITY;
+const { cityUniforms, createParkLawnMaterial } = window.CITY;
+const { mrt, vec4 } = window.CITY.TSL;
 
 const TILE = 700;
 const TRACK_DRAW = 1400;
@@ -34,6 +35,7 @@ const EMB_HALF = 2.6; // a raised track's embankment or deck, centre to an outer
 const NEIGHBOUR = 9.5; // a track this near abreast shares the embankment (its top runs across, no wall between)
 const DECK_DEPTH = 1.3; // a rail bridge's deck, top to soffit
 const PARAPET = 1.1;
+const SLOPE = 1.6; // an embankment's grassed side: 1.6 m out per metre up, where it has the room (else a wall)
 const LOCO_LEN = 21.4; // MP40PH-3C
 const COACH_LEN = 25.9; // Bombardier BiLevel
 const COUPLER = 0.9;
@@ -111,13 +113,29 @@ function createConcreteMaterial() {
   return mat;
 }
 
+// The embankments' grassed sides: the parks' turf (its bump & soft specular, js/tsl-materials.js), rougher and drier
+// (railway verges are cut twice a year), greener and darker toward the foot of the slope
+function createEmbankmentGrassMaterial() {
+  const mat = createParkLawnMaterial(false);
+  mat.roughness = 0.95;
+  mat.colorNode = Fn(() => {
+    const p = positionWorld;
+    const wave = sin(p.x.mul(0.37).add(sin(p.z.mul(0.21)).mul(2.0))).mul(sin(p.z.mul(0.29).add(sin(p.x.mul(0.17)).mul(2.0)))).mul(0.5).add(0.5);
+    const grain = fract(sin(dot(floor(p.xz.mul(3.3)), vec2(12.9898, 78.233))).mul(43758.5453));
+    const turf = mix(color(0x26341a), color(0x3b4a22), wave.mul(0.7).add(grain.mul(0.3)));
+    const dry = mix(turf, color(0x5b5734), smoothstep(0.62, 0.95, wave).mul(0.55));
+    return mix(color(0x1f2b16), dry, smoothstep(0.0, 1.6, p.y));
+  })();
+  return mat;
+}
+
 function buildTrackwork(group) {
   const onRoad = buildRoadTest();
   const tiles = new Map();
   const tileOf = (x, z) => {
     const k = Math.floor(x / TILE) * 100000 + Math.floor(z / TILE);
     let t = tiles.get(k);
-    if (!t) tiles.set(k, (t = { bed: [], bedUv: [], rail: [], wall: [], x: (Math.floor(x / TILE) + 0.5) * TILE, z: (Math.floor(z / TILE) + 0.5) * TILE }));
+    if (!t) tiles.set(k, (t = { bed: [], bedUv: [], rail: [], wall: [], grass: [], x: (Math.floor(x / TILE) + 0.5) * TILE, z: (Math.floor(z / TILE) + 0.5) * TILE }));
     return t;
   };
   // a flat strip, wound counter-clockwise from above; uv.x 0..1 across, uv.y metres along (s0..s1)
@@ -150,6 +168,7 @@ function buildTrackwork(group) {
   // Where each track's neighbours run: every track sampled every 3 m in 10 m cells, to find the nearest one abreast
   // on either side (the embankment's top runs across to it, with no wall in between)
   const samples = new Map();
+  const railCells = new Set(); // (50 m cells with track in them)
   const heavy = (GEO.rails || []).filter((r) => r[0] === 1);
   heavy.forEach(([, , , , flat], w) => {
     for (let i = 2; i < flat.length; i += 2) {
@@ -159,6 +178,7 @@ function buildTrackwork(group) {
         const x = ax + ((bx - ax) * k) / n, z = az + ((bz - az) * k) / n;
         const key = Math.floor(x / 10) * 100000 + Math.floor(z / 10);
         (samples.get(key) || samples.set(key, []).get(key)).push(x, z, w);
+        railCells.add(Math.floor(x / 50) * 100000 + Math.floor(z / 50));
       }
     }
   });
@@ -179,6 +199,27 @@ function buildTrackwork(group) {
     }
     return best < NEIGHBOUR ? best / 2 + 0.15 : 0; // half way across to it, or 0: none (an outer edge)
   };
+  // Room for a grassed side: no street (or its sidewalk), building, other track or water where the slope would run.
+  // The buildings near the tracks, rasterised into 4 m cells
+  const built = new Set();
+  for (const [cx, cz, ang, parts] of GEO.buildings || []) {
+    const c50x = Math.floor(cx / 50), c50z = Math.floor(cz / 50);
+    let near = false;
+    for (let a = -1; a <= 1 && !near; a++) for (let b = -1; b <= 1 && !near; b++) near = railCells.has((c50x + a) * 100000 + c50z + b);
+    if (!near) continue;
+    const cs = Math.cos(ang), sn = Math.sin(ang);
+    for (const [u0, u1, v0, v1] of parts) {
+      for (let u = u0 - 1; u <= u1 + 1; u += 2) {
+        for (let v = v0 - 1; v <= v1 + 1; v += 2) built.add(Math.floor((cx + u * cs + v * sn) / 4) * 100000 + Math.floor((cz - u * sn + v * cs) / 4));
+      }
+    }
+  }
+  const otherTrack = (x, z, w, r) => {
+    const L = samples.get(Math.floor(x / 10) * 100000 + Math.floor(z / 10));
+    for (let i = 0; L && i < L.length; i += 3) if (L[i + 2] !== w && Math.hypot(L[i] - x, L[i + 1] - z) < r) return true;
+    return false;
+  };
+  const room = (x, z, w) => !onRoad(x, z, 4.5) && !built.has(Math.floor(x / 4) * 100000 + Math.floor(z / 4)) && !otherTrack(x, z, w, 3) && !waterAt(x, z);
   const colliders = [];
   const shade = [];
   let km = 0;
@@ -188,6 +229,7 @@ function buildTrackwork(group) {
     let s = 0;
     let wasSpan = null; // the previous piece: on a bridge span (true), on the embankment (false), at grade (null)
     let col = null; // the collider being grown along the embankment
+    const sloped = { 1: false, '-1': false }; // the previous piece's sides: grassed (true) or walled
     for (let i = 0; i + 1 < P.length; i++) {
       const a = P[i], b = P[i + 1];
       const L = Math.hypot(b.x - a.x, b.z - a.z);
@@ -211,6 +253,7 @@ function buildTrackwork(group) {
         if (!raised) {
           wasSpan = null;
           col = null;
+          sloped[1] = sloped[-1] = false;
           s += seg;
           continue;
         }
@@ -224,8 +267,22 @@ function buildTrackwork(group) {
         T.bed.push(...A(-hr, ya), ...B(hl, yb), ...B(-hr, yb), ...A(-hr, ya), ...A(hl, ya), ...B(hl, yb));
         T.bedUv.push(0, s, 0, s, 0, s, 0, s, 0, s, 0, s);
         const base = (yy) => (span ? yy - DECK_DEPTH : 0);
+        const ext = { 1: hl, '-1': hr }; // how far the embankment reaches either side (its slopes too), for the collider
         for (const [o, outer, sg] of [[hl, !rl, 1], [-hr, !rr, -1]]) {
-          if (!outer) continue;
+          if (!outer) {
+            sloped[sg] = false;
+            continue;
+          }
+          // a grassed slope where there's room for it (tested half way down and at its toe)
+          const wa = ya * SLOPE, wb = yb * SLOPE, wm = (wa + wb) / 2;
+          const grass = !span && ya > 0.6 && yb > 0.6 && [0.5, 1].every((f) => room(mx + nx * sg * (Math.abs(o) + wm * f + 0.5), mz + nz * sg * (Math.abs(o) + wm * f + 0.5), w));
+          if (grass) {
+            quad(T.grass, A(o, ya), B(o, yb), B(o + sg * wb, 0), A(o + sg * wa, 0), nx * sg, 1, nz * sg);
+            if (!sloped[sg]) for (const f of [-1, 1]) quad(T.grass, A(o, 0), A(o, ya), A(o + sg * wa, 0), A(o, 0), tx * f, 0, tz * f);
+            ext[sg] = Math.abs(o) + wm;
+          } else if (sloped[sg]) for (const f of [-1, 1]) quad(T.grass, A(o, 0), A(o, ya), A(o + sg * wa, 0), A(o, 0), tx * f, 0, tz * f);
+          sloped[sg] = grass;
+          if (grass) continue;
           // the retaining wall (embankment) or the deck's edge beam (span), and on a span its parapet
           quad(T.wall, A(o, base(ya)), B(o, base(yb)), B(o, yb), A(o, ya), nx * sg, 0, nz * sg);
           if (span) {
@@ -249,7 +306,7 @@ function buildTrackwork(group) {
         // enough to step onto)
         if (span || Math.min(ya, yb) < 0.6) col = null;
         else {
-          const off = (hl - hr) / 2, hx = (hl + hr) / 2;
+          const off = (ext[1] - ext[-1]) / 2, hx = (ext[1] + ext[-1]) / 2;
           // (its top a little under the surface: whoever walks up the ramp stands above it)
           const top = Math.min(ya, yb) - 0.25;
           if (col && col.i === i && col.len + seg <= 12.01 && Math.abs(col.hx - hx) < 0.3) {
@@ -283,6 +340,7 @@ function buildTrackwork(group) {
   const bedMat = createBallastMaterial();
   const railMat = new THREE.MeshStandardNodeMaterial({ color: 0x8e8a84, roughness: 0.35, metalness: 0.85 });
   const wallMat = createConcreteMaterial();
+  const grassMat = createEmbankmentGrassMaterial();
   const first = {};
   const out = [];
   const mesh = (pos, uvs, mat, name, cast) => {
@@ -303,10 +361,13 @@ function buildTrackwork(group) {
     return m;
   };
   for (const T of tiles.values()) {
-    out.push({ x: T.x, z: T.z, meshes: [mesh(T.bed, T.bedUv, bedMat, 'RailBallast'), mesh(T.rail, null, railMat, 'RailRails'), mesh(T.wall, null, wallMat, 'RailBridges', true)].filter(Boolean) });
+    out.push({ x: T.x, z: T.z, meshes: [mesh(T.bed, T.bedUv, bedMat, 'RailBallast'), mesh(T.rail, null, railMat, 'RailRails'), mesh(T.wall, null, wallMat, 'RailBridges', true), mesh(T.grass, null, grassMat, 'RailEmbankments')].filter(Boolean) });
   }
   if (shade.length) {
-    const veil = mesh(shade, null, new THREE.MeshBasicNodeMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false }), 'RailBridgeShade');
+    const veilMat = new THREE.MeshBasicNodeMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false });
+    // (no sky to reflect under a bridge: the wet-road reflections fade there, as under a car, js/tsl-materials.js)
+    veilMat.mrtNode = mrt({ normal: vec4(0.0, 0.0, 0.0, 0.0), metalRough: vec4(0.0, 1.0, 0.0, 0.7) });
+    const veil = mesh(shade, null, veilMat, 'RailBridgeShade');
     veil.receiveShadow = false;
     veil.renderOrder = 1;
   }

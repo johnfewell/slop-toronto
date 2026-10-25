@@ -11,7 +11,7 @@
   "mode": "person",
   "time": "midday",
   "wait": 7000,
-  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; const l = C.RAIL_LIFTS.reduce((b, q) => Math.hypot((q.x0 + q.x1) / 2 - 841, (q.z0 + q.z1) / 2 - 117) < Math.hypot((b.x0 + b.x1) / 2 - 841, (b.z0 + b.z1) / 2 - 117) ? q : b); const L = Math.hypot(l.x1 - l.x0, l.z1 - l.z0) || 1, ux = (l.x1 - l.x0) / L * -1, uz = (l.z1 - l.z0) / L * -1, cx = (l.x0 + l.x1) / 2, cz = (l.z0 + l.z1) / 2; const px = cx - ux * (L / 2 + 45) - uz * 4, pz = cz - uz * (L / 2 + 45) + ux * 4, y = C.deckHeightAt(px, pz, 0, 3) + 1.6; console.log('[shot] lift at ' + Math.round(cx) + ', ' + Math.round(cz) + ' deck ' + l.H + ' m'); app.teleportTo(px + 30, pz, 0); app.cameraSystem.cinema = () => ({ pos: [px, y, pz], look: [cx + ux * 20, y + 1.9, cz + uz * 20], fov: 60 }); })()"
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; const l = C.RAIL_LIFTS.reduce((b, q) => Math.hypot((q.x0 + q.x1) / 2 - 841, (q.z0 + q.z1) / 2 - 117) < Math.hypot((b.x0 + b.x1) / 2 - 841, (b.z0 + b.z1) / 2 - 117) ? q : b); const L = Math.hypot(l.x1 - l.x0, l.z1 - l.z0) || 1, ux = (l.x1 - l.x0) / L * 1, uz = (l.z1 - l.z0) / L * 1, cx = (l.x0 + l.x1) / 2, cz = (l.z0 + l.z1) / 2; const px = cx - ux * (L / 2 + 45) - uz * 4, pz = cz - uz * (L / 2 + 45) + ux * 4, y = C.deckHeightAt(px, pz, 0, 3) + 1.6; console.log('[shot] lift at ' + Math.round(cx) + ', ' + Math.round(cz) + ' deck ' + l.H + ' m'); app.teleportTo(px + 30, pz, 0); app.cameraSystem.cinema = () => ({ pos: [px, y, pz], look: [cx + ux * 20, y + 1.9, cz + uz * 20], fov: 60 }); })()"
  },
  {
   "name": "gs3-york-under",
@@ -58,16 +58,16 @@
  {
   "name": "gs8-union-above",
   "mode": "person",
-  "time": "golden",
+  "time": "midday",
   "wait": 8000,
-  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(0, 60, 0); app.cameraSystem.cinema = () => ({ pos: [-420, 260, 520], look: [60, 0, 100], fov: 45 }); })()"
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(0, 60, 0); app.cameraSystem.cinema = () => ({ pos: [120, 330, 420], look: [0, 0, 95], fov: 45 }); })()"
  },
  {
   "name": "gs9-train-over-king",
   "mode": "person",
   "time": "golden",
-  "wait": 8000,
-  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, R = app.railCorridor; let best = null, bd = 1e9; for (const t of R.trains) { const r = t.route; for (let i = 0; i < r.pts.length; i++) { const d = Math.hypot(r.pts[i].x - -3160, r.pts[i].z - -385); if (d < bd) { bd = d; best = { t, s: r.cum[i] }; } } } const t = best.t; t.wait = 0; t.dwell = 0; t.stopped = true; t.s = Math.min(t.route.len, best.s + 110); t.speed = 0.4; console.log('[shot] train ' + Math.round(bd) + ' m from the street, track at ' + C.railLiftAt(-3160, -385).toFixed(1) + ' m'); app.teleportTo(-3095, -300, 0); app.cameraSystem.cinema = () => ({ pos: [-3125, 1.6, -300], look: [-3160, C.railLiftAt(-3160, -385) + 2, -385], fov: 58 }); })()"
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, R = app.railCorridor; const l = C.RAIL_LIFTS.reduce((b, q) => Math.hypot((q.x0 + q.x1) / 2 - -3150, (q.z0 + q.z1) / 2 - -387) < Math.hypot((b.x0 + b.x1) / 2 - -3150, (b.z0 + b.z1) / 2 - -387) ? q : b); const L = Math.hypot(l.x1 - l.x0, l.z1 - l.z0) || 1, ux = (l.x1 - l.x0) / L * 1, uz = (l.z1 - l.z0) / L * 1, cx = (l.x0 + l.x1) / 2, cz = (l.z0 + l.z1) / 2; let best = null, bd = 1e9; for (const t of R.trains) { const r = t.route; for (let i = 0; i < r.pts.length; i++) { const d = Math.hypot(r.pts[i].x - cx, r.pts[i].z - cz); if (d < bd) { bd = d; best = { t, s: r.cum[i] }; } } } const t = best.t; t.wait = 0; t.dwell = 0; t.stopped = true; t.s = Math.min(t.route.len, best.s + 125); t.speed = 0.3; const px = cx - ux * (L / 2 + 35) - uz * 3, pz = cz - uz * (L / 2 + 35) + ux * 3, y = C.deckHeightAt(px, pz, 0, 3) + 1.6; console.log('[shot] train ' + Math.round(bd) + ' m from the street at ' + Math.round(cx) + ', ' + Math.round(cz) + ', deck ' + l.H); app.teleportTo(px + 30, pz, 0); app.cameraSystem.cinema = () => ({ pos: [px, y, pz], look: [cx, l.H + 0 - 6.2 + 3.5, cz], fov: 58 }); })()"
  },
  {
   "name": "gs10-train-over-yonge",
@@ -89,5 +89,33 @@
   "time": "golden",
   "wait": 8000,
   "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1000, 40, 0); app.cameraSystem.cinema = () => ({ pos: [1000, 26, 30], look: [1250, 2, 125], fov: 55 }); })()"
+ },
+ {
+  "name": "gs14-train-over-queen-e",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, R = app.railCorridor; const l = C.RAIL_LIFTS.reduce((b, q) => Math.hypot((q.x0 + q.x1) / 2 - 3162, (q.z0 + q.z1) / 2 - -741) < Math.hypot((b.x0 + b.x1) / 2 - 3162, (b.z0 + b.z1) / 2 - -741) ? q : b); const L = Math.hypot(l.x1 - l.x0, l.z1 - l.z0) || 1, ux = (l.x1 - l.x0) / L * 1, uz = (l.z1 - l.z0) / L * 1, cx = (l.x0 + l.x1) / 2, cz = (l.z0 + l.z1) / 2; let best = null, bd = 1e9; for (const t of R.trains) { const r = t.route; for (let i = 0; i < r.pts.length; i++) { const d = Math.hypot(r.pts[i].x - cx, r.pts[i].z - cz); if (d < bd) { bd = d; best = { t, s: r.cum[i] }; } } } const t = best.t; t.wait = 0; t.dwell = 0; t.stopped = true; t.s = Math.min(t.route.len, best.s + 125); t.speed = 0.3; const px = cx - ux * (L / 2 + 40) - uz * 3, pz = cz - uz * (L / 2 + 40) + ux * 3, y = C.deckHeightAt(px, pz, 0, 3) + 1.6; console.log('[shot] train ' + Math.round(bd) + ' m from the street at ' + Math.round(cx) + ', ' + Math.round(cz) + ', deck ' + l.H); app.teleportTo(px + 30, pz, 0); app.cameraSystem.cinema = () => ({ pos: [px, y, pz], look: [cx, l.H + 0 - 6.2 + 3.5, cz], fov: 58 }); })()"
+ },
+ {
+  "name": "gs15-train-over-carlaw",
+  "mode": "person",
+  "time": "golden",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, R = app.railCorridor; const l = C.RAIL_LIFTS.reduce((b, q) => Math.hypot((q.x0 + q.x1) / 2 - 3636, (q.z0 + q.z1) / 2 - -1470) < Math.hypot((b.x0 + b.x1) / 2 - 3636, (b.z0 + b.z1) / 2 - -1470) ? q : b); const L = Math.hypot(l.x1 - l.x0, l.z1 - l.z0) || 1, ux = (l.x1 - l.x0) / L * -1, uz = (l.z1 - l.z0) / L * -1, cx = (l.x0 + l.x1) / 2, cz = (l.z0 + l.z1) / 2; let best = null, bd = 1e9; for (const t of R.trains) { const r = t.route; for (let i = 0; i < r.pts.length; i++) { const d = Math.hypot(r.pts[i].x - cx, r.pts[i].z - cz); if (d < bd) { bd = d; best = { t, s: r.cum[i] }; } } } const t = best.t; t.wait = 0; t.dwell = 0; t.stopped = true; t.s = Math.min(t.route.len, best.s + 125); t.speed = 0.3; const px = cx - ux * (L / 2 + 40) - uz * 3, pz = cz - uz * (L / 2 + 40) + ux * 3, y = C.deckHeightAt(px, pz, 0, 3) + 1.6; console.log('[shot] train ' + Math.round(bd) + ' m from the street at ' + Math.round(cx) + ', ' + Math.round(cz) + ', deck ' + l.H); app.teleportTo(px + 30, pz, 0); app.cameraSystem.cinema = () => ({ pos: [px, y, pz], look: [cx, l.H + 0 - 6.2 + 3.5, cz], fov: 58 }); })()"
+ },
+ {
+  "name": "gs16-dufferin-exhibition",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3700, 60, 0); app.cameraSystem.cinema = () => ({ pos: [-3650, 70, 330], look: [-3830, 0, 150], fov: 55 }); })()"
+ },
+ {
+  "name": "gs17-sherbourne-under",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; const l = C.RAIL_LIFTS.reduce((b, q) => Math.hypot((q.x0 + q.x1) / 2 - 1153, (q.z0 + q.z1) / 2 - 122) < Math.hypot((b.x0 + b.x1) / 2 - 1153, (b.z0 + b.z1) / 2 - 122) ? q : b); const L = Math.hypot(l.x1 - l.x0, l.z1 - l.z0) || 1, ux = (l.x1 - l.x0) / L * -1, uz = (l.z1 - l.z0) / L * -1, cx = (l.x0 + l.x1) / 2, cz = (l.z0 + l.z1) / 2; const px = cx - ux * (L / 2 + 45) - uz * 4, pz = cz - uz * (L / 2 + 45) + ux * 4, y = C.deckHeightAt(px, pz, 0, 3) + 1.6; console.log('[shot] lift at ' + Math.round(cx) + ', ' + Math.round(cz) + ' deck ' + l.H + ' m'); app.teleportTo(px + 30, pz, 0); app.cameraSystem.cinema = () => ({ pos: [px, y, pz], look: [cx + ux * 20, y + 1.9, cz + uz * 20], fov: 60 }); })()"
  }
 ]

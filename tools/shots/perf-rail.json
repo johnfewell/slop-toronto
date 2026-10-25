@@ -1,0 +1,70 @@
+[
+ {
+  "name": "perf-spawn",
+  "wait": 6000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<3500)requestAnimationFrame(f);else res()})()});console.log('[perf] spawn '+((performance.now()-t)/n).toFixed(1)+' ms lake '+__CITY_APP.scene.getObjectByName('LakeOntario').visible)})()"
+ },
+ {
+  "name": "perf-north",
+  "x": 330.4,
+  "z": -1080,
+  "heading": 0,
+  "wait": 7000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<3500)requestAnimationFrame(f);else res()})()});console.log('[perf] north '+((performance.now()-t)/n).toFixed(1)+' ms lake '+__CITY_APP.scene.getObjectByName('LakeOntario').visible)})()"
+ },
+ {
+  "name": "perf-trail",
+  "camera": "trail",
+  "wait": 5000
+ },
+ {
+  "name": "perf-islands",
+  "camera": "islands",
+  "wait": 5000
+ },
+ {
+  "name": "perf-humber",
+  "camera": "humberBay",
+  "wait": 5000
+ },
+ {
+  "name": "perf-yonge-under",
+  "x": 328,
+  "z": 20,
+  "heading": 0,
+  "wait": 6000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<3500)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-yonge-under '+((performance.now()-t)/n).toFixed(1)+' ms')})()"
+ },
+ {
+  "name": "perf-east-corridor",
+  "x": 1153,
+  "z": 40,
+  "heading": 0,
+  "wait": 6000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<3500)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-east-corridor '+((performance.now()-t)/n).toFixed(1)+' ms')})()"
+ },
+ {
+  "name": "perf-bathurst-bridge",
+  "x": -1756,
+  "z": -60,
+  "heading": 0,
+  "wait": 6000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<3500)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-bathurst-bridge '+((performance.now()-t)/n).toFixed(1)+' ms')})()"
+ },
+ {
+  "name": "perf-queen-e",
+  "x": 3150,
+  "z": -690,
+  "heading": 0,
+  "wait": 6000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<3500)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-queen-e '+((performance.now()-t)/n).toFixed(1)+' ms')})()"
+ },
+ {
+  "name": "perf-king-w",
+  "x": -3060,
+  "z": -352,
+  "heading": 4.4,
+  "wait": 6000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(1500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<3500)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-king-w '+((performance.now()-t)/n).toFixed(1)+' ms')})()"
+ }
+]
