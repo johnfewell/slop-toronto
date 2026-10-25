@@ -1,0 +1,51 @@
+[
+ {
+  "name": "cdbg0-inspect",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 2000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, cm = app.controllerManager; cm.nearColliders(0, 0, 1); const out = {}; for (const [id, s] of Object.entries(C.LANDMARK_SITES || {})) { const r = Math.max(s.w || 50, s.d || 50); const cs = cm.colliders.filter((c) => c.polygon && c.maxX > s.x - r && c.minX < s.x + r && c.maxZ > s.z - r && c.minZ < s.z + r); const area = (p) => { let a = 0; for (let i = 0; i < p.length; i++) { const q = p[(i + 1) % p.length]; a += p[i].x * q.z - q.x * p[i].z; } return Math.round(a / 2); }; const ground = cs.filter((c) => c.minY === undefined); out[id] = { ground: ground.map((c) => [c.polygon.length, area(c.polygon), Math.round(c.maxY * 10) / 10]), bands: cs.length - ground.length, boxes: cm.colliders.filter((c) => !c.polygon && c.obb && Math.abs(c.obb.cx - s.x) < 1 && Math.abs(c.obb.cz - s.z) < 1).length }; } console.log('[inspect] ' + JSON.stringify(out)); })()"
+ },
+ {
+  "name": "cdbg1-princes-gates",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode('cyclist'); const d = app.teleportTo(-2567, 520, Math.PI); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [e.position.x + 14, e.position.y + 11, e.position.z + 16], look: [-2567, 3, 470], fov: 55 }); })()"
+ },
+ {
+  "name": "cdbg2-rogers-centre",
+  "mode": "car",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode('car'); app.teleportTo(-655, 175, 0); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [e.position.x + 16, e.position.y + 14, e.position.z - 18], look: [e.position.x - 10, e.position.y, e.position.z + 4], fov: 60 }); })()"
+ },
+ {
+  "name": "cdbg3-strachan-cut",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.selectMode('cyclist'); app.teleportTo(-2521.5, 20, 0); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [e.position.x - 9, e.position.y + 7, e.position.z - 12], look: [e.position.x + 2, e.position.y - 1, e.position.z + 10], fov: 60 }); })()"
+ },
+ {
+  "name": "cdbg4-yonge-dundas",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode('person'); const pl = app.subway.entrances && app.subway.entrances.pylons || []; let best = pl[0]; for (const p of pl) if (Math.hypot(p.x, p.z - 120) < Math.hypot(best.x, best.z - 120)) best = p; app.teleportTo(best.x + 2.5, best.z + 1.5, Math.PI); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [e.position.x + 7, e.position.y + 6, e.position.z + 8], look: [best.x, best.y + 0.5, best.z], fov: 55 }); })()"
+ },
+ {
+  "name": "cdbg5-rom",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP, s = window.CITY.LANDMARK_SITES.rom; app.selectMode('person'); app.teleportTo(s.x, s.z, 0); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [e.position.x + 10, e.position.y + 12, e.position.z + 14], look: [e.position.x - 6, e.position.y, e.position.z - 6], fov: 60 }); })()"
+ },
+ {
+  "name": "cdbg6-cn-tower",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, s = C.LANDMARK_SITES.cnTower || { x: C.GEO.points.cnTower[0], z: C.GEO.points.cnTower[1] }; app.selectMode('person'); app.teleportTo(s.x, s.z, 0); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [e.position.x + 14, e.position.y + 16, e.position.z + 18], look: [s.x, 2, s.z], fov: 60 }); })()"
+ }
+]
