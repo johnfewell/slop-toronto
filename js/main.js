@@ -1011,6 +1011,9 @@ async function initApp() {
     // The phone tiers: the pooled street, head & police lights that are off (intensity 0, parked underground) leave
     // the clustered lighting's list, so by day its per-frame cluster pass has no lights to sort and test (quality.js)
     if (darkLights) for (const l of darkLights) l.visible = l.intensity > 0;
+    // (the phone tiers walk the scene's matrices once a frame here, not in each of the frame's three scene renders: the
+    // view & the two shadow cascades, see the warm-up below)
+    if (!scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();
 
     // Render frame via TSL RenderPipeline (SSR + Bloom)
     if (!warmedUp) {
@@ -1029,6 +1032,7 @@ async function initApp() {
       markInit('warmup');
       if (QUALITY.lean) tourGuide.warmGraphics(false);
       collectDarkLights();
+      if (QUALITY.lean) scene.matrixWorldAutoUpdate = false;
     }
     const cpu1 = cpuTimes ? performance.now() : 0;
     renderPipeline.render();
@@ -1051,7 +1055,7 @@ async function initApp() {
         // for what the first frames uploaded
         if (QUALITY.lean) {
           const LEAN_ROOTS = new Set(['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns',
-            'CityLandmarks', 'Terrain', 'CitySignage', 'RoadMarkings', 'Trees', 'RailCorridor', 'Streetcars', 'Subway', 'ShadowProxy']);
+            'CityLandmarks', 'Terrain', 'CitySignage', 'RoadMarkings', 'Trees', 'RailCorridor', 'Streetcars', 'Subway', 'ShadowProxy', 'ShadowProxies']);
           const release = () => {
             // the static city's groups (only their vertex data: the trains & streetcars move by their matrices)
             const roots = scene.children.filter((o) => LEAN_ROOTS.has(o.name));

@@ -598,6 +598,7 @@ function createStreetcars(scene, trafficSystem) {
     const camX = camera ? camera.position.x : 0;
     const camZ = camera ? camera.position.z : 0;
     const drawR = DRAW_RADIUS * cull;
+    const farR = Math.max(drawR, NEAR) + 150;
     obstacles.length = 0;
     let n = 0;
     for (const car of cars) {
@@ -632,6 +633,9 @@ function createStreetcars(scene, trafficSystem) {
         car.s = CAR_LEN;
         car.lastStop = -1;
       }
+      // far from the camera (not drawn, no obstacle, out of earshot) the modules stay where they were: placing them
+      // is 11 track lookups a car, a frame (the nose, sampled above, tells)
+      if (Math.abs(tmp.x - camX) > farR || Math.abs(tmp.z - camZ) > farR) continue;
       // the modules follow the track behind the nose
       let back = car.s;
       for (let k = 0; k < SECTIONS.length; k++) {

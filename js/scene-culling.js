@@ -290,6 +290,10 @@ function setupSceneCulling(scene, roots, shadow = null) {
       stats.proxiedMeshes++;
     }
 
+    // The phone tiers keep the stand-ins in one group: hidden while the view renders (they only draw in the shadow
+    // cascades, so three's walk of the view's scene skips ~1,400 of them) and never touched by the per-frame matrix walk
+    const proxyGroup = Q.lean ? new THREE.Group() : null;
+    if (proxyGroup) proxyGroup.name = 'ShadowProxies';
     const firstProxy = new Map(); // material + kind -> the stand-in that compiles their shared pipeline
     const addProxy = (mesh, tris) => {
       mesh.name = 'ShadowProxy';
@@ -301,7 +305,7 @@ function setupSceneCulling(scene, roots, shadow = null) {
       const kind = mesh.material.uuid + (mesh.isInstancedMesh ? ':i' : ':m');
       if (firstProxy.has(kind)) mesh.userData.sharesPipelineWith = firstProxy.get(kind);
       else firstProxy.set(kind, mesh);
-      scene.add(mesh);
+      (proxyGroup || scene).add(mesh);
       stats.proxies++;
       stats.proxyTriangles += tris;
     };
@@ -324,6 +328,17 @@ function setupSceneCulling(scene, roots, shadow = null) {
       }
     }
     for (const cam of cams) cam.layers.enable(SHADOW_PROXY_LAYER);
+    if (proxyGroup) {
+      scene.add(proxyGroup);
+      proxyGroup.updateMatrixWorld(true);
+      proxyGroup.updateMatrixWorld = () => {};
+      const shadowCams = new Set(cams);
+      const before = scene.onBeforeRender;
+      scene.onBeforeRender = function (renderer, s, camera, ...rest) {
+        proxyGroup.visible = shadowCams.has(camera);
+        return before.call(this, renderer, s, camera, ...rest);
+      };
+    }
   }
 
   // 3. The big batches kept at any distance that cast no shadow (the casters have their stand-ins above): cells of a
@@ -336,20 +351,77 @@ function setupSceneCulling(scene, roots, shadow = null) {
   }
 
   state.culled = culled;
+  state.buckets = Q.lean ? bucketCulled(culled) : null;
+  if (state.buckets) stats.buckets = state.buckets.length;
   return stats;
 }
 
-const state = { culled: [] };
+const state = { culled: [], buckets: null };
+
+// The phone tiers (quality.js lean): the culled chunks gathered into groups of BUCKET x BUCKET m under their parent, so
+// a far group hides whole and three's scene walk skips it. CityStreetProps alone holds ~8,400 chunks, nearly all hidden,
+// which every scene render (the view & the two shadow cascades) otherwise visits one by one
+const BUCKET = 600;
+function bucketCulled(culled) {
+  const byKey = new Map();
+  for (const c of culled) {
+    const parent = c.mesh.parent;
+    if (!parent) continue;
+    const key = parent.uuid + ':' + Math.floor(c.x / BUCKET) + ',' + Math.floor(c.z / BUCKET);
+    let b = byKey.get(key);
+    if (!b) byKey.set(key, (b = { parent, entries: [] }));
+    b.entries.push(c);
+  }
+  const moved = new Map(); // parent -> Set of moved chunks
+  const buckets = [];
+  for (const b of byKey.values()) {
+    const group = new THREE.Group();
+    group.name = (b.parent.name || 'Chunks') + 'Bucket';
+    let cx = 0, cz = 0;
+    for (const c of b.entries) { cx += c.x; cz += c.z; }
+    cx /= b.entries.length;
+    cz /= b.entries.length;
+    let r = 0, dMax = 0;
+    for (const c of b.entries) {
+      r = Math.max(r, Math.hypot(c.x - cx, c.z - cz) + c.r);
+      dMax = Math.max(dMax, c.d);
+      // (a plain move, not remove() & add(): removing 8,400 children one by one from one array is quadratic)
+      let set = moved.get(b.parent);
+      if (!set) moved.set(b.parent, (set = new Set()));
+      set.add(c.mesh);
+      c.mesh.parent = group;
+      group.children.push(c.mesh);
+    }
+    group.parent = b.parent;
+    buckets.push({ group, parent: b.parent, x: cx, z: cz, r, dMax, entries: b.entries });
+  }
+  for (const [parent, set] of moved) parent.children = parent.children.filter((o) => !set.has(o));
+  for (const b of buckets) b.parent.children.push(b.group);
+  return buckets;
+}
 
 // Per frame (after the warm-up frame, which must see everything): hide the chunks beyond their cull distance
 function updateSceneCulling(cameraPosition) {
   const { x, y, z } = cameraPosition;
   const k = Q.dist;
-  for (const c of state.culled) {
+  const cull = (c) => {
     const dx = c.x - x;
     const dy = c.y - y;
     const dz = c.z - z;
-    c.mesh.visible = Math.sqrt(dx * dx + dy * dy + dz * dz) - c.r < c.d * k;
+    return (c.mesh.visible = Math.sqrt(dx * dx + dy * dy + dz * dz) - c.r < c.d * k);
+  };
+  if (!state.buckets) {
+    for (const c of state.culled) cull(c);
+    return;
+  }
+  for (const b of state.buckets) {
+    if (Math.hypot(b.x - x, b.z - z) - b.r >= b.dMax * k) {
+      b.group.visible = false;
+      continue;
+    }
+    let any = false;
+    for (const c of b.entries) if (cull(c)) any = true;
+    b.group.visible = any;
   }
 }
 
