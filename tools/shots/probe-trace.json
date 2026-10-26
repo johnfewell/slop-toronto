@@ -3,7 +3,7 @@
   "name": "probe-trace",
   "mode": "helicopter",
   "time": "midday",
-  "wait": 200000,
-  "js": "(() => { const s = document.createElement('script'); s.src = './tools/traffic-measure.js?' + Date.now(); s.onload = async () => { await window.__trafficProbe({ name: 'king-east', from: [-1751, -361], to: [836, -349], ux: 1, uz: 0, trace: true, limit: 900 }, 11); await window.__trafficProbe({ name: 'bay-north', from: [137, -41], to: [88, -2805], ux: -0.0177, uz: -0.9998, trace: true, limit: 900 }, 12); console.log('[measure] {\"kind\":\"done\"}'); }; document.head.appendChild(s); })()"
+  "wait": 120000,
+  "js": "(() => { const s = document.createElement('script'); s.src = './tools/traffic-measure.js?' + Date.now(); s.onload = async () => { await window.__trafficProbe({ name: 'king-west', from: [836, -349], to: [-1751, -361], ux: -1, uz: 0, trace: true, limit: 240 }, 13); console.log('[measure] {\"kind\":\"done\"}'); }; document.head.appendChild(s); })()"
  }
 ]

@@ -24,7 +24,7 @@ test("the lights are the City of Toronto's: every junction & midblock signal a C
   assert.equal(SIGNALS.lights.length, J.length + SIGNAL_CROSSINGS.length);
 });
 
-test('nobody gets the WALK while traffic crossing their path has a green or amber, and every WALK lasts 7 s or more', () => {
+test('nobody gets the WALK while traffic crossing their path has a green or amber, and every WALK lasts 7 s (40% of a squeezed phase)', () => {
   const bad = [];
   for (const light of SIGNALS.lights) {
     const k = light.index;

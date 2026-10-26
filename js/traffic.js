@@ -6,7 +6,10 @@
 //   stop for the signals street-details.js shows, give way to oncoming traffic when turning left, to the major road at
 //   unsignalized junctions & roundabouts and to pedestrians on crosswalks, and never enter a junction they can't clear.
 //   They ride the flyovers & ramps at the height of the deck (road-network.js edgeY).
-// - 340 pedestrians follow connected sidewalks, meet to talk, and cross signalized crosswalks on WALK.
+// - 340 pedestrians follow connected sidewalks, meet to talk, and cross signalized crosswalks on WALK, midblock
+//   pedestrian signals on theirs, and pedestrian crossovers when the traffic can stop (the City's crossings).
+// - How many cars & people, where, and which way the cars turn follow the City of Toronto's counts at the hour of day
+//   (js/toronto-traffic-data.js; see `setHour`).
 // - Fixed-size local populations replenish distant roads and sidewalks in every direction, protecting the near view.
 // - The player's vehicle or character pushes and is pushed by the traffic (SAT contact, impulses, sparks).
 
@@ -700,7 +703,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // ...and how many cars they hold (the City's volumes, see setHour): each street's flow over the speed traffic makes
   // along it, stops & queues included (V_TRAVEL); the streets new cars appear on, by how many each holds (edgeWeights,
   // cumulative); people at the crossings by how many cross there (the City's pedestrian counts)
-  const V_TRAVEL = 5.5; // m/s
+  const V_TRAVEL = 8; // m/s (about 29 km/h, a downtown trip with its stops)
   const MIN_CARS = Math.min(NUM_CARS, 24);
   const edgeWeights = [];
   let carTarget = NUM_CARS, pedTarget = NUM_PEDS;

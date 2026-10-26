@@ -385,6 +385,6 @@ class LightingSystem {
 }
 
 // (the hour of each time of day: traffic.js reads the City's volumes at it)
-const SUN_HOURS = Object.fromEntries(Object.entries(SUN).map(([k, v]) => [k, v.h]));
+const SUN_HOURS = { ...Object.fromEntries(Object.entries(SUN).map(([k, v]) => [k, v.h])), twilight: SUN.sunset.h, midnight: SUN.night.h };
 Object.assign(window.CITY, { LightingSystem, SUN_HOURS });
 })();

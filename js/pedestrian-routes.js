@@ -67,7 +67,8 @@ function createPedestrianRoutes({ walkable, onSidewalk, midCrossings = [] }, blo
         for (const line of [-0.75, 0.75]) {
           const a = { x: cx - road.clx * L + road.dx * line, z: cz - road.clz * L + road.dz * line };
           const b = { x: cx + road.clx * L + road.dx * line, z: cz + road.clz * L + road.dz * line };
-          if (!onSidewalk(a.x, a.z) || !onSidewalk(b.x, b.z) || !clear(a, b)) continue;
+          // (both ends on a curb island, as the centre-line streets' sidewalk lines are: their curb rectangles are rough)
+          if (!blockAt(a.x, a.z) || !blockAt(b.x, b.z) || !clear(a, b)) continue;
           result.push(segment(a, b, { node: n, side, line, from: n, to: n, clx: road.clx, clz: road.clz }));
         }
         continue;
@@ -97,7 +98,7 @@ function createPedestrianRoutes({ walkable, onSidewalk, midCrossings = [] }, blo
     for (const line of [-0.75, 0.75]) {
       const a = { x: c.x - c.ux * L + dx * line, z: c.z - c.uz * L + dz * line };
       const b = { x: c.x + c.ux * L + dx * line, z: c.z + c.uz * L + dz * line };
-      if (!onSidewalk(a.x, a.z) || !onSidewalk(b.x, b.z) || !clear(a, b)) continue;
+      if (!blockAt(a.x, a.z) || !blockAt(b.x, b.z) || !clear(a, b)) continue;
       const track = segment(a, b, { mid: c, node: null, side: 0, line, from: null, to: null, clx: c.ux, clz: c.uz });
       track.lands = [a, b].map((end) => {
         let best = null, bd = 1.6;

@@ -1,0 +1,58 @@
+[
+ {
+  "name": "spawn",
+  "mode": "cyclist",
+  "time": "golden",
+  "wait": 11000,
+  "js": "(async()=>{await new Promise(r=>setTimeout(r,5000));let n=0;const t=performance.now();const fr=[];let last=t;await new Promise(res=>{(function f(){const now=performance.now();fr.push(now-last);last=now;n++;if(now-t<5000)requestAnimationFrame(f);else res()})()});fr.sort((a,b)=>a-b);console.log('[bench] spawn '+((performance.now()-t)/n).toFixed(2)+' ms p95 '+fr[Math.floor(fr.length*0.95)].toFixed(2))})()"
+ },
+ {
+  "name": "king",
+  "x": 400,
+  "z": -130,
+  "heading": 1.5708,
+  "wait": 10000,
+  "js": "(async()=>{await new Promise(r=>setTimeout(r,4000));let n=0;const t=performance.now();const fr=[];let last=t;await new Promise(res=>{(function f(){const now=performance.now();fr.push(now-last);last=now;n++;if(now-t<5000)requestAnimationFrame(f);else res()})()});fr.sort((a,b)=>a-b);console.log('[bench] king '+((performance.now()-t)/n).toFixed(2)+' ms p95 '+fr[Math.floor(fr.length*0.95)].toFixed(2))})()"
+ },
+ {
+  "name": "king-spadina",
+  "x": -1125,
+  "z": -372,
+  "heading": 0.0,
+  "wait": 10000,
+  "js": "(async()=>{await new Promise(r=>setTimeout(r,4000));let n=0;const t=performance.now();const fr=[];let last=t;await new Promise(res=>{(function f(){const now=performance.now();fr.push(now-last);last=now;n++;if(now-t<5000)requestAnimationFrame(f);else res()})()});fr.sort((a,b)=>a-b);console.log('[bench] king-spadina '+((performance.now()-t)/n).toFixed(2)+' ms p95 '+fr[Math.floor(fr.length*0.95)].toFixed(2))})()"
+ },
+ {
+  "name": "yonge-dundas",
+  "x": 345,
+  "z": -1165,
+  "heading": -1.2,
+  "wait": 10000,
+  "js": "(async()=>{await new Promise(r=>setTimeout(r,4000));let n=0;const t=performance.now();const fr=[];let last=t;await new Promise(res=>{(function f(){const now=performance.now();fr.push(now-last);last=now;n++;if(now-t<5000)requestAnimationFrame(f);else res()})()});fr.sort((a,b)=>a-b);console.log('[bench] yonge-dundas '+((performance.now()-t)/n).toFixed(2)+' ms p95 '+fr[Math.floor(fr.length*0.95)].toFixed(2))})()"
+ },
+ {
+  "name": "king-bay",
+  "x": 150,
+  "z": -330,
+  "heading": -0.6,
+  "wait": 10000,
+  "js": "(async()=>{await new Promise(r=>setTimeout(r,4000));let n=0;const t=performance.now();const fr=[];let last=t;await new Promise(res=>{(function f(){const now=performance.now();fr.push(now-last);last=now;n++;if(now-t<5000)requestAnimationFrame(f);else res()})()});fr.sort((a,b)=>a-b);console.log('[bench] king-bay '+((performance.now()-t)/n).toFixed(2)+' ms p95 '+fr[Math.floor(fr.length*0.95)].toFixed(2))})()"
+ },
+ {
+  "name": "water",
+  "x": -600,
+  "z": 620,
+  "heading": 3.1416,
+  "wait": 10000,
+  "js": "(async()=>{await new Promise(r=>setTimeout(r,4000));let n=0;const t=performance.now();const fr=[];let last=t;await new Promise(res=>{(function f(){const now=performance.now();fr.push(now-last);last=now;n++;if(now-t<5000)requestAnimationFrame(f);else res()})()});fr.sort((a,b)=>a-b);console.log('[bench] water '+((performance.now()-t)/n).toFixed(2)+' ms p95 '+fr[Math.floor(fr.length*0.95)].toFixed(2))})()"
+ },
+ {
+  "name": "night-king",
+  "time": "midnight",
+  "x": 400,
+  "z": -130,
+  "heading": 1.5708,
+  "wait": 10000,
+  "js": "(async()=>{await new Promise(r=>setTimeout(r,4000));let n=0;const t=performance.now();const fr=[];let last=t;await new Promise(res=>{(function f(){const now=performance.now();fr.push(now-last);last=now;n++;if(now-t<5000)requestAnimationFrame(f);else res()})()});fr.sort((a,b)=>a-b);console.log('[bench] night-king '+((performance.now()-t)/n).toFixed(2)+' ms p95 '+fr[Math.floor(fr.length*0.95)].toFixed(2))})()"
+ }
+]

@@ -156,7 +156,9 @@
     Math.random = mulberry(seed);
     elapsed = 5000 + seed * 9.3;
     const { from, to, ux, uz } = route;
-    const e0 = edgeInto(from[0], from[1], ux, uz);
+    // (the first edge arriving at a junction from the start on, along the route, within 200 m)
+    let e0 = null;
+    for (let k = 0; k <= 10 && !e0; k++) e0 = edgeInto(from[0] + ux * 20 * k, from[1] + uz * 20 * k, ux, uz);
     if (!e0) return log({ kind: 'probe', route: route.name, seed, error: 'no start edge' });
     aim(from[0] - ux * 60, from[1] - uz * 60);
     await run(20);
@@ -182,7 +184,7 @@
     const lat = (x, z) => (x - from[0]) * -uz + (z - from[1]) * ux;
     const u0 = u(from[0], from[1]), u1 = u(to[0], to[1]);
     let tStart = null, tEnd = null, stops = 0, stopped = false, stopT = 0, off = false, lastEdge = v.edge;
-    const limit = route.limit || 1500;
+    const limit = route.limit || 900; // (s: slower than ~10 km/h over the route is a DNF)
     for (let i = 0; i < limit / DT && tEnd === null; i++) {
       aim(v.x, v.z);
       step();
@@ -254,16 +256,20 @@
     const routes = [
       { name: 'king-east', from: [-1751, -361], to: [836, -349], ux: 1, uz: 0 },
       { name: 'king-west', from: [836, -349], to: [-1751, -361], ux: -1, uz: 0 },
-      { name: 'bay-north', from: [137, -41], to: [88, -2805], ux: -0.0177, uz: -0.9998 },
-      { name: 'bay-south', from: [88, -2805], to: [137, -41], ux: 0.0177, uz: 0.9998 }
+      // (Bay in two sections: at Queen the road graph has no straight-on move, the probe would be turned off Bay)
+      { name: 'bay-north', from: [137, -41], to: [131, -690], ux: -0.0177, uz: -0.9998 },
+      { name: 'bay-south', from: [131, -690], to: [137, -41], ux: 0.0177, uz: 0.9998 },
+      { name: 'bay-north-upper', from: [126, -790], to: [88, -2805], ux: -0.0177, uz: -0.9998 },
+      { name: 'bay-south-upper', from: [88, -2805], to: [126, -790], ux: 0.0177, uz: 0.9998 }
     ];
-    if (opts.probe !== false) for (const r of routes) for (const seed of opts.probeSeeds || [11, 12, 13, 14]) await probe(r, seed);
     const riders = [
       { name: 'strachan-sb-at-lakeshore', x: -2522, z: 482, ux: 0, uz: 1 },
       { name: 'strachan-nb-at-manitoba', x: -2531, z: 295, ux: 0, uz: -1 },
       { name: 'lakeshore-eb-at-strachan', x: -2522, z: 482, ux: 1, uz: 0 }
     ];
     if (opts.rider !== false) for (const seed of opts.riderSeeds || [21]) for (const r of riders) await rider(r, opts.trials || 8, seed);
+    // (the probes last: a gridlocked one takes its whole limit)
+    if (opts.probe !== false) for (const r of routes) for (const seed of opts.probeSeeds || [11, 12, 13, 14]) await probe(r, seed);
     log({ kind: 'done', wallSeconds: (performance.now() - t0) / 1000 });
     app.film.stop();
   };

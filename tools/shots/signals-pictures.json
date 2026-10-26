@@ -1,0 +1,41 @@
+[
+ {
+  "name": "king-bay",
+  "wait": 110000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"king-bay\", \"teleport\": [131, -330, 0], \"pos\": [152, 2.6, -322], \"look\": [118, 3, -365], \"fov\": 46, \"junction\": \"BAY ST / KING ST W\", \"minOn\": 4, \"maxS\": 100}); })()",
+  "time": "golden",
+  "mode": "cyclist"
+ },
+ {
+  "name": "king-bay-b",
+  "wait": 110000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"king-bay-b\", \"pos\": [108, 6, -318], \"look\": [142, 2, -362], \"fov\": 50, \"junction\": \"BAY ST / KING ST W\", \"minOn\": 4, \"settle\": 2, \"maxS\": 100}); })()"
+ },
+ {
+  "name": "pxo-king-brant",
+  "wait": 110000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"pxo-king-brant\", \"teleport\": [-1310, -345, 0], \"pos\": [-1294, 2.4, -342], \"look\": [-1336, 4.4, -356], \"fov\": 45, \"pxo\": \"KING ST W / BRANT ST\", \"maxS\": 120}); })()",
+  "time": "midday"
+ },
+ {
+  "name": "pxo-dundas-bond",
+  "wait": 110000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"pxo-dundas-bond\", \"teleport\": [545, -1110, 0], \"pos\": [548, 2.4, -1112], \"look\": [522, 4.2, -1123], \"fov\": 45, \"pxo\": \"DUNDAS ST E / BOND ST\", \"maxS\": 120}); })()"
+ },
+ {
+  "name": "residential-major",
+  "wait": 110000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"residential-major\", \"teleport\": [-1328, -2300, 0], \"pos\": [-1323, 1.7, -2235], \"look\": [-1328, 1.6, -2330], \"fov\": 50, \"settle\": 25}); })()"
+ },
+ {
+  "name": "yonge-dundas",
+  "wait": 110000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"yonge-dundas\", \"teleport\": [324, -1170, 0], \"pos\": [352, 9, -1150], \"look\": [318, 0, -1190], \"fov\": 55, \"junction\": \"YONGE ST / DUNDAS ST\", \"minOn\": 6, \"maxS\": 120}); })()",
+  "time": "golden"
+ },
+ {
+  "name": "hero-king-spadina",
+  "wait": 110000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"hero-king-spadina\", \"teleport\": [-1110, -345, 0], \"pos\": [-1136, 3.2, -336], \"look\": [-1080, 6, -353], \"fov\": 42, \"junction\": \"SPADINA AVE / KING ST W\", \"minOn\": 5, \"maxS\": 120}); })()"
+ }
+]
