@@ -17,6 +17,10 @@ its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
 - **Streetcars and GO trains:** TTC streetcars on the real streetcar network (no buses on streetcar routes), and GO
   trains on real bridges and embankments over the streets, from OpenStreetMap. Union Station has an open train shed
   over its platforms, and Strachan Avenue dips under the tracks in a cutting.
+- **Toronto's cycling network:** the City's bike lanes, cycle tracks (Bloor, Richmond & Adelaide, Sherbourne,
+  University...) behind their curbs & flexi-posts, green crossrides, sharrows, and the multi-use trails, the Martin
+  Goodman Trail's red asphalt past Sugar Beach among them, from City of Toronto Open Data; the traffic keeps out of
+  them, and both maps show them.
 - **Street furniture from the City's data:** the City of Toronto's park name signs at 240 parks, each with its own
   name and address, plus hydrants, bike rings, transit shelters, litter bins and post boxes where the City says they stand.
 - **Sky and sound:** volumetric clouds with golden hour, sunset and night, and a city that sounds like one: traffic,

@@ -53,7 +53,8 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 
 - **City of Toronto Open Data**, under the Open Government Licence – Toronto
   (https://open.toronto.ca/open-data-license/): 3D Massing, Topographic Mapping – Edge of Roadway, Street Tree Data,
-  Water Hydrants, Bicycle Parking, Street Furniture – Transit Shelter, Street Furniture – Litter Receptacle.
+  Water Hydrants, Bicycle Parking, Street Furniture – Transit Shelter, Street Furniture – Litter Receptacle, Cycling
+  Network (the bike lanes, cycle tracks, sharrows & multi-use trails: `tools/fetch-cycling.mjs`, `js/cycling.js`).
   Contains information licensed under the Open Government Licence – Toronto.
 - **City of Toronto Open Data, traffic & pedestrians**, under the Open Government Licence – Toronto
   (https://open.toronto.ca/open-data-license/): Traffic Signals Tabular (the traffic signals, pedestrian crossovers and
@@ -71,6 +72,8 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   city, their stops and trips per hour on a weekday; the streetcars, buses and Line 2 trains run at those headways.
   Contains information licensed under the Open Government Licence – Toronto.
 - **OpenStreetMap**: streets, places, water and land use, the streetcar & railway tracks and the streetcar stops. © OpenStreetMap contributors, under the Open Database
+- **OpenStreetMap**: streets, places, water and land use, the streetcar & railway tracks and the streetcar stops, and
+  which side of the street each bikeway is on (cycleway tags). © OpenStreetMap contributors, under the Open Database
   License (ODbL). https://www.openstreetmap.org/copyright
   The city database built from it, `js/toronto-geodata.js` (by `tools/build-geodata.mjs`), is a derivative database
   and is made available under the ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/), not the MIT License.

@@ -1,0 +1,44 @@
+[
+ {
+  "name": "perf-bloor",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-1319.9,-2816.2,0);const cam={pos:[-1359.9, 2.2, -2815.3],look:[-1460.0, 0.4, -2816.6],fov:55};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-bloor '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "perf-richmond",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-680.0,-643.0,0);const cam={pos:[-720.0, 2.2, -642.7],look:[-820.0, 0.4, -645.6],fov:55};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-richmond '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "perf-sherbourne",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(1157.9,-960.0,0);const cam={pos:[1157.7, 2.2, -1000.0],look:[1160.7, 0.4, -1100.0],fov:55};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-sherbourne '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "perf-mgt-queensquay",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(1040,396,0);const cam={pos:[999.4, 2.0, 403.1],look:[880, 0.3, 422],fov:55};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-mgt-queensquay '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "perf-king",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8500,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(400,-130,0);const cam={pos:[352, 1.7, -290],look:[340, 2, -330],fov:55};app.cameraSystem.cinema=()=>cam;})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-king '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ },
+ {
+  "name": "perf-start",
+  "mode": "cyclist",
+  "time": "golden",
+  "wait": 8500,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;const L=window.CITY.TELEPORT_LOCATIONS&&window.CITY.TELEPORT_LOCATIONS.start;if(L)app.teleportTo(L.x,L.z,L.heading);})();(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<5000)requestAnimationFrame(f);else res()})()});console.log('[perf] perf-start '+((performance.now()-t)/n).toFixed(2)+' ms')})()"
+ }
+]

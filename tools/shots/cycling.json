@@ -1,0 +1,44 @@
+[
+ {
+  "name": "bloor",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-1319.9,-2816.2,0);const cam={pos:[-1359.9, 2.2, -2815.3],look:[-1460.0, 0.4, -2816.6],fov:55};app.cameraSystem.cinema=()=>cam;})()",
+  "hold": "KeyH"
+ },
+ {
+  "name": "richmond",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-680.0,-643.0,0);const cam={pos:[-720.0, 2.2, -642.7],look:[-820.0, 0.4, -645.6],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "sherbourne",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(1157.9,-960.0,0);const cam={pos:[1157.7, 2.2, -1000.0],look:[1160.7, 0.4, -1100.0],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "college",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-4535.8,-1923.4,0);const cam={pos:[-4498.5, 2.2, -1908.7],look:[-4425.2, 0.4, -1876.7],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "mgt-queensquay",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(1040,396,0);const cam={pos:[999.4, 2.0, 403.1],look:[880, 0.3, 422],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "hero-bloor",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(()=>{const app=window.__CITY_APP;app.selectMode('cyclist');app.teleportTo(-1300,-2817.2,-1.5707963267948966);const cam={pos:[-1294.5, 1.4, -2816.0],look:[-1330.0, 1.6, -2817.7],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ }
+]

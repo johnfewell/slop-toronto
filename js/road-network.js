@@ -627,6 +627,8 @@ function buildRoadNetwork(sidewalks, obstacles) {
     }
     edges = edges.filter((e) => e.lanes.length);
   }
+  // Toronto's bike lanes & cycle tracks (cycling.js): the lanes beside them move over, or the road gives one up
+  if (window.CITY.bikeLaneShift) window.CITY.bikeLaneShift(edges);
   // Edges no vehicle could both reach and leave (dead ends, and roads reached only from them) are dropped once the
   // moves are known (7.); know them already, so that no road keeps clear of a dead one merging with it or forking off it
   {

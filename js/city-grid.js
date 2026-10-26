@@ -941,6 +941,14 @@ function buildCityGrid(scene) {
   };
   // islands sorted along x so each merged batch is a compact strip (the culling & the frustum can skip batches)
   mergeInto(geos.curb, curbMat, window.CITY.QUALITY.kerbShadows !== false, 'Kerbs'); // (none on the phone tier)
+  // the cycle tracks' separator curbs, in the kerbs' stone (cycling.js)
+  for (const g of window.CITY.bikeSeparatorGeometries ? window.CITY.bikeSeparatorGeometries() : []) {
+    const m = new THREE.Mesh(g, curbMat);
+    m.name = 'BikeSeparators';
+    m.receiveShadow = true;
+    m.castShadow = false; // (13 cm high: its shadow is a line the kerbs' already draw)
+    group.add(m);
+  }
   mergeInto(geos.walk, sidewalkMat, false, 'Walkways');
   mergeInto(geos.lawn, lawnMat, false, 'Lawns');
   mergeInto(geos.plot, plotMat, false, 'Yards');
