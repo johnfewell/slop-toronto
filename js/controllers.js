@@ -862,7 +862,8 @@ class ThirdPersonControllerManager {
   // Height of what stands under (x, z): the raised curb island (walking), the hills (Aso Rock, the ridges), or a flyover
   // deck or ramp where whoever is at height y can step or drive onto it (y unknown: at street level)
   getGroundHeight(x, z, mode = 'person', y = null) {
-    let ground = mode === 'person' && this.isPointOnSidewalk(x, z) ? CITY_BOUNDS.sidewalkHeight : 0.0;
+    // (the bicycle too: up on the curb islands it rides the parks' trails & paths on their surface, not 22 cm under it)
+    let ground = (mode === 'person' || mode === 'cyclist') && this.isPointOnSidewalk(x, z) ? CITY_BOUNDS.sidewalkHeight : 0.0;
     // down in a road cut (city-config.js cutAt: Strachan Ave under the railway), else up on the hills
     const cut = window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0;
     if (cut < 0) ground += cut;
@@ -1300,7 +1301,10 @@ class ThirdPersonControllerManager {
     }
 
     this.moveBody(b, 'cyclist', dt);
-    b.position.y = this.getGroundHeight(b.position.x, b.position.z, 'cyclist', b.position.y);
+    // a curb's step up or down eases over a few frames (a deck's or a teleport's jump doesn't)
+    const ground = this.getGroundHeight(b.position.x, b.position.z, 'cyclist', b.position.y);
+    const dy = ground - b.position.y;
+    b.position.y = Math.abs(dy) > 0.5 ? ground : b.position.y + dy * Math.min(1, dt * 22);
 
     const targetLean = -turnInput * Math.min(1.0, Math.abs(b.speed) / 9.0) * 0.34;
     b.leanAngle += (targetLean - b.leanAngle) * Math.min(1, dt * 9);

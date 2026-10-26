@@ -132,6 +132,8 @@ async function initApp() {
   markInit('trees');
   // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
   await window.CITY.buildStreetProps(scene);
+  // the flexi-posts on the cycle tracks' separators (cycling.js)
+  if (window.CITY.buildBikePosts) window.CITY.buildBikePosts(scene);
   // the City's park name signs at the parks' entrances, each with its park's name & address (park-signs.js)
   if (window.CITY.buildParkSigns) {
     const parkSigns = await window.CITY.buildParkSigns(scene);

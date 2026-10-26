@@ -193,6 +193,36 @@ function buildRoadPaint(scene, network) {
     }
   }
 
+  // A band along a polyline P (cycling.js: points with their normal n, mitre m & distance s) between offsets o0 < o1
+  // along n, dashed as strip's are (duty over 1: a surface, see createRoadPaintMaterial)
+  // (o0 & o1 may also be arrays, an offset per point)
+  function ribbon(P, o0, o1, col, period = 1, duty = 1) {
+    if (!P || P.length < 2) return;
+    const i = position.length / 3;
+    for (let k = 0; k < P.length; k++) {
+      const p = P[k];
+      const a = Array.isArray(o0) ? o0[k] : o0, b = Array.isArray(o1) ? o1[k] : o1;
+      const half = (b - a) / 2;
+      for (const [o, sgn] of [[a, -1], [b, 1]]) {
+        position.push(p.x + p.nx * o * p.m, p.y + HEIGHT, p.z + p.nz * o * p.m);
+        side.push(p.nx * half * sgn * p.m, p.nz * half * sgn * p.m);
+        paint.push(p.s, period, duty);
+        colors.push(col.r, col.g, col.b);
+      }
+    }
+    // facing up: n is the right normal of the way P runs (strip's winding), or the left
+    for (let k = 0; k + 1 < P.length; k++) {
+      const a = i + 2 * k;
+      if (P.nRight) index.push(a, a + 1, a + 3, a, a + 3, a + 2);
+      else index.push(a, a + 3, a + 1, a, a + 2, a + 3);
+    }
+  }
+  // Toronto's bikeways: lanes, tracks, crossrides & symbols, the trails' surfaces (cycling.js)
+  const roadVerts = position.length / 3;
+  const material = createRoadPaintMaterial();
+  if (window.CITY.bikePaint) window.CITY.bikePaint({ strip, ribbon, WHITE, YELLOW, material, scene, height: HEIGHT });
+  console.info(`[roadPaint] ${position.length / 3} vertices (${position.length / 3 - roadVerts} the bikeways')`);
+
   const normal = new Float32Array(position.length);
   for (let i = 1; i < normal.length; i += 3) normal[i] = 1;
 
@@ -204,7 +234,7 @@ function buildRoadPaint(scene, network) {
   geometry.setAttribute('paint', new THREE.Float32BufferAttribute(paint, 3));
   geometry.setIndex(index);
 
-  const mesh = new THREE.Mesh(geometry, createRoadPaintMaterial());
+  const mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'RoadMarkings';
   mesh.receiveShadow = true;
   mesh.renderOrder = -1; // under the other see-through ground effects (contact shadows, headlight beams)

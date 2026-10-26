@@ -1676,20 +1676,23 @@ function createRoadPaintMaterial() {
   })();
   mat.positionNode = positionGeometry.add(sideOffset.mul(widen.sub(1.0)));
 
-  // Exact box filter of the dashes (on for `duty` of each period) over the pixel footprint
+  // Exact box filter of the dashes (on for `duty` of each period) over the pixel footprint. A duty over 1 marks a
+  // surface instead of paint (cycling.js: a trail's asphalt): solid, unworn, with a little grain
   const t = paint.x.div(paint.y);
   const footprint = max(fwidth(t), 0.0001);
-  const duty = paint.z;
+  const surface = step(1.5, paint.z);
+  const duty = min(paint.z, 1.0);
   const onSoFar = (x) => floor(x).mul(duty).add(clamp(fract(x).sub(float(1.0).sub(duty).mul(0.5)), 0.0, duty));
   const dashes = onSoFar(t.add(footprint.mul(0.5))).sub(onSoFar(t.sub(footprint.mul(0.5)))).div(footprint);
 
   const xz = positionWorld.xz;
   const detail = smoothstep(70.0, 15.0, length(positionWorld.sub(cameraPosition)));
   const wear = mix(float(0.5), noise2D(xz.mul(0.8)).mul(0.6).add(noise2D(xz.mul(2.3)).mul(0.4)), detail);
-  mat.opacityNode = dashes.mul(varying(float(1.0).div(widen))).mul(smoothstep(0.1, 0.6, wear).mul(0.4).add(0.55));
+  mat.opacityNode = mix(dashes.mul(varying(float(1.0).div(widen))).mul(smoothstep(0.1, 0.6, wear).mul(0.4).add(0.55)), float(1.0), surface);
 
   const wet = roadWetMasks(roadPuddleField(positionWorld.x, positionWorld.z)); // same pools & film as the asphalt
-  mat.colorNode = vec3(mix(float(1.0), float(0.72), wet.y).mul(mix(float(1.0), float(0.86), wet.z)));
+  const grain = mix(float(1.0), wear.mul(0.22).add(0.86), surface);
+  mat.colorNode = vec3(mix(float(1.0), float(0.72), wet.y).mul(mix(float(1.0), float(0.86), wet.z)).mul(grain));
   mat.roughnessNode = mix(mix(float(0.62), float(0.42), wet.z), float(0.2), wet.y);
   mat.aoNode = canyonSkyAONode();
 
