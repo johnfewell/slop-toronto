@@ -14,3 +14,4 @@ dist/
 
 # local prop sources for tools/prop-preview.html (John's raw models & simplification variants)
 tools/prop-src/
+.wrangler/
