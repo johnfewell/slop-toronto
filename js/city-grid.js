@@ -946,7 +946,7 @@ function buildCityGrid(scene) {
     const m = new THREE.Mesh(g, curbMat);
     m.name = 'BikeSeparators';
     m.receiveShadow = true;
-    m.castShadow = window.CITY.QUALITY.kerbShadows !== false;
+    m.castShadow = false; // (13 cm high: its shadow is a line the kerbs' already draw)
     group.add(m);
   }
   mergeInto(geos.walk, sidewalkMat, false, 'Walkways');

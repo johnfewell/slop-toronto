@@ -33,7 +33,7 @@ const RESERVE = {
   [K.track]: TRACK_W + SEP_W + 0.1,
   [K.track2]: TRACK2_W + SEP_W + 0.1
 };
-const CAR_CLEAR = 1.25; // a car's half width & a little: a lane's centre keeps this far from a bikeway's edge
+const CAR_CLEAR = 1.5; // a lane's centre keeps this far from a bikeway's edge: a bus's half width & a little
 
 const cutY = (x, z) => (window.CITY.cutAt ? Math.min(0, window.CITY.cutAt(x, z)) : 0);
 
@@ -142,12 +142,12 @@ const DIAMOND = [[[0, 0], [0.28, 0.5], [0, 1], [-0.28, 0.5], [0, 0]]];
 const ARROW = [[[0, 0], [0, 0.75]], [[-0.2, 0.52], [0, 0.82], [0.2, 0.52]]];
 const CHEVRONS = [[[-0.32, 0], [0, 0.22], [0.32, 0]], [[-0.32, 0.3], [0, 0.52], [0.32, 0.3]]];
 
-// The pavement symbols are many small strips: they go into meshes of their own, one per 600 m cell (the view frustum
+// The pavement symbols are many small strips: they go into meshes of their own, one per kilometre cell (the view frustum
 // skips the far ones), in road-paint.js's material (`material`), the lines & surfaces into its one mesh (strip, ribbon)
 function bikePaint({ strip, ribbon, WHITE, YELLOW, material, scene, height }) {
   const cells = new Map();
   const symbolStrip = (ax, ay, az, bx, by, bz, w, col) => {
-    const k = Math.floor(ax / 600) * 1000 + Math.floor(az / 600);
+    const k = Math.floor(ax / 1000) * 1000 + Math.floor(az / 1000);
     let c = cells.get(k);
     if (!c) cells.set(k, (c = { position: [], side: [], paint: [], colors: [], index: [] }));
     const len = Math.hypot(bx - ax, bz - az);
@@ -359,7 +359,7 @@ function buildBikePosts(scene) {
   for (let i = 0; i < spots.length; i += 3) mesh.setMatrixAt(i / 3, m.makeTranslation(spots[i], spots[i + 1], spots[i + 2]));
   mesh.instanceMatrix.needsUpdate = true;
   mesh.name = 'BikePosts';
-  mesh.castShadow = window.CITY.QUALITY.kerbShadows !== false;
+  mesh.castShadow = false; // (a thin post's shadow barely reads: street-props.js's bike rings cast none either)
   mesh.receiveShadow = true;
   mesh.userData.cullDistance = 110;
   mesh.userData.cullCell = 60;
