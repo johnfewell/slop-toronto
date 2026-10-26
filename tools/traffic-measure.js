@@ -217,10 +217,12 @@
     const s = e.len - 3;
     const ent = { position: { x: e.sx + e.dx * s + e.rx * lane, y: 0.0, z: e.sz + e.dz * s + e.rz * lane }, heading: Math.atan2(e.dx, e.dz), speed: 0, vx: 0, vz: 0, type: 'car' };
     const waits = [];
-    for (let k = 0; k < trials; k++) {
+    let greens = 0, attempts = 0;
+    for (let k = 0; k < trials && attempts < trials * 4; k++) {
+      attempts++;
       // away for a while, then arrive at the line
       await run(5 + Math.random() * 60);
-      if (stateOf(e, elapsed) === 'green') { k--; continue; } // arrived on a green: no wait
+      if (stateOf(e, elapsed) === 'green') { greens++; k--; continue; } // arrived on a green: no wait (counted apart)
       let w = 0;
       while (stateOf(e, elapsed) !== 'green' && w < 180) {
         ent.position.x = e.sx + e.dx * s + e.rx * lane; ent.position.z = e.sz + e.dz * s + e.rz * lane;
@@ -231,7 +233,7 @@
       waits.push(w);
       await yieldUI();
     }
-    log({ kind: 'rider', spot: spot.name, seed, waits: waits.map((w) => +w.toFixed(1)), mean: mean(waits), max: Math.max(...waits) });
+    log({ kind: 'rider', spot: spot.name, seed, waits: waits.map((w) => +w.toFixed(1)), mean: mean(waits), max: waits.length ? Math.max(...waits) : null, arrivals: attempts, onGreen: greens });
   }
 
   window.__trafficEdges = (pts) => {
