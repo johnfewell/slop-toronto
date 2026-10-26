@@ -14,6 +14,7 @@
 # usage: Blender --background --factory-startup --python tools/blender/bake_props.py -- shelter|bin|hydrant|postbox|bikering <src.glb> <out.glb> <workdir>
 #   park-sign <face-template.jpg> <out.glb> <workdir>: modelled from measurements, no source mesh (see its block below)
 #   ttc-pylon <ttc-logo.webp> <out.glb> <workdir> [id-face.png]: the TTC's insignia pylon, modelled from its drawing
+#   bikeshare - <out dir> <workdir>: Bike Share Toronto's dock, kiosk & bike, modelled from measurements (bikeshare_props.py)
 #   sources (John's Meshy originals, tools/prop-src/, gitignored): shelter s-orig.glb, bin b-orig.glb, hydrant h-orig.glb
 #   (Rusted_Hydrant_with_C), postbox p-orig.glb (Graffiti_Mailbox_by_C), bikering cand-calga.glb (From_Toronto_to_Calga)
 import bpy, bmesh, sys, os, math, mathutils, numpy as np
@@ -23,6 +24,12 @@ argv = sys.argv[sys.argv.index('--') + 1:]
 KIND, SRC, OUT, WORK = argv[0], argv[1], argv[2], argv[3]
 os.makedirs(WORK, exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
+
+# ---------------------------------------------------------------- bikeshare: Bike Share Toronto's dock, kiosk & bike
+# modelled from measurements in their own file (SRC unused, OUT the output directory): bikeshare_props.py
+if KIND == 'bikeshare':
+    exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bikeshare_props.py')).read())
+    sys.exit(0)
 
 # ---------------------------------------------------------------- park-sign: modelled from its measurements, no source mesh
 # The City's park name sign ("A CITY WITHIN A PARK"): two square blue posts on base collars, an arched aluminium panel

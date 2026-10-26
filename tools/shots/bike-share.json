@@ -1,0 +1,58 @@
+[
+ {
+  "name": "bs-union",
+  "mode": "person",
+  "time": "midday",
+  "camera": "pov",
+  "wait": 6500,
+  "js": "(() => { const app = window.__CITY_APP; const S = window.CITY.bikeShareStations; const s = S && S.find((t) => t.id === 7033); let x = 45.0, z = -31.8, h = -1.6492; if (s) { const d = s.docks, n = d.length; const cx = (d[0] + d[n - 2]) / 2, cz = (d[1] + d[n - 1]) / 2; const nx = Math.sin(s.yaw), nz = Math.cos(s.yaw), ux = Math.cos(s.yaw), uz = -Math.sin(s.yaw); x = cx + ux * 22 + nx * 3.0; z = cz + uz * 22 + nz * 3.0; const tx = cx + ux * -6 + nx * 0.8, tz = cz + uz * -6 + nz * 0.8; h = Math.atan2(tx - x, tz - z); console.log('[aim] 7033 ' + x.toFixed(2) + ' ' + z.toFixed(2) + ' ' + h.toFixed(4)); } app.teleportTo(x, z, h); app.selectCamera('pov', true); })(); (() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "bs-bay-queens-quay",
+  "mode": "person",
+  "time": "midday",
+  "camera": "pov",
+  "wait": 6500,
+  "js": "(() => { const app = window.__CITY_APP; const S = window.CITY.bikeShareStations; const s = S && S.find((t) => t.id === 7016); let x = 160.61, z = 563.88, h = -3.0735; if (s) { const d = s.docks, n = d.length; const cx = (d[0] + d[n - 2]) / 2, cz = (d[1] + d[n - 1]) / 2; const nx = Math.sin(s.yaw), nz = Math.cos(s.yaw), ux = Math.cos(s.yaw), uz = -Math.sin(s.yaw); x = cx + ux * 16 + nx * 3.0; z = cz + uz * 16 + nz * 3.0; const tx = cx + ux * -6 + nx * 0.8, tz = cz + uz * -6 + nz * 0.8; h = Math.atan2(tx - x, tz - z); console.log('[aim] 7016 ' + x.toFixed(2) + ' ' + z.toFixed(2) + ' ' + h.toFixed(4)); } app.teleportTo(x, z, h); app.selectCamera('pov', true); })(); (() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "bs-sugar-beach",
+  "mode": "person",
+  "time": "midday",
+  "camera": "pov",
+  "wait": 6500,
+  "js": "(() => { const app = window.__CITY_APP; const S = window.CITY.bikeShareStations; const s = S && S.find((t) => t.id === 7788); let x = 815.32, z = 447.98, h = 1.6929; if (s) { const d = s.docks, n = d.length; const cx = (d[0] + d[n - 2]) / 2, cz = (d[1] + d[n - 1]) / 2; const nx = Math.sin(s.yaw), nz = Math.cos(s.yaw), ux = Math.cos(s.yaw), uz = -Math.sin(s.yaw); x = cx + ux * 24 + nx * 2.6; z = cz + uz * 24 + nz * 2.6; const tx = cx + ux * -12 + nx * 0.6, tz = cz + uz * -12 + nz * 0.6; h = Math.atan2(tx - x, tz - z); console.log('[aim] 7788 ' + x.toFixed(2) + ' ' + z.toFixed(2) + ' ' + h.toFixed(4)); } app.teleportTo(x, z, h); app.selectCamera('pov', true); })(); (() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "bs-residential",
+  "mode": "person",
+  "time": "midday",
+  "camera": "pov",
+  "wait": 6500,
+  "js": "(() => { const app = window.__CITY_APP; const S = window.CITY.bikeShareStations; const s = S && S.find((t) => t.id === 7360); let x = -3064.06, z = -2270.55, h = 0.441; if (s) { const d = s.docks, n = d.length; const cx = (d[0] + d[n - 2]) / 2, cz = (d[1] + d[n - 1]) / 2; const nx = Math.sin(s.yaw), nz = Math.cos(s.yaw), ux = Math.cos(s.yaw), uz = -Math.sin(s.yaw); x = cx + ux * 10 + nx * -4.5; z = cz + uz * 10 + nz * -4.5; const tx = cx + ux * -2 + nx * 1.0, tz = cz + uz * -2 + nz * 1.0; h = Math.atan2(tx - x, tz - z); console.log('[aim] 7360 ' + x.toFixed(2) + ' ' + z.toFixed(2) + ' ' + h.toFixed(4)); } app.teleportTo(x, z, h); app.selectCamera('pov', true); })(); (() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "bs-park-dufferin",
+  "mode": "person",
+  "time": "midday",
+  "camera": "pov",
+  "wait": 6500,
+  "js": "(() => { const app = window.__CITY_APP; const S = window.CITY.bikeShareStations; const s = S && S.find((t) => t.id === 7150); let x = -3766.88, z = -2321.9, h = -0.3835; if (s) { const d = s.docks, n = d.length; const cx = (d[0] + d[n - 2]) / 2, cz = (d[1] + d[n - 1]) / 2; const nx = Math.sin(s.yaw), nz = Math.cos(s.yaw), ux = Math.cos(s.yaw), uz = -Math.sin(s.yaw); x = cx + ux * 9 + nx * 5.0; z = cz + uz * 9 + nz * 5.0; const tx = cx + ux * -2 + nx * 0.8, tz = cz + uz * -2 + nz * 0.8; h = Math.atan2(tx - x, tz - z); console.log('[aim] 7150 ' + x.toFixed(2) + ' ' + z.toFixed(2) + ' ' + h.toFixed(4)); } app.teleportTo(x, z, h); app.selectCamera('pov', true); })(); (() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "bs-close-qqyonge",
+  "mode": "person",
+  "time": "midday",
+  "camera": "pov",
+  "wait": 6500,
+  "js": "(() => { const app = window.__CITY_APP; const S = window.CITY.bikeShareStations; const s = S && S.find((t) => t.id === 7168); let x = 310.31, z = 513.33, h = -2.1555; if (s) { const d = s.docks, n = d.length; const cx = (d[0] + d[n - 2]) / 2, cz = (d[1] + d[n - 1]) / 2; const nx = Math.sin(s.yaw), nz = Math.cos(s.yaw), ux = Math.cos(s.yaw), uz = -Math.sin(s.yaw); x = cx + ux * 2.5 + nx * 3.2; z = cz + uz * 2.5 + nz * 3.2; const tx = cx + ux * 0 + nx * 1.0, tz = cz + uz * 0 + nz * 1.0; h = Math.atan2(tx - x, tz - z); console.log('[aim] 7168 ' + x.toFixed(2) + ' ' + z.toFixed(2) + ' ' + h.toFixed(4)); } app.teleportTo(x, z, h); app.selectCamera('pov', true); })(); (() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ },
+ {
+  "name": "bs-hero-union-golden",
+  "mode": "person",
+  "time": "golden",
+  "camera": "pov",
+  "wait": 7500,
+  "js": "(() => { const app = window.__CITY_APP; const S = window.CITY.bikeShareStations; const s = S && S.find((t) => t.id === 7033); let x = 1.0, z = -31.8, h = 1.6492; if (s) { const d = s.docks, n = d.length; const cx = (d[0] + d[n - 2]) / 2, cz = (d[1] + d[n - 1]) / 2; const nx = Math.sin(s.yaw), nz = Math.cos(s.yaw), ux = Math.cos(s.yaw), uz = -Math.sin(s.yaw); x = cx + ux * -20 + nx * 3.2; z = cz + uz * -20 + nz * 3.2; const tx = cx + ux * 6 + nx * 0.9, tz = cz + uz * 6 + nz * 0.9; h = Math.atan2(tx - x, tz - z); console.log('[aim] 7033 ' + x.toFixed(2) + ' ' + z.toFixed(2) + ' ' + h.toFixed(4)); } app.teleportTo(x, z, h); app.selectCamera('pov', true); })(); (() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ }
+]

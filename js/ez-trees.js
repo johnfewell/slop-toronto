@@ -150,6 +150,7 @@ async function buildEzTrees(scene, generated) {
     const x = ST[i], z = ST[i + 1];
     // (none in the rail corridor, on its embankments or under its bridges: city-config.js treeOffRail)
     if (!window.CITY.treeOffRail(x, z)) { offRail++; continue; }
+    if (window.CITY.bikeShareAt && window.CITY.bikeShareAt(x, z)) continue; // (none in a Bike Share station: bike-share.js)
     sites.push({ x, y: (blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0) + cutDown(x, z), z, model: ST[i + 2], height: ST[i + 3] / 10, tier: 1 });
   }
   const genModel = (sp, h) => {
@@ -159,6 +160,7 @@ async function buildEzTrees(scene, generated) {
     return ids.indexOf(['ez-oak-small', 'ez-oak-medium', 'ez-oak-large'][big]);
   };
   for (const t of generated) {
+    if (window.CITY.bikeShareAt && window.CITY.bikeShareAt(t.x, t.z)) continue;
     const h = t.scale * slopHeight;
     sites.push({ x: t.x, y: (t.y || 0) + cutDown(t.x, t.z), z: t.z, model: genModel(t.species || 0, h), height: h, tier: t.tier || 0 });
   }

@@ -1,0 +1,8 @@
+[
+ {
+  "name": "probe",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(()=>{const S=window.CITY.bikeShareStations;const want=[7168,7016,7033,7788,7399,7360,7040,7000,7076,7261,7209,7150,7297];for(const id of want){const s=S.find(t=>t.id===id);if(s)console.log('[bs] '+JSON.stringify({id:s.id,cap:s.cap,x:+s.x.toFixed(1),z:+s.z.toFixed(1),rows:s.rows,yaw:+s.yaw.toFixed(3),d0:[+s.docks[0].toFixed(1),+s.docks[1].toFixed(1)],dN:[+s.docks[s.docks.length-2].toFixed(1),+s.docks[s.docks.length-1].toFixed(1)]}));}console.log('[bs] stats '+JSON.stringify(window.CITY.bikeShareStats));const r={};for(const s of S)r[s.rows]=(r[s.rows]||0)+1;console.log('[bs] rows '+JSON.stringify(r));})()"
+ }
+]
