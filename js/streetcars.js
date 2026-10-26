@@ -912,8 +912,23 @@ function createStreetcars(scene, trafficSystem) {
     cars.push(car);
     return car;
   };
-  // A route's own speed through the city, stops & lights included, as driven here (measured: simulate() below)
-  const runSpeed = (t) => t.len / (t.len / 10.5 + t.stops.length * (DWELL + 9) + t.signals.length * 6);
+  // A route's run through the city at the TTC's own schedule speed (its timetable's stop-to-stop times over the
+  // distance, stops included: 2.2-3.5 m/s downtown), so as many cars are out on the street as the TTC has there: each
+  // route gets its cruising speed & dwell to take that long. The time a run takes here, as driven (calibrated with
+  // simulate() below): its length at 0.9 of the cruise, each stop the dwell plus ~9 s slowing & pulling away, each
+  // light ~6 s on average.
+  const runTime = (t, cruise, dwell) => t.len / (cruise * 0.9) + t.stops.length * (dwell + 9) + t.signals.length * 6;
+  for (const t of routes) {
+    const v = Math.min(5, Math.max(2.2, t.pattern.speed || 3)); // (short turns' figures can be odd)
+    const want = t.len / v;
+    // a longer dwell first (20 s), then a lower cruise (down to 6 m/s, ~22 km/h), then the dwell again (up to 40 s)
+    let dwell = 20;
+    const left = want - t.stops.length * (dwell + 9) - t.signals.length * 6;
+    const cruise = Math.min(MAX_SPEED, Math.max(6, left > 0 ? t.len / (0.9 * left) : 6));
+    dwell = Math.min(40, Math.max(DWELL, (want - t.len / (cruise * 0.9) - t.signals.length * 6) / Math.max(1, t.stops.length) - 9));
+    Object.assign(t, { cruise, dwell, schedSpeed: v });
+  }
+  const runSpeed = (t) => (t.cruise ? t.len / runTime(t, t.cruise, t.dwell) : t.len / runTime(t, MAX_SPEED, DWELL));
   function setHeadways(fill) {
     for (const t of routes) {
       const H = T.headway(t.pattern) * thin;
@@ -1077,7 +1092,7 @@ function createStreetcars(scene, trafficSystem) {
       const t = car.track;
       // where the car must stop: a stop to dwell at, a red light, the car ahead, whatever stands in the way; the end of
       // its route
-      let target = MAX_SPEED;
+      let target = t.cruise || MAX_SPEED;
       let stopD = Infinity;
       sample(t, car.s, tmp);
       const near = Math.abs(tmp.x - camX) < NEAR + 50 && Math.abs(tmp.z - camZ) < NEAR + 50;
@@ -1089,7 +1104,7 @@ function createStreetcars(scene, trafficSystem) {
         if (next !== undefined) {
           const d = next - car.s;
           if (d < 0.6 && car.speed < 1.0) {
-            car.dwell = DWELL * (0.7 + Math.random() * 0.6);
+            car.dwell = (t.dwell || DWELL) * (0.7 + Math.random() * 0.6);
             car.k++;
             car.speed = 0;
           } else if (d < -1) car.k++; // (ran past it)
@@ -1227,7 +1242,7 @@ function createStreetcars(scene, trafficSystem) {
       const ts = passes.get(t);
       const gaps = ts.slice(1).map((x, i) => x - ts[i]);
       const mean = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : NaN;
-      return { route: t.sign.join(' / '), dir: t.pattern.dir, len: Math.round(t.len), stops: t.stops.length, gtfsPerHour: t.pattern.perHour[T.hour], gtfsHeadway: Math.round(T.headway(t.pattern)), simPasses: ts.length, simHeadway: Math.round(mean), simSpeed: speeds.get(t).length ? Math.round((speeds.get(t).reduce((a, b) => a + b, 0) / speeds.get(t).length) * 10) / 10 : null, gtfsSpeed: t.pattern.speed, estSpeed: Math.round(runSpeed(t) * 10) / 10 };
+      return { route: t.sign.join(' / '), dir: t.pattern.dir, len: Math.round(t.len), stops: t.stops.length, gtfsPerHour: t.pattern.perHour[T.hour], gtfsHeadway: Math.round(T.headway(t.pattern)), simPasses: ts.length, simHeadway: Math.round(mean), simSpeed: speeds.get(t).length ? Math.round((speeds.get(t).reduce((a, b) => a + b, 0) / speeds.get(t).length) * 10) / 10 : null, gtfsSpeed: t.pattern.speed, estSpeed: Math.round(runSpeed(t) * 10) / 10, cruise: Math.round((t.cruise || 0) * 10) / 10, dwell: Math.round(t.dwell || 0) };
     });
     console.info(`[streetcars] simulated ${seconds} s at ${T.hour}:00 in ${Math.round(performance.now() - t0)} ms`);
     return rows;
