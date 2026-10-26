@@ -241,7 +241,7 @@ function timeLight(j) {
     if (lpi.some((v) => v)) timing.lpi++;
     for (let p = 0; p < P; p++) {
       fdw[p] = peds && cross[p] ? cross[p] / j.fdwAt : 0;
-      need[p] = Math.max(SIGNAL_TIMING.minGreen[p], lpi[p] + (peds && cross[p] ? WALK + fdw[p] : 0));
+      need[p] = lpi[p] + Math.max(SIGNAL_TIMING.minGreen[p], peds && cross[p] ? WALK + fdw[p] - lpi[p] : 0); // (the head start, then a whole minimum green)
     }
     if (j.scramble) {
       // the people's own phase, timed for the longest crosswalk (nobody walks the diagonal here); the roads' greens
@@ -260,7 +260,7 @@ function timeLight(j) {
   if (sum > avail) {
     // (more than the cycle: what the pedestrians need beyond the vehicles' minimum greens squeezed alike)
     timing.pedLimited++;
-    const base = need.map((n, p) => Math.min(n, SIGNAL_TIMING.minGreen[p]));
+    const base = need.map((n, p) => Math.min(n, lpi[p] + SIGNAL_TIMING.minGreen[p])); // (the head start & a whole minimum green)
     const extra = sum - base.reduce((a, b) => a + b, 0);
     const k = Math.max(0, (avail - base.reduce((a, b) => a + b, 0)) / (extra || 1));
     for (let p = 0; p < P; p++) need[p] = base[p] + (need[p] - base[p]) * k;
@@ -619,7 +619,7 @@ function checkLayouts() {
       const end = G[k][1] + AMBER + SIGNAL_TIMING.allRed;
       const next = k + 1 < W.length ? W[k + 1][0] : CYCLE + W[0][0];
       if (end > next + 1e-6) problems.push(`${name}: phase ${k}'s clearance runs into phase ${(k + 1) % W.length}'s WALK or green`);
-      if (G[k][1] - G[k][0] < 5 - 1e-6) problems.push(`${name}: phase ${k}'s green is under 5 s`);
+      if (G[k][1] - G[k][0] < 8 - 1e-6) problems.push(`${name}: phase ${k}'s green is under 8 s`);
       if (G[k][0] < W[k][0] - 1e-6 || G[k][1] > W[k][1] + 1e-6) problems.push(`${name}: phase ${k}'s green outside its window`);
       const w = walks && walks[k];
       if (w && (w[0] < W[k][0] - 1e-6 || w[1] > w[2] + 1e-6 || w[2] > G[k][1] + 1e-6)) problems.push(`${name}: phase ${k}'s WALK outside its window`);
