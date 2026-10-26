@@ -1,0 +1,31 @@
+[
+ {
+  "name": "yonge-dundas",
+  "wait": 150000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"yonge-dundas\", \"teleport\": [300, -1150, 0], \"pos\": [346, 6.5, -1158], \"look\": [318, 2.5, -1192], \"fov\": 58, \"junction\": \"YONGE ST / DUNDAS ST\", \"minOn\": 8, \"maxS\": 200, \"after\": 3}); })()",
+  "time": "golden",
+  "mode": "cyclist"
+ },
+ {
+  "name": "yonge-dundas-b",
+  "wait": 150000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"yonge-dundas-b\", \"pos\": [300, 9, -1205], \"look\": [330, 1.5, -1172], \"fov\": 58, \"junction\": \"YONGE ST / DUNDAS ST\", \"minOn\": 8, \"settle\": 1, \"maxS\": 200, \"after\": 3}); })()"
+ },
+ {
+  "name": "pxo-dundas-bond",
+  "wait": 150000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"pxo-dundas-bond\", \"teleport\": [545, -1110, 0], \"pos\": [526, 40, -1090], \"look\": [526, 0, -1121], \"fov\": 50, \"pxo\": \"DUNDAS ST E / BOND ST\", \"maxS\": 200, \"after\": 2.5, \"frame\": {\"back\": 3, \"side\": 11, \"h\": 2.2, \"lookY\": 3.4}}); })()",
+  "time": "midday"
+ },
+ {
+  "name": "pxo-king-brant",
+  "wait": 150000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"pxo-king-brant\", \"teleport\": [-1310, -345, 0], \"pos\": [-1330, 40, -320], \"look\": [-1332, 0, -354], \"fov\": 50, \"pxo\": \"KING ST W / BRANT ST\", \"maxS\": 200, \"after\": 2.5, \"frame\": {\"back\": 3, \"side\": 11, \"h\": 2.2, \"lookY\": 3.4}}); })()"
+ },
+ {
+  "name": "hero-king-spadina",
+  "wait": 150000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"hero-king-spadina\", \"teleport\": [-1150, -330, 0], \"pos\": [-1136, 3.2, -336], \"look\": [-1080, 6, -353], \"fov\": 42, \"junction\": \"SPADINA AVE / KING ST W\", \"minOn\": 7, \"maxS\": 240, \"after\": 2}); })()",
+  "time": "golden"
+ }
+]

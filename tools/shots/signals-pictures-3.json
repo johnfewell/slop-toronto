@@ -1,0 +1,26 @@
+[
+ {
+  "name": "yonge-dundas",
+  "wait": 170000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"yonge-dundas\", \"teleport\": [300, -1150, 0], \"pos\": [324, 40, -1150], \"look\": [324, 0, -1182], \"fov\": 60, \"junction\": \"YONGE ST / DUNDAS ST\", \"minOn\": 8, \"maxS\": 200, \"after\": 3, \"frame\": {\"back\": 14, \"side\": 0, \"h\": 4.5, \"lookY\": 1.0}}); })()",
+  "time": "golden",
+  "mode": "cyclist"
+ },
+ {
+  "name": "yonge-dundas-b",
+  "wait": 170000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"yonge-dundas-b\", \"pos\": [324, 40, -1150], \"look\": [324, 0, -1182], \"fov\": 60, \"junction\": \"YONGE ST / DUNDAS ST\", \"minOn\": 8, \"settle\": 1, \"maxS\": 200, \"after\": 3, \"frame\": {\"back\": 14, \"side\": 0, \"h\": 4.5, \"lookY\": 1.0, \"end\": 1}}); })()"
+ },
+ {
+  "name": "hero-king-spadina",
+  "wait": 170000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"hero-king-spadina\", \"teleport\": [-1150, -330, 0], \"pos\": [-1136, 3.2, -336], \"look\": [-1080, 6, -353], \"fov\": 42, \"junction\": \"SPADINA AVE / KING ST W\", \"minOn\": 3, \"nearCam\": 30, \"maxS\": 300, \"after\": 1.5}); })()",
+  "time": "golden"
+ },
+ {
+  "name": "pxo-mccaul",
+  "wait": 170000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"pxo-mccaul\", \"teleport\": [-553, -1000, 0], \"pos\": [-553, 40, -960], \"look\": [-553, 0, -989], \"fov\": 50, \"pxo\": \"MC CAUL ST / GRANGE RD\", \"maxS\": 240, \"after\": 2.5, \"frame\": {\"back\": 3, \"side\": 11, \"h\": 2.2, \"lookY\": 3.4}}); })()",
+  "time": "midday"
+ }
+]

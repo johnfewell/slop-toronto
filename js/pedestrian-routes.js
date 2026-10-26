@@ -10,9 +10,10 @@
 // centre-line graph's: each side with a crosswalk (road-network.js n.crosswalk, from the City's Pedestrian Network)
 // gets one where its zebra is painted. The midblock crossings (the City's midblock pedestrian signals & pedestrian
 // crossovers, network.midCrossings) are tracks of their own (`mid`), landing on the sidewalks either side.
-function createPedestrianRoutes({ walkable, onSidewalk, midCrossings = [] }, blockAt) {
+function createPedestrianRoutes({ walkable, onSidewalk, midCrossings = [], edges = [] }, blockAt) {
   const sidewalks = new Map(), crossings = new Map(), junctions = new Map(), connections = new WeakMap();
   const CROSSWALK = window.CITY.CROSSWALK || 2.5;
+  const stats = { built: 0, offIsland: 0, blocked: 0, midBuilt: 0, midOffIsland: 0, midBlocked: 0, midNoLanding: 0, blockedAt: [] };
   const point = (track, end) => ({ x: track.ax + track.ux * track.len * end, z: track.az + track.uz * track.len * end });
   const segment = (a, b, extra = {}) => {
     const len = Math.hypot(b.x - a.x, b.z - a.z);
@@ -20,12 +21,19 @@ function createPedestrianRoutes({ walkable, onSidewalk, midCrossings = [] }, blo
       len, node: null, side: 0, line: 0, mid: null, ...extra };
   };
 
-  function clear(a, b, block = null) {
-    const steps = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z)));
+  // (`ends`: metres at either end left unchecked: a crossing's ends stand among the corner's poles & signs, which
+  // people step round)
+  function clear(a, b, block = null, ends = 0) {
+    const L = Math.hypot(b.x - a.x, b.z - a.z);
+    const steps = Math.max(1, Math.ceil(L));
     let x = a.x, z = a.z;
     for (let i = 0; i <= steps; i++) {
       const nx = a.x + (b.x - a.x) * i / steps, nz = a.z + (b.z - a.z) * i / steps;
-      if (!walkable(Math.min(x, nx) - 0.4, Math.max(x, nx) + 0.4, Math.min(z, nz) - 0.4, Math.max(z, nz) + 0.4)) return false;
+      if (ends && (i * L / steps < ends || (steps - i) * L / steps < ends)) { x = nx; z = nz; continue; }
+      if (!walkable(Math.min(x, nx) - 0.4, Math.max(x, nx) + 0.4, Math.min(z, nz) - 0.4, Math.max(z, nz) + 0.4)) {
+        if (!block && stats.blockedAt.length < 400) stats.blockedAt.push(+(i / steps).toFixed(2));
+        return false;
+      }
       if (block && blockAt(nx, nz) !== block) return false;
       x = nx; z = nz;
     }
@@ -62,14 +70,28 @@ function createPedestrianRoutes({ walkable, onSidewalk, midCrossings = [] }, blo
       if (n.general || side >= 4) {
         // a centre-line junction's side: across its road where the zebra is painted, curb to curb plus 2 m, two lines
         const s = road.to === n ? road.len + CROSSWALK / 2 : -CROSSWALK / 2;
-        const cx = road.sx + road.dx * s, cz = road.sz + road.dz * s;
-        const L = road.half + 2;
+        const back = road.to === n ? -1 : 1; // (along the road, away from the junction)
         for (const line of [-0.75, 0.75]) {
-          const a = { x: cx - road.clx * L + road.dx * line, z: cz - road.clz * L + road.dz * line };
-          const b = { x: cx + road.clx * L + road.dx * line, z: cz + road.clz * L + road.dz * line };
-          // (both ends on a curb island, as the centre-line streets' sidewalk lines are: their curb rectangles are rough)
-          if (!blockAt(a.x, a.z) || !blockAt(b.x, b.z) || !clear(a, b)) continue;
-          result.push(segment(a, b, { node: n, side, line, from: n, to: n, clx: road.clx, clz: road.clz }));
+          // both ends on a curb island, as the centre-line streets' sidewalk lines are (their curb rectangles are rough):
+          // 2 m onto the sidewalk, further where the corner is cut back, and the line nudged back from the junction
+          // where it must be
+          let track = null;
+          for (const nudge of [0, 1.5, 3]) {
+            const cx = road.sx + road.dx * (s + back * nudge) + road.dx * line, cz = road.sz + road.dz * (s + back * nudge) + road.dz * line;
+            const reach = (sgn) => {
+              for (const L of [road.half + 2, road.half + 3, road.half + 4.5]) {
+                const p = { x: cx + sgn * road.clx * L, z: cz + sgn * road.clz * L };
+                if (blockAt(p.x, p.z)) return p;
+              }
+              return null;
+            };
+            const a = reach(-1), b = reach(1);
+            if (a && b) { track = [a, b]; break; }
+          }
+          if (!track) { stats.offIsland++; continue; }
+          if (!clear(track[0], track[1], null, 1.5)) { stats.blocked++; continue; }
+          stats.built++;
+          result.push(segment(track[0], track[1], { node: n, side, line, from: n, to: n, clx: road.clx, clz: road.clz }));
         }
         continue;
       }
@@ -93,26 +115,53 @@ function createPedestrianRoutes({ walkable, onSidewalk, midCrossings = [] }, blo
     if (mids.has(c)) return mids.get(c);
     const result = [];
     mids.set(c, result);
-    const L = c.half + 2;
     const dx = -c.uz, dz = c.ux;
     for (const line of [-0.75, 0.75]) {
-      const a = { x: c.x - c.ux * L + dx * line, z: c.z - c.uz * L + dz * line };
-      const b = { x: c.x + c.ux * L + dx * line, z: c.z + c.uz * L + dz * line };
-      if (!blockAt(a.x, a.z) || !blockAt(b.x, b.z) || !clear(a, b)) continue;
+      const reach = (sgn) => {
+        for (const L of [c.half + 2, c.half + 3, c.half + 4.5]) {
+          const p = { x: c.x + sgn * c.ux * L + dx * line, z: c.z + sgn * c.uz * L + dz * line };
+          if (blockAt(p.x, p.z)) return p;
+        }
+        return null;
+      };
+      const a = reach(-1), b = reach(1);
+      if (!a || !b) { stats.midOffIsland++; continue; }
+      if (!clear(a, b, null, 1.5)) { stats.midBlocked++; continue; }
       const track = segment(a, b, { mid: c, node: null, side: 0, line, from: null, to: null, clx: c.ux, clz: c.uz });
       track.lands = [a, b].map((end) => {
-        let best = null, bd = 1.6;
-        for (const st of c.stops) {
-          for (const w of along(st.e)) {
+        let best = null, bd = 4;
+        // (the sidewalk lines of the streets within 25 m: the road it crosses, its pieces either side, a corner's)
+        const near = edges.filter((e) => {
+          const t = Math.max(0, Math.min(e.len, (end.x - e.sx) * e.dx + (end.z - e.sz) * e.dz));
+          return Math.hypot(e.sx + e.dx * t - end.x, e.sz + e.dz * t - end.z) < 25;
+        });
+        for (const e of near) {
+          for (const w of along(e)) {
             const t = (end.x - w.ax) * w.ux + (end.z - w.az) * w.uz;
             if (t < 0.5 || t > w.len - 0.5) continue;
             const d = Math.abs((end.x - w.ax) * w.uz - (end.z - w.az) * w.ux);
             if (d < bd) { bd = d; best = { track: w, t }; }
           }
         }
-        return best;
+        if (best) return best;
+        // no sidewalk line here (they break where a laneway splits the block): a stub along the curb island, up to
+        // 30 m each way, to walk on & off by (traffic.js: whoever reaches its end out of sight leaves)
+        const block = blockAt(end.x, end.z);
+        const span = (sgn) => {
+          let k = 0;
+          for (; k < 15; k++) {
+            const x = end.x + dx * sgn * 2 * (k + 1), z = end.z + dz * sgn * 2 * (k + 1);
+            if (blockAt(x, z) !== block || !walkable(x - 0.4, x + 0.4, z - 0.4, z + 0.4)) break;
+          }
+          return 2 * k;
+        };
+        const lo = span(-1), hi = span(1);
+        if (lo + hi < 8) return null;
+        const stub = segment({ x: end.x - dx * lo, z: end.z - dz * lo }, { x: end.x + dx * hi, z: end.z + dz * hi }, { stub: true, block });
+        return { track: stub, t: lo };
       });
-      if (!track.lands[0] || !track.lands[1]) continue;
+      if (!track.lands[0] || !track.lands[1]) { stats.midNoLanding++; continue; }
+      stats.midBuilt++;
       result.push(track);
       // (the sidewalk lines know where people may turn off onto it)
       track.lands.forEach((land, end) => (land.track.offs || (land.track.offs = [])).push({ t: land.t, track, end }));
@@ -204,7 +253,7 @@ function createPedestrianRoutes({ walkable, onSidewalk, midCrossings = [] }, blo
     return best;
   }
 
-  return { along, across, acrossMid, next };
+  return { along, across, acrossMid, next, stats };
 }
 
 Object.assign(window.CITY, { createPedestrianRoutes });

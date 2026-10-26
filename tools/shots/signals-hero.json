@@ -1,0 +1,14 @@
+[
+ {
+  "name": "hero-king-spadina",
+  "wait": 240000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"hero-king-spadina\", \"teleport\": [-1150, -330, 0], \"pos\": [-1136, 3.2, -336], \"look\": [-1080, 6, -353], \"fov\": 42, \"junction\": \"SPADINA AVE / KING ST W\", \"minOn\": 4, \"nearCam\": 45, \"noStreetcarNear\": [-1105, -352, 45], \"maxS\": 400, \"after\": 1}); })()",
+  "time": "golden",
+  "mode": "cyclist"
+ },
+ {
+  "name": "hero-king-spadina-2",
+  "wait": 240000,
+  "js": "(async () => { if (!window.__sigPic) await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/signals-pictures.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__sigPic({\"name\": \"hero-king-spadina-2\", \"pos\": [-1138, 2.6, -338], \"look\": [-1092, 4.5, -368], \"fov\": 48, \"junction\": \"SPADINA AVE / KING ST W\", \"minOn\": 4, \"nearCam\": 45, \"noStreetcarNear\": [-1105, -352, 45], \"settle\": 1, \"maxS\": 400, \"after\": 1}); })()"
+ }
+]

@@ -244,12 +244,12 @@ function timeLight(j) {
       need[p] = Math.max(SIGNAL_TIMING.minGreen[p], lpi[p] + (peds && cross[p] ? WALK + fdw[p] : 0));
     }
     if (j.scramble) {
-      // the people's own phase, timed for the diagonal; the roads' greens their vehicles' alone
+      // the people's own phase, timed for the longest crosswalk (nobody walks the diagonal here); the roads' greens
+      // their vehicles' alone
       const S = P - 1;
-      const diagonal = Math.hypot(Math.max(...cross.slice(0, S)), Math.min(...cross.slice(0, S)));
       for (let p = 0; p < S; p++) { lpi[p] = 0; fdw[p] = 0; need[p] = SIGNAL_TIMING.minGreen[p]; }
-      fdw[S] = diagonal / j.fdwAt;
-      need[S] = WALK + 4 + fdw[S];
+      fdw[S] = Math.max(...cross.slice(0, S)) / j.fdwAt;
+      need[S] = WALK + fdw[S];
       demand[S] = 0;
     }
   }

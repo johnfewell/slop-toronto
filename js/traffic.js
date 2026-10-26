@@ -457,7 +457,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     const hairRoll = hash(i, 2);
     peds.push({
       placed: false,
-      crossesStreets: i % 6 === 0, // some start near crossings; everyone can use them along their route
+      crossesStreets: i % 3 === 0, // a third start at crossings (by how many cross there); everyone can use them along their route
       x: 0,
       z: 0,
       ax: 0, // track: start, direction, length; position along it and walking direction
@@ -2051,6 +2051,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         p.t = t;
         if (p.node) atCurb(p); // later arrivals this frame must see the newly occupied entrance
         if (p.nextLeg === p.nextRoute.length) p.nextRoute = null;
+      } else if (p.route && p.route.stub && !nearView(p.x, p.z, 2, PED_SPAWN_DISTANCE)) {
+        p.placed = false; // (off a midblock crossing's stub, out of sight: gone on)
+        return;
       } else {
         p.dir = -p.dir;
         p.v = 0;
@@ -2748,6 +2751,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         continue;
       }
       walk(p, dt);
+      if (!p.placed) continue;
       renderPed(p, dt);
     }
     pedCrowd.end();
