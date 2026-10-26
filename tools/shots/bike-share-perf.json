@@ -1,0 +1,54 @@
+[
+ {
+  "name": "perf-spawn",
+  "mode": "cyclist",
+  "time": "midday",
+  "camera": "chase",
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-spawn \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ },
+ {
+  "name": "perf-qqyonge",
+  "mode": "cyclist",
+  "time": "midday",
+  "x": 320.24,
+  "z": 515.8,
+  "heading": -1.8974,
+  "camera": "chase",
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-qqyonge \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ },
+ {
+  "name": "perf-union",
+  "mode": "cyclist",
+  "time": "midday",
+  "x": 33,
+  "z": -27.8,
+  "heading": -2.1112,
+  "camera": "chase",
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-union \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ },
+ {
+  "name": "perf-queen",
+  "mode": "cyclist",
+  "time": "midday",
+  "camera": "chase",
+  "x": 330.4,
+  "z": -1080,
+  "heading": 0,
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-queen \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ },
+ {
+  "name": "perf-residential",
+  "mode": "cyclist",
+  "time": "midday",
+  "x": -3053.55,
+  "z": -2269.67,
+  "heading": -0.4959,
+  "camera": "chase",
+  "wait": 7500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);let n=0;const t=performance.now();await new Promise(res=>{(function f(){n++;if(performance.now()-t<4000)requestAnimationFrame(f);else res()})()});console.log(\"[perf] perf-residential \"+((performance.now()-t)/n).toFixed(2)+\" ms\")})()"
+ }
+]

@@ -138,6 +138,9 @@ async function initApp() {
     allColliders.push(...parkSigns.colliders);
     if (parkSigns.textures) uploadedTextures.push(...parkSigns.textures);
   }
+  // Bike Share Toronto's stations, docks, pay stations & (live) bikes (bike-share.js)
+  const bikeShare = window.CITY.buildBikeShare ? await window.CITY.buildBikeShare(scene) : null;
+  if (bikeShare) allColliders.push(...bikeShare.colliders);
   // Yonge & Dundas: the screens round Sankofa Square (yonge-dundas.js)
   window.CITY.buildYongeDundas(scene);
   markInit('streetProps');
@@ -209,7 +212,7 @@ async function initApp() {
 
   // City-wide static geometry: chunk & distance-cull the small props, shadow stand-ins for the big casters
   // (scene-culling.js)
-  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityLandmarks', 'Terrain']
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
@@ -1038,6 +1041,7 @@ async function initApp() {
     renderCarCondition();
     cityAudio.update(dt, elapsed);
     if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
+    if (warmedUp && bikeShare) bikeShare.update(cameraSystem.camera.position); // the nearby stations' bikes
 
     // The pooled street, head & police lights that are off (intensity 0, parked underground) leave the clustered
     // lighting's list, so by day its per-frame cluster pass has no lights to sort and test

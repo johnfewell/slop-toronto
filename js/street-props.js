@@ -93,6 +93,12 @@ async function buildStreetProps(scene) {
       if (k !== 1) geo.scale(k, k, k);
     }
     if (key === 'shelter') pts = spreadAlongStreet(pts, (b.max.x - b.min.x) * k);
+    // (none standing in a Bike Share station's docks or bikes, bike-share.js; a shelter stays where the City has it)
+    if (key !== 'shelter' && window.CITY.bikeShareAt) {
+      const kept = [];
+      for (let i = 0; i < pts.length; i += 2) if (!window.CITY.bikeShareAt(pts[i], pts[i + 1], 'prop')) kept.push(pts[i], pts[i + 1]);
+      pts = kept;
+    }
     const n = pts.length / 2;
     const meshes = srcs.map((src, j) => {
       const mesh = new THREE.InstancedMesh(geos[j], src.material, n);

@@ -53,8 +53,12 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 
 - **City of Toronto Open Data**, under the Open Government Licence – Toronto
   (https://open.toronto.ca/open-data-license/): 3D Massing, Topographic Mapping – Edge of Roadway, Street Tree Data,
-  Water Hydrants, Bicycle Parking, Street Furniture – Transit Shelter, Street Furniture – Litter Receptacle.
-  Contains information licensed under the Open Government Licence – Toronto.
+  Water Hydrants, Bicycle Parking, Street Furniture – Transit Shelter, Street Furniture – Litter Receptacle, Bike Share
+  Toronto. Contains information licensed under the Open Government Licence – Toronto.
+- **Bike Share Toronto** (Toronto Parking Authority): the stations' places, sizes and live bike counts come from its
+  GBFS feeds (station_information, baked into `js/bike-share-stations.js` by `tools/geo-bikeshare.mjs`; station_status,
+  read by the browser once a minute), as published through the City of Toronto's Open Data "Bike Share Toronto" dataset
+  under the Open Government Licence – Toronto. https://open.toronto.ca/dataset/bike-share-toronto/
 - **OpenStreetMap**: streets, places, water and land use, the streetcar & railway tracks and the streetcar stops. © OpenStreetMap contributors, under the Open Database
   License (ODbL). https://www.openstreetmap.org/copyright
   The city database built from it, `js/toronto-geodata.js` (by `tools/build-geodata.mjs`), is a derivative database
@@ -81,6 +85,11 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   ID Sign") and Street View (`tools/blender/bake_props.py ttc-pylon`). TTC logo and subway signage design: Toronto
   Transit Commission (trademark), used to depict the real street signage; logo file supplied by John. The station
   names, lines and accessibility are from OpenStreetMap.
+- **Bike Share Toronto station** (`assets/props/bike-share-dock.glb`, `bike-share-kiosk.glb`, `bike-share-bike.glb`):
+  the dock, the pay station and the PBSC "Iconic" city bike in the system's 2026 orange, modelled in Blender from
+  measured Street View references (Queens Quay & Yonge, York & Queens Quay, Fort York & Capreol, Euclid & Bloor) and
+  Nano Banana Pro (Gemini) reference views (`tools/blender/bikeshare_props.py`), without the sponsor's lettering. Dock,
+  kiosk and bike design: PBSC Urban Solutions / Bike Share Toronto, depicted as they stand in the street.
 - **TTC subway lantern** (`assets/props/ttc-lantern.glb`): the TTC's older square lit "TTC" lantern on its stainless
   pole (on the pole's top, or hung from an arm), at the entrances that still have one, modelled in Blender from
   measured Street View references (Osgoode, Chester, St Patrick; `tools/blender/bake_props.py ttc-lantern`), printed at

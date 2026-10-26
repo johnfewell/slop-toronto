@@ -1,0 +1,10 @@
+[
+ {
+  "name": "bs-hero-union-golden",
+  "mode": "person",
+  "time": "golden",
+  "camera": "pov",
+  "wait": 7500,
+  "js": "(() => { const app = window.__CITY_APP; const S = window.CITY.bikeShareStations; const s = S && S.find((t) => t.id === 7033); let x = 1.0, z = -31.8, h = 1.6492; if (s) { const d = s.docks, n = d.length; const cx = (d[0] + d[n - 2]) / 2, cz = (d[1] + d[n - 1]) / 2; const nx = Math.sin(s.yaw), nz = Math.cos(s.yaw), ux = Math.cos(s.yaw), uz = -Math.sin(s.yaw); x = cx + ux * -20 + nx * 3.2; z = cz + uz * -20 + nz * 3.2; const tx = cx + ux * 6 + nx * 0.9, tz = cz + uz * 6 + nz * 0.9; h = Math.atan2(tx - x, tz - z); console.log('[aim] 7033 ' + x.toFixed(2) + ' ' + z.toFixed(2) + ' ' + h.toFixed(4)); } app.teleportTo(x, z, h); app.selectCamera('pov', true); })(); (() => { const b = document.getElementById('btn-toggle-hud'); if (b && b.style.visibility !== 'hidden') { b.click(); b.style.visibility = 'hidden'; } document.querySelectorAll('.location-prompt, [class*=locate], [class*=geoloc]').forEach((e) => { e.style.visibility = 'hidden'; }); })()"
+ }
+]
