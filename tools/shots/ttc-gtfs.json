@@ -1,0 +1,37 @@
+[
+ {
+  "name": "king-504",
+  "mode": "person",
+  "time": "golden",
+  "wait": 10000,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6466, -79.3895); if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();\napp.cameraSystem.cinema = null; const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const S = app.streetcars, o = { x: 0, y: 0, z: 0, yaw: 0 };\nlet best = null, bd = 1e9;\nfor (const c of S.cars) { S.sample(c.track, c.s - 15, o); if (o.y < -1) continue; if (!(Math.abs(Math.sin(o.yaw)) > 0.7)) continue; if (c.route && (!/^504/.test(c.route.sign[0]) || (-1 >= 0 && c.route.dir !== -1))) continue; const d = Math.hypot(o.x - t.x, o.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] king-504 streetcar ' + (best.route ? best.route.sign.join(' / ') : '(no route)') + ' ' + Math.round(bd) + ' m from target');\nS.sample(best.track, best.s, o); app.teleportTo(o.x + 25, o.z + 25, 0); await sleep(2500);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 16 + rx * 5.5, n.y + 1.6, n.z + fz * 16 + rz * 5.5], look: [m.x, m.y + 2.2, m.z], fov: 50 }; }; })()"
+ },
+ {
+  "name": "queens-quay-509-510",
+  "mode": "person",
+  "time": "golden",
+  "wait": 10000,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6386, -79.387); if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();\napp.cameraSystem.cinema = null; const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const S = app.streetcars, o = { x: 0, y: 0, z: 0, yaw: 0 };\nlet best = null, bd = 1e9;\nfor (const c of S.cars) { S.sample(c.track, c.s - 15, o); if (o.y < -1) continue; if (!(Math.abs(Math.sin(o.yaw)) > 0.7)) continue; if (c.route && (!/^5(09|10)/.test(c.route.sign[0]) || (-1 >= 0 && c.route.dir !== -1))) continue; const d = Math.hypot(o.x - t.x, o.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] queens-quay-509-510 streetcar ' + (best.route ? best.route.sign.join(' / ') : '(no route)') + ' ' + Math.round(bd) + ' m from target');\nS.sample(best.track, best.s, o); app.teleportTo(o.x + 25, o.z + 25, 0); await sleep(2500);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 24 + rx * -7, n.y + 1.6, n.z + fz * 24 + rz * -7], look: [m.x, m.y + 2.2, m.z], fov: 50 }; }; })()"
+ },
+ {
+  "name": "bus-at-stop",
+  "mode": "person",
+  "time": "golden",
+  "wait": 50000,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY; if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();\napp.cameraSystem.cinema = null; const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const T = app.trafficSystem; const spots = [[43.6436,-79.4295],[43.6506,-79.3712],[43.6488,-79.376]];\nlet best = null, t = null;\nfor (let i = 0; i < spots.length && !best; i++) { t = C.worldFromLatLon(spots[i][0], spots[i][1]); app.teleportTo(t.x, t.z, 0);\n  for (let k = 0; k < 14 && !best; k++) { await sleep(1000); let bd = 1e9; for (const b of T.buses) { if (!b.edge) continue; const d = Math.hypot(b.x - t.x, b.z - t.z); if (d > 400) continue; if (b.route !== undefined && !(b.dwellUntil > 0)) continue; if (d < bd) { bd = d; best = b; } } } }\nif (!best) { console.log('[shot] bus-at-stop: no bus'); return; }\nconsole.log('[shot] bus-at-stop bus ' + (best.route ? best.route.sign.join(' / ') + ' at ' + (best.route.stopName || '') : '(roaming)') + ' ' + Math.round(Math.hypot(best.x - t.x, best.z - t.z)) + ' m from the spot');\nconst b = best; if (b.dwellUntil > 0) { b.dwellUntil = 1e9; setTimeout(() => { b.dwellUntil = 1; }, 60000); }\napp.cameraSystem.cinema = () => { const fx = Math.sin(b.yaw), fz = Math.cos(b.yaw), rx = -fz, rz = fx; return { pos: [b.x + fx * 15 + rx * 5.5, (b.y || 0) + 1.6, b.z + fz * 15 + rz * 5.5], look: [b.x - fx * 1, (b.y || 0) + 2.0, b.z - fz * 1], fov: 50 }; }; })()"
+ },
+ {
+  "name": "hero-king-504",
+  "mode": "person",
+  "time": "golden",
+  "wait": 10000,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6449, -79.399); if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();\napp.cameraSystem.cinema = null; const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const S = app.streetcars, o = { x: 0, y: 0, z: 0, yaw: 0 };\nlet best = null, bd = 1e9;\nfor (const c of S.cars) { S.sample(c.track, c.s - 15, o); if (o.y < -1) continue; if (!(Math.abs(Math.sin(o.yaw)) > 0.7)) continue; if (c.route && (!/^504/.test(c.route.sign[0]) || (1 >= 0 && c.route.dir !== 1))) continue; const d = Math.hypot(o.x - t.x, o.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] hero-king-504 streetcar ' + (best.route ? best.route.sign.join(' / ') : '(no route)') + ' ' + Math.round(bd) + ' m from target');\nS.sample(best.track, best.s, o); app.teleportTo(o.x + 25, o.z + 25, 0); await sleep(2500);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 19 + rx * 4.6, n.y + 1.3, n.z + fz * 19 + rz * 4.6], look: [m.x, m.y + 2.9, m.z], fov: 44 }; }; })()"
+ },
+ {
+  "name": "hero-queens-quay-509",
+  "mode": "person",
+  "time": "golden",
+  "wait": 10000,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6386, -79.387); if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();\napp.cameraSystem.cinema = null; const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const S = app.streetcars, o = { x: 0, y: 0, z: 0, yaw: 0 };\nlet best = null, bd = 1e9;\nfor (const c of S.cars) { S.sample(c.track, c.s - 15, o); if (o.y < -1) continue; if (!(Math.abs(Math.sin(o.yaw)) > 0.7)) continue; if (c.route && (!/^509/.test(c.route.sign[0]) || (1 >= 0 && c.route.dir !== 1))) continue; const d = Math.hypot(o.x - t.x, o.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] hero-queens-quay-509 streetcar ' + (best.route ? best.route.sign.join(' / ') : '(no route)') + ' ' + Math.round(bd) + ' m from target');\nS.sample(best.track, best.s, o); app.teleportTo(o.x + 25, o.z + 25, 0); await sleep(2500);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 17 + rx * -5, n.y + 1.3, n.z + fz * 17 + rz * -5], look: [m.x, m.y + 2.6, m.z], fov: 46 }; }; })()"
+ }
+]

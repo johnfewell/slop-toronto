@@ -152,6 +152,8 @@ async function initApp() {
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
   // --- Toronto layer (after aalghooneh/slop-toronto): the TTC's streetcars, which the traffic keeps behind ---
   const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
+  // the TTC's buses on their routes (transit-buses.js), in place of roaming ones
+  const transitBuses = window.CITY.createTransitBuses ? window.CITY.createTransitBuses(trafficSystem) : null;
   // the Union Station Rail Corridor's tracks & GO trains (rail-corridor.js)
   const railCorridor = window.CITY.createRailCorridor(scene, trafficSystem);
   allColliders.push(...railCorridor.colliders); // the raised tracks' embankments (the player's only)
@@ -446,6 +448,7 @@ async function initApp() {
 
   function selectTime(timeId) {
     lightingSystem.applyPreset(timeId);
+    if (window.CITY.TRANSIT) window.CITY.TRANSIT.setTime(timeId); // the TTC's headways for that hour (transit.js)
     colorGrade.applyPreset(lightingSystem.activePresetId);
     timeButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-time') === timeId);
@@ -801,6 +804,7 @@ async function initApp() {
     trafficSystem,
     highwayTraffic,
     streetcars, // Toronto layer
+    transitBuses, // Toronto layer
     railCorridor, // Toronto layer
     subway, // Toronto layer
     controllerManager,
@@ -1018,6 +1022,7 @@ async function initApp() {
       nextPlayerSave = now + 5000;
     }
     streetcars.update(dt, elapsed, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
+    if (transitBuses) transitBuses.update(dt); // Toronto layer
     railCorridor.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
     subway.update(elapsed, cameraSystem.camera); // Toronto layer
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);

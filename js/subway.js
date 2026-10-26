@@ -45,7 +45,7 @@ const EXT = 260; // the routes run on this far into the tunnels (out of sight)
 const CAR_LEN = 23.0, CAR_W = 3.1, CAR_H = 3.65, CAR_GAP = 0.6, CARS = 6;
 const TRAIN_LEN = CARS * CAR_LEN + (CARS - 1) * CAR_GAP;
 const SPEED = 16; // m/s over the viaduct (~58 km/h)
-const HEADWAY = 110; // s between trains each way (x quality.js `subway`)
+const HEADWAY = 110; // s between trains each way (x quality.js `subway`), without the TTC's timetable (transit.js)
 // Entrances
 const ST_HALF = 1.2; // a stairway's walls, centre to outer face (2 m clear between them)
 const ST_IN = 1.0;
@@ -1446,7 +1446,16 @@ function createSubway(scene) {
   const parked = SUBWAY_CUTS.map((C) => ({ C, mid: C.world(C.len / 2, 0), trains: parkedTrains(C) })).filter((p) => p.trains.length);
   const nParked = parked.reduce((t, p) => t + p.trains.length, 0);
   const k = QUALITY.subway ?? 1;
-  const headway = HEADWAY / Math.max(0.1, k);
+  // Line 2's headway for the hour the city's clock shows (transit.js: the TTC's trains per hour through the city, the
+  // two directions' mean)
+  const T = window.CITY.TRANSIT;
+  const line2 = T ? T.ofType(1).filter((p) => p.route === '2') : [];
+  const lineHeadway = () => {
+    const per = line2.length ? line2.reduce((t, p) => t + p.perHour[T.hour], 0) / line2.length : 0;
+    return per > 0 ? 3600 / per : HEADWAY;
+  };
+  let headway = lineHeadway() / Math.max(0.1, k);
+  if (T) T.onHour(() => { headway = lineHeadway() / Math.max(0.1, k); });
   const cabs = new THREE.InstancedMesh(carGeometry(true), createCarMaterial(true), Math.max(1, routes.length * 4 + nParked * 2));
   const mids = new THREE.InstancedMesh(carGeometry(false), createCarMaterial(false), Math.max(1, routes.length * 8 + nParked * (CARS - 2)));
   for (const m of [cabs, mids]) {
@@ -1536,6 +1545,7 @@ function createSubway(scene) {
 
   const cutInfo = SUBWAY_CUTS.map((C, i) => `${C.groups.map((G) => `${Math.round(G.t1 - G.t0)} m`).join(' + ')} at x ${Math.round(C.world(C.len / 2, 0).x)} (${cutStats[i].portals} portals, decks: ${cutStats[i].decks.join(', ') || 'none'})`).join('; ');
   console.info(`[subway] ${VIADUCTS.length} viaduct (${VIADUCTS.map((V) => `${Math.round(V.len)} m, lower deck at ${Math.round(V.railY * 10) / 10} m, ${piers} piers`).join('; ')}), ${SUBWAY_CUTS.length} open cuts (${cutInfo}), ${COVERED.length} covered bridge (${COVERED.map((V, i) => (V.atGrade ? `${Math.round(V.len)} m at grade, its top ${V.top.toFixed(1)} m up, over a road cut ${(-V.floor).toFixed(1)} m down (${coveredStats[i].piers} pilasters, ${coveredStats[i].fascia} m of fascia)` : `${Math.round(V.len)} m, ${coveredStats[i].piers} piers`)).join('; ')}), ${nParked} trains laid up, ${routes.length} train routes; ${ent.stairs} stair entrances & ${ent.signs} pylons alone at ${new Set(ent.sites.map((s) => s.name)).size} stations (${ent.skipped} left out)`);
+  api.headway = () => headway;
   return api;
 }
 

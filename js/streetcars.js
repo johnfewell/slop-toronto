@@ -15,7 +15,7 @@
 //   of them run). Fleet size by quality tier (quality.js `streetcarSpacing`).
 
 const { THREE, GEO, QUALITY, blockAt, deckHeightAt, railLiftAt, railSpanAt, SIGNALS, ROADS, cityUniforms } = window.CITY;
-const { Fn, color, mix, step, smoothstep, abs, uv, positionGeometry, normalGeometry, float } = window.CITY.TSL;
+const { Fn, color, mix, step, smoothstep, abs, uv, positionGeometry, normalGeometry, float, vec2, texture, attribute } = window.CITY.TSL;
 const { mergeGeometries } = window.CITY.Addons;
 
 const GAUGE = 1.495; // TTC broad gauge (4 ft 10 7/8 in)
@@ -25,10 +25,10 @@ const GANGWAY = 0.55;
 const CAR_LEN = SECTIONS.reduce((t, l) => t + l, 0) + GANGWAY * (SECTIONS.length - 1);
 const HALF_W = 1.27;
 const HEIGHT = 3.84;
-const MAX_SPEED = 13; // m/s (~47 km/h, downtown)
+const MAX_SPEED = 11.5; // m/s (~41 km/h, downtown)
 const ACCEL = 1.1;
 const DECEL = 1.4;
-const DWELL = 9;
+const DWELL = 15; // s at a stop (x 0.7-1.3)
 const WIRE_Y = 5.6;
 const TILE = 700; // trackwork tiles (m)
 const TRACK_DRAW = 1200; // trackwork drawn within (m, x the tier's cull)
@@ -101,20 +101,20 @@ function chainWays(ways) {
 // A polyline resampled every ~2 m with arc lengths and heights: the road deck under it followed like a vehicle would
 // (deckHeightAt, stepping at most 0.45 m every 2 m (the decks start 0.3 m up): up a bridge's approach ramp, never onto a flyover passing overhead), the raised
 // right-of-way (a curb island), and in a tunnel a 9% dive to 7.5 m down
-function makeTrack(src) {
+function makeTrack(src, step = 2) {
   const pts = [{ x: src[0].x, z: src[0].z, f: src[0].f || 0, y: 0 }];
   for (let i = 1; i < src.length; i++) {
     const a = src[i - 1];
     const b = src[i];
     const L = Math.hypot(b.x - a.x, b.z - a.z);
-    const n = Math.max(1, Math.ceil(L / 2));
+    const n = Math.max(1, Math.ceil(L / step));
     for (let k = 1; k <= n; k++) pts.push({ x: a.x + ((b.x - a.x) * k) / n, z: a.z + ((b.z - a.z) * k) / n, f: b.f || 0, y: 0 });
   }
   const cum = [0];
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
   let deck = 0;
   for (const p of pts) {
-    deck = deckHeightAt(p.x, p.z, deck, 0.45);
+    deck = deckHeightAt(p.x, p.z, deck, 0.225 * step);
     p.y = Math.max(deck, blockAt(p.x, p.z) ? 0.22 : 0);
   }
   // tunnels: depth by the distance from the nearest portal along the track
@@ -223,7 +223,7 @@ function buildTracks(network) {
     if (kind !== 0 || (service && !/Loop/i.test(name))) continue;
     ways.push(toPts(flat).map((p) => ({ x: p.x, z: p.z, f: flags })));
   }
-  const tracks = chainWays(ways).map(makeTrack).filter((t) => t.len > 150);
+  const tracks = chainWays(ways).map((w) => makeTrack(w)).filter((t) => t.len > 150);
 
   // Direction of travel on each track: right-hand traffic's. Where the track lies off the middle of its street (two
   // tracks), the side it lies on; on the middle (single track, loops), the way the traffic drives in the lanes it
@@ -306,31 +306,410 @@ function buildTracks(network) {
     t.stops.sort((a, b) => a - b);
   }
 
-  // Signals along each track: the junctions of the road network with a signal the track passes through, and the phase
-  // there of the road the track runs along (signal-plan.js)
-  if (network) {
-    const sigGrid = pointGrid(network.nodes.filter((n) => n.signal), 20);
-    for (const t of tracks) {
-      for (const [n, { s }] of nearAlong(t, sigGrid, 9)) {
-        if (s < 15) continue;
-        sample(t, s, tmp);
-        const fx = Math.sin(tmp.yaw);
-        const fz = Math.cos(tmp.yaw);
-        let p = SIGNALS.phaseForDir(n.sigJ, fx, fz);
-        let best = 0.8;
-        for (const e of n.in || []) {
-          const dot = e.dx * fx + e.dz * fz;
-          if (dot > best && e.sigP !== undefined) {
-            best = dot;
-            p = e.sigP;
-          }
+  assignSignals(tracks, network);
+  return tracks;
+}
+
+// Signals along each track: the junctions of the road network with a signal the track passes through, and the phase
+// there of the road the track runs along (signal-plan.js)
+function assignSignals(tracks, network) {
+  if (!network) return;
+  const tmp = { x: 0, z: 0, y: 0, yaw: 0 };
+  const sigGrid = pointGrid(network.nodes.filter((n) => n.signal), 20);
+  for (const t of tracks) {
+    for (const [n, { s }] of nearAlong(t, sigGrid, 9)) {
+      if (s < 15) continue;
+      sample(t, s, tmp);
+      const fx = Math.sin(tmp.yaw);
+      const fz = Math.cos(tmp.yaw);
+      let p = SIGNALS.phaseForDir(n.sigJ, fx, fz);
+      let best = 0.8;
+      for (const e of n.in || []) {
+        const dot = e.dx * fx + e.dz * fz;
+        if (dot > best && e.sigP !== undefined) {
+          best = dot;
+          p = e.sigP;
         }
-        t.signals.push({ s, j: n.sigJ, p, half: Math.max(6, (n.hx || 7) + 3) });
       }
-      t.signals.sort((a, b) => a.s - b.s);
+      t.signals.push({ s, j: n.sigJ, p, half: Math.max(6, (n.hx || 7) + 3) });
+    }
+    t.signals.sort((a, b) => a.s - b.s);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Routes: the TTC's stopping patterns through the city (transit.js, from its GTFS) laid on the tracks
+// ---------------------------------------------------------------------------------------------------------------------
+// The track network as a graph: every streetcar way (main lines, loops & the junctions' curves; not the yards) cut at
+// its vertices, joined where ways share a point or one ends on another; each piece both ways, but against the chained
+// tracks' direction of travel (buildTracks) only at a high price, so a car keeps to the right-hand track.
+function trackGraph(tracks) {
+  const ways = [];
+  for (const [kind, service, name, flags, flat] of GEO.rails || []) {
+    if (kind !== 0 || service === 'yard') continue;
+    const pts = toPts(flat);
+    // (the curves & sidings aren't in the chained tracks: drawn only where a route runs on them, routeTrackwork)
+    const drawn = !service || /Loop/i.test(name);
+    if (pts.length > 1) ways.push({ pts, f: flags, k: drawn ? 1 : 1.4, drawn });
+  }
+  // the chained tracks' direction of travel, by 4 m cells
+  const dgrid = new Map();
+  for (const t of tracks) {
+    for (let i = 0; i + 1 < t.pts.length; i++) {
+      const a = t.pts[i], b = t.pts[i + 1];
+      const L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+      const k = Math.floor(a.x / 4) * 100000 + Math.floor(a.z / 4);
+      if (!dgrid.has(k)) dgrid.set(k, []);
+      dgrid.get(k).push({ x: a.x, z: a.z, dx: (b.x - a.x) / L, dz: (b.z - a.z) / L });
     }
   }
-  return tracks;
+  const travel = (x, z, dx, dz) => {
+    const ix = Math.floor(x / 4), iz = Math.floor(z / 4);
+    for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const q of dgrid.get((ix + a) * 100000 + iz + c) || []) {
+      if (Math.hypot(q.x - x, q.z - z) > 1.2) continue;
+      const dot = q.dx * dx + q.dz * dz;
+      if (Math.abs(dot) > 0.9) return Math.sign(dot);
+    }
+    return 0;
+  };
+  // a way's end lying on another way's segment (its vertex simplified away there): split that segment
+  const sgrid = new Map();
+  ways.forEach((w, wi) => {
+    for (let i = 0; i + 1 < w.pts.length; i++) {
+      const a = w.pts[i], b = w.pts[i + 1];
+      for (let ix = Math.floor(Math.min(a.x, b.x) / 10); ix <= Math.floor(Math.max(a.x, b.x) / 10); ix++) {
+        for (let iz = Math.floor(Math.min(a.z, b.z) / 10); iz <= Math.floor(Math.max(a.z, b.z) / 10); iz++) {
+          const k = ix * 100000 + iz;
+          if (!sgrid.has(k)) sgrid.set(k, []);
+          sgrid.get(k).push([wi, i]);
+        }
+      }
+    }
+  });
+  const splits = ways.map((w) => w.pts.map(() => []));
+  ways.forEach((w, wi) => {
+    for (const p of [w.pts[0], w.pts[w.pts.length - 1]]) {
+      let best = null, bd = 1.0;
+      for (const [wj, i] of sgrid.get(Math.floor(p.x / 10) * 100000 + Math.floor(p.z / 10)) || []) {
+        if (wj === wi) continue;
+        const a = ways[wj].pts[i], b = ways[wj].pts[i + 1];
+        const L2 = (b.x - a.x) ** 2 + (b.z - a.z) ** 2 || 1;
+        const t = ((p.x - a.x) * (b.x - a.x) + (p.z - a.z) * (b.z - a.z)) / L2;
+        if (t < 0 || t > 1) continue;
+        const d = Math.hypot(a.x + (b.x - a.x) * t - p.x, a.z + (b.z - a.z) * t - p.z);
+        if (d < bd) {
+          bd = d;
+          best = [wj, i, t];
+        }
+      }
+      if (best && best[2] > 0.001 && best[2] < 0.999) splits[best[0]][best[1]].push({ t: best[2], p });
+    }
+  });
+  const nodes = new Map();
+  const nodeOf = (p) => {
+    const k = `${Math.round(p.x * 5)},${Math.round(p.z * 5)}`;
+    let n = nodes.get(k);
+    if (!n) nodes.set(k, (n = { x: p.x, z: p.z, out: [] }));
+    return n;
+  };
+  const arcs = [];
+  ways.forEach((w, wi) => {
+    const seq = [];
+    w.pts.forEach((p, i) => {
+      seq.push(p);
+      if (i + 1 < w.pts.length) for (const sp of splits[wi][i].sort((a, b) => a.t - b.t)) seq.push(sp.p);
+    });
+    for (let i = 0; i + 1 < seq.length; i++) {
+      const A = nodeOf(seq[i]), B = nodeOf(seq[i + 1]);
+      if (A === B) continue;
+      const L = Math.hypot(B.x - A.x, B.z - A.z);
+      const dx = (B.x - A.x) / L, dz = (B.z - A.z) / L;
+      const tv = travel((A.x + B.x) / 2, (A.z + B.z) / 2, dx, dz);
+      const fwd = { a: A, b: B, len: L, dx, dz, f: w.f, k: w.k * (tv < 0 ? 25 : 1), w };
+      const back = { a: B, b: A, len: L, dx: -dx, dz: -dz, f: w.f, k: w.k * (tv > 0 ? 25 : 1), w };
+      fwd.rev = back;
+      back.rev = fwd;
+      A.out.push(fwd);
+      B.out.push(back);
+      arcs.push(fwd, back);
+    }
+  });
+  return { arcs, nodes, used: new Set() };
+}
+
+// A pattern's line (along the street, from the timetable) followed through the track graph: the cheapest chain of
+// pieces (Dijkstra over pieces, a turn of at most 50 degrees from one to the next) from near the line's start to near
+// its end, each piece costing its length, more the further it lies from the line (squared) and much more heading
+// against it. Where the tracks don't go on as the line does: cut there, on again from the next track on the line.
+function routeOnTracks(G, pat) {
+  const S = [];
+  for (let i = 0; i + 1 < pat.pts.length; i++) {
+    const a = pat.pts[i], b = pat.pts[i + 1];
+    const n = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.z - a.z) / 4));
+    for (let k = 0; k < n; k++) S.push({ x: a.x + ((b.x - a.x) * k) / n, z: a.z + ((b.z - a.z) * k) / n });
+  }
+  S.push({ ...pat.pts[pat.pts.length - 1] });
+  S.forEach((p, j) => {
+    const a = S[Math.max(0, j - 3)], b = S[Math.min(S.length - 1, j + 3)];
+    const L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+    p.dx = (b.x - a.x) / L;
+    p.dz = (b.z - a.z) / L;
+  });
+  const LC = 20, REACH = 40;
+  const lg = new Map();
+  S.forEach((p, j) => {
+    const k = Math.floor(p.x / LC) * 100000 + Math.floor(p.z / LC);
+    if (!lg.has(k)) lg.set(k, []);
+    lg.get(k).push(j);
+  });
+  const near = (x, z) => {
+    let bj = -1, bd = REACH;
+    const ix = Math.floor(x / LC), iz = Math.floor(z / LC);
+    for (let a = -2; a <= 2; a++) for (let c = -2; c <= 2; c++) for (const j of lg.get((ix + a) * 100000 + iz + c) || []) {
+      const d = Math.hypot(S[j].x - x, S[j].z - z);
+      if (d < bd) {
+        bd = d;
+        bj = j;
+      }
+    }
+    return bj < 0 ? null : { j: bj, d: bd };
+  };
+  // the pieces along the line, priced
+  const info = new Map();
+  let minJ = Infinity, maxJ = -1;
+  for (const arc of G.arcs) {
+    if (!near(arc.a.x, arc.a.z) && !near(arc.b.x, arc.b.z) && !near((arc.a.x + arc.b.x) / 2, (arc.a.z + arc.b.z) / 2)) continue;
+    const n = Math.max(1, Math.ceil(arc.len / 8));
+    let sum = 0, dot = 0, hits = 0, j0 = Infinity, j1 = -1;
+    for (let k = 0; k <= n; k++) {
+      const q = near(arc.a.x + arc.dx * (arc.len * k) / n, arc.a.z + arc.dz * (arc.len * k) / n);
+      if (!q) continue;
+      hits++;
+      sum += q.d;
+      dot += S[q.j].dx * arc.dx + S[q.j].dz * arc.dz;
+      j0 = Math.min(j0, q.j);
+      j1 = Math.max(j1, q.j);
+    }
+    if (hits < n + 1) continue;
+    const mean = sum / hits;
+    dot /= hits;
+    const on = mean < 6 && dot > 0.7 && arc.k < 2;
+    info.set(arc, { cost: arc.len * (1 + (mean / 4) ** 2) * arc.k * (dot < 0.3 ? 10 : 1), j0, j1, on });
+    if (on) {
+      minJ = Math.min(minJ, j0);
+      maxJ = Math.max(maxJ, j1);
+    }
+  }
+  if (!(maxJ - minJ > 40)) return [];
+  const pieces = [];
+  let from = minJ;
+  const dist = new Map(), prev = new Map(), heap = [];
+  const push = (e, d) => {
+    heap.push([d, e]);
+    for (let i = heap.length - 1; i > 0;) {
+      const p = (i - 1) >> 1;
+      if (heap[p][0] <= heap[i][0]) break;
+      [heap[p], heap[i]] = [heap[i], heap[p]];
+      i = p;
+    }
+  };
+  const pop = () => {
+    const top = heap[0], last = heap.pop();
+    if (heap.length) {
+      heap[0] = last;
+      for (let i = 0; ;) {
+        const l = 2 * i + 1, r = l + 1;
+        let m = i;
+        if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+        if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+        if (m === i) break;
+        [heap[m], heap[i]] = [heap[i], heap[m]];
+        i = m;
+      }
+    }
+    return top;
+  };
+  while (from < maxJ - 8) {
+    dist.clear();
+    prev.clear();
+    heap.length = 0;
+    for (const [arc, c] of info) {
+      if (c.on && c.j0 >= from && c.j0 <= from + 8) {
+        dist.set(arc, c.cost);
+        push(arc, c.cost);
+      }
+    }
+    let goal = null, far = null, reached = -1;
+    while (heap.length) {
+      const [d, arc] = pop();
+      if (d > dist.get(arc)) continue;
+      const c = info.get(arc);
+      if (c.on && c.j1 > reached) {
+        reached = c.j1;
+        far = arc;
+      }
+      if (c.on && c.j1 >= maxJ - 8) {
+        goal = arc;
+        break;
+      }
+      for (const nx of arc.b.out) {
+        if (nx === arc.rev || nx.dx * arc.dx + nx.dz * arc.dz < 0.64) continue;
+        const cn = info.get(nx);
+        if (!cn || cn.j1 < c.j0 - 6) continue;
+        const nd = d + cn.cost;
+        if (nd < (dist.get(nx) ?? Infinity)) {
+          dist.set(nx, nd);
+          prev.set(nx, arc);
+          push(nx, nd);
+        }
+      }
+    }
+    const end = goal || far;
+    if (!end) break;
+    const chain = [];
+    for (let a = end; a; a = prev.get(a)) chain.push(a);
+    chain.reverse();
+    for (const a of chain) if (!a.w.drawn) G.used.add(a.w);
+    if (chain.reduce((t, a) => t + a.len, 0) > 300) pieces.push([{ x: chain[0].a.x, z: chain[0].a.z, f: chain[0].f }, ...chain.map((a) => ({ x: a.b.x, z: a.b.z, f: a.f }))]);
+    if (goal) break;
+    let next = Infinity;
+    for (const c of info.values()) if (c.on && c.j0 > reached && c.j0 < next) next = c.j0;
+    if (!Number.isFinite(next)) break;
+    from = next;
+  }
+  return pieces;
+}
+
+// Fallback (no way through the track graph): the line resampled every 2 m, each point moved onto the nearest track
+// heading the same way within 7 m; where none lies near, 1.75 m right of the line; smoothed over 8 m.
+function snapToTracks(tracks, pat) {
+  const CELL = 10;
+  const grid = new Map();
+  for (const t of tracks) {
+    const P = t.pts;
+    for (let i = 0; i < P.length; i++) {
+      const a = P[Math.max(0, i - 2)], b = P[Math.min(P.length - 1, i + 2)];
+      const L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+      const k = Math.floor(P[i].x / CELL) * 100000 + Math.floor(P[i].z / CELL);
+      let c = grid.get(k);
+      if (!c) grid.set(k, (c = []));
+      c.push({ p: P[i], dx: (b.x - a.x) / L, dz: (b.z - a.z) / L });
+    }
+  }
+  const snap = (x, z, dx, dz) => {
+    let best = null, bd = 7;
+    const ix = Math.floor(x / CELL), iz = Math.floor(z / CELL);
+    for (let a = -1; a <= 1; a++) {
+      for (let c = -1; c <= 1; c++) {
+        for (const q of grid.get((ix + a) * 100000 + iz + c) || []) {
+          if (q.dx * dx + q.dz * dz < 0.8) continue;
+          const d = Math.hypot(q.p.x - x, q.p.z - z);
+          if (d < bd) {
+            bd = d;
+            best = q.p;
+          }
+        }
+      }
+    }
+    return best;
+  };
+  let snapped = 0, total = 0;
+  {
+    // the line every 2 m
+    const S = [];
+    for (let i = 0; i + 1 < pat.pts.length; i++) {
+      const a = pat.pts[i], b = pat.pts[i + 1];
+      const n = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.z - a.z) / 2));
+      for (let k = 0; k < n; k++) S.push({ x: a.x + ((b.x - a.x) * k) / n, z: a.z + ((b.z - a.z) * k) / n });
+    }
+    S.push(pat.pts[pat.pts.length - 1]);
+    if (S.length < 20) return null;
+    const dirs = S.map((_, j) => {
+      const a = S[Math.max(0, j - 4)], b = S[Math.min(S.length - 1, j + 4)];
+      const L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+      return { dx: (b.x - a.x) / L, dz: (b.z - a.z) / L };
+    });
+    let own = 0;
+    const on = S.map((p, j) => {
+      const { dx, dz } = dirs[j];
+      const q = snap(p.x, p.z, dx, dz);
+      total++;
+      if (q) {
+        snapped++;
+        own++;
+        return { x: q.x, z: q.z, f: q.f || 0 };
+      }
+      return { x: p.x - dz * 1.75, z: p.z + dx * 1.75, f: 0 };
+    });
+    // smoothed, and never stepping back
+    const src = [];
+    for (let j = 0; j < on.length; j++) {
+      let x = 0, z = 0, n = 0;
+      for (let k = Math.max(0, j - 2); k <= Math.min(on.length - 1, j + 2); k++) {
+        x += on[k].x;
+        z += on[k].z;
+        n++;
+      }
+      const p = { x: x / n, z: z / n, f: on[j].f };
+      const last = src[src.length - 1];
+      if (last && (p.x - last.x) * dirs[j].dx + (p.z - last.z) * dirs[j].dz < 0.4) continue;
+      src.push(p);
+    }
+    if (src.length < 10) return null;
+    src.onTrack = own / S.length;
+    return src;
+  }
+}
+
+// Each pattern's route: on the track graph (or, failing that, snapped onto the tracks), its stops (the timetable's, in
+// order along it; the nose pulls up a few metres past the stop's pole) and its signals (as the tracks')
+function buildRoutes(tracks, network) {
+  const T = window.CITY.TRANSIT;
+  const pats = T ? T.ofType(0) : [];
+  if (!pats.length) return [];
+  const G = trackGraph(tracks);
+  const routes = [];
+  const snapped = [], cut = [];
+  for (const pat of pats) {
+    let pieces = routeOnTracks(G, pat);
+    if (!pieces.length) {
+      const src = snapToTracks(tracks, pat);
+      if (!src) continue;
+      pieces = [src];
+      snapped.push(pat.sign[0]);
+    } else if (pieces.length > 1) cut.push(`${pat.sign[0]} (${pieces.length})`);
+    for (const src of pieces) {
+    // (every 4 m: a route is a car's path only, its rails drawn from the tracks; half the memory of 2 m)
+    const t = makeTrack(src, 4);
+    t.pattern = pat;
+    t.sign = pat.sign;
+    // its stops, in order along it
+    let i0 = 0;
+    for (const st of pat.stops) {
+      let bi = -1, bd = 25;
+      for (let i = i0; i < t.pts.length; i++) {
+        const d = Math.hypot(t.pts[i].x - st.x, t.pts[i].z - st.z);
+        if (d < bd) {
+          bd = d;
+          bi = i;
+        }
+      }
+      if (bi < 0) continue;
+      i0 = bi;
+      const s = Math.min(t.len - 2, t.cum[bi] + 4);
+      if (s > CAR_LEN + 2 && !t.stops.some((q) => Math.abs(q - s) < 30)) {
+        t.stops.push(s);
+        (t.stopNames || (t.stopNames = [])).push(st.name);
+      }
+    }
+    routes.push(t);
+    }
+  }
+  assignSignals(routes, network);
+  // the curves & sidings the routes run on, to be drawn with the rest of the trackwork
+  routes.extraTrack = [...G.used].map((w) => makeTrack(w.pts.map((p) => ({ x: p.x, z: p.z, f: w.f }))));
+  console.info(`[streetcars] ${routes.length} routes from the TTC's timetable on the tracks (${G.arcs.length / 2} pieces of track)${cut.length ? `; cut where the tracks don't go on: ${cut.join(', ')}` : ''}${snapped.length ? `; snapped (no way through): ${snapped.join(', ')}` : ''}`);
+  return routes;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -456,8 +835,9 @@ function moduleGeometry(len, nose, door) {
   g.computeVertexNormals();
   return g;
 }
-// `lamp`: the cab end's lamps, white headlamps (the leading cab) or red tail lamps (the trailing one, turned round)
-function createStreetcarMaterial(lamp = 0xfff1d6) {
+// `lamp`: the cab end's lamps, white headlamps (the leading cab) or red tail lamps (the trailing one, turned round);
+// `atlas`: the destination signs (transit.js signAtlas), each car's row its instance's signRow
+function createStreetcarMaterial(lamp = 0xfff1d6, atlas = null) {
   const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.38, metalness: 0.25 });
   const y = positionGeometry.y;
   const dz = abs(uv().x);
@@ -492,11 +872,13 @@ function createStreetcarMaterial(lamp = 0xfff1d6) {
   // lit saloon after dusk, the cab end's lamps (always on, brighter at night)
   const night = smoothstep(0.6, 1.15, cityUniforms.uInteriorGlow); // (as the vehicles' lamps, actor-models.js)
   const lampMask = smoothstep(0.6, 0.63, y).mul(float(1.0).sub(smoothstep(0.76, 0.79, y))).mul(front).mul(smoothstep(0.8, 0.84, lx)).mul(float(1.0).sub(smoothstep(1.06, 1.1, lx)));
-  // the sign: an amber LED line of route & destination
-  const led = sign.mul(smoothstep(3.22, 3.25, y)).mul(float(1.0).sub(smoothstep(3.36, 3.39, y))).mul(step(lx, 0.62));
+  // the sign: the route & destination in amber LEDs (without an atlas, a plain amber line)
+  const led = atlas
+    ? texture(atlas.tex, vec2(positionGeometry.x.div(1.6).add(0.5), attribute('signRow', 'float').add(float(3.47).sub(y).div(0.34).clamp(0.02, 0.98)).div(atlas.rows))).rgb.mul(sign).mul(1.6)
+    : color(0xffa020).mul(sign.mul(smoothstep(3.22, 3.25, y)).mul(float(1.0).sub(smoothstep(3.36, 3.39, y))).mul(step(lx, 0.62)));
   mat.emissiveNode = color(0xffe2b0).mul(band.max(doorGlass).mul(float(1.0).sub(front)).mul(0.55).mul(night))
     .add(color(lamp).mul(lampMask).mul(night.mul(2.2).add(0.25)))
-    .add(color(0xffa020).mul(led).mul(night.mul(1.2).add(0.6)));
+    .add(led.mul(night.mul(1.2).add(0.6)));
   return mat;
 }
 
@@ -507,23 +889,65 @@ function createStreetcars(scene, trafficSystem) {
   const tracks = buildTracks(network);
   const trackGroup = new THREE.Group();
   trackGroup.name = 'StreetcarTracks';
-  const trackTiles = buildTrackwork(trackGroup, tracks);
-  group.add(trackGroup);
   markStreetcarStreets(network, tracks);
+  const routes = buildRoutes(tracks, network);
+  const trackTiles = buildTrackwork(trackGroup, [...tracks, ...(routes.extraTrack || [])]);
+  group.add(trackGroup);
 
-  // The fleet: one car per `streetcarSpacing` m of track (quality.js), spread out along it
-  const spacing = QUALITY.streetcarSpacing || 500;
+  // The fleet. With the TTC's timetable (transit.js): its routes, each car entering at the start of its route's
+  // stretch through the city at the route's headway for the hour (main.js selectTime -> transit.js), stopping at its
+  // stops, and gone at the end (out of sight). Without it: one car per `streetcarSpacing` m of track (quality.js),
+  // spread out along the tracks, round and round.
+  const routed = routes.length > 0;
+  const T = window.CITY.TRANSIT;
+  // (the phone tiers: fewer cars, the headways stretched by their spacing)
+  const thin = Math.max(1, (QUALITY.streetcarSpacing || 500) / 500);
   const cars = [];
-  for (const t of tracks) {
-    const n = Math.max(1, Math.round(t.len / spacing));
-    for (let k = 0; k < n; k++) {
-      cars.push({ track: t, s: ((k + 0.5) / n) * t.len, speed: MAX_SPEED * 0.6, dwell: 0, lastStop: -1, sections: SECTIONS.map(() => ({ x: 0, y: 0, z: 0, yaw: 0 })) });
+  const newCar = (track, s) => {
+    const car = { track, route: track.pattern || null, s, speed: MAX_SPEED * 0.6, dwell: 0, k: 0, atEnd: 0, sections: SECTIONS.map(() => ({ x: 0, y: 0, z: 0, yaw: 0 })) };
+    while (car.k < track.stops.length && track.stops[car.k] < s - 0.5) car.k++;
+    cars.push(car);
+    return car;
+  };
+  // A route's own speed through the city, stops & lights included, as driven here (measured: simulate() below)
+  const runSpeed = (t) => t.len / (t.len / 10.5 + t.stops.length * (DWELL + 9) + t.signals.length * 6);
+  function setHeadways(fill) {
+    for (const t of routes) {
+      const H = T.headway(t.pattern) * thin;
+      t.headway = H;
+      if (fill) {
+        // the cars already on their way, as if the route had been running
+        if (!Number.isFinite(H)) {
+          t.clock = Infinity;
+          continue;
+        }
+        const gap = H * runSpeed(t), phase = Math.random();
+        for (let s = CAR_LEN + 1 + phase * gap; s < t.len - 20; s += gap) newCar(t, s);
+        t.clock = (1 - phase) * H;
+      } else {
+        t.clock = Number.isFinite(H) ? Math.min(Number.isFinite(t.clock) ? t.clock : Infinity, Math.random() * H) : Infinity;
+      }
+    }
+  }
+  if (routed) {
+    setHeadways(true);
+    T.onHour(() => setHeadways(false));
+  } else {
+    const spacing = QUALITY.streetcarSpacing || 500;
+    for (const t of tracks) {
+      const n = Math.max(1, Math.round(t.len / spacing));
+      for (let k = 0; k < n; k++) newCar(t, ((k + 0.5) / n) * t.len);
     }
   }
 
   const bodyMat = createStreetcarMaterial(0xfff1d6);
-  const tailMat = createStreetcarMaterial(0xff2a1c);
+  // the destination signs: route number, name & destination (transit.js), front & back
+  const atlas = routed ? T.signAtlas(routes.map((t) => t.sign), 1.6 / 0.34) : null;
+  for (const t of routes) t.signRow = atlas.rowOf(t.sign);
+  const headMat = atlas ? createStreetcarMaterial(0xfff1d6, atlas) : bodyMat;
+  const tailMat = createStreetcarMaterial(0xff2a1c, atlas);
   const noseGeo = moduleGeometry(SECTIONS[0], true, DOORS[0]);
+  const tailGeo = atlas ? noseGeo.clone() : noseGeo;
   const midGeos = SECTIONS.map((l, k) => moduleGeometry(l, false, DOORS[k]));
   const gangwayGeo = new THREE.BoxGeometry(HALF_W * 1.9, HEIGHT - 0.6, GANGWAY + 0.2).translate(0, 0.4 + (HEIGHT - 0.6) / 2, 0);
   // the pantograph & its roof pod on the middle module
@@ -532,9 +956,15 @@ function createStreetcars(scene, trafficSystem) {
     new THREE.BoxGeometry(0.06, 1.3, 0.06).rotateX(0.5).translate(0, 0.85, 0.3),
     new THREE.BoxGeometry(1.5, 0.05, 0.08).translate(0, 1.5, 0.62)
   ].map((g) => g.toNonIndexed()));
-  const count = Math.max(1, cars.length);
-  const head = new THREE.InstancedMesh(noseGeo, bodyMat, count);
-  const tail = new THREE.InstancedMesh(noseGeo, tailMat, count);
+  // (drawn at once: those within DRAW_RADIUS; a timetabled fleet comes and goes, so room for the most there could be)
+  const count = Math.max(1, routed ? 160 : cars.length);
+  const signRows = atlas ? [noseGeo, tailGeo].map((g) => {
+    const a = new THREE.InstancedBufferAttribute(new Float32Array(count), 1);
+    g.setAttribute('signRow', a);
+    return a;
+  }) : [];
+  const head = new THREE.InstancedMesh(noseGeo, headMat, count);
+  const tail = new THREE.InstancedMesh(tailGeo, tailMat, count);
   const mids = midGeos.slice(1, 4).map((g) => new THREE.InstancedMesh(g, bodyMat, count));
   const gangways = new THREE.InstancedMesh(gangwayGeo, new THREE.MeshStandardNodeMaterial({ color: 0x1b1c1e, roughness: 0.9 }), count * 4);
   const pantos = new THREE.InstancedMesh(pantoGeo, new THREE.MeshStandardNodeMaterial({ color: 0x2a2b2d, roughness: 0.5, metalness: 0.6 }), count);
@@ -581,30 +1011,69 @@ function createStreetcars(scene, trafficSystem) {
       best = Math.min(best, ahead - half);
     };
     for (const v of others) if (v.edge && Math.abs((v.y || 0) - y) < 2.5) test(v.x, v.z, v.half || 2.3, v.halfWidth || 0.9);
+    // other routes' cars on the same tracks (504A & 504B along King...), module by module
     for (const o of cars) {
-      if (o === car || o.track !== t) continue;
-      const d = o.s - CAR_LEN - car.s;
-      if (d > -1 && d < reach) best = Math.min(best, d);
+      if (o === car || o.track === t || !o.placed) continue;
+      const m = o.sections[2];
+      if (Math.abs(m.x - tmp.x) > reach + CAR_LEN || Math.abs(m.z - tmp.z) > reach + CAR_LEN || Math.abs(m.y - y) > 2.5) continue;
+      for (const sec of o.sections) test(sec.x, sec.z, SECTIONS[0] / 2 + GANGWAY, HALF_W);
     }
     if (playerEnt && Math.abs(playerEnt.position.y - y) < 2.6) test(playerEnt.position.x, playerEnt.position.z, 2.3, 1.0);
     return best;
   }
 
   const cull = QUALITY.cull || 1;
+  // the car ahead on the same track (or route), by distance along it
+  function followAhead(car) {
+    let best = Infinity;
+    for (const o of car.track.cars || cars) {
+      if (o === car || o.track !== car.track) continue;
+      const d = o.s - CAR_LEN - car.s;
+      if (d > -1 && d < best) best = d;
+    }
+    return best;
+  }
+  let camX = 0, camZ = 0;
+  // (the timetable: each route's cars, for following & spawning)
+  for (const t of routed ? routes : tracks) t.cars = [];
+  for (const car of cars) car.track.cars.push(car);
+  function spawn(t, dt) {
+    if (!Number.isFinite(t.clock)) return;
+    t.clock -= dt;
+    if (t.clock > 0) return;
+    // the start clear of the last car in, and out of sight close by (not where it would appear from nothing), or
+    // waited long enough
+    const p0 = t.pts[0];
+    const seen = p0.y > -3 && Math.hypot(p0.x - camX, p0.z - camZ) < 220 && t.clock > -30;
+    if (seen || t.cars.some((o) => o.s < CAR_LEN * 2 + 8)) return;
+    t.cars.push(newCar(t, CAR_LEN + 1));
+    t.clock += t.headway;
+    if (t.clock < 0) t.clock = t.headway * 0.5;
+  }
+  function retire(car) {
+    const i = cars.indexOf(car);
+    if (i >= 0) cars.splice(i, 1);
+    const j = car.track.cars.indexOf(car);
+    if (j >= 0) car.track.cars.splice(j, 1);
+  }
+
   function update(dt, elapsed, camera, playerEnt, activeMode) {
     if (dt <= 0) return;
     dt = Math.min(dt, 0.1);
     const others = trafficSystem ? [...(trafficSystem.cars || []), ...(trafficSystem.buses || [])] : [];
     const ground = playerEnt && activeMode !== 'helicopter' ? playerEnt : null;
-    const camX = camera ? camera.position.x : 0;
-    const camZ = camera ? camera.position.z : 0;
+    camX = camera ? camera.position.x : 0;
+    camZ = camera ? camera.position.z : 0;
     const drawR = DRAW_RADIUS * cull;
     const farR = Math.max(drawR, NEAR) + 150;
     obstacles.length = 0;
+    if (routed) for (const t of routes) spawn(t, dt);
     let n = 0;
-    for (const car of cars) {
+    for (let ci = cars.length - 1; ci >= 0; ci--) {
+      const car = cars[ci];
       const t = car.track;
-      // where the car must stop: a stop to dwell at, a red light, whatever stands ahead
+      // where the car must stop: a stop to dwell at, a red light, the car ahead, whatever stands in the way; the end of
+      // its route
       let target = MAX_SPEED;
       let stopD = Infinity;
       sample(t, car.s, tmp);
@@ -613,30 +1082,44 @@ function createStreetcars(scene, trafficSystem) {
         car.dwell -= dt;
         target = 0;
       } else {
-        const next = t.stops.find((q) => q > car.s - 0.5 && q !== car.lastStop);
+        const next = t.stops[car.k];
         if (next !== undefined) {
           const d = next - car.s;
           if (d < 0.6 && car.speed < 1.0) {
             car.dwell = DWELL * (0.7 + Math.random() * 0.6);
-            car.lastStop = next;
+            car.k++;
             car.speed = 0;
-          } else stopD = Math.min(stopD, d);
+          } else if (d < -1) car.k++; // (ran past it)
+          else stopD = Math.min(stopD, d);
         }
-        stopD = Math.min(stopD, phaseAhead(car, elapsed));
+        stopD = Math.min(stopD, phaseAhead(car, elapsed), followAhead(car) - 4);
+        if (routed) stopD = Math.min(stopD, t.len - car.s);
         if (near) stopD = Math.min(stopD, blockedAhead(car, 75, others, ground) - 4);
       }
       if (stopD < Infinity) target = Math.min(target, Math.sqrt(Math.max(0, 2 * DECEL * Math.max(0, stopD))));
       if (car.speed < target) car.speed = Math.min(target, car.speed + ACCEL * dt);
       else car.speed = Math.max(target, car.speed - (stopD < 3 ? DECEL * 3 : DECEL * 1.6) * dt);
       car.s += car.speed * dt;
-      if (car.s > t.len) {
-        // off the end of the run: back in at its start
-        car.s = CAR_LEN;
-        car.lastStop = -1;
+      if (car.s > t.len - 1) {
+        if (routed) {
+          // the end of its run through the city: gone once out of sight (in a tunnel, far off, or after a layover)
+          car.s = Math.min(car.s, t.len);
+          car.atEnd += dt;
+          if (tmp.y < -3 || Math.hypot(tmp.x - camX, tmp.z - camZ) > 250 || car.atEnd > 90) {
+            retire(car);
+            continue;
+          }
+        } else if (car.s > t.len) {
+          // off the end of the run: back in at its start
+          car.s = CAR_LEN;
+          car.k = 0;
+        }
       }
       // far from the camera (not drawn, no obstacle, out of earshot) the modules stay where they were: placing them
       // is 11 track lookups a car, a frame (the nose, sampled above, tells)
+      car.placed = false;
       if (Math.abs(tmp.x - camX) > farR || Math.abs(tmp.z - camZ) > farR) continue;
+      car.placed = true;
       // the modules follow the track behind the nose
       let back = car.s;
       for (let k = 0; k < SECTIONS.length; k++) {
@@ -663,7 +1146,7 @@ function createStreetcars(scene, trafficSystem) {
       }
       // draw: the cab modules (the tail one turned round), the inner ones, the gangways, the pantograph mid-roof;
       // only near the camera, and not deep in a tunnel
-      if (dCam > drawR || mid.y < -HEIGHT - 0.5) continue;
+      if (dCam > drawR || mid.y < -HEIGHT - 0.5 || n >= count) continue;
       car.sections.forEach((sec, k) => {
         dummy.position.set(sec.x, sec.y, sec.z);
         dummy.rotation.set(0, sec.yaw + (k === SECTIONS.length - 1 ? Math.PI : 0), 0, 'YXZ');
@@ -685,6 +1168,7 @@ function createStreetcars(scene, trafficSystem) {
           gangways.setMatrixAt(n * 4 + k, dummy.matrix);
         }
       });
+      for (const a of signRows) a.array[n] = t.signRow || 0;
       n++;
     }
     for (const m of [head, tail, ...mids, pantos]) m.count = n;
@@ -695,6 +1179,12 @@ function createStreetcars(scene, trafficSystem) {
       m.instanceMatrix.addUpdateRange(0, m.count * 16);
       m.instanceMatrix.needsUpdate = true;
     }
+    for (const a of signRows) {
+      if (!n) continue;
+      a.clearUpdateRanges();
+      a.addUpdateRange(0, n);
+      a.needsUpdate = true;
+    }
     if (trafficSystem && trafficSystem.setObstacles) trafficSystem.setObstacles(obstacles);
     // the trackwork within reach
     const trackR = TRACK_DRAW * cull + TILE * 0.7;
@@ -704,6 +1194,41 @@ function createStreetcars(scene, trafficSystem) {
     }
   }
 
+  // The timetable over `seconds` of simulated time, the camera far out over the lake (no traffic, no player): how often
+  // each route's cars pass the middle of its stretch, against the timetable (for checking; holds the page meanwhile)
+  function simulate(seconds = 3600, step = 0.1) {
+    const cam = { position: { x: 0, y: 500, z: 20000 } };
+    const passes = new Map(routes.map((t) => [t, []]));
+    const prev = new Map();
+    const seen = new Map(); // car -> [time, s] when first seen
+    const speeds = new Map(routes.map((t) => [t, []]));
+    let time = 0;
+    const t0 = performance.now();
+    for (; time < seconds; time += step) {
+      prev.clear();
+      for (const c of cars) prev.set(c, c.s);
+      update(step, 1e5 + time, cam, null, 'helicopter');
+      // (the cars gone this step: their run's speed, if seen from near its start)
+      const now = new Set(cars);
+      for (const [c] of prev) {
+        const f = seen.get(c);
+        if (!now.has(c) && f && f[1] < CAR_LEN + 20 && speeds.has(c.track)) speeds.get(c.track).push((c.track.len - f[1]) / Math.max(1, time - f[0]));
+      }
+      for (const c of cars) {
+        if (!seen.has(c)) seen.set(c, [time, c.s]);
+        const mid = c.track.len / 2, p = prev.get(c);
+        if (p !== undefined && p < mid && c.s >= mid && passes.has(c.track)) passes.get(c.track).push(time);
+      }
+    }
+    const rows = routes.map((t) => {
+      const ts = passes.get(t);
+      const gaps = ts.slice(1).map((x, i) => x - ts[i]);
+      const mean = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : NaN;
+      return { route: t.sign.join(' / '), dir: t.pattern.dir, len: Math.round(t.len), stops: t.stops.length, gtfsPerHour: t.pattern.perHour[T.hour], gtfsHeadway: Math.round(T.headway(t.pattern)), simPasses: ts.length, simHeadway: Math.round(mean), simSpeed: speeds.get(t).length ? Math.round((speeds.get(t).reduce((a, b) => a + b, 0) / speeds.get(t).length) * 10) / 10 : null, gtfsSpeed: t.pattern.speed, estSpeed: Math.round(runSpeed(t) * 10) / 10 };
+    });
+    console.info(`[streetcars] simulated ${seconds} s at ${T.hour}:00 in ${Math.round(performance.now() - t0)} ms`);
+    return rows;
+  }
   // A streetcar shoves the player (on foot, by bike or car) out of its modules along the shallower side
   function pushPlayer(car, ground, activeMode) {
     const r = activeMode === 'car' ? 1.6 : activeMode === 'cyclist' ? 0.8 : 0.45;
@@ -732,8 +1257,9 @@ function createStreetcars(scene, trafficSystem) {
   }
 
   const km = Math.round(tracks.reduce((t, k) => t + k.len, 0) / 100) / 10;
-  console.info(`[streetcars] ${tracks.length} track runs, ${km} km, ${cars.length} streetcars, ${tracks.reduce((t, k) => t + k.stops.length, 0)} stops, ${tracks.reduce((t, k) => t + k.signals.length, 0)} signals, ${trackTiles.length} track tiles`);
-  return { group, update, cars, tracks, sample };
+  const runs = routed ? routes : tracks;
+  console.info(`[streetcars] ${tracks.length} track runs, ${km} km, ${cars.length} streetcars on ${runs.length} ${routed ? `TTC routes at ${T.hour}:00 (${[...new Set(routes.map((t) => t.pattern.route))].join(', ')})` : 'runs'}, ${runs.reduce((t, k) => t + k.stops.length, 0)} stops, ${runs.reduce((t, k) => t + k.signals.length, 0)} signals, ${trackTiles.length} track tiles`);
+  return { group, update, cars, tracks, routes, sample, simulate };
 }
 
 Object.assign(window.CITY, { createStreetcars });
