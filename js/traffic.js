@@ -420,7 +420,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   const busHeaderGeo = buildBusSignGeometry();
 
   const busBodyMat = createLoftedBusMaterial();
-  const busDestMat = new THREE.MeshBasicNodeMaterial({
+  // (the TTC's routes, transit.js: each bus its own route's sign, its row of the atlas per instance)
+  const busSigns = window.CITY.TRANSIT && window.CITY.TRANSIT.busSigns ? window.CITY.TRANSIT.busSigns('busSign') : null;
+  const busSignRows = new THREE.InstancedBufferAttribute(new Float32Array(NUM_BUSES), 1);
+  if (busSigns) busHeaderGeo.setAttribute('busSign', busSignRows);
+  const busDestMat = busSigns ? busSigns.material : new THREE.MeshBasicNodeMaterial({
     map: createBusDestinationTexture()
   });
 
@@ -932,6 +936,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   const weights = [];
   function chooseMove(v, fromLane) {
     const e = v.edge;
+    if (v.route && !v.route.off) {
+      const m = routeMove(v);
+      if (m && (!fromLane || m.out[v.lane] >= 0)) return m;
+      if (m) v.route.off = 'lost'; // in the wrong lane at the line: off its route (a roaming bus until recycled)
+    }
     let total = 0;
     const share = !v.bus && e.turnShare;
     let types = null;
@@ -1231,9 +1240,13 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     const e = v.edge;
     if (v.conn || v.commit || Math.abs(v.dl) > 0.5 || v.s < v.half || e.len - v.s - v.half < 12) return;
     let target = -1;
+    const curb = v.route && !v.route.off ? stopLane(v) : -1;
     if (v.move.out[v.lane] < 0) {
       const t = v.lane + Math.sign(nearestLane(v.move, v.lane) - v.lane);
       if (laneSafe(v, t, -4)) target = t;
+    } else if (curb >= 0) {
+      const t = v.lane + Math.sign(curb - v.lane);
+      if (curb !== v.lane && v.move.out[t] >= 0 && laneSafe(v, t, -3)) target = t;
     } else if (v.speed > 2) {
       let best = laneAcc(v, v.lane) + 0.6;
       for (let t = v.lane - 1; t <= v.lane + 1; t += 2) {
@@ -1406,6 +1419,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       }
     }
     // --- end streetcars ---
+    if (v.route && !v.route.off) worst = Math.min(worst, busStopAhead(v)); // TTC bus stops (transit-buses.js)
     const acc = Math.min(freeAcc(v) + worst, (cap - v.speed) * 2);
     v.acc = clamp(acc, -9, v.driver.a);
   }
@@ -1760,6 +1774,79 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     v.commit = null;
     v.yielding = false;
     v.speed = 0;
+  }
+
+  // --- TTC bus routes (transit-buses.js): a bus given v.route follows its road links (route.edges, the current one
+  // route.i) and pulls up at its stops (route.stops: { ei, s } in order, the next route.k) in the curb lane ---
+  let busRouter = null;
+  const BUS_DWELL = 12;
+  function routeMove(v) {
+    const r = v.route;
+    let i = r.i;
+    while (i < r.edges.length && r.edges[i] !== v.edge) i++;
+    if (i >= r.edges.length - 1) {
+      r.off = i >= r.edges.length ? 'lost' : 'end';
+      return null;
+    }
+    r.i = i;
+    const m = v.edge.moves.find((mv) => mv.to === r.edges[i + 1]);
+    if (!m) r.off = 'lost';
+    return m || null;
+  }
+  // the curb lane while the next stop is on this link within 150 m (-1: none)
+  function stopLane(v) {
+    const r = v.route, st = r.stops[r.k];
+    if (!st || r.edges[st.ei] !== v.edge || st.s - v.s > 150) return -1;
+    return v.edge.lanes.length - 1;
+  }
+  function busStopAhead(v) {
+    const r = v.route;
+    const st = r.stops[r.k];
+    if (!st || v.conn) return 0;
+    if (r.i > st.ei) {
+      r.k++;
+      return 0;
+    }
+    if (r.edges[st.ei] !== v.edge) return 0;
+    const d = st.s - v.s - v.half;
+    if (v.dwellUntil) {
+      if (clock < v.dwellUntil) return Math.min(-v.driver.b, stopAt(v, Math.max(0.05, d), 0.2));
+      v.dwellUntil = 0;
+      r.k++;
+      return 0;
+    }
+    if (d < -3) {
+      r.k++; // (ran past it)
+      return 0;
+    }
+    if (d < 1.5 && v.speed < 0.8) {
+      v.dwellUntil = clock + BUS_DWELL * (0.6 + Math.random() * 0.8);
+      r.stopName = st.name;
+      return stopAt(v, Math.max(0.05, d), 0.2);
+    }
+    return d < LOOKAHEAD ? stopAt(v, Math.max(0.05, d), 0.2) : 0;
+  }
+  // Put bus v at s along lane `lane` of edge e if there is room (and, protecting the view, out of sight close by)
+  function placeBus(v, e, lane, s, protectView) {
+    if (e.len < 2 * v.half + 6) return false;
+    s = clamp(s, v.half + 3, e.len - v.half - 3);
+    const x = e.sx + e.dx * s + e.rx * e.lanes[lane];
+    const z = e.sz + e.dz * s + e.rz * e.lanes[lane];
+    if (protectView && nearView(x, z, v.half + 4, VEHICLE_SPAWN_DISTANCE)) return false;
+    if (player.active && Math.hypot(x - player.x, z - player.z) < 25) return false;
+    if (!laneClear(e.occ[lane], s, v.half + 8)) return false;
+    if (movers.some((o) => Math.abs(o.x - x) < o.halfL + v.half + 8 && Math.abs(o.z - z) < o.halfL + v.half + 8 && Math.abs((o.y || 0) - edgeY(e, s)) < 2.5)) return false;
+    v.dwellUntil = 0;
+    place(v, e, lane, s);
+    return true;
+  }
+  // Off the roads (no route near enough to take): not driven, not drawn
+  function retireBus(v) {
+    v.edge = null;
+    v.conn = null;
+    v.trail = null;
+    v.route = null;
+    v.dwellUntil = 0;
   }
 
   // Put v in a free lane around the focus. Normal replenishment protects the near view; teleports can fill it.
@@ -2269,6 +2356,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     dummy.updateMatrix();
     busBodyInst.setMatrixAt(i, dummy.matrix);
     busHeaderInst.setMatrixAt(i, dummy.matrix);
+    busSignRows.array[i] = b.route ? b.route.signRow : 0;
     writeLampState(b, busStates.array, i * 4);
 
     const dxCam = b.x - camX;
@@ -2636,7 +2724,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         continue;
       }
       const was = !!v.edge;
-      if (spawnVehicle(v, jump ? 0 : 100, NEAR_RADIUS, !jump) && !was && !v.bus) placedCars++;
+      if (v.bus && busRouter) busRouter.spawn(v, jump);
+      else if (spawnVehicle(v, jump ? 0 : 100, NEAR_RADIUS, !jump) && !was && !v.bus) placedCars++;
     }
     buildOccupancy();
     // the lights around the player see who waits, then step (the rest keep their coordinated timing: nothing to do)
@@ -2708,6 +2797,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     syncInst(busWheelRightInst, visibleBuses * 2);
     syncInst(busShadowInst, visibleBuses);
     if (visibleBuses > 0) flagRange(busStates, visibleBuses);
+    if (visibleBuses > 0 && busSigns) flagRange(busSignRows, visibleBuses);
     updateTrafficLights();
 
     // 2. Pedestrians
@@ -2781,6 +2871,12 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     get pedTarget() { return pedTarget; },
     setCollisionListener, // audio
     setObstacles, // streetcars.js
+    // transit-buses.js: the TTC's bus routes
+    setBusRouter: (r) => { busRouter = r; },
+    placeBus,
+    retireBus,
+    focus: () => ({ x: focusX, z: focusZ }),
+    NEAR_RADIUS,
     signalConflicts,
     cars,
     buses,
