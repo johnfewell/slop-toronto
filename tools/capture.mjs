@@ -24,7 +24,8 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' });
   fs.createReadStream(file).pipe(res);
 }).listen(PORT, '127.0.0.1');
-const BASE = `http://127.0.0.1:${PORT}`;
+// (CAPTURE_BASE: another server's origin instead, e.g. `npx wrangler@4 dev`'s, for the Worker's /live/vehicles)
+const BASE = process.env.CAPTURE_BASE || `http://127.0.0.1:${PORT}`;
 const OUT = process.env.GPU2_OUT || 'capture-out';
 const shots = process.argv[2]
   ? JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))

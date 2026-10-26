@@ -290,6 +290,69 @@ function createTransitBuses(traffic) {
   };
   const tmp = { x: 0, z: 0 };
 
+  // Live (transit-live.js): each bus in the TTC's feed at its spot along a route of its number (on a road link
+  // heading its way within 20 m), run on from there at the schedule speed; on the road, its driver hurried or held to
+  // keep up (desired speed). A route with buses in the feed runs on them alone; without a feed, the timetable.
+  let liveRoutes = new Set();
+  const liveBuses = new Map(); // vehicle id -> scheduled bus
+  function snapLive(v) {
+    let best = null, bd = 20;
+    for (const r of routes) {
+      if (r.pat.route !== v.route) continue;
+      r.links.forEach((e, i) => {
+        if (v.h && e.dx * v.h.x + e.dz * v.h.z < 0.3) return;
+        const a = (v.x - e.sx) * e.dx + (v.z - e.sz) * e.dz;
+        if (a < -5 || a > e.len + 5) return;
+        const lat = Math.abs((v.x - e.sx) * e.rx + (v.z - e.sz) * e.rz) + (Number.isFinite(r.headway) ? 0 : 8);
+        if (lat < bd) {
+          bd = lat;
+          best = { r, d: r.cum[i] + Math.max(0, Math.min(e.len, a)) };
+        }
+      });
+    }
+    return best;
+  }
+  if (TRANSIT.onLive) {
+    TRANSIT.onLive((L) => {
+      const now = Date.now();
+      if (L.mode !== 'live') {
+        for (const b of liveBuses.values()) b.live = null;
+        liveBuses.clear();
+        liveRoutes = new Set();
+        return;
+      }
+      const seen = new Set(), on = new Set();
+      for (const v of L.vehicles) {
+        const m = snapLive(v);
+        if (!m) continue;
+        seen.add(v.id);
+        on.add(v.route);
+        let b = liveBuses.get(v.id);
+        if (b && b.r !== m.r && !b.real) {
+          b.r.buses.splice(b.r.buses.indexOf(b), 1);
+          b = null;
+        }
+        if (!b) {
+          b = { r: m.r, d: m.d, real: null };
+          m.r.buses.push(b);
+          liveBuses.set(v.id, b);
+        }
+        b.live = { d: m.d, at: now - Math.min(120000, Math.max(0, now - v.ts)) };
+      }
+      for (const [id, b] of liveBuses) {
+        if (seen.has(id)) continue;
+        b.live = null;
+        liveBuses.delete(id);
+      }
+      liveRoutes = on;
+      // the timetable's buses on routes now running live, not on the road: gone
+      for (const r of routes) {
+        if (!liveRoutes.has(r.pat.route)) continue;
+        r.buses = r.buses.filter((b) => b.live || b.real);
+      }
+    });
+  }
+
   // traffic.js asks for a bus to put on the road: the nearest scheduled one in range without one
   function spawn(v, jump) {
     if (v.route && v.route.sched) v.route.sched.real = null;
@@ -335,9 +398,10 @@ function createTransitBuses(traffic) {
   function update(dt) {
     if (dt <= 0) return;
     dt = Math.min(dt, 0.25);
+    const now = Date.now();
     for (const r of routes) {
       // a bus enters at the route's start every headway
-      if (Number.isFinite(r.clock)) {
+      if (Number.isFinite(r.clock) && !liveRoutes.has(r.pat.route)) {
         r.clock -= dt;
         if (r.clock <= 0) {
           r.buses.push({ r, d: 0, real: null });
@@ -348,17 +412,26 @@ function createTransitBuses(traffic) {
       for (let k = r.buses.length - 1; k >= 0; k--) {
         const b = r.buses[k];
         const v = b.real;
+        // live: where the feed saw it, run on at the schedule speed
+        const want = b.live ? b.live.d + r.pat.speed * ((now - b.live.at) / 1000) : NaN;
         if (v) {
           // on the road: where its bus is (until traffic.js takes it for another, or it leaves the route)
           if (v.route && v.route.sched === b && !v.route.off && v.edge) {
             b.d = Math.max(b.d, r.cum[v.route.i] + Math.max(0, v.s));
+            if (v.baseV0 === undefined) v.baseV0 = v.v0;
+            // (live: its driver hurried or held to keep up with the feed)
+            v.v0 = b.live ? Math.max(3, Math.min(15, v.baseV0 * (1 + (want - b.d) / 120))) : v.baseV0;
             continue;
           }
+          if (v.baseV0 !== undefined) v.v0 = v.baseV0;
           b.real = null;
           if (v.route && v.route.sched === b) v.route.sched = null;
         }
-        b.d += r.pat.speed * dt;
-        if (b.d > r.len) r.buses.splice(k, 1);
+        b.d = b.live ? Math.min(r.len, want) : b.d + r.pat.speed * dt;
+        if (b.d >= r.len) {
+          r.buses.splice(k, 1);
+          for (const [id, lb] of liveBuses) if (lb === b) liveBuses.delete(id);
+        }
       }
     }
   }
@@ -381,7 +454,7 @@ function createTransitBuses(traffic) {
   const nb = routes.reduce((t, r) => t + r.buses.length, 0);
   if (cut.length) console.info(`[transit] bus routes cut where the city's roads don't go on as the TTC's do: ${cut.join(', ')}`);
   console.info(`[transit] ${routes.length} bus routes on the roads (${[...new Set(routes.map((r) => r.pat.route))].join(', ')}), ${nb} buses scheduled at ${TRANSIT.hour}:00, ${routes.reduce((t, r) => t + r.stops.length, 0)} stops; matched in ${Math.round(performance.now() - t0)} ms${failed.length ? `; not matched: ${failed.join(', ')}` : ''}`);
-  return { routes, update, simulate };
+  return { routes, update, simulate, liveBuses };
 }
 
 Object.assign(window.CITY, { createTransitBuses });

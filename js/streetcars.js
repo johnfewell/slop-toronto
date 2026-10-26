@@ -1052,11 +1052,106 @@ function createStreetcars(scene, trafficSystem) {
     return best;
   }
   let camX = 0, camZ = 0;
+
+  // Live (transit-live.js: the TTC's own positions, every 20 s): each streetcar in the feed on its route's rails, its
+  // car driving as any other (stops, lights, the traffic) but hurried or held to keep up with where the feed says it
+  // is, run on from there at the route's schedule speed; one far behind or ahead out of sight is put there. A route
+  // with cars in the feed runs on them alone; one without, and everything when there is no feed, on the timetable.
+  const liveCars = new Map(); // vehicle id -> car
+  let liveRoutes = new Set();
+  const LG = 25, lgrid = new Map();
+  for (const t of routes) {
+    for (let i = 1; i + 1 < t.pts.length; i++) {
+      const k = Math.floor(t.pts[i].x / LG) * 100000 + Math.floor(t.pts[i].z / LG);
+      if (!lgrid.has(k)) lgrid.set(k, []);
+      lgrid.get(k).push({ t, i });
+    }
+  }
+  // a live vehicle's spot on a route of its number (heading its way, the routes running this hour first)
+  function snapLive(v) {
+    let best = null, bd = 30;
+    const ix = Math.floor(v.x / LG), iz = Math.floor(v.z / LG);
+    for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const { t, i } of lgrid.get((ix + a) * 100000 + iz + c) || []) {
+      if (t.pattern.route !== v.route || t.pts[i].y < -3.5) continue;
+      const p = t.pts[i], d = Math.hypot(p.x - v.x, p.z - v.z);
+      if (d > 30) continue;
+      if (v.h) {
+        const q = t.pts[i + 1], o = t.pts[i - 1], L = Math.hypot(q.x - o.x, q.z - o.z) || 1;
+        if (((q.x - o.x) * v.h.x + (q.z - o.z) * v.h.z) / L < 0.3) continue;
+      }
+      const score = d + (Number.isFinite(t.headway) ? 0 : 12);
+      if (score < bd) {
+        bd = score;
+        best = { t, s: t.cum[i] };
+      }
+    }
+    return best;
+  }
+  if (routed && T.onLive) {
+    T.onLive((L) => {
+      const now = Date.now();
+      if (L.mode !== 'live') {
+        for (const car of liveCars.values()) car.live = null;
+        liveCars.clear();
+        liveRoutes = new Set();
+        return;
+      }
+      const seen = new Set(), on = new Set();
+      for (const v of L.vehicles) {
+        const m = snapLive(v);
+        if (!m) continue;
+        seen.add(v.id);
+        on.add(v.route);
+        let car = liveCars.get(v.id);
+        if (car && car.track !== m.t) {
+          // on another of its route's runs now: moved there if out of sight, else it catches up where it is
+          if (Math.hypot(car.sections[2].x - camX, car.sections[2].z - camZ) > 300 || !car.placed) {
+            retire(car);
+            car = null;
+          } else continue;
+        }
+        if (!car) {
+          car = newCar(m.t, Math.max(CAR_LEN + 1, m.s));
+          m.t.cars.push(car);
+          car.liveId = v.id;
+          liveCars.set(v.id, car);
+        }
+        // (the feed's own time for the position, at most 2 minutes back)
+        car.live = { s: m.s, at: now - Math.min(120000, Math.max(0, now - v.ts)) };
+      }
+      // gone from the feed: on to the end of the run
+      for (const [id, car] of liveCars) {
+        if (seen.has(id)) continue;
+        car.live = null;
+        car.liveId = null;
+        liveCars.delete(id);
+      }
+      liveRoutes = on;
+      // the timetable's cars on routes now running live: gone, out of sight
+      for (const car of [...cars]) {
+        if (car.live || !liveRoutes.has(car.track.pattern.route)) continue;
+        if (!car.placed || Math.hypot(car.sections[2].x - camX, car.sections[2].z - camZ) > 250) retire(car);
+      }
+    });
+  }
+  // a live car's speed: on at the schedule speed from where & when the feed saw it, hurried or held to be there
+  function liveTarget(car, t, now) {
+    const want = Math.min(t.len, car.live.s + t.schedSpeed * ((now - car.live.at) / 1000));
+    const err = want - car.s;
+    if ((err > 400 || err < -250) && Math.hypot(car.sections[2].x - camX, car.sections[2].z - camZ) > 300) {
+      car.s = Math.max(CAR_LEN + 1, want);
+      car.k = 0;
+      while (car.k < t.stops.length && t.stops[car.k] < car.s - 0.5) car.k++;
+      car.dwell = 0;
+      return t.cruise;
+    }
+    return Math.max(0, Math.min(MAX_SPEED, t.cruise * (1 + err / 120)));
+  }
   // (the timetable: each route's cars, for following & spawning)
   for (const t of routed ? routes : tracks) t.cars = [];
   for (const car of cars) car.track.cars.push(car);
   function spawn(t, dt) {
-    if (!Number.isFinite(t.clock)) return;
+    if (!Number.isFinite(t.clock) || liveRoutes.has(t.pattern.route)) return; // (a route running live: no timetable cars)
     t.clock -= dt;
     if (t.clock > 0) return;
     // the start clear of the last car in, and out of sight close by (not where it would appear from nothing), or
@@ -1069,6 +1164,7 @@ function createStreetcars(scene, trafficSystem) {
     if (t.clock < 0) t.clock = t.headway * 0.5;
   }
   function retire(car) {
+    if (car.liveId) liveCars.delete(car.liveId);
     const i = cars.indexOf(car);
     if (i >= 0) cars.splice(i, 1);
     const j = car.track.cars.indexOf(car);
@@ -1086,18 +1182,20 @@ function createStreetcars(scene, trafficSystem) {
     const farR = Math.max(drawR, NEAR) + 150;
     obstacles.length = 0;
     if (routed) for (const t of routes) spawn(t, dt);
+    const now = Date.now();
     let n = 0;
     for (let ci = cars.length - 1; ci >= 0; ci--) {
       const car = cars[ci];
       const t = car.track;
       // where the car must stop: a stop to dwell at, a red light, the car ahead, whatever stands in the way; the end of
       // its route
-      let target = t.cruise || MAX_SPEED;
+      let target = car.live ? liveTarget(car, t, now) : t.cruise || MAX_SPEED;
       let stopD = Infinity;
       sample(t, car.s, tmp);
       const near = Math.abs(tmp.x - camX) < NEAR + 50 && Math.abs(tmp.z - camZ) < NEAR + 50;
       if (car.dwell > 0) {
-        car.dwell -= dt;
+        // (a live car running late cuts its dwell short)
+        car.dwell -= car.live && target > (t.cruise || MAX_SPEED) * 1.3 ? dt * 3 : dt;
         target = 0;
       } else {
         const next = t.stops[car.k];
@@ -1277,7 +1375,7 @@ function createStreetcars(scene, trafficSystem) {
   const km = Math.round(tracks.reduce((t, k) => t + k.len, 0) / 100) / 10;
   const runs = routed ? routes : tracks;
   console.info(`[streetcars] ${tracks.length} track runs, ${km} km, ${cars.length} streetcars on ${runs.length} ${routed ? `TTC routes at ${T.hour}:00 (${[...new Set(routes.map((t) => t.pattern.route))].join(', ')})` : 'runs'}, ${runs.reduce((t, k) => t + k.stops.length, 0)} stops, ${runs.reduce((t, k) => t + k.signals.length, 0)} signals, ${trackTiles.length} track tiles`);
-  return { group, update, cars, tracks, routes, sample, simulate };
+  return { group, update, cars, tracks, routes, sample, simulate, liveCars };
 }
 
 Object.assign(window.CITY, { createStreetcars });

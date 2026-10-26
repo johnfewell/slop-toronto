@@ -71,13 +71,15 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   `tools/build-transit.mjs`, fetched by `tools/fetch-gtfs.mjs`) keeps only the routes' stopping patterns through the
   city, their stops and trips per hour on a weekday; the streetcars, buses and Line 2 trains run at those headways.
   Contains information licensed under the Open Government Licence – Toronto.
-  Water Hydrants, Bicycle Parking, Street Furniture – Transit Shelter, Street Furniture – Litter Receptacle, Bike Share
-  Toronto. Contains information licensed under the Open Government Licence – Toronto.
+- **TTC live vehicle positions**: "TTC BusTime Real-Time Next Vehicle Arrival (NVAS)", the Toronto Transit Commission's
+  GTFS-Realtime vehicle positions (https://bustime.ttc.ca/gtfsrt/vehicles) from City of Toronto Open Data, under the
+  Open Government Licence – Toronto (https://open.toronto.ca/dataset/ttc-bustime-real-time-next-vehicle-arrival-nvas/).
+  The site's Worker (`worker/live.js`) reads it at most every 15 s; the streetcars and buses run where the TTC's are
+  (`js/transit-live.js`). Contains information licensed under the Open Government Licence – Toronto.
 - **Bike Share Toronto** (Toronto Parking Authority): the stations' places, sizes and live bike counts come from its
   GBFS feeds (station_information, baked into `js/bike-share-stations.js` by `tools/geo-bikeshare.mjs`; station_status,
   read by the browser once a minute), as published through the City of Toronto's Open Data "Bike Share Toronto" dataset
   under the Open Government Licence – Toronto. https://open.toronto.ca/dataset/bike-share-toronto/
-- **OpenStreetMap**: streets, places, water and land use, the streetcar & railway tracks and the streetcar stops. © OpenStreetMap contributors, under the Open Database
 - **OpenStreetMap**: streets, places, water and land use, the streetcar & railway tracks and the streetcar stops, and
   which side of the street each bikeway is on (cycleway tags). © OpenStreetMap contributors, under the Open Database
   License (ODbL). https://www.openstreetmap.org/copyright

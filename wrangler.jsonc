@@ -1,7 +1,9 @@
-// Cloudflare: the site is static, served as a Worker's static assets from dist/ (node tools/build-site.mjs builds it,
-// with dist/_headers). Deploy: node tools/build-site.mjs && npx wrangler@4 deploy
+// Cloudflare: the site is served as a Worker's static assets from dist/ (node tools/build-site.mjs builds it, with
+// dist/_headers); requests no asset matches reach worker/live.js (/live/vehicles: the TTC's live positions, the rest
+// back to the assets). Deploy: node tools/build-site.mjs && npx wrangler@4 deploy
 {
   "name": "slop-toronto",
+  "main": "worker/live.js",
   "compatibility_date": "2026-10-01",
-  "assets": { "directory": "./dist" }
+  "assets": { "directory": "./dist", "binding": "ASSETS" }
 }
