@@ -1,0 +1,55 @@
+[
+ {
+  "name": "ride-0",
+  "mode": "cyclist",
+  "time": "golden",
+  "wait": 3000,
+  "hold": "KeyW",
+  "js": "(()=>{const app=window.__CITY_APP;const B=window.CITY.CYCLING_BANDS;\nconst [X0,X1,Z0,Z1,KIND,SX,SZ,DUR]=[-1800, -1100, -2835, -2800, 3, -1150, -2820, 22000];\n// the track's pieces (and crossings) in the corridor, chained in riding order\nconst pieces=B.filter(b=>b.kind===KIND&&b.P.every(p=>p.x>X0&&p.x<X1&&p.z>Z0&&p.z<Z1));\nconst P=[];for(const b of pieces)for(const p of b.P)P.push(p);\nconst near=(x,z)=>{let best=null,bd=1e9;for(const b of pieces){const Q=b.P;for(let i=0;i+1<Q.length;i++){const a=Q[i],c=Q[i+1];const ex=c.x-a.x,ez=c.z-a.z,L2=ex*ex+ez*ez;if(L2<1e-6)continue;let t=((x-a.x)*ex+(z-a.z)*ez)/L2;t=Math.max(0,Math.min(1,t));const qx=a.x+ex*t,qz=a.z+ez*t,d=Math.hypot(qx-x,qz-z);if(d<bd){bd=d;const L=Math.sqrt(L2);best={qx,qz,tx:ex/L,tz:ez/L,nx:a.nx,nz:a.nz,cross:b.cross};}}}return best;};\nconst v=0.9;const q=near(SX,SZ);const sx=q.qx+q.nx*v,sz=q.qz+q.nz*v;\napp.teleportTo(sx,sz,Math.atan2(q.tx,q.tz));app.cameraSystem.cinema=null;\nconst cm=app.controllerManager;const bike=cm.entities.cyclist;const log=[];const c0=cm.worldContactCount||0;const t0=performance.now();let dist=0,px=sx,pz=sz,minSpeed=99,maxDy=0,y0=null,offs=[];\n(function f(){const p=bike.position;const r=near(p.x,p.z);\n const ax=r.qx+r.tx*8+r.nx*v,az=r.qz+r.tz*8+r.nz*v;bike.heading=Math.atan2(ax-p.x,az-p.z);\n const off=(p.x-r.qx)*r.nx+(p.z-r.qz)*r.nz;dist+=Math.hypot(p.x-px,p.z-pz);px=p.x;pz=p.z;\n const t=performance.now()-t0;if(t>2500){minSpeed=Math.min(minSpeed,bike.speed);if(y0===null)y0=p.y;maxDy=Math.max(maxDy,Math.abs(p.y-y0));offs.push(off);}\n log.push([Math.round(p.x),Math.round(p.z),+off.toFixed(2),+p.y.toFixed(3),+bike.speed.toFixed(1),r.cross?1:0]);\n if(t<DUR)setTimeout(f,100);else console.log('[ride] '+JSON.stringify({metres:Math.round(dist),contacts:(cm.worldContactCount||0)-c0,minSpeedAfterStart:+minSpeed.toFixed(2),maxHeightChange:+maxDy.toFixed(3),offsetRange:[Math.min(...offs).toFixed(2),Math.max(...offs).toFixed(2)],samples:log.filter((_,i)=>i%10==0)}));})();\n})()\n;(()=>{const ts=window.__CITY_APP.trafficSystem;const I=window.CITY.bikewayIntrusion;const t0=performance.now();let n=0,nj=0,bad=0,worst=0,where=[];const seen=new Set();\n(function f(){for(const v of [...ts.cars,...ts.buses]){if(!v.edge||v.conn)continue;if(v.s<10)continue;const d=I(v.x,v.z,v.halfWidth||0.95);if(d<=0)continue;if(v.s>v.edge.len-20){if(d>0.25)nj++;continue;}n++;if(d>0.25){bad++;if(d>worst)worst=d;if(where.length<12)where.push([Math.round(v.x),Math.round(v.z),+d.toFixed(2),v.bus?1:0])}}\n if(performance.now()-t0<20000)setTimeout(f,250);else console.log('[cars] '+JSON.stringify({beside:n,intruding:bad,intrudingNearJunction:nj,worst:+worst.toFixed(2),where}));})();})()\n"
+ },
+ {
+  "name": "ride-1",
+  "wait": 2400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "ride-2",
+  "wait": 2400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "ride-3",
+  "wait": 2400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "ride-4",
+  "wait": 2400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "ride-5",
+  "wait": 2400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "ride-6",
+  "wait": 2400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "ride-7",
+  "wait": 2400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "map-full",
+  "wait": 2500,
+  "hold": "KeyM"
+ },
+ {
+  "name": "map-mini",
+  "wait": 2500,
+  "hold": "KeyM"
+ }
+]
