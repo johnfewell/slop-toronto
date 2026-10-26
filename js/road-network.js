@@ -10,7 +10,7 @@
 // Conventions: north = -z, east = +x. Every directed edge has a unit direction (dx, dz) and a right normal
 // (rx, rz) = (-dz, dx). Lanes are lateral offsets to the right of the centreline, sorted left to right.
 
-const { CITY_BOUNDS, isOnLand, SIGNAL_JUNCTIONS } = window.CITY;
+const { CITY_BOUNDS, isOnLand, SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS = [], PXOS = [], TRAFFIC_DATA } = window.CITY;
 const ALL_AVENUES = window.CITY.ALL_AVENUES || []; // a rectangular grid's avenues & cross streets (none in Abuja)
 const ALL_STREETS = window.CITY.ALL_STREETS || [];
 
@@ -299,7 +299,8 @@ function buildRoadNetwork(sidewalks, obstacles) {
     }
     // Links the grid already carries: most of their length runs along an avenue (north-south) or a cross street
     const links = [];
-    for (const [a, b, ni, w, lanes, dir, inner, rank, ih] of RG.links) {
+    for (let li = 0; li < RG.links.length; li++) {
+      const [a, b, ni, w, lanes, dir, inner, rank, ih] = RG.links[li];
       const pts = [pos[a]];
       for (let k = 0; k < inner.length; k += 2) pts.push({ x: inner[k], z: inner[k + 1], h: ih ? ih[k / 2] : 0 });
       pts.push(pos[b]);
@@ -310,7 +311,7 @@ function buildRoadNetwork(sidewalks, obstacles) {
         if ((Math.abs(dz) > 0.94 && aveAt(x, z, 1.5)) || (Math.abs(dx) > 0.94 && pieceAt(x, z, 1.5, false))) hit++;
       });
       if (n && hit > n * 0.5) continue;
-      links.push({ a, b, name: RG.names[ni], w, lanes, dir, pts, len, rank: rank || 0 });
+      links.push({ a, b, name: RG.names[ni], w, lanes, dir, pts, len, rank: rank || 0, li }); // (li: its GEO.roadGraph link)
     }
     // Junction nodes a few metres apart are one: collapse links under 8.5 m (an edge needs 8 m, see addEdgeGeneral).
     // (Not the crossings of a dual carriageway's
@@ -441,7 +442,7 @@ function buildRoadNetwork(sidewalks, obstacles) {
       }
       stations.push(B);
       const lanes = lanesOf(l);
-      for (let k = 0; k + 1 < stations.length; k++) runs.push({ from: stations[k], to: stations[k + 1], line: l.pts, ...lanes });
+      for (let k = 0; k + 1 < stations.length; k++) runs.push({ from: stations[k], to: stations[k + 1], line: l.pts, li: l.li, rank: l.rank, ...lanes });
     }
     if (window.CITY.DEBUG_ROADS !== false) console.info(`[roads] centreline streets: ${links.length} links not on the grid, ${runs.length} straight runs`);
     return runs;
@@ -512,7 +513,7 @@ function buildRoadNetwork(sidewalks, obstacles) {
     }
     return true;
   };
-  function addEdgeGeneral(from, to, axis, lanes, half, divided, line = null) {
+  function addEdgeGeneral(from, to, axis, lanes, half, divided, line = null, li = -1, rank = 0) {
     const x0 = from.x;
     const z0 = from.z;
     const span = Math.hypot(to.x - x0, to.z - z0);
@@ -525,7 +526,7 @@ function buildRoadNetwork(sidewalks, obstacles) {
     // a deck's lanes run clear of whatever stands on the ground beneath it
     const open = Math.min(h0, h1) > 2 ? lanes.slice() : lanes.filter((o) => laneOpen(x0, z0, dx, dz, span, o, line, half));
     if (!open.length) return;
-    edges.push({ from, to, axis, x0, z0, dx, dz, rx: -dz, rz: dx, span, half, lanes: open.sort((p, q) => p - q), moves: [], general: true, cand: lanes, divided: !!divided, line, h0, h1 });
+    edges.push({ from, to, axis, x0, z0, dx, dz, rx: -dz, rz: dx, span, half, lanes: open.sort((p, q) => p - q), moves: [], general: true, cand: lanes, divided: !!divided, line, h0, h1, li, rank });
   }
   // A divided road drawn as two one-way roadways between the same two junctions runs both ways
   // along one centreline here: each way keeps to the right of it, as on a two-way street, and the road is as wide as
@@ -554,8 +555,8 @@ function buildRoadNetwork(sidewalks, obstacles) {
     if (r.half >= 7.25) r.axis = o.axis = 'ave'; // as wide as a major road (see lanesOf)
   }
   for (const r of genRuns) {
-    if (r.fwd.length) addEdgeGeneral(r.from, r.to, r.axis, r.fwd, r.half, r.divided, r.line);
-    if (r.back.length) addEdgeGeneral(r.to, r.from, r.axis, r.back, r.half, r.divided, r.line);
+    if (r.fwd.length) addEdgeGeneral(r.from, r.to, r.axis, r.fwd, r.half, r.divided, r.line, r.li, r.rank);
+    if (r.back.length) addEdgeGeneral(r.to, r.from, r.axis, r.back, r.half, r.divided, r.line, r.li, r.rank);
   }
   // Two edges from one node to the same next one (a service road whose ends were drawn onto its main road's junctions)
   // would drive through each other: keep the grid's, else the one with the most lanes
@@ -1162,8 +1163,67 @@ function buildRoadNetwork(sidewalks, obstacles) {
     return c;
   }
 
+  // 10. Crosswalks (the City's Pedestrian Network, js/toronto-traffic-data.js). At a signalised junction, which of its
+  //     sides has one (n.crosswalk[side]): where the City maps a crossing of that junction's signal across that arm (all
+  //     of them where it maps none there). And the crossings between junctions, the midblock pedestrian signals and the
+  //     pedestrian crossovers: where each crosses the road's edges (both ways), its stop on each (e.stops: { s, c },
+  //     sorted along it) a vehicle stops at for its red, or to give way to the people on a crossover.
+  const cityCrosswalks = new Map(); // px -> [[cx, cz, ux, uz, length, type, px]]
+  for (const c of (TRAFFIC_DATA && TRAFFIC_DATA.crosswalks) || []) if (c[6]) (cityCrosswalks.get(c[6]) || cityCrosswalks.set(c[6], []).get(c[6])).push(c);
+  let legsWith = 0, legsWithout = 0;
+  for (const n of nodes) {
+    if (!n.signal) continue;
+    n.crosswalk = new Array(n.sideCount).fill(false);
+    const mapped = cityCrosswalks.get(SIGNAL_JUNCTIONS[n.sigJ].px) || [];
+    const legs = [];
+    for (const e of n.in) legs.push({ side: e.inSide, x: e.sx + e.dx * (e.len + CROSSWALK / 2), z: e.sz + e.dz * (e.len + CROSSWALK / 2), e });
+    for (const e of n.out) legs.push({ side: e.outSide, x: e.sx - e.dx * CROSSWALK / 2, z: e.sz - e.dz * CROSSWALK / 2, e });
+    let any = false;
+    for (const leg of legs) {
+      const { e } = leg;
+      const hit = mapped.some(([cx, cz, ux, uz]) => {
+        const along = (cx - leg.x) * e.dx + (cz - leg.z) * e.dz, side = (cx - leg.x) * e.rx + (cz - leg.z) * e.rz;
+        return Math.abs(ux * e.rx + uz * e.rz) > 0.8 && Math.abs(along) < 14 && Math.abs(side) < e.half + 8;
+      });
+      if (hit) { n.crosswalk[leg.side] = true; any = true; }
+    }
+    if (!any) for (const leg of legs) n.crosswalk[leg.side] = true; // (none mapped here, or none on our arms: every side)
+    for (let k = 0; k < n.sideCount; k++) if (legs.some((l) => l.side === k)) (n.crosswalk[k] ? legsWith++ : legsWithout++);
+  }
+  const midCrossings = [];
+  const crossingSites = [
+    ...SIGNAL_CROSSINGS.map((c, i) => ({ kind: 'signal', i, x: c.x, z: c.z, ux: c.ux || 0, uz: c.uz || 0 })),
+    ...PXOS.map((c, i) => ({ kind: 'pxo', i, x: c.x, z: c.z, ux: c.ux || 0, uz: c.uz || 0 }))
+  ];
+  for (const site of crossingSites) {
+    const stops = [];
+    for (const e of edges) {
+      if ((e.h0 || 0) > 2 || (e.h1 || 0) > 2 || e.len < 8) continue;
+      const along = (site.x - e.sx) * e.dx + (site.z - e.sz) * e.dz, side = (site.x - e.sx) * e.rx + (site.z - e.sz) * e.rz;
+      if (along < -6 || along > e.len + 6 || Math.abs(side) > e.half + 5) continue;
+      if ((site.ux || site.uz) && Math.abs(site.ux * e.dx + site.uz * e.dz) > 0.6) continue; // (a road it doesn't cross)
+      stops.push({ e, s: Math.max(3, Math.min(e.len - 3, along)), side: Math.abs(side) });
+    }
+    if (!stops.length) continue;
+    // the road it crosses: the nearest edge, and the other way of the same road (the edge most nearly opposite)
+    stops.sort((a, b) => a.side - b.side);
+    const e0 = stops[0].e;
+    const both = stops.filter((st) => st.e === e0 || (Math.abs(st.e.dx * e0.dx + st.e.dz * e0.dz) > 0.9 && st.side < e0.half + 3));
+    const s0 = stops[0].s;
+    const c = { kind: site.kind, i: site.i, x: e0.sx + e0.dx * s0, z: e0.sz + e0.dz * s0, ux: e0.rx, uz: e0.rz, half: Math.max(...both.map((st) => st.e.half)), stops: [] };
+    for (const st of both) {
+      // (on the way back the same spot is at the other end of the edge)
+      const sp = Math.max(3, Math.min(st.e.len - 3, (c.x - st.e.sx) * st.e.dx + (c.z - st.e.sz) * st.e.dz));
+      c.stops.push({ e: st.e, s: sp });
+      (st.e.stops || (st.e.stops = [])).push({ s: sp, c });
+    }
+    midCrossings.push(c);
+  }
+  for (const e of edges) if (e.stops) e.stops.sort((a, b) => a.s - b.s);
+  if (window.CITY.DEBUG_ROADS !== false) console.info(`[roads] crosswalks: ${legsWith} sides of signalised junctions with one, ${legsWithout} without; ${midCrossings.filter((c) => c.kind === 'signal').length} midblock signals & ${midCrossings.filter((c) => c.kind === 'pxo').length} crossovers on the road`);
+
   const isRoadClear = (x, z, clear = 0.15) => !blockedOnStreet(x, z, clear);
-  return { nodes, edges, paintEdges, connector, curvePoint, walkable, onSidewalk, isRoadClear };
+  return { nodes, edges, paintEdges, connector, curvePoint, walkable, onSidewalk, isRoadClear, midCrossings };
 }
 
 // The largest strongly connected set of `list` (a Set), going on from item e to the items next(e)

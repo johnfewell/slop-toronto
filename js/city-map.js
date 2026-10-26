@@ -1115,6 +1115,7 @@ class CityMapSystem {
       ctx.fillStyle = 'rgba(226, 232, 240, 0.34)';
       for (let i = 0; i < this.trafficSystem.cars.length; i += 2) {
         const car = this.trafficSystem.cars[i];
+        if (!car.edge) continue; // (a car off the streets: traffic.js keeps as many as the streets hold)
         const cx = toX(car.x);
         const cy = toY(car.z);
         if (Math.abs(cx) < w * 0.5 && Math.abs(cy) < h * 0.5) {

@@ -626,13 +626,30 @@ function deckHeightAt(x, z, y = 0, step = 0.6) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Traffic signals, as mapped (GEO.signals, OpenStreetMap highway=traffic_signals). A junction's signals (often mapped on
-// each approach, or on both carriageways of a dual road) are clustered within 45 m and pinned to the street graph's
-// junction nodes nearby: road-network.js signals those junctions, street-details.js mounts the heads on them. Signals on
-// a pedestrian crossing between junctions (or with no junction near) are SIGNAL_CROSSINGS: a pole on either kerb.
+// Traffic signals: the City of Toronto's own (js/toronto-traffic-data.js, Traffic Signals Tabular). Each signal at a
+// junction controls the street graph's junction nodes the build pinned it to (both carriageways of a divided road):
+// road-network.js signals those junctions, street-details.js mounts the heads on them, signal-plan.js times them by
+// their real mode of control & pedestrian walking speed. Midblock pedestrian signals (and a signal whose crossing
+// street the graph lacks, like Yonge & Queen with Queen closed) are SIGNAL_CROSSINGS: traffic stops for their red, a
+// pole on either kerb. The pedestrian crossovers (PXOS) have no light: drivers yield to people on them.
+// Without the City's data: OpenStreetMap's (GEO.signals) as before, clustered within 45 m onto junctions.
 // ---------------------------------------------------------------------------------------------------------------------
-const { SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS } = (() => {
+const TRAFFIC_DATA = window.CITY.TRAFFIC_DATA || null;
+const { SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS, PXOS } = (() => {
   const RG = GEO.roadGraph;
+  if (TRAFFIC_DATA) {
+    const junctions = [], crossings = [];
+    for (const r of TRAFFIC_DATA.signals) {
+      const [x, z, px, mode, sys, lpi, speed, fdwAt, veh8, ped8, approaches, ux, uz, len, name, pins] = r;
+      const info = { px, mode, sys, lpi, speed, fdwAt, veh8, ped8, approaches, name };
+      if (pins.length) {
+        const pts = pins.map((n) => ({ x: RG.nodes[2 * n], z: RG.nodes[2 * n + 1] }));
+        junctions.push({ x: pts.reduce((t, p) => t + p.x, 0) / pts.length, z: pts.reduce((t, p) => t + p.z, 0) / pts.length, pts, ...info });
+      } else crossings.push({ x, z, ux, uz, len, ...info });
+    }
+    const pxos = TRAFFIC_DATA.pxo.map(([x, z, px, ux, uz, len, name]) => ({ x, z, px, ux, uz, len, name }));
+    return { SIGNAL_JUNCTIONS: junctions, SIGNAL_CROSSINGS: crossings, PXOS: pxos };
+  }
   const degree = new Map();
   for (const [a, b] of RG.links) for (const n of [a, b]) degree.set(n, (degree.get(n) || 0) + 1);
   const junctionNodes = [];
@@ -654,10 +671,10 @@ const { SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS } = (() => {
       if (Math.hypot(nearest.x - cx, nearest.z - cz) < 60) pts = [nearest];
     }
     if (pts.length) {
-      junctions.push({ x: pts.reduce((t, p) => t + p.x, 0) / pts.length, z: pts.reduce((t, p) => t + p.z, 0) / pts.length, pts });
+      junctions.push({ x: pts.reduce((t, p) => t + p.x, 0) / pts.length, z: pts.reduce((t, p) => t + p.z, 0) / pts.length, pts, mode: 2 });
     } else crossings.push(...c.sig); // a signal on a road with no junction near: a crossing's
   }
-  return { SIGNAL_JUNCTIONS: junctions, SIGNAL_CROSSINGS: crossings };
+  return { SIGNAL_JUNCTIONS: junctions, SIGNAL_CROSSINGS: crossings, PXOS: [] };
 })();
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -841,6 +858,8 @@ Object.assign(window.CITY, {
   DECKS,
   SIGNAL_JUNCTIONS,
   SIGNAL_CROSSINGS,
+  PXOS,
+  TRAFFIC_DATA,
   CITY_LANDMARKS,
   LANDMARK_SITES,
   TELEPORT_LOCATIONS,

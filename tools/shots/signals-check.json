@@ -1,0 +1,14 @@
+[
+ {
+  "name": "sig-king-spadina",
+  "mode": "helicopter",
+  "time": "midday",
+  "wait": 30000,
+  "js": "(() => { const app = window.__CITY_APP; document.getElementById('btn-toggle-hud')?.click(); app.teleportTo(-1109, -350, 0); app.cameraSystem.cinema = () => ({ pos: [-1085, 9, -322], look: [-1112, 0, -352], fov: 50 }); })()"
+ },
+ {
+  "name": "sig-king-spadina-2",
+  "wait": 8000,
+  "js": "(() => { const T = window.__CITY_APP.trafficSystem; const placed = T.peds.filter((p) => p.placed); console.log('[check] cars', T.cars.filter((c) => c.edge).length, 'target', T.carTarget, 'peds', placed.length, 'target', T.pedTarget, 'on crosswalks', placed.filter((p) => p.node).length, 'mid', placed.filter((p) => p.mid).length, 'waiting', placed.filter((p) => p.waiting).length); })()"
+ }
+]

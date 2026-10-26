@@ -119,9 +119,25 @@ function buildRoadPaint(scene, network) {
       across(f, f.len - 0.35, left + 0.1, f.half - 0.1, 0.45, WHITE);
     }
 
-    // Zebra crossings curb to curb at the signalised junctions, between the stop lines and the junction
-    if (e.from.signal) across(e, -CROSSWALK / 2, -e.half, e.half, CROSSWALK - 0.3, WHITE, 1.2, 0.5);
-    if (e.to.signal) across(e, e.len + CROSSWALK / 2, -e.half, e.half, CROSSWALK - 0.3, WHITE, 1.2, 0.5);
+    // Zebra crossings curb to curb at the signalised junctions, between the stop lines and the junction, on the sides
+    // with a crosswalk (road-network.js n.crosswalk: the City's Pedestrian Network)
+    const zebra = (n, side) => n.signal && (!n.crosswalk || n.crosswalk[side]);
+    if (zebra(e.from, e.outSide)) across(e, -CROSSWALK / 2, -e.half, e.half, CROSSWALK - 0.3, WHITE, 1.2, 0.5);
+    if (zebra(e.to, e.inSide)) across(e, e.len + CROSSWALK / 2, -e.half, e.half, CROSSWALK - 0.3, WHITE, 1.2, 0.5);
+  }
+
+  // The midblock crossings (network.midCrossings): a zebra curb to curb; at a pedestrian crossover the yield line of
+  // "shark's teeth" across each approach a few metres before it, and at a midblock signal a stop bar
+  for (const c of network.midCrossings || []) {
+    const e = c.stops[0].e;
+    const s = c.stops[0].s;
+    across(e, s, -c.half, c.half, CROSSWALK - 0.3, WHITE, 1.2, 0.5);
+    for (const st of c.stops) {
+      const f = st.e;
+      const left = f.lanes.length && f.lanes[0] > 1 ? Math.max(0, f.lanes[0] - 1.8) : -f.half;
+      if (c.kind === 'pxo') across(f, st.s - CROSSWALK / 2 - 3.5, left + 0.1, f.half - 0.1, 0.6, WHITE, 0.9, 0.55);
+      else across(f, st.s - CROSSWALK / 2 - 1.0, left + 0.1, f.half - 0.1, 0.45, WHITE);
+    }
   }
 
   // At a simple bend, corresponding offset lines meet at a bounded mitre, without an intersection-sized gap

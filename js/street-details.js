@@ -1,7 +1,7 @@
 (function () {
 // js/street-details.js
 // Abuja's street furniture & greenery, on the real streets & blocks (city-config.js):
-// - Traffic signals where OpenStreetMap maps them (city-config.js SIGNAL_JUNCTIONS): a pole on the near-right corner of
+// - Traffic signals where the City of Toronto has them (city-config.js SIGNAL_JUNCTIONS): a pole on the near-right corner of
 //   every approach, three-aspect heads facing the traffic, a mast arm over the wide roads, each head lit by its
 //   junction's phase for that approach (js/signal-plan.js, which js/traffic.js obeys too); and at the signalised
 //   pedestrian crossings (SIGNAL_CROSSINGS), a red / green man pole on either kerb
@@ -373,9 +373,11 @@ function buildStreetDetails(scene) {
     console.info(`[streetDetails] ${heads} signal heads at ${SIGNAL_JUNCTIONS.length} signalised junctions`);
   }
 
-  // Signalised pedestrian crossings: a pole on either kerb, its red / green man facing the far kerb
+  // Signalised pedestrian crossings: a pole on either kerb, its red / green man facing the far kerb. (With the City's
+  // signals, js/pedestrian-signals.js mounts these, and a head at every junction crosswalk, on the crossings the
+  // pedestrians use.)
   const pedHeadMatrices = [];
-  {
+  if (!window.CITY.TRAFFIC_DATA) {
     SIGNAL_CROSSINGS.forEach((c, ci) => {
       const near = nearestRoads(c.x, c.z, 25).find((n) => !n.road.raised);
       if (!near) return;

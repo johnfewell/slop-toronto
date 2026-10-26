@@ -62,8 +62,11 @@
     await run(30); // the jump places everyone, then they settle
     const last = new Map(), trips = [];
     const tripOf = (v) => last.get(v);
-    const reasons = {};
+    const reasons = {}, why = {};
     let samples = 0, queuedShare = 0, stoppedShare = 0, pedWaits = [], pedState = new Map(), sumStop = 0, sumKm = 0;
+    // people crossing: each step off a kerb onto a junction crosswalk (p.node) or a midblock crossing (p.mid)
+    const onCrossing = new Map();
+    let crossings = 0, midCrossings = 0, placedSum = 0, carSum = 0, carSamples = 0;
     await run(seconds, (i) => {
       for (const v of vehicles()) {
         if (!v.edge) continue;
@@ -93,7 +96,17 @@
           else if (e.to.signal) r = stateOf(e, elapsed) === 'green' ? 'front-green-blocked' : 'front-red';
           else r = 'front-unsignalised';
           reasons[r] = (reasons[r] || 0) + 1;
+          // (and for the first in line, why it doesn't go: traffic.js whyWaiting)
+          if (T.whyWaiting && v.gap >= 6) {
+            const w = T.whyWaiting(v);
+            why[w] = (why[w] || 0) + 1;
+          }
         }
+      }
+      if (i % 30 === 0) {
+        placedSum += T.peds.filter((p) => p.placed).length;
+        carSum += T.cars.filter((c) => c.edge).length;
+        carSamples++;
       }
       if (i % 15 === 0) {
         let act = 0, q = 0, st = 0;
@@ -106,6 +119,10 @@
         if (act) { samples++; queuedShare += q / act; stoppedShare += st / act; }
       }
       for (const p of T.peds) {
+        const track = p.placed && (p.node || p.mid);
+        const on = !!track && p.t > 2.2 && p.t < p.len - 2.2;
+        if (on && !onCrossing.get(p)) { if (p.mid) midCrossings++; else crossings++; }
+        onCrossing.set(p, on);
         const s = pedState.get(p);
         const w = !!(p.placed && p.waiting);
         if (w && !s) pedState.set(p, { t: elapsed, node: p.node, x: p.x, z: p.z });
@@ -117,7 +134,7 @@
     });
     for (const tr of last.values()) if (tr.km > 0.3) trips.push(tr.stop / tr.km);
     const placed = T.peds.filter((p) => p.placed);
-    log({ kind: 'fleet', spot: spot.name, seed, seconds, cars: T.cars.length, buses: T.buses.length, active: vehicles().filter((v) => v.edge).length, peds: placed.length, pedsAtCrossings: placed.filter((p) => p.node).length, stopPerKm: sumStop / Math.max(1e-6, sumKm), tripMean: mean(trips), tripP95: pct(trips, 0.95), trips: trips.length, km: sumKm, queuedAtRed: queuedShare / samples, stopped: stoppedShare / samples, pedWaitMean: mean(pedWaits), pedWaitP95: pct(pedWaits, 0.95), pedWaits: pedWaits.length, updateMs: updateMs / updates, reasons });
+    log({ kind: 'fleet', spot: spot.name, seed, seconds, cars: T.cars.length, buses: T.buses.length, active: vehicles().filter((v) => v.edge).length, peds: placed.length, pedsAtCrossings: placed.filter((p) => p.node).length, stopPerKm: sumStop / Math.max(1e-6, sumKm), tripMean: mean(trips), tripP95: pct(trips, 0.95), trips: trips.length, km: sumKm, queuedAtRed: queuedShare / samples, stopped: stoppedShare / samples, pedWaitMean: mean(pedWaits), pedWaitP95: pct(pedWaits, 0.95), pedWaits: pedWaits.length, updateMs: updateMs / updates, reasons, why, crossingsPerMin: (crossings / seconds) * 60, midCrossingsPerMin: (midCrossings / seconds) * 60, carsMean: carSum / Math.max(1, carSamples), pedsMean: placedSum / Math.max(1, carSamples) });
     updateMs = 0; updates = 0;
   }
 

@@ -1,0 +1,9 @@
+[
+ {
+  "name": "crosswalk-diag",
+  "mode": "helicopter",
+  "time": "midday",
+  "wait": 15000,
+  "js": "(() => { const T = window.__CITY_APP.trafficSystem, N = T.network; let sides = 0, built = 0, sideNo = 0; const why = { noSidewalkA: 0, noSidewalkB: 0, blocked: 0 }; const R = T.pedRoutes; for (const n of N.nodes) { if (!n.signal || !n.crosswalk) continue; const tracks = R.across(n); const bySide = new Set(tracks.map((t) => t.side)); for (let k = 0; k < n.sideCount; k++) { if (!n.road[k]) continue; if (!n.crosswalk[k]) { sideNo++; continue; } sides++; if (bySide.has(k)) built++; } } let mids = 0, midBuilt = 0; for (const c of N.midCrossings) { mids++; if (R.acrossMid(c).length) midBuilt++; } console.log('[diag] signal sides with a City crosswalk', sides, 'tracks built on', built, 'sides without', sideNo, 'mid crossings', mids, 'with tracks', midBuilt); })()"
+ }
+]

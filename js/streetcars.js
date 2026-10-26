@@ -310,6 +310,7 @@ function buildTracks(network) {
   // there of the road the track runs along (signal-plan.js)
   if (network) {
     const sigGrid = pointGrid(network.nodes.filter((n) => n.signal), 20);
+    const midGrid = pointGrid((network.midCrossings || []).filter((c) => c.kind === 'signal'), 20);
     for (const t of tracks) {
       for (const [n, { s }] of nearAlong(t, sigGrid, 9)) {
         if (s < 15) continue;
@@ -327,6 +328,8 @@ function buildTracks(network) {
         }
         t.signals.push({ s, j: n.sigJ, p, half: Math.max(6, (n.hx || 7) + 3) });
       }
+      // (and the midblock pedestrian signals it passes: the road's phase, 0; it stops 3 m short of the crossing)
+      for (const [c, { s }] of nearAlong(t, midGrid, 9)) if (s >= 15) t.signals.push({ s, j: SIGNALS.crossingIndex(c.i), p: 0, half: 3 });
       t.signals.sort((a, b) => a.s - b.s);
     }
   }

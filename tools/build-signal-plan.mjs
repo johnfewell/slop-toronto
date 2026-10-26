@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const ctx = vm.createContext({ window: { CITY: { DEBUG_ROADS: false, SIGNAL_PLAN_BUILD: true } }, console });
-for (const f of ['js/toronto-geodata.js', 'js/city-config.js', 'js/signal-plan.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
+for (const f of ['js/toronto-geodata.js', 'js/toronto-traffic-data.js', 'js/city-config.js', 'js/signal-plan.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
 const { SIGNALS, SIGNAL_TIMING: T, SIGNAL_CROSSINGS } = ctx.window.CITY;
 const J = SIGNALS.junctions;
 const C = T.cycle, V = SIGNALS.V_PROG, LOST = 3;
@@ -35,7 +35,7 @@ for (const [name, info] of SIGNALS.corridors) {
   let d = 0;
   const fwd = along.map((p, i) => {
     if (i) d += Math.hypot(p.j.x - along[i - 1].j.x, p.j.z - along[i - 1].j.z);
-    const W = T.layouts[p.j.phases][SIGNALS.phaseForDir(p.j.index, info.ux, info.uz)];
+    const W = SIGNALS.windows(p.j.index)[SIGNALS.phaseForDir(p.j.index, info.ux, info.uz)]; // (each light's own split)
     return { k: p.j.index, gs: W[0], ge: W[1], d };
   });
   const back = fwd.slice().reverse().map((q) => ({ ...q, d: d - q.d }));

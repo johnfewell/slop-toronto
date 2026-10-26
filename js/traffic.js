@@ -10,7 +10,7 @@
 // - Fixed-size local populations replenish distant roads and sidewalks in every direction, protecting the near view.
 // - The player's vehicle or character pushes and is pushed by the traffic (SAT contact, impulses, sparks).
 
-const { THREE, buildRoadNetwork, edgeY, SIGNALS, deckHeightAt } = window.CITY;
+const { THREE, buildRoadNetwork, edgeY, SIGNALS, deckHeightAt, SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS } = window.CITY;
 const {
   cityUniforms,
   createContactShadowMaterial,
@@ -171,7 +171,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         for (let h = g + 1; h < unit.length; h++) {
           if (n.groupPhase[g] !== n.groupPhase[h] || !crosses(g, h)) continue;
           let moved = false;
-          for (let q = 0; q < J.phases && !moved; q++) {
+          for (let q = 0; q < J.axes.length && !moved; q++) {
             if (unit.every((_, k) => k === h || n.groupPhase[k] !== q || !crosses(k, h))) {
               n.groupPhase[h] = q;
               moved = true;
@@ -189,18 +189,70 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         const L = Math.hypot(dx, dz) || 1;
         let best = q === 0 ? 1 : 0, bd = 2;
         J.axes.forEach(([ax, az], p) => {
-          const d = Math.abs(ax * dx + az * dz) / L;
+          const d = Math.abs(ax * dx + az * dz) / L; // (the roads' phases: a scramble's own comes after them)
           if (p !== q && d < bd) { bd = d; best = p; }
         });
         return best;
       };
       n.walkP = n.road.map((r) => (!r ? 0 : walkPhaseOf(r.to === n ? r.inArm.group : r.outArm.group)));
+      if (J.scramble) n.walkP.fill(J.phases - 1); // (a pedestrian scramble: everyone walks in its own phase)
       for (const e of n.in) {
         e.sigP = n.groupPhase[e.axisIndex];
         (sigApproaches.get(n.sigJ) || sigApproaches.set(n.sigJ, []).get(n.sigJ)).push(e);
       }
     }
     (conflicts ? console.error : console.info)(`[signals] ${nodesChecked} signalised nodes: ${conflicts} with crossing roads in the same phase (${movedRoads} roads moved to a phase of their own)`);
+  }
+
+  // Traffic volumes (js/toronto-traffic-data.js, the City's counts): every edge's vehicles per hour its way at the hour
+  // of the day (setHour: the time-of-day buttons). They set how many cars the streets around the player hold (a
+  // street's flow over the speed traffic makes along it, queues & all), the streets cars appear on, and the way they
+  // turn: the City's turning shares on a counted approach, else straight on more often than not, towards the busier
+  // streets.
+  const TD = window.CITY.TRAFFIC_DATA;
+  const RGL = window.CITY.GEO.roadGraph.links;
+  const RANK_DAILY = [400, 1200, 7000, 12000, 14000, 30000, 60000]; // (a street no count reaches, by class, both ways)
+  for (const e of edges) {
+    const l = e.li >= 0 ? RGL[e.li] : null;
+    const daily = TD && l ? TD.linkVolume[e.li] : RANK_DAILY[e.rank || (e.axis === 'ave' ? 3 : 1)] || 1200;
+    e.daily = l && l[5] !== 0 ? daily : daily / 2; // its own way
+    e.vph = 0;
+  }
+  const HOURLY = TD ? TD.hourly : null;
+  const shareAt = (h, kind) => {
+    if (!HOURLY) return 1 / 24;
+    const a = HOURLY[kind], h0 = Math.floor(h) % 24, f = h - Math.floor(h);
+    return a[h0] * (1 - f) + a[(h0 + 1) % 24] * f;
+  };
+  const PEAK_PED = HOURLY ? Math.max(...HOURLY.pedestrians) : 1;
+  let hour = 18.6, pedLevel = 1;
+  function setHour(h) {
+    hour = h;
+    const f = shareAt(h, 'vehicles');
+    for (const e of edges) e.vph = e.daily * f;
+    pedLevel = Math.min(1, shareAt(h, 'pedestrians') / PEAK_PED);
+    nearX = Infinity; // (the spawn weights & targets again)
+  }
+  // the City's turning shares where the approach was counted: [left, straight, right]
+  if (TD) {
+    const cells = new Map();
+    for (const t of TD.turns) {
+      const k = Math.floor(t[0] / 40) * 100000 + Math.floor(t[1] / 40);
+      (cells.get(k) || cells.set(k, []).get(k)).push(t);
+    }
+    let counted = 0;
+    for (const e of edges) {
+      const n = e.to;
+      let best = null, bd = 25;
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+        for (const t of cells.get((Math.floor(n.x / 40) + a) * 100000 + Math.floor(n.z / 40) + b) || []) {
+          const d = Math.hypot(t[0] - n.x, t[1] - n.z);
+          if (d < bd && -(t[2] * e.dx + t[3] * e.dz) > 0.8) { bd = d; best = t; }
+        }
+      }
+      if (best) { e.turnShare = { L: best[4], S: best[5], R: best[6] }; counted++; }
+    }
+    console.info(`[traffic] the City's counts: ${counted} approaches with turning shares`);
   }
 
   // =========================================================================
@@ -413,6 +465,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       t: 0,
       dir: 1,
       node: null, // the intersection of its crosswalk, which side of it, where along it
+      mid: null, // (or the midblock crossing it is on: network.midCrossings)
+      clx: 0, // the crosswalk's direction (its road's lateral axis): coord is measured along it
+      clz: 1,
       side: 0,
       coord: 0,
       line: 0, // its line over the crosswalk, off the centre line
@@ -642,24 +697,86 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   const nearJunctions = []; // their junctions (signal-plan.js actuates these)
   let nearX = Infinity;
   let nearZ = Infinity;
+  // ...and how many cars they hold (the City's volumes, see setHour): each street's flow over the speed traffic makes
+  // along it, stops & queues included (V_TRAVEL); the streets new cars appear on, by how many each holds (edgeWeights,
+  // cumulative); people at the crossings by how many cross there (the City's pedestrian counts)
+  const V_TRAVEL = 5.5; // m/s
+  const MIN_CARS = Math.min(NUM_CARS, 24);
+  const edgeWeights = [];
+  let carTarget = NUM_CARS, pedTarget = NUM_PEDS;
+  const nearMids = []; // the midblock crossings around the focus (signals & crossovers)
+  const nearMidSet = new Set();
+  for (const c of network.midCrossings) Object.assign(c, { on: 0, onNow: 0, active: false, waitNow: false });
+  const crossingWeights = []; // cumulative over nearSignals then nearMids
+  const pedVolumeOf = (n) => {
+    const sj = SIGNAL_JUNCTIONS[n.sigJ];
+    return Math.max(300, (sj && sj.ped8) || 0);
+  };
   function refreshNear() {
     if (Math.hypot(focusX - nearX, focusZ - nearZ) < 40) return;
     nearX = focusX;
     nearZ = focusZ;
     nearEdges.length = 0;
     nearSignals.length = 0;
+    edgeWeights.length = 0;
+    let held = 0, w = 0;
     for (const e of edges) {
       const s = clamp((focusX - e.sx) * e.dx + (focusZ - e.sz) * e.dz, 0, e.len);
       const dx = e.sx + e.dx * s - focusX, dz = e.sz + e.dz * s - focusZ;
-      if (dx * dx + dz * dz < NEAR_RADIUS * NEAR_RADIUS) nearEdges.push(e);
+      if (dx * dx + dz * dz < NEAR_RADIUS * NEAR_RADIUS) {
+        nearEdges.push(e);
+        const cars = (e.vph / 3600 / V_TRAVEL) * e.len;
+        held += cars;
+        edgeWeights.push((w += cars + 1e-4));
+      }
     }
+    carTarget = Math.round(clamp(held, MIN_CARS, NUM_CARS));
     for (const n of nodes) {
       const dx = n.x - focusX, dz = n.z - focusZ;
       if (n.signal && dx * dx + dz * dz < NEAR_RADIUS * NEAR_RADIUS) nearSignals.push(n);
     }
     nearJunctions.length = 0;
     for (const n of nearSignals) if (!nearJunctions.includes(n.sigJ)) nearJunctions.push(n.sigJ);
+    for (const c of nearMids) {
+      c.on = 0;
+      c.active = false;
+      if (c.kind === 'pxo') window.CITY.PXO_ACTIVE[c.i] = 0;
+    }
+    nearMids.length = 0;
+    nearMidSet.clear();
+    for (const c of network.midCrossings) {
+      if ((c.x - focusX) ** 2 + (c.z - focusZ) ** 2 > NEAR_RADIUS * NEAR_RADIUS) continue;
+      nearMids.push(c);
+      nearMidSet.add(c);
+      if (c.kind === 'signal') nearJunctions.push(SIGNALS.crossingIndex(c.i));
+    }
+    // people: as many as the City counts crossing here at this hour (downtown's crossings fill the crowd; a quiet
+    // residential street has a few), by crossing
+    crossingWeights.length = 0;
+    let pw = 0, peds = 0;
+    for (const n of nearSignals) {
+      const v = pedVolumeOf(n) / Math.max(1, SIGNAL_JUNCTIONS[n.sigJ].pts.length); // (a junction of two nodes: half each)
+      peds += v;
+      crossingWeights.push((pw += v));
+    }
+    for (const c of nearMids) {
+      const v = c.kind === 'signal' ? Math.max(300, SIGNAL_CROSSINGS[c.i].ped8 || 0) : 600;
+      peds += v;
+      crossingWeights.push((pw += v));
+    }
+    // (the 8 peak hours' crossings at the junctions around: 60 000 or more downtown fill the whole crowd)
+    pedTarget = Math.round(clamp(NUM_PEDS * pedLevel * Math.min(1, 0.25 + peds / 80000), Math.min(NUM_PEDS, 30), NUM_PEDS));
   }
+  const pickWeighted = (cum) => {
+    const r = Math.random() * cum[cum.length - 1];
+    let lo = 0, hi = cum.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (cum[mid] < r) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  };
 
   // The detectors of the lights around the player (signal-plan.js actuates them): a vehicle within DETECT m of a stop
   // line (unless it stands there with nowhere to go), the player's own vehicle there, people waiting at a curb call
@@ -813,9 +930,18 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   function chooseMove(v, fromLane) {
     const e = v.edge;
     let total = 0;
+    const share = !v.bus && e.turnShare;
+    let types = null;
+    if (share) {
+      types = { L: 0, S: 0, R: 0 };
+      for (const m of e.moves) types[m.turn]++;
+    }
     for (let k = 0; k < e.moves.length; k++) {
       const m = e.moves[k];
       let w = m.turn === 'S' ? (v.bus ? 8 : 3) : 1;
+      // (the City's shares on a counted approach; elsewhere towards the busier street)
+      if (share) w = (share[m.turn] + 0.01) / types[m.turn];
+      else if (!v.bus) w *= Math.sqrt((m.to.vph + 4) / (e.vph + 4));
       if (v.bus && m.turn !== 'S' && m.to.lanes.length < 2) w *= 0.05;
       if (v.bus && m.to.tram) w *= 0.001; // streetcar routes have streetcars, not buses (e.tram, streetcars.js)
       if (fromLane) {
@@ -1017,6 +1143,14 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       }
       return false;
     }
+    // A bend in the street (a shape node: one way in, one way on, nothing crossing): no junction to keep clear, so v
+    // follows whoever is ahead round it (accelerate looks onto the next piece) instead of waiting at the bend until the
+    // piece beyond could hold its whole queue (which let a queue move up one short piece at a time)
+    if (n.shape && n.in.length === 1 && n.out.length === 1) {
+      v.out = j;
+      v.yielding = false;
+      return true;
+    }
     if (!v.isPolice && (phase === 'red' || (phase === 'amber' && stoppable))) return false;
     if (boxBusy(n, e.axisIndex)) return false; // crossing traffic inside
     const lead = ahead(e.occ[v.lane], v.s, v);
@@ -1037,6 +1171,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     if (wait < 0 && pedestrianOn(n, f.outSide, laneCoord(f, j), timeTo(v, d + c.len - 3), timeTo(v, d + c.len + 2 * v.half))) return false;
     const vs = v.s - e.len - c.len; // where on f it would be now
     if (!room(f, j, v) || alongside(f, j, v, vs, m.turn !== 'S') || mergingAhead(v, f, j)) return false;
+    // (a midblock crossing just past the junction it would have to stop at: wait at the line, out of the junction)
+    if (f.stops && f.stops[0].s < 2 * v.half + 4 && crossingHolds(f.stops[0].c)) return false;
     v.out = j;
     v.yielding = wait >= 0;
     v.yieldAt = wait;
@@ -1045,6 +1181,44 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       claim(v); // at once, so vehicles and pedestrians deciding later this frame know
     }
     return true;
+  }
+
+  // (tools/traffic-measure.js: why a vehicle standing at its line doesn't go, the first of mayEnter's reasons; no side
+  // effects)
+  function whyWaiting(v) {
+    if (!v.edge || v.conn) return v.conn ? (v.yielding ? 'inside-turning' : 'inside') : 'unplaced';
+    const e = v.edge, n = e.to, m = v.move;
+    if (!m) return 'no-move';
+    const og = obstacleGap(v);
+    if (og.gap < 8) return 'streetcar-ahead';
+    if (v.gap < 6) return 'follow';
+    if (e.len - v.s - v.half > 12) return 'midblock';
+    const phase = n.signal ? phaseOf(e) : 'green';
+    const f = m.to, j = m.out[v.lane];
+    if (j < 0) return 'wrong-lane';
+    if (phase !== 'green') return 'light-' + phase;
+    if (boxBusy(n, e.axisIndex)) return 'box-busy';
+    const lead = ahead(e.occ[v.lane], v.s, v);
+    if (lead && lead.v.yielding) return 'lead-yielding';
+    const c = connector(e, v.lane, f, j);
+    const first = n.signal && m.turn !== 'S' && !lead;
+    const across = m.turn === 'L' && !!e.opposite;
+    const wait = first ? (across ? yieldPoint(v, c, e) : c.len - 3 - v.half) : -1;
+    if (m.turn === 'L' ? across && wait < 0 && yieldOncoming(e.opposite, v.wait > 8, v) : e.opposite && e.opposite.lefts > 0) return m.turn === 'L' ? 'left-oncoming' : 'oncoming-left';
+    if (!n.signal && e.axisIndex !== 0 && yieldToCrossTraffic(v, n)) return 'give-way';
+    const d = e.len - v.s - v.half;
+    if (pedestrianOn(n, e.inSide, laneCoord(e, v.lane), 0, timeTo(v, d + 2.5 + 2 * v.half))) return 'peds-in';
+    if (wait < 0 && pedestrianOn(n, f.outSide, laneCoord(f, j), timeTo(v, d + c.len - 3), timeTo(v, d + c.len + 2 * v.half))) return 'peds-out';
+    if (!room(f, j, v)) {
+      // (beyond: a short link inside the same junction, a link whose own queue reaches back, or one blocked at its end)
+      const g = f.occ[j][0];
+      const why = f.len < 30 && f.to.signal && f.to.sigJ === n.sigJ ? 'short-inside' : f.len < 30 ? 'short' : 'long';
+      return `no-room-${why}${g && g.v.speed < 0.5 ? '' : '-moving'}`;
+    }
+    if (alongside(f, j, v, v.s - e.len - c.len, m.turn !== 'S')) return 'alongside';
+    if (mergingAhead(v, f, j)) return 'merging';
+    if (f.stops && f.stops[0].s < 2 * v.half + 4 && crossingHolds(f.stops[0].c)) return 'crossing-beyond';
+    return 'none';
   }
 
   // Overtake into an adjacent lane when it is clearly quicker (MOBIL), or work towards a lane the planned turn
@@ -1112,6 +1286,50 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // Fastest v can take curve c at without exceeding the sideways acceleration its driver accepts
   const bendSpeed = (v, c) => Math.sqrt(v.driver.aLat / Math.max(c.curv, 1e-3));
 
+  // The midblock crossings (network.midCrossings, e.stops): braking for a crossing `d` metres ahead (front bumper to its
+  // line 1.2 m before it): a midblock signal's red (or amber with room to stop), people still on it, or a crossover
+  // anyone waits at or walks on (once v could stop for them: too close, it goes on, and they wait for it)
+  const STOP_BACK = 1.2;
+  function stopForCrossing(v, c, d) {
+    if (d < -0.3) return 0;
+    if (c.kind === 'signal') {
+      const ph = SIGNALS.state(SIGNALS.crossingIndex(c.i), 0, clock);
+      if (ph === 'green' && !c.on) return 0;
+      if (!v.isPolice && (ph === 'red' || canStopBefore(v, d))) return stopAt(v, d);
+      return c.on && canStopBefore(v, d) ? stopAt(v, d) : 0;
+    }
+    if (!c.active) return 0;
+    return canStopBefore(v, d) || v.speed < 2 ? stopAt(v, d) : 0;
+  }
+  const crossingHolds = (c) => (c.kind === 'signal' ? SIGNALS.state(SIGNALS.crossingIndex(c.i), 0, clock) !== 'green' || c.on : c.active);
+  // the first crossing ahead on v's edge (or, near its end, on the edge it turns into) that it has to stop for
+  function crossingsAhead(v) {
+    const e = v.edge;
+    let worst = 0;
+    if (!v.conn && e.stops) {
+      for (const st of e.stops) {
+        const d = st.s - STOP_BACK - v.s - v.half;
+        if (d < -0.3) continue;
+        if (d > LOOKAHEAD) break;
+        worst = Math.min(worst, stopForCrossing(v, st.c, d));
+        if (worst < 0) return worst;
+      }
+    }
+    const f = v.move && v.move.to;
+    if (!f || !f.stops) return worst;
+    // (its way onto f: the rest of e and the curve through the junction)
+    const j = v.conn ? v.out : v.move.out[v.lane];
+    if (j < 0) return worst;
+    const before = v.conn ? v.conn.len - v.cs : e.len - v.s + connector(e, v.lane, f, j).len;
+    for (const st of f.stops) {
+      const d = before + st.s - STOP_BACK - v.half;
+      if (d > LOOKAHEAD) break;
+      worst = Math.min(worst, stopForCrossing(v, st.c, d));
+      if (worst < 0) break;
+    }
+    return worst;
+  }
+
   // IDM acceleration for vehicles ahead in the lane (and, through the intersection, in the lane it leads to),
   // the stop line while v may not go, a red beyond, the player, and slowing down for turns and give-way lines
   function accelerate(v) {
@@ -1134,6 +1352,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
           worst = Math.min(worst, stopAt(v, d));
         } else {
           worst = Math.min(worst, follow(v, f.occ[j], vs), signalAhead(v, f, f.len - vs - v.half));
+          // (a short piece round a bend: and whoever is on the piece after it)
+          if (f.len < 30 && f.to.shape && f.moves.length === 1 && f.moves[0].out[j] >= 0) {
+            const m2 = f.moves[0], j2 = m2.out[j];
+            worst = Math.min(worst, follow(v, m2.to.occ[j2], vs - f.len - connector(f, j, m2.to, j2).len));
+          }
           // pulling in to wait inside: slow down for that spot already if it will have to wait there
           if (v.yielding && holdsOn(v, pedsOut(v, d + c.len - 3))) worst = Math.min(worst, stopAt(v, d + v.half + v.yieldAt, 0.5));
         }
@@ -1161,6 +1384,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       }
       cap = bendSpeed(v, v.conn);
     }
+    if (v.edge.stops || (v.move && v.move.to && v.move.to.stops)) worst = Math.min(worst, crossingsAhead(v));
     const pg = playerGap(v, 0);
     if (pg < LOOKAHEAD) {
       worst = Math.min(worst, brake(v, pg, v.pSpeed));
@@ -1525,10 +1749,21 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     occupy(e.occ[lane], v, s);
   }
 
+  // Take v off the streets (until the streets around hold more cars again)
+  function retire(v) {
+    v.edge = null;
+    v.conn = null;
+    v.trail = null;
+    v.commit = null;
+    v.yielding = false;
+    v.speed = 0;
+  }
+
   // Put v in a free lane around the focus. Normal replenishment protects the near view; teleports can fill it.
   function spawnVehicle(v, rMin, rMax, protectView) {
     for (let attempt = 0; attempt < 12; attempt++) {
-      const e = nearEdges[Math.floor(Math.random() * nearEdges.length)];
+      // (a bus anywhere along the wide roads; a car where the City counts the traffic)
+      const e = v.bus || !edgeWeights.length ? nearEdges[Math.floor(Math.random() * nearEdges.length)] : nearEdges[pickWeighted(edgeWeights)];
       if (!e || (v.bus && (e.axis !== 'ave' || e.tram)) || e.len < 2 * v.half + 10) continue;
       const lane = Math.floor(Math.random() * e.lanes.length);
       const along = (focusX - e.sx) * e.dx + (focusZ - e.sz) * e.dz;
@@ -1560,7 +1795,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // walkers queue at the curb; and the links that carry them round each corner onto the next
   const { blockAt, createPedestrianRoutes } = window.CITY;
   const pedRoutes = createPedestrianRoutes(network, blockAt);
-  const track = { ax: 0, az: 0, ux: 0, uz: 1, len: 1, node: null, side: 0, line: 0, route: null };
+  const track = { ax: 0, az: 0, ux: 0, uz: 1, len: 1, node: null, mid: null, clx: 0, clz: 1, side: 0, line: 0, route: null };
+  // the crossovers' flashing lights (pedestrian-signals.js): 1 while someone waits at one or walks on it
+  window.CITY.PXO_ACTIVE = (window.CITY.PXOS || []).map(() => 0);
 
   function sidewalkTrack(e) {
     if ((e.h0 || 0) > 2 || (e.h1 || 0) > 2) return false; // (Toronto layer) never along the Gardiner's deck or a flyover
@@ -1573,6 +1810,13 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
   function crosswalkTrack(n) {
     const choices = pedRoutes.across(n);
+    if (!choices.length) return false;
+    const route = choices[Math.floor(Math.random() * choices.length)];
+    Object.assign(track, route, { route });
+    return true;
+  }
+  function midTrack(c) {
+    const choices = pedRoutes.acrossMid(c);
     if (!choices.length) return false;
     const route = choices[Math.floor(Math.random() * choices.length)];
     Object.assign(track, route, { route });
@@ -1600,10 +1844,13 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   function spawnPed(p, rMin, rMax, protectView) {
     p.knock = null;
     for (let attempt = 0; attempt < 10; attempt++) {
-      const crosswalk = p.crossesStreets && nearSignals.length > 0 && attempt < 5;
-      const ok = crosswalk
-        ? crosswalkTrack(nearSignals[Math.floor(Math.random() * nearSignals.length)])
-        : nearEdges.length > 0 && sidewalkTrack(nearEdges[Math.floor(Math.random() * nearEdges.length)]);
+      // (at a crossing by how many people the City counts crossing there)
+      const crosswalk = p.crossesStreets && crossingWeights.length > 0 && attempt < 5;
+      let ok;
+      if (crosswalk) {
+        const k = pickWeighted(crossingWeights);
+        ok = k < nearSignals.length ? crosswalkTrack(nearSignals[k]) : midTrack(nearMids[k - nearSignals.length]);
+      } else ok = nearEdges.length > 0 && sidewalkTrack(nearEdges[Math.floor(Math.random() * nearEdges.length)]);
       if (!ok) continue;
       const along = (focusX - track.ax) * track.ux + (focusZ - track.az) * track.uz;
       const minT = Math.max(0, along - rMax), maxT = Math.min(track.len, along + rMax);
@@ -1614,7 +1861,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       const d = Math.hypot(x - focusX, z - focusZ);
       if (d < rMin || d > rMax || (protectView && nearView(x, z, 2, PED_SPAWN_DISTANCE))) continue;
       if (player.active && Math.hypot(x - player.x, z - player.z) < 10) continue;
-      if (crosswalk && track.node.curb.some((q) => Math.hypot(q.x - x, q.z - z) < QUEUE_GAP)) continue;
+      if (crosswalk && track.node && track.node.curb.some((q) => Math.hypot(q.x - x, q.z - z) < QUEUE_GAP)) continue;
       if (p.conversation) endConversation(p.conversation);
       Object.assign(p, track);
       p.t = t;
@@ -1652,6 +1899,32 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       if (lead && !canStop(lead, e, true)) return false;
     }
     return true;
+  }
+
+  // May p step off onto its midblock crossing? A signal's on its WALK, and either way once no vehicle is over it or too
+  // close to stop for it (at a crossover the drivers stop for people waiting: they only wait for those who can't)
+  function mayCrossMid(p) {
+    const c = p.mid;
+    if (c.kind === 'signal' && !SIGNALS.walk(SIGNALS.crossingIndex(c.i), 1, clock)) return false;
+    for (const st of c.stops) {
+      for (const list of st.e.occ) {
+        for (const o of list) {
+          const d = st.s - STOP_BACK - o.s - o.v.half;
+          if (d < -2 * o.v.half - 2.5 || o.s > st.e.len) continue; // past it
+          if (d < 0) return false; // over it
+          if (d < 60 && o.v.speed > 1 && !canStopBefore(o.v, d)) return false;
+        }
+      }
+    }
+    return true;
+  }
+  // the midblock crossings near the focus: who waits at them & walks on them this frame (vehicles read it next frame)
+  const CROSS_CHANCE = { signal: 0.35, pxo: 0.3 }; // people passing a crossing's end who take it
+  function markMid(p, on) {
+    const c = p.mid;
+    if (on) c.onNow++;
+    else c.waitNow = true;
+    if (c.kind === 'signal') (on ? SIGNALS.busy : SIGNALS.call)(SIGNALS.crossingIndex(c.i), 1);
   }
 
   // Continue through validated sidewalk corners. Crossing tracks retain their curb queues and right of way;
@@ -1719,7 +1992,10 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         }
       }
     }
-    if (p.node) {
+    if (p.mid) {
+      const s = curbProgress(p);
+      room = s <= KERB && !mayCrossMid(p) ? KERB - s : Infinity;
+    } else if (p.node) {
       // room to walk before standing: up to the curb unless p may cross, and up to the back of whoever is ahead
       const s = curbProgress(p);
       room = s <= KERB && !mayCross(p) ? KERB - s : Infinity;
@@ -1734,15 +2010,36 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     const movement = Math.min(p.v * dt, room);
     if (p.v * dt > room) p.v = 0;
     let t = p.t + p.dir * movement;
-    const reachesCurb = !!p.node && curbProgress(p) <= KERB && (p.dir > 0 ? t : p.len - t) >= KERB - 1e-6;
-    p.waiting = reachesCurb && !mayCross(p);
+    const reachesCurb = !!(p.node || p.mid) && curbProgress(p) <= KERB && (p.dir > 0 ? t : p.len - t) >= KERB - 1e-6;
+    p.waiting = reachesCurb && !(p.mid ? mayCrossMid(p) : mayCross(p));
     if (p.waiting) {
       t = p.dir > 0 ? Math.min(t, KERB) : Math.max(t, p.len - KERB);
       p.v = 0;
     }
+    // along a sidewalk past the end of a midblock crossing: some take it
+    const offs = !p.node && !p.mid && p.route && p.route.offs;
+    if (offs && p.conversation === null) {
+      for (const off of offs) {
+        if ((off.t - p.t) * (off.t - t) > 0 || !nearMidSet.has(off.track.mid) || Math.random() > CROSS_CHANCE[off.track.mid.kind]) continue;
+        Object.assign(p, off.track);
+        p.route = off.track;
+        p.dir = off.end === 0 ? 1 : -1;
+        t = off.end === 0 ? 0 : p.len;
+        p.nextRoute = null;
+        break;
+      }
+    }
     if (p.dir > 0 ? t >= p.len : t <= 0) {
       t = p.dir > 0 ? p.len : 0;
-      if (p.nextRoute) {
+      if (p.mid) {
+        // over: onto the sidewalk there, on towards the goal
+        const land = p.route.lands[p.dir > 0 ? 1 : 0];
+        Object.assign(p, land.track);
+        p.route = land.track;
+        t = land.t;
+        p.dir = (p.goalX - p.x) * p.ux + (p.goalZ - p.z) * p.uz >= 0 ? 1 : -1;
+        p.nextRoute = null;
+      } else if (p.nextRoute) {
         const leg = p.nextRoute[p.nextLeg++];
         Object.assign(p, leg.track);
         p.route = leg.track;
@@ -1760,8 +2057,12 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     p.t = t;
     p.x = p.ax + p.ux * t;
     p.z = p.az + p.uz * t;
+    if (p.mid) {
+      if (t > KERB && t < p.len - KERB) markMid(p, true);
+      else if (p.waiting) markMid(p, false);
+    }
     if (p.node && ((t > KERB && t < p.len - KERB) || (p.waiting && walkOn(p.node, p.side)))) {
-      p.coord = p.side >= 2 ? p.x : p.z;
+      p.coord = p.x * p.clx + p.z * p.clz; // (along its crosswalk's axis, like laneCoord)
       if (!p.node.walkers.length) walkedNodes.push(p.node);
       p.node.walkers.push(p);
     }
@@ -2311,14 +2612,25 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     // 1. Cars & buses
     // Limit attempted placements, not just successes, and rotate through the pool so an awkward location
     // cannot monopolize a frame. Previous-frame lane lists protect spawn spacing; rebuild before driving.
+    // (as many cars as the streets around hold at this hour, carTarget: a car that drove away is retired while there
+    // are more than that, and one waiting is placed while there are fewer; the buses always run)
     let budget = jump ? vehicles.length : 4;
+    let placedCars = 0;
+    for (const c of cars) if (c.edge) placedCars++;
     for (let scanned = 0; scanned < vehicles.length && budget > 0; scanned++) {
       const v = vehicles[vehicleCursor];
       vehicleCursor = (vehicleCursor + 1) % vehicles.length;
       const d = v.edge ? Math.hypot(v.x - focusX, v.z - focusZ) : Infinity;
       if (d <= (jump ? NEAR_RADIUS : VEHICLE_RADIUS)) continue;
+      if (!v.bus && !v.edge && placedCars >= carTarget) continue;
       budget--;
-      spawnVehicle(v, jump ? 0 : 100, NEAR_RADIUS, !jump);
+      if (!v.bus && v.edge && placedCars > carTarget) {
+        retire(v);
+        placedCars--;
+        continue;
+      }
+      const was = !!v.edge;
+      if (spawnVehicle(v, jump ? 0 : 100, NEAR_RADIUS, !jump) && !was && !v.bus) placedCars++;
     }
     buildOccupancy();
     // the lights around the player see who waits, then step (the rest keep their coordinated timing: nothing to do)
@@ -2395,17 +2707,34 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     // 2. Pedestrians
     for (const n of walkedNodes) n.walkers.length = 0;
     walkedNodes.length = 0;
+    // (as many people as the City counts around here at this hour, pedTarget: someone who walked away is gone while
+    // there are more, and someone new appears while there are fewer)
     let pedBudget = jump ? NUM_PEDS : 6;
+    let placedPeds = 0;
+    for (const p of peds) if (p.placed) placedPeds++;
     for (let scanned = 0; scanned < NUM_PEDS && pedBudget > 0; scanned++) {
       const p = peds[pedCursor];
       pedCursor = (pedCursor + 1) % NUM_PEDS;
       const d = p.placed ? Math.hypot(p.x - focusX, p.z - focusZ) : Infinity;
       if (d <= (jump ? NEAR_RADIUS : PED_RADIUS)) continue;
+      if (!p.placed && placedPeds >= pedTarget) continue;
       pedBudget--;
-      spawnPed(p, jump ? 0 : 60, jump ? NEAR_RADIUS : 280, !jump);
+      if (p.placed && placedPeds > pedTarget && !p.knock) {
+        if (p.conversation) endConversation(p.conversation);
+        p.placed = false;
+        p.node = p.mid = null;
+        placedPeds--;
+        continue;
+      }
+      const was = p.placed;
+      if (spawnPed(p, jump ? 0 : 60, jump ? NEAR_RADIUS : 280, !jump) && !was) placedPeds++;
     }
     meet(dt);
     gatherCurbs();
+    for (const c of nearMids) {
+      c.onNow = 0;
+      c.waitNow = false;
+    }
     pedCrowd.begin();
     for (let i = 0; i < NUM_PEDS; i++) {
       const p = peds[i];
@@ -2419,6 +2748,11 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       renderPed(p, dt);
     }
     pedCrowd.end();
+    for (const c of nearMids) {
+      c.on = c.onNow;
+      c.active = c.onNow > 0 || c.waitNow;
+      if (c.kind === 'pxo') window.CITY.PXO_ACTIVE[c.i] = c.active ? 1 : 0;
+    }
 
     // 3. Collision sparks, including the player's own impacts against buildings
     if (playerEntity && playerEntity.lastCollisionSpark) {
@@ -2429,9 +2763,15 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     updateSparks(dt);
   }
 
+  setHour(hour);
   return {
     group,
     update,
+    setHour, // main.js: the time of day (hours) the City's volumes are read at
+    pedRoutes, // (pedestrian-signals.js: the crosswalks people use)
+    whyWaiting, // (tools/traffic-measure.js)
+    get carTarget() { return carTarget; },
+    get pedTarget() { return pedTarget; },
     setCollisionListener, // audio
     setObstacles, // streetcars.js
     signalConflicts,

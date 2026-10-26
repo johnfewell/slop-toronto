@@ -149,6 +149,8 @@ async function initApp() {
     ...allColliders.filter((c) => !c.obb && !c.polygon) // (nor the landmarks' drawn outlines: js/world-collision.js)
   ]);
   markInit('traffic');
+  // the people's heads at every crosswalk, the midblock signals & the pedestrian crossovers (pedestrian-signals.js)
+  if (window.CITY.buildPedestrianSignals) window.CITY.buildPedestrianSignals(scene, trafficSystem, streetDetails.signalClock);
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
   // --- Toronto layer (after aalghooneh/slop-toronto): the TTC's streetcars, which the traffic keeps behind ---
   const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
@@ -446,6 +448,7 @@ async function initApp() {
 
   function selectTime(timeId) {
     lightingSystem.applyPreset(timeId);
+    if (trafficSystem.setHour && window.CITY.SUN_HOURS[timeId] !== undefined) trafficSystem.setHour(window.CITY.SUN_HOURS[timeId]); // (the City's volumes at that hour)
     colorGrade.applyPreset(lightingSystem.activePresetId);
     timeButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-time') === timeId);

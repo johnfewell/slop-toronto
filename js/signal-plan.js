@@ -21,6 +21,18 @@
 //   change still runs through amber and all-red. Away from the player a light eases back onto its coordinated timing (it dwells in the main road's green
 //   when early, cuts the cross road's green short, never under its minimum, when late) and then costs nothing.
 //
+// - Each junction's timing is its own (timeJunction): the City's mode of control (fixed time lights never actuate;
+//   semi-actuated ones without vehicle extensions skip an uncalled side phase but never cut or stretch one; the others
+//   gap out & extend), the City's pedestrian timing (a WALK of at least 7 s, then the flashing don't walk sized for the
+//   whole crossing at the walking speed the City times it for, 1.2 m/s at most junctions; a leading pedestrian interval
+//   of 5 s on the crosswalks that have one: their WALK starts before the parallel traffic's green), and the green
+//   split between the roads by the busier lane of each (the City's counts, js/toronto-traffic-data.js), never under
+//   what its pedestrians need. The cycle stays common (the City's own cycle lengths aren't published: see
+//   tools/build-traffic-data.mjs), so the green waves hold.
+// - Midblock pedestrian signals (SIGNAL_CROSSINGS) are lights too, after the junctions in every array (index
+//   SIGNALS.crossingIndex(i)): phase 0 the road's green, phase 1 the people's WALK and clearance, which near the player
+//   only runs when someone waits to cross.
+//
 // Every reader asks with (junction, phase, time): the light's local time is (time - shift[j]) mod cycle. shift[j] is
 // the junction's offset unless the actuated controller holds or skips its clock (stepSignals). The signal-head shader
 // reads the same shifts (SIGNALS.shifts, a uniform array) so the heads stay in step with the traffic.
@@ -31,16 +43,21 @@ const { GEO, SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS } = window.CITY;
 // (`amber` s) and all-red (`allRed` s) before the next phase's green. Pedestrians step off on the WALK, the first
 // `walk` seconds of the green of the traffic parallel to them.
 const SIGNAL_TIMING = {
-  cycle: 70, amber: 3.5, allRed: 1.5, walk: 8,
+  cycle: 70, amber: 3.5, allRed: 1.5, walk: 7, lpi: 5,
   layouts: {
-    2: [[0, 34], [39, 65]], // the coordinated road 34 s, the crossing road 26 s
+    2: [[0, 34], [39, 65]], // (without the City's data) the coordinated road 34 s, the crossing road 26 s
     3: [[0, 30], [35, 47], [52, 65]] // a third road at its own angle: 30 / 12 / 13 s
   },
-  minGreen: [12, 10, 10], // a light never ends a green sooner (at least the WALK and 2 s)
+  minGreen: [12, 10, 10], // a light never ends a vehicle green sooner
   maxGreen: [Infinity, 40, 30], // nor holds a waiting cross road beyond (the coordinated road rests while nobody waits)
   maxDwell: 15 // s per cycle a light near the player may hold the coordinated green to win back its offset
 };
 const CYCLE = SIGNAL_TIMING.cycle, AMBER = SIGNAL_TIMING.amber, WALK = SIGNAL_TIMING.walk;
+const CLEAR = SIGNAL_TIMING.amber + SIGNAL_TIMING.allRed;
+// the City's modes of control (js/toronto-traffic-data.js modes): how a light near the player answers demand
+const MODE = { fixed: 0, sap: 1, sa1: 2, sa2: 3, sav: 4, fa: 5, mps: 6, ips: 7 };
+const TD = window.CITY.TRAFFIC_DATA;
+const SCRAMBLES = new Set(['YONGE ST / DUNDAS ST']); // (the City's signal names, js/toronto-traffic-data.js)
 const V_PROG = 11.5; // m/s, the progression speed: traffic.js cars cruise at 10-13.6 m/s
 const BAND = 10; // s of green a passing band keeps clear (a platoon's length)
 const LEAD = 2; // s a corridor's green starts before its band arrives (the queue moves off first)
@@ -63,6 +80,7 @@ RG.links.forEach((l) => {
 });
 const nodeAt = new Map();
 for (let i = 0; i < RG.nodes.length / 2; i++) nodeAt.set(`${RG.nodes[2 * i]},${RG.nodes[2 * i + 1]}`, i);
+const linksOf = new Map(RG.links.map((l, i) => [l, i]));
 
 const J = SIGNAL_JUNCTIONS.map((sj, index) => {
   const arms = [];
@@ -80,11 +98,17 @@ const J = SIGNAL_JUNCTIONS.map((sj, index) => {
       const ux = other[0] - p.x, uz = other[1] - p.z;
       const L = Math.hypot(ux, uz) || 1;
       const name = RG.names[ni] || '';
-      arms.push({ ux: ux / L, uz: uz / L, w, lanes, rank: rank || 0, road: name ? baseName(name) : `#${index}:${arms.length}`, named: !!name });
+      // (its link's daily volume & lanes the way into the junction, for the split; 0 if it only leads away)
+      const li = linksOf.get(l);
+      const into = dir === 0 ? 0.5 : (dir > 0) === !atA ? 1 : 0;
+      const vol = TD ? TD.linkVolume[li] * into : 0;
+      const inLanes = dir === 0 ? Math.max(1, Math.floor(lanes / 2)) : Math.max(1, lanes);
+      arms.push({ ux: ux / L, uz: uz / L, w, lanes, rank: rank || 0, road: name ? baseName(name) : `#${index}:${arms.length}`, named: !!name, li, perLane: vol / inLanes });
     }
   }
-  return { index, x: sj.x, z: sj.z, arms, road: null, axes: null, phases: 2, offset: 0 };
+  return { index, x: sj.x, z: sj.z, arms, road: null, axes: null, phases: 2, offset: 0, mode: sj.mode ?? MODE.sa1, px: sj.px, name: sj.name, lpiBits: sj.lpi || 0, fdwAt: sj.fdwAt || 1.2, ped8: sj.ped8 || 0 };
 });
+const NJ = J.length;
 
 // Corridors: every named road with a signal, the junctions it passes through (sorted along it later)
 const corridors = new Map();
@@ -149,11 +173,17 @@ for (const j of J) {
   if (axes.length === 1) axes.push([-axes[0][1], axes[0][0]]);
   j.axes = axes;
   j.phases = axes.length;
+  // Toronto's pedestrian scramble: after the roads' greens, a phase for the people alone, every crosswalk at once (and
+  // nobody walks beside the traffic). Yonge & Dundas since 2008.
+  if (SCRAMBLES.has(j.name)) {
+    j.scramble = true;
+    j.phases++;
+  }
 }
 
 // Which phase does traffic moving along (or against) direction (ux, uz) at junction j run in?
 function phaseForDir(j, ux, uz) {
-  const axes = J[j].axes;
+  const axes = (j < NJ ? J[j] : CROSSINGS[j - NJ]).axes;
   let best = 0, bd = -1;
   for (let p = 0; p < axes.length; p++) {
     const d = Math.abs(axes[p][0] * ux + axes[p][1] * uz);
@@ -165,6 +195,131 @@ function phaseForDir(j, ux, uz) {
   return best;
 }
 // ---------------------------------------------------------------------------------------------------------------------
+// 2b. Each light's own timing within the common cycle (see the top): its phase windows, each from the WALK (a leading
+//     pedestrian interval before the traffic's green where the City has one) to the end of the traffic's green, the
+//     flashing don't walk at the end of it; the midblock pedestrian signals after the junctions
+// ---------------------------------------------------------------------------------------------------------------------
+const CROSSINGS = SIGNAL_CROSSINGS.map((c, i) => {
+  const L = Math.hypot(c.ux || 0, c.uz || 0);
+  const across = L ? [c.ux / L, c.uz / L] : [0, 1];
+  return { index: NJ + i, crossing: i, x: c.x, z: c.z, arms: [], axes: [[-across[1], across[0]], across], phases: 2, offset: 0, mode: c.mode ?? MODE.mps, px: c.px, name: c.name, len: c.len || 0, fdwAt: c.fdwAt || 1.2, ped8: c.ped8 || 0 };
+});
+const ALL = J.concat(CROSSINGS); // every light, by index
+const crosswalksOf = new Map(); // px -> the City's crosswalks there [cx, cz, ux, uz, length, type, px]
+if (TD) for (const c of TD.crosswalks) if (c[6]) (crosswalksOf.get(c[6]) || crosswalksOf.set(c[6], []).get(c[6])).push(c);
+const WIN = [], LPI = [], FDW = [], MIN = [], MAXG = [];
+const timing = { split: 0, pedLimited: 0, fromCity: 0, lpi: 0 };
+function timeLight(j) {
+  const P = j.phases;
+  const lpi = new Array(P).fill(0), fdw = new Array(P).fill(0), need = new Array(P).fill(0), demand = new Array(P).fill(0);
+  const peds = j.mode !== MODE.sav; // (semi-actuated without push buttons: no pedestrian heads)
+  if (j.crossing !== undefined) {
+    // a midblock signal: the road's green, then the people's WALK & clearance across it
+    const len = j.len || 14;
+    fdw[1] = len / j.fdwAt;
+    need[1] = WALK + fdw[1];
+    need[0] = CYCLE - 2 * CLEAR - need[1];
+  } else {
+    // the length each phase's pedestrians cross: the City's crosswalks here (people walk alongside the phase their
+    // crosswalk runs along), else the widest road of the other phases
+    const cross = new Array(P).fill(0);
+    const mine = crosswalksOf.get(j.px) || [];
+    for (const c of mine) {
+      const p = phaseForDir(j.index, c[2], c[3]);
+      cross[p] = Math.max(cross[p], c[4]);
+    }
+    if (mine.length) timing.fromCity++;
+    for (const a of j.arms) {
+      const pa = phaseForDir(j.index, a.ux, a.uz);
+      for (let p = 0; p < P; p++) if (p !== pa && !mine.length) cross[p] = Math.max(cross[p], a.w);
+      demand[pa] = Math.max(demand[pa], a.perLane || 0);
+    }
+    // leading pedestrian intervals: the north & south crosswalks' people walk with the east-west road, the east &
+    // west ones' with the north-south road (grid directions: north is -z)
+    if (j.lpiBits & 3) lpi[phaseForDir(j.index, 1, 0)] = SIGNAL_TIMING.lpi;
+    if (j.lpiBits & 12) lpi[phaseForDir(j.index, 0, 1)] = SIGNAL_TIMING.lpi;
+    if (lpi.some((v) => v)) timing.lpi++;
+    for (let p = 0; p < P; p++) {
+      fdw[p] = peds && cross[p] ? cross[p] / j.fdwAt : 0;
+      need[p] = Math.max(SIGNAL_TIMING.minGreen[p], lpi[p] + (peds && cross[p] ? WALK + fdw[p] : 0));
+    }
+    if (j.scramble) {
+      // the people's own phase, timed for the diagonal; the roads' greens their vehicles' alone
+      const S = P - 1;
+      const diagonal = Math.hypot(Math.max(...cross.slice(0, S)), Math.min(...cross.slice(0, S)));
+      for (let p = 0; p < S; p++) { lpi[p] = 0; fdw[p] = 0; need[p] = SIGNAL_TIMING.minGreen[p]; }
+      fdw[S] = diagonal / j.fdwAt;
+      need[S] = WALK + 4 + fdw[S];
+      demand[S] = 0;
+    }
+  }
+  // the green time to share: what's left after every phase has what it needs, by each phase's busiest lane (the
+  // coordinated road first among equals: its band)
+  const avail = CYCLE - P * CLEAR;
+  let sum = need.reduce((a, b) => a + b, 0);
+  if (sum > avail) {
+    // (more than the cycle: what the pedestrians need beyond the vehicles' minimum greens squeezed alike)
+    timing.pedLimited++;
+    const base = need.map((n, p) => Math.min(n, SIGNAL_TIMING.minGreen[p]));
+    const extra = sum - base.reduce((a, b) => a + b, 0);
+    const k = Math.max(0, (avail - base.reduce((a, b) => a + b, 0)) / (extra || 1));
+    for (let p = 0; p < P; p++) need[p] = base[p] + (need[p] - base[p]) * k;
+    sum = avail;
+  }
+  const g = need.slice();
+  if (j.crossing === undefined) {
+    const w = demand.map((d, p) => (j.scramble && p === P - 1 ? 0 : Math.max(d, 30) * (p === 0 ? 1.15 : 1)));
+    const W = w.reduce((a, b) => a + b, 0);
+    // (what Webster's split gives each, as far as the minimums allow)
+    let rest = avail - sum;
+    for (let pass = 0; pass < 3 && rest > 0.01; pass++) {
+      const want = w.map((v) => (avail * v) / W);
+      let short = 0;
+      for (let p = 0; p < P; p++) short += Math.max(0, want[p] - g[p]);
+      if (!short) break;
+      const k = Math.min(1, rest / short);
+      for (let p = 0; p < P; p++) {
+        const add = Math.max(0, want[p] - g[p]) * k;
+        g[p] += add;
+        rest -= add;
+      }
+    }
+    // (anything left: the coordinated road)
+    if (rest > 0.01) g[0] += rest;
+    if (TD) timing.split++;
+  } else g[0] = avail - g[1];
+  const W = [];
+  let t = 0;
+  for (let p = 0; p < P; p++) {
+    const gp = Math.round(g[p] * 10) / 10;
+    W.push([t, Math.min(t + gp, CYCLE - CLEAR)]);
+    t += gp + CLEAR;
+  }
+  WIN[j.index] = W;
+  LPI[j.index] = lpi;
+  // (a squeezed phase keeps 40% of its time, up to the 7 s, for the WALK)
+  FDW[j.index] = fdw.map((f, p) => {
+    const span = W[p][1] - W[p][0] - lpi[p];
+    return f ? Math.max(0, Math.min(f, span - Math.min(WALK, span * 0.4))) : 0;
+  });
+  // the shortest a light near the player may cut a green to: the vehicles' minimum, or the head start & the WALK
+  MIN[j.index] = W.map((w, p) => Math.min(w[1] - w[0], lpi[p] + Math.max(j.crossing !== undefined && p === 0 ? 12 : SIGNAL_TIMING.minGreen[p], FDW[j.index][p] ? WALK : 0)));
+  MAXG[j.index] = SIGNAL_TIMING.maxGreen.slice(0, P).map((m, p) => Math.max(m, W[p][1] - W[p][0]));
+}
+if (TD) for (const j of ALL) timeLight(j);
+else {
+  for (const j of ALL) {
+    WIN[j.index] = SIGNAL_TIMING.layouts[j.phases];
+    LPI[j.index] = new Array(j.phases).fill(0);
+    FDW[j.index] = new Array(j.phases).fill(0);
+    MIN[j.index] = SIGNAL_TIMING.minGreen.slice(0, j.phases);
+    MAXG[j.index] = SIGNAL_TIMING.maxGreen.slice(0, j.phases);
+  }
+}
+// the traffic's green of phase p (after its pedestrians' head start)
+const greenOf = (k, p) => [WIN[k][p][0] + LPI[k][p], WIN[k][p][1]];
+
+// ---------------------------------------------------------------------------------------------------------------------
 // 3. Offsets: green waves along the corridors, the highest-class corridors first
 // ---------------------------------------------------------------------------------------------------------------------
 const linksByRoad = new Map();
@@ -172,7 +327,7 @@ for (const l of RG.links) {
   const r = baseName(RG.names[l[2]]);
   (linksByRoad.get(r) || linksByRoad.set(r, []).get(r)).push(l);
 }
-const windowOf = (j, p) => SIGNAL_TIMING.layouts[J[j].phases][p];
+const windowOf = (j, p) => greenOf(j, p);
 const assigned = new Uint8Array(J.length);
 // does a band arriving at time a get through junction k's phase p green (with BAND s to spare)?
 const inGreen = (a, k, p) => {
@@ -317,40 +472,53 @@ if (TABLE && !window.CITY.SIGNAL_PLAN_BUILD && J.every((j) => TABLE.junctions[ke
   planCorridors();
   planCrossings();
 }
+CROSSINGS.forEach((c, i) => { c.offset = crossingShift[i]; });
 
 // ---------------------------------------------------------------------------------------------------------------------
-// 4. Reading a light
+// 4. Reading a light (k: a junction's index, or SIGNALS.crossingIndex(i) for midblock signal i)
 // ---------------------------------------------------------------------------------------------------------------------
-const shifts = J.map((j) => j.offset); // seconds; read by the signal-head shader too (street-details.js)
-const PHASE_WINDOWS = J.map((j) => SIGNAL_TIMING.layouts[j.phases]);
+const OFFSETS = ALL.map((j) => j.offset);
+const shifts = OFFSETS.slice(); // seconds; read by the signal-head shader too (street-details.js)
+const PHASE_WINDOWS = ALL.map((j) => j.phases === undefined ? [] : Array.from({ length: j.phases }, (_, p) => greenOf(j.index, p)));
+// per light & phase: [WALK start, flashing don't walk start, its end] (none where nobody walks with it)
+const WALK_WINDOWS = ALL.map((j) => WIN[j.index].map((w, p) => {
+  const peds = j.crossing !== undefined || j.scramble ? p === j.phases - 1 : j.mode !== MODE.sav;
+  return peds ? [w[0], w[1] - FDW[j.index][p], w[1]] : null;
+}));
 const localTime = (j, time) => mod(time - shifts[j], CYCLE);
 
-// 'green', 'amber' or 'red' for phase p of junction j
+// 'green', 'amber' or 'red' for phase p of light j
 function signalState(j, p, time) {
   const t = localTime(j, time);
   const w = PHASE_WINDOWS[j][p];
   if (!w) return 'red';
   return t >= w[0] && t < w[1] ? 'green' : t >= w[1] && t < w[1] + AMBER ? 'amber' : 'red';
 }
-// Do pedestrians walking alongside phase p's traffic have the WALK?
+// Do pedestrians walking alongside phase p's traffic have the WALK (they may step off)?
 function signalWalk(j, p, time) {
+  const w = WALK_WINDOWS[j][p];
+  if (!w) return false;
   const t = localTime(j, time);
-  const w = PHASE_WINDOWS[j][p];
-  return !!w && t >= w[0] && t < w[0] + WALK && t < w[1];
+  return t >= w[0] && t < w[1];
 }
-// A mid-block crossing's WALK: a second after its road's light turns red (street-details.js pedLensMat)
-const CROSSING_WALK_START = SIGNAL_TIMING.layouts[2][0][1] + AMBER + 1;
-const crossingWalk = (i, time) => {
-  const t = mod(time - crossingShift[i], CYCLE);
-  return t >= CROSSING_WALK_START && t < CROSSING_WALK_START + WALK;
-};
+// ...and their head: 'walk', 'flash' (the flashing don't walk: finish crossing, don't start) or 'dont'
+function pedState(j, p, time) {
+  const w = WALK_WINDOWS[j][p];
+  if (!w) return 'dont';
+  const t = localTime(j, time);
+  return t >= w[0] && t < w[1] ? 'walk' : t >= w[1] && t < w[2] ? 'flash' : 'dont';
+}
+// A midblock crossing's WALK (its people's phase, 1)
+const crossingIndex = (i) => NJ + i;
+const crossingWalk = (i, time) => signalWalk(NJ + i, 1, time);
+const CROSSING_WALK_START = SIGNAL_TIMING.layouts[2][0][1] + AMBER + 1; // (the old shared timing: unused with the City's data)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // 5. The actuated controller for the lights near the player: demand comes in as calls (traffic.js detectors, the
 //    streetcars, waiting pedestrians) for the next step; `busy` marks a phase whose crosswalks still have people on them
 // ---------------------------------------------------------------------------------------------------------------------
-const calls = new Uint8Array(J.length);
-const busy = new Uint8Array(J.length);
+const calls = new Uint8Array(ALL.length);
+const busy = new Uint8Array(ALL.length);
 const callSignal = (j, p) => { calls[j] |= 1 << p; };
 const busySignal = (j, p) => { busy[j] |= 1 << p; };
 const tracked = new Map(); // j -> { tau, actuated, dwell }
@@ -359,10 +527,17 @@ const wrap = (d) => {
   const m = mod(d, CYCLE);
   return m > CYCLE / 2 ? m - CYCLE : m;
 };
+const MODES = ALL.map((j) => j.mode);
+// (semi-actuated lights without vehicle extensions, and the midblock pedestrian signals: a phase runs its full length
+// or not at all)
+const FIXED_LENGTH = MODES.map((m) => m === MODE.sap || m === MODE.mps);
 
-// Advance every tracked light by dt; `near` lists the junctions in the player's area (actuated from now on)
+// Advance every tracked light by dt; `near` lists the lights in the player's area (actuated from now on, unless the
+// City runs them on fixed time). A phase runs from its WALK (WIN) to the end of its traffic's green; it rests or holds
+// in the WALK (before the flashing don't walk), and once that has started it runs to the end.
 function stepSignals(time, dt, near) {
   for (const j of near) {
+    if (MODES[j] === MODE.fixed) continue;
     let s = tracked.get(j);
     if (!s) tracked.set(j, (s = { tau: localTime(j, time - dt), actuated: true, dwell: 0, seen: 0 }));
     s.actuated = true;
@@ -372,38 +547,41 @@ function stepSignals(time, dt, near) {
   for (const [j, s] of tracked) {
     if (s.seen !== time) s.actuated = false;
     if (s.actuated) actuated++;
-    const W = PHASE_WINDOWS[j];
+    const W = WIN[j], F = FDW[j];
     const P = W.length;
-    const tauC = mod(time - J[j].offset, CYCLE); // where the coordinated timing is
+    const fixedLength = FIXED_LENGTH[j];
+    const tauC = mod(time - OFFSETS[j], CYCLE); // where the coordinated timing is
     let tau = s.tau;
     let p = -1;
     for (let k = 0; k < P; k++) if (tau >= W[k][0] && tau < W[k][1]) p = k;
     let next = tau + dt;
     if (p >= 0) {
       const [gs, ge] = W[p];
+      const H = ge - F[p]; // the end of the WALK: the flashing don't walk runs from here to the end of the green
+      const hold = (F[p] > 0 ? H : ge) - 1e-3;
       const g = tau - gs;
       if (g < dt * 1.5) s.dwell = 0;
       const bit = 1 << p;
       const mine = calls[j] & bit, others = calls[j] & ~bit, crossing = busy[j] & bit;
       const d = wrap(tau - tauC); // > 0: ahead of the coordinated timing
-      if (s.actuated && g >= SIGNAL_TIMING.minGreen[p] && !mine && others && !crossing) {
-        next = ge; // gap out: nobody comes, someone waits across
+      if (s.actuated && !fixedLength && g >= MIN[j][p] && tau < H && !mine && others && !crossing) {
+        next = ge; // gap out: nobody comes, nobody is crossing, someone waits across
         stats.gapOuts++;
-      } else if (next >= ge) {
-        // at the end of the green: rest in the coordinated green while nobody waits across, hold a cross road's green
-        // for its traffic while nobody waits on the others (up to its maximum), or dwell to win back an early start
-        const rest = s.actuated && !others && (p === 0 || (mine && g < SIGNAL_TIMING.maxGreen[p]));
-        const dwell = p === 0 && d > 0.02 && s.dwell < (s.actuated ? SIGNAL_TIMING.maxDwell : CYCLE);
+      } else if (next >= hold && tau < hold + 2e-3) {
+        // at the end of the WALK: rest in the coordinated green while nobody waits across, hold a cross road's green
+        // for its traffic while nobody waits on the others (up to its maximum), or dwell to win back the offset
+        const rest = s.actuated && !others && (p === 0 || (!fixedLength && mine && g < MAXG[j][p]));
+        const dwell = p === 0 && (d > 0.02 || (fixedLength && d < -0.02)) && s.dwell < (s.actuated ? SIGNAL_TIMING.maxDwell : CYCLE);
         if (rest || dwell) {
-          next = Math.min(tau, ge - 1e-3);
+          next = Math.min(tau, hold);
           if (!rest) s.dwell += dt;
           stats.holds++;
         }
-      } else if (p > 0 && d < -0.02 && g >= SIGNAL_TIMING.minGreen[p] && !crossing && !(s.actuated && mine && !others)) {
+      } else if (p > 0 && !fixedLength && d < -0.02 && g >= MIN[j][p] && !crossing && !(s.actuated && mine && !others)) {
         next = Math.min(ge, tau + dt + Math.min(-d, dt * 4)); // late: the cross road's green runs out sooner
       }
     }
-    // near the player a side phase nobody calls is skipped, straight from the clearance before it to the next green
+    // near the player a side phase nobody calls is skipped, straight from the clearance before it to the next phase
     // (the coordinated phase always runs)
     if (s.actuated && p < 0) {
       for (let q = 1; q < P; q++) {
@@ -418,8 +596,8 @@ function stepSignals(time, dt, near) {
     s.tau = mod(next, CYCLE);
     shifts[j] = time - s.tau;
     // back on its coordinated timing and away from the player: nothing to do any more
-    if (!s.actuated && Math.abs(wrap(s.tau - mod(time - J[j].offset, CYCLE))) < 0.05) {
-      shifts[j] = J[j].offset;
+    if (!s.actuated && Math.abs(wrap(s.tau - mod(time - OFFSETS[j], CYCLE))) < 0.05) {
+      shifts[j] = OFFSETS[j];
       tracked.delete(j);
     }
   }
@@ -430,39 +608,56 @@ function stepSignals(time, dt, near) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// 6. Safety: no two phases of a junction green (or amber) at once, at any moment of the cycle; every change through
-//    amber and all-red. (traffic.js checks, once the road network is built, that crossing roads at every signalised
-//    node run in different phases.)
+// 6. Safety: no two phases of a light green (or amber) at once, at any moment of the cycle; every change through
+//    amber and all-red, and nobody's WALK before the traffic it crosses has cleared. (traffic.js checks, once the road
+//    network is built, that crossing roads at every signalised node run in different phases.)
 // ---------------------------------------------------------------------------------------------------------------------
 function checkLayouts() {
   const problems = [];
-  for (const [n, W] of Object.entries(SIGNAL_TIMING.layouts)) {
+  const check = (name, W, G, walks) => {
     for (let k = 0; k < W.length; k++) {
-      const end = W[k][1] + AMBER + SIGNAL_TIMING.allRed;
+      const end = G[k][1] + AMBER + SIGNAL_TIMING.allRed;
       const next = k + 1 < W.length ? W[k + 1][0] : CYCLE + W[0][0];
-      if (end > next + 1e-9) problems.push(`${n}-phase layout: phase ${k}'s clearance runs into phase ${(k + 1) % W.length}'s green`);
-      if (W[k][1] - W[k][0] < SIGNAL_TIMING.minGreen[k]) problems.push(`${n}-phase layout: phase ${k}'s green is under its minimum`);
+      if (end > next + 1e-6) problems.push(`${name}: phase ${k}'s clearance runs into phase ${(k + 1) % W.length}'s WALK or green`);
+      if (G[k][1] - G[k][0] < 5 - 1e-6) problems.push(`${name}: phase ${k}'s green is under 5 s`);
+      if (G[k][0] < W[k][0] - 1e-6 || G[k][1] > W[k][1] + 1e-6) problems.push(`${name}: phase ${k}'s green outside its window`);
+      const w = walks && walks[k];
+      if (w && (w[0] < W[k][0] - 1e-6 || w[1] > w[2] + 1e-6 || w[2] > G[k][1] + 1e-6)) problems.push(`${name}: phase ${k}'s WALK outside its window`);
+      if (G[k][1] > CYCLE - CLEAR + 1e-6) problems.push(`${name}: phase ${k} runs past the cycle`);
     }
-  }
+  };
+  for (const [n, W] of Object.entries(SIGNAL_TIMING.layouts)) check(`${n}-phase layout`, W, W, null);
+  for (const j of ALL) check(`${j.crossing !== undefined ? 'crossing' : 'junction'} ${j.index} (${j.name || ''})`, WIN[j.index], PHASE_WINDOWS[j.index], WALK_WINDOWS[j.index]);
   return problems;
 }
 {
   const problems = checkLayouts();
-  if (problems.length) console.error('[signals]', problems.join('; '));
+  if (problems.length) console.error('[signals]', problems.length, 'problems:', problems.slice(0, 5).join('; '));
 }
 
 const SIGNALS = {
   junctions: J,
+  crossings: CROSSINGS,
+  lights: ALL,
   corridors: corridorInfo,
-  plan: { corridors, linksByRoad, baseName, keyOf, planCorridors, planCrossings, layouts: SIGNAL_TIMING.layouts, planned },
+  plan: { corridors, linksByRoad, baseName, keyOf, planCorridors, planCrossings, layouts: SIGNAL_TIMING.layouts, planned, timing },
   shifts,
+  offsets: OFFSETS,
   crossingShift,
   CROSSING_WALK_START,
   phaseForDir,
-  windows: (j) => PHASE_WINDOWS[j],
+  windows: (j) => PHASE_WINDOWS[j], // each phase's traffic green [start, end)
+  phaseWindows: (j) => WIN[j], // each phase's whole time [its WALK, the end of its green)
+  walkWindows: (j) => WALK_WINDOWS[j], // [WALK start, flashing don't walk start, its end] (or null)
+  minGreen: (j) => MIN[j], // from the phase's start (its WALK): the head start, then the traffic's minimum green
+  lpi: (j) => LPI[j],
+  mode: (j) => MODES[j],
+  MODE,
   state: signalState,
   walk: signalWalk,
+  pedState,
   crossingWalk,
+  crossingIndex,
   localTime,
   call: callSignal,
   busy: busySignal,
@@ -474,7 +669,7 @@ const SIGNALS = {
 };
 if (window.CITY.DEBUG_ROADS !== false) {
   const three = J.filter((j) => j.phases === 3).length;
-  console.info(`[signals] ${J.length} junctions on a ${CYCLE} s cycle (${three} with three phases), green waves at ${(V_PROG * 3.6).toFixed(0)} km/h (offsets: ${planned === 'table' ? 'js/toronto-signal-plan.js' : 'planned at load'})`);
+  console.info(`[signals] ${J.length} junctions & ${CROSSINGS.length} midblock signals on a ${CYCLE} s cycle (${three} with three phases), green waves at ${(V_PROG * 3.6).toFixed(0)} km/h (offsets: ${planned === 'table' ? 'js/toronto-signal-plan.js' : 'planned at load'})${TD ? `; the City's timing: ${timing.split} splits by volume, ${timing.fromCity} with the City's crosswalks, ${timing.lpi} with leading pedestrian intervals, ${timing.pedLimited} squeezed` : ''}`);
 }
 
 Object.assign(window.CITY, { SIGNALS, SIGNAL_TIMING });
