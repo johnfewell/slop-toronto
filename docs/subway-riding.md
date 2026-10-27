@@ -85,5 +85,5 @@ GPU2_LOCK_WAIT=60 gpu2 slop-toronto-subway -- env CAPTURE_QUERY='?quality=high&a
 GPU2_LOCK_WAIT=60 gpu2 slop-toronto-subway -- env CAPTURE_QUERY='?quality=low&autoscale=0&transit=timetable#ride=subway' CAPTURE_VIEWPORT=412x915 CAPTURE_MOBILE=1 CAPTURE_TAG=phone CAPTURE_PROGRESS=1 node tools/capture.mjs tools/shots/subway-riding-phone.json
 ```
 
-The full suite has 178 tests: 165 pass, with the same 13 pre-existing fixture/raw-geodata failures recorded before
+After the shared mode/boarding fixes, the full suite has 183 tests: 170 pass, with the same 13 pre-existing fixture/raw-geodata failures recorded before
 passenger work. The static-site build also passes. These results do not mean the full suite is green.

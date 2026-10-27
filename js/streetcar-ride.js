@@ -165,6 +165,7 @@ function createStreetcarRide({ scene, streetcars, controllerManager, cameraSyste
   const rideSession = session || window.CITY.createTransitRideSession({ controllerManager, cameraSystem });
   if (!streetcars || !streetcars.shape) return api;
   const { SECTIONS, DOORS, GANGWAY, HALF_W } = streetcars.shape;
+  const boardingRange = SECTIONS.reduce((length, section) => length + section + GANGWAY, 0) + 18;
   const sample = streetcars.sample;
   const routes = streetcars.routes || [];
 
@@ -373,10 +374,19 @@ function createStreetcarRide({ scene, streetcars, controllerManager, cameraSyste
     return !isBlocked(point, radius);
   }
   // A stop's door-side sidewalk anchor, including the footprint and the transfer corridor. No unchecked fallback.
-  function landingAt(track, index, dynamic = false, car = null) {
-    if (!track.stopRecords?.[index]) return null;
+  function landingAt(track, index, dynamic = false, car = null, module = 0) {
+    if (!track.stopRecords?.[index] || DOORS[module] === null) return null;
     const pose = {};
-    sample(track, track.stops[index] - SECTIONS[0] / 2 + DOORS[0], pose);
+    const section = car?.sections[module];
+    if (section) {
+      Object.assign(pose, { x: section.x + Math.sin(section.yaw) * DOORS[module],
+        y: section.y + Math.sin(section.pitch || 0) * DOORS[module],
+        z: section.z + Math.cos(section.yaw) * DOORS[module], yaw: section.yaw });
+    } else {
+      let back = track.stops[index];
+      for (let k = 0; k < module; k++) back -= SECTIONS[k] + GANGWAY;
+      sample(track, back - SECTIONS[module] / 2 + DOORS[module], pose);
+    }
     if (pose.y < -0.5) return null; // Underground loop platforms are not built yet.
     const rightX = -Math.cos(pose.yaw), rightZ = Math.sin(pose.yaw);
     const door = { x: pose.x + rightX * HALF_W, y: pose.y + FLOOR, z: pose.z + rightZ * HALF_W };
@@ -417,18 +427,22 @@ function createStreetcarRide({ scene, streetcars, controllerManager, cameraSyste
       if (!car.placed || car === leftCar || car.speed > 0.1 || car.doorState !== 'open') continue;
       if (!car.track.stopRecords?.[car.stopIndex] || !car.sections[0]
         || Math.abs(car.s - car.track.stops[car.stopIndex]) > 1) continue;
-      const front = car.sections[0];
-      if (Math.hypot(p.x - front.x, p.z - front.z) > 24 || Math.abs(p.y - front.y) > 0.6) continue;
+      if (Math.hypot(p.x - car.sections[0].x, p.z - car.sections[0].z) > boardingRange) continue;
       if (car.stopIndex >= lastSupportedStop(car.track)) continue;
-      const anchor = landingAt(car.track, car.stopIndex, true, car);
-      if (!anchor) continue;
-      const d = Math.hypot(p.x - anchor.x, p.z - anchor.z);
-      if (d > distance || !controllerManager.isPointOnSidewalk(p.x, p.z)) continue;
-      // Opposite sidewalk/vehicle side is never a boarding zone.
-      const side = (p.x - anchor.door.x) * -Math.cos(anchor.heading) + (p.z - anchor.door.z) * Math.sin(anchor.heading);
-      if (side < -0.1 || !pathClear(anchor.door, { x: p.x, y: p.y, z: p.z })) continue;
-      distance = d;
-      best = car;
+      for (let module = 0; module < SECTIONS.length; module++) {
+        const section = car.sections[module];
+        if (DOORS[module] === null || !section || Math.hypot(p.x - section.x, p.z - section.z) > 18
+          || Math.abs(p.y - section.y) > 0.6) continue;
+        const anchor = landingAt(car.track, car.stopIndex, true, car, module);
+        if (!anchor) continue;
+        const d = Math.hypot(p.x - anchor.x, p.z - anchor.z);
+        if (d > distance) continue;
+        // Board at any open passenger door, including from a clear road-level boarding area beside it.
+        const side = (p.x - anchor.door.x) * -Math.cos(anchor.heading) + (p.z - anchor.door.z) * Math.sin(anchor.heading);
+        if (side < -0.1 || !pathClear(anchor.door, p) || !trafficClear(p, car)) continue;
+        distance = d;
+        best = car;
+      }
     }
     return best;
   }

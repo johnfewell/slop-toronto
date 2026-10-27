@@ -437,7 +437,9 @@ async function initApp() {
 
   function selectMode(mode) {
     cancelTransit(); // (off the streetcar first, then on as the mode chosen)
-    controllerManager.setMode(mode);
+    const previousMode = controllerManager.activeMode;
+    if (!controllerManager.switchMode(mode)) return;
+    if (mode !== previousMode) cameraSystem.resetForTeleport();
     touchControls.setMode(controllerManager.activeMode);
     gamepadControls.reset();
     modeButtons.forEach((btn) => {

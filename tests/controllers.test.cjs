@@ -417,6 +417,45 @@ test('leaving the car clears its brake and reverse lights', () => {
   assert.deepEqual(car.carState.value, { x: 0, w: 0 });
 });
 
+test('user mode changes follow the current player instead of selecting a mode left at spawn', () => {
+  const { controller, ent: cyclist, key } = teleportHarness('cyclist');
+  controller.entities = Object.fromEntries(['person', 'car', 'cyclist', 'helicopter'].map((mode) =>
+    [mode, mode === 'cyclist' ? cyclist : teleportHarness(mode).ent]));
+  Object.assign(cyclist.position, { x: -150, y: 0, z: 120 }); cyclist.heading = 0.7;
+  let previous = cyclist;
+  for (const mode of ['person', 'car', 'helicopter', 'cyclist']) {
+    key('keydown', 'KeyW');
+    const origin = { ...previous.position };
+    assert.equal(controller.switchMode(mode), true);
+    const current = controller.getActiveEntity();
+    assert.equal(controller.activeMode, mode);
+    assert.ok(Math.hypot(current.position.x - origin.x, current.position.z - origin.z) <= 12, 'stay beside the current player');
+    assert.equal(current.heading, 0.7); assert.equal(current.speed, 0);
+    assert.equal(controller.keys.forward, false);
+    assert.ok(Math.hypot(current.position.x - 400, current.position.z - 400) > 100, 'never return to the old spawn');
+    assert.deepEqual([previous.position.x, previous.position.z], [origin.x, origin.z], 'the outgoing vehicle stays parked');
+    previous = current;
+  }
+});
+
+test('a mode change with no safe arrival keeps the current mode and location', () => {
+  const { controller, ent: cyclist } = teleportHarness('cyclist');
+  controller.entities.person = teleportHarness('person').ent;
+  controller.findTeleportPosition = () => null;
+  assert.equal(controller.switchMode('person'), false);
+  assert.equal(controller.activeMode, 'cyclist'); assert.equal(controller.getActiveEntity(), cyclist);
+  assert.equal(controller.switchMode('invalid'), false);
+});
+
+test('mode changes preserve an elevated deck instead of dropping the player to the street below', () => {
+  const { controller, ent: cyclist } = teleportHarness('cyclist');
+  controller.entities.person = teleportHarness('person').ent;
+  Object.assign(cyclist.position, { x: 30, y: 12, z: 20 });
+  controller.getGroundHeight = (x, z, mode, y) => y > 10 ? 12 : 0;
+  assert.equal(controller.switchMode('person'), true);
+  assert.equal(controller.getActiveEntity().position.y, 12);
+});
+
 
 test('ground passenger interaction does not jump, while E still ascends in flight', () => {
   const { controller, key } = keyboardHarness();

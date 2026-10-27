@@ -308,23 +308,40 @@ class ThirdPersonControllerManager {
     if (mode === 'car') this.entities.car.home = { x: this.entities.car.position.x, z: this.entities.car.position.z, heading: this.entities.car.heading };
   }
 
+  // User mode changes travel with the player. Internal setMode calls still select saved entities without moving them.
+  switchMode(mode) {
+    if (!this.entities[mode] || this.suspended) return false;
+    if (mode === this.activeMode) return true;
+    const previousMode = this.activeMode, previous = this.getActiveEntity();
+    const { x, y, z } = previous.position, heading = previous.heading;
+    const altitude = mode === 'helicopter' ? Math.max(92, y) : y;
+    let destination;
+    this.activeMode = mode;
+    try { destination = this.findTeleportPosition(x, z, heading, altitude); }
+    finally { this.activeMode = previousMode; }
+    if (!destination) return false;
+    this.setMode(mode);
+    this.teleportActiveTo(destination.x, destination.z, heading, altitude);
+    return true;
+  }
+
   getActiveEntity() {
     return this.entities[this.activeMode];
   }
 
-  // savedAltitude: the helicopter's height on a restored visit (main.js), else it arrives at a safe 92 m or more
+  // savedAltitude also selects the current deck for ground arrivals; flight defaults to a safe 92 m or more.
   teleportActiveTo(x, z, heading = Math.PI, savedAltitude = null) {
     const ent = this.getActiveEntity();
     this.resetInput();
     if (!Number.isFinite(heading)) heading = ent.heading;
     const heli = this.activeMode === 'helicopter';
-    const altitude = heli ? Math.max(0.25, Math.min(380, savedAltitude ?? Math.max(92, ent.position.y))) : 0;
+    const altitude = heli ? Math.max(0.25, Math.min(380, savedAltitude ?? Math.max(92, ent.position.y))) : savedAltitude;
     const destination = this.findTeleportPosition(x, z, heading, altitude);
     if (destination) {
       ent.position.x = destination.x;
       ent.position.z = destination.z;
       ent.heading = heading;
-      ent.position.y = heli ? altitude : this.getGroundHeight(destination.x, destination.z, this.activeMode);
+      ent.position.y = heli ? altitude : this.getGroundHeight(destination.x, destination.z, this.activeMode, altitude);
     }
     ent.speed = 0;
     if (this.activeMode === 'person') {
@@ -389,7 +406,7 @@ class ThirdPersonControllerManager {
     };
     const clear = (p) => {
       if (!p) return false;
-      const baseY = heli ? altitude : this.getGroundHeight(p.x, p.z, this.activeMode);
+      const baseY = heli ? altitude : this.getGroundHeight(p.x, p.z, this.activeMode, altitude);
       // Keep other player models out of both the arrival and its default chase view. A corridor also prevents a
       // parked car between camera and character from hiding the character even when the camera itself is outside it.
       const viewTop = baseY + Math.max(body[entity.type][1], cameraUp);

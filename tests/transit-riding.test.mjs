@@ -121,6 +121,25 @@ test('a collision across the boarding corridor rejects the transfer', () => {
   assert.equal(ride.board(car), false);
 });
 
+test('all four open passenger doors accept street boarding, including the rear door', () => {
+  for (const module of [0, 1, 3, 4]) {
+    const { ride, car, entity, streetcars } = harness();
+    entity.position.set(-4, 0.22, car.sections[module].z + streetcars.shape.DOORS[module]);
+    assert.equal(ride.boardable(), car, `door on module ${module}`);
+    assert.equal(ride.action(), true);
+  }
+});
+
+test('a clear roadway boarding area beside an open door works, but nearby traffic blocks boarding', () => {
+  const { ride, car, entity, traffic } = harness();
+  entity.position.x = -2;
+  assert.equal(ride.boardable(), car, 'the player need not stand on the sidewalk behind the open door');
+  traffic.cars.push({ x: -2, z: entity.position.z, y: 0, half: 2, halfWidth: 0.9 });
+  assert.equal(ride.boardable(), null);
+  traffic.cars.length = 0;
+  assert.equal(ride.action(), true);
+});
+
 test('blocked sidewalk exit keeps the rider aboard and moving exits are rejected', () => {
   const { ride, car, traffic, entity } = harness();
   assert.equal(ride.board(car), true);

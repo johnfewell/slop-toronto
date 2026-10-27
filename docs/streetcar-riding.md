@@ -3,7 +3,8 @@
 Choose **Sights → Ride the 504 along King** for a passenger seat on a King streetcar. A direct link is
 `explore.html#ride=504`. The car follows its normal tracks, traffic signals and stopping pattern.
 
-To board during ordinary exploration, walk or cycle to the door-side sidewalk beside an open streetcar at a stop.
+To board during ordinary exploration, walk or cycle to any of the four open passenger doors at a stop, on the
+door-side sidewalk or a clear road-level boarding area beside the door.
 Press **E**, tap **Board**, or press the gamepad's **A / bottom face button**. The prompt appears only for a stopped
 car serving that stop, with a clear transfer corridor and a supported stop still ahead. A red-light pause is not
 boarding service. Bicycles are suspended during the ride and restored on exit as a game convenience.
@@ -41,6 +42,12 @@ Production-module tests cover the door lifecycle, holding the final supported st
 wrong-deck/closed/moving rejection, blocked transfer corridors and exits, request/cancel without forced alighting,
 passenger cleanup, live correction/retirement guards, input resets, gamepad interaction and repeated interior reuse.
 Separate checks cover shader-build concurrency and drivers safely yielding out of shared tram lanes.
+Regression coverage includes all four boarding doors, road-level boarding with traffic checks, and mode changes
+that retain the current location/heading, stop carried motion and preserve elevated decks. A phone GPU fixture
+uses the normal fleet rather than the featured ride: it boards a stopped 510 through the rear door by tapping the
+prompt, then changes mode beside the same stop (`tools/shots/mode-and-boarding.json`).
+The desktop companion (`tools/shots/mode-and-boarding-keyboard.json`) boards an ordinary 501/504 through a rear
+door from a clear roadway position using the keyboard's **E** handler. Both GPU fixtures passed after the fixes.
 
 Mac mini Metal WebGPU captures exercise desktop and low-quality touch views. The complete journey fixture checks
 three successive King stops, station text, retained service identity, stop intent, safe alighting, ground-state
@@ -53,7 +60,7 @@ GPU2_LOCK_WAIT=60 gpu2 slop-toronto-riding -- env CAPTURE_QUERY='?quality=high&a
 GPU2_LOCK_WAIT=60 gpu2 slop-toronto-riding -- env CAPTURE_QUERY='?quality=low&autoscale=0&transit=timetable&film#ride=504' CAPTURE_VIEWPORT=412x915 CAPTURE_MOBILE=1 CAPTURE_TAG=touch CAPTURE_PROGRESS=1 node tools/capture.mjs tools/shots/streetcar-riding-phone.json
 ```
 
-After implementation the full suite has 173 tests: 160 pass and the same 13 baseline failures involving stale fixtures/raw geodata. These were recorded before
+After the controls/boarding fixes the full suite has 183 tests: 170 pass and the same 13 baseline failures involving stale fixtures/raw geodata. These were recorded before
 riding work; validation must compare against them rather than claim a green full suite. GPU runs alongside production
 transcription are marked contended and establish visual/function correctness, not a performance benchmark.
 
