@@ -141,7 +141,7 @@ for (const interruption of ['blur', 'hidden', 'reset']) {
   });
 }
 
-function advanceWithTouch(mode, strength, reverse) {
+function advanceWithTouch(mode, strength, reverse, configure = () => {}) {
   const { controller } = keyboardHarness();
   const entity = { position: { x: 0, y: 0, z: 0 }, heading: 0, speed: 0 };
   if (mode === 'Person') Object.assign(entity, { verticalVel: 0 });
@@ -166,6 +166,7 @@ function advanceWithTouch(mode, strength, reverse) {
   controller.setTouchInput(reverse ? 'backward' : 'forward', strength);
   controller.setTouchInput(reverse ? 'right' : 'left', strength);
   if (mode === 'Helicopter') controller.setTouchInput(reverse ? 'down' : 'up', strength);
+  configure(entity, controller);
   controller[`update${mode}`](0.1, 0);
   return entity;
 }
@@ -393,4 +394,25 @@ test('fast bodies stop at a thin wall instead of passing through it when frames 
     for (let i = 0; i < 12; i++) controller.moveBody(ent, mode, 0.05);
     assert.ok(ent.position.x < -0.2, `the ${mode} stays on its side of the wall (x ${ent.position.x.toFixed(2)})`);
   }
+});
+
+
+test('player lamps distinguish parked, braking, reversing and the custom handbrake', () => {
+  const step = (strength, reverse, speed = 0, handbrake = false) => advanceWithTouch('Car', strength, reverse, (car, controller) => {
+    car.speed = speed;
+    car.carState = { value: { x: 0, w: 0 } };
+    controller.keys.up = handbrake;
+  }).carState.value;
+  assert.deepEqual(step(0, false), { x: 0, w: 0 }, 'parked lamps are off');
+  assert.deepEqual(step(1, true, 10), { x: 1, w: 0 }, 'backward input brakes before reversing');
+  assert.deepEqual(step(1, true), { x: 0, w: 1 }, 'white reverse lights when backing up');
+  assert.deepEqual(step(0, false, 10, true), { x: 1, w: 0 }, 'handbrake still lights the brake lamps');
+});
+
+test('leaving the car clears its brake and reverse lights', () => {
+  const { controller } = keyboardHarness();
+  const car = { carState: { value: { x: 1, w: 1 } } };
+  controller.entities = { car, person: {} };
+  controller.setMode('person');
+  assert.deepEqual(car.carState.value, { x: 0, w: 0 });
 });

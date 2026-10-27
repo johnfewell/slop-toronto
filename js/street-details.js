@@ -626,7 +626,7 @@ function buildStreetDetails(scene) {
 
   // Trees: main.js draws these (the parkland & yard trees) with the City's street trees in John's EZ-Tree models
   // (ez-trees.js); mrdoob's procedural trees (js/trees.js) only if those don't load
-  const addFallbackTrees = () => group.add(createTreeField(scene, treePositions).group);
+  const addFallbackTrees = (colliders = []) => group.add(createTreeField(scene, treePositions, colliders).group);
 
   // Instanced poles, arms, luminaires & signal heads
   function addMatrixArrayInstanced(geo, mat, matrices, castShadow = true) {

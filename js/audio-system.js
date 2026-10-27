@@ -546,7 +546,7 @@ class CityAudioSystem {
     if (!contacts) this.collisionPairs.set(a, contacts = new WeakMap());
     let contact = contacts.get(b);
     if (!contact) {
-      contact = { last: -Infinity, played: -Infinity, speed: 0 };
+      contact = { last: -Infinity, played: -Infinity, speed: 0, horn: -Infinity };
       contacts.set(b, contact);
       let reverse = this.collisionPairs.get(b);
       if (!reverse) this.collisionPairs.set(b, reverse = new WeakMap());
@@ -554,14 +554,22 @@ class CityAudioSystem {
     }
     const separated = now - contact.last > 0.3;
     contact.last = now;
+    const vehicle = impact.kind === 'vehicle' ? a === active ? b : b === active ? a : null : null;
+    let honked = false;
+    if (vehicle && separated && now - contact.horn > 1.5) {
+      honked = this.emit('horn', { id: vehicle, x: vehicle.x, y: (vehicle.y || 0) + 0.7, z: vehicle.z,
+        heading: vehicle.yaw + vehicle.yawOffset, seed: ++this.collisionSequence },
+      { intensity: 0.8, when: now + 0.12, priority: true });
+      if (honked) contact.horn = this.lastHorn = now;
+    }
     // Both pair orders share the gate. Sustained rubbing stays quiet, but a substantially stronger second hit
     // or a new impact after separation can sound again; muting/reset discards this history rather than queuing it.
-    if (now - contact.played < 0.18 || (!separated && speed <= Math.max(4, contact.speed * 1.8))) return false;
+    if (now - contact.played < 0.18 || (!separated && speed <= Math.max(4, contact.speed * 1.8))) return honked;
     const light = a.type === 'cyclist' || b.type === 'cyclist';
     const severity = clamp((speed - 0.8) / 22, 0, 1) * (light ? 0.65 : 1);
     const intensity = (0.12 + 0.88 * Math.sqrt(severity)) * (light ? 0.7 : 1);
     // The physics record is reused. emit() copies this position so the crash remains at the contact point.
-    if (!this.emit('crash', { id: a, x, y, z, seed: ++this.collisionSequence }, { severity, intensity })) return false;
+    if (!this.emit('crash', { id: a, x, y, z, seed: ++this.collisionSequence }, { severity, intensity })) return honked;
     contact.played = now;
     contact.speed = speed;
     return true;

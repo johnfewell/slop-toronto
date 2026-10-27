@@ -22,6 +22,10 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   nearest boundary), the substepped movement and wall sliding in `js/controllers.js`, the R key's road reset and the
   idea of the `?debug=collisions` review (`js/collision-debug.js`), adapted to this city. MIT, © 2026 Mr.doob & Kamil.
   https://github.com/unable12/slop-sanfrancisco
+- **Later Slop New York improvements**, reviewed through mrdoob's `2018076` (2026-10-26): vehicle contact physics,
+  pedestrian avoidance/dives, player lamps, audio refinements, procedural tree LODs and filtered fire escapes (MIT,
+  same upstream attribution above). Adapted for Toronto's decks, crossings, quality tiers and existing driving model.
+  See [the integration record](docs/upstream-sync.md) for source commits and scope.
 - **City audio** (`js/audio-*.js`): mrdoob's synthesized spatial audio from Slop New York (MIT, above), with the
   player car's tyre squeal and engine revs from aalghooneh's slop-toronto fork (MIT, © Slop Toronto contributors).
   https://github.com/aalghooneh/slop-toronto. Every sound is synthesized in code; no recordings.

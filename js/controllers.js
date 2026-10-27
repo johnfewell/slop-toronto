@@ -301,6 +301,8 @@ class ThirdPersonControllerManager {
   setMode(mode) {
     if (!this.entities[mode]) return;
     this.activeMode = mode;
+    const car = this.entities.car;
+    if (mode !== 'car' && car?.carState) car.carState.value.x = car.carState.value.w = 0;
     // a wrecked car restarts where this drive began
     if (mode === 'car') this.entities.car.home = { x: this.entities.car.position.x, z: this.entities.car.position.z, heading: this.entities.car.heading };
   }
@@ -339,7 +341,7 @@ class ThirdPersonControllerManager {
       ent.chassisPivot.position.y = 0;
       ent.lastCollisionSpark = null;
       for (const wheel of ent.wheels) if (wheel.isFront) wheel.steerPivot.rotation.y = 0;
-      if (ent.carState) ent.carState.value.x = 1;
+      if (ent.carState) ent.carState.value.x = ent.carState.value.w = 0;
     } else if (this.activeMode === 'cyclist') {
       ent.leanAngle = ent.leanPivot.rotation.z = 0;
     } else if (heli) {
@@ -1077,6 +1079,10 @@ class ThirdPersonControllerManager {
   }
 
   update(dt, elapsed) {
+    for (const entity of Object.values(this.entities)) {
+      entity.prevX = entity.position.x;
+      entity.prevZ = entity.position.z;
+    }
     this.clock = (this.clock || 0) + dt;
     const heli = this.entities.helicopter;
     heli.mainRotorPivot.rotation.y += dt * 24.0;
@@ -1265,9 +1271,10 @@ class ThirdPersonControllerManager {
     c.heaveY = Math.max(-0.08, Math.min(0.14, c.heaveY + c.heaveVel * dt));
     c.chassisPivot.position.y = c.heaveY;
 
-    // brake lamps: braking, or standing still off the pedal (mrdoob's f3132b6)
+    // Brake lamps under braking (including the handbrake), white reverse lamps while backing up (21f6dde).
     if (c.carState) {
-      c.carState.value.x = braking || (c.speed === 0 && !throttle) ? 1 : 0;
+      c.carState.value.x = braking || handbrake ? 1 : 0;
+      c.carState.value.w = c.speed < -0.2 ? 1 : 0;
     }
 
     const forwardDist = (c.position.x - prevX) * Math.sin(c.heading) + (c.position.z - prevZ) * Math.cos(c.heading);
