@@ -200,14 +200,14 @@ async function initApp() {
       }
     } catch { /* missing or unavailable storage does not prevent riding */ }
   }
-  let rideSession = null;
+  let rideSession = null, subwayRide = null;
   function savePlayerState() {
     if (!keepPlayerState) return;
     try {
-      const entities = Object.fromEntries(Object.entries(controllerManager.entities).map(([mode, entity]) => [mode, rideSession?.savedGround(mode) || {
+      const entities = Object.fromEntries(Object.entries(controllerManager.entities).map(([mode, entity]) => [mode, subwayRide?.savedGround(mode) || rideSession?.savedGround(mode) || {
         x: entity.position.x, y: entity.position.y, z: entity.position.z, heading: entity.heading
       }]));
-      localStorage.setItem(PLAYER_STATE_KEY, JSON.stringify({ version: 1, activeMode: controllerManager.activeMode, entities }));
+      localStorage.setItem(PLAYER_STATE_KEY, JSON.stringify({ version: 1, activeMode: subwayRide?.surfaceMode || controllerManager.activeMode, entities }));
     } catch { /* storage may be disabled or full */ }
   }
   window.addEventListener('pagehide', savePlayerState);
@@ -220,9 +220,13 @@ async function initApp() {
   const streetcarRide = window.CITY.createStreetcarRide({
     scene, streetcars, controllerManager, cameraSystem, selectCamera, onChange: onRideChange, session: rideSession,
     trafficSystem,
-    canInteract: () => !document.hidden && !mapSystem.isFullMapOpen && (!helpModal || helpModal.hidden),
+    canInteract: () => !subwayRide?.inside && !subwayRide?.hasEntranceCandidate && !document.hidden && !mapSystem.isFullMapOpen && (!helpModal || helpModal.hidden),
     isBlocked: (p, radius) => [...highwayTraffic.cars, ...(railCorridor.cars || [])].some((v) =>
       (v.sections || [v]).some((q) => Math.abs((q.y || 0) - p.y) < 2 && Math.hypot(q.x - p.x, q.z - p.z) < radius + (v.half || 2.5)))
+  });
+  subwayRide = window.CITY.createSubwayRide({ scene, subway, controllerManager, cameraSystem, session: rideSession,
+    selectCamera, onChange: onRideChange,
+    canInteract: () => !document.hidden && !mapSystem.isFullMapOpen && (!helpModal || helpModal.hidden)
   });
   markInit('controllers');
 
@@ -384,7 +388,7 @@ async function initApp() {
       const modes = ['person', 'car', 'cyclist', 'helicopter'];
       selectMode(modes[(modes.indexOf(controllerManager.activeMode) + step + modes.length) % modes.length]);
     },
-    onInteract: () => streetcarRide.action(),
+    onInteract: () => subwayRide.action() || streetcarRide.action(),
     onCycleCamera: (step) => cycleCamera(step),
     onToggleMap: () => mapSystem.toggleFullMap(!mapSystem.isFullMapOpen),
     onCloseMap: () => mapSystem.toggleFullMap(false)
@@ -396,11 +400,13 @@ async function initApp() {
     car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Floor it'], [['Space'], 'Handbrake'], [['B'], 'Horn'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
     cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['B'], 'Bell'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
     helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']],
-    streetcar: [[['E'], 'Get off / Request stop'], [['V'], 'Seat / Chase'], [['Drag'], 'Look around']]
+    streetcar: [[['E'], 'Get off / Request stop'], [['V'], 'Seat / Chase'], [['Drag'], 'Look around']],
+    subway: [[['E'], 'Get off at arrival'], [['V'], 'Seat / Exterior on viaduct'], [['Drag'], 'Look around']],
+    station: [[['W', 'S'], 'Walk along platform'], [['A', 'D'], 'Turn'], [['E'], 'Board train']]
   };
   // Top speeds in km/h (controllers.js: 8.2, 19 & 52 m/s; the car runs out of power against the air near 230): full
   // scale of the speed meter
-  const topSpeedKmh = { person: 30, car: 230, cyclist: 68, helicopter: 187, streetcar: 45 };
+  const topSpeedKmh = { person: 30, car: 230, cyclist: 68, helicopter: 187, streetcar: 45, subway: 60, station: 30 };
 
   function renderControlHints(mode) {
     if (!elControlsHint) return;
@@ -430,7 +436,7 @@ async function initApp() {
   }
 
   function selectMode(mode) {
-    if (streetcarRide.active) streetcarRide.exit({ cancel: true }); // (off the streetcar first, then on as the mode chosen)
+    cancelTransit(); // (off the streetcar first, then on as the mode chosen)
     controllerManager.setMode(mode);
     touchControls.setMode(controllerManager.activeMode);
     gamepadControls.reset();
@@ -452,30 +458,45 @@ async function initApp() {
 
   function selectCamera(camId, snap = false) {
     // aboard a streetcar: the seat (POV) or the chase over the car (the low action camera would sit in its body)
-    if (streetcarRide.active && camId !== 'pov' && camId !== 'chase') camId = 'chase';
+    if (rideSession.active && camId !== 'pov' && camId !== 'chase') camId = 'chase';
+    if (subwayRide?.inside && (!subwayRide.active || !subwayRide.canChase)) camId = 'pov';
     if (streetcarRide.active) streetcarRide.car.hideBody = camId === 'pov';
     cameraSystem.setCameraPreset(camId, snap);
     cameraButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-camera') === camId);
     });
     const preset = cameraSystem.getActivePreset();
-    if (elCamera) elCamera.textContent = streetcarRide.active && preset.id === 'pov' ? 'Streetcar Seat' : preset.name;
+    if (elCamera) elCamera.textContent = rideSession.active && preset.id === 'pov' ? `${rideSession.entity.label} seat` : preset.name;
   }
 
   // On & off a streetcar: the HUD's mode, hints & touch controls
   function onRideChange(active) {
-    document.body.classList.toggle('riding-streetcar', active);
+    active = rideSession.active;
+    document.body.classList.toggle('riding-transit', active);
+    document.body.classList.toggle('in-subway', !!subwayRide?.inside);
     const ent = controllerManager.getActiveEntity();
-    if (elMode) elMode.textContent = active ? 'Streetcar' : ent.label;
-    renderControlHints(active ? 'streetcar' : controllerManager.activeMode);
+    if (elMode) elMode.textContent = active ? rideSession.entity.label : subwayRide?.inside ? `${subwayRide.station.name} platform` : ent.label;
+    renderControlHints(active ? rideSession.entity.type : subwayRide?.inside ? 'station' : controllerManager.activeMode);
     touchControls.setEnabled(!active && !mapSystem.isFullMapOpen);
     touchControls.reset();
     gamepadControls.reset();
     if (!active) selectCamera(cameraSystem.activePresetId);
+    modeButtons.forEach((btn) => btn.classList.toggle('active', btn.getAttribute('data-mode') === controllerManager.activeMode));
+    touchControls.setMode(controllerManager.activeMode);
+    document.body.dataset.mode = controllerManager.activeMode;
+    placeModeIndicator();
   }
   // The featured ride: on a 504 along King (the teleport menu, #ride=504), walking or on the bike
-  function rideFeatured(route = '504') {
+  function cancelTransit() {
     if (streetcarRide.active) streetcarRide.exit({ cancel: true });
+    if (subwayRide?.inside) subwayRide.exit({ cancel: true });
+  }
+  function rideFeatured(route = '504') {
+    cancelTransit();
+    if (route === 'subway' || route === '2') {
+      if (!['person', 'cyclist'].includes(controllerManager.activeMode)) selectMode('person');
+      return subwayRide.featured();
+    }
     if (controllerManager.activeMode !== 'person' && controllerManager.activeMode !== 'cyclist') selectMode('cyclist');
     touchControls.reset();
     gamepadControls.reset();
@@ -484,7 +505,8 @@ async function initApp() {
 
   // Steps through CAMERA_PRESETS (V / Shift+V, and the arrows either side of the camera name)
   function cycleCamera(step) {
-    if (streetcarRide.active) return selectCamera(cameraSystem.activePresetId === 'pov' ? 'chase' : 'pov', true);
+    if (rideSession.active) return selectCamera(cameraSystem.activePresetId === 'pov' ? 'chase' : 'pov', true);
+    if (subwayRide.inside) return selectCamera('pov', true);
     const n = CAMERA_PRESETS.length;
     const idx = CAMERA_PRESETS.findIndex((p) => p.id === cameraSystem.activePresetId);
     selectCamera(CAMERA_PRESETS[(idx + step + n) % n].id, true);
@@ -614,7 +636,7 @@ async function initApp() {
   }
 
   function teleportTo(x, z, heading = Math.PI) {
-    if (streetcarRide.active) streetcarRide.exit({ cancel: true });
+    cancelTransit();
     const destination = controllerManager.teleportActiveTo(x, z, heading);
     touchControls.reset();
     gamepadControls.reset();
@@ -652,7 +674,7 @@ async function initApp() {
     helpModal.hidden = !open;
     controllerManager.resetInput();
     if (open) {
-      const card = helpModal.querySelector(`[data-help-mode="${streetcarRide.active ? 'streetcar' : controllerManager.activeMode}"]`);
+      const card = helpModal.querySelector(`[data-help-mode="${rideSession.active ? rideSession.entity.type : controllerManager.activeMode}"]`);
       helpModal.querySelectorAll('[data-help-mode]').forEach((c) => c.classList.toggle('current', c === card));
     }
   }
@@ -738,11 +760,11 @@ async function initApp() {
       case 'KeyE':
         // board the streetcar standing at the stop / get off at a stop (streetcar-ride.js)
         if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || mapSystem.isFullMapOpen || (helpModal && !helpModal.hidden)) break;
-        streetcarRide.action();
+        subwayRide.action() || streetcarRide.action();
         break;
       case 'KeyR': {
         if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || mapSystem.isFullMapOpen) break;
-        if (streetcarRide.active) streetcarRide.exit({ cancel: true });
+        cancelTransit();
         const road = controllerManager.findRoadReset();
         if (road) teleportTo(road.x, road.z, road.heading);
         break;
@@ -869,6 +891,7 @@ async function initApp() {
     streetcars, // Toronto layer
     streetcarRide, // Toronto layer
     rideSession,
+    subwayRide,
     rideFeatured,
     transitBuses, // Toronto layer
     railCorridor, // Toronto layer
@@ -952,6 +975,12 @@ async function initApp() {
       if (loadingStatus) loadingStatus.textContent = `Compiling Shaders & Render Pipelines... ${Math.round((e.loaded / e.total) * 100)}%`;
       setLoadingProgress(e.loaded / e.total);
     });
+    const outdoorMask = cameraSystem.camera.layers.mask;
+    subwayRide?.warmGraphics(true);
+    cameraSystem.camera.layers.set(2);
+    await compile(scene);
+    cameraSystem.camera.layers.mask = outdoorMask;
+    subwayRide?.warmGraphics(false);
     for (const o of skipped) o.visible = true;
     renderer.setMRT(null);
     renderer.setRenderTarget(null);
@@ -1054,7 +1083,7 @@ async function initApp() {
     // (aboard a streetcar the camera follows the car, so it moves after the car does; the player, riding along hidden,
     // is nobody's obstacle)
     gamepadControls.update(dt);
-    const riding = streetcarRide.active;
+    const riding = rideSession.active || subwayRide.inside;
     const playerEnt = riding ? null : controllerManager.getActiveEntity();
     controllerManager.update(dt, elapsed);
     if (collisionDebug) collisionDebug.update();
@@ -1075,6 +1104,7 @@ async function initApp() {
     }
     streetcars.update(dt, elapsed, cameraSystem.camera, playerEnt, controllerManager.activeMode); // Toronto layer
     streetcarRide.update(dt);
+    subwayRide.update(dt);
     if (riding) cameraSystem.update(dt, elapsed);
     if (transitBuses) transitBuses.update(dt); // Toronto layer
     railCorridor.update(dt, cameraSystem.camera, playerEnt, controllerManager.activeMode); // Toronto layer
@@ -1173,8 +1203,8 @@ async function initApp() {
       frameCount = 0;
       fpsTimer = 0;
 
-      const activeEnt = streetcarRide.active ? streetcarRide.entity : controllerManager.getActiveEntity();
-      const mode = streetcarRide.active ? 'streetcar' : controllerManager.activeMode;
+      const activeEnt = rideSession.active ? rideSession.entity : controllerManager.getActiveEntity();
+      const mode = rideSession.active ? rideSession.entity.type : subwayRide.inside ? 'station' : controllerManager.activeMode;
       const kmh = Math.round(Math.abs(activeEnt.speed) * 3.6);
       const altM = Math.max(0, Math.round(activeEnt.position.y));
 

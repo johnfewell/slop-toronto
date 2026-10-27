@@ -2698,8 +2698,8 @@ body.touch-enabled .ac-item { min-height: 48px; }
 .ride-fade.show { opacity: 0.85; transition-duration: 0.08s; }
 
 /* aboard: the joystick & the walking / cycling actions step aside */
-body.riding-streetcar .touch-movement,
-body.riding-streetcar .touch-actions { visibility: hidden; }
+body.riding-transit .touch-movement,
+body.riding-transit .touch-actions { visibility: hidden; }
 
 @media (max-width: 820px) {
   .hud-top-center { top: calc(max(var(--edge), env(safe-area-inset-top)) + 62px); }
@@ -2711,7 +2711,11 @@ body.riding-streetcar .touch-actions { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .ride-fade, .ride-fade.show { transition: none; } .ride-prompt { animation: none; } }
 
 @media (max-width: 820px) {
-  body.riding-streetcar .hud-top-center { top: calc(max(var(--edge), env(safe-area-inset-top)) + 120px); left: var(--edge); right: var(--edge); transform: none; }
-  body.riding-streetcar .ride-hud { width: 100%; max-width: 100%; box-sizing: border-box; }
+  body.riding-transit .hud-top-center, body.in-subway .hud-top-center { top: calc(max(var(--edge), env(safe-area-inset-top)) + 120px); left: var(--edge); right: var(--edge); transform: none; }
+  body.riding-transit .ride-hud, body.in-subway .ride-hud { width: 100%; max-width: 100%; box-sizing: border-box; }
   .ride-route { font-size: 14px; }
 }
+
+body.in-subway .ride-num { background: #007f3e; }
+
+body.in-subway:not(.riding-transit) [data-touch-action="up"] { visibility: hidden; }

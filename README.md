@@ -11,10 +11,11 @@ its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
 
 ## What's in it
 
-- **The TTC subway:** Line 2 Toronto Rockets cross the Don Valley on the Bloor Viaduct's lower deck and run through
+- **The TTC subway:** six-car trains cross the Don Valley on the Bloor Viaduct's lower deck and run through
   the open cuts in the west end (Runnymede to High Park, Keele past Vincent Yard). 27 stations have their stairways on
   the street and the TTC insignia pylon at 86 entrances, each with the station's name, lines and accessibility.
 - **Ride a streetcar:** choose **Ride the 504 along King** in Sights, or walk/cycle to an open streetcar at a stop and press **E**. Use **V** for seat/chase views, and **E** to request a stop or get off with the doors open. Touch and gamepad controls work too.
+- **Ride the subway:** choose **Ride the subway across the Don Valley** in Sights, or enter at Castle Frank or Broadview. Board, cross the viaduct, get off at the other station and return to the street. Change platforms for the return journey. The first route has procedural station and train interiors.
 - **Streetcars and GO trains:** TTC streetcars on the real streetcar network (no buses on streetcar routes), and GO
   trains on real bridges and embankments over the streets, from OpenStreetMap. Union Station has an open train shed
   over its platforms, and Strachan Avenue dips under the tracks in a cutting.
@@ -34,9 +35,9 @@ its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
 No build step for development: `npm run dev` (or `python3 -m http.server 5530 --bind 127.0.0.1`) and open
 `http://127.0.0.1:5530/` (landing page) or `/explore.html` (the city).
 
-Passenger travel: [streetcar controls and implementation notes](docs/streetcar-riding.md), the
-[streetcar design](docs/streetcar-riding-spec.md), and the next milestone,
-[subway travel between stations](docs/subway-riding-spec.md). The latest engine integration is recorded in
+Passenger travel: [streetcar controls and implementation notes](docs/streetcar-riding.md),
+[subway controls and implementation notes](docs/subway-riding.md), and the full
+[streetcar](docs/streetcar-riding-spec.md) and [subway](docs/subway-riding-spec.md) designs. The latest engine integration is recorded in
 [the upstream sync notes](docs/upstream-sync.md).
 
 ## Publish

@@ -360,6 +360,10 @@ class ThirdPersonControllerManager {
   // exact: only (x, z) itself (null if it isn't clear), no search round it
   findTeleportPosition(x, z, heading, altitude, exact = false) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+    if (this.interiorSpace && this.activeMode === 'person') {
+      const point = this.interiorSpace.constrain({ x, z }, 0.5);
+      return exact && Math.hypot(point.x - x, point.z - z) > 0.01 ? null : point;
+    }
     const heli = this.activeMode === 'helicopter';
     const car = this.activeMode === 'car';
     const radius = BODY_RADIUS[this.activeMode] || 0.48;
@@ -866,6 +870,7 @@ class ThirdPersonControllerManager {
   // deck or ramp where whoever is at height y can step or drive onto it (y unknown: at street level)
   getGroundHeight(x, z, mode = 'person', y = null) {
     // (the bicycle too: up on the curb islands it rides the parks' trails & paths on their surface, not 22 cm under it)
+    if (this.interiorSpace && mode === 'person') return this.interiorSpace.floor;
     let ground = (mode === 'person' || mode === 'cyclist') && this.isPointOnSidewalk(x, z) ? CITY_BOUNDS.sidewalkHeight : 0.0;
     // down in a road cut (city-config.js cutAt: Strachan Ave under the railway), else up on the hills
     const cut = window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0;
@@ -948,6 +953,13 @@ class ThirdPersonControllerManager {
   // One frame's move of the active body (its position by its speed & heading; the car's by its momentum, turning from
   // `fromHeading` to its heading), in substeps, each pushed out of what it meets (WORLD CONTACT above)
   moveBody(ent, mode, dt, fromHeading = ent.heading) {
+    if (this.interiorSpace && mode === 'person') {
+      ent.position.x += Math.sin(ent.heading) * ent.speed * dt;
+      ent.position.z += Math.cos(ent.heading) * ent.speed * dt;
+      const at = this.interiorSpace.constrain(ent.position, 0.5);
+      ent.position.x = at.x; ent.position.z = at.z; ent.position.y = this.interiorSpace.floor;
+      return;
+    }
     const car = mode === 'car', pos = ent.position, radius = BODY_RADIUS[mode] || 0.48;
     const toHeading = ent.heading, turn = car ? toHeading - fromHeading : 0;
     const reach = car ? G.CAR_REACH : radius;
@@ -1152,6 +1164,7 @@ class ThirdPersonControllerManager {
     this.moveBody(p, 'person', dt);
 
     const groundY = this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
+    if (this.interiorSpace) { p.position.y = groundY; p.verticalVel = 0; return; }
     if (this.keys.up && p.position.y <= groundY + 0.02) {
       p.verticalVel = 5.2;
     }

@@ -424,3 +424,18 @@ test('ground passenger interaction does not jump, while E still ascends in fligh
   controller.activeMode = 'helicopter'; key('keydown', 'KeyE'); assert.equal(controller.keys.up, true);
   key('keyup', 'KeyE'); assert.equal(controller.keys.up, false);
 });
+
+test('station interiors ground and constrain walking independently of overlapping outdoor buildings', () => {
+  const { controller, ent } = teleportHarness('person', [{ minX: -100, maxX: 100, minZ: -100, maxZ: 100, maxY: 90 }]);
+  delete controller.getGroundHeight;
+  controller.interiorSpace = { floor: 17.4, constrain(p, radius) { return { x: Math.max(-4 + radius, Math.min(-2 - radius, p.x)), z: Math.max(-80 + radius, Math.min(80 - radius, p.z)) }; } };
+  controller.teleportActiveTo(-3, 0, Math.PI / 2);
+  assert.equal(ent.position.x, -3); assert.equal(ent.position.y, 17.4);
+  ent.speed = 20; controller.moveBody(ent, 'person', 1);
+  assert.equal(ent.position.x, -2.5, 'cannot step into the track area');
+  assert.equal(controller.findTeleportPosition(0, 0, 0, 0, true), null);
+  controller.keys.up = true; controller.updatePerson(0.1);
+  assert.equal(ent.position.y, 17.4); assert.equal(ent.verticalVel, 0, 'a platform jump cannot escape its cell');
+  controller.interiorSpace = null;
+  assert.equal(controller.getGroundHeight(0, 0), 0, 'outdoor grounding resumes when the visit ends');
+});

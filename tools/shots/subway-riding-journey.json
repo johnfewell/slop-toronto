@@ -1,0 +1,55 @@
+[
+  {
+    "name": "subway-castle-frank-seat",
+    "wait": 1000,
+    "js": "if(!window.__CITY_APP.subwayRide.active) throw new Error('No subway ride'); document.getElementById('locate-prompt').hidden=true;"
+  },
+  {
+    "name": "subway-viaduct-seat",
+    "wait": 500,
+    "js": "(async () => { const a=window.__CITY_APP,R=a.subwayRide,id=R.car.id; a.film.start(10); try { for(let i=0;i<140&&!R.canChase;i++) {await a.film.step(25); if(!R.active||R.car.id!==id) throw new Error('Train identity lost');} if(!R.canChase) throw new Error('Did not reach open viaduct'); a.selectCamera('pov',true); console.log('[ride-check] continuous viaduct ride '+JSON.stringify({id,s:R.car.s,eye:R.entity.seatEye,layer:a.cameraSystem.camera.layers.mask})); } finally {a.film.stop();} })()"
+  },
+  {
+    "name": "subway-viaduct-exterior",
+    "camera": "chase",
+    "wait": 1000,
+    "js": "if(window.__CITY_APP.cameraSystem.activePresetId!=='chase') throw new Error('No exterior view on viaduct');"
+  },
+  {
+    "name": "subway-broadview-arrival",
+    "time": "midnight",
+    "wait": 500,
+    "js": "(async () => {const a=window.__CITY_APP,R=a.subwayRide,id=R.car.id; a.film.start(10); try { for(let i=0;i<180 && !(R.car.stopIndex===1&&R.car.doorState==='open');i++) await a.film.step(25); if(!R.active||R.car.id!==id||R.car.stopIndex!==1||R.car.doorState!=='open') throw new Error('No retained arrival'); if(!a.scene.getObjectByName('SubwayPlatform_'+R.car.track.destination.id)?.visible) throw new Error('Arrival platform hidden'); console.log('[ride-check] arrived '+R.car.track.destination.name+' on '+id); } finally {a.film.stop();} })()"
+  },
+  {
+    "name": "subway-broadview-platform",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide; document.getElementById('ride-status').click(); if(R.active||!R.inside||a.controllerManager.suspended||!a.controllerManager.interiorSpace||!a.controllerManager.getActiveEntity().mesh.visible) throw new Error('Platform alighting failed'); const p=a.controllerManager.getActiveEntity().position; if(Math.abs(p.y-a.controllerManager.interiorSpace.floor)>.01) throw new Error('Wrong platform elevation'); console.log('[ride-check] safely on '+R.station.name+' platform '+JSON.stringify(p));})()"
+  },
+  {
+    "name": "subway-return-seat",
+    "wait": 1000,
+    "js": "(async () => {const a=window.__CITY_APP,R=a.subwayRide; document.getElementById('subway-other-platform').click(); a.film.start(10); try { for(let i=0;i<320 && document.getElementById('ride-status').disabled;i++) await a.film.step(25); if(document.getElementById('ride-status').disabled) throw new Error('No return train'); document.getElementById('ride-status').click(); if(!R.active||R.car.track.origin.name!=='Broadview') throw new Error('Could not board westbound return'); console.log('[ride-check] boarded return '+R.car.id); } finally {a.film.stop();} })()"
+  },
+  {
+    "name": "subway-castle-frank-arrival",
+    "wait": 500,
+    "js": "(async () => {const a=window.__CITY_APP,R=a.subwayRide,id=R.car.id; a.film.start(10); try { for(let i=0;i<180 && !(R.car.stopIndex===1&&R.car.doorState==='open');i++) await a.film.step(25); if(!R.active||R.car.id!==id||R.car.stopIndex!==1||R.car.doorState!=='open') throw new Error('No retained arrival'); if(!a.scene.getObjectByName('SubwayPlatform_'+R.car.track.destination.id)?.visible) throw new Error('Arrival platform hidden'); console.log('[ride-check] arrived '+R.car.track.destination.name+' on '+id); } finally {a.film.stop();} })()"
+  },
+  {
+    "name": "subway-castle-frank-platform",
+    "wait": 500,
+    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide; document.getElementById('ride-status').click(); if(R.active||!R.inside||a.controllerManager.suspended||!a.controllerManager.interiorSpace||!a.controllerManager.getActiveEntity().mesh.visible) throw new Error('Platform alighting failed'); const p=a.controllerManager.getActiveEntity().position; if(Math.abs(p.y-a.controllerManager.interiorSpace.floor)>.01) throw new Error('Wrong platform elevation'); console.log('[ride-check] safely on '+R.station.name+' platform '+JSON.stringify(p));})()"
+  },
+  {
+    "name": "subway-return-street",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide; document.getElementById('ride-cancel').click(); if(R.inside||R.active||a.rideSession.active||a.controllerManager.interiorSpace||a.controllerManager.suspended||a.cameraSystem.followOverride||a.cameraSystem.camera.layers.mask!==1) throw new Error('Street restoration failed'); const p=a.controllerManager.getActiveEntity().position; if(Math.abs(p.y-a.controllerManager.getGroundHeight(p.x,p.z,a.controllerManager.activeMode))>.1) throw new Error('Unsafe street exit'); console.log('[ride-check] round trip exited to street '+JSON.stringify(p));})()"
+  },
+  {
+    "name": "subway-mode-cleanup",
+    "mode": "car",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP; if(!a.rideFeatured('subway')) throw new Error('Restart failed'); a.selectMode('car'); if(a.subwayRide.inside||a.rideSession.active||a.controllerManager.suspended||a.controllerManager.interiorSpace||a.cameraSystem.camera.layers.mask!==1) throw new Error('Mode cleanup failed'); console.log('[ride-check] subway mode cleanup passes');})()"
+  }
+]

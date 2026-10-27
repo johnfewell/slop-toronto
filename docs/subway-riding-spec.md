@@ -1,14 +1,19 @@
 # Boarding subways and riding between stations
 
-Specification only · 2026-10-26 · Follows [streetcar riding](streetcar-riding-spec.md)
+Design specification · 2026-10-26 · Follows [streetcar riding](streetcar-riding-spec.md)
+
+A playable two-station slice is implemented. See [controls, implementation and remaining limits](subway-riding.md).
+The assessment and estimates below describe the original design baseline. Measured underground elevations,
+faithful T1/station art, streamed interiors and performance/resource budgets remain future work; the current slice
+does not claim every acceptance gate in this fuller specification.
 
 Build a complete **Castle Frank ↔ Broadview** passenger journey first: enter a station from the street, choose a
 direction, wait on a platform, board, ride through tunnel and across the Don Valley on the existing viaduct, arrive
 at the other station, get off and return to the street. Support both directions. This proves real travel between
 stations with recognizable scenery before expanding to the rest of the in-bounds subway network.
 
-This is a larger feature than attaching a camera to the trains already visible in the city. No subway-riding code,
-station interiors, data-generation changes or dependencies are implemented by this document.
+This is a larger feature than attaching a camera to the trains already visible in the city. This document records
+the broader design; the implementation notes identify what the first playable slice provides.
 
 ## What the repository actually provides
 

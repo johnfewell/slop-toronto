@@ -18,7 +18,7 @@ const patterns = D.patterns.map((p, i) => {
   const [num, name, type, colour] = D.routes[p.r];
   const pts = [];
   for (let k = 0; k < (p.pts || []).length; k += 2) pts.push({ x: p.pts[k], z: p.pts[k + 1] });
-  const stops = (p.stops || []).map((s) => ({ x: D.stops[2 * s], z: D.stops[2 * s + 1], name: D.stopNames[s], id: D.stopIds?.[s] || `${D.stops[2 * s]},${D.stops[2 * s + 1]}` }));
+  const stops = (p.stops || []).map((s, i) => ({ x: D.stops[2 * s], z: D.stops[2 * s + 1], name: D.stopNames[s], time: p.times?.[i], id: D.stopIds?.[s] || `${D.stops[2 * s]},${D.stops[2 * s + 1]}` }));
   return { id: i, route: num, name, routeType: type, colour, type: p.t, dir: p.d, sign: p.sign, perHour: p.h, trips: p.n, speed: p.v || 4, pts, stops };
 });
 

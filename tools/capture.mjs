@@ -1,7 +1,7 @@
 // tools/capture.mjs — screenshots of the running app for review (run on the Mac mini via gpu2, never on the laptop)
 // usage: GPU2_OUT=out node tools/capture.mjs [shot.json]   (serves this folder itself: vite would rewrite the import map)
 // A shot is { name, mode?, time?, camera?, x?, z?, heading?, wait?, js? } (js: a page expression run before the shot) (world metres, see the geodata frame); the
-// A shot may also tap a selector (`tap`) after its setup; async `js` is awaited. The
+// A shot may also tap a selector (`tap`) after its setup or reload before setup (`reload`); async `js` is awaited. The
 // default list is one overview per time of day.
 // CAPTURE_ROOT=dist serves another folder (the built site); CAPTURE_STATIC=1 with CAPTURE_PAGE=index.html screenshots a
 // plain page (full page, desktop and phone width) instead of waiting for the city.
@@ -152,6 +152,10 @@ if (HEAP === 'alloc') {
 
 try {
   for (const s of shots) {
+    if (s.reload) {
+      await page.reload({ waitUntil: 'load' });
+      await page.waitForFunction(() => window.__CITY_APP?.ready, null, { timeout: 240000 });
+    }
     await page.evaluate((s) => {
       const app = window.__CITY_APP;
       if (s.mode) app.selectMode(s.mode);

@@ -22,7 +22,7 @@ test('shader preparation never interleaves renderer node builds across async yie
     }
   };
   const run = vm.runInNewContext(`${precompile}\nprecompileShaders`, { scene, renderer, renderPipeline: { render() {} },
-    scenePass: { renderTarget: {} }, sceneMRT: {}, cameraSystem: { camera: {} }, loadingStatus: {},
+    scenePass: { renderTarget: {} }, sceneMRT: {}, cameraSystem: { camera: { layers: { mask: 1, set(layer) { this.mask = 1 << layer; } } } }, subwayRide: { warmGraphics() {} }, loadingStatus: {},
     markInit() {}, setLoadingProgress() {}, console });
   await run();
   assert.equal(peak, 1, 'material references must belong to a single build across its yields');

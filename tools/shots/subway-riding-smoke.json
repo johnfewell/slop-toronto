@@ -1,0 +1,7 @@
+[
+  {
+    "name": "subway-platform-seat",
+    "wait": 1500,
+    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide; document.getElementById('locate-prompt').hidden=true; if(!R.active) throw new Error('Subway featured boarding failed'); console.log('[ride-check] subway active '+JSON.stringify({id:R.car.id,origin:R.car.track.origin.name,destination:R.car.track.destination.name,s:R.car.s,eye:R.entity.seatEye}));})()"
+  }
+]

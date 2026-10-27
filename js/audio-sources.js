@@ -204,6 +204,7 @@ class CityAudioSources {
       const cars = this.streetcarSystems[k].cars;
       for (let i = 0; i < cars.length; i++) {
         const car = cars[i];
+        if (car.audible === false) continue;
         const sections = car.sections;
         const n = sections ? sections.length : 0;
         // The middle module sounds for the whole car; the nose sets its heading, nose against tail its bend

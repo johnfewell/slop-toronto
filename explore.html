@@ -32,7 +32,7 @@
   <script>
     // Download the city scripts while Three.js loads; execute them only after its imports are ready below.
     const cityAppScripts = (() => {
-      const assetVersion = '20261027-ride1';
+      const assetVersion = '20261027-subway1';
       return [
         './js/quality.js',
         './js/toronto-geodata.js',
@@ -84,6 +84,8 @@
         './js/gamepad-controls.js',
         './js/cameras.js',
         './js/streetcar-ride.js',
+        './js/subway-service.js',
+        './js/subway-ride.js',
         './js/city-map.js',
         './js/navigation.js',
         './js/tour-guide.js',
@@ -115,7 +117,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&amp;family=Overpass:wght@600;700&amp;display=swap" />
-  <link rel="stylesheet" href="./css/style.css?v=20261027-ride1" />
+  <link rel="stylesheet" href="./css/style.css?v=20261027-subway1" />
   <!-- three.js dev branch pinned to commit e27dfa95ae (2026-10-23) via jsDelivr: mrdoob's engine needs dev (it crawls at 1 fps on the 0.186.1 release) -->
   <script type="importmap">
     {
@@ -422,6 +424,7 @@
   <div id="teleport-popover" class="popover" popover data-side="below" data-anchor="hud-toolbar" aria-label="Teleport the active player">
     <div class="pop-title">Featured ride</div>
     <button id="tp-ride504" class="pop-item tp-btn ride-btn" data-ride="504" type="button"><span class="pop-name">Ride the 504 along King</span><span class="pop-sub">Board a King streetcar · sit back &amp; watch the city</span></button>
+    <button class="pop-item tp-btn ride-btn" data-ride="subway" type="button"><span class="pop-name">Ride the subway across the Don Valley</span><span class="pop-sub">Castle Frank ↔ Broadview · Line 2</span></button>
     <div class="pop-title">Go to a sight</div>
     <button id="tp-humberArch" class="pop-item tp-btn" data-teleport="humberArch" type="button"><span class="pop-name">Humber Bay Arch Bridge</span><span class="pop-sub">Martin Goodman Trail · Humber Bay</span></button>
     <button id="tp-cnTower" class="pop-item tp-btn" data-teleport="cnTower" type="button"><span class="pop-name">CN Tower</span><span class="pop-sub">Bremner Blvd · Entertainment District</span></button>
@@ -472,6 +475,7 @@
       <div class="ride-head"><span id="ride-num" class="ride-num">504</span><span id="ride-route" class="ride-route"></span></div>
       <div class="ride-next"><span id="ride-next-label" class="ride-next-label">Next stop</span><span id="ride-next" class="ride-next-name"></span></div>
       <button id="ride-status" class="ride-status" type="button"></button>
+      <button id="subway-other-platform" class="ride-cancel" type="button" hidden>Change to the other platform</button>
       <button id="ride-cancel" class="ride-cancel" type="button">Return to where I boarded</button>
     </section>
   </div>
@@ -680,6 +684,10 @@
         <section class="help-sec" data-help-mode="streetcar">
           <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-bus"/></svg>Ride a streetcar</h3>
           <ul><li>Walking or cycling, at a stop: <kbd>E</kbd> boards the car with its doors open</li><li><kbd>E</kbd> at a stop gets off · between stops, requests the next</li><li><kbd>V</kbd> Seat / chase view · drag to look round</li><li>Sights menu: <b>Ride the 504 along King</b></li></ul>
+        </section>
+        <section class="help-sec" data-help-mode="subway">
+          <h3>Ride Line 2</h3>
+          <ul><li>Sights: <b>Ride the subway across the Don Valley</b></li><li><kbd>E</kbd> enters a supported station, boards an open train or gets off at arrival</li><li>Castle Frank ↔ Broadview · use the other-platform button to return</li><li><kbd>V</kbd> Seat / exterior view on the viaduct</li></ul>
         </section>
         <section class="help-sec help-keys">
           <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-camera"/></svg>Look &amp; view</h3>

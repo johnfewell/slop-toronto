@@ -1,0 +1,7 @@
+[
+  {
+    "name": "subway-debug",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP;console.log('[ride-check] subway service '+JSON.stringify({routes:a.subwayRide.routes.map(r=>({id:r.id,length:r.len,calls:r.calls,portals:[r.open0,r.open1]})),cars:a.subwayRide.cars.map(c=>({id:c.id,s:c.s,stop:c.stopIndex,doors:c.doorState,ridden:c.ridden})),station:a.subwayRide.station?.id,active:a.subwayRide.active,inside:a.subwayRide.inside}));})()"
+  }
+]

@@ -239,6 +239,11 @@ class CameraSystem {
         );
         // (the streetcar: always over its overhead wire, never down through its roof)
         if (entity.minCamY) desiredPos.y = Math.max(desiredPos.y, entity.position.y + entity.minCamY);
+        if (entity.chaseSide) {
+          desiredPos.x -= Math.cos(entity.heading) * entity.chaseSide;
+          desiredPos.z += Math.sin(entity.heading) * entity.chaseSide;
+          desiredPos.y = entity.position.y + entity.chaseHeight;
+        }
 
         const lookUpBias = entity.type === 'helicopter' ? 0.2 : (entity.type === 'car' ? 0.52 : 1.55);
         desiredLook.set(
