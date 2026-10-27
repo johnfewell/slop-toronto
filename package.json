@@ -4,7 +4,8 @@
   "type": "module",
   "description": "Toronto in three.js WebGPU + TSL, on the engine of Slop New York by mrdoob",
   "scripts": {
-    "dev": "python3 -m http.server 5530 --bind 127.0.0.1",
+    "dev": "node tools/dev-server.mjs",
+    "build": "node tools/build-site.mjs",
     "test": "node --test tests/*.cjs tests/*.mjs",
     "capture": "node tools/capture.mjs",
     "build:water": "node tools/build-water.mjs"

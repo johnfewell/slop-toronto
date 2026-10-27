@@ -32,7 +32,6 @@
   <script>
     // Download the city scripts while Three.js loads; execute them only after its imports are ready below.
     const cityAppScripts = (() => {
-      const assetVersion = '20261027-controls2';
       return [
         './js/quality.js',
         './js/toronto-geodata.js',
@@ -103,7 +102,7 @@
         './js/audio-sources.js',
         './js/audio-system.js',
         './js/main.js'
-      ].map((src) => `${src}?v=${assetVersion}`);
+      ];
     })();
     for (const src of cityAppScripts) {
       const preload = document.createElement('link');
@@ -117,7 +116,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&amp;family=Overpass:wght@600;700&amp;display=swap" />
-  <link rel="stylesheet" href="./css/style.css?v=20261027-controls2" />
+  <link rel="stylesheet" href="./css/style.css" />
   <!-- three.js dev branch pinned to commit e27dfa95ae (2026-10-23) via jsDelivr: mrdoob's engine needs dev (it crawls at 1 fps on the 0.186.1 release) -->
   <script type="importmap">
     {

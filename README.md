@@ -32,8 +32,13 @@ its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
 
 ## Run it
 
-No build step for development: `npm run dev` (or `python3 -m http.server 5530 --bind 127.0.0.1`) and open
+No build step for development: `npm run dev` (or `node tools/dev-server.mjs`) and open
 `http://127.0.0.1:5530/` (landing page) or `/explore.html` (the city).
+
+The dev server sends `Cache-Control: no-store` and automatically reloads open tabs when app HTML, JS or CSS changes.
+The city saves its safe player location on reload. Use this server rather than Python's generic file server; the
+latter does not disable caching or notify already-open tabs. A tab opened before the dev server change needs one
+reload to load the live-reload client.
 
 Passenger travel: [streetcar controls and implementation notes](docs/streetcar-riding.md),
 [subway controls and implementation notes](docs/subway-riding.md), and the full
@@ -42,13 +47,24 @@ Passenger travel: [streetcar controls and implementation notes](docs/streetcar-r
 
 ## Publish
 
-The site is static. `node tools/build-site.mjs` copies what the pages load into `dist/`: the two pages, `css/`,
-`assets/` and only the `js/` files the pages load (followed through their imports), plus `dist/_headers`. Cloudflare
-serves `dist/` as a Worker's static assets (`wrangler.jsonc`):
+The site is static. `npm run build` (or `node tools/build-site.mjs`) writes `dist/`: the two pages, assets and only
+the scripts they load, followed through their imports. JS and CSS receive automatic SHA-256 content fingerprints
+such as `js/main.012345abcdef.js`. The build rewrites page, lazy-import and debug-script URLs; a dependency change
+also invalidates its importer's filename. Identical builds keep identical URLs, and unchanged geodata stays cached
+across unrelated code edits. `dist/asset-manifest.json` records the source-to-output mapping and build ID.
+
+These are fingerprinted individual files, preserving the existing ordered scripts and lazy modules. The build does
+not combine the app into one bundle. Manual `?v=` bumps are no longer needed. HTML, the manifest and unhashed media
+revalidate on each use; fingerprinted code is immutable and cacheable for a year. Those policies are explicit in
+`dist/_headers`, following [Cloudflare's static-asset header rules](https://developers.cloudflare.com/workers/static-assets/headers/).
+Cloudflare serves `dist/` as a Worker's static assets (`wrangler.jsonc`):
 
 - **Production** deploys from the `release` branch (Cloudflare Workers Builds: build `node tools/build-site.mjs`,
   deploy `npx wrangler deploy`).
 - By hand: `node tools/build-site.mjs && npx wrangler@4 deploy`.
+
+Cache regression checks: `node --test tests/site-cache.test.mjs tests/boot.test.cjs`. The GPU runner also verifies
+that editing CSS reloads the real city and preserves the player (`GPU2_LOCK_WAIT=60 gpu2 slop-toronto-subway -- node tools/check-dev-reload.mjs`).
 
 ## License and data
 

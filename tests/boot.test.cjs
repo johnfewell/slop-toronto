@@ -54,8 +54,7 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   // (inside an async function: the module awaits the GPU probe at its top level)
   await vm.runInContext(`(async () => {${moduleScript[1].replace(/^\s*import .+;$/gm, '')}})()`, context);
   assert.deepEqual(scripts, links);
-  assert.match(scripts[0], /\/quality\.js\?v=/); // the tier is chosen before anything is built
-  assert.match(scripts[1], /\/toronto-geodata\.js\?v=/);
-  assert.match(scripts.at(-1), /\/main\.js\?v=/);
-  assert.equal(new Set(scripts.map((src) => src.split('?v=')[1])).size, 1);
+  assert.match(scripts[0], /\/quality\.js$/); // source URLs; the production build fingerprints them
+  assert.match(scripts[1], /\/toronto-geodata\.js$/);
+  assert.match(scripts.at(-1), /\/main\.js$/);
 });
