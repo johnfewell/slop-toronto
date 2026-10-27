@@ -33,6 +33,10 @@ its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
 No build step for development: `npm run dev` (or `python3 -m http.server 5530 --bind 127.0.0.1`) and open
 `http://127.0.0.1:5530/` (landing page) or `/explore.html` (the city).
 
+Designs for future passenger travel: [streetcar boarding and riding](docs/streetcar-riding-spec.md), followed by
+[subway travel between stations](docs/subway-riding-spec.md). These are specifications; boarding is not yet implemented
+on `main`. The latest selective engine integration is recorded in [the upstream sync notes](docs/upstream-sync.md).
+
 ## Publish
 
 The site is static. `node tools/build-site.mjs` copies what the pages load into `dist/`: the two pages, `css/`,
