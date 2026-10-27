@@ -1,0 +1,24 @@
+[
+  {
+    "name": "ride-complete-three-stops",
+    "time": "golden",
+    "wait": 1000,
+    "js": "(async () => {\n  const a=window.__CITY_APP, R=a.streetcarRide, car=R.car;\n  if(!R.active) throw new Error('No featured ride');\n  document.getElementById('locate-prompt').hidden=true;\n  const original=R.car, start=car.stopIndex, stops=[];\n  const safe=a.rideSession.savedGround(a.controllerManager.activeMode);\n  window.dispatchEvent(new Event('pagehide'));\n  const saved=JSON.parse(localStorage.getItem('toronto-player-state'));\n  if(Math.hypot(saved.entities[saved.activeMode].x-safe.x,saved.entities[saved.activeMode].z-safe.z)>0.01) throw new Error('Saved seat instead of safe ground');\n  console.log('[ride-check] persistence uses safe boarding position');\n  a.film.start(10);\n  let requested=false;\n  try {\n    for(let batch=0;batch<360;batch++) {\n      const elapsed=await a.film.step(25);\n      if(batch%24===0) console.log('[ride-check] progress '+JSON.stringify({batch,s:car.s,speed:car.speed,doors:car.doorState,why:a.streetcars.whyWaiting(car,elapsed)}));\n      if(!R.active || R.car!==original || !a.streetcars.cars.includes(original)) throw new Error('Occupied service identity lost');\n      if(!requested && car.doorState==='closed') { R.action(); requested=true; console.log('[ride-check] requested next stop'); }\n      if(car.doorState==='open' && car.stopIndex>start && !stops.includes(car.stopIndex)) {\n        stops.push(car.stopIndex);\n        console.log('[ride-check] arrived '+JSON.stringify({index:car.stopIndex,name:car.track.stopNames[car.stopIndex],s:car.s,simulationSeconds:(batch+1)*2.5}));\n        if(stops.length===3) break;\n      }\n    }\n    if(stops.length<3) throw new Error('Did not reach three stops: '+JSON.stringify({stops,s:car.s,speed:car.speed,k:car.k,doors:car.doorState}));\n    for(let attempt=0;attempt<10&&!R.exitPoint(car);attempt++) { car.hold=3; await a.film.step(10); }\n    if(!R.exitPoint(car)) throw new Error('No safe sidewalk exit at arrival');\n    window.__rideArrival={x:a.controllerManager.getActiveEntity().position.x,z:a.controllerManager.getActiveEntity().position.z};\n    if(!R.action()||R.active||a.controllerManager.suspended) throw new Error('Alighting failed');\n    const p=a.controllerManager.getActiveEntity().position;\n    if(!a.controllerManager.isPointOnSidewalk(p.x,p.z)||Math.abs(p.y-a.controllerManager.getGroundHeight(p.x,p.z))>.1) throw new Error('Invalid sidewalk landing');\n    if(a.cameraSystem.followOverride||!a.controllerManager.getActiveEntity().mesh.visible) throw new Error('Failed to restore camera/model');\n    console.log('[ride-check] alighted safely '+JSON.stringify({x:p.x,y:p.y,z:p.z,stops:stops.length}));\n  } finally { a.film.stop(); }\n})()"
+  },
+  {
+    "name": "ride-night",
+    "time": "midnight",
+    "wait": 2000,
+    "js": "(() => {const a=window.__CITY_APP; if(!a.rideFeatured('504')) throw new Error('Could not start night ride');})()"
+  },
+  {
+    "name": "ride-mode-cleanup",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP; a.selectMode('car'); if(a.streetcarRide.active||a.controllerManager.suspended||a.cameraSystem.followOverride||!a.controllerManager.getActiveEntity().mesh.visible) throw new Error('Mode cancellation failed'); console.log('[ride-check] mode change restores controls');})()"
+  },
+  {
+    "name": "ride-teleport-cleanup",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP; if(!a.rideFeatured('504')) throw new Error('Could not restart ride'); a.teleportTo(-1000,-350,1.57); if(a.streetcarRide.active||a.controllerManager.suspended) throw new Error('Teleport cancellation failed'); console.log('[ride-check] teleport releases passenger lease');})()"
+  }
+]

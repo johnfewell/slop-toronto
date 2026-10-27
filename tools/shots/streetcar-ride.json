@@ -1,0 +1,5 @@
+[
+  { "name": "ride-walking-passenger", "mode": "person", "wait": 2000, "js": "if (!window.__CITY_APP.rideFeatured('504')) throw new Error('Walking passenger boarding failed');" },
+  { "name": "ride-exterior-night", "camera": "chase", "time": "midnight", "wait": 2500 },
+  { "name": "ride-flight-cleanup", "mode": "helicopter", "wait": 1500, "js": "if(window.__CITY_APP.controllerManager.suspended || window.__CITY_APP.streetcarRide.active) throw new Error('Flight cancellation failed');" }
+]

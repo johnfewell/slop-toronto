@@ -1,0 +1,23 @@
+[
+  {
+    "name": "phone-ride-seat",
+    "wait": 1500,
+    "js": "(() => {const a=window.__CITY_APP; document.getElementById('locate-prompt').hidden=true; if(!a.streetcarRide.active) throw new Error('Phone featured ride failed'); const panel=document.getElementById('ride-hud').getBoundingClientRect(), search=document.getElementById('search-input')?.getBoundingClientRect(); const el=document.querySelector('.search-box')?.getBoundingClientRect(); console.log('[ride-check] phone HUD bounds',JSON.stringify({panel,search,el})); window.__phoneCar=a.streetcarRide.car;})()"
+  },
+  {
+    "name": "phone-cancel-touch",
+    "tap": "#ride-cancel",
+    "wait": 500
+  },
+  {
+    "name": "phone-board-touch",
+    "tap": "#ride-prompt",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP, c=window.__phoneCar; if(a.streetcarRide.active) throw new Error('Touch cancellation failed'); c.doorState='closed'; a.streetcarRide.update(.2); c.doorState='open'; c.doorProgress=1; c.dwell=20; a.streetcarRide.update(.2); if(document.getElementById('ride-prompt').hidden) throw new Error('No touch boarding prompt at door-side stop');})()"
+  },
+  {
+    "name": "phone-ride-confirmed",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP; if(!a.streetcarRide.active||!a.controllerManager.suspended) throw new Error('Touch boarding failed'); const panel=document.getElementById('ride-hud').getBoundingClientRect(); const field=document.getElementById('search-box'); if(field&&panel.top<field.getBoundingClientRect().bottom+4) throw new Error('Phone ride panel overlaps search'); console.log('[ride-check] touch cancel, boarding and layout pass');})()"
+  }
+]

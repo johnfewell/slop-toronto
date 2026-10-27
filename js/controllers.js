@@ -240,6 +240,7 @@ class ThirdPersonControllerManager {
     const onKey = (e, isDown) => {
       const action = actionsByCode.get(e.code);
       if (!action || (isDown && isTypingInField(e))) return;
+      if (e.code === 'KeyE' && this.activeMode !== 'helicopter') return; // ground E is passenger interaction
       if (isDown) this._pressedCodes.add(e.code);
       else this._pressedCodes.delete(e.code);
       // Releasing one binding must not cancel another key held for the same action.
@@ -1088,7 +1089,10 @@ class ThirdPersonControllerManager {
     heli.mainRotorPivot.rotation.y += dt * 24.0;
     heli.tailRotorPivot.rotation.x += dt * 32.0;
 
-    if (this.activeMode === 'person') {
+    if (this.suspended) {
+      // aboard a streetcar (streetcar-ride.js): the player rides along, hidden, without moving itself
+      this.entities[this.activeMode].speed = 0;
+    } else if (this.activeMode === 'person') {
       this.updatePerson(dt, elapsed);
     } else {
       // The walker waits where it was left (New York's paced back & forth along a street between z -340 & 340, which
@@ -1096,7 +1100,9 @@ class ThirdPersonControllerManager {
       this.entities.person.speed = 0;
     }
 
-    if (this.activeMode === 'car') {
+    if (this.suspended) {
+      // (nothing drives)
+    } else if (this.activeMode === 'car') {
       this.updateCar(dt, elapsed);
     } else if (this.activeMode === 'cyclist') {
       this.updateCyclist(dt, elapsed);

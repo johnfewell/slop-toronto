@@ -200,10 +200,11 @@ async function initApp() {
       }
     } catch { /* missing or unavailable storage does not prevent riding */ }
   }
+  let rideSession = null;
   function savePlayerState() {
     if (!keepPlayerState) return;
     try {
-      const entities = Object.fromEntries(Object.entries(controllerManager.entities).map(([mode, entity]) => [mode, {
+      const entities = Object.fromEntries(Object.entries(controllerManager.entities).map(([mode, entity]) => [mode, rideSession?.savedGround(mode) || {
         x: entity.position.x, y: entity.position.y, z: entity.position.z, heading: entity.heading
       }]));
       localStorage.setItem(PLAYER_STATE_KEY, JSON.stringify({ version: 1, activeMode: controllerManager.activeMode, entities }));
@@ -214,6 +215,15 @@ async function initApp() {
   // --- end restored visits
   const cameraSystem = new CameraSystem(renderer.domElement, controllerManager);
   const touchControls = new TouchControls(controllerManager);
+  // Riding a streetcar: [E] at a stop boards the car standing there, [E] at a stop gets off (streetcar-ride.js)
+  rideSession = window.CITY.createTransitRideSession({ controllerManager, cameraSystem });
+  const streetcarRide = window.CITY.createStreetcarRide({
+    scene, streetcars, controllerManager, cameraSystem, selectCamera, onChange: onRideChange, session: rideSession,
+    trafficSystem,
+    canInteract: () => !document.hidden && !mapSystem.isFullMapOpen && (!helpModal || helpModal.hidden),
+    isBlocked: (p, radius) => [...highwayTraffic.cars, ...(railCorridor.cars || [])].some((v) =>
+      (v.sections || [v]).some((q) => Math.abs((q.y || 0) - p.y) < 2 && Math.hypot(q.x - p.x, q.z - p.z) < radius + (v.half || 2.5)))
+  });
   markInit('controllers');
 
   // City-wide static geometry: chunk & distance-cull the small props, shadow stand-ins for the big casters
@@ -374,6 +384,7 @@ async function initApp() {
       const modes = ['person', 'car', 'cyclist', 'helicopter'];
       selectMode(modes[(modes.indexOf(controllerManager.activeMode) + step + modes.length) % modes.length]);
     },
+    onInteract: () => streetcarRide.action(),
     onCycleCamera: (step) => cycleCamera(step),
     onToggleMap: () => mapSystem.toggleFullMap(!mapSystem.isFullMapOpen),
     onCloseMap: () => mapSystem.toggleFullMap(false)
@@ -384,11 +395,12 @@ async function initApp() {
     person: [[['W', 'S'], 'Walk'], [['A', 'D'], 'Turn'], [['Shift'], 'Sprint'], [['Space'], 'Jump'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
     car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Floor it'], [['Space'], 'Handbrake'], [['B'], 'Horn'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
     cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['B'], 'Bell'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
-    helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']]
+    helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']],
+    streetcar: [[['E'], 'Get off / Request stop'], [['V'], 'Seat / Chase'], [['Drag'], 'Look around']]
   };
   // Top speeds in km/h (controllers.js: 8.2, 19 & 52 m/s; the car runs out of power against the air near 230): full
   // scale of the speed meter
-  const topSpeedKmh = { person: 30, car: 230, cyclist: 68, helicopter: 187 };
+  const topSpeedKmh = { person: 30, car: 230, cyclist: 68, helicopter: 187, streetcar: 45 };
 
   function renderControlHints(mode) {
     if (!elControlsHint) return;
@@ -418,6 +430,7 @@ async function initApp() {
   }
 
   function selectMode(mode) {
+    if (streetcarRide.active) streetcarRide.exit({ cancel: true }); // (off the streetcar first, then on as the mode chosen)
     controllerManager.setMode(mode);
     touchControls.setMode(controllerManager.activeMode);
     gamepadControls.reset();
@@ -438,16 +451,40 @@ async function initApp() {
   }
 
   function selectCamera(camId, snap = false) {
+    // aboard a streetcar: the seat (POV) or the chase over the car (the low action camera would sit in its body)
+    if (streetcarRide.active && camId !== 'pov' && camId !== 'chase') camId = 'chase';
+    if (streetcarRide.active) streetcarRide.car.hideBody = camId === 'pov';
     cameraSystem.setCameraPreset(camId, snap);
     cameraButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-camera') === camId);
     });
     const preset = cameraSystem.getActivePreset();
-    if (elCamera) elCamera.textContent = preset.name;
+    if (elCamera) elCamera.textContent = streetcarRide.active && preset.id === 'pov' ? 'Streetcar Seat' : preset.name;
+  }
+
+  // On & off a streetcar: the HUD's mode, hints & touch controls
+  function onRideChange(active) {
+    document.body.classList.toggle('riding-streetcar', active);
+    const ent = controllerManager.getActiveEntity();
+    if (elMode) elMode.textContent = active ? 'Streetcar' : ent.label;
+    renderControlHints(active ? 'streetcar' : controllerManager.activeMode);
+    touchControls.setEnabled(!active && !mapSystem.isFullMapOpen);
+    touchControls.reset();
+    gamepadControls.reset();
+    if (!active) selectCamera(cameraSystem.activePresetId);
+  }
+  // The featured ride: on a 504 along King (the teleport menu, #ride=504), walking or on the bike
+  function rideFeatured(route = '504') {
+    if (streetcarRide.active) streetcarRide.exit({ cancel: true });
+    if (controllerManager.activeMode !== 'person' && controllerManager.activeMode !== 'cyclist') selectMode('cyclist');
+    touchControls.reset();
+    gamepadControls.reset();
+    return streetcarRide.featured(route);
   }
 
   // Steps through CAMERA_PRESETS (V / Shift+V, and the arrows either side of the camera name)
   function cycleCamera(step) {
+    if (streetcarRide.active) return selectCamera(cameraSystem.activePresetId === 'pov' ? 'chase' : 'pov', true);
     const n = CAMERA_PRESETS.length;
     const idx = CAMERA_PRESETS.findIndex((p) => p.id === cameraSystem.activePresetId);
     selectCamera(CAMERA_PRESETS[(idx + step + n) % n].id, true);
@@ -577,6 +614,7 @@ async function initApp() {
   }
 
   function teleportTo(x, z, heading = Math.PI) {
+    if (streetcarRide.active) streetcarRide.exit({ cancel: true });
     const destination = controllerManager.teleportActiveTo(x, z, heading);
     touchControls.reset();
     gamepadControls.reset();
@@ -591,7 +629,7 @@ async function initApp() {
     trafficSystem,
     onToggle: (open) => {
       controllerManager.resetInput();
-      touchControls.setEnabled(!open);
+      touchControls.setEnabled(!open && !rideSession.active);
       gamepadControls.setEnabled(!open);
       const mapHint = document.getElementById('fullmap-hover-info');
       if (open && touchControls.available && mapHint) {
@@ -614,7 +652,7 @@ async function initApp() {
     helpModal.hidden = !open;
     controllerManager.resetInput();
     if (open) {
-      const card = helpModal.querySelector(`[data-help-mode="${controllerManager.activeMode}"]`);
+      const card = helpModal.querySelector(`[data-help-mode="${streetcarRide.active ? 'streetcar' : controllerManager.activeMode}"]`);
       helpModal.querySelectorAll('[data-help-mode]').forEach((c) => c.classList.toggle('current', c === card));
     }
   }
@@ -631,6 +669,13 @@ async function initApp() {
       if (loc) {
         teleportTo(loc.x, loc.z, loc.heading);
       }
+      closePopovers();
+    });
+  });
+
+  document.querySelectorAll('[data-ride]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      rideFeatured(btn.getAttribute('data-ride'));
       closePopovers();
     });
   });
@@ -690,8 +735,14 @@ async function initApp() {
       case 'KeyH':
         if (hudToggleBtn) hudToggleBtn.click();
         break;
+      case 'KeyE':
+        // board the streetcar standing at the stop / get off at a stop (streetcar-ride.js)
+        if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || mapSystem.isFullMapOpen || (helpModal && !helpModal.hidden)) break;
+        streetcarRide.action();
+        break;
       case 'KeyR': {
         if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || mapSystem.isFullMapOpen) break;
+        if (streetcarRide.active) streetcarRide.exit({ cancel: true });
         const road = controllerManager.findRoadReset();
         if (road) teleportTo(road.x, road.z, road.heading);
         break;
@@ -729,6 +780,10 @@ async function initApp() {
     const dest = params.get('to');
     if (params.has('locate')) tourGuide.requestLocation();
     const hit = (q) => (q ? tourGuide.search(q)[0] : null);
+    if (params.has('ride')) {
+      rideFeatured(params.get('ride') || '504');
+      return;
+    }
     if (place && hit(place)) {
       const p = hit(place);
       tourGuide.teleportToPlace(p);
@@ -812,6 +867,9 @@ async function initApp() {
     trafficSystem,
     highwayTraffic,
     streetcars, // Toronto layer
+    streetcarRide, // Toronto layer
+    rideSession,
+    rideFeatured,
     transitBuses, // Toronto layer
     railCorridor, // Toronto layer
     subway, // Toronto layer
@@ -834,13 +892,17 @@ async function initApp() {
   // The quality safety net & the ?fps=1 readout (quality.js), fed every real-time frame
   const qualityNet = QUALITY.attach(window.__CITY_APP);
 
-  // 6b. Shader pre-compilation behind the loading screen. compileAsync() builds the node graphs in slices and has the GPU
-  //     process compile the pipelines in parallel, but after every 8 ms slice it waits for a rendered frame, which
-  //     leaves the main thread idle about half the time while nothing else animates; several calls side by side keep
-  //     it busy (warm cache: 2.1 s instead of 4.0 s). (Rendering straight away compiled ~500 pipelines one after
-  //     another: ~25 s with a cold shader cache.)
-  const COMPILE_POOL = Number(new URLSearchParams(location.search).get('pool') ?? 16);
-  const nextTask = () => (globalThis.scheduler?.yield ? globalThis.scheduler.yield() : new Promise((resolve) => setTimeout(resolve, 0)));
+  // 6b. Shader pre-compilation behind the loading screen: one compileAsync() over the scene. It builds the node graphs
+  //     one after another, in 8 ms slices, while the GPU process compiles up to 16 pipelines in parallel.
+  //     It used to run 16 compileAsync() calls side by side, but three's node builds must not interleave:
+  //     compileAsync() yields between a build's stages, and the material inputs every material shares (MaterialNode's
+  //     map, normalMap…: one global materialReference each, its texture set from whichever material set it up last)
+  //     then held another material's texture, so a shader was generated for the wrong one. The Bike Share palette's
+  //     nearest filtering took the sampler out of a tree's or a post box's declarations while its code still sampled
+  //     with it ("unresolved value 'nodeUniform4_sampler'", 3 boots in 12 on the M4 mini), and the other way round
+  //     (the palette's pipeline asking for a sampler binding its layout lacked). One call takes about as long (1.0 s
+  //     warm on the mini, 1.2 s on the laptop). (Rendering straight away compiled ~500 pipelines one after another:
+  //     ~25 s with a cold shader cache.)
   async function precompileShaders() {
     // An empty frame first: it sets up the post-processing chain, which configures the scene pass's render target
     // (MSAA samples, depth format), so the pipelines compiled below are the very ones the scene pass asks for
@@ -849,70 +911,48 @@ async function initApp() {
     scene.visible = true;
     markInit('postFX');
 
-    // Every visible object with frustum culling off (like the warm-up frame, see the loop). Plain meshes that share
-    // a material share its shader, so one job compiles them in turn (the first build serves the rest); every
-    // instanced mesh gets a build of its own
+    // Every visible object with frustum culling off (like the warm-up frame, see the loop), less what shares another
+    // object's pipeline: chunks of one mesh share its pipeline, so the first visible one compiles it (the first chunk
+    // itself may be hidden; mrdoob's 539289a), and the shadow stand-ins only ever draw in the shadow maps (the
+    // warm-up frame compiles those). Those are hidden while the scene compiles.
     const culled = [];
-    const jobs = [];
-    const jobByMaterial = new Map();
+    const skipped = [];
     const pipelines = new Set();
+    let first = null;
     scene.traverseVisible((o) => {
       if (o.frustumCulled) {
         culled.push(o);
         o.frustumCulled = false;
       }
       if (!o.isMesh && !o.isLine && !o.isPoints && !o.isSprite) return;
-      // chunks of one mesh share its pipeline: the first visible one compiles it (the first chunk itself may be
-      // hidden; mrdoob's 539289a); the shadow stand-ins only ever draw in the shadow maps (the warm-up frame compiles
-      // those)
-      if (o.userData.shadowProxy) return;
       const pipeline = o.userData.sharesPipelineWith || o;
-      if (pipelines.has(pipeline)) return;
-      pipelines.add(pipeline);
-      if (o.isInstancedMesh || Array.isArray(o.material)) {
-        jobs.push([o]);
+      if (o.userData.shadowProxy || pipelines.has(pipeline)) {
+        if (!o.children.length) skipped.push(o);
         return;
       }
-      let job = jobByMaterial.get(o.material);
-      if (!job) {
-        job = [];
-        jobByMaterial.set(o.material, job);
-        jobs.push(job);
-      }
-      job.push(o);
+      pipelines.add(pipeline);
+      if (!first && o.receiveShadow) first = o;
     });
 
     renderer.setRenderTarget(scenePass.renderTarget);
     renderer.setMRT(sceneMRT);
-    const compile = async (object) => {
-      // Each compile starts in a task of its own: compileAsync() keeps one precompilation state on the renderer,
-      // which must not be mid-step for two of them in the same microtask checkpoint
-      await nextTask();
+    const compile = async (object, onProgress) => {
       try {
-        await renderer.compileAsync(object, cameraSystem.camera, scene);
+        await renderer.compileAsync(object, cameraSystem.camera, scene, onProgress);
       } catch (e) {
         console.warn('[compile]', e); // the warm-up frame compiles it instead
       }
     };
-    let next = 0;
-    let done = 0;
-    const worker = async () => {
-      while (next < jobs.length) {
-        const job = jobs[next++];
-        for (const object of job) await compile(object);
-        done++;
-        if (loadingStatus) {
-          loadingStatus.textContent = `Compiling Shaders & Render Pipelines... ${Math.round((done / jobs.length) * 100)}%`;
-        }
-        setLoadingProgress(done / jobs.length);
-      }
-    };
     // One shadow-receiving object alone first: its build sets up the sun's shadow node, which bumps the light node's
-    // version, part of every material's cache key (three's LightsNode.customCacheKey). Built in parallel, the objects
-    // started before that bump got a key the frames never use, and the warm-up frame built ~75 of them again
-    const first = jobs.find((j) => j[0].receiveShadow);
-    if (first) await compile(first[0]);
-    await Promise.all(Array.from({ length: COMPILE_POOL }, worker));
+    // version, part of every material's cache key (three's LightsNode.customCacheKey). Built alongside the others,
+    // the objects started before that bump got a key the frames never use, and the warm-up frame built ~75 of them again
+    if (first) await compile(first);
+    for (const o of skipped) o.visible = false;
+    await compile(scene, (e) => {
+      if (loadingStatus) loadingStatus.textContent = `Compiling Shaders & Render Pipelines... ${Math.round((e.loaded / e.total) * 100)}%`;
+      setLoadingProgress(e.loaded / e.total);
+    });
+    for (const o of skipped) o.visible = true;
     renderer.setMRT(null);
     renderer.setRenderTarget(null);
     for (const o of culled) o.frustumCulled = true;
@@ -1011,27 +1051,33 @@ async function initApp() {
     elapsed += dt;
 
     // Update 3rd-person controllers, camera, signals, traffic & vehicle collisions, building LODs, and dynamic shadow focus
+    // (aboard a streetcar the camera follows the car, so it moves after the car does; the player, riding along hidden,
+    // is nobody's obstacle)
     gamepadControls.update(dt);
+    const riding = streetcarRide.active;
+    const playerEnt = riding ? null : controllerManager.getActiveEntity();
     controllerManager.update(dt, elapsed);
     if (collisionDebug) collisionDebug.update();
-    cameraSystem.update(dt, elapsed);
+    if (!riding) cameraSystem.update(dt, elapsed);
     streetDetails.signalClock.value = elapsed;
     trafficSystem.update(
       dt,
       elapsed,
       cameraSystem.currentPos,
-      controllerManager.getActiveEntity(),
+      playerEnt,
       controllerManager.activeMode,
       cameraSystem.camera
     );
-    highwayTraffic.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode);
+    highwayTraffic.update(dt, cameraSystem.camera, playerEnt, controllerManager.activeMode);
     if (!document.hidden && now >= nextPlayerSave) {
       savePlayerState();
       nextPlayerSave = now + 5000;
     }
-    streetcars.update(dt, elapsed, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
+    streetcars.update(dt, elapsed, cameraSystem.camera, playerEnt, controllerManager.activeMode); // Toronto layer
+    streetcarRide.update(dt);
+    if (riding) cameraSystem.update(dt, elapsed);
     if (transitBuses) transitBuses.update(dt); // Toronto layer
-    railCorridor.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
+    railCorridor.update(dt, cameraSystem.camera, playerEnt, controllerManager.activeMode); // Toronto layer
     subway.update(elapsed, cameraSystem.camera); // Toronto layer
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
@@ -1127,8 +1173,8 @@ async function initApp() {
       frameCount = 0;
       fpsTimer = 0;
 
-      const activeEnt = controllerManager.getActiveEntity();
-      const mode = controllerManager.activeMode;
+      const activeEnt = streetcarRide.active ? streetcarRide.entity : controllerManager.getActiveEntity();
+      const mode = streetcarRide.active ? 'streetcar' : controllerManager.activeMode;
       const kmh = Math.round(Math.abs(activeEnt.speed) * 3.6);
       const altM = Math.max(0, Math.round(activeEnt.position.y));
 

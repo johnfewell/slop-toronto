@@ -63,6 +63,8 @@ class CameraSystem {
 
     // Follow cameras (chase / action) are smoothed relative to the followed entity, see update()
     this.followEntity = null;
+    // An entity the follow cameras take instead of the player's (streetcar-ride.js: the streetcar the player rides)
+    this.followOverride = null;
     this.followOffset = new THREE.Vector3();
     this.followLookOffset = new THREE.Vector3();
     this.followBaseY = 0;
@@ -204,7 +206,7 @@ class CameraSystem {
         return;
       }
     }
-    const entity = this.controllerManager.getActiveEntity();
+    const entity = this.followOverride || this.controllerManager.getActiveEntity();
     const desiredPos = this._desiredPos;
     const desiredLook = this._desiredLook;
 
@@ -235,6 +237,8 @@ class CameraSystem {
           Math.max(0.65, entity.position.y + height),
           entity.position.z - Math.cos(totalYaw) * horizDist
         );
+        // (the streetcar: always over its overhead wire, never down through its roof)
+        if (entity.minCamY) desiredPos.y = Math.max(desiredPos.y, entity.position.y + entity.minCamY);
 
         const lookUpBias = entity.type === 'helicopter' ? 0.2 : (entity.type === 'car' ? 0.52 : 1.55);
         desiredLook.set(
@@ -264,6 +268,17 @@ class CameraSystem {
       }
 
       case 'pov': {
+        if (entity.seatEye) {
+          // a seat aboard the streetcar, looking ahead (drag to look round)
+          const yaw = entity.seatYaw + this.orbitYawOffset;
+          desiredPos.copy(entity.seatEye);
+          desiredLook.set(
+            entity.seatEye.x + Math.sin(yaw) * 40.0,
+            entity.seatEye.y + Math.sin(-this.orbitPitchOffset) * 18.0 + entity.seatLookY,
+            entity.seatEye.z + Math.cos(yaw) * 40.0
+          );
+          break;
+        }
         let fwdOffset = 0.35;
         let eyeY = 1.68;
         if (entity.type === 'car') {

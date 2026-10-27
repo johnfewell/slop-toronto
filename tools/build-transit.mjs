@@ -128,6 +128,7 @@ const r1 = (x) => Math.round(x * 10) / 10;
 const stopIndex = new Map();
 const stopOut = [];
 const stopNames = [];
+const stopIds = [];
 const routeIndex = new Map();
 const routeOut = [];
 const patterns = [];
@@ -177,6 +178,7 @@ for (const [shape, r] of rep) {
       stopIndex.set(s.stop, stopOut.length / 2);
       stopOut.push(r1(st.w[0]), r1(st.w[1]));
       stopNames.push(st.name);
+      stopIds.push(st.id);
     }
     return stopIndex.get(s.stop);
   });
@@ -214,6 +216,7 @@ const data = {
   routes: routeOut,
   stops: stopOut,
   stopNames,
+  stopIds,
   // (the subway's only its trips per hour: js/subway.js runs it on OpenStreetMap's lines)
   patterns: patterns.map(({ r, d, t, label, n, v, perHour, pts, stops: s }) => (t === 1 ? { r, d, t, sign: label, n, h: perHour } : { r, d, t, sign: label, n, v, h: perHour, pts, stops: s }))
 };

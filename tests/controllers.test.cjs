@@ -416,3 +416,11 @@ test('leaving the car clears its brake and reverse lights', () => {
   controller.setMode('person');
   assert.deepEqual(car.carState.value, { x: 0, w: 0 });
 });
+
+
+test('ground passenger interaction does not jump, while E still ascends in flight', () => {
+  const { controller, key } = keyboardHarness();
+  controller.activeMode = 'person'; key('keydown', 'KeyE'); assert.equal(controller.keys.up, false);
+  controller.activeMode = 'helicopter'; key('keydown', 'KeyE'); assert.equal(controller.keys.up, true);
+  key('keyup', 'KeyE'); assert.equal(controller.keys.up, false);
+});

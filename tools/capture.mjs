@@ -1,6 +1,7 @@
 // tools/capture.mjs — screenshots of the running app for review (run on the Mac mini via gpu2, never on the laptop)
 // usage: GPU2_OUT=out node tools/capture.mjs [shot.json]   (serves this folder itself: vite would rewrite the import map)
 // A shot is { name, mode?, time?, camera?, x?, z?, heading?, wait?, js? } (js: a page expression run before the shot) (world metres, see the geodata frame); the
+// A shot may also tap a selector (`tap`) after its setup; async `js` is awaited. The
 // default list is one overview per time of day.
 // CAPTURE_ROOT=dist serves another folder (the built site); CAPTURE_STATIC=1 with CAPTURE_PAGE=index.html screenshots a
 // plain page (full page, desktop and phone width) instead of waiting for the city.
@@ -53,7 +54,10 @@ if (process.env.CAPTURE_CPU_THROTTLE) {
   await throttle.send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.CAPTURE_CPU_THROTTLE) });
 }
 const log = [];
-page.on('console', (m) => log.push(`[${m.type()}] ${m.text()}`));
+page.on('console', (m) => {
+  log.push(`[${m.type()}] ${m.text()}`);
+  if (process.env.CAPTURE_PROGRESS && m.text().startsWith('[ride-check]')) console.log(m.text());
+});
 page.on('pageerror', (e) => log.push(`[pageerror] ${e.message}`));
 page.on('response', (r) => { if (r.status() >= 400) log.push(`[http ${r.status()} error] ${r.url()}`); });
 
@@ -146,21 +150,32 @@ if (HEAP === 'alloc') {
   await hcdp.send('HeapProfiler.startSampling', { samplingInterval: 8192, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
 }
 
-for (const s of shots) {
-  await page.evaluate((s) => {
-    const app = window.__CITY_APP;
-    if (s.mode) app.selectMode(s.mode);
-    if (s.x !== undefined) app.teleportTo(s.x, s.z, s.heading ?? Math.PI);
-    if (s.time) app.selectTime(s.time);
-    if (s.camera) app.selectCamera(s.camera, true);
-    if (s.js) (0, eval)(s.js);
-  }, s);
-  if (s.hold) await page.keyboard.down(s.hold);
-  await page.waitForTimeout(s.wait ?? 4000);
-  if (s.hold) await page.keyboard.up(s.hold);
-  const fps = await page.evaluate(() => window.__CITY_APP.getFps());
-  await page.screenshot({ path: path.join(OUT, `${TAG}${s.name}.png`) });
-  log.push(`[capture] ${TAG}${s.name} fps ${Math.round(fps)}`);
+try {
+  for (const s of shots) {
+    await page.evaluate((s) => {
+      const app = window.__CITY_APP;
+      if (s.mode) app.selectMode(s.mode);
+      if (s.x !== undefined) app.teleportTo(s.x, s.z, s.heading ?? Math.PI);
+      if (s.time) app.selectTime(s.time);
+      if (s.camera) app.selectCamera(s.camera, true);
+      if (s.js) return (0, eval)(s.js);
+    }, s);
+    if (s.tap) await page.tap(s.tap);
+    if (s.hold) await page.keyboard.down(s.hold);
+    await page.waitForTimeout(s.wait ?? 4000);
+    if (s.hold) await page.keyboard.up(s.hold);
+    const fps = await page.evaluate(() => window.__CITY_APP.getFps());
+    await page.screenshot({ path: path.join(OUT, `${TAG}${s.name}.png`) });
+    log.push(`[capture] ${TAG}${s.name} fps ${Math.round(fps)}`);
+  }
+} catch (error) {
+  log.push(`[capture] failed: ${error.message}`);
+  flush();
+  await page.screenshot({ path: path.join(OUT, `${TAG}failed.png`) });
+  console.log(log.filter((l) => l.includes('error') || l.includes('[ride-check]')).slice(-20).join('\n'));
+  await browser.close();
+  server.close();
+  throw error;
 }
 if (PROFILE === 'shots') await stopProfile();
 if (HEAP) await stopHeap();

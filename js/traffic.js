@@ -847,7 +847,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
   // --- Streetcars: gap to the nearest streetcar module ahead of v in its path, and how fast it moves v's way ---
   const moverGap = { gap: Infinity, speed: 0 };
-  function obstacleGap(v) {
+  function obstacleGap(v, lateralOffset = 0) {
     moverGap.gap = Infinity;
     moverGap.speed = 0;
     if (!movers.length) return moverGap;
@@ -866,7 +866,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       const across = Math.abs(ox * fz - oz * fx);
       const reachAlong = o.halfL * along + o.halfW * across;
       const reachAcross = o.halfL * across + o.halfW * along;
-      if (Math.abs(dz * fx - dx * fz) > v.halfWidth + reachAcross + 0.3) continue;
+      if (Math.abs(dz * fx - dx * fz - lateralOffset) > v.halfWidth + reachAcross + 0.3) continue;
       const gap = ahead - v.half - reachAlong;
       if (gap < moverGap.gap) {
         moverGap.gap = gap;
@@ -1251,7 +1251,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // pulling out of an intersection, nor in the last 12 m before the next.
   function changeLanes(v) {
     const e = v.edge;
-    if (v.conn || v.commit || Math.abs(v.dl) > 0.5 || v.s < v.half || e.len - v.s - v.half < 12) return;
+    if (v.conn || v.commit || Math.abs(v.dl) > 0.5 || v.s < v.half) return;
+    // A stopped driver may clear the shared tram lane before the stop line, using a legal straight-through lane.
+    if (e.len - v.s - v.half < 12 && !(e.tram && v.wait > 4 && v.move.turn === 'S')) return;
     let target = -1;
     const curb = v.route && !v.route.off ? stopLane(v) : -1;
     if (v.move.out[v.lane] < 0) {
@@ -1260,7 +1262,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     } else if (curb >= 0) {
       const t = v.lane + Math.sign(curb - v.lane);
       if (curb !== v.lane && v.move.out[t] >= 0 && laneSafe(v, t, -3)) target = t;
-    } else if (v.speed > 2) {
+    } else if (v.speed > 2 || (e.tram && v.wait > 4)) {
       let best = laneAcc(v, v.lane) + 0.6;
       for (let t = v.lane - 1; t <= v.lane + 1; t += 2) {
         if (t < 0 || t >= e.lanes.length || v.move.out[t] < 0 || !laneSafe(v, t, -3)) continue;
@@ -1299,6 +1301,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       if (gap < 1.5 || freeAcc(f) + brake(f, gap, v.speed) < bSafe) return false;
     }
     const off = v.edge.lanes[t] - v.edge.lanes[v.lane] - v.dl;
+    const og = obstacleGap(v, off);
+    if (og.gap < 1.5 || (og.gap < LOOKAHEAD && freeAcc(v) + brake(v, og.gap, og.speed) < bSafe)) return false;
     const reach = v.half + player.halfL + 6;
     return !(Math.abs(v.pRight - off) < v.halfWidth + player.halfW + 0.4 && v.pAhead > -reach && v.pAhead < reach);
   }
@@ -1309,6 +1313,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     let worst = o ? brake(v, o.s - o.v.half - v.s - v.half, o.v.speed) : 0;
     const pg = playerGap(v, v.edge.lanes[t] - v.edge.lanes[v.lane] - v.dl);
     if (pg < LOOKAHEAD) worst = Math.min(worst, brake(v, pg, v.pSpeed));
+    const og = obstacleGap(v, v.edge.lanes[t] - v.edge.lanes[v.lane] - v.dl);
+    if (og.gap < LOOKAHEAD) worst = Math.min(worst, brake(v, og.gap, og.speed));
     return freeAcc(v) + worst;
   }
 

@@ -1,6 +1,9 @@
 # Boarding and riding streetcars
 
-Specification only · 2026-10-26 · First transit-riding milestone
+Design specification · 2026-10-26 · First transit-riding milestone
+
+The first seated-riding implementation is now available; see [controls, validation and current limits](streetcar-riding.md).
+The requirements below remain the design reference for subsequent refinement.
 
 The player walks up to a TTC streetcar stop, boards a stopped streetcar, watches Toronto pass from a passenger
 seat, requests a stop, and gets off onto a safe sidewalk or platform. The streetcar keeps using the city's existing
@@ -151,7 +154,7 @@ Engineering estimates for one contributor familiar with this code, excluding any
 
 Total: roughly **5–9 engineering days** for a reliable first release. A short prototype may be faster because
 the branch exists; its current completeness and asset quality are not verified enough to promise a one-night build.
-The overnight deliverable requested here is this specification. No riding code is included with it.
+This estimate was recorded during specification. Implementation and validation are tracked in the linked implementation notes.
 
 ## Acceptance gates
 

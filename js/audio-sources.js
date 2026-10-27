@@ -209,7 +209,7 @@ class CityAudioSources {
         // The middle module sounds for the whole car; the nose sets its heading, nose against tail its bend
         const mid = n ? sections[n >> 1] : car;
         if (!mid || !Number.isFinite(mid.x) || !Number.isFinite(mid.z)) continue;
-        const y = (Number.isFinite(car.y) ? car.y : 0) + 1.1;
+        const y = (Number.isFinite(car.y) ? car.y : mid.y || 0) + 1.1;
         const d2 = this.distanceSq(mid.x, y, mid.z);
         if (!Number.isFinite(d2) || d2 > STREETCAR_RANGE * STREETCAR_RANGE) continue;
         const speed = Math.abs(car.speed || 0);
@@ -222,7 +222,7 @@ class CityAudioSources {
         if (tram) writeMotor(tram, car, 'streetcar', mid.x, y, mid.z, speed, 0, heading, false, false, 0, false, 1, STREETCAR_RANGE);
         // load: the system works it out from the change of speed (audio-system.js); 0.15 is cruising
         this.motor(car, 'streetcar', mid.x, y, mid.z, speed, 0.15, heading, false, false, seedAt(5000 + k * 500 + i), false,
-          1, STREETCAR_RANGE, 0, 0, 0, curve);
+          car.ridden ? 0.45 : 1, STREETCAR_RANGE, 0, 0, 0, curve);
       }
     }
   }

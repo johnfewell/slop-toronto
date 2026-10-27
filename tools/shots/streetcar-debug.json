@@ -1,0 +1,7 @@
+[
+  {
+    "name": "ride-debug",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP,R=a.streetcarRide,sc=a.streetcars; const ts=sc.routes.filter(t=>t.pattern.route==='504'); const info=ts.map(t=>{const n=t.stops.findIndex((s,i)=>/^King St/.test(t.stopNames[i])); const p=n<0?null:R.landingAt(t,n); return {sign:t.sign,dir:t.pattern.dir,n,stops:t.stops.length,records:t.stopRecords?.length,first:t.stopNames.slice(0,3),point:p,dynamic:n<0?null:R.landingAt(t,n,true)}; }); console.log('[ride-debug]',JSON.stringify({mode:a.controllerManager.activeMode,suspended:a.controllerManager.suspended,active:R.active,hidden:document.hidden,info})); console.log('[ride-featured-retry]',a.rideFeatured('504'));})()"
+  }
+]
