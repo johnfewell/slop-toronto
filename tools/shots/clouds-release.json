@@ -1,0 +1,22 @@
+[
+  {
+    "name": "alpha6-golden-clouds",
+    "time": "golden",
+    "wait": 2500,
+    "js": "(() => {const a=window.__CITY_APP,c=a.renderer.contextNode.value.getClouds();if(!c||c.frame<1)throw new Error('Cloud simulation is inactive');for(const key of ['shapeTexture','shapeDetailTexture','localWeatherTexture','turbulenceTexture'])if(!(c[key]?.image?.width>1))throw new Error('Missing cloud texture '+key);document.getElementById('locate-prompt').hidden=true;console.log('[ride-check] alpha6 clouds active '+JSON.stringify({frame:c.frame,time:c.time,preset:c.qualityPreset,shape:[c.shapeTexture.image.width,c.shapeTexture.image.height,c.shapeTexture.image.depth]}));})()"
+  },
+  { "name": "alpha6-midday", "time": "midday", "mode": "car", "hold": "KeyW", "wait": 3000 },
+  { "name": "alpha6-sunset", "time": "twilight", "camera": "cnTower", "wait": 3000 },
+  { "name": "alpha6-night", "time": "midnight", "wait": 3000 },
+  {
+    "name": "alpha6-streetcar-seat",
+    "time": "golden",
+    "wait": 1000,
+    "js": "if(!window.__CITY_APP.rideFeatured('504'))throw new Error('Streetcar failed with upgraded clouds');"
+  },
+  {
+    "name": "alpha6-subway-seat",
+    "wait": 1000,
+    "js": "if(!window.__CITY_APP.rideFeatured('subway'))throw new Error('Subway failed with upgraded clouds');"
+  }
+]

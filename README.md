@@ -47,7 +47,8 @@ Passenger travel: [streetcar controls and implementation notes](docs/streetcar-r
 
 ## Publish
 
-The site is static. `npm run build` (or `node tools/build-site.mjs`) writes `dist/`: the two pages, assets and only
+The site is static. `npm run build` regenerates the cloud module from the locked installed packages, then writes
+`dist/`: the two pages, assets and only
 the scripts they load, followed through their imports. JS and CSS receive automatic SHA-256 content fingerprints
 such as `js/main.012345abcdef.js`. The build rewrites page, lazy-import and debug-script URLs; a dependency change
 also invalidates its importer's filename. Identical builds keep identical URLs, and unchanged geodata stays cached
@@ -59,9 +60,12 @@ revalidate on each use; fingerprinted code is immutable and cacheable for a year
 `dist/_headers`, following [Cloudflare's static-asset header rules](https://developers.cloudflare.com/workers/static-assets/headers/).
 Cloudflare serves `dist/` as a Worker's static assets (`wrangler.jsonc`):
 
-- **Production** deploys from the `release` branch (Cloudflare Workers Builds: build `node tools/build-site.mjs`,
-  deploy `npx wrangler deploy`).
-- By hand: `node tools/build-site.mjs && npx wrangler@4 deploy`.
+- **Production** releases are tracked on the `release` branch. The current Cloudflare Worker is deployed manually
+  with Wrangler; its dashboard has no Git build connected, so pushing the branch alone does not publish the site.
+- Deploy: `npm ci && npm run build && npx wrangler@4 deploy`.
+- `node tools/build-site.mjs` alone assembles the already-generated scripts without installing or rebuilding dependencies.
+
+Cloud library: [alpha.6 integration and verification](docs/clouds-alpha6.md).
 
 Cache regression checks: `node --test tests/site-cache.test.mjs tests/boot.test.cjs`. The GPU runner also verifies
 that editing CSS reloads the real city and preserves the player (`GPU2_LOCK_WAIT=60 gpu2 slop-toronto-subway -- node tools/check-dev-reload.mjs`).

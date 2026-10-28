@@ -1,0 +1,17 @@
+{
+  "package": "three-clouds-webgpu",
+  "version": "0.1.0-alpha.6",
+  "tarball": "three-clouds-webgpu-0.1.0-alpha.6.tgz",
+  "sha256": "40d314508339a81d254bdb00a6d95320b36aa5a6fca95a1f06778fb68c53f280",
+  "renderer": "three@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b (app-specific r187 integration)",
+  "dependencies": {
+    "@takram/three-atmosphere": {
+      "url": "https://github.com/johnfewell/three-geospatial/releases/download/fork-release-7/takram-three-atmosphere-0.19.1%2Bfork.7.tgz",
+      "sha256": "3e77db75b7410589b076db6f74caeac5f3a2f787cef5cb7b363285c5ee85f9e0"
+    },
+    "@takram/three-geospatial": {
+      "url": "https://github.com/johnfewell/three-geospatial/releases/download/fork-release-7/takram-three-geospatial-0.9.1%2Bfork.7.tgz",
+      "sha256": "319ea47db67a9372e6dce58317cc702b6fd105e051964ed4c8e474bf072d9e44"
+    }
+  }
+}

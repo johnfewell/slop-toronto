@@ -56,9 +56,12 @@ if (process.env.CAPTURE_CPU_THROTTLE) {
 const log = [];
 page.on('console', (m) => {
   log.push(`[${m.type()}] ${m.text()}`);
-  if (process.env.CAPTURE_PROGRESS && m.text().startsWith('[ride-check]')) console.log(m.text());
+  if (process.env.CAPTURE_PROGRESS && (m.type() === 'error' || m.text().startsWith('[ride-check]'))) console.log(`[${m.type()}] ${m.text()}`);
 });
-page.on('pageerror', (e) => log.push(`[pageerror] ${e.message}`));
+page.on('pageerror', (e) => {
+  log.push(`[pageerror] ${e.message}`);
+  if (process.env.CAPTURE_PROGRESS) console.log(`[pageerror] ${e.message}`);
+});
 page.on('response', (r) => { if (r.status() >= 400) log.push(`[http ${r.status()} error] ${r.url()}`); });
 
 // CAPTURE_PROFILE=1: a CPU profile of the load (until the city is ready), its top self-time functions in profile.txt;
