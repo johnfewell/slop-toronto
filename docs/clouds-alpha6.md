@@ -45,3 +45,12 @@ GPU2_LOCK_WAIT=60 gpu2 slop-toronto-alpha6 -- env CAPTURE_ROOT=dist CAPTURE_QUER
 
 The Mac mini's Tailscale SSH route timed out during this run; the same machine was reached over its local-network
 hostname while preserving the known SSH host-key identity. Captures remain on that machine, not the laptop GPU.
+
+## Published release
+
+Published on 2026-10-27 to `https://slop-toronto.cloud6711.workers.dev` using Wrangler, preserving existing variables.
+Cloudflare version: `26c0cc29-b0a5-490e-a625-f39fad732807`. Deployed source: `b942b0b`; site build: `8e97f0daa6f5`.
+The live manifest matches the tested build and `js/clouds.8ade1946424a.js` matches its local bytes by full SHA-256.
+Live HTML returns `Cache-Control: no-cache`, fingerprinted code returns a year of immutable caching, and the TTC
+vehicle endpoint returns HTTP 200 with its existing 15-second cache. A Mac mini capture against the public URL
+reaches ready, loads the fingerprinted scripts and reports no page/shader/WebGPU validation errors.
