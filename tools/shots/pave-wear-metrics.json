@@ -1,0 +1,36 @@
+[
+ {
+  "name": "hud",
+  "mode": "person",
+  "time": "midday",
+  "wait": 300,
+  "js": "document.getElementById('btn-toggle-hud')?.click()"
+ },
+ {
+  "name": "residential-close-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -2047, Z = -2306.9, SX = 1, SZ = 0, KIND = 'close';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "downtown-medium-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -820, Z = -348.8, SX = 0, SZ = -1, KIND = 'medium';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "queen-tracks-roadhigh-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -1000, Z = -730, SX = 0, SZ = 1, KIND = 'roadhigh';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "shader-stats",
+  "wait": 200,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP; const cam = app.cameraSystem.camera; let road = null, walk = null;\n  app.scene.traverse((o) => { if (!o.isMesh) return; if (!road && o.name === 'StreetLevel') road = o; if (!walk && o.name === 'Walkways') walk = o; });\n  const stat = async (o) => { if (!o) return null; const s = await app.renderer.debug.getShaderAsync(app.scene, cam, o); const f = s.fragmentShader;\n    const n = (re) => (f.match(re) || []).length; return { bytes: f.length, lines: f.split('\\n').length, sin: n(/\\bsin\\(/g), fract: n(/\\bfract\\(/g), deriv: n(/\\b(dpdx|dpdy|fwidth)\\w*\\(/g), branches: n(/\\bif \\(/g), loops: n(/\\bfor \\(/g) }; };\n  const out = { tier: window.CITY.QUALITY.tier, wear: window.CITY.QUALITY.surfaceWear, road: await stat(road), walk: await stat(walk) };\n  console.log('[ride-check] shader ' + JSON.stringify(out)); return out; })()"
+ }
+]

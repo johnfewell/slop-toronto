@@ -77,6 +77,10 @@ const lodKeep = (() => {
   return h.lessThan(share(fade.x, fade.y)).and(h.greaterThanEqual(share(fade.z, fade.w)));
 })();
 const ALL_IN = -1e6, ALL_OUT = 1e9;
+// Trees are binned into square cells this wide for the level updates (cell-hierarchical, after mrdoob's trees.js in
+// upstream e35c06c): a cell lying wholly between two hand-over edges takes one level set per tree class without
+// per-tree distances; only the cells straddling an edge evaluate their trees one by one
+const LOD_CELL = 200;
 
 // The EZ-Tree glTF material as a node material wearing the dissolve; the cutout as nodes, as createTreeMaterial does
 // (an `alphaTest` on a shadow caster churns the shared shadow material's version)
@@ -196,8 +200,8 @@ async function buildEzTrees(scene, generated) {
   const midFarOf = new Int16Array(N);
   const tier = new Uint8Array(N);
   const isPine = new Uint8Array(N);
+  const cls = new Uint8Array(N); // tree class: tier * 2 + pine (the hand-over edges are the same within a class)
   const levels = new Uint8Array(N); // bit L: drawn at level L (both levels inside a hand-over band)
-  const fades = new Float32Array(N * 12); // per level: edge in, band in, edge out, band out
   const meshes = [];
   const make = (geo, material, name, attrs, noShadow) => { meshes.push({ geo, material, name, capacity: 0, attrs, noShadow }); return meshes.length - 1; };
   const idxNear = models.map((m) => make(m.near, m.material, `Trees_${m.id}_near`));
@@ -230,6 +234,7 @@ async function buildEzTrees(scene, generated) {
     tints.set([0.86 + r1 * 0.2, 0.88 + r3 * 0.16, 0.86 + r2 * 0.18], i * 3);
     px[i] = t.x; py[i] = t.y + t.height * 0.5; pz[i] = t.z;
     tier[i] = Math.min(2, t.tier);
+    cls[i] = tier[i] * 2 + isPine[i];
     meshOf[i * 3] = idxNear[m];
     meshOf[i * 3 + 1] = idxMid[m];
     meshOf[i * 3 + 2] = sp >= 0 ? idxFar[sp] : idxMid[m];
@@ -259,24 +264,96 @@ async function buildEzTrees(scene, generated) {
     group.add(mesh);
     return mesh;
   });
+  // The hand-over edges per tree class, at street level (index 1) and aloft (0): per level [edge in, band in, edge
+  // out, band out] as float32s (what aLodFade carries), and the distances where a class's level set changes
+  const classFades = [new Float32Array(6 * 12), new Float32Array(6 * 12)];
+  const classEdges = [[], []];
+  for (let lowIdx = 0; lowIdx < 2; lowIdx++) {
+    const low = lowIdx === 1;
+    for (let c = 0; c < 6; c++) {
+      const tr = c >> 1, pine = c & 1;
+      let maxD = low ? Math.min(MAX_DIST[tr], LOW_CUTOFF) : MAX_DIST[tr];
+      if (pine) maxD = Math.min(maxD, PINE_FAR);
+      // [edge in, band in, edge out, band out] per level; pines have no far level (their mid mesh goes out to maxD)
+      const f = classFades[lowIdx];
+      const o = c * 12;
+      f[o] = ALL_IN; f[o + 1] = 1; f[o + 2] = NEAR; f[o + 3] = BAND[0];
+      f[o + 4] = NEAR; f[o + 5] = BAND[0];
+      if (pine) { f[o + 6] = maxD; f[o + 7] = BAND[2]; f[o + 8] = ALL_OUT; f[o + 9] = 1; f[o + 10] = ALL_OUT; f[o + 11] = 1; }
+      else { f[o + 6] = MID; f[o + 7] = BAND[1]; f[o + 8] = MID; f[o + 9] = BAND[1]; f[o + 10] = maxD; f[o + 11] = BAND[2]; }
+      const edges = [MID_SHADOW];
+      for (let l = 0; l < 3; l++) edges.push(f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN);
+      classEdges[lowIdx][c] = edges;
+    }
+  }
+  // The levels a tree of class c draws at distance d (bit 3: the mid level without a shadow)
+  function levelBits(f, c, d) {
+    const o = c * 12;
+    let bits = 0;
+    for (let l = 0; l < 3; l++) {
+      const lo = f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, hi = f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN;
+      if (d >= lo && d < hi) bits |= 1 << l;
+    }
+    if (bits & 2 && d > MID_SHADOW) bits |= 8;
+    return bits;
+  }
+
+  // The cells: their trees, a sphere round their trees' middles, their classes and the sorted edges of those classes
+  const cellMap = new Map();
+  for (let i = 0; i < N; i++) {
+    const key = (Math.floor(px[i] / LOD_CELL) + 32768) * 65536 + (Math.floor(pz[i] / LOD_CELL) + 32768);
+    let list = cellMap.get(key);
+    if (!list) cellMap.set(key, list = []);
+    list.push(i);
+  }
+  const cells = Array.from(cellMap.values(), (list) => {
+    const trees = Int32Array.from(list);
+    let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity, mask = 0;
+    for (const i of trees) {
+      x0 = Math.min(x0, px[i]); x1 = Math.max(x1, px[i]);
+      y0 = Math.min(y0, py[i]); y1 = Math.max(y1, py[i]);
+      z0 = Math.min(z0, pz[i]); z1 = Math.max(z1, pz[i]);
+      mask |= 1 << cls[i];
+    }
+    const x = (x0 + x1) * 0.5, y = (y0 + y1) * 0.5, z = (z0 + z1) * 0.5;
+    let r2 = 0;
+    for (const i of trees) r2 = Math.max(r2, (px[i] - x) ** 2 + (py[i] - y) ** 2 + (pz[i] - z) ** 2);
+    const classes = [0, 1, 2, 3, 4, 5].filter((c) => mask & (1 << c));
+    const edges = [0, 1].map((lowIdx) => Float64Array.from(new Set(classes.flatMap((c) => classEdges[lowIdx][c]))).sort());
+    // sig: the cell's level bits, 4 per class (bits 4c..4c+3), while every tree of a class shares them; -1 otherwise
+    return { trees, x, y, z, r: Math.sqrt(r2) + 1e-3, classes, edges, sig: 0 };
+  });
+
   const counts = new Int32Array(instanced.length);
+  let fadesNow = classFades[0];
   function rebuild() {
     counts.fill(0);
-    for (let i = 0; i < N; i++) {
-      const bits = levels[i];
-      if (!bits) continue;
-      for (let l = 0; l < 3; l++) {
-        if (!(bits & (1 << l))) continue;
-        const mi = l === 1 && bits & 8 ? midFarOf[i] : meshOf[i * 3 + l];
-        const mesh = instanced[mi];
-        const c = counts[mi]++;
-        const far = meshes[mi].attrs;
-        const a = mesh.geometry.attributes;
-        mesh.instanceMatrix.array.set((far ? matsFar : matsNear).subarray(i * 16, i * 16 + 16), c * 16);
-        if (far) a.aTreeData.array.set(farData.subarray(i * 4, i * 4 + 4), c * 4);
-        else mesh.instanceColor.array.set(tints.subarray(i * 3, i * 3 + 3), c * 3);
-        a.aLodOrigin.array.set([px[i], py[i], pz[i]], c * 3);
-        a.aLodFade.array.set(fades.subarray(i * 12 + l * 4, i * 12 + l * 4 + 4), c * 4);
+    const F = fadesNow;
+    for (let ci = 0; ci < cells.length; ci++) {
+      const cell = cells[ci];
+      if (cell.sig === 0) continue; // (nothing drawn)
+      const trees = cell.trees;
+      for (let k = 0; k < trees.length; k++) {
+        const i = trees[k];
+        const bits = levels[i];
+        if (!bits) continue;
+        const fo = cls[i] * 12;
+        for (let l = 0; l < 3; l++) {
+          if (!(bits & (1 << l))) continue;
+          const mi = l === 1 && bits & 8 ? midFarOf[i] : meshOf[i * 3 + l];
+          const mesh = instanced[mi];
+          const c = counts[mi]++;
+          const far = meshes[mi].attrs;
+          const a = mesh.geometry.attributes;
+          const src = far ? matsFar : matsNear, dst = mesh.instanceMatrix.array;
+          for (let j = 0; j < 16; j++) dst[c * 16 + j] = src[i * 16 + j];
+          if (far) { const t = a.aTreeData.array; t[c * 4] = farData[i * 4]; t[c * 4 + 1] = farData[i * 4 + 1]; t[c * 4 + 2] = farData[i * 4 + 2]; t[c * 4 + 3] = farData[i * 4 + 3]; }
+          else { const t = mesh.instanceColor.array; t[c * 3] = tints[i * 3]; t[c * 3 + 1] = tints[i * 3 + 1]; t[c * 3 + 2] = tints[i * 3 + 2]; }
+          const og = a.aLodOrigin.array;
+          og[c * 3] = px[i]; og[c * 3 + 1] = py[i]; og[c * 3 + 2] = pz[i];
+          const fd = a.aLodFade.array, fl = fo + l * 4;
+          fd[c * 4] = F[fl]; fd[c * 4 + 1] = F[fl + 1]; fd[c * 4 + 2] = F[fl + 2]; fd[c * 4 + 3] = F[fl + 3];
+        }
       }
     }
     instanced.forEach((mesh, mi) => {
@@ -304,25 +381,43 @@ async function buildEzTrees(scene, generated) {
     const low = cam.y < 40;
     let changed = low !== lastLow; // the far edges move with the camera's height: every tree's bands change
     lastLow = low;
-    for (let i = 0; i < N; i++) {
-      const dx = px[i] - cam.x, dy = py[i] - cam.y, dz = pz[i] - cam.z;
-      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      let maxD = low ? Math.min(MAX_DIST[tier[i]], LOW_CUTOFF) : MAX_DIST[tier[i]];
-      if (isPine[i]) maxD = Math.min(maxD, PINE_FAR);
-      // [edge in, band in, edge out, band out] per level; pines have no far level (their mid mesh goes out to maxD)
-      const f = fades;
-      const o = i * 12;
-      f[o] = ALL_IN; f[o + 1] = 1; f[o + 2] = NEAR; f[o + 3] = BAND[0];
-      f[o + 4] = NEAR; f[o + 5] = BAND[0];
-      if (isPine[i]) { f[o + 6] = maxD; f[o + 7] = BAND[2]; f[o + 8] = ALL_OUT; f[o + 9] = 1; f[o + 10] = ALL_OUT; f[o + 11] = 1; }
-      else { f[o + 6] = MID; f[o + 7] = BAND[1]; f[o + 8] = MID; f[o + 9] = BAND[1]; f[o + 10] = maxD; f[o + 11] = BAND[2]; }
-      let bits = 0;
-      for (let l = 0; l < 3; l++) {
-        const lo = f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, hi = f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN;
-        if (d >= lo && d < hi) bits |= 1 << l;
+    const lowIdx = low ? 1 : 0;
+    const F = fadesNow = classFades[lowIdx];
+    const cx = cam.x, cy = cam.y, cz = cam.z;
+    for (let ci = 0; ci < cells.length; ci++) {
+      const cell = cells[ci];
+      const ex = cell.x - cx, ey = cell.y - cy, ez = cell.z - cz;
+      const dc = Math.sqrt(ex * ex + ey * ey + ez * ez);
+      const dMin = dc - cell.r, dMax = dc + cell.r;
+      const edges = cell.edges[lowIdx];
+      let straddles = false;
+      for (let k = 0; k < edges.length; k++) {
+        const e = edges[k];
+        if (e > dMax) break;
+        if (e >= dMin) { straddles = true; break; }
       }
-      if (bits & 2 && d > MID_SHADOW) bits |= 8; // (bit 3: the mid level without a shadow)
-      if (bits !== levels[i]) { levels[i] = bits; changed = true; }
+      if (!straddles) {
+        // no edge between the cell's nearest and furthest tree: each class has one level set throughout
+        let sig = 0;
+        for (let k = 0; k < cell.classes.length; k++) sig |= levelBits(F, cell.classes[k], dc) << (cell.classes[k] * 4);
+        if (sig === cell.sig) continue;
+        cell.sig = sig;
+        const trees = cell.trees;
+        for (let k = 0; k < trees.length; k++) {
+          const i = trees[k];
+          const bits = (sig >> (cls[i] * 4)) & 15;
+          if (bits !== levels[i]) { levels[i] = bits; changed = true; }
+        }
+        continue;
+      }
+      cell.sig = -1;
+      const trees = cell.trees;
+      for (let k = 0; k < trees.length; k++) {
+        const i = trees[k];
+        const dx = px[i] - cx, dy = py[i] - cy, dz = pz[i] - cz;
+        const bits = levelBits(F, cls[i], Math.sqrt(dx * dx + dy * dy + dz * dz));
+        if (bits !== levels[i]) { levels[i] = bits; changed = true; }
+      }
     }
     if (changed) rebuild();
     return changed;

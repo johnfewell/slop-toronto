@@ -1,0 +1,23 @@
+[
+  {
+    "name": "ride-seat",
+    "wait": 2000,
+    "js": "(() => { const a = window.__CITY_APP; document.getElementById('locate-prompt').hidden=true; if (!a.streetcarRide.active) throw new Error('Featured 504 boarding failed'); const c=a.streetcarRide.car; console.log('[ride]', JSON.stringify({id:c.id,stop:c.stopIndex,doors:c.doorState,remaining:c.lastPassengerStop-c.stopIndex})); c.dwell=0; })()"
+  },
+  {
+    "name": "ride-moving",
+    "wait": 9000,
+    "js": "window.__rideStart=window.__CITY_APP.streetcarRide.car.s"
+  },
+  {
+    "name": "ride-chase",
+    "camera": "chase",
+    "wait": 2000,
+    "js": "(() => { const a=window.__CITY_APP; if(a.streetcarRide.car.s <= window.__rideStart) throw new Error('Streetcar did not depart'); console.log('[ride] departed',a.streetcarRide.car.s-window.__rideStart); })()"
+  },
+  {
+    "name": "ride-cancel",
+    "wait": 1000,
+    "js": "(() => { const a=window.__CITY_APP; if(!a.streetcarRide.exit({cancel:true})) throw new Error('Cancel failed'); if(a.controllerManager.suspended || !a.controllerManager.getActiveEntity().mesh.visible || a.cameraSystem.followOverride) throw new Error('Passenger cleanup failed'); })()"
+  }
+]

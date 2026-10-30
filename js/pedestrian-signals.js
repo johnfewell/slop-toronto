@@ -9,7 +9,8 @@
 // - The pedestrian crossovers: a pole on either kerb, its mast arm out over the road with the yellow crossover sign and
 //   two amber lights that flash while someone waits at it or walks on it (window.CITY.PXO_ACTIVE, traffic.js), and the
 //   "Stop for pedestrians" sign on the pole
-// All instanced: a handful of draws.
+// A head goes on the City's mapped signal pole near its spot where there is one (js/mapped-poles.js, drawn by
+// street-details.js), else on a pole of its own. All instanced: a handful of draws.
 
 const { THREE, SIGNALS, SIGNAL_TIMING, PXOS = [], blockAt } = window.CITY;
 const { Fn, float, color, uniformArray, instancedBufferAttribute, int, mod, step, mix, uv, texture, fract, positionWorld } = window.CITY.TSL;
@@ -122,8 +123,14 @@ function buildPedestrianSignals(scene, traffic, signalClock) {
   const pedHeads = [], pedSig = [];
   const carHeads = [], carSig = [];
   const sitePoles = []; // (where poles stand, to keep them apart)
-  const clearOf = (x, z, r) => sitePoles.every((p) => Math.hypot(p.x - x, p.z - z) >= r);
+  // the City's mapped signal poles (street-details.js draws them, solid): a head goes on one near the spot it wants,
+  // and a pole of our own keeps clear of them
+  const mappedNear = window.CITY.mappedSignalPoleNear || (() => null);
+  const clearOf = (x, z, r) => sitePoles.every((p) => Math.hypot(p.x - x, p.z - z) >= r) && !mappedNear(x, z, r);
+  let onMapped = 0;
+  const colliders = []; // (each pole solid, world-collision.js)
   function pole(x, z, h, r = 0.07) {
+    colliders.push(window.CITY.WorldCollision.circleCollider(x, z, r, SW_Y, h));
     dummy.position.set(x, SW_Y + h / 2, z);
     dummy.rotation.set(0, 0, 0);
     dummy.scale.set(r, h, r);
@@ -168,6 +175,14 @@ function buildPedestrianSignals(scene, traffic, signalClock) {
       if ((n.x - (ax + bx) / 2) * sx + (n.z - (az + bz) / 2) * sz < 0) { sx = -sx; sz = -sz; }
       const p = n.walkP[side];
       for (const [ex, ez, ox, oz] of [[ax, az, -ux, -uz], [bx, bz, ux, uz]]) {
+        // (a mapped pole on the kerb behind the crossing's end, not out in the road)
+        const m = mappedNear(ex + sx * 1.6, ez + sz * 1.6, 3.5, (q) => (q.x - ex) * ox + (q.z - ez) * oz > -0.5);
+        if (m) {
+          pedHead(m.x - sx * 0.18, m.z - sz * 0.18, -ox, -oz, n.sigJ, p);
+          crosswalkHeads++;
+          onMapped++;
+          continue;
+        }
         const spot = kerbSpot(ex + sx * 1.6, ez + sz * 1.6, ox, oz, sx, sz);
         if (!spot) continue;
         pole(spot.x, spot.z, 3.1);
@@ -188,12 +203,14 @@ function buildPedestrianSignals(scene, traffic, signalClock) {
     const dx = -uz, dz = ux; // along the road
     for (const sgn of [-1, 1]) {
       const ex = c.x + ux * L * sgn, ez = c.z + uz * L * sgn;
-      const spot = kerbSpot(ex + dx * 1.7, ez + dz * 1.7, ux * sgn, uz * sgn, dx, dz);
+      const m = c.kind === 'signal' && mappedNear(ex + dx * 1.7, ez + dz * 1.7, 4, (q) => ((q.x - c.x) * ux + (q.z - c.z) * uz) * sgn > c.half - 0.5);
+      const spot = m || kerbSpot(ex + dx * 1.7, ez + dz * 1.7, ux * sgn, uz * sgn, dx, dz);
       if (!spot) continue;
       const fx = -ux * sgn, fz = -uz * sgn; // facing the road (& the far kerb)
       if (c.kind === 'signal') {
         const k = SIGNALS.crossingIndex(c.i);
-        pole(spot.x, spot.z, 6.2, 0.09);
+        if (m) onMapped++;
+        else pole(spot.x, spot.z, 6.2, 0.09);
         // the traffic head at the end of a short arm over the kerb lane, lenses both ways along the road
         const reach = Math.min(3, Math.max(1, c.half - 1));
         dummy.position.set(spot.x + fx * reach / 2, 6.25, spot.z + fz * reach / 2);
@@ -311,15 +328,24 @@ function buildPedestrianSignals(scene, traffic, signalClock) {
   const lampHousingGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 12).rotateX(Math.PI / 2);
   const stopGeo = new THREE.PlaneGeometry(0.45, 0.68);
 
-  function instanced(geo, mat, matrices, shadow = true) {
-    if (!matrices.length) return;
+  function instanced(geo, mat, matrices, shadow = true, parent = group) {
+    if (!matrices.length) return null;
     const m = new THREE.InstancedMesh(geo, mat, matrices.length);
     matrices.forEach((mx, i) => m.setMatrixAt(i, mx));
     m.instanceMatrix.needsUpdate = true;
     if (shadow && !mat.isMeshBasicNodeMaterial) m.castShadow = m.receiveShadow = true;
-    group.add(m);
+    parent.add(m);
+    return m;
   }
-  instanced(unitCyl, poleMat, poles);
+  // The ~1,900 poles go in a group of their own that main.js hands to scene-culling.js: chunked & distance culled like
+  // street-details.js's poles, and casting through the same 8-triangle stand-in (32 triangles each, all of them in both
+  // shadow cascades every frame, before). (Only the poles: the heads' & lamps' materials read per-instance attributes
+  // by instance index, which chunks would renumber)
+  const poleGroup = new THREE.Group();
+  poleGroup.name = 'PedestrianSignalPoles';
+  group.add(poleGroup);
+  const poleMesh = instanced(unitCyl, poleMat, poles, true, poleGroup);
+  if (poleMesh) poleMesh.userData.shadowStandIn = new THREE.CylinderGeometry(1.11, 1.11, 1, 4, 1, true);
   instanced(unitBox, poleMat, arms);
   instanced(pedHousingGeo, housingMat, pedHeads);
   instanced(pedLensGeo, pedLensMat, pedHeads, false);
@@ -330,8 +356,9 @@ function buildPedestrianSignals(scene, traffic, signalClock) {
   instanced(lampGeo, lampMat, lamps, false);
   instanced(stopGeo, stopMat, stopSigns);
   scene.add(group);
-  console.info(`[pedestrianSignals] ${crosswalkHeads} pedestrian heads at junction crosswalks, ${midHeads} midblock signal poles, ${crossovers} pedestrian crossovers (${PXOS.length} in the City's list)`);
-  return { group };
+  console.info(`[pedestrianSignals] ${crosswalkHeads} pedestrian heads at junction crosswalks, ${midHeads} midblock signal poles, ${crossovers} pedestrian crossovers (${PXOS.length} in the City's list); ${onMapped} on the City's mapped poles`);
+  if (window.CITY.poleStats) window.CITY.poleStats.signals.pedestrianOnMapped = onMapped;
+  return { group, colliders };
 }
 
 Object.assign(window.CITY, { buildPedestrianSignals });

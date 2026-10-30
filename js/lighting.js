@@ -54,10 +54,12 @@ function worldDirection(az, el) {
   const th = FRAME.bearingDeg * rad;
   return new THREE.Vector3(east * Math.cos(th) - north * Math.sin(th), Math.sin(el * rad), -(east * Math.sin(th) + north * Math.cos(th))).normalize();
 }
+// The scene's calendar day: every time preset is lit on it, and seasonal scenery (rinks.js) follows it
+const SCENE_DATE = Object.freeze({ month: 8, day: 22 });
 // 22 August in Toronto at an Eastern Daylight Time clock time (hours)
 const watDate = (hours) => {
   const now = new Date();
-  const d = new Date(Date.UTC(now.getUTCFullYear(), 7, 22, 0, 0, 0));
+  const d = new Date(Date.UTC(now.getUTCFullYear(), SCENE_DATE.month - 1, SCENE_DATE.day, 0, 0, 0));
   return new Date(d.getTime() + (hours - WAT_OFFSET_H) * 3600000);
 };
 // The afternoon time (WAT hours) the sun stands `el` degrees up
@@ -298,7 +300,7 @@ class LightingSystem {
     const dist = length(toFrag);
     const dir = toFrag.div(max(dist, 0.001));
     const horizonDir = normalize(vec3(dir.x, max(dir.y, 0.015), dir.z));
-    const skyColor = pmremTexture(this.envRenderTarget.texture, horizonDir, float(0.3)).rgb;
+    const skyColor = pmremTexture(this.envRenderTarget.texture, horizonDir, float(0.0)).rgb;
     // Mean haze density exp(-y / H) along the ray between the fragment and the camera
     const H = this.uFogHeight;
     const ya = max(positionWorld.y, 0.0);
@@ -386,5 +388,5 @@ class LightingSystem {
 
 // (the hour of each time of day: traffic.js reads the City's volumes at it)
 const SUN_HOURS = { ...Object.fromEntries(Object.entries(SUN).map(([k, v]) => [k, v.h])), twilight: SUN.sunset.h, midnight: SUN.night.h };
-Object.assign(window.CITY, { LightingSystem, SUN_HOURS });
+Object.assign(window.CITY, { LightingSystem, SUN_HOURS, SCENE_DATE });
 })();

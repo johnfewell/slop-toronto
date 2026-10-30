@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const original = '{"elements":[{"id":1}]}\n';
 const replacement = '\n {"elements":[{"id":2}]}\n';
+// overpass.sh stores a validated response minified (a third of the size): the same JSON without its whitespace
+const stored = JSON.stringify(JSON.parse(replacement));
 
 function download(responses) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'overpass test '));
@@ -47,7 +49,7 @@ process.exitCode = response.exitCode || 0;
 test('Overpass accepts complete JSON with leading whitespace', () => {
   const result = download([{ status: 200, body: replacement }]);
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.data, replacement);
+  assert.equal(result.data, stored);
   assert.equal(result.calls, 1);
 });
 
@@ -69,6 +71,6 @@ for (const [name, response] of [
 test('Overpass retries a failed endpoint before replacing data', () => {
   const result = download([{ status: 200, body: '{', exitCode: 28 }, { status: 200, body: replacement }]);
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.data, replacement);
+  assert.equal(result.data, stored);
   assert.equal(result.calls, 2);
 });

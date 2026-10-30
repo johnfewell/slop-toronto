@@ -12,11 +12,12 @@ function productionFunction(name, context) {
 }
 
 for (const [hasView, inView, draw] of [[true, false, false], [true, true, true], [false, false, true]]) {
-  test(`pedestrian gait always advances; pose generation follows drawing (${hasView}, ${inView})`, () => {
+  test(`pedestrian gait advances within 50 m; pose generation follows drawing (${hasView}, ${inView})`, () => {
     let args, drawn = 0;
-    const ped = { x: 10, z: 20, ux: 0, uz: 1, dir: 1, rig: { update(...values) { args = values; } } };
+    const ped = { x: 10, z: 20, ux: 0, uz: 1, dir: 1, dodge: 0, dodgeTarget: 0, diveStart: -Infinity,
+      rig: { update(...values) { args = values; } } };
     const renderPed = productionFunction('renderPed', {
-      hasView, visible: () => inView, pedGround: () => 0, focusX: 0, focusZ: 0,
+      hasView, visible: () => inView, pedGround: () => 0, focusX: 0, focusZ: 0, clock: 0, PEDESTRIAN_DIVE_DURATION: 2.5,
       pedCrowd: { add(rig) { assert.equal(rig, ped.rig); drawn++; } }
     });
     renderPed(ped, 1 / 60);
@@ -25,9 +26,77 @@ for (const [hasView, inView, draw] of [[true, false, false], [true, true, true],
     assert.equal(args[2], ped.z);
     assert.equal(args[5], ped);
     assert.equal(args[7], draw);
+    assert.equal(args[8], -1);
     assert.equal(drawn, draw ? 1 : 0);
   });
 }
+
+test('hidden pedestrians finish their dive without drawing or changing the escape heading', () => {
+  let args;
+  const ped = { x: 10, z: 20, ux: 0, uz: 1, dir: 1, dodge: 1.8, dodgeTarget: 1.8,
+    diveStart: 9.5, diveHeading: Math.PI / 2, rig: { update(...values) { args = values; } } };
+  const context = {
+    hasView: true, visible: () => false, pedGround: () => 0, focusX: 0, focusZ: 0,
+    clock: 10, PEDESTRIAN_DIVE_DURATION: 2.5,
+    pedCrowd: { add() { assert.fail('hidden pedestrians must not be drawn'); } }
+  };
+  const renderPed = productionFunction('renderPed', context);
+  renderPed(ped, 1 / 60);
+  assert.equal(args[3], ped.diveHeading);
+  assert.equal(args[7], false);
+  assert.equal(args[8], 0.5);
+  context.clock = 12;
+  renderPed(ped, 1 / 60);
+  assert.equal(args[3], 0);
+  assert.equal(args[7], false);
+  assert.equal(args[8], -1);
+});
+
+// Upstream 1fe128d: a hidden person more than 50 m from the focus skips its gait and re-plants on its next update.
+test('hidden pedestrians beyond 50 m skip their gait unless diving; visible ones still walk and draw', () => {
+  const calls = [];
+  let drawn = 0;
+  const context = {
+    hasView: true, inView: false, pedGround: () => 0, focusX: 0, focusZ: 0, clock: 10, PEDESTRIAN_DIVE_DURATION: 2.5,
+    pedCrowd: { add(rig, distance) { drawn++; calls.push(['draw', distance]); } }
+  };
+  context.visible = () => context.inView;
+  const renderPed = productionFunction('renderPed', context);
+  const ped = { x: 30, z: 40.01, ux: 0, uz: 1, dir: 1, dodge: 0, dodgeTarget: 0, diveStart: -Infinity,
+    rig: { placed: true, update(...values) { calls.push(['update', values[7]]); } } };
+  renderPed(ped, 1 / 60);
+  assert.deepEqual(calls, [], 'no gait work for a hidden person 50.01 m away');
+  assert.equal(ped.rig.placed, false, 'its feet are re-planted when it next updates');
+  ped.z = 39.99; ped.rig.placed = true;
+  renderPed(ped, 1 / 60);
+  assert.deepEqual(calls, [['update', false]], 'within 50 m a hidden person still advances its gait');
+  assert.equal(ped.rig.placed, true);
+  calls.length = 0; ped.z = 400; ped.diveStart = 9.5;
+  renderPed(ped, 1 / 60);
+  assert.deepEqual(calls, [['update', false]], 'a hidden dive always finishes');
+  calls.length = 0; ped.diveStart = -Infinity; context.inView = true;
+  renderPed(ped, 1 / 60);
+  assert.equal(calls[0][0], 'update'); assert.equal(calls[0][1], true);
+  assert.equal(drawn, 1); assert.ok(Math.abs(calls[1][1] - Math.hypot(30, 400)) < 1e-9, 'drawn with its focus distance');
+});
+
+test('a real rig whose gait was skipped re-plants where it reappears', async () => {
+  const THREE = await import('three');
+  const window = { CITY: { THREE, TSL: {}, Addons: {} } };
+  vm.runInNewContext(readFileSync(join(__dirname, '../js/pedestrians.js'), 'utf8'), { window, Math });
+  const rig = new window.CITY.PersonRig({ seed: 0.4 });
+  const ground = () => 0.22;
+  for (let f = 0; f < 60; f++) rig.update(1 / 60, 0, f / 60 * 1.3, 0, ground, null, 0, true);
+  rig.placed = false; // skipped while it walked 0.8 m further out of sight
+  rig.update(1 / 60, 0, 2.1, 0, ground, null, 0, true);
+  assert.equal(rig.placed, true);
+  assert.equal(rig.x, 0); assert.equal(rig.z, 2.1);
+  for (const foot of rig.feet) {
+    assert.ok(Math.hypot(foot.px - rig.x, foot.pz - rig.z) < 0.3, 'both feet stand under the body');
+    assert.equal(foot.py, 0.22); assert.equal(foot.swing, false);
+  }
+  assert.ok(rig.pose.every(Number.isFinite));
+});
 
 function sparkHarness(updates = 3) {
   const sparks = Array.from({ length: 120 }, () => ({ life: 0 }));

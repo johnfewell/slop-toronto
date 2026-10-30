@@ -4,10 +4,13 @@
   "type": "module",
   "description": "Toronto in three.js WebGPU + TSL, on the engine of Slop New York by mrdoob",
   "scripts": {
-    "dev": "python3 -m http.server 5530 --bind 127.0.0.1",
+    "dev": "node tools/prepare-bench.mjs && node tools/dev-server.mjs",
+    "build": "node tools/prepare-bench.mjs && npm run build:clouds && node tools/build-site.mjs",
     "test": "node --test tests/*.cjs tests/*.mjs",
+    "test:geodata": "GEO_DATA=\"${GEO_DATA:-$HOME/.cache/slop-toronto/osm-ids}\" PROPS_DATA=\"${PROPS_DATA:-$HOME/.cache/slop-toronto/raw}\" node --test tests/geodata.test.mjs",
     "capture": "node tools/capture.mjs",
-    "build:water": "node tools/build-water.mjs"
+    "build:water": "node tools/build-water.mjs",
+    "build:clouds": "node tools/build-clouds.mjs"
   },
   "devDependencies": {
     "@gltf-transform/cli": "4.5.1",
@@ -19,8 +22,12 @@
     "vite": "8.3.5"
   },
   "dependencies": {
-    "@takram/three-atmosphere": "0.19.1",
-    "@takram/three-geospatial": "0.9.1",
-    "three-clouds-webgpu": "file:vendor/clouds/three-clouds-webgpu-0.1.0-alpha.5.tgz"
+    "@takram/three-atmosphere": "https://github.com/johnfewell/three-geospatial/releases/download/fork-release-7/takram-three-atmosphere-0.19.1%2Bfork.7.tgz",
+    "@takram/three-geospatial": "https://github.com/johnfewell/three-geospatial/releases/download/fork-release-7/takram-three-geospatial-0.9.1%2Bfork.7.tgz",
+    "three-clouds-webgpu": "file:vendor/clouds/three-clouds-webgpu-0.1.0-alpha.6.tgz"
+  },
+  "overrides": {
+    "@takram/three-atmosphere": "$@takram/three-atmosphere",
+    "@takram/three-geospatial": "$@takram/three-geospatial"
   }
 }

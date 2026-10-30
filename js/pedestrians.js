@@ -16,16 +16,19 @@
 const { THREE } = window.CITY;
 const {
   Fn,
+  If,
   float,
   int,
   vec2,
   vec3,
+  vec4,
   color,
   attribute,
   instanceIndex,
   attributeArray,
   normalLocal,
   varying,
+  vertexStage,
   cross,
   normalize,
   sin,
@@ -749,11 +752,11 @@ const qrot = (q, v) => v.add(cross(q.xyz, cross(q.xyz, v).add(v.mul(q.w))).mul(2
 
 /**
  * Material for one crowd mesh. `pose` is its storage buffer (STRIDE vec4s per instance). The vertex stage morphs the
- * bind pose (girth, female, hair) and skins it with two bones; the fragment stage dresses the person from their seed:
- * skin tone, hair & hairline, eyes, brows & mouth, a tailored jacket (lapels, shirt V) or casual coat (zip, hem,
- * collar), cuffs, trousers, sneakers or leather shoes with soles & laces.
+ * bind pose (girth, female, hair), skins it with two bones and resolves per-instance palette colours & style flags;
+ * the near LOD (`detail = 1`) adds fine procedural facial/jacket/shoe detail per body part in the fragment stage,
+ * while the far LOD (`detail = 0`) shades its part colours directly in the vertex stage.
  */
-function createPersonMaterial(pose) {
+function createPersonMaterial(pose, detail = 1) {
   const mat = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
   const base = int(instanceIndex).mul(STRIDE);
   const info = pose.element(base.add(STRIDE - 1)); // seed, female, girth, hair
@@ -779,115 +782,194 @@ function createPersonMaterial(pose) {
     return mix(qrot(qa, p).mul(ta.w).add(ta.xyz), qrot(qb, p).mul(tb.w).add(tb.xyz), w);
   })();
 
-  const vInfo = varying(info, 'vPersonInfo');
-  const isPart = (partId, id) => step(abs(partId.sub(id)), 0.25);
-  const lane = (salt) => fract(sin(vInfo.x.add(salt).mul(12.9898)).mul(43758.5453));
-  const partOf = () => attribute('skin', 'vec4').w;
+  const skinAttr = attribute('skin', 'vec4');
+  const posAttr = attribute('position', 'vec3');
+  const extraAttr = attribute('extra', 'vec3');
+  const partId = skinAttr.w;
+  const isPart = (id) => step(abs(partId.sub(id)), 0.25);
+  const isLeg = isPart(PART.LEG);
+  const isShoe = isPart(PART.SHOE);
+  const isArm = isPart(PART.ARM);
+  const isHand = isPart(PART.HAND);
+  const isHead = isPart(PART.HEAD);
+  const isHairPart = step(PART.HAIR - 0.5, partId);
+
+  const female = info.y;
+  const lane = (salt) => fract(sin(info.x.add(salt).mul(12.9898)).mul(43758.5453));
+  const skinCol = vertexStage(pickColorFromPalette(SKIN_COLORS, lane(17.0))).toVar();
+  const hairCol = vertexStage(pickColorFromPalette(HAIR_COLORS, lane(3.0))).toVar();
+  const coatCol = vertexStage(
+    mix(pickColorFromPalette(COAT_COLORS, lane(29.0)), pickColorFromPalette(COAT_COLORS_F, lane(29.0)), female)
+  ).toVar();
+  const shirtCol = vertexStage(pickColorFromPalette(SHIRT_COLORS, lane(71.0))).toVar();
+  const legsCol = vertexStage(
+    mix(pickColorFromPalette(LEG_COLORS, lane(47.0)), pickColorFromPalette(LEG_COLORS_F, lane(47.0)), female)
+  ).toVar();
+  const bald = vertexStage(step(lane(41.0), 0.08).mul(float(1.0).sub(female))).toVar();
+  const tailored = vertexStage(step(0.42, lane(89.0))).toVar();
+  const hemY = vertexStage(mix(mix(0.955, 0.88, female), 1.0, lane(61.0))).toVar();
+  const sneaker = vertexStage(step(0.4, lane(5.0))).toVar();
+  const upperCol = vertexStage(
+    mix(
+      mix(color(0x201e1c), color(0x4a3524), lane(23.0)),
+      mix(color(0x252b32), color(0xc8c3b8), step(0.55, lane(31.0))),
+      sneaker
+    )
+  ).toVar();
+  const soleCol = vertexStage(mix(color(0x191816), color(0xd5d1c8), sneaker)).toVar();
+  const cuffCol = vertexStage(mix(coatCol.mul(0.72), shirtCol, tailored)).toVar();
+  const roughnessVal = vertexStage(
+    mix(
+      mix(mix(float(0.86), float(0.55), max(isHand, isHead)), float(0.74), isHairPart),
+      float(0.38),
+      isShoe.mul(float(1.0).sub(sneaker))
+    )
+  );
+
+  if (!detail) {
+    const vFarSurface = varying(
+      vertexStage(
+        Fn(() => {
+          const q = posAttr;
+          const hd = normalize(vec2(q.x, q.z.add(0.01)));
+          const hairline = hd.y.mul(0.055).add(1.62).sub(hd.x.mul(hd.x).sub(hd.y.mul(hd.y)).mul(0.005)).add(bald.mul(0.3));
+          const headCol = mix(skinCol, hairCol, smoothstep(hairline.sub(0.015), hairline.add(0.015), q.y));
+          const hairPartCol = mix(hairCol.mul(0.97), skinCol, bald.mul(step(q.y, 1.755)));
+          const opening = q.y.sub(1.33).mul(0.42);
+          const shirtV = smoothstep(1.33, 1.36, q.y)
+            .mul(step(abs(q.x), opening.add(0.01)))
+            .mul(smoothstep(0.035, 0.075, q.z))
+            .mul(tailored);
+          const neckLine = mix(1.5, 1.49, tailored);
+          const torsoCol = mix(mix(legsCol, mix(coatCol, shirtCol, shirtV), step(hemY, q.y)), skinCol, step(neckLine, q.y));
+          const sleeveCol = mix(coatCol, cuffCol, smoothstep(0.92, 0.96, extraAttr.z));
+          const shoeCol = mix(upperCol, soleCol, step(q.y, 0.022));
+          const farCol = mix(
+            mix(
+              mix(mix(mix(mix(torsoCol, legsCol, isLeg), shoeCol, isShoe), sleeveCol, isArm), skinCol, isHand),
+              headCol,
+              isHead
+            ),
+            hairPartCol,
+            isHairPart
+          );
+          return vec4(farCol, roughnessVal);
+        })()
+      ),
+      'vPersonFarSurface'
+    );
+    mat.colorNode = vFarSurface.xyz;
+    mat.roughnessNode = vFarSurface.w;
+    return mat;
+  }
+
+  // Every lofted sub-mesh has a constant `partId` across its triangles, so each triangle only needs the colours &
+  // style flags of its own body part.
+  const vPartA = varying(
+    vertexStage(
+      vec4(
+        mix(mix(mix(mix(coatCol, legsCol, isLeg), upperCol, isShoe), skinCol, max(isHand, isHead)), hairCol, isHairPart),
+        mix(mix(tailored, sneaker, isShoe), bald, max(isHead, isHairPart))
+      )
+    ),
+    'vPersonPartA'
+  );
+  const vPartB = varying(
+    vertexStage(
+      vec4(mix(mix(mix(mix(shirtCol, soleCol, isShoe), cuffCol, isArm), hairCol, isHead), skinCol, isHairPart), hemY)
+    ),
+    'vPersonPartB'
+  );
+  const vPartC = varying(vertexStage(vec4(mix(legsCol, skinCol, step(1.18, posAttr.y)), partId)), 'vPersonPartC');
+  const vLocal = varying(
+    vertexStage(vec4(mix(posAttr.x, extraAttr.z, isArm), posAttr.y, posAttr.z, roughnessVal)),
+    'vPersonLocal'
+  );
 
   mat.colorNode = Fn(() => {
-    const partId = partOf();
-    const female = vInfo.y;
-    const q = attribute('position', 'vec3').toVar();
-    const along = attribute('extra', 'vec3').z;
+    const pId = vPartC.w;
+    const colA = vPartA.xyz;
+    const colB = vPartB.xyz;
+    const param0 = vPartA.w;
+    const q = vLocal.xyz;
+    const outCol = vec3(colA).toVar();
 
-    const skinCol = pickColorFromPalette(SKIN_COLORS, lane(17.0)).toVar();
-    const hairCol = pickColorFromPalette(HAIR_COLORS, lane(3.0)).toVar();
-    const coatCol = mix(pickColorFromPalette(COAT_COLORS, lane(29.0)), pickColorFromPalette(COAT_COLORS_F, lane(29.0)), female).toVar();
-    const shirtCol = pickColorFromPalette(SHIRT_COLORS, lane(71.0)).toVar();
-    const legsCol = mix(pickColorFromPalette(LEG_COLORS, lane(47.0)), pickColorFromPalette(LEG_COLORS_F, lane(47.0)), female);
-
-    // Head: skin, hairline (none for the bald), eyes, brows, lips
-    const hd = normalize(vec2(q.x, q.z.add(0.01)));
-    const bald = step(lane(41.0), 0.08).mul(float(1.0).sub(female));
-    const hairline = hd.y.mul(0.055).add(1.62).sub(hd.x.mul(hd.x).sub(hd.y.mul(hd.y)).mul(0.005)).add(bald.mul(0.3));
-    const hairMask = smoothstep(hairline.sub(0.004), hairline.add(0.004), q.y);
-    const front = smoothstep(0.06, 0.08, q.z);
-    const eyeX = abs(abs(q.x).sub(0.031));
-    const eyes = smoothstep(0.011, 0.006, eyeX).mul(smoothstep(0.0055, 0.002, abs(q.y.sub(1.627)))).mul(front);
-    const brows = smoothstep(0.016, 0.01, eyeX).mul(smoothstep(0.0035, 0.0012, abs(q.y.sub(1.646)))).mul(front);
-    const mouth = smoothstep(0.022, 0.014, abs(q.x)).mul(smoothstep(0.0045, 0.0015, abs(q.y.sub(1.549)))).mul(front);
-    const faceCol = mix(
-      skinCol.mul(float(1.0).sub(eyes.mul(0.7)).sub(brows.mul(0.45))),
-      skinCol.mul(color(0xb06a5c)).mul(1.15),
-      mouth.mul(0.7)
-    );
-    const headCol = mix(faceCol, hairCol, hairMask);
-    const hairStrands = hairCol.mul(sin(q.x.mul(170.0).add(q.z.mul(130.0))).mul(0.06).add(0.97));
-    const hairPartCol = mix(hairStrands, skinCol, bald.mul(step(q.y, 1.755)));
-
-    // Torso: collar & neck, tailored jacket (lapels, shirt V) or casual coat (zip, collar band), hem, trousers below
-    const tailored = step(0.42, lane(89.0));
-    const hemY = mix(mix(0.955, 1.0, lane(61.0)), mix(0.88, 1.0, lane(61.0)), female);
-    const chestFront = smoothstep(0.035, 0.075, q.z);
-    const opening = q.y.sub(1.33).mul(0.42);
-    const shirtV = smoothstep(1.33, 1.35, q.y).mul(smoothstep(0.004, 0.0, abs(q.x).sub(opening))).mul(chestFront).mul(tailored);
-    const lapel = smoothstep(0.024, 0.009, abs(abs(q.x).sub(opening)))
-      .mul(smoothstep(1.32, 1.37, q.y))
-      .mul(chestFront)
-      .mul(tailored)
-      .mul(float(1.0).sub(shirtV));
-    const zip = smoothstep(0.006, 0.0025, abs(q.x)).mul(chestFront).mul(float(1.0).sub(tailored));
-    const collarBand = smoothstep(1.455, 1.48, q.y).mul(float(1.0).sub(tailored));
-    const neckLine = mix(1.5, 1.49, tailored);
-    const neck = smoothstep(neckLine.sub(0.004), neckLine.add(0.004), q.y);
-    const hem = smoothstep(hemY.sub(0.004), hemY.add(0.004), q.y);
-    const hemShade = smoothstep(hemY.add(0.035), hemY, q.y).mul(0.12);
-    const jacketCol = mix(
-      coatCol.mul(float(1.0).sub(lapel.mul(0.25)).sub(zip.mul(0.4)).sub(collarBand.mul(0.15)).sub(hemShade)),
-      shirtCol,
-      shirtV
-    );
-    const torsoCol = mix(mix(legsCol, jacketCol, hem), skinCol, neck);
-
-    // Sleeves: cuffs (shirt cuff under a tailored jacket)
-    const cuff = smoothstep(0.93, 0.96, along);
-    const sleeveCol = mix(coatCol, mix(coatCol.mul(0.72), shirtCol, tailored), cuff);
-
-    // Trousers: subtle front crease
-    const crease = smoothstep(0.004, 0.0, abs(abs(q.x).sub(HIP_X))).mul(step(0.0, q.z)).mul(0.08);
-    const trouserCol = legsCol.mul(float(1.0).sub(crease));
-
-    // Shoes: sneakers or leather, soles, laces over the instep
-    const sneaker = step(0.4, lane(5.0));
-    const leatherCol = mix(color(0x201e1c), color(0x4a3524), lane(23.0));
-    const sneakerCol = mix(color(0x252b32), color(0xc8c3b8), step(0.55, lane(31.0)));
-    const upperCol = mix(leatherCol, sneakerCol, sneaker);
-    const sole = smoothstep(0.024, 0.016, q.y);
-    const soleCol = mix(color(0x191816), color(0xd5d1c8), sneaker);
-    const laceCoord = q.z.mul(80.0);
-    const laces = smoothstep(0.6, 0.75, fract(laceCoord))
-      .mul(step(abs(abs(q.x).sub(HIP_X)), 0.016))
-      .mul(step(0.0, q.z))
-      .mul(step(q.z, 0.09))
-      .mul(step(0.075, q.y))
-      .mul(sneaker);
-    const shoeCol = mix(mix(upperCol, soleCol, sole), color(0xb8b4aa), laces.mul(0.6));
-
-    return mix(
-      mix(
-        mix(
-          mix(
-            mix(mix(torsoCol, trouserCol, isPart(partId, PART.LEG)), shoeCol, isPart(partId, PART.SHOE)),
-            sleeveCol,
-            isPart(partId, PART.ARM)
-          ),
-          skinCol,
-          isPart(partId, PART.HAND)
-        ),
-        headCol,
-        isPart(partId, PART.HEAD)
-      ),
-      hairPartCol,
-      step(PART.HAIR - 0.5, partId)
-    );
+    If(pId.lessThan(0.5), () => {
+      // Torso: collar & neck, tailored jacket (lapels, shirt V) or casual coat (zip, collar band), hem, trousers below
+      const isTailored = param0;
+      const coatHemY = vPartB.w;
+      const chestFront = smoothstep(0.035, 0.075, q.z);
+      const opening = q.y.sub(1.33).mul(0.42);
+      const shirtV = smoothstep(1.33, 1.35, q.y)
+        .mul(smoothstep(0.004, 0.0, abs(q.x).sub(opening)))
+        .mul(chestFront)
+        .mul(isTailored);
+      const lapel = smoothstep(0.024, 0.009, abs(abs(q.x).sub(opening)))
+        .mul(smoothstep(1.32, 1.37, q.y))
+        .mul(chestFront)
+        .mul(isTailored)
+        .mul(float(1.0).sub(shirtV));
+      const zip = smoothstep(0.006, 0.0025, abs(q.x)).mul(chestFront).mul(float(1.0).sub(isTailored));
+      const collarBand = smoothstep(1.455, 1.48, q.y).mul(float(1.0).sub(isTailored));
+      const neckLine = mix(1.5, 1.49, isTailored);
+      const neck = smoothstep(neckLine.sub(0.004), neckLine.add(0.004), q.y);
+      const hem = smoothstep(coatHemY.sub(0.004), coatHemY.add(0.004), q.y);
+      const hemShade = smoothstep(coatHemY.add(0.035), coatHemY, q.y).mul(0.12);
+      const jacketCol = mix(
+        colA.mul(float(1.0).sub(lapel.mul(0.25)).sub(zip.mul(0.4)).sub(collarBand.mul(0.15)).sub(hemShade)),
+        colB,
+        shirtV
+      );
+      outCol.assign(mix(mix(vPartC.xyz, jacketCol, hem), vPartC.xyz, neck));
+    })
+      .ElseIf(pId.lessThan(1.5), () => {
+        // Trousers: subtle front crease
+        const crease = smoothstep(0.004, 0.0, abs(abs(q.x).sub(HIP_X))).mul(step(0.0, q.z)).mul(0.08);
+        outCol.assign(colA.mul(float(1.0).sub(crease)));
+      })
+      .ElseIf(pId.lessThan(2.5), () => {
+        // Shoes: sneakers or leather, soles, laces over the instep
+        const isSneaker = param0;
+        const sole = smoothstep(0.024, 0.016, q.y);
+        const laces = smoothstep(0.6, 0.75, fract(q.z.mul(80.0)))
+          .mul(step(abs(abs(q.x).sub(HIP_X)), 0.016))
+          .mul(step(0.0, q.z))
+          .mul(step(q.z, 0.09))
+          .mul(step(0.075, q.y))
+          .mul(isSneaker);
+        outCol.assign(mix(mix(colA, colB, sole), color(0xb8b4aa), laces.mul(0.6)));
+      })
+      .ElseIf(pId.lessThan(3.5), () => {
+        // Sleeves: cuffs (shirt cuff under a tailored jacket; q.x carries `along`)
+        outCol.assign(mix(colA, colB, smoothstep(0.93, 0.96, q.x)));
+      })
+      .ElseIf(pId.greaterThan(5.5), () => {
+        // Hair & long hair: subtle strand variation or bald scalp
+        const hairStrands = colA.mul(sin(q.x.mul(170.0).add(q.z.mul(130.0))).mul(0.06).add(0.97));
+        outCol.assign(mix(hairStrands, colB, param0.mul(step(q.y, 1.755))));
+      })
+      .ElseIf(pId.greaterThan(4.5), () => {
+        // Head: skin, hairline (none for the bald), eyes, brows, lips
+        const isBald = param0;
+        const hd = normalize(vec2(q.x, q.z.add(0.01)));
+        const hairline = hd.y.mul(0.055).add(1.62).sub(hd.x.mul(hd.x).sub(hd.y.mul(hd.y)).mul(0.005)).add(isBald.mul(0.3));
+        const hairMask = smoothstep(hairline.sub(0.004), hairline.add(0.004), q.y);
+        const front = smoothstep(0.06, 0.08, q.z);
+        const eyeX = abs(abs(q.x).sub(0.031));
+        const eyes = smoothstep(0.011, 0.006, eyeX).mul(smoothstep(0.0055, 0.002, abs(q.y.sub(1.627)))).mul(front);
+        const brows = smoothstep(0.016, 0.01, eyeX).mul(smoothstep(0.0035, 0.0012, abs(q.y.sub(1.646)))).mul(front);
+        const mouth = smoothstep(0.022, 0.014, abs(q.x)).mul(smoothstep(0.0045, 0.0015, abs(q.y.sub(1.549)))).mul(front);
+        const faceCol = mix(
+          colA.mul(float(1.0).sub(eyes.mul(0.7)).sub(brows.mul(0.45))),
+          colA.mul(color(0xb06a5c)).mul(1.15),
+          mouth.mul(0.7)
+        );
+        outCol.assign(mix(faceCol, colB, hairMask));
+      });
+    return outCol;
   })();
 
-  mat.roughnessNode = Fn(() => {
-    const partId = partOf();
-    const skin = max(isPart(partId, PART.HAND), isPart(partId, PART.HEAD));
-    const leather = isPart(partId, PART.SHOE).mul(step(lane(5.0), 0.4));
-    return mix(mix(mix(float(0.86), float(0.55), skin), float(0.74), step(PART.HAIR - 0.5, partId)), float(0.38), leather);
-  })();
+  mat.roughnessNode = vLocal.w;
 
   return mat;
 }
@@ -902,15 +984,18 @@ class PersonCrowd {
    */
   constructor(maxCount, { farDistance = 34, castShadow = true } = {}) {
     this.farDistance = farDistance;
-    this.lods = [1, 0].map((detail) => {
+    this.updates = 0;
+    const levels = Number.isFinite(farDistance) ? [1, 0] : [1];
+    this.lods = levels.map((detail) => {
       const pose = attributeArray(maxCount * STRIDE, 'vec4').toReadOnly();
-      const mesh = new THREE.Mesh(buildPersonGeometry(detail), createPersonMaterial(pose));
+      const mesh = new THREE.Mesh(buildPersonGeometry(detail), createPersonMaterial(pose, detail));
       mesh.name = detail ? 'PeopleNear' : 'PeopleFar';
-      mesh.count = 1; // one (degenerate) person until the first frame, so the pipelines compile up front
+      mesh.count = 1; // one (degenerate) person until warm-up finishes, so the pipelines compile up front
       mesh.frustumCulled = false;
-      mesh.castShadow = castShadow;
+      mesh.castShadow = Boolean(castShadow && detail > 0);
       mesh.receiveShadow = true;
-      return { pose, mesh, count: 0, max: maxCount };
+      mesh.matrixAutoUpdate = false;
+      return { pose, mesh, count: 0, max: maxCount, hasZero: true };
     });
     this.meshes = this.lods.map((l) => l.mesh);
   }
@@ -920,16 +1005,36 @@ class PersonCrowd {
   }
 
   add(rig, distance = 0) {
-    const l = this.lods[distance > this.farDistance ? 1 : 0];
+    const l = this.lods.length > 1 && distance > this.farDistance ? this.lods[1] : this.lods[0];
     if (l.count >= l.max) return;
     l.pose.value.array.set(rig.pose, l.count * STRIDE * 4);
     l.count++;
   }
 
   end() {
+    const hideEmpty = ++this.updates > 2;
     for (const l of this.lods) {
+      if (l.count === 0) {
+        if (!hideEmpty) {
+          if (!l.hasZero) {
+            const attr = l.pose.value;
+            attr.array.fill(0, 0, STRIDE * 4);
+            attr.clearUpdateRanges();
+            attr.addUpdateRange(0, STRIDE * 4);
+            attr.needsUpdate = true;
+            l.hasZero = true;
+          }
+          l.mesh.count = 1;
+          l.mesh.visible = true;
+        } else {
+          l.mesh.count = 0;
+          l.mesh.visible = false;
+        }
+        continue;
+      }
+      l.hasZero = false;
       l.mesh.count = l.count;
-      if (l.count === 0) continue;
+      l.mesh.visible = true;
       const attr = l.pose.value;
       attr.clearUpdateRanges();
       attr.addUpdateRange(0, l.count * STRIDE * 4);
@@ -954,8 +1059,39 @@ const GAIT = {
   heelRoll: 0.14, // share of the stance spent rolling onto the sole, and when the heel comes up
   heelOff: 0.5
 };
+// The rigs' first-order lags (1 - e^(-dt / tau)): every rig steps by the same dt in a frame, so each factor is worked
+// out once a frame rather than once per rig (mrdoob's 1fe128d)
+let _easeDt = -1;
+let _e04 = 0, _e045 = 0, _e10 = 0, _e12 = 0, _e22 = 0, _e30 = 0;
+function syncEase(dt) {
+  if (dt === _easeDt) return;
+  _easeDt = dt;
+  _e04 = 1 - Math.exp(-dt / 0.04);
+  _e045 = 1 - Math.exp(-dt / 0.045);
+  _e10 = 1 - Math.exp(-dt / 0.1);
+  _e12 = 1 - Math.exp(-dt / 0.12);
+  _e22 = 1 - Math.exp(-dt / 0.22);
+  _e30 = 1 - Math.exp(-dt / 0.3);
+}
 const HEEL = new THREE.Vector3(0, -ANKLE_H, -0.07); // heel contact, from the ankle
 const TOE_JOINT = new THREE.Vector3(0, 0.02 - ANKLE_H, 0.135);
+
+const PEDESTRIAN_DIVE_DURATION = 2.5;
+// Time, pelvis height/pitch, chest/head pitch, hand height/forward/spread, left and right ankle height/forward,
+// foot pitch. The hands catch the landing; a short prone pause leads into a push-up, one knee under the body,
+// and a staggered rise. Positions are metres in the escape direction, before each person's height scaling.
+const DIVE_POSES = [
+  [0,    0.957, 0.035, 0.05, 0.05, 0.82, 0.03, 0.23, 0.08, 0,     0.08, 0,     0],
+  [0.12, 0.79,  0.38,  0.50, 0.10, 0.76, 0.42, 0.27, 0.08, -0.06, 0.08, 0.10,  0.15],
+  [0.30, 1.10,  0.88,  1.05, 0.65, 0.92, 0.76, 0.29, 0.61, -0.55, 0.72, -0.52, 0.9],
+  [0.55, 0.50,  1.45,  1.46, 1.05, 0.10, 0.72, 0.32, 0.32, -0.70, 0.41, -0.64, 1.35],
+  [0.72, 0.135, 1.49,  1.45, 1.10, 0.08, 0.60, 0.32, 0.16, -0.80, 0.19, -0.76, 1.4],
+  [1.15, 0.135, 1.49,  1.45, 1.10, 0.08, 0.60, 0.32, 0.16, -0.80, 0.19, -0.76, 1.4],
+  [1.55, 0.40,  1.10,  1.00, 0.25, 0.11, 0.57, 0.30, 0.10, -0.44, 0.12, -0.50, 0.9],
+  [1.90, 0.65,  0.55,  0.60, 0.10, 0.62, 0.40, 0.27, 0.08, 0.15,  0.12, -0.35, 0.3],
+  [2.20, 0.83,  0.20,  0.30, 0.08, 0.80, 0.20, 0.25, 0.08, 0.03,  0.08, -0.03, 0],
+  [PEDESTRIAN_DIVE_DURATION, 0.957, 0.035, 0.05, 0.05, 0.82, 0.03, 0.23, 0.08, 0, 0.08, 0, 0]
+];
 
 const wrap = (a) => a - Math.round(a / (Math.PI * 2)) * Math.PI * 2;
 const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
@@ -1020,7 +1156,6 @@ class PersonRig {
     this.s = scale;
     this.female = female ? 1 : 0;
     this.girth = girth;
-    this.hair = hair;
     this.armSwing = armSwing;
     this.stride = stride;
     this.bind = BIND[this.female];
@@ -1037,6 +1172,8 @@ class PersonRig {
     this.pelvisY = 0;
     this.sway = 0;
     this.air = 0;
+    this.diving = false;
+    this.diveGround = 0;
     this.time = seed * 7.3;
     this.feet = [makeFoot(1), makeFoot(-1)];
     this.pose = new Float32Array(STRIDE * 4);
@@ -1055,6 +1192,7 @@ class PersonRig {
     this.yaw = yaw;
     this.vx = this.vz = this.speed = 0;
     this.gait = this.run = this.sway = this.air = 0;
+    this.diving = false;
     this.phase = 0.05;
     for (const foot of this.feet) {
       this.restPoint(foot, x, z, yaw, _v);
@@ -1098,36 +1236,60 @@ class PersonRig {
    * Walk the body to ground position (x, z), turning towards `heading`. `ground(owner, x, z)` gives the walking
    * surface's height anywhere around. `air` lifts the body off the ground (jumps). Set `updatePose` false for hidden
    * pedestrians: their gait and planted feet still advance, while bone transforms wait until they are drawn.
+   * `diveTime` is elapsed seconds in an evasive dive, or -1 for ordinary locomotion.
    */
-  update(dt, x, z, heading, ground, owner = null, air = 0, updatePose = true) {
-    if (!this.placed || Math.hypot(x - this.x, z - this.z) > 3) {
+  update(dt, x, z, heading, ground, owner = null, air = 0, updatePose = true, diveTime = -1) {
+    const jx = x - this.x;
+    const jz = z - this.z;
+    if (!this.placed || jx * jx + jz * jz > 9) {
       this.reset(x, z, heading, ground, owner);
-      return;
+      if (diveTime < 0) return;
     }
     dt = Math.min(Math.max(dt, 1e-4), 0.1);
     const s = this.s;
     this.time += dt;
 
+    if (diveTime >= 0) {
+      if (!this.diving) this.diveGround = ground(owner, this.x, this.z);
+      const groundY = ground(owner, x, z);
+      // Crossing a curb in flight changes the landing surface, without stepping the whole airborne body.
+      // Travel ends before .55 s; settle exactly onto the surface by the prone pose at .72 s.
+      this.diveGround += (groundY - this.diveGround) * (diveTime >= 0.72 ? 1 : 1 - Math.exp(-dt / 0.06));
+      this.diving = true;
+      this.x = x;
+      this.z = z;
+      this.yaw = wrap(this.yaw + Math.max(-10 * dt, Math.min(10 * dt, wrap(heading - this.yaw))));
+      this.vx = this.vz = this.speed = this.gait = this.run = this.air = 0;
+      if (updatePose) this.solveDive(diveTime, this.diveGround);
+      return;
+    }
+    if (this.diving) {
+      this.pelvisYaw = this.pelvisRoll = this.spreadF = 0;
+      this.pelvisTilt = 0.035;
+      this.reset(x, z, this.yaw, ground, owner);
+      return;
+    }
+
     // Body velocity (smoothed) and heading
-    const kv = 1 - Math.exp(-dt / 0.1);
-    this.vx += ((x - this.x) / dt - this.vx) * kv;
-    this.vz += ((z - this.z) / dt - this.vz) * kv;
+    syncEase(dt);
+    this.vx += ((x - this.x) / dt - this.vx) * _e10;
+    this.vz += ((z - this.z) / dt - this.vz) * _e10;
     this.x = x;
     this.z = z;
-    const speed = (this.speed = Math.hypot(this.vx, this.vz));
+    const speed = (this.speed = Math.sqrt(this.vx * this.vx + this.vz * this.vz));
     const yawErr = wrap(heading - this.yaw);
     this.yaw = wrap(this.yaw + Math.max(-GAIT.turnRate * dt, Math.min(GAIT.turnRate * dt, yawErr)));
     const sinY = Math.sin(this.yaw);
     const cosY = Math.cos(this.yaw);
     const fwdSpeed = this.vx * sinY + this.vz * cosY;
 
-    this.gait += (Math.min(1, speed / 0.9) - this.gait) * (1 - Math.exp(-dt / 0.22));
-    this.run += (smooth(2.3, 3.6, speed) - this.run) * (1 - Math.exp(-dt / 0.3));
+    this.gait += (Math.min(1, speed / 0.9) - this.gait) * _e22;
+    this.run += (smooth(2.3, 3.6, speed) - this.run) * _e30;
     const run = this.run;
     const duty = lerp(GAIT.dutyWalk, GAIT.dutyRun - 0.07 * smooth(4.5, 8, speed), run);
 
     // Airborne (jumping): legs tuck under the body, feet land wherever they come down
-    this.air += (air - this.air) * (1 - Math.exp(-dt / 0.04));
+    this.air += (air - this.air) * _e04;
     if (air > 0.03) {
       for (const foot of this.feet) {
         this.restPoint(foot, x, z, this.yaw, _v);
@@ -1155,9 +1317,12 @@ class PersonRig {
       f = Math.max(GAIT.startCadence, lerp(walkF, runF, run));
     } else {
       let unsettled = Math.abs(yawErr) > 0.12;
+      const settleSq = (0.07 * s) * (0.07 * s);
       for (const foot of this.feet) {
         this.restPoint(foot, x, z, this.yaw, _v);
-        if (Math.hypot(foot.px - _v.x, foot.pz - _v.z) > 0.07 * s) unsettled = true;
+        const fdx = foot.px - _v.x;
+        const fdz = foot.pz - _v.z;
+        if (fdx * fdx + fdz * fdz > settleSq) unsettled = true;
         if (Math.abs(wrap(foot.yaw - this.yaw - foot.side * GAIT.toeOut)) > 0.25) unsettled = true;
         if (foot.swing) unsettled = true;
       }
@@ -1226,7 +1391,9 @@ class PersonRig {
         foot.yaw = syaw;
 
         const e = lerp(w * w * (3 - 2 * w), smooth(0.12, 1, w), run);
-        const stepLen = Math.hypot(ex - foot.lx, ez - foot.lz);
+        const sdx = ex - foot.lx;
+        const sdz = ez - foot.lz;
+        const stepLen = Math.sqrt(sdx * sdx + sdz * sdz);
         // foot clearance; running, the heel flicks up behind early in the swing
         const clearance =
           (0.03 + 0.055 * Math.min(1, stepLen / (0.9 * s))) * s * (1 - run) + run * 0.3 * s + Math.max(0, foot.ty - foot.lground) * 1.15;
@@ -1272,7 +1439,7 @@ class PersonRig {
     const latR = (right.ax - x) * cosY - (right.az - z) * sinY;
     const cSum = left.contact + right.contact;
     const swayTarget = cSum > 0.01 ? ((left.contact * latL + right.contact * latR) / cSum) * 0.42 * g * (1 - run * 0.6) : 0;
-    this.sway += (swayTarget - this.sway) * (1 - Math.exp(-dt / 0.12));
+    this.sway += (swayTarget - this.sway) * _e12;
 
     this.pelvisYaw = Math.max(-0.13, Math.min(0.13, -0.13 * spreadF * g));
     this.pelvisRoll = 0.045 * g * (left.contact - right.contact) * (1 - run * 0.5);
@@ -1292,12 +1459,13 @@ class PersonRig {
       this.hipOffset(i, _v);
       const hx = x + cosY * this.sway + _v.x;
       const hz = z - sinY * this.sway + _v.z;
-      const d = Math.hypot(foot.ax - hx, foot.az - hz);
-      const top = foot.ay + Math.sqrt(Math.max(0, reach * reach - d * d)) - _v.y;
+      const hdx = foot.ax - hx;
+      const hdz = foot.az - hz;
+      const top = foot.ay + Math.sqrt(Math.max(0, reach * reach - (hdx * hdx + hdz * hdz))) - _v.y;
       if (foot.contact > 0.97) hard[i] = top;
       target = Math.min(target, top + (1 - foot.contact) * lerp(0.35, 1.5, run));
     }
-    this.pelvisY += (target - this.pelvisY) * (1 - Math.exp(-dt / 0.045));
+    this.pelvisY += (target - this.pelvisY) * _e045;
     this.pelvisY = Math.min(this.pelvisY, hard[0], hard[1]);
     if (updatePose) this.solve();
   }
@@ -1386,12 +1554,81 @@ class PersonRig {
     const sinA = Math.sqrt(Math.max(0, 1 - cosA * cosA));
     _knee.copy(hip).addScaledVector(dn, l1 * cosA).addScaledVector(_pole, l1 * sinA);
     _ankle.copy(hip).addScaledVector(dn, dist);
-    this.reachError = Math.max(this.reachError || 0, _ankle.distanceTo(ankleTarget));
-    if (this.feet[i].contact > 0.97) this.stanceReachError = Math.max(this.stanceReachError || 0, _ankle.distanceTo(ankleTarget));
     const front = _front.set(Math.sin(footYaw), 0, Math.cos(footYaw)).add(_pole);
     this.writeBone(LIMB.thigh[i], this.basis(_v2.subVectors(hip, _knee), front, _q), hip);
     this.writeBone(LIMB.shin[i], this.basis(_v2.subVectors(_knee, _ankle), front, _q), _knee);
     return _ankle;
+  }
+
+  // Grounded escape animation, independent of the walking gait and evaluated only for visible people.
+  solveDive(time, groundY) {
+    const s = this.s;
+    const j = this.bind;
+    let frame = 0;
+    while (frame < DIVE_POSES.length - 2 && time > DIVE_POSES[frame + 1][0]) frame++;
+    const a = DIVE_POSES[frame];
+    const b = DIVE_POSES[frame + 1];
+    const t = smooth(a[0], b[0], time);
+    const pitch = lerp(a[2], b[2], t);
+    const footPitch = lerp(a[12], b[12], t);
+    const footClearance = ANKLE_H * Math.cos(footPitch) + 0.208 * Math.sin(footPitch);
+    qY(_qRoot, this.yaw);
+    _qPelvis.copy(_qRoot).multiply(qX(_q, pitch));
+    _pelvis.set(this.x, groundY + lerp(a[1], b[1], t) * s, this.z);
+    this.pelvisY = _pelvis.y;
+    this.writeBone(BONE.PELVIS, _qPelvis, _pelvis);
+    _qChest.copy(_qRoot).multiply(qX(_q, lerp(a[3], b[3], t)));
+    _chest.copy(j[BONE.CHEST]).sub(j[BONE.PELVIS]).multiplyScalar(s).applyQuaternion(_qPelvis).add(_pelvis);
+    this.writeBone(BONE.CHEST, _qChest, _chest);
+    _qa.copy(_qRoot).multiply(qX(_q, lerp(a[4], b[4], t)));
+    _v.copy(j[BONE.HEAD]).sub(j[BONE.CHEST]).multiplyScalar(s).applyQuaternion(_qChest).add(_chest);
+    this.writeBone(BONE.HEAD, _qa, _v);
+
+    for (let i = 0; i < 2; i++) {
+      const side = SIDES[i];
+      _shoulder.copy(j[LIMB.upperArm[i]]).sub(j[BONE.CHEST]).multiplyScalar(s).applyQuaternion(_qChest).add(_chest);
+      _target.set(side * lerp(a[7], b[7], t), lerp(a[5], b[5], t), lerp(a[6], b[6], t))
+        .multiplyScalar(s).applyQuaternion(_qRoot);
+      _target.x += this.x;
+      _target.y += groundY;
+      _target.z += this.z;
+      _pole.set(side * 0.9, 0.25, -0.5).applyQuaternion(_qRoot);
+      this.solveDiveLimb(LIMB.upperArm[i], LIMB.forearm[i], _shoulder, _target,
+        UPPER_ARM * s, (FOREARM + 0.07) * s, side * ARM_BIND_ABDUCTION);
+
+      _hip.copy(j[LIMB.thigh[i]]).sub(j[BONE.PELVIS]).multiplyScalar(s).applyQuaternion(_qPelvis).add(_pelvis);
+      const ankleIndex = 8 + i * 2;
+      _target.set(side * GAIT.spread, Math.max(footClearance, lerp(a[ankleIndex], b[ankleIndex], t)), lerp(a[ankleIndex + 1], b[ankleIndex + 1], t))
+        .multiplyScalar(s).applyQuaternion(_qRoot);
+      _target.x += this.x;
+      _target.y += groundY;
+      _target.z += this.z;
+      // Knees fold towards the chest, then tuck beneath the hips for the rise. A little outward bend keeps
+      // the knees clear of the pavement when the body is lying flat.
+      _pole.set(side * 0.45 * Math.sin(pitch), -0.2 * Math.sin(pitch), Math.cos(pitch)).applyQuaternion(_qRoot);
+      this.solveDiveLimb(LIMB.thigh[i], LIMB.shin[i], _hip, _target, THIGH * s, SHIN * s);
+      _qa.copy(_qRoot).multiply(qX(_q, footPitch));
+      this.writeBone(LIMB.foot[i], _qa, _ankle);
+      _v.copy(j[LIMB.toe[i]]).sub(j[LIMB.foot[i]]).multiplyScalar(s).applyQuaternion(_qa).add(_ankle);
+      this.writeBone(LIMB.toe[i], _qa, _v);
+    }
+  }
+
+  // Two-bone reach with an explicit bend direction for the bracing arms and folded legs of the dive.
+  solveDiveLimb(upper, lower, root, target, l1, l2, bindTilt = 0) {
+    _v.subVectors(target, root);
+    const length = _v.length();
+    _v.divideScalar(length || 1);
+    const dist = Math.max(Math.abs(l1 - l2) + 1e-3, Math.min((l1 + l2) * 0.999, length));
+    _pole.addScaledVector(_v, -_pole.dot(_v)).normalize();
+    const cosA = (l1 * l1 + dist * dist - l2 * l2) / (2 * l1 * dist);
+    _knee.copy(root).addScaledVector(_v, l1 * cosA).addScaledVector(_pole, l1 * Math.sqrt(Math.max(0, 1 - cosA * cosA)));
+    _ankle.copy(root).addScaledVector(_v, dist);
+    _front.set(0, 0, 1).applyQuaternion(_qChest);
+    this.basis(_v2.subVectors(root, _knee), _front, _qUpper).multiply(qZ(_q, -bindTilt));
+    this.writeBone(upper, _qUpper, root);
+    this.basis(_v2.subVectors(_knee, _ankle), _front, _q2).multiply(qZ(_q, -bindTilt));
+    this.writeBone(lower, _q2, _knee);
   }
 
   // Bones of the whole body from the feet, pelvis and gait state (world space)
@@ -1769,5 +2006,5 @@ class PersonRagdoll {
   }
 }
 
-Object.assign(window.CITY, { PERSON_BONES: BONE, buildPersonGeometry, createPersonMaterial, PersonCrowd, PersonRig, PersonRagdoll });
+Object.assign(window.CITY, { PEDESTRIAN_DIVE_DURATION, PERSON_BONES: BONE, buildPersonGeometry, createPersonMaterial, PersonCrowd, PersonRig, PersonRagdoll });
 })();

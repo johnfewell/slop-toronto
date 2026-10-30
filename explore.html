@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="city-build" content="__CITY_BUILD__" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Slop Toronto · Explore</title>
   <link rel="icon" href="./assets/logo-mark.svg" type="image/svg+xml" />
@@ -14,10 +15,10 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Slop Toronto" />
   <meta property="og:locale" content="en_CA" />
-  <meta property="og:url" content="https://slop-toronto.cloud6711.workers.dev/explore.html" />
+  <meta property="og:url" content="https://sloptoronto.ca/explore" />
   <meta property="og:title" content="Explore Toronto in 3D · Slop Toronto" />
   <meta property="og:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
-  <meta property="og:image" content="https://slop-toronto.cloud6711.workers.dev/assets/og-toronto.jpg" />
+  <meta property="og:image" content="https://sloptoronto.ca/assets/og-toronto.jpg" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -25,17 +26,24 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Explore Toronto in 3D · Slop Toronto" />
   <meta name="twitter:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
-  <meta name="twitter:image" content="https://slop-toronto.cloud6711.workers.dev/assets/og-toronto.jpg" />
+  <meta name="twitter:image" content="https://sloptoronto.ca/assets/og-toronto.jpg" />
   <meta name="twitter:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <!-- /social -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <script>
     // Download the city scripts while Three.js loads; execute them only after its imports are ready below.
     const cityAppScripts = (() => {
-      const assetVersion = '20261026-ttclive1';
       return [
         './js/quality.js',
-        './js/toronto-geodata.js',
+        './js/toronto-sidewalks.js',
+        './js/toronto-parking-meters.js',
+        './js/toronto-benches.js',
+        './js/toronto-city-facilities.js',
+        './js/toronto-wayfinding.js',
+        './js/toronto-cafeto.js',
+        './js/toronto-poles.js',
+        './js/toronto-tennis.js',
+        './js/toronto-rinks.js',
         './js/toronto-subway.js',
         './js/toronto-traffic-data.js',
         './js/toronto-transit.js',
@@ -52,6 +60,8 @@
         './js/vehicle-lights.js',
         './js/pedestrians.js',
         './js/lighting.js',
+        './js/sidewalk-polygons.js',
+        './js/sidewalk-sections.js',
         './js/city-grid.js',
         './js/terrain.js',
         './js/fire-escapes.js',
@@ -60,8 +70,17 @@
         './js/toronto-landmarks.js',
         './js/landmarks.js',
         './js/signage.js',
+        './js/mapped-poles.js',
         './js/street-details.js',
         './js/street-props.js',
+        './js/parking-meter-layout.js',
+        './js/bench-layout.js',
+        './js/patio-layout.js',
+        './js/cafeto-patios.js',
+        './js/wayfinding.js',
+        './js/tennis.js',
+        './js/sports-terrain.js',
+        './js/rinks.js',
         './js/park-signs.js',
         './js/bike-share-stations.js',
         './js/bike-share.js',
@@ -70,8 +89,10 @@
         './js/road-network.js',
         './js/road-paint.js',
         './js/pedestrian-routes.js',
+        './js/vehicle-physics.js',
         './js/traffic.js',
         './js/pedestrian-signals.js',
+        './js/transit-riding.js',
         './js/streetcars.js',
         './js/transit-buses.js',
         './js/rail-corridor.js',
@@ -81,6 +102,9 @@
         './js/touch-controls.js',
         './js/gamepad-controls.js',
         './js/cameras.js',
+        './js/streetcar-ride.js',
+        './js/subway-service.js',
+        './js/subway-ride.js',
         './js/city-map.js',
         './js/navigation.js',
         './js/tour-guide.js',
@@ -97,8 +121,21 @@
         './js/audio-acoustics.js',
         './js/audio-sources.js',
         './js/audio-system.js',
+        './js/measurements.js',
+        './js/capture-clock.js',
+        './js/postcards.js',
+        './js/photo-images.js',
+        './js/photo-mode.js',
+        './js/mp-protocol.js',
+        './js/multiplayer.js',
         './js/main.js'
-      ].map((src) => `${src}?v=${assetVersion}`);
+      ];
+    })();
+    // The city database (window.CITY.GEO): data/toronto-geodata.bin (tools/build-geodata.mjs, which sets its version to
+    // the file's hash), fetched and decoded by js/geodata-loader.js while three.js loads
+    const cityGeo = (() => {
+      const bin = fetch('./data/toronto-geodata.bin?v=1c2763c1c4b8');
+      return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
     for (const src of cityAppScripts) {
       const preload = document.createElement('link');
@@ -112,7 +149,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&amp;family=Overpass:wght@600;700&amp;display=swap" />
-  <link rel="stylesheet" href="./css/style.css?v=20261026-ttclive1" />
+  <link rel="stylesheet" href="./css/style.css" />
   <!-- three.js dev branch pinned to commit e27dfa95ae (2026-10-23) via jsDelivr: mrdoob's engine needs dev (it crawls at 1 fps on the 0.186.1 release) -->
   <script type="importmap">
     {
@@ -124,6 +161,10 @@
       }
     }
   </script>
+  <!-- Umami analytics (self-hosted, no cookies), counting visits only on the production hosts (data-domains).
+       Session replay is deliberately left out (counter only).
+       async, not defer: deferred scripts run in document order, so the city's module script below would wait for them. -->
+  <script async src="https://umami.cloud6711.workers.dev/script.js" data-website-id="75a0f1a3-3bb4-4dd9-adde-eade0b719665" data-domains="sloptoronto.ca,www.sloptoronto.ca"></script>
 </head>
 <body>
   <!-- Icon sprite (24 × 24 stroke icons, drawn in currentColor) -->
@@ -339,6 +380,7 @@
         <div class="pc-fact"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-pin"/></svg><span id="pc-address"></span></div>
         <div class="pc-fact"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-locate"/></svg><span id="pc-distance"></span></div>
       </div>
+      <div id="pc-city-info" class="pc-city-info" hidden></div>
       <div class="pc-actions">
         <button id="pc-directions" class="btn btn-primary" type="button"><svg class="icon" aria-hidden="true"><use href="#i-directions"/></svg>Directions</button>
         <button id="pc-go" class="btn" type="button"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>Go there</button>
@@ -402,6 +444,10 @@
       <button id="btn-open-map" class="tool-btn" type="button" title="Full Toronto street map [M]">
         <svg class="icon" aria-hidden="true"><use href="#i-map"/></svg><span class="tool-label">Map</span><kbd>M</kbd>
       </button>
+      <button id="btn-mp" class="tool-btn" type="button" title="Ride with a friend: copies a link to your own room" hidden>
+        <span class="mp-dot" aria-hidden="true"></span><span id="mp-count" class="tool-label">Just you</span>
+      </button>
+      <button id="btn-mp-leave" class="tool-btn icon-only" type="button" title="Leave this room for the public one" aria-label="Leave this room" hidden>&times;</button>
       <button id="btn-help" class="tool-btn icon-only" type="button" title="Controls &amp; help [?]" aria-label="Controls and help">
         <svg class="icon" aria-hidden="true"><use href="#i-help"/></svg>
       </button>
@@ -417,6 +463,9 @@
 
   <!-- Teleport Destinations (native popover: light-dismiss & Esc) -->
   <div id="teleport-popover" class="popover" popover data-side="below" data-anchor="hud-toolbar" aria-label="Teleport the active player">
+    <div class="pop-title">Featured ride</div>
+    <button id="tp-ride504" class="pop-item tp-btn ride-btn" data-ride="504" type="button"><span class="pop-name">Ride the 504 along King</span><span class="pop-sub">Board a King streetcar · sit back &amp; watch the city</span></button>
+    <button class="pop-item tp-btn ride-btn" data-ride="subway" type="button"><span class="pop-name">Ride the subway across the Don Valley</span><span class="pop-sub">Castle Frank ↔ Broadview · Line 2</span></button>
     <div class="pop-title">Go to a sight</div>
     <button id="tp-humberArch" class="pop-item tp-btn" data-teleport="humberArch" type="button"><span class="pop-name">Humber Bay Arch Bridge</span><span class="pop-sub">Martin Goodman Trail · Humber Bay</span></button>
     <button id="tp-cnTower" class="pop-item tp-btn" data-teleport="cnTower" type="button"><span class="pop-name">CN Tower</span><span class="pop-sub">Bremner Blvd · Entertainment District</span></button>
@@ -441,6 +490,8 @@
 
   <!-- Bottom-Center: Third-Person Mode Switcher & Controls Guide -->
   <footer class="hud hud-bottom-center">
+    <!-- the streetcar at hand: board it [E] (a button on touch screens), or the stop to wait at -->
+    <button id="ride-prompt" class="panel ride-prompt" type="button" hidden><kbd>E</kbd><span id="ride-prompt-text"></span></button>
     <div id="hud-controls-hint" class="controls-hint"></div>
     <nav id="mode-switch" class="panel mode-switch" aria-label="Third-Person Navigation Mode">
       <span class="mode-indicator" aria-hidden="true"></span>
@@ -458,6 +509,18 @@
       </button>
     </nav>
   </footer>
+
+  <!-- Top-Center: aboard a streetcar, its route, destination & next stop -->
+  <div class="hud hud-top-center">
+    <section id="ride-hud" class="panel ride-hud" hidden aria-live="polite" aria-label="Streetcar ride">
+      <div class="ride-head"><span id="ride-num" class="ride-num">504</span><span id="ride-route" class="ride-route"></span></div>
+      <div class="ride-next"><span id="ride-next-label" class="ride-next-label">Next stop</span><span id="ride-next" class="ride-next-name"></span></div>
+      <button id="ride-status" class="ride-status" type="button"></button>
+      <button id="subway-other-platform" class="ride-cancel" type="button" hidden>Change to the other platform</button>
+      <button id="ride-cancel" class="ride-cancel" type="button">Return to where I boarded</button>
+    </section>
+  </div>
+  <div id="ride-fade" class="ride-fade" aria-hidden="true"></div>
 
   <!-- Center: the car's wreck notice while it waits to restart -->
   <div id="hud-wrecked" class="wrecked" role="status" hidden>
@@ -659,6 +722,14 @@
           <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-heli"/></svg>Fly <kbd>4</kbd></h3>
           <ul><li><kbd>W</kbd><kbd>S</kbd> Pitch · <kbd>A</kbd><kbd>D</kbd> Yaw</li><li><kbd>Space</kbd>/<kbd>E</kbd> Up · <kbd>Q</kbd>/<kbd>C</kbd> Down</li><li><kbd>Shift</kbd> Boost</li></ul>
         </section>
+        <section class="help-sec" data-help-mode="streetcar">
+          <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-bus"/></svg>Ride a streetcar</h3>
+          <ul><li>Walking or cycling, at a stop: <kbd>E</kbd> boards the car with its doors open</li><li><kbd>E</kbd> at a stop gets off · between stops, requests the next</li><li><kbd>V</kbd> Seat / chase view · drag to look round</li><li>Sights menu: <b>Ride the 504 along King</b></li></ul>
+        </section>
+        <section class="help-sec" data-help-mode="subway">
+          <h3>Ride Line 2</h3>
+          <ul><li>Sights: <b>Ride the subway across the Don Valley</b></li><li><kbd>E</kbd> enters a supported station, boards an open train or gets off at arrival</li><li>Castle Frank ↔ Broadview · use the other-platform button to return</li><li><kbd>V</kbd> Seat / exterior view on the viaduct</li></ul>
+        </section>
         <section class="help-sec help-keys">
           <h3><svg class="icon icon-sm" aria-hidden="true"><use href="#i-camera"/></svg>Look &amp; view</h3>
           <ul><li>Drag to orbit · scroll to zoom</li><li><kbd>V</kbd> Next camera · <kbd>5</kbd>–<kbd>0</kbd> Cameras &amp; sights</li><li><kbd>H</kbd> Clean view · <kbd>?</kbd> This help</li><li><kbd>N</kbd> Sound on / off</li></ul>
@@ -709,6 +780,8 @@
         new Promise((resolve) => setTimeout(() => resolve(null), 3000))
       ])
       : null;
+
+    window.CITY.GEO = await cityGeo;
 
     for (const src of cityAppScripts) {
       const s = document.createElement('script');

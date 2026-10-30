@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "variants": [],
+  "reviewed": [
+    {
+      "pattern": "ttc:94:1:3:b5461fb08a",
+      "same": true,
+      "maxStray": 90,
+      "note": "94A Wellesley west to Ossington Station: the 8-trip and 60-trip Wednesday shapes call at the same stops and differ only in the loop into Ossington Station (85 m at most, beside Ossington Station at Bus Bay 4). Reviewed 2026-10-28 against GTFS 2026-09-30: one stopping pattern."
+    }
+  ],
+  "aliases": {}
+}

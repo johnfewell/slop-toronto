@@ -4,7 +4,12 @@ const { join } = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 
-const source = readFileSync(join(__dirname, '../js/cameras.js'), 'utf8');
+const read = (path) => readFileSync(join(__dirname, '..', path), 'utf8');
+const source = read('js/cameras.js');
+// The scenic presets look out from Toronto's real geography (the CN Tower, the teleport arrivals, lat / lon shore points)
+const city = vm.createContext({ window: { CITY: {} } });
+for (const path of ['js/toronto-geodata.js', 'js/city-config.js']) vm.runInContext(read(path), city);
+const CITY = city.window.CITY;
 
 class Vector3 {
   constructor(x = 0, y = 0, z = 0) { this.set(x, y, z); }
@@ -57,7 +62,7 @@ function cameraHarness(entity = {
   };
   window.innerWidth = 1600;
   window.innerHeight = 900;
-  window.CITY = { THREE: { Vector3, PerspectiveCamera } };
+  window.CITY = { ...CITY, THREE: { Vector3, PerspectiveCamera } };
   vm.runInNewContext(source, { window, document });
   const camera = new window.CITY.CameraSystem(canvas, { getActiveEntity: () => entity });
   return {
@@ -179,7 +184,7 @@ test('mouse orbit and wheel zoom retain their behavior and bounds', () => {
   close(h.camera.zoomMultiplier, 2.4);
 });
 
-for (const preset of ['chase', 'observatory', 'drone']) {
+for (const preset of ['chase', 'skyline', 'cnTower', 'humberBay', 'drone']) {
   test(`teleport after driving, orbiting and ${preset} snaps to a fresh chase view`, () => {
     const h = cameraHarness();
     h.entity.speed = 45;
@@ -190,9 +195,12 @@ for (const preset of ['chase', 'observatory', 'drone']) {
     h.pointer(h.canvas, 'pointerup', 1, 200, 80);
     h.canvas.dispatch('wheel', { deltaY: 1000, preventDefault() {} });
     h.camera.setCameraPreset(preset, true);
+    assert.equal(h.camera.activePresetId, preset, 'a real Toronto camera preset');
     h.camera.update(1 / 60, 4);
 
-    h.entity.position.set(-200, 20, 5300);
+    // the Union Station teleport arrival on Bay Street
+    const arrival = CITY.TELEPORT_LOCATIONS.unionStation;
+    h.entity.position.set(arrival.x, 20, arrival.z);
     h.entity.heading = -Math.PI / 2;
     h.entity.speed = 0;
     h.camera.resetForTeleport();
@@ -201,7 +209,7 @@ for (const preset of ['chase', 'observatory', 'drone']) {
     assert.equal(h.camera.camera.fov, fresh.camera.fov);
     // Compare arrival, follow re-anchoring, and movement after arrival, including a change in height.
     for (let i = 0; i < 3; i++) {
-      if (i === 2) h.entity.position.set(-205, 23, 5304);
+      if (i === 2) h.entity.position.set(arrival.x - 5, 23, arrival.z + 4);
       h.camera.update(1 / 60, 5 + i / 60);
       fresh.update(1 / 60, 5 + i / 60);
       for (const field of ['currentPos', 'currentLookAt']) {

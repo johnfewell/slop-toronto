@@ -798,9 +798,10 @@ class CityMapSystem {
   }
 
   toggleFullMap(open) {
-    this.isFullMapOpen = Boolean(open);
+    open = Boolean(open);
+    if (this.onToggle?.(open) === false) return false;
+    this.isFullMapOpen = open;
     if (!this.isFullMapOpen) this.cancelPan();
-    if (this.onToggle) this.onToggle(this.isFullMapOpen);
     if (!this.modal) return;
     this.modal.classList.toggle('hidden', !this.isFullMapOpen);
     if (this.isFullMapOpen) {

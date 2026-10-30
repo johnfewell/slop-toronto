@@ -123,17 +123,37 @@ async function initApp() {
   markInit('signage');
   const allColliders = [...landmarkColliders, ...cityBlocks.colliders, ...boroughs.colliders, ...(cityGrid.colliders || [])];
 
+  const tennis = window.CITY.buildTennis?.(scene, allColliders);
+  if (tennis) allColliders.push(...tennis.colliders);
+  // The City's rink and skate-trail outlines in their scene-date season (rinks.js); after tennis, whose paving one meets
+  const rinks = window.CITY.buildRinks?.(scene, allColliders);
+  if (rinks) allColliders.push(...rinks.colliders);
+
   const streetDetails = buildStreetDetails(scene);
+  // These positions are procedural park/yard trees; the City street-tree
+  // inventory is loaded separately and remains intact.
+  if (tennis || rinks) {
+    const clear = streetDetails.treePositions.filter((t) => !(tennis && (tennis.sites.some((s) => window.CITY.onCourt(s,t.x,t.z,1))||tennis.pads.some((p)=>window.CITY.inTennisPad(p,t.x,t.z))))&&!(rinks && rinks.sites.some((s)=>window.CITY.inRecord(s,t.x,t.z,1))));
+    streetDetails.treePositions.length = 0;
+    streetDetails.treePositions.push(...clear);
+  }
   markInit('streetDetails');
   // Trees: the City's street trees & the parkland ones in John's EZ-Tree models (ez-trees.js), else mrdoob's
   const treeMode = new URLSearchParams(location.search).get('trees'); // ?trees=slop: mrdoob's trees (comparison)
   if (window.CITY.clearParkSignTrees) window.CITY.clearParkSignTrees(streetDetails.treePositions); // (park-signs.js)
-  if (treeMode === 'slop' || !(await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees();
+  if (treeMode === 'slop' || !(await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees(allColliders);
   markInit('trees');
   // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
-  await window.CITY.buildStreetProps(scene);
-  // the flexi-posts on the cycle tracks' separators (cycling.js)
-  if (window.CITY.buildBikePosts) window.CITY.buildBikePosts(scene);
+  // Street furniture is solid (world-collision.js prop colliders; ?propcolliders=0 leaves the new ones out, for A/B):
+  // the props, the cycle tracks' separators & flexi-posts, the streetlight & signal poles. The Open Data furniture's
+  // colliders (parking pay stations, benches, TO360 signs & pillars) are always in
+  const propColliders = new URLSearchParams(location.search).get('propcolliders') !== '0' ? allColliders : [];
+  const streetProps = await window.CITY.buildStreetProps(scene, allColliders);
+  for (const c of streetProps.colliders || []) (c.openData ? allColliders : propColliders).push(c);
+  const wayfindingMaps=window.CITY.buildWayfindingMaps?.(streetProps.group);
+  // the flexi-posts on the cycle tracks' separators, and the separators' & posts' colliders (cycling.js)
+  if (window.CITY.buildBikePosts) propColliders.push(...(window.CITY.buildBikePosts(scene)?.colliders || []));
+  propColliders.push(...(streetDetails.colliders || []));
   // the City's park name signs at the parks' entrances, each with its park's name & address (park-signs.js)
   if (window.CITY.buildParkSigns) {
     const parkSigns = await window.CITY.buildParkSigns(scene);
@@ -143,6 +163,13 @@ async function initApp() {
   // Bike Share Toronto's stations, docks, pay stations & (live) bikes (bike-share.js)
   const bikeShare = window.CITY.buildBikeShare ? await window.CITY.buildBikeShare(scene) : null;
   if (bikeShare) allColliders.push(...bikeShare.colliders);
+  // the City's CaféTO sidewalk & curb lane cafés, placed by rule clear of everything above (cafeto-patios.js)
+  const patioFurniture = [['bench', 'benchStats'], ['parkingMeter', 'parkingMeterStats'], ['wayfinding', 'wayfindingStats'], ['infoPillar', 'infoPillarStats']]
+    .flatMap(([kind, key]) => (window.CITY[key]?.sites || []).map((s) => ({ x: s.x, z: s.z, kind })));
+  const patios = window.CITY.buildPatios
+    ? window.CITY.buildPatios(scene, allColliders, { furniture: patioFurniture, bikeShareAt: window.CITY.bikeShareAt })
+    : { colliders: [], pedestrianObstacles: [] };
+  allColliders.push(...patios.colliders);
   // Yonge & Dundas: the screens round Sankofa Square (yonge-dundas.js)
   window.CITY.buildYongeDundas(scene);
   markInit('streetProps');
@@ -151,11 +178,20 @@ async function initApp() {
   const trafficSystem = createTrafficSystem(scene, cityGrid.sidewalks, [
     ...cityGrid.footprints,
     ...streetDetails.footprints,
-    ...allColliders.filter((c) => !c.obb && !c.polygon) // (nor the landmarks' drawn outlines: js/world-collision.js)
-  ]);
+    ...allColliders.filter((c) => !c.obb && !c.polygon && !c.circle), // (nor the landmarks' drawn outlines: js/world-collision.js)
+    ...patios.pedestrianObstacles // (the sidewalk cafés standing on the walkers' outer line: it goes round them)
+  ], {
+    // the solid street furniture, by its own turned box or circle, that the walkers' lines step round (pedestrian-
+    // routes.js detours, after mrdoob's 2bcd413): what the filter above leaves out, the street props, benches, shelters,
+    // Bike Share, every café and the turned buildings among it, at ground level (not a deck's or a soffit's); the poles
+    // are in streetDetails.footprints already. ?peddetours=0: the lines an obstacle crosses dropped, as before
+    obstacles: allColliders.filter((c) => (c.obb || c.circle) && c.kind !== 'pole' && !(c.minY > 2)),
+    detours: new URLSearchParams(location.search).get('peddetours') !== '0'
+  });
+  window.CITY.auditPatioLanes?.(trafficSystem.network);
   markInit('traffic');
   // the people's heads at every crosswalk, the midblock signals & the pedestrian crossovers (pedestrian-signals.js)
-  if (window.CITY.buildPedestrianSignals) window.CITY.buildPedestrianSignals(scene, trafficSystem, streetDetails.signalClock);
+  if (window.CITY.buildPedestrianSignals) propColliders.push(...(window.CITY.buildPedestrianSignals(scene, trafficSystem, streetDetails.signalClock)?.colliders || []));
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
   // --- Toronto layer (after aalghooneh/slop-toronto): the TTC's streetcars, which the traffic keeps behind ---
   const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
@@ -185,6 +221,7 @@ async function initApp() {
   const PLAYER_STATE_KEY = 'toronto-player-state';
   const keepPlayerState = !new URLSearchParams(location.search).has('film');
   let restoredPlayer = false;
+  let restoredPrivateZone = null; // (multiplayer.js: the private zone round the real location, kept on this device only)
   if (keepPlayerState) {
     try {
       const saved = JSON.parse(localStorage.getItem(PLAYER_STATE_KEY));
@@ -197,28 +234,50 @@ async function initApp() {
         }
         controllerManager.setMode(Object.hasOwn(controllerManager.entities, saved.activeMode) ? saved.activeMode : 'cyclist');
         restoredPlayer = true;
+        restoredPrivateZone = saved.privateZone || null;
       }
     } catch { /* missing or unavailable storage does not prevent riding */ }
   }
+  let rideSession = null, subwayRide = null, tourGuide = null, gamepadControls = null, cityAudio = null, shaderTimeHold = null, photoCapture = null;
   function savePlayerState() {
     if (!keepPlayerState) return;
     try {
-      const entities = Object.fromEntries(Object.entries(controllerManager.entities).map(([mode, entity]) => [mode, {
+      const entities = Object.fromEntries(Object.entries(controllerManager.entities).map(([mode, entity]) => [mode, rideSession?.savedGround(mode) || {
         x: entity.position.x, y: entity.position.y, z: entity.position.z, heading: entity.heading
       }]));
-      localStorage.setItem(PLAYER_STATE_KEY, JSON.stringify({ version: 1, activeMode: controllerManager.activeMode, entities }));
+      localStorage.setItem(PLAYER_STATE_KEY, JSON.stringify({ version: 1, activeMode: rideSession?.surfaceMode || subwayRide?.surfaceMode || controllerManager.activeMode, entities,
+        privateZone: multiplayer ? multiplayer.privateZone : restoredPrivateZone }));
     } catch { /* storage may be disabled or full */ }
   }
-  window.addEventListener('pagehide', savePlayerState);
+  window.addEventListener('pagehide', () => { savePlayerState(); cancelTransit(); tourGuide?.endNavigation(); cityAudio?.system.setPresentationPaused(true); });
+  window.addEventListener('pageshow', () => { controllerManager.resetInput(); if (!window.__CITY_APP?.deviceLost && !rideSession?.held) cityAudio?.system.setPresentationPaused(false); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) savePlayerState(); });
   // --- end restored visits
   const cameraSystem = new CameraSystem(renderer.domElement, controllerManager);
   const touchControls = new TouchControls(controllerManager);
+  // Riding a streetcar: [E] at a stop boards the car standing there, [E] at a stop gets off (streetcar-ride.js)
+  rideSession = window.CITY.createTransitRideSession({ controllerManager, cameraSystem,
+    onAcquire: () => { tourGuide?.endNavigation(); }, onOverlayChange,
+    canOverlay: () => !window.__CITY_APP?.film?.active && !window.__CITY_APP?.deviceLost });
+  const streetcarRide = window.CITY.createStreetcarRide({
+    scene, streetcars, controllerManager, cameraSystem, selectCamera, onChange: onRideChange, session: rideSession,
+    trafficSystem,
+    canInteract: () => !window.CITY.uiOverlay && !subwayRide?.inside && !subwayRide?.hasEntranceCandidate && !document.hidden,
+    isBlocked: (p, radius) => [...highwayTraffic.cars, ...(railCorridor.cars || [])].some((v) =>
+      (v.sections || [v]).some((q) => Math.abs((q.y || 0) - p.y) < 2 && Math.hypot(q.x - p.x, q.z - p.z) < radius + (v.half || 2.5)))
+  });
+  subwayRide = window.CITY.createSubwayRide({ scene, subway, controllerManager, cameraSystem, session: rideSession,
+    selectCamera, onChange: onRideChange,
+    canInteract: () => !window.CITY.uiOverlay && !document.hidden
+  });
+  // Other people in the city (multiplayer.js): its models are made now, so the warm-up frame compiles them; it joins a
+  // room once the city is on screen (null with ?mp=0 or no server to reach)
+  const multiplayer = window.CITY.createMultiplayer ? window.CITY.createMultiplayer({ scene, controllerManager, privateZone: restoredPrivateZone }) : null;
   markInit('controllers');
 
   // City-wide static geometry: chunk & distance-cull the small props, shadow stand-ins for the big casters
   // (scene-culling.js)
-  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain']
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
@@ -230,6 +289,7 @@ async function initApp() {
     root.updateMatrixWorld = () => {}; // (three r187 walks every descendant even with the auto-update flags off)
     root.traverse((o) => { if (o.isLight) staticLights.push(o); });
   }
+  cullingStats.gatedInstances = window.CITY.gateEmptyInstances(scene);
   markInit('culling');
 
   // On WebGPU, small InstancedMeshes (<= 1000 instances) keep their matrices in uniform buffers that three.js
@@ -369,14 +429,18 @@ async function initApp() {
   }
   // --- end crash damage HUD
   // A gamepad drives too (gamepad-controls.js): its bumpers step the mode, Y the camera, Start the map
-  const gamepadControls = new GamepadControls(controllerManager, cameraSystem, {
+  gamepadControls = new GamepadControls(controllerManager, cameraSystem, {
     onCycleMode: (step) => {
       const modes = ['person', 'car', 'cyclist', 'helicopter'];
       selectMode(modes[(modes.indexOf(controllerManager.activeMode) + step + modes.length) % modes.length]);
     },
+    onInteract: () => subwayRide.action() || streetcarRide.action(),
     onCycleCamera: (step) => cycleCamera(step),
     onToggleMap: () => mapSystem.toggleFullMap(!mapSystem.isFullMapOpen),
-    onCloseMap: () => mapSystem.toggleFullMap(false)
+    onCloseMap: () => mapSystem.toggleFullMap(false),
+    onOverlayInput: (input) => {
+      if (!window.__CITY_APP?.photoMode?.onGamepad(input) && input.back) rideSession.closeOverlay();
+    }
   });
 
   // Keyboard guide for each mode: [keys, action]
@@ -384,11 +448,14 @@ async function initApp() {
     person: [[['W', 'S'], 'Walk'], [['A', 'D'], 'Turn'], [['Shift'], 'Sprint'], [['Space'], 'Jump'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
     car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Floor it'], [['Space'], 'Handbrake'], [['B'], 'Horn'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
     cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['B'], 'Bell'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
-    helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']]
+    helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']],
+    streetcar: [[['E'], 'Get off / Request stop'], [['V'], 'Seat / Chase'], [['Drag'], 'Look around']],
+    subway: [[['E'], 'Get off at arrival'], [['V'], 'Seat / Exterior on viaduct'], [['Drag'], 'Look around']],
+    station: [[['W', 'S'], 'Walk along platform'], [['A', 'D'], 'Turn'], [['E'], 'Board train']]
   };
   // Top speeds in km/h (controllers.js: 8.2, 19 & 52 m/s; the car runs out of power against the air near 230): full
   // scale of the speed meter
-  const topSpeedKmh = { person: 30, car: 230, cyclist: 68, helicopter: 187 };
+  const topSpeedKmh = { person: 30, car: 230, cyclist: 68, helicopter: 187, streetcar: 45, subway: 60, station: 30 };
 
   function renderControlHints(mode) {
     if (!elControlsHint) return;
@@ -418,7 +485,11 @@ async function initApp() {
   }
 
   function selectMode(mode) {
-    controllerManager.setMode(mode);
+    if (!cancelTransit()) return false;
+    tourGuide?.setAutoDrive(false);
+    const previousMode = controllerManager.activeMode;
+    if (!controllerManager.switchMode(mode)) return;
+    if (mode !== previousMode) cameraSystem.resetForTeleport();
     touchControls.setMode(controllerManager.activeMode);
     gamepadControls.reset();
     modeButtons.forEach((btn) => {
@@ -438,26 +509,72 @@ async function initApp() {
   }
 
   function selectCamera(camId, snap = false) {
+    // aboard a streetcar: the seat (POV) or the chase over the car (the low action camera would sit in its body)
+    if (rideSession.active && camId !== 'pov' && camId !== 'chase') camId = 'chase';
+    if (subwayRide?.inside && (!subwayRide.active || !subwayRide.canChase)) camId = 'pov';
+    if (streetcarRide.active) streetcarRide.car.hideBody = camId === 'pov';
     cameraSystem.setCameraPreset(camId, snap);
+    updateCameraUI();
+  }
+  function updateCameraUI() {
     cameraButtons.forEach((btn) => {
-      btn.classList.toggle('active', btn.getAttribute('data-camera') === camId);
+      btn.classList.toggle('active', btn.getAttribute('data-camera') === cameraSystem.activePresetId);
     });
     const preset = cameraSystem.getActivePreset();
-    if (elCamera) elCamera.textContent = preset.name;
+    if (elCamera) elCamera.textContent = rideSession.active && preset.id === 'pov' ? `${rideSession.entity.label} seat` : preset.name;
+  }
+
+  // On & off a streetcar: the HUD's mode, hints & touch controls
+  function onRideChange(active) {
+    active = rideSession.active;
+    document.body.classList.toggle('riding-transit', active);
+    document.body.classList.toggle('in-subway', !!subwayRide?.inside);
+    const ent = controllerManager.getActiveEntity();
+    if (elMode) elMode.textContent = active ? rideSession.entity.label : subwayRide?.inside ? `${subwayRide.station.name} platform` : ent.label;
+    renderControlHints(active ? rideSession.entity.type : subwayRide?.inside ? 'station' : controllerManager.activeMode);
+    updateInputAvailability();
+    if (!active) updateCameraUI();
+    modeButtons.forEach((btn) => btn.classList.toggle('active', btn.getAttribute('data-mode') === controllerManager.activeMode));
+    touchControls.setMode(controllerManager.activeMode);
+    document.body.dataset.mode = controllerManager.activeMode;
+    placeModeIndicator();
+  }
+  // The featured ride: on a 504 along King (the teleport menu, #ride=504), walking or on the bike
+  function cancelTransit() {
+    return rideSession?.cancel() ?? true;
+  }
+  function rideFeatured(route = '504') {
+    if (!cancelTransit()) return false;
+    if (route === 'subway' || route === '2') {
+      if (!['person', 'cyclist'].includes(controllerManager.activeMode)) selectMode('person');
+      return subwayRide.featured();
+    }
+    if (controllerManager.activeMode !== 'person' && controllerManager.activeMode !== 'cyclist') selectMode('cyclist');
+    touchControls.reset();
+    gamepadControls.reset();
+    return streetcarRide.featured(route);
   }
 
   // Steps through CAMERA_PRESETS (V / Shift+V, and the arrows either side of the camera name)
   function cycleCamera(step) {
+    if (rideSession.active) return selectCamera(cameraSystem.activePresetId === 'pov' ? 'chase' : 'pov', true);
+    if (subwayRide.inside) return selectCamera('pov', true);
     const n = CAMERA_PRESETS.length;
     const idx = CAMERA_PRESETS.findIndex((p) => p.id === cameraSystem.activePresetId);
     selectCamera(CAMERA_PRESETS[(idx + step + n) % n].id, true);
   }
 
   function selectTime(timeId) {
-    lightingSystem.applyPreset(timeId);
+    applyVisualTime(timeId);
+    if (rideSession.held) return;
     if (trafficSystem.setHour && window.CITY.SUN_HOURS[timeId] !== undefined) trafficSystem.setHour(window.CITY.SUN_HOURS[timeId]); // (the City's volumes at that hour)
     if (window.CITY.TRANSIT) window.CITY.TRANSIT.setTime(timeId); // the TTC's headways for that hour (transit.js)
-    colorGrade.applyPreset(lightingSystem.activePresetId);
+  }
+  // The same visual seam serves photo overrides now and continuous environment state later.
+  function applyVisualTime(timeId) {
+    const apply = () => { lightingSystem.applyPreset(timeId); colorGrade.applyPreset(lightingSystem.activePresetId); };
+    if (shaderTimeHold) shaderTimeHold.render(apply, { hold: rideSession.held });
+    else apply();
     timeButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-time') === timeId);
     });
@@ -577,6 +694,8 @@ async function initApp() {
   }
 
   function teleportTo(x, z, heading = Math.PI) {
+    if (!cancelTransit()) return null;
+    tourGuide?.setAutoDrive(false);
     const destination = controllerManager.teleportActiveTo(x, z, heading);
     touchControls.reset();
     gamepadControls.reset();
@@ -585,14 +704,18 @@ async function initApp() {
     return destination;
   }
 
+  let mapOverlay = null, helpOverlay = null;
   const mapSystem = new CityMapSystem({
     controllerManager,
     cameraSystem,
     trafficSystem,
     onToggle: (open) => {
-      controllerManager.resetInput();
-      touchControls.setEnabled(!open);
-      gamepadControls.setEnabled(!open);
+      if (open) {
+        if (window.CITY.uiOverlay === 'help') toggleHelp(false);
+        if (window.CITY.uiOverlay && window.CITY.uiOverlay !== 'map') return false;
+        if (!mapOverlay) mapOverlay = openUiOverlay('map', { onClose: () => { mapOverlay = null; if (mapSystem.isFullMapOpen) mapSystem.toggleFullMap(false); } });
+        if (!mapOverlay) return false;
+      } else { mapOverlay?.release(); mapOverlay = null; }
       const mapHint = document.getElementById('fullmap-hover-info');
       if (open && touchControls.available && mapHint) {
         mapHint.textContent = 'Tap a place for directions · Drag to pan · Pinch to zoom';
@@ -602,19 +725,62 @@ async function initApp() {
   });
 
   // The tour guide: search, directions, navigation & Tour Drive (tour-guide.js)
-  const tourGuide = createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode });
+  tourGuide = createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode, onPlaceChange: (open) => touchControls.setPanelOpen(open) });
 
   // The city's sound (audio-system.js): from the first click or key; [N] mutes, [B] horn / bike bell
-  const cityAudio = window.CITY.createCityAudio({ controllerManager, trafficSystem, highwayTraffic, streetDetails, cameraSystem, lightingSystem, mapSystem });
+  cityAudio = window.CITY.createCityAudio({ controllerManager, trafficSystem, highwayTraffic, streetDetails, cameraSystem, lightingSystem, mapSystem });
+
+  function updateInputAvailability() {
+    const blocked = !!window.CITY.uiOverlay;
+    controllerManager.resetInput(); touchControls.reset(); gamepadControls?.reset();
+    touchControls.setEnabled(!blocked && !rideSession.active);
+    gamepadControls?.setEnabled(!blocked);
+  }
+  function onOverlayChange(current, previous) {
+    if (current?.hold) {
+      shaderTimeHold?.pause();
+      window.CITY.TRANSIT?.setPresentationHeld(true);
+      cityAudio?.system.setPresentationPaused(true);
+    } else if (previous?.hold) {
+      photoCapture?.release();
+      shaderTimeHold?.release({ resume: true });
+      lastTime = performance.now();
+      window.CITY.TRANSIT?.setPresentationHeld(false);
+      cityAudio?.system.setPresentationPaused(false);
+    }
+    measurements?.markDiscontinuity(current?.hold || previous?.hold ? 'paused' : 'discontinuity');
+    updateInputAvailability();
+  }
+  function openUiOverlay(id, options = {}) {
+    if (!window.__CITY_APP?.ready || window.__CITY_APP.film?.active || document.hidden) return false;
+    const originalTime = lightingSystem.activePresetId;
+    const originalCloudPhase = skyClouds?.context?.time;
+    const lease = rideSession.openOverlay(id, { ...options, onClose: (result) => {
+      if (options.hold && lightingSystem.activePresetId !== originalTime) applyVisualTime(originalTime);
+      if (options.hold && Number.isFinite(originalCloudPhase) && skyClouds?.context) skyClouds.context.time = originalCloudPhase;
+      options.onClose?.(result);
+    } });
+    if (lease && options.hold) {
+      const pos = cameraSystem.currentPos.toArray(), look = cameraSystem.currentLookAt.toArray(), fov = cameraSystem.camera.fov;
+      cameraSystem.cinema = () => ({ pos, look, fov });
+    }
+    return lease;
+  }
 
   // Help: every control at a glance ([?] / F1)
   const helpModal = document.getElementById('help-modal');
   function toggleHelp(open = helpModal && helpModal.hidden) {
     if (!helpModal) return;
+    if (open) {
+      if (window.CITY.uiOverlay === 'map') mapSystem.toggleFullMap(false);
+      if (window.CITY.uiOverlay && window.CITY.uiOverlay !== 'help') return false;
+      if (!helpOverlay) helpOverlay = openUiOverlay('help', { onClose: () => { helpModal.hidden = true; helpOverlay = null; helpBtn?.focus(); } });
+      if (!helpOverlay) return false;
+    } else { helpOverlay?.release(); helpOverlay = null; }
     helpModal.hidden = !open;
     controllerManager.resetInput();
     if (open) {
-      const card = helpModal.querySelector(`[data-help-mode="${controllerManager.activeMode}"]`);
+      const card = helpModal.querySelector(`[data-help-mode="${rideSession.active ? rideSession.entity.type : controllerManager.activeMode}"]`);
       helpModal.querySelectorAll('[data-help-mode]').forEach((c) => c.classList.toggle('current', c === card));
     }
   }
@@ -631,6 +797,13 @@ async function initApp() {
       if (loc) {
         teleportTo(loc.x, loc.z, loc.heading);
       }
+      closePopovers();
+    });
+  });
+
+  document.querySelectorAll('[data-ride]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      rideFeatured(btn.getAttribute('data-ride'));
       closePopovers();
     });
   });
@@ -653,6 +826,10 @@ async function initApp() {
   // facing along it (walking, driving & cycling; controllers.js findRoadReset)
   window.addEventListener('keydown', (e) => {
     if (isTypingInField(e)) return;
+    if (window.CITY.uiOverlay) {
+      if (e.code === 'Escape' && window.CITY.uiOverlay !== 'map') { e.preventDefault(); rideSession.closeOverlay(); }
+      return;
+    }
     switch (e.code) {
       case 'Digit1':
         selectMode('person');
@@ -690,8 +867,14 @@ async function initApp() {
       case 'KeyH':
         if (hudToggleBtn) hudToggleBtn.click();
         break;
+      case 'KeyE':
+        // board the streetcar standing at the stop / get off at a stop (streetcar-ride.js)
+        if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || mapSystem.isFullMapOpen || (helpModal && !helpModal.hidden)) break;
+        subwayRide.action() || streetcarRide.action();
+        break;
       case 'KeyR': {
         if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || mapSystem.isFullMapOpen) break;
+        if (!cancelTransit()) break;
         const road = controllerManager.findRoadReset();
         if (road) teleportTo(road.x, road.z, road.heading);
         break;
@@ -729,6 +912,10 @@ async function initApp() {
     const dest = params.get('to');
     if (params.has('locate')) tourGuide.requestLocation();
     const hit = (q) => (q ? tourGuide.search(q)[0] : null);
+    if (params.has('ride')) {
+      rideFeatured(params.get('ride') || '504');
+      return;
+    }
     if (place && hit(place)) {
       const p = hit(place);
       tourGuide.teleportToPlace(p);
@@ -812,9 +999,14 @@ async function initApp() {
     trafficSystem,
     highwayTraffic,
     streetcars, // Toronto layer
+    streetcarRide, // Toronto layer
+    rideSession,
+    subwayRide,
+    rideFeatured,
     transitBuses, // Toronto layer
     railCorridor, // Toronto layer
     subway, // Toronto layer
+    multiplayer,
     controllerManager,
     touchControls,
     gamepadControls,
@@ -825,6 +1017,9 @@ async function initApp() {
     selectCamera,
     cycleCamera,
     selectTime,
+    applyVisualTime,
+    openOverlay: openUiOverlay,
+    experience: rideSession,
     tourGuide,
     teleportTo,
     quality: QUALITY,
@@ -834,13 +1029,17 @@ async function initApp() {
   // The quality safety net & the ?fps=1 readout (quality.js), fed every real-time frame
   const qualityNet = QUALITY.attach(window.__CITY_APP);
 
-  // 6b. Shader pre-compilation behind the loading screen. compileAsync() builds the node graphs in slices and has the GPU
-  //     process compile the pipelines in parallel, but after every 8 ms slice it waits for a rendered frame, which
-  //     leaves the main thread idle about half the time while nothing else animates; several calls side by side keep
-  //     it busy (warm cache: 2.1 s instead of 4.0 s). (Rendering straight away compiled ~500 pipelines one after
-  //     another: ~25 s with a cold shader cache.)
-  const COMPILE_POOL = Number(new URLSearchParams(location.search).get('pool') ?? 16);
-  const nextTask = () => (globalThis.scheduler?.yield ? globalThis.scheduler.yield() : new Promise((resolve) => setTimeout(resolve, 0)));
+  // 6b. Shader pre-compilation behind the loading screen: one compileAsync() over the scene. It builds the node graphs
+  //     one after another, in 8 ms slices, while the GPU process compiles up to 16 pipelines in parallel.
+  //     It used to run 16 compileAsync() calls side by side, but three's node builds must not interleave:
+  //     compileAsync() yields between a build's stages, and the material inputs every material shares (MaterialNode's
+  //     map, normalMap…: one global materialReference each, its texture set from whichever material set it up last)
+  //     then held another material's texture, so a shader was generated for the wrong one. The Bike Share palette's
+  //     nearest filtering took the sampler out of a tree's or a post box's declarations while its code still sampled
+  //     with it ("unresolved value 'nodeUniform4_sampler'", 3 boots in 12 on the M4 mini), and the other way round
+  //     (the palette's pipeline asking for a sampler binding its layout lacked). One call takes about as long (1.0 s
+  //     warm on the mini, 1.2 s on the laptop). (Rendering straight away compiled ~500 pipelines one after another:
+  //     ~25 s with a cold shader cache.)
   async function precompileShaders() {
     // An empty frame first: it sets up the post-processing chain, which configures the scene pass's render target
     // (MSAA samples, depth format), so the pipelines compiled below are the very ones the scene pass asks for
@@ -849,70 +1048,54 @@ async function initApp() {
     scene.visible = true;
     markInit('postFX');
 
-    // Every visible object with frustum culling off (like the warm-up frame, see the loop). Plain meshes that share
-    // a material share its shader, so one job compiles them in turn (the first build serves the rest); every
-    // instanced mesh gets a build of its own
+    // Every visible object with frustum culling off (like the warm-up frame, see the loop), less what shares another
+    // object's pipeline: chunks of one mesh share its pipeline, so the first visible one compiles it (the first chunk
+    // itself may be hidden; mrdoob's 539289a), and the shadow stand-ins only ever draw in the shadow maps (the
+    // warm-up frame compiles those). Those are hidden while the scene compiles.
     const culled = [];
-    const jobs = [];
-    const jobByMaterial = new Map();
+    const skipped = [];
     const pipelines = new Set();
+    let first = null;
     scene.traverseVisible((o) => {
       if (o.frustumCulled) {
         culled.push(o);
         o.frustumCulled = false;
       }
       if (!o.isMesh && !o.isLine && !o.isPoints && !o.isSprite) return;
-      // chunks of one mesh share its pipeline: the first visible one compiles it (the first chunk itself may be
-      // hidden; mrdoob's 539289a); the shadow stand-ins only ever draw in the shadow maps (the warm-up frame compiles
-      // those)
-      if (o.userData.shadowProxy) return;
       const pipeline = o.userData.sharesPipelineWith || o;
-      if (pipelines.has(pipeline)) return;
-      pipelines.add(pipeline);
-      if (o.isInstancedMesh || Array.isArray(o.material)) {
-        jobs.push([o]);
+      if (o.userData.shadowProxy || pipelines.has(pipeline)) {
+        if (!o.children.length) skipped.push(o);
         return;
       }
-      let job = jobByMaterial.get(o.material);
-      if (!job) {
-        job = [];
-        jobByMaterial.set(o.material, job);
-        jobs.push(job);
-      }
-      job.push(o);
+      pipelines.add(pipeline);
+      if (!first && o.receiveShadow) first = o;
     });
 
     renderer.setRenderTarget(scenePass.renderTarget);
     renderer.setMRT(sceneMRT);
-    const compile = async (object) => {
-      // Each compile starts in a task of its own: compileAsync() keeps one precompilation state on the renderer,
-      // which must not be mid-step for two of them in the same microtask checkpoint
-      await nextTask();
+    const compile = async (object, onProgress) => {
       try {
-        await renderer.compileAsync(object, cameraSystem.camera, scene);
+        await renderer.compileAsync(object, cameraSystem.camera, scene, onProgress);
       } catch (e) {
         console.warn('[compile]', e); // the warm-up frame compiles it instead
       }
     };
-    let next = 0;
-    let done = 0;
-    const worker = async () => {
-      while (next < jobs.length) {
-        const job = jobs[next++];
-        for (const object of job) await compile(object);
-        done++;
-        if (loadingStatus) {
-          loadingStatus.textContent = `Compiling Shaders & Render Pipelines... ${Math.round((done / jobs.length) * 100)}%`;
-        }
-        setLoadingProgress(done / jobs.length);
-      }
-    };
     // One shadow-receiving object alone first: its build sets up the sun's shadow node, which bumps the light node's
-    // version, part of every material's cache key (three's LightsNode.customCacheKey). Built in parallel, the objects
-    // started before that bump got a key the frames never use, and the warm-up frame built ~75 of them again
-    const first = jobs.find((j) => j[0].receiveShadow);
-    if (first) await compile(first[0]);
-    await Promise.all(Array.from({ length: COMPILE_POOL }, worker));
+    // version, part of every material's cache key (three's LightsNode.customCacheKey). Built alongside the others,
+    // the objects started before that bump got a key the frames never use, and the warm-up frame built ~75 of them again
+    if (first) await compile(first);
+    for (const o of skipped) o.visible = false;
+    await compile(scene, (e) => {
+      if (loadingStatus) loadingStatus.textContent = `Compiling Shaders & Render Pipelines... ${Math.round((e.loaded / e.total) * 100)}%`;
+      setLoadingProgress(e.loaded / e.total);
+    });
+    const outdoorMask = cameraSystem.camera.layers.mask;
+    subwayRide?.warmGraphics(true);
+    cameraSystem.camera.layers.set(2);
+    await compile(scene);
+    cameraSystem.camera.layers.mask = outdoorMask;
+    subwayRide?.warmGraphics(false);
+    for (const o of skipped) o.visible = true;
     renderer.setMRT(null);
     renderer.setRenderTarget(null);
     for (const o of culled) o.frustumCulled = true;
@@ -979,6 +1162,30 @@ async function initApp() {
   })() : null;
   window.__CITY_APP.cpuTimes = () => (cpuTimes ? cpuTimes.read() : null);
 
+  // ?metrics=1: opt-in, bounded raw frame distributions. Capture windows stop before image readback.
+  const ownedResources = window.CITY.createOwnedResourceLedger();
+  const measurements = new URLSearchParams(location.search).get('metrics') === '1'
+    ? window.CITY.createFrameMeasurements({ metadata: () => ({
+      threeRevision: THREE.REVISION, backend: renderer.backend.constructor.name,
+      tier: QUALITY.tier, scale: QUALITY.scale, distanceScale: QUALITY.dist, aa: QUALITY.aa,
+      viewport: [window.innerWidth, window.innerHeight], devicePixelRatio: window.devicePixelRatio,
+      canvas: [renderer.domElement.width, renderer.domElement.height],
+      time: lightingSystem.activePresetId, camera: cameraSystem.activePresetId,
+      mode: rideSession.active ? rideSession.entity.type : controllerManager.activeMode,
+      transit: window.CITY.TRANSIT?.live?.mode || 'unavailable',
+      cloudPreset: QUALITY.clouds, cloudScale: QUALITY.cloudScale,
+      userAgent: navigator.userAgent
+    }) }) : null;
+  window.__CITY_APP.resources = ownedResources;
+  window.__CITY_APP.measurements = measurements;
+  window.__CITY_APP.frameTimes = (options) => measurements?.read(options) || null;
+  window.__CITY_APP.resourceSnapshot = () => ({
+    owned: ownedResources.snapshot(),
+    renderer: { ...renderer.info.memory },
+    note: 'renderer counts and feature-owned estimates; neither is total physical GPU memory'
+  });
+  document.addEventListener('visibilitychange', () => measurements?.markDiscontinuity('visibility'));
+
   // the clustered (shadowless point & spot) lights, for the dark-light pass in the loop (after the warm-up frame)
   let darkLights = null;
   const collectDarkLights = () => {
@@ -995,6 +1202,11 @@ async function initApp() {
   let fpsTimer = 0;
   let nextPlayerSave = 0;
   let warmedUp = false; // see the first frame below
+  shaderTimeHold = window.CITY.createShaderTimeHold(window.CITY.TSL.time, window.CITY.TSL.deltaTime);
+  const renderFinal = () => renderPipeline.render();
+  window.__CITY_APP.clockState = () => ({ simulation: elapsed, shader: window.CITY.TSL.time.value,
+    cloud: skyClouds?.context?.time ?? null, cloudFrame: skyClouds?.context?.frame ?? null,
+    cloudPreset: skyClouds?.context?.qualityPreset || 'none' });
 
   if (elFps) elFps.textContent = '60';
 
@@ -1004,35 +1216,53 @@ async function initApp() {
     // The phone tier holds an even frame rate (QUALITY.maxFps, 30): a frame that comes early is skipped whole, so the
     // ride paces at a steady 33 ms instead of jumping between 17, 33 & 50, and the phone runs cooler
     if (QUALITY.maxFps && fixedDt === null && warmedUp && now - lastTime < 1000 / QUALITY.maxFps - 4) return;
-    const cpu0 = cpuTimes ? performance.now() : 0;
+    const measuring = !!measurements?.isActive();
+    const wasWarmed = warmedUp;
+    const cpu0 = cpuTimes || measuring ? performance.now() : 0;
     const rawDt = fixedDt !== null ? fixedDt : (now - lastTime) * 0.001;
     lastTime = now;
     const dt = fixedDt !== null ? fixedDt : Math.min(Math.max(rawDt, 0.001), 0.05);
-    elapsed += dt;
 
     // Update 3rd-person controllers, camera, signals, traffic & vehicle collisions, building LODs, and dynamic shadow focus
+    // (aboard a streetcar the camera follows the car, so it moves after the car does; the player, riding along hidden,
+    // is nobody's obstacle)
     gamepadControls.update(dt);
-    controllerManager.update(dt, elapsed);
-    if (collisionDebug) collisionDebug.update();
-    cameraSystem.update(dt, elapsed);
-    streetDetails.signalClock.value = elapsed;
-    trafficSystem.update(
-      dt,
-      elapsed,
-      cameraSystem.currentPos,
-      controllerManager.getActiveEntity(),
-      controllerManager.activeMode,
-      cameraSystem.camera
-    );
-    highwayTraffic.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode);
-    if (!document.hidden && now >= nextPlayerSave) {
-      savePlayerState();
-      nextPlayerSave = now + 5000;
+    const holding = rideSession.held;
+    if (!holding) elapsed += dt;
+    const riding = rideSession.active || subwayRide.inside;
+    const playerEnt = riding ? null : controllerManager.getActiveEntity();
+    if (!holding) {
+      controllerManager.update(dt, elapsed, cameraSystem.initialized ? cameraSystem.currentPos : null);
+      if (collisionDebug) collisionDebug.update();
+      if (!riding) cameraSystem.update(dt, elapsed);
+      streetDetails.signalClock.value = elapsed;
+      trafficSystem.update(
+        dt,
+        elapsed,
+        cameraSystem.currentPos,
+        playerEnt,
+        controllerManager.activeMode,
+        cameraSystem.camera
+      );
+      highwayTraffic.update(dt, cameraSystem.camera, playerEnt, controllerManager.activeMode);
+      if (!document.hidden && now >= nextPlayerSave) {
+        savePlayerState();
+        nextPlayerSave = now + 5000;
+      }
+      streetcars.update(dt, elapsed, cameraSystem.camera, playerEnt, controllerManager.activeMode); // Toronto layer
+      streetcarRide.update(dt);
+      subwayRide.update(dt);
+      if (riding) cameraSystem.update(dt, elapsed);
+      if (multiplayer) multiplayer.update(dt);
+      if (transitBuses) transitBuses.update(dt); // Toronto layer
+      railCorridor.update(dt, cameraSystem.camera, playerEnt, controllerManager.activeMode); // Toronto layer
+      subway.update(elapsed, cameraSystem.camera); // Toronto layer
+    } else {
+      // Positive presentation delta for framing; no actor, traffic, dwell, score or Tour Drive step.
+      window.__CITY_APP.photoMode?.update(dt);
+      cameraSystem.update(dt, elapsed);
+      if (!document.hidden && now >= nextPlayerSave) { savePlayerState(); nextPlayerSave = now + 5000; }
     }
-    streetcars.update(dt, elapsed, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
-    if (transitBuses) transitBuses.update(dt); // Toronto layer
-    railCorridor.update(dt, cameraSystem.camera, controllerManager.getActiveEntity(), controllerManager.activeMode); // Toronto layer
-    subway.update(elapsed, cameraSystem.camera); // Toronto layer
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);
@@ -1045,13 +1275,13 @@ async function initApp() {
       if (++shadowFrame % QUALITY.shadowEvery === 0 || !warmedUp) sh.needsUpdate = true;
     }
     lakeWater.update(elapsed);
-    if (skyClouds) skyClouds.update(dt);
-    mapSystem.update();
-    tourGuide.update(dt, elapsed);
-    renderCarCondition();
-    cityAudio.update(dt, elapsed);
+    if (skyClouds) skyClouds.update(holding ? 0 : dt);
+    if (!holding) {
+      mapSystem.update(); tourGuide.update(dt, elapsed); renderCarCondition(); cityAudio.update(dt, elapsed);
+    }
     if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
     if (warmedUp && bikeShare) bikeShare.update(cameraSystem.camera.position); // the nearby stations' bikes
+    if (warmedUp && wayfindingMaps) wayfindingMaps.update(cameraSystem.camera.position,dt);
 
     // The pooled street, head & police lights that are off (intensity 0, parked underground) leave the clustered
     // lighting's list, so by day its per-frame cluster pass has no lights to sort and test
@@ -1079,9 +1309,12 @@ async function initApp() {
       collectDarkLights();
       scene.matrixWorldAutoUpdate = false;
     }
-    const cpu1 = cpuTimes ? performance.now() : 0;
-    renderPipeline.render();
-    if (cpuTimes && warmedUp) cpuTimes.add(cpu1 - cpu0, performance.now() - cpu1);
+    const cpu1 = cpuTimes || measuring ? performance.now() : 0;
+    shaderTimeHold.render(renderFinal, { hold: holding });
+    const renderCpuMs = cpuTimes || measuring ? performance.now() - cpu1 : 0;
+    if (cpuTimes && warmedUp) cpuTimes.add(cpu1 - cpu0, renderCpuMs);
+    if (measuring) measurements.record(now, rawDt * 1000, cpu1 - cpu0, renderCpuMs,
+      !wasWarmed ? 'startup' : holding ? 'paused' : fixedDt !== null ? 'fixed-step' : document.hidden ? 'hidden' : null);
     if (!warmedUp) {
       warmedUp = true;
       markInit('firstFrame');
@@ -1096,6 +1329,7 @@ async function initApp() {
         setLoadingProgress(1);
         window.__CITY_APP.ready = true;
         openDeepLink();
+        if (multiplayer) multiplayer.start({ tourGuide, rideSession, subwayRide, teleportTo, camera: cameraSystem.camera });
         // The phone tiers: the CPU copies of what the GPU now holds go (scene-culling.js), a second pass a little later
         // for what the first frames uploaded
         if (QUALITY.lean) {
@@ -1114,7 +1348,7 @@ async function initApp() {
       });
     }
 
-    if (fixedDt === null && warmedUp) qualityNet.tick(Math.max(0, rawDt));
+    if (fixedDt === null && warmedUp && !holding) qualityNet.tick(Math.max(0, rawDt));
     window.__CITY_APP.frameNo = (window.__CITY_APP.frameNo || 0) + 1; // (rendered frames, for profiling)
     if (gpuTimes && warmedUp) gpuTimes.collect();
 
@@ -1127,8 +1361,8 @@ async function initApp() {
       frameCount = 0;
       fpsTimer = 0;
 
-      const activeEnt = controllerManager.getActiveEntity();
-      const mode = controllerManager.activeMode;
+      const activeEnt = rideSession.active ? rideSession.entity : controllerManager.getActiveEntity();
+      const mode = rideSession.active ? rideSession.entity.type : subwayRide.inside ? 'station' : controllerManager.activeMode;
       const kmh = Math.round(Math.abs(activeEnt.speed) * 3.6);
       const altM = Math.max(0, Math.round(activeEnt.position.y));
 
@@ -1146,6 +1380,11 @@ async function initApp() {
     }
   }
   renderer.setAnimationLoop(frame);
+  renderer.backend.device?.lost.then(() => {
+    savePlayerState(); cancelTransit(); tourGuide.endNavigation(); renderer.setAnimationLoop(null);
+    cityAudio.system.setPresentationPaused(true);
+    window.__CITY_APP.deviceLost = true;
+  });
 
   // Film mode (tools/video/record.mjs): the real-time loop stops; each step() advances the simulation by exactly
   // 1 / fps, renders, and resolves once the GPU has finished the frame, ready to be captured
@@ -1153,23 +1392,113 @@ async function initApp() {
     active: false,
     fps: 30,
     start(fps = 30) {
+      if (rideSession.overlay || photoCapture) return false;
+      measurements?.markDiscontinuity('capture');
+      shaderTimeHold.release();
       this.fps = fps;
       this.active = true;
       renderer.setAnimationLoop(null);
+      return true;
     },
     async step(frames = 1) {
+      if (!this.active || photoCapture) throw new Error('Film does not own frame stepping');
+      shaderTimeHold.release();
       for (let i = 0; i < frames; i++) frame(performance.now(), 1 / this.fps);
       const device = renderer.backend.device;
       if (device) await device.queue.onSubmittedWorkDone();
       return elapsed;
     },
+    // Developer capture seam: advance cloud sampling without stepping any city simulation.
+    // frame(now, 0) is unsafe: traffic and pedestrian velocity calculations divide by dt.
+    async renderHeld({ resetHistory = false, sampleFrame = null } = {}) {
+      if (!this.active) throw new Error('renderHeld requires a stopped film loop');
+      return drawHeldFrame(() => this.active, { resetHistory, sampleFrame });
+    },
     stop() {
+      if (!this.active) return false;
+      shaderTimeHold.release();
+      measurements?.markDiscontinuity('capture');
       this.active = false;
       cameraSystem.cinema = null;
       lastTime = performance.now();
       renderer.setAnimationLoop(frame);
+      return true;
     }
   };
+  async function drawHeldFrame(valid, { resetHistory = false, sampleFrame = null } = {}) {
+      // Three's FRAME nodes run once per internal RAF, even when our animation callback is null.
+      // Faster repeated low-tier renders would skip cloud sampling cells without this boundary.
+      const requested = performance.now();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      if (!valid()) throw new Error('Frame hold ended before rendering');
+      const frameReady = performance.now();
+      if (rideSession.held) {
+        cameraSystem.update(1 / 60, elapsed);
+        cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
+        cityBlocks.updateLights?.(cameraSystem.camera); streetDetails.update?.(cameraSystem.camera);
+        for (const light of staticLights) { light.updateMatrixWorld(); light.target?.updateMatrixWorld(); }
+        lightingSystem.update(cameraSystem.currentPos); lakeWater.update(elapsed);
+        if (resetHistory) lightingSystem.sunLight.shadow.needsUpdate = true;
+        updateSceneCulling(cameraSystem.camera.position);
+        if (!scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();
+      }
+      if (resetHistory) skyClouds?.resetHistory(sampleFrame);
+      skyClouds?.update(0); // Updates camera uniforms/sample index; cloud time stays fixed.
+      const start = performance.now();
+      shaderTimeHold.render(() => renderPipeline.render());
+      const submitted = performance.now();
+      const rendererFrame = renderer.info.frame;
+      const device = renderer.backend.device;
+      if (device) await device.queue.onSubmittedWorkDone();
+      if (!valid()) throw new Error('Frame hold was cancelled');
+      return { elapsed, shaderTime: shaderTimeHold.value, cloudTime: skyClouds?.context?.time ?? null,
+        cloudFrame: skyClouds?.context?.frame ?? null, rendererFrame,
+        waitFrameMs: frameReady - requested, renderMs: submitted - start, waitMs: performance.now() - submitted };
+  }
+  window.__CITY_APP.beginPhotoCapture = () => {
+    if (!rideSession.held || rideSession.overlay.id !== 'photo' || window.__CITY_APP.film.active || photoCapture) return false;
+    const lease = {
+      active: true,
+      renderHeld: (options) => drawHeldFrame(() => lease.active && rideSession.held, options),
+      async jpeg() {
+        if (!lease.active || !rideSession.held) throw new Error('Photo capture was cancelled');
+        // Snapshot through the proven canvas encoder first. Drawing a WebGPU canvas directly into
+        // a 2D resize canvas can read a discarded presentation buffer and silently produce black.
+        const canvas = renderer.domElement, width = canvas.width, height = canvas.height;
+        const blob = await new Promise((resolve, reject) => canvas.toBlob((value) => value?.type === 'image/jpeg' ? resolve(value) : reject(new Error('JPEG capture is unavailable')), 'image/jpeg', 0.88));
+        if (!lease.active || !rideSession.held) throw new Error('Photo capture was cancelled');
+        let result = { blob, width, height, quality: 0.88 };
+        if (Math.max(width, height) > 1920 || blob.size > 2 * 1024 * 1024) {
+          const bitmap = await createImageBitmap(blob);
+          let imageLease = null, blobLease = null;
+          try {
+            blobLease = ownedResources.track({ owner: 'photo', kind: 'image', resource: blob, cpuBytes: blob.size, gpuBytes: 0 });
+            imageLease = ownedResources.track({ owner: 'photo', kind: 'image', resource: bitmap, cpuBytes: width * height * 4, gpuBytes: null });
+            result = await window.CITY.encodePhotoJPEG(bitmap, { resources: ownedResources });
+          } finally { bitmap.close(); imageLease?.release(); blobLease?.release(); }
+        }
+        if (!lease.active || !rideSession.held) throw new Error('Photo capture was cancelled');
+        return result;
+      },
+      release() {
+        if (!lease.active) return false;
+        lease.active = false; photoCapture = null; lastTime = performance.now();
+        if (!window.__CITY_APP.deviceLost) renderer.setAnimationLoop(frame);
+        return true;
+      }
+    };
+    photoCapture = lease; renderer.setAnimationLoop(null); measurements?.markDiscontinuity('capture');
+    return lease;
+  };
+  window.__CITY_APP.resetPhotoHistory = () => skyClouds?.resetHistory();
+  window.__CITY_APP.applyPhotoEnvironment = (environment) => {
+    if (!rideSession.held || rideSession.overlay.id !== 'photo') return false;
+    applyVisualTime(environment.presetId);
+    if (Number.isFinite(environment.cloudPhase) && skyClouds?.context) skyClouds.context.time = environment.cloudPhase;
+    skyClouds?.resetHistory();
+    return true;
+  };
+  if (new URLSearchParams(location.search).get('photo') === '1') window.__CITY_APP.photoMode = window.CITY.createPhotoMode(window.__CITY_APP);
 }
 
 initApp();

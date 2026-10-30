@@ -1,0 +1,135 @@
+[
+ {
+  "name": "stats",
+  "mode": "person",
+  "time": "midday",
+  "wait": 500,
+  "js": "(() => { const C = window.CITY, s = C.patioStats; const out = { season: s.season, placed: s.placed, accepted: s.accepted, rejected: s.rejected, blockers: s.blockers, instances: s.instances, laneConflicts: s.laneConflicts && s.laneConflicts.length, ms: s.ms, q: location.search }; console.log('[ride-check] patios ' + JSON.stringify(out)); if (!/patios=0/.test(location.search)) { if (!s.season || s.placed.curb < 80 || s.placed.sidewalk < 40) throw new Error('CafeTO patios missing'); if (s.laneConflicts && s.laneConflicts.length) throw new Error('Curb lane platform in a traffic lane: ' + JSON.stringify(s.laneConflicts.slice(0, 5))); } })()"
+ },
+ {
+  "name": "ossington-146-curb-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -2971.6,
+  "z": -1134.3,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-2971.6, 11, -1134.3], look: [-2984.6, 0.5, -1143.3], fov: 50 }); const s = window.CITY.patioStats.sites.find((p) => p.address === \"146 OSSINGTON AVE\" && p.kind === \"curb\"); console.log('[ride-check] ossington-146-curb ' + JSON.stringify(s ? { id: s.id, kind: s.kind, x: +s.cx.toFixed(1), z: +s.cz.toFixed(1), length: s.length, depth: +s.depth.toFixed(2) } : 'not placed in the browser')); })()"
+ },
+ {
+  "name": "ossington-146-curb-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -2987.1,
+  "z": -1133.8,
+  "heading": 2.881,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "queen-874-curb-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -2605.8,
+  "z": -748.5,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-2605.8, 11, -748.5], look: [-2614.6, 0.5, -761.6], fov: 50 }); const s = window.CITY.patioStats.sites.find((p) => p.address === \"874 QUEEN ST W\" && p.kind === \"curb\"); console.log('[ride-check] queen-874-curb ' + JSON.stringify(s ? { id: s.id, kind: s.kind, x: +s.cx.toFixed(1), z: +s.cz.toFixed(1), length: s.length, depth: +s.depth.toFixed(2) } : 'not placed in the browser')); })()"
+ },
+ {
+  "name": "queen-874-curb-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -2605.1,
+  "z": -764.0,
+  "heading": -1.327,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "college-611-curb-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -2305.8,
+  "z": -1830.1,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-2305.8, 11, -1830.1], look: [-2315.0, 0.5, -1817.3], fov: 50 }); const s = window.CITY.patioStats.sites.find((p) => p.address === \"611 COLLEGE ST\" && p.kind === \"curb\"); console.log('[ride-check] college-611-curb ' + JSON.stringify(s ? { id: s.id, kind: s.kind, x: +s.cx.toFixed(1), z: +s.cz.toFixed(1), length: s.length, depth: +s.depth.toFixed(2) } : 'not placed in the browser')); })()"
+ },
+ {
+  "name": "college-611-curb-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -2305.6,
+  "z": -1814.6,
+  "heading": -1.85,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "college-660-sidewalk-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -2466.4,
+  "z": -1866.8,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-2466.4, 11, -1866.8], look: [-2468.2, 0.5, -1882.5], fov: 50 }); const s = window.CITY.patioStats.sites.find((p) => p.address === \"660 COLLEGE ST\" && p.kind === \"sidewalk\"); console.log('[ride-check] college-660-sidewalk ' + JSON.stringify(s ? { id: s.id, kind: s.kind, x: +s.cx.toFixed(1), z: +s.cz.toFixed(1), length: s.length, depth: +s.depth.toFixed(2) } : 'not placed in the browser')); })()"
+ },
+ {
+  "name": "college-660-sidewalk-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -2461.2,
+  "z": -1876.6,
+  "heading": -2.273,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "king-309-sidewalk-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -722.8,
+  "z": -351.0,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-722.8, 11, -351.0], look: [-731.8, 0.5, -338.0], fov: 50 }); const s = window.CITY.patioStats.sites.find((p) => p.address === \"309 KING ST W\" && p.kind === \"sidewalk\"); console.log('[ride-check] king-309-sidewalk ' + JSON.stringify(s ? { id: s.id, kind: s.kind, x: +s.cx.toFixed(1), z: +s.cz.toFixed(1), length: s.length, depth: +s.depth.toFixed(2) } : 'not placed in the browser')); })()"
+ },
+ {
+  "name": "king-309-sidewalk-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -722.8,
+  "z": -340.2,
+  "heading": -1.339,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "danforth-494-sidewalk-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": 3492.6,
+  "z": -2765.8,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [3492.6, 11, -2765.8], look: [3483.9, 0.5, -2779.0], fov: 50 }); const s = window.CITY.patioStats.sites.find((p) => p.address === \"494 DANFORTH AVE\" && p.kind === \"sidewalk\"); console.log('[ride-check] danforth-494-sidewalk ' + JSON.stringify(s ? { id: s.id, kind: s.kind, x: +s.cx.toFixed(1), z: +s.cz.toFixed(1), length: s.length, depth: +s.depth.toFixed(2) } : 'not placed in the browser')); })()"
+ },
+ {
+  "name": "danforth-494-sidewalk-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": 3492.9,
+  "z": -2776.7,
+  "heading": -1.824,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ }
+]

@@ -1,0 +1,4 @@
+[
+  {"name":"bench-day","mode":"person","time":"midday","js":"(() => {const C=window.CITY,a=window.__CITY_APP,s=C.benchStats;console.log('[ride-check] benches '+JSON.stringify({source:s.sourceCount,placed:s.placed,rejected:s.rejected}));if(s.sourceCount!==315||s.placed<20)throw new Error('Mapped benches missing');const p=s.sites.find(r=>r.frontage.includes('Queen'))||s.sites[0];window.__bench=p;const x=p.x+Math.sin(p.yaw)*3,z=p.z+Math.cos(p.yaw)*3;a.teleportTo(x,z,Math.atan2(p.x-x,p.z-z));a.selectCamera('pov',true);const m=a.scene.getObjectByName('StreetProps_bench');if(!m||m.geometry.index.count/3>1000)throw new Error('Bench model missing or too dense');console.log('[ride-check] bench site '+JSON.stringify(p));})()","wait":2000},
+  {"name":"bench-night-transition","time":"midnight","wait":2000}
+]

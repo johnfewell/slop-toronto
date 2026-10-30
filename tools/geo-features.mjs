@@ -9,8 +9,11 @@ import { toWorld, ringArea, rdpRing, centroid, bbox, load, log } from './geo-bas
 import { inDetail } from './geo-roads.mjs';
 import { elemRings, areas } from './geo-land.mjs';
 import { blocks, blockRaster as R, blockLabels as lab, maskRects } from './geo-blocks.mjs';
+import { osmKey, byOsmKey, massingDataset, massingKey, byMassingRecord } from './geo-ids.mjs';
 
+// (in source order, tools/geo-ids.mjs: the first match by name, the footprint a part falls in don't hang on file order)
 const osmBuildings = load('osm_buildings.json');
+osmBuildings.elements.sort(byOsmKey);
 const osmPlaces = load('osm_places.json');
 const q = (v) => Math.round(v * 10) / 10;
 const q3 = (v) => Math.round(v * 1000) / 1000;
@@ -200,7 +203,7 @@ for (const e of osmBuildings.elements) {
   for (const ring of elemRings(e)) {
     const [cx, cz] = centroid(ring);
     if (!inDetail(cx, cz, 100)) continue;
-    const f = { e, t, ring, cx, cz, area: Math.abs(ringArea(ring)) };
+    const f = { e, t, ring, cx, cz, area: Math.abs(ringArea(ring)), key: osmKey(e) };
     footprints.push(f);
     footprintOf.set(`${e.type}${e.id}`, f);
   }
@@ -215,11 +218,12 @@ const pointInRing = (x, z, r) => {
 };
 const landmarkFootprints = new Set();
 export const landmarks = {};
+export const landmarkSources = {}; // landmark id -> the OSM element its outline came from
 {
   const all = [...osmPlaces.elements, ...load('osm_land.json').elements, ...osmBuildings.elements];
   const findEl = (name, wantBuilding) => all.find((e) => (e.tags || {}).name === name && e.type !== 'node' && (!wantBuilding || (e.tags || {}).building));
   for (const [name, id, how] of LANDMARK_DEFS) {
-    let ring = null, tags = {};
+    let ring = null, tags = {}, src = null;
     if (how === 'point') {
       const n = osmPlaces.elements.find((e) => (e.tags || {}).name === name && e.type === 'node');
       if (n) {
@@ -234,12 +238,14 @@ export const landmarks = {};
     const rings = elemRings(el);
     if (!rings.length) { log(`landmark without outline: ${name}`); continue; }
     ring = rings.reduce((a, r) => (Math.abs(ringArea(r)) > Math.abs(ringArea(a)) ? r : a));
+    src = osmKey(el);
     if (how === 'largest') {
       let best = null;
       for (const f of footprints) if (pointInRing(f.cx, f.cz, ring) && (!best || f.area > best.area)) best = f;
       if (best) {
         ring = best.ring;
         tags = { ...best.t, name };
+        src = best.key;
         if (MODELLED.has(id)) landmarkFootprints.add(best);
       }
     } else if (how === 'building') {
@@ -250,6 +256,7 @@ export const landmarks = {};
     const s = rdpRing(ring, 0.3);
     if (ringArea(s) > 0) s.reverse();
     const r = minRect(s);
+    landmarkSources[id] = src;
     landmarks[id] = {
       name, x: q(r.cx), z: q(r.cz), w: q(r.w), d: q(r.d), ang: q3(r.ang), area: Math.round(Math.abs(ringArea(s))),
       h: tags.height ? parseFloat(tags.height) : null, levels: parseLevels(tags['building:levels']),
@@ -277,6 +284,10 @@ function offBlocks(r) {
   return off / n;
 }
 export const buildings = [];
+// Row for row with buildings: the 3D Massing record each one is, and the OSM footprint lending its type & name ('' none;
+// a tower and its podium share one)
+export const buildingIds = [];
+export const buildingOsm = [];
 const stats = { tagged: 0, estimated: 0, dropped: 0, multi: 0, joined: 0 };
 // Toronto: the City's 3D Massing parts (tools/fetch-massing.mjs) are the buildings, each standing at its lidar height;
 // a tower and its podium are separate parts. OpenStreetMap only lends the building type and name (the footprint the
@@ -292,14 +303,18 @@ for (const f of footprints) {
 }
 const osmAt = (x, z) => {
   let best = null;
-  for (const f of osmGrid.get(cellKey(x, z)) || []) if (pointInRing(x, z, f.ring) && (!best || f.area < best.area)) best = f;
+  for (const f of osmGrid.get(cellKey(x, z)) || []) {
+    if (pointInRing(x, z, f.ring) && (!best || f.area < best.area || (f.area === best.area && byOsmKey(f.e, best.e) < 0))) best = f;
+  }
   return best;
 };
-const massing = load('massing.json').parts.map((p, i) => {
+const massingSrc = load('massing.json');
+const massingDs = massingDataset(massingSrc);
+const massing = massingSrc.parts.sort(byMassingRecord).map((p, i) => {
   const ring = p.ring.map(([lon, lat]) => toWorld(lon, lat));
   if (ring.length > 3) ring.pop();
   const [cx, cz] = centroid(ring);
-  return { ring, cx, cz, area: Math.abs(ringArea(ring)), max: p.max, avg: p.avg, min: p.min, id: i + 1 };
+  return { ring, cx, cz, area: Math.abs(ringArea(ring)), max: p.max, avg: p.avg, min: p.min, id: i + 1, key: massingKey(massingDs, p) };
 });
 for (const f of massing) {
   if (!inDetail(f.cx, f.cz)) continue;
@@ -359,6 +374,8 @@ for (const f of massing) {
     0,
     t.name || ''
   ]);
+  buildingIds.push(f.key);
+  buildingOsm.push(osm ? osm.key : '');
 }
 log(`${buildings.length} buildings from the 3D Massing (${stats.joined} with an OSM type or name, ${stats.multi} multi-part plans); ${stats.dropped} off the blocks dropped`);
 

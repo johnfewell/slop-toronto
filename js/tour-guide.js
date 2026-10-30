@@ -277,7 +277,7 @@ function createRouteGraphics(scene, groundAt) {
   return { group, setRoute, uAlong, uTime };
 }
 
-function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode }) {
+function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode, onPlaceChange=()=>{} }) {
   const player = () => controllerManager.getActiveEntity();
   const playerPos = () => {
     const p = player().position;
@@ -476,10 +476,42 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
       $('pc-sub').textContent = p.sub || '';
       $('pc-address').textContent = info.address;
       $('pc-distance').textContent = info.distance;
+      const cityInfo=$('pc-city-info');
+      if(cityInfo) {
+        cityInfo.replaceChildren();cityInfo.hidden=!p.city;
+        if(p.city) {
+          const r=p.city;
+          if(r.address) $('pc-address').textContent=r.address;
+          const fact=(label,value)=>{if(value){const row=el('p');row.append(el('strong','',`${label}: `),document.createTextNode(value));cityInfo.append(row);}};
+          fact('Amenities',r.amenities);fact('Accessibility',r.accessibility);fact('Hours',r.hours);fact('Find it',r.details);
+          for(const [label,value]of Object.entries(r.facts||{}))fact(label,value==null?'':String(value));
+          for(const [label,value]of Object.entries(window.CITY.rinkCardFacts?.(r)||{}))fact(label,value);
+          if(r.statusAt) fact('Reported status',`${({'0':'Closed','1':'Open','2':'Service alert'})[r.status]||'Unspecified'}${r.reason?' — '+r.reason:''} (${r.statusAt.slice(0,10)})`);
+          fact('Notes',r.comments);
+          if(r.statusAt) cityInfo.append(el('p','pc-source','Dated City report. Check current hours and seasonal availability.'));
+          const related=(window.CITY.CITY_FACILITIES?.records||[]).filter((other)=>other.id!==r.id&&r.locationId&&other.locationId===r.locationId);
+          if(related.length) {
+            const links=el('div','pc-related');
+            for(const other of related) {
+              const button=el('button','btn',other.name);button.type='button';button.addEventListener('click',()=>{
+                const place=Navigation.buildIndex().find((item)=>item.city?.id===other.id);if(place)showPlace(place);
+              });links.append(button);
+            }
+            cityInfo.append(links);
+          }
+          try {
+            const url=new URL(r.url);
+            if(url.protocol==='https:'&&(url.hostname==='toronto.ca'||url.hostname.endsWith('.toronto.ca'))) {
+              const link=el('a','pc-source',url.pathname.includes('/dataset/')?'City of Toronto source':'City of Toronto facility details');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';cityInfo.append(link);
+            }
+          } catch {}
+        }
+      }
       card.hidden = false;
       document.body.classList.add('place-open');
     }
     mapSystem.setSelectedPlace({ x: p.x, z: p.z, name: p.name });
+    onPlaceChange(true);
     if (p.kind === 'street' && p.bounds) mapSystem.highlightStreet(p.name);
     if (fly && mapSystem.isFullMapOpen) mapSystem.flyTo(p.x, p.z, p.kind === 'district' ? 0.3 : p.kind === 'street' ? null : 1.4, p.bounds);
   }
@@ -488,6 +520,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     if (card) card.hidden = true;
     document.body.classList.remove('place-open');
     mapSystem.setSelectedPlace(null);
+    onPlaceChange(false);
   }
 
   // Go there now: onto the street in front of it, facing it
@@ -690,6 +723,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
   const banner = $('nav-banner');
   const nav = { active: false, route: null, hint: 0, off: 0, lastReroute: 0, arrived: false, auto: false, stuck: 0, uiTimer: 0 };
   function startNavigation({ auto = false } = {}) {
+    if (window.CITY.presentationHeld) return false;
     if (!route) return;
     const wanted = TRAVEL_TO_PLAYER[route.mode];
     if (controllerManager.activeMode !== wanted) selectMode(wanted);
@@ -892,7 +926,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
 
   // The user takes the wheel: any driving key ends Tour Drive
   window.addEventListener('keydown', (e) => {
-    if (!nav.auto || window.CITY.isTypingInField(e)) return;
+    if (!nav.auto || window.CITY.isTypingInField(e) || window.CITY.uiOverlay) return;
     if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
       setAutoDrive(false);
       toast('You have the wheel. Tour Drive is off', 1800);
@@ -942,7 +976,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
 
   // ---- keyboard: / or Ctrl+K focuses the search, Esc closes panels ----------------------------------------------------
   window.addEventListener('keydown', (e) => {
-    if (window.CITY.isTypingInField(e)) return;
+    if (window.CITY.isTypingInField(e) || (window.CITY.uiOverlay && window.CITY.uiOverlay !== 'map')) return;
     if ((e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) && searchInput) {
       e.preventDefault();
       if (mapSystem.isFullMapOpen && mapSearch) mapSearch.focus();
@@ -956,6 +990,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
   // ---- every frame ---------------------------------------------------------------------------------------------------
   function update(dt, elapsed) {
     graphics.uTime.value = elapsed;
+    if (window.CITY.uiOverlay) return;
     if (!nav.active || !nav.route) return;
     const pos = playerPos();
     const pr = progressOnRoute(nav.route, pos.x, pos.z, nav.hint);
@@ -989,6 +1024,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     showDirections,
     startNavigation,
     endNavigation,
+    setAutoDrive,
     setTravel,
     teleportToPlace,
     get route() { return route; },

@@ -47,7 +47,7 @@ const words = (s) => normalize(s).split(' ').filter(Boolean).map((w) => ABBREV[w
 const CATEGORY_LABEL = {
   hotel: 'Hotel', bank: 'Bank', food: 'Restaurant & café', worship: 'Place of worship', fuel: 'Filling station',
   health: 'Hospital & health', education: 'School & university', market: 'Market & mall', shop: 'Shop',
-  government: 'Government', office: 'Office', leisure: 'Leisure & sights', transport: 'Transport', place: 'Place'
+  government: 'Government', office: 'Office', leisure: 'Leisure & sights', transport: 'Transport', place: 'Place', washroom:'Washroom',water:'Drinking water',rink:'Outdoor ice rink',tennis:'Tennis courts'
 };
 // what people type when they want a kind of place
 const CATEGORY_WORDS = {
@@ -63,7 +63,9 @@ const CATEGORY_WORDS = {
   government: ['government', 'ministry', 'embassy', 'commission', 'court', 'police', 'federal'],
   office: ['office', 'offices', 'company'],
   leisure: ['park', 'garden', 'museum', 'gallery', 'sight', 'sights', 'attraction', 'leisure', 'stadium', 'cinema'],
-  transport: ['bus', 'park', 'motor', 'terminal', 'transport']
+  transport: ['bus', 'park', 'motor', 'terminal', 'transport'],
+  washroom:['washroom','washrooms','toilet','toilets','restroom','restrooms'],
+  water:['water','fountain','fountains','bottle','refill'],rink:['rink','rinks','skating','skate'],tennis:['tennis']
 };
 
 let INDEX = null;
@@ -74,10 +76,11 @@ function buildIndex() {
   const add = (it) => {
     const key = normalize(it.name);
     const prev = seen.get(key);
-    if (prev && prev.some((p) => Math.hypot(p.x - it.x, p.z - it.z) < 150)) return;
+    if (!it.city && prev && prev.some((p) => Math.hypot(p.x - it.x, p.z - it.z) < 150)) return;
     (prev || seen.set(key, []).get(key)).push(it);
     it.id = `${it.kind}:${items.length}`;
     it.words = words(it.name);
+    it.searchWords = words(it.keywords || '');
     it.norm = it.words.join(' ');
     items.push(it);
   };
@@ -87,6 +90,10 @@ function buildIndex() {
     if (districtNames.has(d.name)) continue;
     districtNames.add(d.name);
     add({ kind: 'district', name: d.name, x: d.x, z: d.z, sub: 'Neighbourhood · Toronto' });
+  }
+  for (const record of window.CITY.CITY_FACILITIES?.records || []) {
+    const cat=['washroom','water','rink','tennis'].includes(record.kind)?record.kind:'leisure';
+    add({kind:'place',cat,name:record.name,x:record.x,z:record.z,sub:`${record.type} · ${districtAt(record.x,record.z)}`,city:record,keywords:`${record.amenities} ${record.accessibility}`});
   }
   for (const [x, z, name, cat] of GEO.pois || []) {
     add({ kind: 'place', cat, name, x, z, sub: `${CATEGORY_LABEL[cat] || 'Place'} · ${districtAt(x, z)}` });
@@ -160,6 +167,7 @@ function searchPlaces(query, { near = null, limit = 8 } = {}) {
         else if (w.length >= 4 && isLast && iw.length > w.length && oneEdit(w, iw.slice(0, w.length))) best = Math.max(best, 3);
       }
       if (!best && w.length >= 3 && it.norm.includes(w)) best = 2;
+      if (!best && it.searchWords.some((iw)=>iw===w||(isLast&&iw.startsWith(w)))) best = 5;
       if (!best) ok = false;
       score += best;
     }

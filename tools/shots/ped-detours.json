@@ -1,0 +1,106 @@
+[
+ {
+  "name": "stats-start",
+  "mode": "person",
+  "time": "midday",
+  "wait": 500,
+  "js": "(() => {\n  const T = window.__CITY_APP.trafficSystem, s = T.pedRoutes.stats;\n  const { blockedAt, detourAt, ...rest } = s;\n  const placed = T.peds.filter((p) => p.placed);\n  const out = { ...rest, detourMs: +s.detourMs.toFixed(1), q: location.search, peds: placed.length,\n    onDetourPieces: placed.filter((p) => p.route && (p.route.before || p.route.after)).length,\n    onCrosswalks: placed.filter((p) => p.node).length, waiting: placed.filter((p) => p.waiting).length };\n  console.log('[ride-check] ped-routes ' + JSON.stringify(out));\n  if (!/peddetours=0/.test(location.search) && !(s.obstacles > 1000)) throw new Error('walkers got no furniture obstacles');\n})()"
+ },
+ {
+  "name": "patio-aerial-0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => {\n  const app = window.__CITY_APP, C = window.CITY, T = app.trafficSystem;\n  const all = C.patioStats.sites.filter((s) => s.kind === 'sidewalk' && s.outerLine !== null && s.outerLine !== undefined);\n  const s = all.find((p) => /OSSINGTON/.test(p.address)) || all.find((p) => /COLLEGE/.test(p.address)) || all[0];\n  window.__patio = s;\n  document.getElementById('btn-toggle-hud')?.click();\n  // the walker 14 m along the sidewalk from it, then the camera above the curb, looking at the café\n  const x = s.cx + s.tx * 14 - s.nx * 1.2, z = s.cz + s.tz * 14 - s.nz * 1.2;\n  app.teleportTo(x, z, Math.atan2(-s.tx, -s.tz));\n  const cam = [s.cx - s.nx * 9 + s.tx * 6, 9, s.cz - s.nz * 9 + s.tz * 6];\n  app.cameraSystem.cinema = () => ({ pos: cam, look: [s.cx - s.nx * 1.5, 0.3, s.cz - s.nz * 1.5], fov: 55 });\n  // its edge's sidewalk lines (built now if no one has walked there yet): the pieces of the outer line round it\n  const edges = T.network.edges.filter((e) => {\n    const t = Math.max(0, Math.min(e.len, (s.cx - e.sx) * e.dx + (s.cz - e.sz) * e.dz));\n    return Math.hypot(e.sx + e.dx * t - s.cx, e.sz + e.dz * t - s.cz) < 20;\n  });\n  const lines = edges.flatMap((e) => T.pedRoutes.along(e).filter((w) => Math.hypot(w.ax + w.ux * w.len / 2 - s.cx, w.az + w.uz * w.len / 2 - s.cz) < 60 || w.before || w.after)\n    .map((w) => ({ ax: +w.ax.toFixed(1), az: +w.az.toFixed(1), len: +w.len.toFixed(1), before: !!w.before, after: !!w.after,\n      off: +(((w.ax - s.cx) * s.nx + (w.az - s.cz) * s.nz)).toFixed(2) })));\n  console.log('[ride-check] patio ' + JSON.stringify({ address: s.address, x: +s.cx.toFixed(1), z: +s.cz.toFixed(1), length: s.length,\n    depth: +s.depth.toFixed(2), outerLine: s.outerLine, candidates: all.length, lines }));\n})()"
+ },
+ {
+  "name": "patio-aerial-1",
+  "wait": 1500,
+  "js": "(function anonymous(\n) {\n\n  const T = window.__CITY_APP.trafficSystem, s = window.__patio;\n  const near = T.peds.filter((p) => p.placed && Math.hypot(p.x - s.cx, p.z - s.cz) < 25);\n  console.log('[ride-check] patio-frame-1 ' + JSON.stringify(near.map((p) => ({ x: +p.x.toFixed(2), z: +p.z.toFixed(2),\n    off: +(((p.x - s.cx) * s.nx + (p.z - s.cz) * s.nz)).toFixed(2), detour: !!(p.route && (p.route.before || p.route.after)) }))));\n\n})()"
+ },
+ {
+  "name": "patio-aerial-2",
+  "wait": 1500,
+  "js": "(function anonymous(\n) {\n\n  const T = window.__CITY_APP.trafficSystem, s = window.__patio;\n  const near = T.peds.filter((p) => p.placed && Math.hypot(p.x - s.cx, p.z - s.cz) < 25);\n  console.log('[ride-check] patio-frame-2 ' + JSON.stringify(near.map((p) => ({ x: +p.x.toFixed(2), z: +p.z.toFixed(2),\n    off: +(((p.x - s.cx) * s.nx + (p.z - s.cz) * s.nz)).toFixed(2), detour: !!(p.route && (p.route.before || p.route.after)) }))));\n\n})()"
+ },
+ {
+  "name": "patio-aerial-3",
+  "wait": 1500,
+  "js": "(function anonymous(\n) {\n\n  const T = window.__CITY_APP.trafficSystem, s = window.__patio;\n  const near = T.peds.filter((p) => p.placed && Math.hypot(p.x - s.cx, p.z - s.cz) < 25);\n  console.log('[ride-check] patio-frame-3 ' + JSON.stringify(near.map((p) => ({ x: +p.x.toFixed(2), z: +p.z.toFixed(2),\n    off: +(((p.x - s.cx) * s.nx + (p.z - s.cz) * s.nz)).toFixed(2), detour: !!(p.route && (p.route.before || p.route.after)) }))));\n\n})()"
+ },
+ {
+  "name": "patio-aerial-4",
+  "wait": 1500,
+  "js": "(function anonymous(\n) {\n\n  const T = window.__CITY_APP.trafficSystem, s = window.__patio;\n  const near = T.peds.filter((p) => p.placed && Math.hypot(p.x - s.cx, p.z - s.cz) < 25);\n  console.log('[ride-check] patio-frame-4 ' + JSON.stringify(near.map((p) => ({ x: +p.x.toFixed(2), z: +p.z.toFixed(2),\n    off: +(((p.x - s.cx) * s.nx + (p.z - s.cz) * s.nz)).toFixed(2), detour: !!(p.route && (p.route.before || p.route.after)) }))));\n\n})()"
+ },
+ {
+  "name": "detour-follow-0",
+  "wait": 1200,
+  "js": "(() => {\n  const app = window.__CITY_APP, T = app.trafficSystem, cm = app.controllerManager, P = cm.entities[cm.activeMode].position;\n  const on = T.peds.filter((p) => p.placed && !p.node && !p.mid && p.route && (p.route.before || p.route.after));\n  on.sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z));\n  const p = on[0];\n  window.__follow = p || null;\n  if (!p) { console.log('[ride-check] detour-follow none of ' + T.peds.filter((q) => q.placed).length); return; }\n  // its line: the first piece of the chain (the straight line it leaves); the camera beside it, 8 m up\n  let first = p.route; while (first.before) first = first.before;\n  window.__line = first;\n  app.cameraSystem.cinema = () => ({ pos: [p.x - first.uz * 7 - first.ux * 6, 7, p.z + first.ux * 7 - first.uz * 6], look: [p.x + first.ux * 2, 0.4, p.z + first.uz * 2], fov: 55 });\n  const pieces = []; for (let t = first; t; t = t.after) pieces.push({ ax: +t.ax.toFixed(2), az: +t.az.toFixed(2), len: +t.len.toFixed(2) });\n  console.log('[ride-check] detour-follow ' + JSON.stringify({ x: +p.x.toFixed(1), z: +p.z.toFixed(1), pieces }));\n})()"
+ },
+ {
+  "name": "detour-follow-1",
+  "wait": 1200,
+  "js": "(function anonymous(\n) {\n\n  const p = window.__follow, L = window.__line;\n  if (!p) return;\n  console.log('[ride-check] follow-1 ' + JSON.stringify({ along: +((p.x - L.ax) * L.ux + (p.z - L.az) * L.uz).toFixed(2),\n    offLine: +((p.x - L.ax) * L.uz - (p.z - L.az) * L.ux).toFixed(2), detour: !!(p.route.before || p.route.after) }));\n\n})()"
+ },
+ {
+  "name": "detour-follow-2",
+  "wait": 1200,
+  "js": "(function anonymous(\n) {\n\n  const p = window.__follow, L = window.__line;\n  if (!p) return;\n  console.log('[ride-check] follow-2 ' + JSON.stringify({ along: +((p.x - L.ax) * L.ux + (p.z - L.az) * L.uz).toFixed(2),\n    offLine: +((p.x - L.ax) * L.uz - (p.z - L.az) * L.ux).toFixed(2), detour: !!(p.route.before || p.route.after) }));\n\n})()"
+ },
+ {
+  "name": "detour-follow-3",
+  "wait": 1200,
+  "js": "(function anonymous(\n) {\n\n  const p = window.__follow, L = window.__line;\n  if (!p) return;\n  console.log('[ride-check] follow-3 ' + JSON.stringify({ along: +((p.x - L.ax) * L.ux + (p.z - L.az) * L.uz).toFixed(2),\n    offLine: +((p.x - L.ax) * L.uz - (p.z - L.az) * L.ux).toFixed(2), detour: !!(p.route.before || p.route.after) }));\n\n})()"
+ },
+ {
+  "name": "detour-follow-4",
+  "wait": 100,
+  "js": "(function anonymous(\n) {\n\n  const p = window.__follow, L = window.__line;\n  if (!p) return;\n  console.log('[ride-check] follow-4 ' + JSON.stringify({ along: +((p.x - L.ax) * L.ux + (p.z - L.az) * L.uz).toFixed(2),\n    offLine: +((p.x - L.ax) * L.uz - (p.z - L.az) * L.ux).toFixed(2), detour: !!(p.route.before || p.route.after) }));\n\n})()"
+ },
+ {
+  "name": "ks-setup",
+  "wait": 8000,
+  "js": "(() => {\n  const app = window.__CITY_APP;\n  app.cameraSystem.cinema = null;\n  app.teleportTo(-1109, -350, 0);\n  app.cameraSystem.cinema = () => ({ pos: [-1085, 9, -322], look: [-1112, 0, -352], fov: 50 });\n})()"
+ },
+ {
+  "name": "ks-walk-0",
+  "wait": 100,
+  "js": "(async () => {\n  const T = window.__CITY_APP.trafficSystem;\n  const t0 = performance.now();\n  for (;;) {\n    const groups = new Map();\n    for (const p of T.peds) {\n      if (!p.placed || !p.node || Math.hypot(p.node.x - -1105, p.node.z - -345) > 45) continue;\n      const k = p.node.x.toFixed(0) + ':' + p.node.z.toFixed(0) + ':' + p.side;\n      (groups.get(k) || groups.set(k, { waiting: 0, reacting: 0, people: [] }).get(k)).people.push(p);\n    }\n    let best = null;\n    for (const g of groups.values()) {\n      g.waiting = g.people.filter((p) => p.waiting).length;\n      g.reacting = g.people.filter((p) => p.waiting && p.walkAt > 0).length;\n      if (g.reacting >= 2 && g.reacting === g.waiting && (!best || g.reacting > best.reacting)) best = g;\n    }\n    if (best) {\n      window.__walkers = best.people;\n      // (the camera turned onto them: on a phone's narrow view the corner's group is otherwise out of frame)\n      const cx = best.people.reduce((a, p) => a + p.x, 0) / best.people.length, cz = best.people.reduce((a, p) => a + p.z, 0) / best.people.length;\n      window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-1085, 9, -322], look: [cx, 0.5, cz], fov: 50 });\n      break;\n    }\n    if (performance.now() - t0 > 100000) { console.log('[ride-check] walk-onset none in 100 s'); window.__walkers = []; return; }\n    await new Promise((r) => setTimeout(r, 40));\n  }\n  console.log('[ride-check] walk-onset after ' + Math.round(performance.now() - t0) + ' ms: ' + window.__walkers.length + ' people');\n})()"
+ },
+ {
+  "name": "ks-walk-1",
+  "wait": 350,
+  "js": "(function anonymous(\n) {\n\n  console.log('[ride-check] walk-1 ' + JSON.stringify((window.__walkers || []).map((p) => ({ delay: +p.walkDelay.toFixed(2),\n    waiting: p.waiting, onCrossing: !!p.node, progress: p.node ? +(p.dir > 0 ? p.t : p.len - p.t).toFixed(2) : null }))));\n\n})()"
+ },
+ {
+  "name": "ks-walk-2",
+  "wait": 350,
+  "js": "(function anonymous(\n) {\n\n  console.log('[ride-check] walk-2 ' + JSON.stringify((window.__walkers || []).map((p) => ({ delay: +p.walkDelay.toFixed(2),\n    waiting: p.waiting, onCrossing: !!p.node, progress: p.node ? +(p.dir > 0 ? p.t : p.len - p.t).toFixed(2) : null }))));\n\n})()"
+ },
+ {
+  "name": "ks-walk-3",
+  "wait": 350,
+  "js": "(function anonymous(\n) {\n\n  console.log('[ride-check] walk-3 ' + JSON.stringify((window.__walkers || []).map((p) => ({ delay: +p.walkDelay.toFixed(2),\n    waiting: p.waiting, onCrossing: !!p.node, progress: p.node ? +(p.dir > 0 ? p.t : p.len - p.t).toFixed(2) : null }))));\n\n})()"
+ },
+ {
+  "name": "ks-walk-4",
+  "wait": 500,
+  "js": "(function anonymous(\n) {\n\n  console.log('[ride-check] walk-4 ' + JSON.stringify((window.__walkers || []).map((p) => ({ delay: +p.walkDelay.toFixed(2),\n    waiting: p.waiting, onCrossing: !!p.node, progress: p.node ? +(p.dir > 0 ? p.t : p.len - p.t).toFixed(2) : null }))));\n\n})()"
+ },
+ {
+  "name": "ks-walk-5",
+  "wait": 800,
+  "js": "(function anonymous(\n) {\n\n  console.log('[ride-check] walk-5 ' + JSON.stringify((window.__walkers || []).map((p) => ({ delay: +p.walkDelay.toFixed(2),\n    waiting: p.waiting, onCrossing: !!p.node, progress: p.node ? +(p.dir > 0 ? p.t : p.len - p.t).toFixed(2) : null }))));\n\n})()"
+ },
+ {
+  "name": "ks-walk-6",
+  "wait": 100,
+  "js": "(function anonymous(\n) {\n\n  console.log('[ride-check] walk-6 ' + JSON.stringify((window.__walkers || []).map((p) => ({ delay: +p.walkDelay.toFixed(2),\n    waiting: p.waiting, onCrossing: !!p.node, progress: p.node ? +(p.dir > 0 ? p.t : p.len - p.t).toFixed(2) : null }))));\n\n})()"
+ },
+ {
+  "name": "stats-end",
+  "wait": 100,
+  "js": "(() => {\n  const T = window.__CITY_APP.trafficSystem, s = T.pedRoutes.stats;\n  const { blockedAt, detourAt, ...rest } = s;\n  const placed = T.peds.filter((p) => p.placed);\n  const out = { ...rest, detourMs: +s.detourMs.toFixed(1), q: location.search, peds: placed.length,\n    onDetourPieces: placed.filter((p) => p.route && (p.route.before || p.route.after)).length,\n    onCrosswalks: placed.filter((p) => p.node).length, waiting: placed.filter((p) => p.waiting).length };\n  console.log('[ride-check] ped-routes ' + JSON.stringify(out));\n  if (!/peddetours=0/.test(location.search) && !(s.obstacles > 1000)) throw new Error('walkers got no furniture obstacles');\n})()"
+ }
+]

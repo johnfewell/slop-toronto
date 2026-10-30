@@ -1,0 +1,155 @@
+[
+ {
+  "name": "stats",
+  "mode": "person",
+  "time": "midday",
+  "wait": 500,
+  "js": "(() => { const C = window.CITY; console.log('[ride-check] sidewalks ' + JSON.stringify({ data: !!C.SIDEWALKS, key: C.SIDEWALKS && C.SIDEWALKS.blocks, live: C.sidewalkBlocksKey(C.GEO.blocks), q: location.search })); })()"
+ },
+ {
+  "name": "queen-west-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -1940.6,
+  "z": -733.6,
+  "heading": -1.58,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1910.8, 28, -715.3], look: [-1940.6, 0, -733.6], fov: 50 }); })()"
+ },
+ {
+  "name": "queen-west-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -1940.6,
+  "z": -733.6,
+  "heading": -1.58,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "king-spadina-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -1091.2,
+  "z": -307.6,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1073.2, 28, -337.6], look: [-1091.2, 0, -307.6], fov: 50 }); })()"
+ },
+ {
+  "name": "king-spadina-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -1091.2,
+  "z": -307.6,
+  "heading": 0,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "residential-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -2042.6,
+  "z": -2306.9,
+  "heading": -0.004,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-2024.5, 28, -2336.9], look: [-2042.6, 0, -2306.9], fov: 50 }); })()"
+ },
+ {
+  "name": "residential-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -2042.6,
+  "z": -2306.9,
+  "heading": -0.004,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "harbourfront-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -620.1,
+  "z": 540,
+  "heading": -1.713,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-592.9, 28, 562.1], look: [-620.1, 0, 540.0], fov: 50 }); })()"
+ },
+ {
+  "name": "harbourfront-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -620.1,
+  "z": 540,
+  "heading": -1.713,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "queen-e-bridge-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": 2338.9,
+  "z": -737.8,
+  "heading": -1.559,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [2369.1, 28, -720.1], look: [2338.9, 0, -737.8], fov: 50 }); })()"
+ },
+ {
+  "name": "queen-e-bridge-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": 2338.9,
+  "z": -737.8,
+  "heading": -1.559,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "fort-york-fallback-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -1993.6,
+  "z": 281.2,
+  "heading": -1.329,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1960.2, 28, 291.5], look: [-1993.6, 0, 281.2], fov: 50 }); })()"
+ },
+ {
+  "name": "fort-york-fallback-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -1993.6,
+  "z": 281.2,
+  "heading": -1.329,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "residential-wide",
+  "mode": "person",
+  "time": "midday",
+  "x": -2042.6,
+  "z": -2306.9,
+  "heading": 0,
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-2012.6, 75, -2376.9], look: [-2042.6, 0, -2306.9], fov: 50 }); })()"
+ },
+ {
+  "name": "king-spadina-wide",
+  "mode": "person",
+  "time": "midday",
+  "x": -1091.2,
+  "z": -307.6,
+  "heading": 0,
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1061.2, 75, -377.6], look: [-1091.2, 0, -307.6], fov: 50 }); })()"
+ }
+]

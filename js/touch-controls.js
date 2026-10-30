@@ -13,6 +13,7 @@ class TouchControls {
     this.buttonPointers = new Map();
     this.stickPointer = null;
     this.enabled = true;
+    this.panelOpen = false;
     this.available = false;
     this.touchSeen = false;
     this.onAvailabilityChange = null;
@@ -75,7 +76,7 @@ class TouchControls {
   }
 
   canInteract() {
-    return this.enabled && this.available && !document.hidden;
+    return this.enabled && !this.panelOpen && this.available && !document.hidden && !window.CITY.uiOverlay;
   }
 
   updateAvailability() {
@@ -84,14 +85,20 @@ class TouchControls {
     if (changed) this.reset();
     this.available = available;
     document.body.classList.toggle('touch-enabled', available);
-    this.root.hidden = !this.enabled || !available;
+    this.root.hidden = !this.enabled || !available || this.panelOpen;
     if (changed && typeof this.onAvailabilityChange === 'function') this.onAvailabilityChange(available);
   }
 
   setEnabled(enabled) {
     this.enabled = Boolean(enabled);
     if (!this.enabled) this.reset();
-    if (this.root) this.root.hidden = !this.enabled || !this.available;
+    if (this.root) this.root.hidden = !this.enabled || !this.available || this.panelOpen;
+  }
+
+  setPanelOpen(open) {
+    this.panelOpen = Boolean(open);
+    if (this.panelOpen) this.reset();
+    if (this.root) this.root.hidden = !this.enabled || !this.available || this.panelOpen;
   }
 
   setMode(mode) {

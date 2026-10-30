@@ -1,0 +1,13 @@
+[
+  {
+    "name": "merge-photo-multiplayer",
+    "js": "(async()=>{const a=window.__CITY_APP; if(!a.multiplayer||!window.CITY.MP_PROTOCOL)throw Error('Multiplayer not loaded'); const counts={},bad=[]; const wraps=[[a.multiplayer,'multiplayer'],[a.streetcars,'streetcars'],[a.subwayRide,'subwayRide']]; for(const [system,name] of wraps){const original=system.update;counts[name]=0;system.update=function(...args){counts[name]++;if(a.experience.held)bad.push(name);return original.apply(this,args);};} await window.__testPhoto('skyline',true);if(bad.length||new Set(Object.values(counts)).size!==1||!counts.multiplayer)throw Error('Merged loop advanced incorrectly: '+JSON.stringify({counts,bad}));a.photoMode.close();console.log('[ride-check] merged multiplayer/photo loop passed '+JSON.stringify(counts));})()",
+    "wait": 100
+  },
+  { "name": "merge-photo-seat", "js": "window.__testPhotoSeat('streetcar')", "wait": 100 },
+  {
+    "name": "merge-place-card",
+    "js": "(()=>{const a=window.__CITY_APP,p=window.CITY.Navigation.buildIndex().find(p=>p.city);if(!p)throw Error('City facilities missing');a.tourGuide.showPlace(p,{fly:false});if(!a.touchControls.panelOpen||a.touchControls.canInteract())throw Error('Place card lost touch protection');if(!a.photoMode.open())throw Error('Photo could not frame over place card');a.photoMode.close();if(!a.touchControls.panelOpen)throw Error('Photo lost place card state');console.log('[ride-check] merged place-card/photo input passed');})()",
+    "wait": 100
+  }
+]

@@ -77,7 +77,10 @@ function areas(features) {
         members.push({ type: 'way', ref: 0, role: 'outer', geometry: geom(outer) });
         for (const r of inner) members.push({ type: 'way', ref: 0, role: 'inner', geometry: geom(r) });
       }
-      out.push({ type: 'relation', id: +(f.properties.osm_id || wayId), tags: t, members });
+      // a closed way cut by the box edge comes out in pieces: shaped as a relation, it keeps its true OSM type
+      const e = { type: 'relation', id: +(f.properties.osm_id || wayId), tags: t, members };
+      if (!f.properties.osm_id) e.osmType = 'way';
+      out.push(e);
     }
   }
   return out;
@@ -147,7 +150,7 @@ write('osm_places.json', [
 const poiLike = (t) => t.name && (t.amenity || t.shop || t.office || t.tourism || t.leisure || t.healthcare || t.historic || t.government || t.diplomatic || t.building);
 write('osm_pois.json', [
   ...pts.filter((e) => cityPt(e) && poiLike(e.tags)),
-  ...polys.filter((e) => poiLike(e.tags)).map((e) => ({ type: e.type, id: e.id, center: center(e), tags: e.tags })).filter((e) => e.center)
+  ...polys.filter((e) => poiLike(e.tags)).map((e) => ({ type: e.type, id: e.id, ...(e.osmType && { osmType: e.osmType }), center: center(e), tags: e.tags })).filter((e) => e.center)
 ]);
 postBoxesOut(pts);
 subwayOut(pts);

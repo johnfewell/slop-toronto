@@ -227,7 +227,7 @@ async function buildParkSigns(scene) {
     // the sign's turned footprint (buildingContact's oriented box: local x along the panel)
     const cs = Math.cos(yaw), sn = Math.sin(yaw);
     const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
-    colliders.push({ minX: x - ex, maxX: x + ex, minZ: z - ez, maxZ: z + ez, maxY: y + top, obb: { cx: x, cz: z, hx, hz, cs, sn } });
+    colliders.push({ minX: x - ex, maxX: x + ex, minZ: z - ez, maxZ: z + ez, maxY: y + top, obb: { cx: x, cz: z, hx, hz, cs, sn }, prop: true }); // (street furniture: world-collision.js)
     sites.push({ x, z, yaw, name });
   });
   geo.setAttribute('signCell', new THREE.InstancedBufferAttribute(cellAttr, 2));

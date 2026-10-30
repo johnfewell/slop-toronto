@@ -1,14 +1,21 @@
 (function () {
 // js/gamepad-controls.js
-// A standard-mapping gamepad drives every travel mode (mrdoob, Slop New York 9c39d20): left stick steers & throttles,
-// the triggers drive / brake (car, bicycle) or climb / descend (helicopter), the right stick orbits the chase camera;
-// A jumps, X boosts, LB / RB step the mode, Y the camera, Start the map, B closes it, R3 recentres, D-pad zooms
+// A standard-mapping gamepad drives every travel mode (mrdoob, Slop New York 9c39d20, 67ef6be): on foot and in the
+// helicopter the left stick moves; in the car and on the bicycle its X axis only steers and the triggers alone
+// accelerate / brake-and-reverse (the helicopter's triggers climb / descend). The right stick orbits the chase camera;
+// A jumps (handbrake in the car), X boosts, LB / RB step the mode, Y the camera, Start the map, B closes it,
+// R3 recentres, D-pad zooms
 const { isTypingInField } = window.CITY;
 const DEAD_ZONE = 0.15;
 const BUTTON_COUNT = 17;
 
 function axis(value) {
   return Number.isFinite(value) ? Math.max(-1, Math.min(1, value)) : 0;
+}
+
+function steeringAxis(value) {
+  const v = axis(value);
+  return Math.sign(v) * Math.max(0, (Math.abs(v) - DEAD_ZONE) / (1 - DEAD_ZONE));
 }
 
 function stick(pad, offset) {
@@ -102,7 +109,7 @@ class GamepadControls {
       this.syncButtons = true;
     }
     this.connected = connected;
-    if (!pad) return;
+    if (!pad) { if (window.CITY.uiOverlay) this.callbacks.onOverlayInput?.({ reset: true }); return; }
 
     const pressed = buttons(pad);
     if (this.syncButtons) {
@@ -117,18 +124,35 @@ class GamepadControls {
     // Capture edges before callbacks: changing mode or opening the map may synchronously call reset().
     const toggleMap = edge(9), closeMap = edge(1);
     const cycleMode = Number(Boolean(edge(5))) - Number(Boolean(edge(4)));
-    const cycleCamera = edge(3), recenter = edge(11);
+    const cycleCamera = edge(3), recenter = edge(11), interact = edge(0);
     this.previousButtons = pressed;
 
     const target = document.activeElement;
     const typing = isTypingInField({ target }) || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
-    if (!this.focused || document.hidden || (typeof document.hasFocus === 'function' && !document.hasFocus()) || typing) {
+    if (!this.focused || document.hidden || (typeof document.hasFocus === 'function' && !document.hasFocus())) {
       this.suppressedButtons = pressed.slice();
       this.controller.clearGamepadInput();
+      if (window.CITY.uiOverlay) this.callbacks.onOverlayInput?.({ reset: true });
+      return;
+    }
+
+    if (typing) {
+      this.controller.clearGamepadInput();
+      if (window.CITY.uiOverlay) this.callbacks.onOverlayInput?.({ reset: true });
+      // A text field keeps its typing focus, but B can always leave a modal.
+      if (window.CITY.uiOverlay && closeMap) this.callbacks.onOverlayInput?.({ back: true, dt });
+      this.suppressedButtons = pressed.slice();
       return;
     }
 
     const revision = this.revision;
+    if (window.CITY.uiOverlay && window.CITY.uiOverlay !== 'map') {
+      this.controller.clearGamepadInput();
+      this.callbacks.onOverlayInput?.({ confirm: interact, back: closeMap, next: cycleCamera, secondary: edge(2), viewStep: cycleMode,
+        move: stick(pad, 0), look: stick(pad, 2), zoom: Number(held(13)) - Number(held(12)), timeStep: Number(Boolean(edge(15))) - Number(Boolean(edge(14))),
+        rise: buttonValue(pad, 7) - buttonValue(pad, 6), dt });
+      return;
+    }
     if (toggleMap) {
       this.controller.clearGamepadInput();
       this.callbacks.onToggleMap?.();
@@ -140,18 +164,24 @@ class GamepadControls {
       if (closeMap) this.callbacks.onCloseMap?.();
       return;
     }
+    if (interact && this.callbacks.onInteract?.()) {
+      this.controller.clearGamepadInput();
+      return;
+    }
     if (cycleMode) this.callbacks.onCycleMode?.(cycleMode);
     if (revision !== this.revision) return;
     if (cycleCamera) this.callbacks.onCycleCamera?.(1);
     if (revision !== this.revision) return;
     if (recenter) this.camera.resetOrbit();
 
-    const movement = stick(pad, 0), look = stick(pad, 2);
     const mode = this.controller.activeMode;
+    const driving = mode === 'car' || mode === 'cyclist';
+    const movement = driving ? { x: steeringAxis(pad.axes?.[0]), y: 0 } : stick(pad, 0);
+    const look = stick(pad, 2);
     let drive = -movement.y;
     let vertical = 0;
-    if (mode === 'car' || mode === 'cyclist') {
-      drive = Math.max(0, drive, buttonValue(pad, 7)) - Math.max(0, -drive, buttonValue(pad, 6));
+    if (driving) {
+      drive = buttonValue(pad, 7) - buttonValue(pad, 6);
     } else if (mode === 'helicopter') {
       vertical = buttonValue(pad, 7) - buttonValue(pad, 6);
     }

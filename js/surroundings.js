@@ -520,7 +520,7 @@ function buildSurroundings(scene, terrain, quality = {}) {
   buildLandmarks(group);
   const { list, stats } = generateBuildings(quality.farCity ?? 1);
   const mat = createBuildingMaterial();
-  for (const mesh of buildBuildingChunks(list, mat, 1200, 'SurroundingBuildings')) group.add(mesh);
+  for (const mesh of buildBuildingChunks(list, mat, 1200 * (quality.staticCell || 1), 'SurroundingBuildings')) group.add(mesh);
 
   scene.add(group);
   console.info(`[surroundings] ${list.length} buildings ${JSON.stringify(stats)}, built in ${(performance.now() - t0).toFixed(0)} ms`);

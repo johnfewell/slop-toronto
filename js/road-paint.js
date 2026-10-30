@@ -7,39 +7,63 @@
 // paint rides the flyovers' decks & ramps (road-network.js edgeY). It covers every street as built (the network's
 // paintEdges, dead ends included), and a line carries on through a street's bends, joined at a bounded mitre with its
 // dashes in phase (mrdoob's 30096be).
+// The markings are cut into square cells (mrdoob's 997185d): each cell is a mesh the view frustum can skip, and the
+// paint's cells go beyond PAINT_CULL, by when the material has faded it out (it is a fraction of a pixel wide by then).
+// The trails' asphalt surfaces (cycling.js) are cells of their own that stay at any distance.
 
 const { THREE, CROSSWALK, createRoadPaintMaterial, edgeY } = window.CITY;
 
 const WHITE = new THREE.Color(0xe6e2d6);
 const YELLOW = new THREE.Color(0xe0b12e); // Ontario's centre lines: yellow between opposing traffic
 const HEIGHT = 0.012; // above the asphalt
+const PAINT_CELL = 1200; // m (the paint's cells)
+const SURFACE_CELL = 2400; // m (the trails' surfaces: kept at any distance, cells for the view frustum alone)
+const PAINT_CULL = 1650 * window.CITY.QUALITY.cull; // m: the paint's cells go beyond this (x the tier's cull distances)
+const MAX_SEGMENT = 200; // m: longer strips are cut, so no cell's bounds reach far past it
+const WIDEN = 16; // createRoadPaintMaterial widens a thin strip up to 16x its width on screen (the bounds allow for it)
+
+// The vertex arrays of one cell's mesh
+const newCell = (surface) => ({ surface, position: [], side: [], paint: [], colors: [], index: [] });
 
 function buildRoadPaint(scene, network) {
-  const position = [];
-  const side = [];
-  const paint = [];
-  const colors = [];
-  const index = [];
+  const cells = new Map();
+  const cellAt = (x, z, surface) => {
+    const size = surface ? SURFACE_CELL : PAINT_CELL;
+    const key = `${surface ? 's' : 'p'}${Math.floor(x / size)},${Math.floor(z / size)}`;
+    let c = cells.get(key);
+    if (!c) cells.set(key, (c = newCell(surface)));
+    return c;
+  };
   const lines = [];
   const bends = new Map();
 
-  // Flat strip w wide from a (at height ay) to b (by), with a dash pattern (period, duty cycle) running along it from
-  // `phase` (flow -1: the dashes run back from b to a)
-  function strip(ax, ay, az, bx, by, bz, w, col, period = 1, duty = 1, phase = 0, flow = 1) {
+  // One quad of a strip into the cell of its middle
+  function quad(ax, ay, az, bx, by, bz, sx, sz, col, period, duty, u0, u1) {
+    const c = cellAt((ax + bx) * 0.5, (az + bz) * 0.5, duty > 1.5);
+    const i = c.position.length / 3;
+    for (const [x, y, z, s, u] of [[ax, ay, az, -1, u0], [ax, ay, az, 1, u0], [bx, by, bz, 1, u1], [bx, by, bz, -1, u1]]) {
+      c.position.push(x + sx * s, y + HEIGHT, z + sz * s);
+      c.side.push(sx * s, sz * s);
+      c.paint.push(u, period, duty);
+      c.colors.push(col.r, col.g, col.b);
+    }
+    c.index.push(i, i + 1, i + 2, i, i + 2, i + 3);
+  }
+  // A flat strip w wide from a (at height ay) to b (by), with a dash pattern (period, duty cycle) running along it from
+  // `phase` (flow -1: the dashes run back from b to a); shorter than `min`, nothing
+  function stripMin(min, ax, ay, az, bx, by, bz, w, col, period = 1, duty = 1, phase = 0, flow = 1) {
     const len = Math.hypot(bx - ax, bz - az);
-    if (len < 0.05) return;
+    if (len < min) return;
     const sx = ((az - bz) / len) * w * 0.5;
     const sz = ((bx - ax) / len) * w * 0.5;
-    const i = position.length / 3;
-    const end = phase + len * flow;
-    for (const [x, y, z, s, u] of [[ax, ay, az, -1, phase], [ax, ay, az, 1, phase], [bx, by, bz, 1, end], [bx, by, bz, -1, end]]) {
-      position.push(x + sx * s, y + HEIGHT, z + sz * s);
-      side.push(sx * s, sz * s);
-      paint.push(u, period, duty);
-      colors.push(col.r, col.g, col.b);
+    const parts = Math.ceil(len / MAX_SEGMENT);
+    for (let k = 0; k < parts; k++) {
+      const t0 = k / parts, t1 = (k + 1) / parts;
+      quad(ax + (bx - ax) * t0, ay + (by - ay) * t0, az + (bz - az) * t0, ax + (bx - ax) * t1, ay + (by - ay) * t1, az + (bz - az) * t1,
+        sx, sz, col, period, duty, phase + len * t0 * flow, phase + len * t1 * flow);
     }
-    index.push(i, i + 1, i + 2, i, i + 2, i + 3);
   }
+  const strip = (...args) => stripMin(0.05, ...args);
 
   // Edges run between stop lines; s is measured from the start one and o to the right of the centre line
   const at = (e, s, o) => [e.sx + e.dx * s + e.rx * o, edgeY(e, s), e.sz + e.dz * s + e.rz * o];
@@ -212,50 +236,75 @@ function buildRoadPaint(scene, network) {
   // A band along a polyline P (cycling.js: points with their normal n, mitre m & distance s) between offsets o0 < o1
   // along n, dashed as strip's are (duty over 1: a surface, see createRoadPaintMaterial)
   // (o0 & o1 may also be arrays, an offset per point)
+  // (each piece between two points goes into the cell of its middle; a run carries on in the next cell from the point
+  // where it crosses over)
   function ribbon(P, o0, o1, col, period = 1, duty = 1) {
     if (!P || P.length < 2) return;
-    const i = position.length / 3;
-    for (let k = 0; k < P.length; k++) {
+    const vertices = (c, k) => {
       const p = P[k];
       const a = Array.isArray(o0) ? o0[k] : o0, b = Array.isArray(o1) ? o1[k] : o1;
       const half = (b - a) / 2;
+      const i = c.position.length / 3;
       for (const [o, sgn] of [[a, -1], [b, 1]]) {
-        position.push(p.x + p.nx * o * p.m, p.y + HEIGHT, p.z + p.nz * o * p.m);
-        side.push(p.nx * half * sgn * p.m, p.nz * half * sgn * p.m);
-        paint.push(p.s, period, duty);
-        colors.push(col.r, col.g, col.b);
+        c.position.push(p.x + p.nx * o * p.m, p.y + HEIGHT, p.z + p.nz * o * p.m);
+        c.side.push(p.nx * half * sgn * p.m, p.nz * half * sgn * p.m);
+        c.paint.push(p.s, period, duty);
+        c.colors.push(col.r, col.g, col.b);
       }
-    }
-    // facing up: n is the right normal of the way P runs (strip's winding), or the left
+      return i;
+    };
+    let c = null, a = 0;
     for (let k = 0; k + 1 < P.length; k++) {
-      const a = i + 2 * k;
-      if (P.nRight) index.push(a, a + 1, a + 3, a, a + 3, a + 2);
-      else index.push(a, a + 3, a + 1, a, a + 2, a + 3);
+      const next = cellAt((P[k].x + P[k + 1].x) * 0.5, (P[k].z + P[k + 1].z) * 0.5, duty > 1.5);
+      if (next !== c) { c = next; a = vertices(c, k); }
+      vertices(c, k + 1);
+      // facing up: n is the right normal of the way P runs (strip's winding), or the left
+      if (P.nRight) c.index.push(a, a + 1, a + 3, a, a + 3, a + 2);
+      else c.index.push(a, a + 3, a + 1, a, a + 2, a + 3);
+      a += 2;
     }
   }
-  // Toronto's bikeways: lanes, tracks, crossrides & symbols, the trails' surfaces (cycling.js)
-  const roadVerts = position.length / 3;
-  const material = createRoadPaintMaterial();
-  if (window.CITY.bikePaint) window.CITY.bikePaint({ strip, ribbon, WHITE, YELLOW, material, scene, height: HEIGHT });
-  console.info(`[roadPaint] ${position.length / 3} vertices (${position.length / 3 - roadVerts} the bikeways')`);
+  // Toronto's bikeways: lanes, tracks, crossrides & symbols, the trails' surfaces (cycling.js); the pavement symbols'
+  // many small strips go in with the paint (`symbolStrip`: strips down to 2 cm)
+  const symbolStrip = (...args) => stripMin(0.02, ...args);
+  if (window.CITY.bikePaint) window.CITY.bikePaint({ strip, ribbon, symbolStrip, WHITE, YELLOW });
 
-  const normal = new Float32Array(position.length);
-  for (let i = 1; i < normal.length; i += 3) normal[i] = 1;
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
-  geometry.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  geometry.setAttribute('side', new THREE.Float32BufferAttribute(side, 2));
-  geometry.setAttribute('paint', new THREE.Float32BufferAttribute(paint, 3));
-  geometry.setIndex(index);
-
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = 'RoadMarkings';
-  mesh.receiveShadow = true;
-  mesh.renderOrder = -1; // under the other see-through ground effects (contact shadows, headlight beams)
-  scene.add(mesh);
-  return mesh;
+  // One mesh per cell: the surfaces' first (drawn first: the trails' centre lines go over them), all in one material
+  const group = new THREE.Group();
+  group.name = 'RoadMarkings';
+  const material = createRoadPaintMaterial(PAINT_CULL);
+  const first = new Map();
+  let vertices = 0;
+  for (const c of [...cells.values()].sort((p, q) => q.surface - p.surface)) {
+    const n = c.position.length / 3;
+    const normal = new Float32Array(c.position.length);
+    for (let i = 1; i < normal.length; i += 3) normal[i] = 1;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(c.position, 3));
+    geometry.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(c.colors, 3));
+    geometry.setAttribute('side', new THREE.Float32BufferAttribute(c.side, 2));
+    geometry.setAttribute('paint', new THREE.Float32BufferAttribute(c.paint, 3));
+    geometry.setIndex(n > 65535 ? new THREE.Uint32BufferAttribute(c.index, 1) : new THREE.Uint16BufferAttribute(c.index, 1));
+    // bounds round the strips as the material may widen them
+    let reach = 0;
+    for (let i = 0; i < c.side.length; i += 2) reach = Math.max(reach, Math.hypot(c.side[i], c.side[i + 1]));
+    geometry.computeBoundingSphere();
+    geometry.boundingSphere.radius += reach * (WIDEN - 1);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = c.surface ? 'RoadMarkingsSurfaces' : 'RoadMarkingsPaint';
+    mesh.receiveShadow = true;
+    mesh.renderOrder = -1; // under the other see-through ground effects (contact shadows, headlight beams)
+    // scene-culling.js hides the paint's cells beyond PAINT_CULL (at any quality tier's safety net: the fade is fixed)
+    if (!c.surface) Object.assign(mesh.userData, { cullDistance: PAINT_CULL, cullFixed: true });
+    if (first.has(c.surface)) mesh.userData.sharesPipelineWith = first.get(c.surface);
+    else first.set(c.surface, mesh);
+    group.add(mesh);
+    vertices += n;
+  }
+  console.info(`[roadPaint] ${vertices} vertices in ${group.children.length} cells (${group.children.filter((m) => m.name === 'RoadMarkingsSurfaces').length} of trail surfaces)`);
+  scene.add(group);
+  return group;
 }
 
 Object.assign(window.CITY, { buildRoadPaint });

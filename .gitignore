@@ -1,5 +1,8 @@
 .DS_Store
 node_modules/
+node_modules
+# Polyfork model may ship inside the game, not as a standalone Git asset.
+assets/props/plaza-bench.glb
 capture-out/
 gpu2-out/
 # not shipped: Abuja Tour's geodata & landing photos (the Toronto page replaces them), local debug probes
@@ -15,3 +18,5 @@ dist/
 # local prop sources for tools/prop-preview.html (John's raw models & simplification variants)
 tools/prop-src/
 .wrangler/
+# br doctor per-run artifacts
+.doctor/

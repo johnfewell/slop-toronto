@@ -18,6 +18,8 @@ const { THREE, GEO, QUALITY, blockAt, deckHeightAt, railLiftAt, railSpanAt, SIGN
 const { Fn, color, mix, step, smoothstep, abs, uv, positionGeometry, normalGeometry, float, vec2, texture, attribute } = window.CITY.TSL;
 const { mergeGeometries } = window.CITY.Addons;
 
+const { openTransitDoors, stepTransitDoors } = window.CITY;
+
 const GAUGE = 1.495; // TTC broad gauge (4 ft 10 7/8 in)
 const SECTIONS = [6.6, 5.7, 5.4, 5.7, 6.6]; // module lengths, nose to tail (30.2 m with the gangways)
 const DOORS = [-1.2, 0, null, 0, 1.2]; // a double door per module (local z of its centre; the cab modules behind the cab)
@@ -701,6 +703,7 @@ function buildRoutes(tracks, network) {
       i0 = bi;
       const s = Math.min(t.len - 2, t.cum[bi] + 4);
       if (s > CAR_LEN + 2 && !t.stops.some((q) => Math.abs(q - s) < 30)) {
+        (t.stopRecords || (t.stopRecords = [])).push({ id: st.id, s, x: st.x, z: st.z, name: st.name });
         t.stops.push(s);
         (t.stopNames || (t.stopNames = [])).push(st.name);
       }
@@ -840,7 +843,7 @@ function moduleGeometry(len, nose, door) {
 }
 // `lamp`: the cab end's lamps, white headlamps (the leading cab) or red tail lamps (the trailing one, turned round);
 // `atlas`: the destination signs (transit.js signAtlas), each car's row its instance's signRow
-function createStreetcarMaterial(lamp = 0xfff1d6, atlas = null) {
+function createStreetcarMaterial(lamp = 0xfff1d6, atlas = null, reversed = false) {
   const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.38, metalness: 0.25 });
   const y = positionGeometry.y;
   const dz = abs(uv().x);
@@ -852,6 +855,8 @@ function createStreetcarMaterial(lamp = 0xfff1d6, atlas = null) {
   const skirt = float(1.0).sub(smoothstep(0.42, 0.46, y));
   // the double door: dark seams round the leaves & between them, glazed down to the waist
   const doorZone = step(dz, 0.72).mul(step(0.36, y)).mul(float(1.0).sub(step(2.62, y))).mul(side);
+  const doorSide = step(0.6, normalGeometry.x.mul(reversed ? 1 : -1));
+  mat.maskNode = float(1).sub(doorZone.mul(doorSide).mul(attribute('doorOpen', 'float'))).greaterThan(0.99);
   const seams = doorZone.mul(float(1.0).sub(smoothstep(0.02, 0.035, dz)).add(smoothstep(0.66, 0.68, dz))).min(1.0);
   const doorGlass = doorZone.mul(smoothstep(1.0, 1.04, y));
   // the cab end: the black windscreen, the destination sign over it, the lamps low at both corners
@@ -906,8 +911,9 @@ function createStreetcars(scene, trafficSystem) {
   // (the phone tiers: fewer cars, the headways stretched by their spacing)
   const thin = Math.max(1, (QUALITY.streetcarSpacing || 500) / 500);
   const cars = [];
+  let nextCarId = 0;
   const newCar = (track, s) => {
-    const car = { track, route: track.pattern || null, s, speed: MAX_SPEED * 0.6, dwell: 0, k: 0, atEnd: 0, sections: SECTIONS.map(() => ({ x: 0, y: 0, z: 0, yaw: 0 })) };
+    const car = { id: `streetcar-${++nextCarId}`, doorState: 'closed', doorProgress: 0, stopIndex: -1, track, route: track.pattern || null, s, speed: MAX_SPEED * 0.6, dwell: 0, k: 0, atEnd: 0, sections: SECTIONS.map(() => ({ x: 0, y: 0, z: 0, yaw: 0 })) };
     while (car.k < track.stops.length && track.stops[car.k] < s - 0.5) car.k++;
     cars.push(car);
     return car;
@@ -963,7 +969,7 @@ function createStreetcars(scene, trafficSystem) {
   const atlas = routed ? T.signAtlas(routes.map((t) => t.sign), 1.6 / 0.34) : null;
   for (const t of routes) t.signRow = atlas.rowOf(t.sign);
   const headMat = atlas ? createStreetcarMaterial(0xfff1d6, atlas) : bodyMat;
-  const tailMat = createStreetcarMaterial(0xff2a1c, atlas);
+  const tailMat = createStreetcarMaterial(0xff2a1c, atlas, true);
   const noseGeo = moduleGeometry(SECTIONS[0], true, DOORS[0]);
   const tailGeo = atlas ? noseGeo.clone() : noseGeo;
   const midGeos = SECTIONS.map((l, k) => moduleGeometry(l, false, DOORS[k]));
@@ -976,6 +982,15 @@ function createStreetcars(scene, trafficSystem) {
   ].map((g) => g.toNonIndexed()));
   // (drawn at once: those within DRAW_RADIUS; a timetabled fleet comes and goes, so room for the most there could be)
   const count = Math.max(1, routed ? 160 : cars.length);
+  const doorData = [noseGeo, tailGeo, ...midGeos.slice(1, 4)].map((geo) => {
+    const data = new THREE.InstancedBufferAttribute(new Float32Array(count), 1);
+    geo.setAttribute('doorOpen', data);
+    return data;
+  });
+  const doorLeaves = new THREE.InstancedMesh(new THREE.BoxGeometry(0.055, 2.2, 0.72),
+    new THREE.MeshStandardNodeMaterial({ color: 0x202b32, roughness: 0.3, metalness: 0.35 }), count * 8);
+  doorLeaves.name = 'StreetcarDoorLeaves';
+  const doorPoint = new THREE.Vector3(), doorMatrix = new THREE.Matrix4();
   const signRows = atlas ? [noseGeo, tailGeo].map((g) => {
     const a = new THREE.InstancedBufferAttribute(new Float32Array(count), 1);
     g.setAttribute('signRow', a);
@@ -986,7 +1001,7 @@ function createStreetcars(scene, trafficSystem) {
   const mids = midGeos.slice(1, 4).map((g) => new THREE.InstancedMesh(g, bodyMat, count));
   const gangways = new THREE.InstancedMesh(gangwayGeo, new THREE.MeshStandardNodeMaterial({ color: 0x1b1c1e, roughness: 0.9 }), count * 4);
   const pantos = new THREE.InstancedMesh(pantoGeo, new THREE.MeshStandardNodeMaterial({ color: 0x2a2b2d, roughness: 0.5, metalness: 0.6 }), count);
-  const bodies = [head, tail, ...mids, gangways, pantos];
+  const bodies = [head, tail, ...mids, gangways, pantos, doorLeaves];
   for (const m of bodies) {
     m.castShadow = true;
     m.receiveShadow = true;
@@ -1104,7 +1119,9 @@ function createStreetcars(scene, trafficSystem) {
         on.add(v.route);
         let car = liveCars.get(v.id);
         if (car && car.track !== m.t) {
-          // on another of its route's runs now: moved there if out of sight, else it catches up where it is
+          // on another of its route's runs now: moved there if out of sight, else it catches up where it is (the car
+          // the player rides stays on its run)
+          if (car.ridden) continue;
           if (Math.hypot(car.sections[2].x - camX, car.sections[2].z - camZ) > 300 || !car.placed) {
             retire(car);
             car = null;
@@ -1129,7 +1146,7 @@ function createStreetcars(scene, trafficSystem) {
       liveRoutes = on;
       // the timetable's cars on routes now running live: gone, out of sight
       for (const car of [...cars]) {
-        if (car.live || !liveRoutes.has(car.track.pattern.route)) continue;
+        if (car.live || car.ridden || !liveRoutes.has(car.track.pattern.route)) continue;
         if (!car.placed || Math.hypot(car.sections[2].x - camX, car.sections[2].z - camZ) > 250) retire(car);
       }
     });
@@ -1138,6 +1155,9 @@ function createStreetcars(scene, trafficSystem) {
   function liveTarget(car, t, now) {
     const want = Math.min(t.len, car.live.s + t.schedSpeed * ((now - car.live.at) / 1000));
     const err = want - car.s;
+    // (the car the player rides: never put somewhere else, and only gently hurried or held, so the ride stays smooth
+    // and drifts back to where the feed says over a few stops)
+    if (car.ridden) return Math.max(0, Math.min(MAX_SPEED, t.cruise * Math.max(0.8, Math.min(1.25, 1 + err / 400))));
     if ((err > 400 || err < -250) && Math.hypot(car.sections[2].x - camX, car.sections[2].z - camZ) > 300) {
       car.s = Math.max(CAR_LEN + 1, want);
       car.k = 0;
@@ -1164,6 +1184,7 @@ function createStreetcars(scene, trafficSystem) {
     if (t.clock < 0) t.clock = t.headway * 0.5;
   }
   function retire(car) {
+    if (car.ridden) return; // (never the car the player rides)
     if (car.liveId) liveCars.delete(car.liveId);
     const i = cars.indexOf(car);
     if (i >= 0) cars.splice(i, 1);
@@ -1183,7 +1204,7 @@ function createStreetcars(scene, trafficSystem) {
     obstacles.length = 0;
     if (routed) for (const t of routes) spawn(t, dt);
     const now = Date.now();
-    let n = 0;
+    let n = 0, nd = 0;
     for (let ci = cars.length - 1; ci >= 0; ci--) {
       const car = cars[ci];
       const t = car.track;
@@ -1193,18 +1214,16 @@ function createStreetcars(scene, trafficSystem) {
       let stopD = Infinity;
       sample(t, car.s, tmp);
       const near = Math.abs(tmp.x - camX) < NEAR + 50 && Math.abs(tmp.z - camZ) < NEAR + 50;
-      if (car.dwell > 0) {
-        // (a live car running late cuts its dwell short)
-        car.dwell -= car.live && target > (t.cruise || MAX_SPEED) * 1.3 ? dt * 3 : dt;
+      if (stepTransitDoors(car, dt)) {
         target = 0;
       } else {
         const next = t.stops[car.k];
         if (next !== undefined) {
           const d = next - car.s;
-          if (d < 0.6 && car.speed < 1.0) {
-            car.dwell = (t.dwell || DWELL) * (0.7 + Math.random() * 0.6);
+          if (d >= -1 && d < 0.6 && car.speed < 0.2) {
+            openTransitDoors(car, car.k, (t.dwell || DWELL) * (0.7 + Math.random() * 0.6));
             car.k++;
-            car.speed = 0;
+            target = 0;
           } else if (d < -1) car.k++; // (ran past it)
           else stopD = Math.min(stopD, d);
         }
@@ -1212,6 +1231,7 @@ function createStreetcars(scene, trafficSystem) {
         if (routed) stopD = Math.min(stopD, t.len - car.s);
         if (near) stopD = Math.min(stopD, blockedAhead(car, 75, others, ground) - 4);
       }
+      if (car.doorState !== 'closed') target = 0;
       if (stopD < Infinity) target = Math.min(target, Math.sqrt(Math.max(0, 2 * DECEL * Math.max(0, stopD))));
       if (car.speed < target) car.speed = Math.min(target, car.speed + ACCEL * dt);
       else car.speed = Math.max(target, car.speed - (stopD < 3 ? DECEL * 3 : DECEL * 1.6) * dt);
@@ -1221,7 +1241,7 @@ function createStreetcars(scene, trafficSystem) {
           // the end of its run through the city: gone once out of sight (in a tunnel, far off, or after a layover)
           car.s = Math.min(car.s, t.len);
           car.atEnd += dt;
-          if (tmp.y < -3 || Math.hypot(tmp.x - camX, tmp.z - camZ) > 250 || car.atEnd > 90) {
+          if (!car.ridden && (tmp.y < -3 || Math.hypot(tmp.x - camX, tmp.z - camZ) > 250 || car.atEnd > 90)) {
             retire(car);
             continue;
           }
@@ -1234,7 +1254,7 @@ function createStreetcars(scene, trafficSystem) {
       // far from the camera (not drawn, no obstacle, out of earshot) the modules stay where they were: placing them
       // is 11 track lookups a car, a frame (the nose, sampled above, tells)
       car.placed = false;
-      if (Math.abs(tmp.x - camX) > farR || Math.abs(tmp.z - camZ) > farR) continue;
+      if (!car.ridden && (Math.abs(tmp.x - camX) > farR || Math.abs(tmp.z - camZ) > farR)) continue;
       car.placed = true;
       // the modules follow the track behind the nose
       let back = car.s;
@@ -1263,6 +1283,24 @@ function createStreetcars(scene, trafficSystem) {
       // draw: the cab modules (the tail one turned round), the inner ones, the gangways, the pantograph mid-roof;
       // only near the camera, and not deep in a tunnel
       if (dCam > drawR || mid.y < -HEIGHT - 0.5 || n >= count) continue;
+      // Doors stay visible from the occupied interior even while its opaque exterior is suppressed.
+      for (let k = 0; k < SECTIONS.length; k++) {
+        if (DOORS[k] === null) continue;
+        const sec = car.sections[k];
+        dummy.position.set(sec.x, sec.y, sec.z);
+        dummy.rotation.set(0, sec.yaw, 0, 'YXZ');
+        dummy.rotateX(-sec.pitch);
+        dummy.updateMatrix();
+        doorMatrix.copy(dummy.matrix);
+        for (const side of [-1, 1]) {
+          if (nd >= count * 8) break;
+          doorPoint.set(-HALF_W - 0.015, 1.52, DOORS[k] + side * (0.36 + (car.doorProgress || 0) * 0.76)).applyMatrix4(doorMatrix);
+          dummy.position.copy(doorPoint);
+          dummy.updateMatrix();
+          doorLeaves.setMatrixAt(nd++, dummy.matrix);
+        }
+      }
+      if (car.ridden && car.hideBody) continue;
       car.sections.forEach((sec, k) => {
         dummy.position.set(sec.x, sec.y, sec.z);
         dummy.rotation.set(0, sec.yaw + (k === SECTIONS.length - 1 ? Math.PI : 0), 0, 'YXZ');
@@ -1285,17 +1323,19 @@ function createStreetcars(scene, trafficSystem) {
         }
       });
       for (const a of signRows) a.array[n] = t.signRow || 0;
+      for (const a of doorData) a.array[n] = car.doorProgress || 0;
       n++;
     }
     for (const m of [head, tail, ...mids, pantos]) m.count = n;
     gangways.count = n * 4;
+    doorLeaves.count = nd;
     for (const m of bodies) {
       if (!m.count) continue;
       m.instanceMatrix.clearUpdateRanges();
       m.instanceMatrix.addUpdateRange(0, m.count * 16);
       m.instanceMatrix.needsUpdate = true;
     }
-    for (const a of signRows) {
+    for (const a of [...signRows, ...doorData]) {
       if (!n) continue;
       a.clearUpdateRanges();
       a.addUpdateRange(0, n);
@@ -1375,7 +1415,29 @@ function createStreetcars(scene, trafficSystem) {
   const km = Math.round(tracks.reduce((t, k) => t + k.len, 0) / 100) / 10;
   const runs = routed ? routes : tracks;
   console.info(`[streetcars] ${tracks.length} track runs, ${km} km, ${cars.length} streetcars on ${runs.length} ${routed ? `TTC routes at ${T.hour}:00 (${[...new Set(routes.map((t) => t.pattern.route))].join(', ')})` : 'runs'}, ${runs.reduce((t, k) => t + k.stops.length, 0)} stops, ${runs.reduce((t, k) => t + k.signals.length, 0)} signals, ${trackTiles.length} track tiles`);
-  return { group, update, cars, tracks, routes, sample, simulate, liveCars };
+  // A car put on a route at `s` (the featured ride, streetcar-ride.js): the route's own cars within reach of it go
+  // first, so it doesn't land on top of one
+  function spawnAt(t, s) {
+    const point = {}, other = {};
+    sample(t, s, point);
+    for (const o of cars) {
+      sample(o.track, o.s, other);
+      if (Math.abs(point.y - other.y) < 2.5 && Math.hypot(point.x - other.x, point.z - other.z) < CAR_LEN + 8) return null;
+    }
+    const car = newCar(t, s);
+    t.cars.push(car);
+    return car;
+  }
+  function whyWaiting(car, elapsed) {
+    return { nextStop: car.track.stops[car.k] - car.s, signal: phaseAhead(car, elapsed), leader: followAhead(car) - 4,
+      obstruction: blockedAhead(car, 75, [...(trafficSystem?.cars || []), ...(trafficSystem?.buses || [])], null) - 4,
+      road: [...(trafficSystem?.cars || []), ...(trafficSystem?.buses || [])].filter((v) => v.edge && Math.hypot(v.x - tmp.x, v.z - tmp.z) < 25)
+        .map((v) => ({ x:v.x,z:v.z,yaw:v.yaw,speed:v.speed,half:v.half,width:v.halfWidth,wait:v.wait,why:trafficSystem.whyWaiting(v),conn:!!v.conn,yielding:v.yielding,turn:v.move?.turn,gap:v.gap })),
+      nearby: cars.filter((o) => o !== car && o.placed && Math.hypot(o.sections[0].x - car.sections[0].x, o.sections[0].z - car.sections[0].z) < 45)
+        .map((o) => ({ id: o.id, sign: o.track.sign, speed: o.speed, s: o.s, x: o.sections[0].x, z: o.sections[0].z, yaw: o.sections[0].yaw })) };
+  }
+  const shape = { SECTIONS, DOORS, GANGWAY, CAR_LEN, HALF_W, HEIGHT, WIRE_Y };
+  return { group, update, cars, tracks, routes, sample, simulate, liveCars, spawnAt, retire, shape, whyWaiting };
 }
 
 Object.assign(window.CITY, { createStreetcars });

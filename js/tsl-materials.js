@@ -56,6 +56,8 @@ const {
   normalize,
   reflect,
   pow,
+  log2,
+  exp2,
   sign,
   fwidth,
   texture,
@@ -78,6 +80,9 @@ const cityUniforms = {
   uRoadWetness: uniform(0.38),
   uCanyonBounce: uniform(0.52)
 };
+
+// How much wear the asphalt & sidewalk shaders draw (quality.js `surfaceWear`): 2 everything, 1 the cheap part, 0 none
+const SURFACE_WEAR = window.CITY.QUALITY?.surfaceWear ?? 2;
 
 // Fast deterministic 2D -> 1D hash in TSL
 const hash2D = Fn(([p]) => {
@@ -153,6 +158,27 @@ const filteredPulse = Fn(([x, a, b, w]) => {
   return integral(p.add(hw)).sub(integral(p.sub(hw))).div(hw.mul(2.0));
 });
 
+// Keep distant lit windows in 1–2 pixel clusters. Adjacent world-anchored scales cross-fade, and
+// the half-width inset leaves room for filtering at cell edges while preserving mean brightness.
+const distantWindowLight = Fn(([grid, fw, probability, seed, lod]) => {
+  const light = float(probability).toVar();
+  If(cityUniforms.uInteriorGlow.greaterThan(0.5).and(lod.greaterThan(0.0)), () => {
+    const level = log2(max(max(fw.x, fw.y).mul(4.0), 2.0)).toVar();
+    const scale = exp2(floor(level)).toVar();
+    const cluster = (size) => {
+      const p = grid.div(size).toVar();
+      const width = fw.div(size).toVar();
+      const lit = step(float(1.0).sub(probability), hash2D(floor(p).add(vec2(seed, 73.1))));
+      const coverage = filteredPulse(fract(p.x), 0.25, 0.75, width.x)
+        .mul(filteredPulse(fract(p.y), 0.25, 0.75, width.y));
+      return lit.mul(coverage).mul(4.0);
+    };
+    const clustered = mix(cluster(scale), cluster(scale.mul(2.0)), smoothstep(0.0, 1.0, fract(level)));
+    light.assign(mix(probability, clustered, smoothstep(0.5, 1.2, cityUniforms.uInteriorGlow)));
+  });
+  return light;
+});
+
 /**
  * Occlusion-Aware Street Sky Visibility (aoNode)
  * Abuja is an open, low-rise city of wide roads and set-back compounds: the sky is only partly hidden near the ground
@@ -187,8 +213,8 @@ const facadeAlongZ = varying(
  *   set back behind the facade so neighbouring windows look into the same full-sized room.
  * - Includes left & right fabric drapes hung just inside the window frame (`winUV`) from a 6-swatch
  *   domestic palette that block interior glow (`emit = 0.20`) so drapes silhouette against lit rooms.
- * - Once windows shrink to a pixel or two (`fwNode`: pixel footprint in cells) rooms glow at the mean lit level (with
- *   a lit room's tint), drapes at their mean coverage & lamps fade out, so distant towers don't twinkle in motion.
+ * - Once windows shrink to a pixel or two (`fwNode`: pixel footprint in cells), lit rooms merge into filtered
+ *   clusters, drapes settle to their mean coverage & lamps fade out, so distant towers don't twinkle in motion.
  * - Returns `vec4(roomColor, litEmit)`.
  */
 const evaluateApartmentInterior = Fn(([uCoord, vCoord, winUV, cellId, winWNode, floorHNode, seedNode, warmthNode, litProbNode, fwNode]) => {
@@ -344,7 +370,8 @@ const evaluateApartmentInterior = Fn(([uCoord, vCoord, winUV, cellId, winWNode, 
   const roomWarmth = mix(vec3(1.0), lightCol, lit.mul(0.85));
   const finalRoomCol = bestCol.mul(roomWarmth).mul(mix(float(0.85), float(1.35), lit));
 
-  return vec4(finalRoomCol, mix(litRoom, litProbNode, lod).mul(bestEmit));
+  const distantLit = distantWindowLight(vec2(gridU, v.div(fH)), fwNode, litProbNode, seedNode, lod);
+  return vec4(finalRoomCol, mix(litRoom, distantLit, lod).mul(bestEmit));
 });
 
 /**
@@ -1542,12 +1569,147 @@ function roadWetMasks(field, drainage = 0.0) {
 }
 
 /**
- * Unified City Roadway Asphalt, Footprint-Filtered Aggregate `bumpNormal`, Scattered Manholes
- * & Post-Rain Wetness (upgraded with techniques from CityGenerator.js `createRoadMaterial`).
+ * Which way the roads run, for the cracks (surfaceWear 2): a texture over the detailed city, 8 m a texel, holding
+ * (cos 2θ, sin 2θ) of the nearest street's bearing θ within its width (an orientation: the sign of the direction doesn't
+ * matter), filtered linearly so it turns smoothly through the junctions. From the street centre lines (CITY.ROADS; not
+ * the raised decks). Built once, ~1.2 M texels (2.4 MB).
+ */
+let _roadDirField = null;
+function roadDirectionField() {
+  if (_roadDirField) return _roadDirField;
+  const B = window.CITY.CITY_BOUNDS, CELL = 8;
+  const W = Math.ceil((B.maxX - B.minX) / CELL), H = Math.ceil((B.maxZ - B.minZ) / CELL);
+  const data = new Uint8Array(W * H * 2).fill(128);
+  const best = new Float32Array(W * H).fill(Infinity);
+  for (const r of window.CITY.ROADS || []) {
+    if (r.raised) continue;
+    const reach = r.w / 2 + CELL;
+    for (let i = 0; i + 1 < r.pts.length; i++) {
+      const a = r.pts[i], b = r.pts[i + 1];
+      const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz;
+      if (L2 < 1e-4) continue;
+      const th = Math.atan2(dz, dx), c2 = Math.round((Math.cos(2 * th) * 0.5 + 0.5) * 255), s2 = Math.round((Math.sin(2 * th) * 0.5 + 0.5) * 255);
+      const ix0 = Math.max(0, Math.floor((Math.min(a.x, b.x) - reach - B.minX) / CELL)), ix1 = Math.min(W - 1, Math.floor((Math.max(a.x, b.x) + reach - B.minX) / CELL));
+      const iz0 = Math.max(0, Math.floor((Math.min(a.z, b.z) - reach - B.minZ) / CELL)), iz1 = Math.min(H - 1, Math.floor((Math.max(a.z, b.z) + reach - B.minZ) / CELL));
+      for (let iz = iz0; iz <= iz1; iz++) {
+        const z = B.minZ + (iz + 0.5) * CELL;
+        for (let ix = ix0; ix <= ix1; ix++) {
+          const x = B.minX + (ix + 0.5) * CELL;
+          const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / L2));
+          const d = Math.hypot(a.x + dx * t - x, a.z + dz * t - z);
+          const o = iz * W + ix;
+          if (d > reach || d >= best[o]) continue;
+          best[o] = d;
+          data[o * 2] = c2;
+          data[o * 2 + 1] = s2;
+        }
+      }
+    }
+  }
+  const tex = new THREE.DataTexture(data, W, H, THREE.RGFormat, THREE.UnsignedByteType);
+  tex.flipY = false;
+  tex.minFilter = tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = false;
+  tex.needsUpdate = true;
+  _roadDirField = { tex, x0: B.minX, z0: B.minZ, w: W * CELL, h: H * CELL };
+  return _roadDirField;
+}
+
+/**
+ * Wear & repairs of the asphalt at world xz, `px` metres a pixel (the patches & potholes ported from mrdoob/slop-newyork
+ * dcb453f): x = how worn the stretch is (0 .. 1), y = signed distance to the edge of a rectangular utility-cut patch
+ * (m, < 0 inside), z = pothole depth (0 .. 1 at the bottom of the bowl), w = 1 where the 11 m cell has a patch.
+ */
+const roadWear = Fn(([wxz, px]) => {
+  // Worn stretches: about a fifth of the roadway, in patches a block or so across
+  const worn = smoothstep(0.55, 0.82, noise2D(wxz.mul(0.045).add(71.0))).toVar();
+
+  // Rectangular utility-cut patches (Toronto Hydro, Enbridge gas, Toronto Water & sewer trenches): a bit over one 11 m
+  // cell in three, kept inside its cell. Some are squarish cuts, others long narrow trenches along the street or across it
+  const pCell = floor(wxz.div(11.0));
+  const hasPatch = step(0.62, hash2D(pCell.add(vec2(3.7, 8.1))));
+  const trench = step(0.6, hash2D(pCell.add(vec2(2.9, 6.3))));
+  const alongX = step(0.5, hash2D(pCell.add(vec2(5.5, 9.9))));
+  const pCentre = pCell.add(0.5).add(vec2(hash2D(pCell.add(vec2(1.3, 5.9))), hash2D(pCell.add(vec2(9.2, 2.4)))).sub(0.5)
+    .mul(mix(float(0.4), float(0.08), trench))).mul(11.0);
+  const cutHalf = vec2(hash2D(pCell.add(vec2(4.4, 0.6))).mul(1.8).add(0.6), hash2D(pCell.add(vec2(7.8, 3.1))).mul(1.4).add(0.5));
+  const trenchLong = hash2D(pCell.add(vec2(0.7, 4.8))).mul(2.0).add(2.4);
+  const trenchNarrow = hash2D(pCell.add(vec2(6.6, 7.2))).mul(0.25).add(0.3);
+  const trenchHalf = mix(vec2(trenchNarrow, trenchLong), vec2(trenchLong, trenchNarrow), alongX);
+  const pHalf = mix(cutHalf, trenchHalf, trench);
+  const pq = abs(wxz.sub(pCentre)).sub(pHalf);
+  const patchDist = max(pq.x, pq.y);
+
+  // Potholes, mostly in the worn stretches (spring after a Toronto winter): a ragged bowl a hand or two across
+  const hCell = floor(wxz.div(7.0));
+  const hCentre = hCell.add(vec2(hash2D(hCell.add(vec2(2.2, 7.7))), hash2D(hCell.add(vec2(6.1, 1.9)))).mul(0.6).add(0.2)).mul(7.0);
+  const hRadius = hash2D(hCell.add(vec2(5.3, 4.2))).mul(0.24).add(0.12);
+  const hDist = length(wxz.sub(hCentre)).mul(noise2D(wxz.mul(6.0)).sub(0.5).mul(0.5).add(1.0));
+  const hasHole = step(float(0.975).sub(worn.mul(0.12)), hash2D(hCell.add(vec2(8.8, 0.3))));
+  const pothole = smoothstep(hRadius.add(px), hRadius.mul(0.35), hDist).mul(hasHole);
+
+  return vec4(worn, patchDist, pothole, hasPatch);
+});
+
+/**
+ * Toronto's asphalt cracks at world xz, `px` metres a pixel, along the road's direction `dir` (a unit vector; see
+ * roadDirectionField), in a stretch `worn` (0 .. 1) (surfaceWear 2): x = hairline cracks, y = sealed cracks. Not the
+ * block & alligator network New York's port drew: in Ontario's cold the asphalt cracks ACROSS the road (thermal cracks,
+ * every several metres in older pavement) and ALONG it, at the paving lanes' joints and in the wheel paths; the City
+ * routes & seals the minor ones (TS 3.90: hot-poured rubberized asphalt, OPSS 1212), leaving a meandering black band a
+ * few centimetres wide over some of them. Thin and broken into runs; the hairlines are only traced near the camera,
+ * the sealant further out.
+ */
+const roadCracks = Fn(([wxz, px, dir, worn]) => {
+  const hair = float(0.0).toVar();
+  const seal = float(0.0).toVar();
+  If(px.lessThan(0.14), () => {
+    const a = dot(wxz, dir); // along the road
+    const b = dot(wxz, vec2(dir.y.negate(), dir.x)); // across it
+    // along: a crack in about three 3.4 m lane cells in five, at a wheel path or a lane joint, wandering a little, in
+    // runs a dozen metres long (longer in the worn stretches)
+    const ib = floor(b.div(3.4));
+    const hb = hash2D(vec2(ib, 17.3));
+    const bc = ib.add(hb.mul(0.7).add(0.15)).mul(3.4).add(noise2D(vec2(a.mul(0.18), ib.mul(3.1))).sub(0.5).mul(0.5))
+      .add(noise2D(vec2(a.mul(2.3), ib)).sub(0.5).mul(0.04));
+    const runL = smoothstep(float(0.5).sub(worn.mul(0.1)), float(0.58).sub(worn.mul(0.1)), noise2D(vec2(a.mul(0.07), ib.mul(7.3).add(2.0)))).mul(step(0.4, hb));
+    const dL = abs(b.sub(bc));
+    // across: a thermal crack in about two 9 m cells in five, partway or right across, wandering
+    const ia = floor(a.div(9.0));
+    const ha = hash2D(vec2(ia, 5.9));
+    const ac = ia.add(ha.mul(0.6).add(0.2)).mul(9.0).add(noise2D(vec2(b.mul(0.35), ia.mul(1.7))).sub(0.5).mul(0.45));
+    const runT = smoothstep(0.38, 0.46, noise2D(vec2(b.mul(0.16), ia.mul(3.1).add(9.0)))).mul(step(0.6, ha));
+    const dT = abs(a.sub(ac));
+    // some of them sealed: a 4-6 cm band of sealant over the crack (by run: whole cracks, not dashes)
+    const sealL = step(0.62, hash2D(vec2(ib, floor(a.div(14.0)).add(41.0))));
+    const sealT = step(0.55, hash2D(vec2(ia, 23.0)));
+    const crackAt = (d, hw) => {
+      const eff = max(hw, px.mul(0.5));
+      return float(1.0).sub(smoothstep(eff, eff.add(px), d)).mul(hw.div(eff));
+    };
+    // a hairline: a 3-6 mm dark core in a 1.5 cm ravelled, dirty margin (what makes a real one read from a few metres)
+    const hw = float(0.0015).add(worn.mul(0.0015));
+    const hairAt = (d) => max(crackAt(d, hw), float(1.0).sub(smoothstep(hw, hw.add(0.015).add(px), d)).mul(0.3));
+    const hairFade = smoothstep(0.05, 0.015, px);
+    hair.assign(max(hairAt(dL).mul(runL).mul(float(1.0).sub(sealL)), hairAt(dT).mul(runT).mul(float(1.0).sub(sealT))).mul(worn.mul(0.4).add(0.6)).mul(hairFade));
+    // the sealant's overband, 5-7 cm of black rubberized asphalt
+    const sw = noise2D(wxz.mul(1.3).add(9.0)).mul(0.01).add(0.025);
+    seal.assign(max(crackAt(dL, sw).mul(runL).mul(sealL), crackAt(dT, sw).mul(runT).mul(sealT)).mul(smoothstep(0.14, 0.07, px)));
+  });
+  return vec2(hair, seal);
+});
+
+/**
+ * Unified City Roadway Asphalt, Footprint-Filtered Aggregate `bumpNormal`, Scattered Manholes, Wear & Repairs
+ * (quality.js `surfaceWear`; ported from mrdoob/slop-newyork dcb453f: tar-sealed utility-cut patches & trenches and
+ * potholes from 1; at 2 oil drips, exposed stone chips & a gentle swell of the paving, and Toronto's own thin cracks
+ * along & across the road, some routed & sealed, in place of New York's block cracking & tar snakes; see roadWear &
+ * roadCracks) & Post-Rain Wetness (upgraded with techniques from CityGenerator.js `createRoadMaterial`).
  * cityUniforms.uRoadWetness drives damp stains, a glossy wet film & standing puddles (roadWetMasks): bone dry at
  * midday, a few small pools at golden hour, slick & mirroring the lights at night. Water's Fresnel rides on metalness
  * (as for the rivers), so puddles reflect the street through SSR at grazing angles yet only darken seen from above.
- * Lane markings are separate geometry built from the road network (js/road-paint.js).
+ * Lane markings are separate geometry built from the road network (js/road-paint.js); the streetcar track bed is laid
+ * over the asphalt as its own strip (js/streetcars.js).
  */
 function createRoadSurfaceMaterial() {
   const mat = new THREE.MeshStandardNodeMaterial({
@@ -1555,18 +1717,68 @@ function createRoadSurfaceMaterial() {
     roughness: 0.48
   });
 
-  const cAsphaltDark = color(0x2b2e33);
-  const cAsphaltLight = color(0x464a51);
-  const cManhole = color(0x4a433c);
+  const wearLite = SURFACE_WEAR >= 1;
+  const wearFull = SURFACE_WEAR >= 2;
+  const zero = float(0.0);
 
-  // Puddle field & wetness masks shared by every channel below (each node is generated once per fragment)
-  const puddleField = roadPuddleField(positionWorld.x, positionWorld.z);
+  // Weathered, oxidised asphalt: a neutral, slightly warm mid grey (the binder bleached by the sun, the limestone & granite
+  // aggregate showing), lighter than the near-black, bluish grey this used to be; fresh blacktop only in the new patches.
+  // Checked against John's Dundas West & Roncesvalles photos (overcast: the roadway about 0.8 of the old concrete walk)
+  const cAsphaltDark = color(0x474542);
+  const cAsphaltLight = color(0x716f6b);
+  const cManhole = color(0x4a433c);
+  const cOldPatch = color(0x77756f);
+
+  // World size of a pixel: fine texture settles to its mean before it can alias at grazing angles or from the air
+  const pixelSize = length(fwidth(positionWorld.xz));
+  // Utility-cut patches, potholes & the worn stretches, shared by every channel below (see roadWear)
+  const wear = wearLite ? roadWear(positionWorld.xz, pixelSize) : null;
+  const worn = wearLite ? wear.x : zero;
+  const patchDist = wearLite ? wear.y : float(1.0);
+  const pothole = wearLite ? wear.z : zero;
+  const hasPatch = wearLite ? wear.w : zero;
+  const patchCover = wearLite ? smoothstep(pixelSize, pixelSize.negate(), patchDist).mul(hasPatch) : zero;
+  // The tar sealing the saw-cut edge of each patch, a few centimetres wide
+  const sealWidth = max(float(0.022), pixelSize.mul(0.75));
+  const patchSeal = wearLite ? float(1.0).sub(smoothstep(sealWidth, sealWidth.add(pixelSize), abs(patchDist))).mul(float(0.022).div(sealWidth)).mul(hasPatch) : zero;
+  // Fresh patches are darker & tighter than the roadway, old ones paler & greyer
+  const patchFresh = wearLite ? step(0.55, hash2D(floor(positionWorld.xz.div(11.0)).add(vec2(12.9, 6.6)))) : zero;
+  // Exposed light stone chips in the worn surface, settling to their average where they shrink below a pixel
+  const chips = wearFull ? mix(float(0.035), smoothstep(0.72, 0.8, noise2D(positionWorld.xz.mul(30.0))), smoothstep(0.03, 0.012, pixelSize)) : zero;
+  // Cracks along & across the road and the sealant over some of them (none over the newer patches); the road's
+  // direction from roadDirectionField
+  const cracks = wearFull ? (() => {
+    const F = roadDirectionField();
+    const o = texture(F.tex, positionWorld.xz.sub(vec2(F.x0, F.z0)).div(vec2(F.w, F.h))).rg.mul(2.0).sub(1.0);
+    const o2 = o.div(max(length(o), 0.001)); // (cos 2θ, sin 2θ)
+    const dir = vec2(clamp(o2.x.add(1.0).mul(0.5), 0.0, 1.0).sqrt(), clamp(float(1.0).sub(o2.x).mul(0.5), 0.0, 1.0).sqrt().mul(mix(float(-1.0), float(1.0), step(0.0, o2.y))));
+    return roadCracks(positionWorld.xz, pixelSize, dir, worn).mul(float(1.0).sub(patchCover));
+  })() : null;
+  const crack = wearFull ? cracks.x : zero;
+  const tarSnake = wearFull ? cracks.y : zero;
+  // Oil & coolant drips from parked & idling cars: ragged dark blots a hand or two across, one 2.5 m cell in four
+  const oilDrip = wearFull ? (() => {
+    const oilCell = floor(positionWorld.xz.div(2.5));
+    const oilCentre = oilCell.add(vec2(hash2D(oilCell.add(vec2(4.1, 2.2))), hash2D(oilCell.add(vec2(8.3, 6.7)))).mul(0.6).add(0.2)).mul(2.5);
+    const oilDist = length(positionWorld.xz.sub(oilCentre)).mul(noise2D(positionWorld.xz.mul(5.0)).sub(0.5).mul(0.8).add(1.0));
+    const oilRadius = hash2D(oilCell.add(vec2(1.9, 9.4))).mul(0.25).add(0.1);
+    return smoothstep(oilRadius.add(pixelSize), oilRadius.mul(0.3), oilDist).mul(step(0.75, hash2D(oilCell.add(vec2(7.7, 3.3)))))
+      .mul(hash2D(oilCell.add(vec2(2.6, 5.1))).mul(0.6).add(0.4));
+  })() : zero;
+
+  // Circular cast-iron manhole covers scattered over the roadway (one 14 m cell in three)
+  const mhCell = floor(positionWorld.xz.div(14.0));
+  const mhCentre = mhCell.add(vec2(hash2D(mhCell.add(13.7)), hash2D(mhCell.add(29.1))).mul(0.6).add(0.2)).mul(14.0);
+  const mhDist = length(positionWorld.xz.sub(mhCentre));
+  const hasManhole = step(0.66, hash2D(mhCell));
+
+  // Puddle field & wetness masks shared by every channel below (each node is generated once per fragment); potholes
+  // hold water first
+  const puddleField = wearLite ? roadPuddleField(positionWorld.x, positionWorld.z).add(pothole.mul(0.45)) : roadPuddleField(positionWorld.x, positionWorld.z);
   const wet = roadWetMasks(puddleField);
   const damp = wet.x;
   const puddle = wet.y;
   const film = wet.z;
-  // World size of a pixel: fine texture settles to its mean before it can alias at grazing angles or from the air
-  const pixelSize = length(fwidth(positionWorld.xz));
   const viewDir = normalize(cameraPosition.sub(positionWorld));
   const waterFresnel = pow(float(1.0).sub(clamp(viewDir.y, 0.0, 1.0)), 5.0).mul(0.98).add(0.02);
 
@@ -1578,53 +1790,97 @@ function createRoadSurfaceMaterial() {
     const camDist = length(positionWorld.sub(cameraPosition));
     const detail = smoothstep(240.0, 22.0, camDist);
 
-    // Two-scale aggregate grit, patchwork pours, oily wear stains & tar crack seams
+    // Two-scale aggregate grit, patchwork pours & oily wear stains
     const microAggregate = mix(float(0.5), noise2D(vec2(wx.mul(16.0), wz.mul(16.0))), smoothstep(0.06, 0.02, pixelSize));
     const fineGrain = mix(float(0.5), noise2D(vec2(wx.mul(3.2), wz.mul(3.2))), smoothstep(0.4, 0.12, pixelSize));
     const patchNoise = noise2D(vec2(wx.mul(0.18), wz.mul(0.18)));
     const oilyStain = smoothstep(0.52, 0.84, noise2D(vec2(wx.mul(0.42), wz.mul(0.42)))).mul(detail);
-    const tarSeam = float(1.0).sub(smoothstep(0.0, 0.04, abs(patchNoise.sub(0.52)))).mul(0.42).mul(detail);
+    // (no 'tar seams' along the noise's contour lines: they drew big dark loops no Toronto street has)
+    // Binder-rich (dark) & ravelled, aggregate-exposed (pale) mottling a stride or so across
+    const mottle = wearFull
+      ? smoothstep(0.3, 0.7, noise2D(vec2(wx.mul(0.9), wz.mul(0.9)).add(41.0)).mul(0.65).add(noise2D(vec2(wx.mul(2.3), wz.mul(2.3)).add(7.0)).mul(0.35))).mul(0.26).sub(0.13)
+      : zero;
 
     const baseAsphalt = mix(
       cAsphaltDark,
       cAsphaltLight,
-      fineGrain.mul(0.36).add(microAggregate.mul(0.22)).add(patchNoise.mul(0.26))
+      fineGrain.mul(0.33).add(microAggregate.mul(0.22)).add(patchNoise.mul(0.24)).add(mottle)
     )
-      .mul(float(1.0).sub(oilyStain.mul(0.32)))
-      .mul(float(1.0).sub(tarSeam));
+      .mul(float(1.0).sub(oilyStain.mul(0.32)));
 
-    // Circular cast-iron manhole covers scattered over the roadway (one 14 m cell in three)
-    const mhCell = floor(vec2(wx, wz).div(14.0));
-    const mhCentre = mhCell.add(vec2(hash2D(mhCell.add(13.7)), hash2D(mhCell.add(29.1))).mul(0.6).add(0.2)).mul(14.0);
-    const mhDist = length(vec2(wx, wz).sub(mhCentre));
-    const isManhole = float(1.0).sub(smoothstep(0.52, 0.60, mhDist)).mul(step(0.66, hash2D(mhCell))).mul(detail);
+    // Utility-cut patches with their tar-sealed edges, stone chips, tar snakes, oil drips, cracks & potholes
+    let surface = baseAsphalt;
+    if (wearLite) {
+      const patchCol = mix(mix(baseAsphalt, cOldPatch, 0.45).mul(1.06), color(0x2e2d2c).mul(0.85), patchFresh);
+      surface = mix(baseAsphalt, patchCol, patchCover)
+        .mul(float(1.0).sub(patchSeal.mul(0.5)))
+        .mul(float(1.0).sub(pothole.mul(0.4)));
+    }
+    if (wearFull) {
+      surface = surface
+        .add(chips.mul(0.08).mul(float(1.0).sub(patchCover.mul(patchFresh))))
+        .mul(float(1.0).sub(tarSnake.mul(0.6)))
+        .mul(float(1.0).sub(oilDrip.mul(0.45)))
+        .mul(float(1.0).sub(crack.mul(0.3)));
+    }
+
+    const isManhole = float(1.0).sub(smoothstep(0.52, 0.60, mhDist)).mul(hasManhole).mul(detail);
     const mhRings = sin(mhDist.mul(36.0)).mul(0.15).add(0.85);
 
     // Water filling the pores darkens the surface: damp stains & pools most, the overall wet film a little
     const wetDarkening = mix(mix(float(1.0), float(0.72), damp), float(0.6), puddle).mul(mix(float(1.0), float(0.8), film));
-    return mix(baseAsphalt, cManhole.mul(mhRings), isManhole).mul(wetDarkening);
+    return mix(surface, cManhole.mul(mhRings), isManhole).mul(wetDarkening);
   })();
 
   mat.roughnessNode = Fn(() => {
     const microRough = mix(float(0.04), noise2D(positionWorld.xz.mul(12.0)).mul(0.08), smoothstep(0.08, 0.03, pixelSize));
-    const wetRough = mix(float(0.90).add(microRough), float(0.38), max(film.mul(0.9), damp.mul(0.8)));
+    // Tar sealant is glossier, oil satin, fresh patches a little tighter, potholes & cracks rougher
+    let dry = float(0.90).add(microRough);
+    if (wearLite) dry = dry.sub(patchSeal.mul(0.3)).sub(patchCover.mul(patchFresh).mul(0.06)).add(pothole.mul(0.06));
+    if (wearFull) dry = dry.sub(tarSnake.mul(0.38)).sub(oilDrip.mul(0.18));
+    // (the wet film & damp-stain gloss are left as they were: wet surfaces are st-wt0.11's)
+    const wetRough = mix(dry, float(0.38), max(film.mul(0.9), damp.mul(0.8)));
     return mix(wetRough, float(0.1), puddle);
   })();
 
   // Water's Fresnel (F0 = 0.02): weights SSR & trades diffuse for reflection in pools (fully) and the wet film (partly)
   mat.metalnessNode = clamp(waterFresnel.mul(1.6), 0.0, 0.85).mul(max(puddle, film.mul(0.6)));
 
-  // Footprint-gated 3mm + 1.6mm asphalt aggregate relief via bumpNormal (from CityGenerator.js)
-  // Flattens to mirror-smooth 0.0 inside standing rainwater puddles so SSR reflections stay crisp!
+  // Footprint-gated asphalt relief via bumpNormal (from CityGenerator.js): 6 mm ravelled coarse texture + 1.6 mm fine
+  // aggregate grit; with wear, raised patches with their tar seals and pothole bowls, and at full wear a gentle swell &
+  // sag of the paving, shallow ruts & ripples, 2.2 mm mid grit, stone chips, hairline cracks, tar-snake beads and the
+  // manhole covers' rims & rings (dcb453f). Steps ramp over >= 2 px so no edge sparkles; the finest relief fades before
+  // it shrinks to a pixel. Flattens to mirror-smooth 0.0 inside standing rainwater puddles so SSR reflections stay crisp!
   mat.normalNode = Fn(() => {
     const wx = positionWorld.x;
     const wz = positionWorld.z;
-    const coarseFade = smoothstep(0.08, 0.025, pixelSize);
+    const coarseFade = wearLite ? smoothstep(0.12, 0.035, pixelSize) : smoothstep(0.08, 0.025, pixelSize);
     const fineFade = smoothstep(0.02, 0.006, pixelSize).mul(float(1.0).sub(film.mul(0.6)));
+    const ramp = max(float(0.012), pixelSize.mul(2.0));
 
-    const coarseGrit = noise2D(vec2(wx.mul(8.5), wz.mul(8.5))).sub(0.5).mul(0.0032).mul(coarseFade);
+    const coarseGrit = noise2D(vec2(wx.mul(8.5), wz.mul(8.5))).sub(0.5).mul(wearLite ? 0.006 : 0.0032).mul(coarseFade);
     const fineGrit = noise2D(vec2(wx.mul(36.0), wz.mul(36.0))).sub(0.5).mul(0.0016).mul(fineFade);
-    return bumpNormal(coarseGrit.add(fineGrit).mul(float(1.0).sub(puddle)));
+    let height = coarseGrit.add(fineGrit);
+    if (wearLite) {
+      const patchStep = smoothstep(ramp, ramp.negate(), patchDist).mul(hasPatch).mul(0.004);
+      const sealBead = float(1.0).sub(smoothstep(0.0, max(float(0.03), ramp), abs(patchDist))).mul(hasPatch).mul(0.0015);
+      height = height.add(patchStep).add(sealBead).sub(pothole.mul(0.03));
+    }
+    if (wearFull) {
+      const midFade = smoothstep(0.035, 0.012, pixelSize);
+      const swell = noise2D(vec2(wx.mul(0.55), wz.mul(0.55)).add(23.0)).sub(0.5).mul(0.02)
+        .add(noise2D(vec2(wx.mul(1.9), wz.mul(1.9))).sub(0.5).mul(0.005));
+      const ripples = noise2D(vec2(wx.mul(3.6), wz.mul(3.6)).add(61.0)).sub(0.5).mul(0.004).mul(smoothstep(0.3, 0.1, pixelSize));
+      const midGrit = noise2D(vec2(wx.mul(19.0), wz.mul(19.0)).add(3.0)).sub(0.5).mul(0.0022).mul(midFade);
+      const chipRelief = chips.mul(0.0015).mul(midFade);
+      const snakeBead = tarSnake.mul(0.0018);
+      const crackGroove = crack.mul(0.0015).mul(smoothstep(0.008, 0.003, pixelSize));
+      const mhRim = float(1.0).sub(smoothstep(0.0, max(float(0.02), ramp), abs(mhDist.sub(0.58)))).mul(0.004);
+      const mhPattern = sin(mhDist.mul(36.0)).mul(0.0008).mul(step(mhDist, 0.54)).mul(smoothstep(0.01, 0.004, pixelSize));
+      const manhole = mhPattern.sub(mhRim).mul(hasManhole).mul(coarseFade);
+      height = height.add(swell).add(ripples).add(midGrit).add(chipRelief).add(snakeBead).sub(crackGroove).add(manhole);
+    }
+    return bumpNormal(height.mul(float(1.0).sub(puddle)));
   })();
 
   mat.emissiveNode = Fn(() => {
@@ -1651,8 +1907,10 @@ function createRoadSurfaceMaterial() {
  * holds (metres along the strip, pattern period, duty cycle) and `side` the offset from the strip's centre line.
  * Strips thinner than ~1.5 px are widened on screen and faded to match (phone-wire AA) and dashes are box-filtered,
  * so distant markings fade out smoothly instead of breaking up and flickering. Worn, and dark & glossy in puddles.
+ * `fadeEnd` (m): the paint fades out over the last fifth before it (road-paint.js culls its cells there; upstream
+ * 997185d's 1,300 -> 1,650 m); the surfaces (a duty over 1) never fade. 0: no fade.
  */
-function createRoadPaintMaterial() {
+function createRoadPaintMaterial(fadeEnd = 0) {
   const mat = new THREE.MeshStandardNodeMaterial({
     vertexColors: true,
     transparent: true,
@@ -1667,9 +1925,10 @@ function createRoadPaintMaterial() {
 
   // How much to widen the strip so it is at least 1.5 px wide on screen (1 when it already is)
   const widen = Fn(() => {
-    const viewProjection = cameraProjectionMatrix.mul(cameraViewMatrix);
-    const edge = viewProjection.mul(vec4(positionGeometry, 1.0));
-    const centre = viewProjection.mul(vec4(positionGeometry.sub(sideOffset), 1.0));
+    // (two matrix-vector products a point instead of a matrix product: mrdoob's 997185d)
+    const toClip = (p) => cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1.0)));
+    const edge = toClip(positionGeometry).toVar();
+    const centre = toClip(positionGeometry.sub(sideOffset)).toVar();
     const halfWidthPx = length(edge.xy.div(edge.w).sub(centre.xy.div(centre.w)).mul(screenSize).mul(0.5));
     const inFront = step(0.05, min(edge.w, centre.w));
     return clamp(float(0.75).div(max(halfWidthPx, 0.001)), 1.0, 16.0).mul(inFront).max(1.0);
@@ -1686,41 +1945,330 @@ function createRoadPaintMaterial() {
   const dashes = onSoFar(t.add(footprint.mul(0.5))).sub(onSoFar(t.sub(footprint.mul(0.5)))).div(footprint);
 
   const xz = positionWorld.xz;
-  const detail = smoothstep(70.0, 15.0, length(positionWorld.sub(cameraPosition)));
-  const wear = mix(float(0.5), noise2D(xz.mul(0.8)).mul(0.6).add(noise2D(xz.mul(2.3)).mul(0.4)), detail);
-  mat.opacityNode = mix(dashes.mul(varying(float(1.0).div(widen))).mul(smoothstep(0.1, 0.6, wear).mul(0.4).add(0.55)), float(1.0), surface);
+  const camDist = length(positionWorld.sub(cameraPosition));
+  const detail = smoothstep(70.0, 15.0, camDist);
+  // the wear's noise only where it shows (within 70 m: beyond, the mix below is 0.5 anyway; mrdoob's 997185d)
+  const wear = Fn(() => {
+    const w = float(0.5).toVar();
+    If(detail.greaterThan(0.0), () => {
+      w.assign(mix(float(0.5), noise2D(xz.mul(0.8)).mul(0.6).add(noise2D(xz.mul(2.3)).mul(0.4)), detail));
+    });
+    return w;
+  })();
+  const fade = fadeEnd > 0 ? smoothstep(float(fadeEnd), float(fadeEnd * 0.79), camDist) : float(1.0);
+  mat.opacityNode = mix(dashes.mul(varying(float(1.0).div(widen))).mul(smoothstep(0.1, 0.6, wear).mul(0.4).add(0.55)).mul(fade), float(1.0), surface);
 
-  const wet = roadWetMasks(roadPuddleField(positionWorld.x, positionWorld.z)); // same pools & film as the asphalt
+  // Same pools & film as the asphalt. The standing water is none at all on a dry day (uRoadWetness up to 0.1): its
+  // noise field is skipped then (mrdoob's 997185d); the film doesn't depend on the field
+  const puddle = Fn(() => {
+    const p = float(0.0).toVar();
+    If(cityUniforms.uRoadWetness.greaterThan(0.1), () => {
+      p.assign(roadWetMasks(roadPuddleField(positionWorld.x, positionWorld.z)).y);
+    });
+    return p;
+  })();
+  const film = roadWetMasks(float(0.0)).z;
   const grain = mix(float(1.0), wear.mul(0.22).add(0.86), surface);
-  mat.colorNode = vec3(mix(float(1.0), float(0.72), wet.y).mul(mix(float(1.0), float(0.86), wet.z)).mul(grain));
-  mat.roughnessNode = mix(mix(float(0.62), float(0.42), wet.z), float(0.2), wet.y);
+  mat.colorNode = vec3(mix(float(1.0), float(0.72), puddle).mul(mix(float(1.0), float(0.86), film)).mul(grain));
+  mat.roughnessNode = mix(mix(float(0.62), float(0.42), film), float(0.2), puddle);
   mat.aoNode = canyonSkyAONode();
 
   return mat;
 }
 
 /**
- * Concrete Walkway Flagstones with Filter-Width Anti-Aliased 1.5m Scored Expansion Joints,
- * -12mm `bumpNormal` Groove Relief, Per-Flag Tone Variation & Post-Rain Damp Patches
- * that follow cityUniforms.uRoadWetness like the roadway (better drained: fewer, smaller pools)
- * (Ported from SidewalkGenerator.js)
+ * Flattened chewing gum on the sidewalk at world xz, `px` metres a pixel, `density` the share of 0.32 m cells with a
+ * blob (ported from mrdoob/slop-newyork 4a921f0): x = coverage, y = age (0 a dark fresh blob .. 1 a grey ghost). Only
+ * traced near the camera, where a blob is still bigger than a pixel.
+ */
+const sidewalkGum = Fn(([wxz, px, density]) => {
+  const cover = float(0.0).toVar();
+  const age = float(0.0).toVar();
+  If(px.lessThan(0.04).and(density.greaterThan(0.001)), () => {
+    const gumCell = 0.32;
+    const gumCoord = wxz.div(gumCell);
+    const gumId = floor(gumCoord);
+    const gumCentre = vec2(hash2D(gumId.add(vec2(11.3, 2.9))), hash2D(gumId.add(vec2(23.9, 17.4)))).mul(0.6).add(0.2);
+    const gumRadius = hash2D(gumId.add(vec2(4.1, 31.7))).mul(0.011).add(0.006);
+    const gumWobble = noise2D(gumCoord.mul(9.0)).sub(0.5).mul(0.35).add(1.0);
+    const gumDist = length(fract(gumCoord).sub(gumCentre)).mul(gumCell).mul(gumWobble);
+    const gumAA = max(px, 0.001);
+    cover.assign(smoothstep(gumRadius.add(gumAA), gumRadius.sub(gumAA.mul(0.5)), gumDist)
+      .mul(step(float(1.0).sub(density), hash2D(gumId.add(vec2(7.7, 3.3)))))
+      .mul(smoothstep(0.04, 0.015, px)));
+    age.assign(hash2D(gumId.add(vec2(19.1, 0.7))));
+  });
+  return vec2(cover, age);
+});
+
+/**
+ * The section hash of js/sidewalk-sections.js (sectionHash) in TSL, integer for integer, so the shader's repairs, years &
+ * stamps are where the CPU rule says: a, b float nodes holding integers, `salt` a JS integer (the CPU's table index)
+ */
+const _sectionHashNode = Fn(([a, b, salt]) => {
+  const { uint, int } = window.CITY.TSL;
+  const h = uint(int(a)).mul(uint(0x8da6b343)).bitXor(uint(int(b)).mul(uint(0xd8163841))).bitXor(salt).toVar();
+  h.assign(h.bitXor(h.shiftRight(uint(16))));
+  h.assign(h.mul(uint(0x7feb352d)));
+  h.assign(h.bitXor(h.shiftRight(uint(15))));
+  h.assign(h.mul(uint(0x846ca68b)));
+  h.assign(h.bitXor(h.shiftRight(uint(16))));
+  return float(h.shiftRight(uint(8))).div(16777216.0);
+});
+const sectionHashNode = (a, b, c) => _sectionHashNode(a, b, window.CITY.TSL.uint(Math.imul(c, 0xcb1ab31f) >>> 0));
+
+/**
+ * The contractors' stamps, one atlas cell a year from 1950 to 2025 (8 x 10 cells, 192 x 112 px for 225 x 130 mm: about
+ * 1.2 mm a texel), drawn once on a canvas: white where the stamp is pressed in. The City's drawing T-310.010-7: a
+ * rounded rectangle outlined by a 3 mm groove, the contractor's name arcing across the top in 25 mm Gothic letters, the
+ * year in 40 mm digits in the middle and a word along the bottom; the older stamps here are ovals. The contractors'
+ * names are clearly fictional (Slop Toronto's own; John's choice): no real company's name is reproduced.
+ */
+let _stampAtlas = null;
+const STAMP_NAMES = [['SLOP CONCRETE', 'LIMITED'], ['SLOP PAVING', 'COMPANY'], ['SLOP & SONS', 'CONTRACTORS'], ['SLOP CEMENT WORKS', 'LIMITED'], ['SLOPWAY CURB', 'COMPANY']];
+function sidewalkStampAtlas() {
+  if (_stampAtlas) return _stampAtlas;
+  const S = window.CITY.SIDEWALK.stamp;
+  const CW = 192, CH = 112, COLS = 8, ROWS = 10;
+  const cv = document.createElement('canvas');
+  cv.width = CW * COLS;
+  cv.height = CH * ROWS;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, cv.width, cv.height);
+  g.fillStyle = g.strokeStyle = '#fff';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  const font = (px) => `bold ${px}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+  for (let year = S.firstYear; year <= S.lastYear; year++) {
+    const i = year - S.firstYear, x0 = (i % COLS) * CW, y0 = Math.floor(i / COLS) * CH;
+    const cx = x0 + CW / 2, cy = y0 + CH / 2;
+    const oval = year < S.ovalBefore;
+    const [name, word] = STAMP_NAMES[(year * 7 + 3) % STAMP_NAMES.length];
+    g.save();
+    g.lineWidth = 3;
+    g.beginPath();
+    if (oval) g.ellipse(cx, cy, CW / 2 - 4, CH / 2 - 4, 0, 0, Math.PI * 2);
+    else g.roundRect(x0 + 4, y0 + 4, CW - 8, CH - 8, 16);
+    g.stroke();
+    g.clip();
+    // the year, large in the middle (40 mm: 34 px)
+    g.font = font(34);
+    g.fillText(String(year), cx, cy + (word ? 4 : 10));
+    // the name arcing across the top (25 mm letters: 21 px, a little smaller for the long names)
+    const px = name.length > 12 ? 15 : 18;
+    g.font = font(px);
+    const R = oval ? 150 : 190, arc = Math.min(1.0, (name.length * px * 0.66) / R);
+    for (let c = 0; c < name.length; c++) {
+      const a = -arc / 2 + (arc * (c + 0.5)) / name.length;
+      g.save();
+      g.translate(cx + Math.sin(a) * R, y0 + 22 + R - Math.cos(a) * R);
+      g.rotate(a);
+      g.fillText(name[c], 0, 0);
+      g.restore();
+    }
+    // the word along the bottom
+    if (word) {
+      g.font = font(13);
+      g.fillText(word, cx, y0 + CH - 18);
+    }
+    g.restore();
+  }
+  const img = g.getImageData(0, 0, cv.width, cv.height).data;
+  const data = new Uint8Array(cv.width * cv.height);
+  for (let p = 0; p < data.length; p++) data[p] = img[p * 4];
+  const tex = new THREE.DataTexture(data, cv.width, cv.height, THREE.RedFormat, THREE.UnsignedByteType);
+  tex.flipY = false; // (row 0 is the canvas' top)
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = 4;
+  tex.needsUpdate = true;
+  _stampAtlas = { tex, cols: COLS, rows: ROWS, texel: S.across / CW };
+  return _stampAtlas;
+}
+
+/**
+ * Toronto's poured-in-place concrete sidewalks (js/sidewalk-sections.js: the rule & its sources; City of Toronto
+ * TS 3.70 and drawings T-310.010-1, -6 & -7). Each walk is one ribbon of concrete along its curb, scored ACROSS the walk
+ * every 1.5 m (a 12 mm expansion joint every 6 m; one lengthwise joint 1.5 m from the curb only on slabs 3 m or wider),
+ * so it reads as stripes, not New York's grid of flags. city-grid.js gives every triangle the frame of the run of curb it
+ * lies along (`walkFrame`: direction, curb line, seed; `walkSpan`: where the walk runs across), so the joints follow
+ * the walk on every street. A repair replaces whole sections, curb side to property side: a run of one to three newer,
+ * paler strips across the walk. The concrete's shade follows its year: the original pour (one year along a side of a
+ * block: 1952-1991 among the houses, 1976-2013 downtown) darker & dirtier, the repairs (1998-2025) paler. Post-Rain Damp
+ * Patches follow cityUniforms.uRoadWetness like the roadway's. Wear by quality.js `surfaceWear`:
+ * - 1: the transverse & expansion joints, the full-width repairs, the smooth tooled margins along the walk's formed edges
+ *   (and either side of the joints on sections older than 2000, which were tooled; newer ones are saw-cut), sections
+ *   heaved a little out of true by frost & roots, weathering stains;
+ * - 2: also the contractors' date stamps (one at each end of the work and every tenth bay, 50 mm from a joint, centred
+ *   across the walk; legible up close, gone by a centimetre a pixel), the light broom finish across the walk, hairline
+ *   cracks, salt scaling, flattened chewing gum (mostly downtown), trowel mottling, fine aggregate & pores;
+ * - 0: plain concrete with its transverse joints.
  */
 function createSidewalkMaterial() {
   const mat = new THREE.MeshStandardNodeMaterial({
     metalness: 0.0,
     roughness: 0.88
   });
+  const { round } = window.CITY.TSL;
+  const SW = window.CITY.SIDEWALK;
+  const BAY = SW.bay;
 
-  const cConcreteA = color(0x8e8d85);
-  const cConcreteB = color(0x73726b);
+  const wearLite = SURFACE_WEAR >= 1;
+  const wearFull = SURFACE_WEAR >= 2;
+  const zero = float(0.0);
 
-  // Damp patches & pools on the flags, shared by every channel below (own field; drains better than the roadway)
+  // Weathered broom-finished concrete, warm grey with age (John's Queen East & Roncesvalles photos); new repairs much paler
+  const cOldA = color(0x9d9b95);
+  const cOldB = color(0x86847e);
+  const cFresh = color(0xc6c5bf);
+  const cExpansion = color(0x2b2824); // the bituminous fibre of the expansion joints
+  const cGumOld = color(0x77756f);
+  const cGumNew = color(0x34332f);
+
+  // Damp patches & pools on the walk, shared by every channel below (own field; drains better than the roadway)
   const swField = noise2D(vec2(positionWorld.x.mul(0.14).add(7.4), positionWorld.z.mul(0.14).sub(13.1))).mul(0.65)
     .add(noise2D(vec2(positionWorld.x.mul(0.38), positionWorld.z.mul(0.38))).mul(0.35));
   const swWet = roadWetMasks(swField, 0.06);
-  const swPuddle = swWet.y.mul(smoothstep(0.5, 0.9, normalWorldGeometry.y));
+  const topFace = smoothstep(0.5, 0.9, normalWorldGeometry.y); // (the slab's 4 cm sides keep plain concrete)
+  const swPuddle = swWet.y.mul(topFace);
   const swFresnel = pow(float(1.0).sub(clamp(normalize(cameraPosition.sub(positionWorld)).y, 0.0, 1.0)), 5.0).mul(0.98).add(0.02);
   const pixelSize = length(fwidth(positionWorld.xz));
+  const wxz = positionWorld.xz;
+
+  // The walk's frame (js/sidewalk-sections.js): s along the run of curb, t in from its curb line, the walk from t0 to t1
+  const frame = attribute('walkFrame', 'vec4');
+  const span = attribute('walkSpan', 'vec2');
+  // per run, in the vertex stage: the joints' phase, the original pour's year, which bay of ten is stamped, seed*2+downtown
+  const run = varying(Fn(() => {
+    const w = round(frame.w);
+    const seed = floor(w.mul(0.5));
+    const down = w.sub(seed.mul(2.0));
+    const [[yr, spr], [yd, spd]] = SW.originalYears;
+    const yOrig = mix(float(yr), float(yd), down).add(floor(sectionHashNode(seed, 0.0, 5).mul(mix(float(spr), float(spd), down))));
+    return vec4(sectionHashNode(seed, 0.0, 10).mul(BAY), yOrig, floor(sectionHashNode(seed, 0.0, 6).mul(SW.stampEvery)), w);
+  })(), 'vWalkRun');
+  const wr = round(run.w);
+  const seed = floor(wr.mul(0.5));
+  const downtown = wr.sub(seed.mul(2.0));
+  const u = frame.xy;
+  const sAlong = dot(wxz, u);
+  const tIn = dot(wxz, vec2(u.y.negate(), u.x)).sub(frame.z);
+  const t0 = span.x, t1 = span.y, width = t1.sub(t0);
+  const sp = sAlong.sub(run.x).div(BAY);
+  const k = floor(sp);
+  const inBay = fract(sp).mul(BAY); // 0 .. BAY from the section's start joint
+  const toJoint = min(inBay, float(BAY).sub(inBay));
+  const toEdge = max(min(tIn.sub(t0), t1.sub(tIn)), 0.0);
+  // the joint at hand: every 4th (6 m) an expansion joint
+  const jn = floor(sp.add(0.5));
+  const expansion = step(jn.sub(floor(jn.div(SW.expansionEvery)).mul(SW.expansionEvery)), 0.5);
+  // a slab 3 m or wider: one lengthwise joint 1.5 m from the curb
+  const toLong = abs(tIn.sub(t0).sub(SW.longitudinalAt)).add(step(width, SW.longitudinalMin).mul(100.0));
+  const aa = max(pixelSize, 0.0005);
+  const line = (d, hw) => {
+    const eff = max(float(hw), aa.mul(0.5));
+    return float(1.0).sub(smoothstep(eff, eff.add(aa), d)).mul(float(hw).div(eff));
+  };
+
+  // The section (sidewalkSection in js/sidewalk-sections.js, hash for hash): a repair is a run of 1-3 whole sections in a
+  // group of 4; its year; the original pour's year is the run's
+  let repair = zero, year = run.y, fresh = zero, tooled = float(1.0), sectionTone = zero;
+  let g = null, j = null, start = null;
+  if (wearLite) {
+    g = floor(k.div(SW.repairGroup));
+    j = k.sub(g.mul(SW.repairGroup));
+    start = floor(sectionHashNode(g, seed, 2).mul(SW.repairGroup));
+    const len = floor(sectionHashNode(g, seed, 3).mul(3.0)).add(1.0);
+    const chance = mix(float(SW.repairChance[0]), float(SW.repairChance[1]), downtown);
+    repair = float(1.0).sub(step(chance, sectionHashNode(g, seed, 1))).mul(step(start, j)).mul(float(1.0).sub(step(start.add(len), j)));
+    year = mix(run.y, floor(sectionHashNode(g, seed, 4).mul(SW.repairYears[1])).add(SW.repairYears[0]), repair);
+    // how new: 0 up to 1985, 1 for this year's pour
+    fresh = clamp(year.sub(1985.0).div(40.0), 0.0, 1.0);
+    tooled = float(1.0).sub(step(SW.sawCutFrom, year));
+    sectionTone = sectionHashNode(k, seed, 12).sub(0.5);
+  }
+
+  // Joints: 5 mm saw cuts (tooled & rounded on the older sections, with their smooth margins), the expansion joints'
+  // 12 mm of dark fibre, the lengthwise joint; the walk's formed edges get the smooth tooled band (TS 3.70: up to 50 mm)
+  const jointHalf = wearLite ? mix(float(0.0025), float(0.004), tooled) : float(0.005);
+  const joint = max(line(toJoint, jointHalf).mul(float(1.0).sub(expansion)), line(toLong, 0.003));
+  const expJoint = line(toJoint, 0.006).mul(expansion);
+  const margin = wearLite
+    ? max(float(1.0).sub(smoothstep(SW.margin - 0.008, SW.margin, toEdge)), float(1.0).sub(smoothstep(0.035, 0.045, toJoint)).mul(tooled)).mul(topFace)
+    : zero;
+
+  // Sections heaved a little out of true by frost & tree roots (one end up, older sections only), hairline cracks
+  let heave = zero, crack = zero;
+  if (wearLite) {
+    const lift = step(0.62, sectionHashNode(k, seed, 13)).mul(sectionHashNode(k, seed, 14).sub(0.5)).mul(0.016).mul(float(1.0).sub(fresh));
+    heave = inBay.sub(BAY / 2).mul(lift).mul(smoothstep(0.0, max(float(0.05), pixelSize.mul(3.0)), toJoint));
+  }
+  if (wearFull) {
+    // a settlement crack across about one older section in six, a little askew & wandering
+    const at = sectionHashNode(k, seed, 15).mul(BAY - 0.5).add(0.25);
+    const skew = sectionHashNode(k, seed, 16).sub(0.5).mul(0.7);
+    const wander = noise2D(wxz.mul(7.0)).sub(0.5).mul(0.02).add(noise2D(wxz.mul(1.7).add(3.7)).sub(0.5).mul(0.06));
+    const has = step(0.83, sectionHashNode(k, seed, 17)).mul(float(1.0).sub(fresh));
+    crack = line(abs(inBay.sub(at).sub(tIn.sub(t0).mul(skew)).add(wander)), 0.0008).mul(has).mul(smoothstep(0.01, 0.03, min(toJoint, toEdge))).mul(topFace);
+  }
+
+  // The contractor's stamp: on the section the rule stamps, 50 mm from its joint, centred across the walk; legible up
+  // close, faded out by a centimetre a pixel (its letters are 25-40 mm)
+  let stamp = zero;
+  if (wearFull) {
+    const atlas = sidewalkStampAtlas();
+    const st = SW.stamp;
+    const pressed = Fn(() => {
+      const s = float(0.0).toVar();
+      If(pixelSize.lessThan(0.014).and(width.greaterThanEqual(st.minWidth)), () => {
+        const k10 = k.sub(run.z);
+        const tenth = step(abs(k10.sub(floor(k10.div(SW.stampEvery)).mul(SW.stampEvery))), 0.5);
+        const first = step(abs(j.sub(start)), 0.5).mul(float(1.0).sub(step(0.85, sectionHashNode(g, seed, 7))));
+        const has = mix(tenth, first, repair);
+        const atEnd = step(0.5, sectionHashNode(k, seed, 8)).mul(float(1.0).sub(repair));
+        const drift = sectionHashNode(k, seed, 9).sub(0.5).mul(max(width.sub(st.across + 0.1), 0.0)).mul(0.8).mul(float(1.0).sub(step(1975.0, year)));
+        const inset = st.fromJoint + st.along / 2;
+        // the stamp's frame: its top towards its joint (it reads from the section, the joint beyond it), its text along
+        // the joint; q runs -0.5 .. 0.5 over it (x to the reader's right, y up the stamp)
+        const up = mix(float(inset).sub(inBay), inBay.sub(BAY - inset), atEnd);
+        const across = tIn.sub(t0.add(t1).mul(0.5).add(drift)).mul(mix(float(-1.0), float(1.0), atEnd));
+        const q = vec2(across.div(st.across), up.div(st.along));
+        If(has.greaterThan(0.5).and(abs(q.x).lessThan(0.5)).and(abs(q.y).lessThan(0.5)), () => {
+          const cell = clamp(year.sub(st.firstYear), 0.0, st.lastYear - st.firstYear);
+          const col = cell.sub(floor(cell.div(atlas.cols)).mul(atlas.cols));
+          const row = floor(cell.div(atlas.cols));
+          const uvA = vec2(col.add(q.x.add(0.5)).div(atlas.cols), row.add(float(0.5).sub(q.y)).div(atlas.rows));
+          const lod = log2(max(pixelSize.mul(0.7).div(atlas.texel), 1.0));
+          s.assign(texture(atlas.tex, uvA).level(lod).r);
+        });
+      });
+      return s;
+    })();
+    // older stamps are worn down to faint relief
+    stamp = pressed.mul(mix(float(0.45), float(1.0), fresh)).mul(smoothstep(0.014, 0.006, pixelSize)).mul(topFace);
+  }
+
+  let scaling = zero, gum = zero, gumAge = zero, brush = zero;
+  if (wearFull) {
+    // The light broom finish: fine striations across the walk (parallel to the joints), none on the smooth margins
+    brush = noise2D(vec2(sAlong.mul(110.0), tIn.mul(2.2))).sub(0.5).mul(float(1.0).sub(margin)).mul(smoothstep(0.012, 0.004, pixelSize));
+    // Salt scaling: de-icing salt & freeze-thaw flake the paste off about one older section in five, in patches, down
+    // to the coarse aggregate
+    const scaled = step(0.8, sectionHashNode(k, seed, 18)).mul(float(1.0).sub(fresh));
+    const scaleField = noise2D(wxz.mul(1.4).add(seed.mul(0.013))).mul(0.7).add(noise2D(wxz.mul(4.3)).mul(0.3));
+    scaling = smoothstep(0.5, 0.58, scaleField).mul(scaled).mul(smoothstep(0.02, 0.08, min(toJoint, toEdge))).mul(topFace);
+    // Flattened chewing gum: thickest on busy stretches downtown (Spadina to Parliament, the lake to Bloor), a little
+    // elsewhere, hardly any on the new repairs
+    const outside = max(max(float(-1150.0).sub(positionWorld.x), positionWorld.x.sub(1500.0)), max(float(-2750.0).sub(positionWorld.z), positionWorld.z.sub(650.0)));
+    const density = smoothstep(0.3, 0.8, noise2D(wxz.mul(0.07).add(5.3))).mul(0.2).add(0.05)
+      .mul(mix(float(0.2), float(1.0), smoothstep(400.0, 0.0, outside)))
+      .mul(float(1.0).sub(fresh.mul(0.8))).mul(topFace);
+    const gm = sidewalkGum(wxz, pixelSize, density);
+    gum = gm.x;
+    gumAge = gm.y;
+  }
 
   mat.aoNode = canyonSkyAONode();
 
@@ -1730,44 +2278,82 @@ function createSidewalkMaterial() {
     const camDist = length(positionWorld.sub(cameraPosition));
     const detail = smoothstep(190.0, 16.0, camDist);
 
-    const panel = 1.5; // 1.5 m concrete walkway flags
-    const panelHash = hash2D(floor(vec2(wx.div(panel), wz.div(panel))));
     const tone = noise2D(vec2(wx.mul(0.48), wz.mul(0.48)));
-    const grit = noise2D(vec2(wx.mul(14.0), wz.mul(14.0))).sub(0.5).mul(0.08).mul(detail).mul(smoothstep(0.07, 0.02, pixelSize));
+    const grit = noise2D(vec2(wx.mul(14.0), wz.mul(14.0))).sub(0.5).mul(0.07).mul(detail).mul(smoothstep(0.07, 0.02, pixelSize));
+    let concrete = mix(cOldB, cOldA, tone).add(grit);
 
-    // Filter-width anti-aliased 1.5m scored joints
-    const joints = max(gridLine(wx, panel, 0.042), gridLine(wz, panel, 0.042)).mul(detail);
+    if (wearLite) {
+      // Each pour's shade by its age (the repairs paler, stripes across the walk), weathering stains & the grime that
+      // collects along the curb side of the older walks, and the smooth margins a touch lighter
+      const stainField = noise2D(vec2(wx.mul(0.8), wz.mul(0.8)).add(17.0)).mul(0.65).add(noise2D(vec2(wx.mul(2.6), wz.mul(2.6))).mul(0.35));
+      const old = float(1.0).sub(fresh);
+      const stain = smoothstep(0.52, 0.86, stainField).mul(mix(float(0.05), float(0.2), old));
+      const curbGrime = smoothstep(0.6, 0.0, tIn.sub(t0)).mul(0.08).mul(old);
+      concrete = mix(concrete, cFresh.mul(sectionTone.mul(0.05).add(1.0)), fresh.mul(fresh).mul(0.9).add(fresh.mul(0.1)))
+        .mul(sectionTone.mul(0.05).add(1.0))
+        .mul(float(1.0).sub(stain).sub(curbGrime))
+        .mul(margin.mul(0.05).add(1.0));
+    }
+    if (wearFull) {
+      // Cloudy trowel & curing mottling a hand or two across, the broom's streaks, fine exposed aggregate, salt-scaled
+      // patches, the stamp's impression (dirt in the old ones), gum
+      const mottle = noise2D(vec2(wx.mul(3.1), wz.mul(3.1)).add(41.0)).mul(0.6).add(noise2D(vec2(wx.mul(7.3), wz.mul(7.3))).mul(0.4))
+        .sub(0.5).mul(0.08).mul(smoothstep(0.15, 0.05, pixelSize));
+      const aggregate = noise2D(vec2(wx.mul(55.0), wz.mul(55.0))).sub(0.5).mul(smoothstep(0.02, 0.006, pixelSize));
+      concrete = concrete.mul(mottle.add(1.0)).mul(brush.mul(0.06).add(1.0)).add(aggregate.mul(mix(float(0.05), float(0.16), scaling)))
+        .mul(float(1.0).sub(scaling.mul(0.12)))
+        .mul(float(1.0).sub(stamp.mul(mix(float(0.22), float(0.1), fresh))))
+        .mul(float(1.0).sub(crack.mul(0.45)));
+      concrete = mix(concrete, mix(cGumNew, cGumOld, gumAge), gum.mul(mix(float(0.9), float(0.45), gumAge)));
+    }
 
-    // Post-rain damp patches, pools & the overall wet film darken the flags
-    const baseConcrete = mix(cConcreteB, cConcreteA, tone)
-      .mul(panelHash.sub(0.5).mul(0.16).add(1.0))
-      .add(grit)
+    const jointShade = wearLite ? mix(float(0.42), float(0.55), tooled) : float(0.45);
+    const withJoints = mix(concrete.mul(float(1.0).sub(joint.mul(jointShade).mul(detail))), cExpansion, expJoint.mul(detail).mul(topFace));
+
+    // Post-rain damp patches, pools & the overall wet film darken the walk
+    return withJoints
       .mul(mix(float(1.0), float(0.72), max(swWet.x, swPuddle)))
       .mul(mix(float(1.0), float(0.8), swWet.z));
-
-    return baseConcrete.mul(float(1.0).sub(joints.mul(0.45)));
   })();
 
   mat.roughnessNode = Fn(() => {
-    const panelHash = hash2D(floor(vec2(positionWorld.x.div(1.5), positionWorld.z.div(1.5))));
-    const wetRough = mix(float(0.90).sub(panelHash.mul(0.06)), float(0.55), max(swWet.z, swWet.x.mul(0.7)));
+    let dry = float(0.9);
+    if (wearLite) dry = dry.sub(margin.mul(0.1)).sub(fresh.mul(0.03)).sub(expJoint.mul(0.25));
+    if (wearFull) dry = dry.sub(gum.mul(0.25)).add(scaling.mul(0.05));
+    const wetRough = mix(dry, float(0.55), max(swWet.z, swWet.x.mul(0.7)));
     return mix(wetRough, float(0.2), swPuddle);
   })();
 
   // Water's Fresnel (F0 = 0.02) on pools & the wet film, as for the roadway
   mat.metalnessNode = clamp(swFresnel.mul(1.6), 0.0, 0.85).mul(max(swPuddle, swWet.z.mul(0.3)));
 
-  // Physical -12mm scored expansion joints + +3mm concrete aggregate grain via bumpNormal
+  // Joint grooves (rounded on the tooled ones), the rounded formed edges, concrete grain and, with wear, the heaved
+  // sections; at full wear the broom finish, hairline cracks, the stamp pressed in, salt-scaled hollows, gum & pores via
+  // bumpNormal. Edges ramp over >= 2 px so nothing sparkles along the joints.
   mat.normalNode = Fn(() => {
     const wx = positionWorld.x;
     const wz = positionWorld.z;
     const camDist = length(positionWorld.sub(cameraPosition));
     const detail = smoothstep(140.0, 14.0, camDist);
 
-    const joints = max(gridLine(wx, 1.5, 0.042), gridLine(wz, 1.5, 0.042));
     const grain = noise2D(vec2(wx.mul(4.5), wz.mul(4.5))).sub(0.5).mul(0.003);
-    const height = grain.sub(joints.mul(0.012)).mul(detail).mul(float(1.0).sub(swPuddle));
-    return bumpNormal(height);
+    let height;
+    if (wearLite) {
+      const rampPx = max(float(0.012), pixelSize.mul(2.0));
+      const grooveW = mix(float(0.0025), float(0.006), tooled);
+      const groove = float(1.0).sub(smoothstep(grooveW, grooveW.add(rampPx), min(toJoint, toLong))).mul(0.006).mul(smoothstep(0.02, 0.006, pixelSize));
+      const edgeRound = float(1.0).sub(smoothstep(0.0, max(float(0.008), rampPx), toEdge)).mul(0.003);
+      height = grain.add(heave).sub(groove).sub(edgeRound);
+      if (wearFull) {
+        const pores = noise2D(vec2(wx.mul(38.0), wz.mul(38.0))).sub(0.5).mul(mix(float(0.0008), float(0.0025), scaling))
+          .mul(smoothstep(0.012, 0.004, pixelSize));
+        height = height.add(pores).add(brush.mul(0.0007)).sub(crack.mul(0.0015)).sub(stamp.mul(0.004))
+          .sub(scaling.mul(0.0015)).add(gum.mul(0.0008));
+      }
+    } else {
+      height = grain.sub(joint.mul(0.008));
+    }
+    return bumpNormal(height.mul(detail).mul(float(1.0).sub(swPuddle)));
   })();
 
   return mat;
@@ -1796,7 +2382,7 @@ function createCurbMaterial() {
     const speckle = noise2D(vec2(wx.mul(18.0), wz.mul(18.0))).sub(0.5).mul(0.06).mul(detail);
     const stone = mix(color(0x4c4c45), color(0x63635a), tone).add(speckle);
 
-    const joints = max(gridLine(wx, 1.5, 0.038), gridLine(wz, 1.5, 0.038)).mul(detail);
+    const joints = max(gridLine(wx, 1.5, 0.005), gridLine(wz, 1.5, 0.005)).mul(detail); // fine, close joints (4a921f0)
     const topFace = smoothstep(0.5, 0.85, normalWorldGeometry.y);
     const wetFilm = smoothstep(0.2, 0.8, cityUniforms.uRoadWetness); // rain-darkened granite, like the roadway's film
     return mix(stone.mul(0.68), stone, topFace).mul(float(1.0).sub(joints.mul(0.42))).mul(mix(float(1.0), float(0.78), wetFilm));
@@ -2319,14 +2905,15 @@ let _forecourtMat = null;
 function createForecourtMaterial() {
   if (_forecourtMat) return _forecourtMat;
   const mat = new THREE.MeshStandardNodeMaterial({ metalness: 0.0, roughness: 0.86 });
+  // Plain weathered concrete, a shade darker than the City's walks beside it: the private frontage between the walk & the
+  // building face. (It was a 1.5 m grid of flags square to the world axes, which read as New York's sidewalks next to
+  // Toronto's poured ones and ran askew on the off-grid streets.)
   mat.colorNode = Fn(() => {
     const p = positionWorld.xz;
-    const tone = mix(color(0x8e8d86), color(0xa6a49c), noise2D(p.mul(0.09)));
-    const slab = noise2D(floor(p.div(1.5)).mul(0.37)).sub(0.5).mul(0.06);
     const near = smoothstep(60.0, 10.0, length(positionWorld.sub(cameraPosition)));
-    const j = fract(p.div(1.5));
-    const joint = max(smoothstep(0.025, 0.0, j.x), smoothstep(0.025, 0.0, j.y)).mul(near).mul(0.28);
-    return tone.add(slab).mul(float(1.0).sub(joint));
+    const tone = mix(color(0x83817b), color(0x96948d), noise2D(p.mul(0.09)));
+    const mottle = noise2D(p.mul(0.7).add(13.0)).sub(0.5).mul(0.06).mul(near);
+    return tone.mul(mottle.add(1.0));
   })();
   _forecourtMat = mat;
   return mat;
@@ -2385,5 +2972,5 @@ function createRenderedWallMaterial() {
   return mat;
 }
 
-Object.assign(window.CITY, { cityUniforms, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial });
+Object.assign(window.CITY, { filteredPulse, cityUniforms, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial });
 })();

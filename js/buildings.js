@@ -468,7 +468,7 @@ function buildCityBlocks(scene) {
     m.count = 0;
     group.add(m);
   }
-  // Wrought-iron fire escapes: real stairs & landings near the camera, masked boxes further out (fire-escapes.js)
+  // Wrought-iron fire escapes: one instanced escape at every distance, nearby ones casting shadows (fire-escapes.js)
   const fireEscapeSystem = window.CITY.createFireEscapes(group);
 
   let lastX = Infinity, lastZ = Infinity, activeCount = 0;
@@ -487,9 +487,9 @@ function buildCityBlocks(scene) {
     near.sort((a, b) => (a.cx - fx) ** 2 + (a.cz - fz) ** 2 - ((b.cx - fx) ** 2 + (b.cz - fz) ** 2));
     activeCount = near.length;
     let nt = 0, na = 0, nd = 0;
-    fireEscapeSystem.begin();
+    fireEscapeSystem.begin(fx, fz);
     for (const d of near) {
-      for (const fe of d.fireEscapes || []) fireEscapeSystem.add(fe, fx, fz);
+      for (const fe of d.fireEscapes || []) fireEscapeSystem.add(fe);
       for (const t of d.tanks) {
         if (nt >= MAX_TANKS) break;
         dummy.rotation.set(0, d.ry, 0);

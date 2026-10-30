@@ -11,7 +11,7 @@
 # with one baked material, plus a second, see-through one for the shelter's glass (panes & roof: they're clear glass). Then: npx @gltf-transform/cli@4 webp <out> <out>; npx @gltf-transform/cli@4 meshopt <out> <out>.
 # Round props (the hydrant, the post-and-ring bike stand, the post box's feet) are lathes & a bent band whose strips carry
 # their own unrolled UVs, so a barrel or the ring's lettering bakes without a seam on every facet.
-# usage: Blender --background --factory-startup --python tools/blender/bake_props.py -- shelter|bin|hydrant|postbox|bikering <src.glb> <out.glb> <workdir>
+# usage: Blender --background --factory-startup --python-exit-code 1 --python tools/blender/bake_props.py -- shelter|bin|hydrant|postbox|bikering|parking-meter|wayfinding <src.glb> <out.glb> <workdir>
 #   park-sign <face-template.jpg> <out.glb> <workdir>: modelled from measurements, no source mesh (see its block below)
 #   ttc-pylon <ttc-logo.webp> <out.glb> <workdir> [id-face.png]: the TTC's insignia pylon, modelled from its drawing
 #   bikeshare - <out dir> <workdir>: Bike Share Toronto's dock, kiosk & bike, modelled from measurements (bikeshare_props.py)
@@ -488,6 +488,27 @@ elif KIND == 'postbox':  # John's graffiti-covered Canada Post box: the graffiti
         'foot':   (0.3, 0.0, 0.50, 0.60, 0.4, 0.0, (0.30, 0.30, 0.30)),
         'hidden': (0.05, 0.0, 0.0, 0.7, 0.0, 0.0, None),
     }
+elif KIND == 'parking-meter':
+    # John's six-foot Flowbird pay station. Keep the graffiti and payment-panel bake;
+    # rebuild the cabinet, hood support and solar panel as clean bevelled solids.
+    HEIGHT, ATLAS, MR_SIZE = 1.8288, 1024, 128
+    TAGS = {
+        'paint':  (1.0, 1.0, 0.12, 0.55, 0.15, 0.0, None),
+        'solar':  (1.5, 1.0, 0.0, 0.30, 0.1, 0.0, None),
+        'edge':   (0.5, 0.7, 0.2, 0.45, 0.25, 0.0, None),
+        'hidden': (0.1, 0.0, 0.0, 0.65, 0.0, 0.0, (0.035, 0.04, 0.045)),
+    }
+elif KIND == 'wayfinding':
+    # Narrow TO460 family: 460 mm overall width. John's original photo and the
+    # published 440 x 1500 mm map panel imply a taller/slimmer column than Meshy.
+    # 2.70 m is an inferred overall height, pending a direct measurement.
+    HEIGHT, ATLAS, MR_SIZE = 2.70, 2048, 128
+    TAGS = {
+        'map': (3.0, 1.0, 0.0, 0.45, 0.0, 0.0, None),
+        'edge': (0.6, 0.3, 0.35, 0.45, 0.45, 0.0, None),
+        'base': (1.0, 0.15, 0.35, 0.45, 0.5, 0.0, None),
+        'hidden': (0.1, 0.0, 0.0, 0.7, 0.0, 0.0, None),
+    }
 elif KIND == 'bikering':  # John's Toronto post-and-ring: galvanised steel, the ring's lettering kept
     HEIGHT, ATLAS, MR_SIZE = None, 1024, 128
     TAGS = {
@@ -510,7 +531,7 @@ else:
 TAG_NAMES = list(TAGS)
 # per kind: output texture size, smoothing angle (an 8-sided post must stay smooth), the original's own axis (the hydrant's
 # barrel sits 4.5 cm behind its bounding-box centre: the pumper nozzle sticks out the front) moved to the origin
-TEX = {'shelter': 1024, 'bin': 1024}.get(KIND, 512)
+TEX = {'shelter': 1024, 'bin': 1024, 'parking-meter': 1024, 'wayfinding': 1024}.get(KIND, 512)
 SHARP = {'hydrant': 50, 'bikering': 65}.get(KIND, 35)
 AXIS = {'hydrant': (0.005, 0.045)}.get(KIND, (0.0, 0.0))
 SLIVER = {'shelter': 1.0, 'bin': 1.0}.get(KIND, 0.15)  # the small props' many little faces (nuts, feet) would eat the atlas
@@ -527,9 +548,49 @@ bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 co = np.empty(len(high.data.vertices) * 3); high.data.vertices.foreach_get('co', co); co = co.reshape(-1, 3)
 lo, hi = co.min(0), co.max(0)
-s = HEIGHT / (hi[2] - lo[2]) if HEIGHT else 1.0
-high.data.transform(Matrix.Translation(Vector((-AXIS[0], -AXIS[1], 0))) @ Matrix.Scale(s, 4) @ Matrix.Translation(Vector((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]))))
-print('HIGH', len(high.data.polygons), 'tris; size', ((hi - lo) * s).round(3))
+s = .460/(hi[0]-lo[0]) if KIND == 'wayfinding' else HEIGHT / (hi[2] - lo[2]) if HEIGHT else 1.0
+zs = HEIGHT/(hi[2]-lo[2]) if KIND == 'wayfinding' else s
+high.data.transform(Matrix.Translation(Vector((-AXIS[0], -AXIS[1], 0))) @ Matrix.Diagonal((s,s,zs,1)) @ Matrix.Translation(Vector((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]))))
+if KIND == 'parking-meter':
+    # John's front/side photographs show that Meshy turned the solar assembly
+    # toward the payment screen. Correct it toward the side shown in the reference photographs before baking.
+    turn = Matrix.Rotation(-math.pi/2, 3, 'Z')
+    for vertex in high.data.vertices:
+        if vertex.co.z > 1.480: vertex.co = turn @ vertex.co
+    high.data.update()
+    # Keep the explicitly corrected reference for reproducible comparisons; the
+    # untouched original remains in prop-src. Export before emission-only baking.
+    bpy.ops.export_scene.gltf(filepath=os.path.join(WORK, 'parking-meter-reference.glb'), export_format='GLB', use_selection=True, export_yup=True)
+print('HIGH', len(high.data.polygons), 'tris; size', ((hi - lo) * np.array([s,s,zs])).round(3))
+WAY_PHOTO = os.environ.get('WAYFINDING_FRONT_PHOTO') if KIND == 'wayfinding' else None
+WAY_H = None
+if WAY_PHOTO:
+    # John's June 25 front photo. Project on the measured X/Z panel plane,
+    # including its sloped crown; do not reuse Meshy's distorted text atlas.
+    corners = ((606/1373,421/1824),(820/1373,486/1824),(812/1373,1302/1824),(596/1373,1297/1824))
+    plane = ((0,1),(1,(2.80-.84)/(3-.84)),(1,0),(0,0))
+    rows, values = [], []
+    for (u,v),(x,y) in zip(plane,corners):
+        rows += [[u,v,1,0,0,0,-u*x,-v*x],[0,0,0,u,v,1,-u*y,-v*y]]; values += [x,y]
+    WAY_H = np.append(np.linalg.solve(np.array(rows),np.array(values)),1).reshape(3,3)
+    def way_st(x,z):
+        q = WAY_H @ np.array([(x/s+.2845)/.556,(z/zs-.84)/2.16,1.0])
+        return q[:2]/q[2]
+    photo = bpy.data.images.load(WAY_PHOTO,check_existing=False)
+    photo.colorspace_settings.name = 'sRGB'
+    pm=bpy.data.materials.new('John-photo-reference');pm.use_nodes=True
+    nt=pm.node_tree;tex=nt.nodes.new('ShaderNodeTexImage');tex.image=photo
+    u=nt.nodes.new('ShaderNodeUVMap');u.uv_map=high.data.uv_layers[0].name;nt.links.new(u.outputs['UV'],tex.inputs['Vector']);nt.links.new(tex.outputs['Color'],nt.nodes['Principled BSDF'].inputs['Base Color'])
+    high.data.materials.append(pm);idx=len(high.data.materials)-1
+    # Rewrite only these front-face loops in UV0. Workbench comparison renders
+    # one active UV layer, so a separate per-material UV1 would be misleading.
+    puv=high.data.uv_layers[0]
+    for face in high.data.polygons:
+        if face.normal.y>-.85 or min(high.data.vertices[i].co.z for i in face.vertices)<.84*zs:continue
+        face.material_index=idx
+        for li in face.loop_indices:
+            v=high.data.vertices[high.data.loops[li].vertex_index].co;x,y=way_st(v.x,v.z);puv.data[li].uv=(x,1-y)
+    bpy.ops.export_scene.gltf(filepath=os.path.join(WORK,'wayfinding-photo-reference.glb'),export_format='GLB',use_selection=True,export_yup=True)
 for m in high.data.materials:  # flat albedo: base colour straight into emission
     nt = m.node_tree; b = nt.nodes['Principled BSDF']; em = nt.nodes.new('ShaderNodeEmission')
     if b.inputs['Base Color'].links: nt.links.new(b.inputs['Base Color'].links[0].from_socket, em.inputs[0])
@@ -687,6 +748,68 @@ elif KIND == 'postbox':
         for y in (-0.2175, 0.2425):
             lathe([(0.026, 0.0), (0.022, 0.062)], 6, 'foot', M=Matrix.Translation((x, y, 0)))         # round feet
     CAGE, RAY = 0.03, 0.10
+elif KIND == 'parking-meter':
+    def bevel_ring(hx, yf, yb, z, r=0.007):
+        return [(-hx+r, yf, z), (hx-r, yf, z), (hx, yf+r, z),
+                (hx, yb-r, z), (hx-r, yb, z), (-hx+r, yb, z),
+                (-hx, yb-r, z), (-hx, yf+r, z)]
+    # Cabinet dimensions measured from the supplied source after height normalization.
+    # Vertical panels stay straight rather than retaining Meshy's small surface lumps.
+    cabinet = [bevel_ring(0.1705, -0.2063, 0.1648, z) for z in (0.0, 0.710)]
+    cabinet += [bevel_ring(0.176, -0.225, 0.1648, z) for z in (0.722, 1.410)]
+    add_grid(cabinet, 'paint', smooth=False, isl=2.0)
+    add_cap(cabinet[0], 'hidden', flip=True)
+    add_cap(cabinet[-1], 'hidden')
+    cap = [bevel_ring(0.179, -0.243, 0.174, 1.410, 0.012),
+           bevel_ring(0.179, -0.243, 0.174, 1.461, 0.012)]
+    add_grid(cap, 'paint', smooth=False, isl=2.0)
+    add_cap(cap[0], 'hidden', flip=True)
+    add_cap(cap[-1], 'paint')
+    # Tapered support under the inclined solar hood, with its painted graffiti face.
+    support = [[(-0.107, -0.115, 1.461), (0.107, -0.115, 1.461),
+                (0.107, 0.115, 1.461), (-0.107, 0.115, 1.461)],
+               [(-0.235, -0.217, 1.548), (0.235, -0.217, 1.548),
+                (0.235, 0.236, 1.804), (-0.235, 0.236, 1.804)]]
+    turn = Matrix.Rotation(-math.pi/2, 3, 'Z')
+    support = [[turn @ Vector(v) for v in row] for row in support]
+    add_grid(support, 'paint', smooth=False, isl=2.0)
+    add_cap(support[0], 'hidden', flip=True)
+    add_cap(support[-1], 'hidden')
+    # Panel: a thin rounded frame. Sloped top/bottom share one unbroken UV island
+    # each so the solar-cell grid survives the selected-to-active albedo bake.
+    angle = math.atan2(0.266, 0.470)
+    length = math.hypot(0.266, 0.470)
+    panel = [bevel_ring(0.260, -length/2, length/2, z, 0.010)
+             for z in (-0.007, 0.007)]
+    transform = Matrix.Rotation(-math.pi/2, 4, 'Z') @ Matrix.Translation((0, 0.006, HEIGHT - length/2*math.sin(angle) - 0.007*math.cos(angle))) @ Matrix.Rotation(angle, 4, 'X')
+    panel = [[transform @ Vector(v) for v in row] for row in panel]
+    add_grid(panel, 'edge', smooth=False, isl=2.0)
+    add_cap(panel[0], 'paint', flip=True)
+    add_cap(panel[-1], 'solar')
+    CAGE, RAY = 0.045, 0.12
+elif KIND == 'wayfinding':
+    # Reconstructed solids, not a decimator: foot plate, tapered lower casting,
+    # printed upper panels and the very shallow sloped crown.
+    add_box(-.282,.282,-.183,.183,0,.045,'base',ft={'-z':'hidden'})
+    rows=[]
+    for hx,z in [(.211,.045),(.278,.84),(.278,2.56)]:
+        rows.append([(-hx-.0065,-.1295,z),(hx-.0065,-.1295,z),(hx-.0065,.1255,z),(-hx-.0065,.1255,z)])
+    fs=add_grid(rows,'map',smooth=False,isl=2.0)
+    for f in fs:
+        f.normal_update()
+        if abs(f.normal.y)<.5: f.material_index=TAG_NAMES.index('edge')
+        elif max(v.co.z for v in f.verts)<=.85: f.material_index=TAG_NAMES.index('base')
+    add_cap(rows[0],'hidden',flip=True)
+    # Measured source crown: 20 cm fall left-to-right; its rear-left corner
+    # is clipped lower too. This visible silhouette must survive the rebuild.
+    top=[(-.278-.0065,-.1295,3.0),(.278-.0065,-.1295,2.80),(.278-.0065,.1255,2.80),(-.278-.0065,.1255,2.88)]
+    fs=add_grid([rows[-1],top],'map',smooth=False,isl=2.0)
+    for f in fs:
+        f.normal_update()
+        if abs(f.normal.y)<.5:f.material_index=TAG_NAMES.index('edge')
+    add_cap(top,'edge')
+    bm.transform(Matrix.Diagonal((s,s,zs,1)))
+    CAGE, RAY = .035, .10
 elif KIND == 'bikering':
     lathe([(0.042, 0.0), (0.030, 0.035), (0.030, 0.93)], 8, 'post', cap_end='post')               # the post
     # the ring: a circle whose band swells into a lens-shaped clamp, wider & thicker, where it grips the post top & bottom
@@ -784,6 +907,61 @@ for i, t in enumerate(TAG_NAMES):
     alb[sel] = (keep * a[sel] + (1 - keep) * c) * occ
     emi[sel] = a[sel] * em
     mr[sel] = (1.0, rough, metal)
+# A supplied photograph can replace Meshy's invented payment-panel lettering/logo.
+# The four normalized image corners delimit the front cabinet, top-left clockwise.
+# All other faces retain the source bake, including the side graffiti and solar grid.
+if KIND == 'parking-meter' and os.environ.get('PARKING_METER_FRONT_PHOTO'):
+    uv = me.uv_layers['UVMap']  # edit-mode packing replaces the earlier RNA layer
+    photo = bpy.data.images.load(os.environ['PARKING_METER_FRONT_PHOTO'])
+    photo.colorspace_settings.name = 'Non-Color'
+    pw, ph = photo.size
+    pixels = px(photo)[::-1, :, :3]
+    corners = ((0.374, 0.293), (0.628, 0.302), (0.587, 0.677), (0.366, 0.667))
+    rows, values = [], []
+    for (u, v), (x, y) in zip(((0, 0), (1, 0), (1, 1), (0, 1)), corners):
+        rows += [[u, v, 1, 0, 0, 0, -u*x, -v*x], [0, 0, 0, u, v, 1, -u*y, -v*y]]
+        values += [x, y]
+    H = np.append(np.linalg.solve(np.array(rows), np.array(values)), 1).reshape(3, 3)
+    for face in me.polygons:
+        coords = np.array([me.vertices[me.loops[li].vertex_index].co[:] for li in face.loop_indices])
+        if face.normal.y > -0.99 or coords[:, 2].min() < 0.715 or coords[:, 2].max() > 1.411:
+            continue
+        uvs = np.array([uv.data[li].uv[:] for li in face.loop_indices]) * ATLAS
+        for j in range(1, len(uvs)-1):
+            ids = [0, j, j+1]; triangle = uvs[ids]; xyz = coords[ids]
+            x0, y0 = np.maximum(0, np.floor(triangle.min(axis=0)).astype(int))
+            x1, y1 = np.minimum(ATLAS, np.ceil(triangle.max(axis=0)).astype(int))
+            xx, yy = np.meshgrid(np.arange(x0, x1)+0.5, np.arange(y0, y1)+0.5)
+            q = np.stack([xx-triangle[0, 0], yy-triangle[0, 1]], axis=-1)
+            w = q @ np.linalg.inv(np.stack([triangle[1]-triangle[0], triangle[2]-triangle[0]], axis=1)).T
+            inside = (w[..., 0] >= 0) & (w[..., 1] >= 0) & (w.sum(axis=-1) <= 1)
+            world = xyz[0] + w[..., 0:1]*(xyz[1]-xyz[0]) + w[..., 1:2]*(xyz[2]-xyz[0])
+            st = np.stack([(world[..., 0]+0.169)/0.338, (1.410-world[..., 2])/0.688, np.ones_like(xx)], axis=-1) @ H.T
+            sx = np.clip(st[..., 0]/st[..., 2]*pw, 0, pw-1).astype(int)
+            sy = np.clip(st[..., 1]/st[..., 2]*ph, 0, ph-1).astype(int)
+            patch = alb[y0:y1, x0:x1]
+            patch[inside] = to_lin(pixels[sy[inside], sx[inside]])
+    print('PHOTO front cabinet from', os.path.basename(os.environ['PARKING_METER_FRONT_PHOTO']))
+if WAY_PHOTO:
+    uv=me.uv_layers['UVMap']
+    photo=bpy.data.images.load(WAY_PHOTO,check_existing=False);photo.colorspace_settings.name='Non-Color'
+    pw,ph=photo.size;pixels=px(photo)[::-1,:,:3]
+    for face in me.polygons:
+        coords=np.array([me.vertices[me.loops[li].vertex_index].co[:] for li in face.loop_indices])
+        if face.normal.y>-.99 or coords[:,2].min()<.84*zs-.001:continue
+        uvs=np.array([uv.data[li].uv[:] for li in face.loop_indices])*ATLAS
+        for j in range(1,len(uvs)-1):
+            ids=[0,j,j+1];triangle=uvs[ids];xyz=coords[ids]
+            x0,y0=np.maximum(0,np.floor(triangle.min(axis=0)).astype(int));x1,y1=np.minimum(ATLAS,np.ceil(triangle.max(axis=0)).astype(int))
+            xx,yy=np.meshgrid(np.arange(x0,x1)+.5,np.arange(y0,y1)+.5)
+            q=np.stack([xx-triangle[0,0],yy-triangle[0,1]],axis=-1)
+            w=q@np.linalg.inv(np.stack([triangle[1]-triangle[0],triangle[2]-triangle[0]],axis=1)).T
+            inside=(w[...,0]>=0)&(w[...,1]>=0)&(w.sum(axis=-1)<=1)
+            world=xyz[0]+w[...,0:1]*(xyz[1]-xyz[0])+w[...,1:2]*(xyz[2]-xyz[0])
+            st=np.stack([(world[...,0]/s+.2845)/.556,(world[...,2]/zs-.84)/2.16,np.ones_like(xx)],axis=-1)@WAY_H.T
+            sx=np.clip(st[...,0]/st[...,2]*pw,0,pw-1).astype(int);sy=np.clip(st[...,1]/st[...,2]*ph,0,ph-1).astype(int)
+            patch=alb[y0:y1,x0:x1];patch[inside]=to_lin(pixels[sy[inside],sx[inside]])
+    print('PHOTO wayfinding front from',os.path.basename(WAY_PHOTO))
 def save(arr, name, size):
     im = bpy.data.images.new(name, arr.shape[1], arr.shape[0], alpha=False); im.colorspace_settings.name = 'Non-Color'
     rgba = np.concatenate([arr, np.ones(arr.shape[:2] + (1,), np.float32)], -1).astype(np.float32)

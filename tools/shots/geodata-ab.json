@@ -1,0 +1,15 @@
+[
+  { "name": "geo-start", "time": "midday", "wait": 8000 },
+  {
+    "name": "geo-king",
+    "mode": "helicopter",
+    "time": "midday",
+    "wait": 10000,
+    "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1180, -349, 0); app.cameraSystem.cinema = () => ({ pos: [-1062, 5.2, -352.5], look: [-200, 4.6, -349], fov: 26 }); })()"
+  },
+  {
+    "name": "geo-timing",
+    "wait": 300,
+    "js": "console.log('GEO-TIMING ' + JSON.stringify({ resources: performance.getEntriesByType('resource').filter((e) => /geodata/.test(e.name)).map((e) => ({ file: e.name.split('/').pop(), start: Math.round(e.startTime), end: Math.round(e.responseEnd), bytes: e.encodedBodySize })), decodeMs: performance.getEntriesByName('geodata-decode').map((e) => +e.duration.toFixed(1)), geoReadyMs: performance.getEntriesByName('geodata-decode').map((e) => Math.round(e.startTime + e.duration)), brotliStream: (() => { try { new DecompressionStream('brotli'); return true; } catch (e) { return false; } })() }))"
+  }
+]

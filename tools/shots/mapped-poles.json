@@ -1,0 +1,19 @@
+[
+  {"name": "stats", "mode": "person", "time": "midday", "x": -996.1, "z": -720.0, "heading": -1.5708, "js": "(() => {const C=window.CITY,s=C.poleStats||null;console.log('[ride-check] poles '+JSON.stringify(s&&{counts:s.counts,placed:s.placed,rejected:s.rejected,nudged:s.nudged,fallback:s.fallback,signals:s.signals}));return s&&{counts:s.counts,placed:s.placed,rejected:s.rejected,fallback:s.fallback,signals:s.signals};})()", "record": true, "wait": 2500},
+  {"name": "queen-west-day", "mode": "person", "time": "midday", "x": -996.1, "z": -720.0, "heading": -1.5708, "wait": 3500},
+  {"name": "queen-west-night", "time": "midnight", "wait": 4500},
+  {"name": "university-day", "mode": "person", "time": "midday", "x": -267.7, "z": -1068.6, "heading": 3.1416, "wait": 3500},
+  {"name": "university-night", "time": "midnight", "wait": 4500},
+  {"name": "palmerston-day", "mode": "person", "time": "midday", "x": -1940.1, "z": -2012.1, "heading": 3.1416, "wait": 3500},
+  {"name": "palmerston-night", "time": "midnight", "wait": 4500},
+  {"name": "queens-quay-day", "mode": "person", "time": "midday", "x": -19.9, "z": 570.5, "heading": -1.43, "wait": 3500},
+  {"name": "queens-quay-night", "time": "midnight", "wait": 4500},
+  {"name": "aerial-queen-spadina-day", "time": "midday", "js": "(() => {const a=window.__CITY_APP;a.selectMode('helicopter');a.controllerManager.teleportActiveTo(-1007.7,-711.3,-1.576,28);a.selectCamera('chase',true);})()", "wait": 4000},
+  {"name": "aerial-queen-spadina-night", "time": "midnight", "js": "(() => {const a=window.__CITY_APP;a.selectMode('helicopter');a.controllerManager.teleportActiveTo(-1007.7,-711.3,-1.576,28);a.selectCamera('chase',true);})()", "wait": 4500},
+  {"name": "aerial-university-dundas-day", "time": "midday", "js": "(() => {const a=window.__CITY_APP;a.selectMode('helicopter');a.controllerManager.teleportActiveTo(-309.1,-1123.5,-3.136,28);a.selectCamera('chase',true);})()", "wait": 4000},
+  {"name": "aerial-university-dundas-night", "time": "midnight", "js": "(() => {const a=window.__CITY_APP;a.selectMode('helicopter');a.controllerManager.teleportActiveTo(-309.1,-1123.5,-3.136,28);a.selectCamera('chase',true);})()", "wait": 4500},
+  {"name": "aerial-palmerston-day", "time": "midday", "js": "(() => {const a=window.__CITY_APP;a.selectMode('helicopter');a.controllerManager.teleportActiveTo(-1970.6,-2105.1,3.137,28);a.selectCamera('chase',true);})()", "wait": 4000},
+  {"name": "aerial-palmerston-night", "time": "midnight", "js": "(() => {const a=window.__CITY_APP;a.selectMode('helicopter');a.controllerManager.teleportActiveTo(-1970.6,-2105.1,3.137,28);a.selectCamera('chase',true);})()", "wait": 4500},
+  {"name": "aerial-queens-quay-york-day", "time": "midday", "js": "(() => {const a=window.__CITY_APP;a.selectMode('helicopter');a.controllerManager.teleportActiveTo(-233.1,522.7,1.616,28);a.selectCamera('chase',true);})()", "wait": 4000},
+  {"name": "aerial-queens-quay-york-night", "time": "midnight", "js": "(() => {const a=window.__CITY_APP;a.selectMode('helicopter');a.controllerManager.teleportActiveTo(-233.1,522.7,1.616,28);a.selectCamera('chase',true);})()", "wait": 4500}
+]

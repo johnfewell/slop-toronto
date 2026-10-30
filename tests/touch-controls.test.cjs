@@ -69,6 +69,27 @@ function near(actual, expected) {
   assert.ok(Math.abs(actual - expected) < 1e-10, `${actual} should be close to ${expected}`);
 }
 
+test('the shared overlay gate blocks touch even if a caller has not toggled control visibility', () => {
+  const h = harness();
+  h.window.CITY.uiOverlay = 'photo';
+  h.stick.dispatch('pointerdown'); h.stick.dispatch('pointermove', { clientX: 110 });
+  h.buttons.boost.dispatch('pointerdown');
+  assert.ok(Object.values(h.input).every((v) => !v));
+  assert.equal(h.controls.stickPointer, null);
+});
+
+test('place cards release held touches and keep their actions clear across map/ride enable changes',()=>{
+  const {controls,root,stick,buttons,input}=harness();
+  stick.dispatch('pointerdown',{clientY:20});buttons.boost.dispatch('pointerdown',{pointerId:2});
+  assert.equal(input.forward,1);assert.equal(input.boost,1);
+  controls.setPanelOpen(true);
+  assert.equal(root.hidden,true);assert.equal(input.forward,0);assert.equal(input.boost,0);
+  controls.setEnabled(true);assert.equal(root.hidden,true);
+  stick.dispatch('pointerdown',{clientY:20});assert.equal(input.forward,0);
+  controls.setEnabled(false);controls.setPanelOpen(false);assert.equal(root.hidden,true);
+  controls.setEnabled(true);assert.equal(root.hidden,false);
+});
+
 test('stick preserves analog strength and normalizes diagonal input with a radial deadzone', () => {
   const { stick, knob, input } = harness();
   stick.dispatch('pointerdown');

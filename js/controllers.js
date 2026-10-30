@@ -30,6 +30,8 @@ const {
 const { PersonCrowd, PersonRig } = window.CITY;
 const { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight } = window.CITY;
 // Walking surface for the player's pedestrian (its rig samples it around its feet)
+// The player's walker or parked bike further than this from the camera is not posed (poseCharacters)
+const POSE_RANGE = 320;
 const personGround = (controllers, x, z) => controllers.getGroundHeight(x, z, 'person', controllers.entities ? controllers.entities.person.position.y : null);
 
 // --- Driving
@@ -148,6 +150,14 @@ const HELI_BAND = [-0.25, 3.2], CAR_BAND = [0, 1.8], FOOT_BAND = [0, 1.9];
 const bodyBand = (mode) => (mode === 'helicopter' ? HELI_BAND : mode === 'car' ? CAR_BAND : FOOT_BAND);
 const meets = (c, y, band) => !(y + band[0] >= c.maxY || y + band[1] <= (c.minY ?? 0));
 const STEP = { car: 0.2, person: 0.2, cyclist: 0.25, helicopter: 1.0 };
+// Street furniture (`prop` colliders: hydrants, bins, posts, poles, shelters, a cycle track's separator; see
+// world-collision.js) is met with slim bodies, not the wide circles kept from the walls: a walker's shoulders (a
+// 0.3 m circle) and a bicycle's length (three 0.3 m circles along it, wheel to wheel), so a rider passes a post at
+// arm's length instead of bouncing off it a metre away. The helicopter flies over them all
+const SLIM = { person: 0.3, cyclist: 0.3, cyclistAlong: [-0.55, 0, 0.55] };
+// A separator curb (`curb`, ~15 cm) is crossed on a bicycle only steeply: more than ~25 degrees across it (the sine of the
+// angle between the way the bicycle goes & the curb). Shallower it holds the wheel and turns it back along the track
+const CURB_CROSS = 0.42;
 // --- end world contact
 
 // Ontario number plate: white, blue lettering, "ONTARIO" along the top and the province's "YOURS TO DISCOVER" along the
@@ -239,7 +249,9 @@ class ThirdPersonControllerManager {
 
     const onKey = (e, isDown) => {
       const action = actionsByCode.get(e.code);
-      if (!action || (isDown && isTypingInField(e))) return;
+      if (!action || (isDown && (isTypingInField(e) || window.CITY.uiOverlay))) return;
+      if (isDown && e.repeat && !this._pressedCodes.has(e.code)) return;
+      if (e.code === 'KeyE' && this.activeMode !== 'helicopter') return; // ground E is passenger interaction
       if (isDown) this._pressedCodes.add(e.code);
       else this._pressedCodes.delete(e.code);
       // Releasing one binding must not cancel another key held for the same action.
@@ -267,6 +279,7 @@ class ThirdPersonControllerManager {
 
   _setAnalogInput(source, action, value) {
     if (!Object.hasOwn(this.keys, action)) return;
+    if (window.CITY.uiOverlay && value) return;
     const strength = Number(value);
     source[action] = typeof value === 'boolean' ? value : Number.isFinite(strength) ? Math.max(0, Math.min(1, strength)) : 0;
     this._blendInput(action);
@@ -301,27 +314,46 @@ class ThirdPersonControllerManager {
   setMode(mode) {
     if (!this.entities[mode]) return;
     this.activeMode = mode;
+    const car = this.entities.car;
+    if (mode !== 'car' && car?.carState) car.carState.value.x = car.carState.value.w = 0;
     // a wrecked car restarts where this drive began
     if (mode === 'car') this.entities.car.home = { x: this.entities.car.position.x, z: this.entities.car.position.z, heading: this.entities.car.heading };
+  }
+
+  // User mode changes travel with the player. Internal setMode calls still select saved entities without moving them.
+  switchMode(mode) {
+    if (!this.entities[mode] || this.suspended) return false;
+    if (mode === this.activeMode) return true;
+    const previousMode = this.activeMode, previous = this.getActiveEntity();
+    const { x, y, z } = previous.position, heading = previous.heading;
+    const altitude = mode === 'helicopter' ? Math.max(92, y) : y;
+    let destination;
+    this.activeMode = mode;
+    try { destination = this.findTeleportPosition(x, z, heading, altitude); }
+    finally { this.activeMode = previousMode; }
+    if (!destination) return false;
+    this.setMode(mode);
+    this.teleportActiveTo(destination.x, destination.z, heading, altitude);
+    return true;
   }
 
   getActiveEntity() {
     return this.entities[this.activeMode];
   }
 
-  // savedAltitude: the helicopter's height on a restored visit (main.js), else it arrives at a safe 92 m or more
+  // savedAltitude also selects the current deck for ground arrivals; flight defaults to a safe 92 m or more.
   teleportActiveTo(x, z, heading = Math.PI, savedAltitude = null) {
     const ent = this.getActiveEntity();
     this.resetInput();
     if (!Number.isFinite(heading)) heading = ent.heading;
     const heli = this.activeMode === 'helicopter';
-    const altitude = heli ? Math.max(0.25, Math.min(380, savedAltitude ?? Math.max(92, ent.position.y))) : 0;
+    const altitude = heli ? Math.max(0.25, Math.min(380, savedAltitude ?? Math.max(92, ent.position.y))) : savedAltitude;
     const destination = this.findTeleportPosition(x, z, heading, altitude);
     if (destination) {
       ent.position.x = destination.x;
       ent.position.z = destination.z;
       ent.heading = heading;
-      ent.position.y = heli ? altitude : this.getGroundHeight(destination.x, destination.z, this.activeMode);
+      ent.position.y = heli ? altitude : this.getGroundHeight(destination.x, destination.z, this.activeMode, altitude);
     }
     ent.speed = 0;
     if (this.activeMode === 'person') {
@@ -339,7 +371,7 @@ class ThirdPersonControllerManager {
       ent.chassisPivot.position.y = 0;
       ent.lastCollisionSpark = null;
       for (const wheel of ent.wheels) if (wheel.isFront) wheel.steerPivot.rotation.y = 0;
-      if (ent.carState) ent.carState.value.x = 1;
+      if (ent.carState) ent.carState.value.x = ent.carState.value.w = 0;
     } else if (this.activeMode === 'cyclist') {
       ent.leanAngle = ent.leanPivot.rotation.z = 0;
     } else if (heli) {
@@ -357,6 +389,10 @@ class ThirdPersonControllerManager {
   // exact: only (x, z) itself (null if it isn't clear), no search round it
   findTeleportPosition(x, z, heading, altitude, exact = false) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+    if (this.interiorSpace && this.activeMode === 'person') {
+      const point = this.interiorSpace.constrain({ x, z }, 0.5);
+      return exact && Math.hypot(point.x - x, point.z - z) > 0.01 ? null : point;
+    }
     const heli = this.activeMode === 'helicopter';
     const car = this.activeMode === 'car';
     const radius = BODY_RADIUS[this.activeMode] || 0.48;
@@ -382,7 +418,7 @@ class ThirdPersonControllerManager {
     };
     const clear = (p) => {
       if (!p) return false;
-      const baseY = heli ? altitude : this.getGroundHeight(p.x, p.z, this.activeMode);
+      const baseY = heli ? altitude : this.getGroundHeight(p.x, p.z, this.activeMode, altitude);
       // Keep other player models out of both the arrival and its default chase view. A corridor also prevents a
       // parked car between camera and character from hiding the character even when the camera itself is outside it.
       const viewTop = baseY + Math.max(body[entity.type][1], cameraUp);
@@ -394,8 +430,13 @@ class ThirdPersonControllerManager {
       }
       const shape = car ? (this._arrivalCar = G.carShape(p.x, p.z, heading, 0.1, this._arrivalCar))
         : (this._arrivalCircle = G.circleShape(p.x, p.z, radius + 0.1, this._arrivalCircle));
-      for (const c of this.nearColliders(p.x, p.z, shape.reach)) {
-        if (meets(c, baseY, band) && G.contact(shape, c)) return false;
+      for (const c of this.nearColliders(p.x, p.z, shape.reach + 0.6)) {
+        if (!meets(c, baseY, band)) continue;
+        if (c.prop && !car) {
+          // (street furniture: by the slim body; the curbs only stop the car)
+          if (heli || c.curb) continue;
+          if (this.slimContact(p.x, p.z, this.activeMode, heading, c, 0.1)) return false;
+        } else if (G.contact(shape, c)) return false;
       }
       return true;
     };
@@ -863,20 +904,26 @@ class ThirdPersonControllerManager {
   // deck or ramp where whoever is at height y can step or drive onto it (y unknown: at street level)
   getGroundHeight(x, z, mode = 'person', y = null) {
     // (the bicycle too: up on the curb islands it rides the parks' trails & paths on their surface, not 22 cm under it)
+    if (this.interiorSpace && mode === 'person') return this.interiorSpace.floor;
     let ground = (mode === 'person' || mode === 'cyclist') && this.isPointOnSidewalk(x, z) ? CITY_BOUNDS.sidewalkHeight : 0.0;
     // down in a road cut (city-config.js cutAt: Strachan Ave under the railway), else up on the hills
     const cut = window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0;
     if (cut < 0) ground += cut;
     else ground = Math.max(ground, terrainHeightAt(x, z));
+    // Verified sports slabs replace the coarse hill locally. Keep the deck
+    // lookup below: a bridge above a court is still a separate surface.
+    const sportsGround = window.CITY.sportsGroundAt?.(x,z);
+    if (Number.isFinite(sportsGround)) ground = sportsGround;
     // (a deck only counts where one is in reach: deckHeightAt's 0 is "none", not the street level)
     const deck = deckHeightAt(x, z, y === null ? ground : y, mode === 'car' ? 0.9 : 0.6);
     return deck > 0 ? Math.max(ground, deck) : ground;
   }
 
   // The colliders whose bounds come within `r` of (x, z), in their original order. They never move, so they are
-  // bucketed once into 48 m cells (tens of thousands of buildings: testing them all every frame cost ~0.5 ms)
+  // bucketed once into 48 m cells (tens of thousands of buildings: testing them all every frame cost ~0.5 ms), the
+  // small ones (street furniture: a cell of downtown holds a hundred bike rings) into 8 m cells
   nearColliders(x, z, r) {
-    const CELL = 48;
+    const CELL = 48, FINE = 8;
     const key = (ix, iz) => (ix + 4096) * 8192 + (iz + 4096);
     // (a model that loaded later replaced its stand-in's colliders: js/world-collision.js swap)
     if (G && G.changes.length !== (this._changesSeen || 0)) {
@@ -889,31 +936,37 @@ class ThirdPersonControllerManager {
     }
     if (!this._colliderCells) {
       this._colliderCells = new Map();
+      this._fineCells = new Map();
       this.colliders.forEach((c, i) => {
         c._order = i;
-        for (let ix = Math.floor(c.minX / CELL); ix <= Math.floor(c.maxX / CELL); ix++) {
-          for (let iz = Math.floor(c.minZ / CELL); iz <= Math.floor(c.maxZ / CELL); iz++) {
+        const small = c.maxX - c.minX <= FINE && c.maxZ - c.minZ <= FINE;
+        const cells = small ? this._fineCells : this._colliderCells, size = small ? FINE : CELL;
+        for (let ix = Math.floor(c.minX / size); ix <= Math.floor(c.maxX / size); ix++) {
+          for (let iz = Math.floor(c.minZ / size); iz <= Math.floor(c.maxZ / size); iz++) {
             const k = key(ix, iz);
-            let list = this._colliderCells.get(k);
-            if (!list) this._colliderCells.set(k, (list = []));
+            let list = cells.get(k);
+            if (!list) cells.set(k, (list = []));
             list.push(c);
           }
         }
       });
+      this._grids = [[this._colliderCells, CELL], [this._fineCells, FINE]];
       this._nearList = [];
       this._nearStamp = 0;
     }
     const out = this._nearList;
     out.length = 0;
     const stamp = ++this._nearStamp;
-    for (let ix = Math.floor((x - r) / CELL); ix <= Math.floor((x + r) / CELL); ix++) {
-      for (let iz = Math.floor((z - r) / CELL); iz <= Math.floor((z + r) / CELL); iz++) {
-        const list = this._colliderCells.get(key(ix, iz));
-        if (!list) continue;
-        for (const c of list) {
-          if (c._seen === stamp) continue;
-          c._seen = stamp;
-          out.push(c);
+    for (const [cells, size] of this._grids) {
+      for (let ix = Math.floor((x - r) / size); ix <= Math.floor((x + r) / size); ix++) {
+        for (let iz = Math.floor((z - r) / size); iz <= Math.floor((z + r) / size); iz++) {
+          const list = cells.get(key(ix, iz));
+          if (!list) continue;
+          for (const c of list) {
+            if (c._seen === stamp) continue;
+            c._seen = stamp;
+            out.push(c);
+          }
         }
       }
     }
@@ -945,6 +998,13 @@ class ThirdPersonControllerManager {
   // One frame's move of the active body (its position by its speed & heading; the car's by its momentum, turning from
   // `fromHeading` to its heading), in substeps, each pushed out of what it meets (WORLD CONTACT above)
   moveBody(ent, mode, dt, fromHeading = ent.heading) {
+    if (this.interiorSpace && mode === 'person') {
+      ent.position.x += Math.sin(ent.heading) * ent.speed * dt;
+      ent.position.z += Math.cos(ent.heading) * ent.speed * dt;
+      const at = this.interiorSpace.constrain(ent.position, 0.5);
+      ent.position.x = at.x; ent.position.z = at.z; ent.position.y = this.interiorSpace.floor;
+      return;
+    }
     const car = mode === 'car', pos = ent.position, radius = BODY_RADIUS[mode] || 0.48;
     const toHeading = ent.heading, turn = car ? toHeading - fromHeading : 0;
     const reach = car ? G.CAR_REACH : radius;
@@ -981,7 +1041,14 @@ class ThirdPersonControllerManager {
       let shape = car ? (this._carShape = G.carShape(pos.x, pos.z, car.heading, 0, this._carShape)) : (this._circle = G.circleShape(pos.x, pos.z, radius, this._circle));
       for (const c of near) {
         if (!meets(c, pos.y, band)) continue;
-        const hit = G.contact(shape, c);
+        let hit;
+        if (c.prop && !car) {
+          // street furniture: the slim body; the helicopter flies over, a walker steps over a curb, a rider crosses
+          // one steeply (CURB_CROSS)
+          if (mode === 'helicopter' || (c.curb && mode !== 'cyclist')) continue;
+          hit = this.slimContact(pos.x, pos.z, mode, ent ? ent.heading : 0, c);
+          if (hit && c.curb && ent && Math.abs(Math.sin(ent.heading) * hit.nx + Math.cos(ent.heading) * hit.nz) > CURB_CROSS) continue;
+        } else hit = G.contact(shape, c);
         if (!hit || !(hit.depth > 0)) continue;
         pos.x += hit.nx * (hit.depth + G.SKIN);
         pos.z += hit.nz * (hit.depth + G.SKIN);
@@ -996,6 +1063,20 @@ class ThirdPersonControllerManager {
       if (!moved) break;
     }
     return hits;
+  }
+
+  // A walker's or a rider's slim body (SLIM) at (x, z), facing heading, against a street-furniture collider: the deepest
+  // contact of its circles, or null. pad: grown by that much (a teleport's clearance)
+  slimContact(x, z, mode, heading, c, pad = 0) {
+    const r = (mode === 'cyclist' ? SLIM.cyclist : SLIM.person) + pad;
+    if (mode !== 'cyclist') return G.contact((this._slim = G.circleShape(x, z, r, this._slim)), c);
+    const sx = Math.sin(heading), sz = Math.cos(heading);
+    let best = null;
+    for (const o of SLIM.cyclistAlong) {
+      const hit = G.contact((this._slim = G.circleShape(x + sx * o, z + sz * o, r, this._slim)), c);
+      if (hit && hit.depth > 0 && (!best || hit.depth > best.depth)) best = hit;
+    }
+    return best;
   }
 
   carHitsWall(c, hit) {
@@ -1059,30 +1140,75 @@ class ThirdPersonControllerManager {
   // Pose the skinned characters once every entity has moved: the pedestrian's rig walks (or runs, turns, jumps) it to
   // where it now is, planting its feet on the ground; the cyclist sits on the bike, hands on the grips, feet on the
   // pedals, helmet on its head
-  poseCharacters(dt) {
+  // (mrdoob's 1fe128d) The one left standing or parked more than 320 m from the camera (`focusPos`) is neither walked
+  // nor posed, and its crowd hides once the warm-up frames are over (PersonCrowd.end); a parked rider is posed again
+  // only when the bike has moved. Only the meshes hidden here are shown again here: transit-riding.js hides the
+  // player's own while it rides
+  poseCharacters(dt, focusPos = null) {
+    const focus = focusPos || this.getActiveEntity()?.position;
+    const far = (e) => !!focus && (e.position.x - focus.x) ** 2 + (e.position.z - focus.z) ** 2 > POSE_RANGE * POSE_RANGE;
+
     const p = this.entities.person;
-    const air = p.position.y - this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
-    p.rig.update(dt, p.position.x, p.position.z, p.heading, personGround, this, air > 0.02 ? air : 0);
-    p.crowd.begin();
-    p.crowd.add(p.rig, 0);
-    p.crowd.end();
+    if (this.activeMode === 'person' || !far(p)) {
+      p._charHidden = false;
+      const air = p.position.y - this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
+      p.rig.update(dt, p.position.x, p.position.z, p.heading, personGround, this, air > 0.02 ? air : 0);
+      p.crowd.begin();
+      p.crowd.add(p.rig, 0);
+      p.crowd.end();
+    } else if (!p._charHidden) {
+      p.rig.placed = false; // (stands afresh where it is when the camera comes back)
+      p.crowd.begin();
+      p.crowd.end();
+      if (p.crowd.updates > 2) p._charHidden = true;
+    }
 
     const b = this.entities.cyclist;
-    b.riderRig.ride(b.leanPivot, b.pedalPhase, b.bikeFrame);
-    b.riderCrowd.begin();
-    b.riderCrowd.add(b.riderRig, 0);
-    b.riderCrowd.end();
-    b.helmet.quaternion.copy(b.riderRig.headQuaternion);
-    b.helmet.position.set(0, 0.175, -0.012).applyQuaternion(b.helmet.quaternion).add(b.riderRig.headPosition);
+    if (this.activeMode === 'cyclist' || !far(b)) {
+      if (b._riderHidden) b.helmet.visible = true;
+      const moved = this.activeMode === 'cyclist' || b._riderHidden || b._posedX !== b.position.x ||
+        b._posedY !== b.position.y || b._posedZ !== b.position.z || b._posedH !== b.heading ||
+        b._posedLean !== b.leanAngle || b._posedPedal !== b.pedalPhase;
+      b._riderHidden = false;
+      if (moved) {
+        b.riderRig.ride(b.leanPivot, b.pedalPhase, b.bikeFrame);
+        b.riderCrowd.begin();
+        b.riderCrowd.add(b.riderRig, 0);
+        b.riderCrowd.end();
+        b.helmet.quaternion.copy(b.riderRig.headQuaternion);
+        b.helmet.position.set(0, 0.175, -0.012).applyQuaternion(b.helmet.quaternion).add(b.riderRig.headPosition);
+        b._posedX = b.position.x;
+        b._posedY = b.position.y;
+        b._posedZ = b.position.z;
+        b._posedH = b.heading;
+        b._posedLean = b.leanAngle;
+        b._posedPedal = b.pedalPhase;
+      }
+    } else if (!b._riderHidden) {
+      b.riderCrowd.begin();
+      b.riderCrowd.end();
+      if (b.riderCrowd.updates > 2) {
+        b.helmet.visible = false;
+        b._riderHidden = true;
+        b._posedX = NaN;
+      }
+    }
   }
 
-  update(dt, elapsed) {
+  update(dt, elapsed, focusPos = null) {
+    for (const entity of Object.values(this.entities)) {
+      entity.prevX = entity.position.x;
+      entity.prevZ = entity.position.z;
+    }
     this.clock = (this.clock || 0) + dt;
     const heli = this.entities.helicopter;
     heli.mainRotorPivot.rotation.y += dt * 24.0;
     heli.tailRotorPivot.rotation.x += dt * 32.0;
 
-    if (this.activeMode === 'person') {
+    if (this.suspended) {
+      // aboard a streetcar (streetcar-ride.js): the player rides along, hidden, without moving itself
+      this.entities[this.activeMode].speed = 0;
+    } else if (this.activeMode === 'person') {
       this.updatePerson(dt, elapsed);
     } else {
       // The walker waits where it was left (New York's paced back & forth along a street between z -340 & 340, which
@@ -1090,7 +1216,9 @@ class ThirdPersonControllerManager {
       this.entities.person.speed = 0;
     }
 
-    if (this.activeMode === 'car') {
+    if (this.suspended) {
+      // (nothing drives)
+    } else if (this.activeMode === 'car') {
       this.updateCar(dt, elapsed);
     } else if (this.activeMode === 'cyclist') {
       this.updateCyclist(dt, elapsed);
@@ -1120,7 +1248,7 @@ class ThirdPersonControllerManager {
       bike.headLight.intensity = bikeActive ? 115 * beamScale : 0;
     }
 
-    this.poseCharacters(dt);
+    this.poseCharacters(dt, focusPos);
   }
 
   updatePerson(dt) {
@@ -1140,6 +1268,7 @@ class ThirdPersonControllerManager {
     this.moveBody(p, 'person', dt);
 
     const groundY = this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
+    if (this.interiorSpace) { p.position.y = groundY; p.verticalVel = 0; return; }
     if (this.keys.up && p.position.y <= groundY + 0.02) {
       p.verticalVel = 5.2;
     }
@@ -1265,9 +1394,10 @@ class ThirdPersonControllerManager {
     c.heaveY = Math.max(-0.08, Math.min(0.14, c.heaveY + c.heaveVel * dt));
     c.chassisPivot.position.y = c.heaveY;
 
-    // brake lamps: braking, or standing still off the pedal (mrdoob's f3132b6)
+    // Brake lamps under braking (including the handbrake), white reverse lamps while backing up (21f6dde).
     if (c.carState) {
-      c.carState.value.x = braking || (c.speed === 0 && !throttle) ? 1 : 0;
+      c.carState.value.x = braking || handbrake ? 1 : 0;
+      c.carState.value.w = c.speed < -0.2 ? 1 : 0;
     }
 
     const forwardDist = (c.position.x - prevX) * Math.sin(c.heading) + (c.position.z - prevZ) * Math.cos(c.heading);
@@ -1361,6 +1491,7 @@ class ThirdPersonControllerManager {
     if (h.position.y !== y0) {
       const shape = (this._circle = G.circleShape(h.position.x, h.position.z, BODY_RADIUS.helicopter, this._circle));
       for (const c of this.nearColliders(h.position.x, h.position.z, shape.reach + 1)) {
+        if (c.prop) continue; // (it flies over street furniture)
         const was = meets(c, y0, HELI_BAND);
         if (was || !meets(c, h.position.y, HELI_BAND) || !G.contact(shape, c)) continue;
         if (h.position.y < y0) h.position.y = Math.max(h.position.y, c.maxY - HELI_BAND[0]);

@@ -1,0 +1,100 @@
+[
+ {
+  "name": "census",
+  "mode": "person",
+  "time": "golden",
+  "x": -267.7,
+  "z": -1068.6,
+  "heading": 3.141592653589793,
+  "wait": 3000,
+  "js": "(function census() {\n  const app = window.__CITY_APP, C = window.CITY;\n  const tri = (g) => (g.index ? g.index.count : g.attributes.position.count) / 3;\n  const kinds = {};\n  app.scene.traverse((o) => {\n    if (!o.isMesh || !o.castShadow) return;\n    const per = tri(o.geometry), n = o.isInstancedMesh ? o.count : 1;\n    const k = (o.name || '?') + '|' + (o.material.name || o.material.type) + '|' + per;\n    const e = kinds[k] || (kinds[k] = { meshes: 0, instances: 0, tris: 0 });\n    e.meshes++; e.instances += n; e.tris += per * n;\n  });\n  const top = Object.entries(kinds).sort((a, b) => b[1].tris - a[1].tris).slice(0, 40);\n  const res = { q: location.search, quality: C.QUALITY.name || C.QUALITY.tier || null, cullingStats: app.cullingStats, poleStats: C.poleStats && { placed: C.poleStats.placed, fallback: C.poleStats.fallback }, casters: Object.fromEntries(top) };\n  console.log('[ride-check] census ' + JSON.stringify({ cullingStats: res.cullingStats, poleStats: res.poleStats }));\n  return res;\n})()",
+  "record": true
+ },
+ {
+  "name": "university-golden-chase",
+  "mode": "person",
+  "camera": "chase",
+  "time": "golden",
+  "x": -267.7,
+  "z": -1068.6,
+  "heading": 3.141592653589793,
+  "wait": 5000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "university-golden-tally",
+  "wait": 500,
+  "js": "(function tally() {\n  return new Promise((resolve) => {\n    const app = window.__CITY_APP, r = app.renderer, b = r.backend, sh = app.lightingSystem.sunLight.shadow;\n    const cams = new Map();\n    const n = typeof sh.getViewportCount === 'function' ? sh.getViewportCount() : 2;\n    for (let i = 0; i < n; i++) cams.set(sh.getCamera(i), i);\n    const t = { shadow: [0, 1].map(() => ({ passes: new Set(), tris: 0, draws: 0 })), view: { frames: new Set(), tris: 0, draws: 0 }, byKind: {}, people: {} };\n    const tri = (g) => (g.index ? g.index.count : g.attributes.position.count) / 3;\n    const orig = b.draw;\n    b.draw = function (ro, info) {\n      const before = info.render.triangles;\n      const res = orig.apply(this, arguments);\n      const d = info.render.triangles - before;\n      const o = ro.object, ci = cams.get(ro.camera);\n      if (ci !== undefined) {\n        const s = t.shadow[ci];\n        s.passes.add(r.info.frame); s.tris += d; s.draws++;\n        const k = (o.name || '?') + '|' + (o.material.name || o.material.type) + '|' + tri(o.geometry);\n        t.byKind[k] = (t.byKind[k] || 0) + d;\n      } else {\n        t.view.frames.add(r.info.frame); t.view.tris += d; t.view.draws++;\n      }\n      if (/^People/.test(o.name)) {\n        const p = t.people[o.name + (ci !== undefined ? ':shadow' : ':view')] ||= { draws: 0, tris: 0 };\n        p.draws++; p.tris += d;\n      }\n      return res;\n    };\n    let frames = 0;\n    const tick = () => {\n      if (++frames < 40) return requestAnimationFrame(tick);\n      b.draw = orig;\n      const per = (x, k) => Math.round(x / Math.max(1, k));\n      const out = {\n        q: location.search,\n        shadowPasses: t.shadow.map((s) => s.passes.size),\n        shadowTrisPerPass: t.shadow.map((s) => per(s.tris, s.passes.size)),\n        shadowDrawsPerPass: t.shadow.map((s) => per(s.draws, s.passes.size)),\n        viewFrames: t.view.frames.size,\n        viewTrisPerFrame: per(t.view.tris, t.view.frames.size),\n        viewDrawsPerFrame: per(t.view.draws, t.view.frames.size),\n        shadowByKindPerPass: Object.fromEntries(Object.entries(t.byKind).sort((a, b) => b[1] - a[1]).slice(0, 25)\n          .map(([k, v]) => [k, per(v, t.shadow[0].passes.size + t.shadow[1].passes.size)])),\n        people: Object.fromEntries(Object.entries(t.people).map(([k, v]) => [k, { drawsPerFrame: +(v.draws / Math.max(1, t.view.frames.size)).toFixed(2), trisPerFrame: per(v.tris, t.view.frames.size) }])),\n        peds: app.trafficSystem && app.trafficSystem.stats ? app.trafficSystem.stats : undefined\n      };\n      console.log('[ride-check] tally ' + JSON.stringify({ shadowTrisPerPass: out.shadowTrisPerPass, viewTrisPerFrame: out.viewTrisPerFrame, people: out.people }));\n      resolve(out);\n    };\n    requestAnimationFrame(tick);\n  });\n})()",
+  "record": true
+ },
+ {
+  "name": "university-golden-look",
+  "wait": 3000,
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-267.7 - Math.sin(3.141592653589793) * 4, 9, -1068.6 - Math.cos(3.141592653589793) * 4], look: [-267.7 + Math.sin(3.141592653589793) * 22, 0.3, -1068.6 + Math.cos(3.141592653589793) * 22], fov: 55 }); })()"
+ },
+ {
+  "name": "university-midday-look",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-267.7 - Math.sin(3.141592653589793) * 4, 9, -1068.6 - Math.cos(3.141592653589793) * 4], look: [-267.7 + Math.sin(3.141592653589793) * 22, 0.3, -1068.6 + Math.cos(3.141592653589793) * 22], fov: 55 }); })()"
+ },
+ {
+  "name": "queen-west-golden-chase",
+  "mode": "person",
+  "camera": "chase",
+  "time": "golden",
+  "x": -996.1,
+  "z": -720,
+  "heading": -1.5707963267948966,
+  "wait": 5000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "queen-west-golden-tally",
+  "wait": 500,
+  "js": "(function tally() {\n  return new Promise((resolve) => {\n    const app = window.__CITY_APP, r = app.renderer, b = r.backend, sh = app.lightingSystem.sunLight.shadow;\n    const cams = new Map();\n    const n = typeof sh.getViewportCount === 'function' ? sh.getViewportCount() : 2;\n    for (let i = 0; i < n; i++) cams.set(sh.getCamera(i), i);\n    const t = { shadow: [0, 1].map(() => ({ passes: new Set(), tris: 0, draws: 0 })), view: { frames: new Set(), tris: 0, draws: 0 }, byKind: {}, people: {} };\n    const tri = (g) => (g.index ? g.index.count : g.attributes.position.count) / 3;\n    const orig = b.draw;\n    b.draw = function (ro, info) {\n      const before = info.render.triangles;\n      const res = orig.apply(this, arguments);\n      const d = info.render.triangles - before;\n      const o = ro.object, ci = cams.get(ro.camera);\n      if (ci !== undefined) {\n        const s = t.shadow[ci];\n        s.passes.add(r.info.frame); s.tris += d; s.draws++;\n        const k = (o.name || '?') + '|' + (o.material.name || o.material.type) + '|' + tri(o.geometry);\n        t.byKind[k] = (t.byKind[k] || 0) + d;\n      } else {\n        t.view.frames.add(r.info.frame); t.view.tris += d; t.view.draws++;\n      }\n      if (/^People/.test(o.name)) {\n        const p = t.people[o.name + (ci !== undefined ? ':shadow' : ':view')] ||= { draws: 0, tris: 0 };\n        p.draws++; p.tris += d;\n      }\n      return res;\n    };\n    let frames = 0;\n    const tick = () => {\n      if (++frames < 40) return requestAnimationFrame(tick);\n      b.draw = orig;\n      const per = (x, k) => Math.round(x / Math.max(1, k));\n      const out = {\n        q: location.search,\n        shadowPasses: t.shadow.map((s) => s.passes.size),\n        shadowTrisPerPass: t.shadow.map((s) => per(s.tris, s.passes.size)),\n        shadowDrawsPerPass: t.shadow.map((s) => per(s.draws, s.passes.size)),\n        viewFrames: t.view.frames.size,\n        viewTrisPerFrame: per(t.view.tris, t.view.frames.size),\n        viewDrawsPerFrame: per(t.view.draws, t.view.frames.size),\n        shadowByKindPerPass: Object.fromEntries(Object.entries(t.byKind).sort((a, b) => b[1] - a[1]).slice(0, 25)\n          .map(([k, v]) => [k, per(v, t.shadow[0].passes.size + t.shadow[1].passes.size)])),\n        people: Object.fromEntries(Object.entries(t.people).map(([k, v]) => [k, { drawsPerFrame: +(v.draws / Math.max(1, t.view.frames.size)).toFixed(2), trisPerFrame: per(v.tris, t.view.frames.size) }])),\n        peds: app.trafficSystem && app.trafficSystem.stats ? app.trafficSystem.stats : undefined\n      };\n      console.log('[ride-check] tally ' + JSON.stringify({ shadowTrisPerPass: out.shadowTrisPerPass, viewTrisPerFrame: out.viewTrisPerFrame, people: out.people }));\n      resolve(out);\n    };\n    requestAnimationFrame(tick);\n  });\n})()",
+  "record": true
+ },
+ {
+  "name": "queen-west-golden-look",
+  "wait": 3000,
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-996.1 - Math.sin(-1.5707963267948966) * 4, 9, -720 - Math.cos(-1.5707963267948966) * 4], look: [-996.1 + Math.sin(-1.5707963267948966) * 22, 0.3, -720 + Math.cos(-1.5707963267948966) * 22], fov: 55 }); })()"
+ },
+ {
+  "name": "queen-west-midday-look",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-996.1 - Math.sin(-1.5707963267948966) * 4, 9, -720 - Math.cos(-1.5707963267948966) * 4], look: [-996.1 + Math.sin(-1.5707963267948966) * 22, 0.3, -720 + Math.cos(-1.5707963267948966) * 22], fov: 55 }); })()"
+ },
+ {
+  "name": "king-spadina-crowd",
+  "mode": "person",
+  "time": "midday",
+  "wait": 12000,
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.6454, -79.3953); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; const x = r.px + nx * off, z = r.pz + nz * off; window.__CITY_APP.cameraSystem.cinema = null; window.__CITY_APP.teleportTo(x, z, Math.atan2(r.dx, r.dz)); window.__CITY_APP.selectCamera('chase', true); console.log('[shot] on', r.road.name, x.toFixed(1), z.toFixed(1)); })()"
+ },
+ {
+  "name": "king-spadina-crowd-tally",
+  "wait": 500,
+  "js": "(function tally() {\n  return new Promise((resolve) => {\n    const app = window.__CITY_APP, r = app.renderer, b = r.backend, sh = app.lightingSystem.sunLight.shadow;\n    const cams = new Map();\n    const n = typeof sh.getViewportCount === 'function' ? sh.getViewportCount() : 2;\n    for (let i = 0; i < n; i++) cams.set(sh.getCamera(i), i);\n    const t = { shadow: [0, 1].map(() => ({ passes: new Set(), tris: 0, draws: 0 })), view: { frames: new Set(), tris: 0, draws: 0 }, byKind: {}, people: {} };\n    const tri = (g) => (g.index ? g.index.count : g.attributes.position.count) / 3;\n    const orig = b.draw;\n    b.draw = function (ro, info) {\n      const before = info.render.triangles;\n      const res = orig.apply(this, arguments);\n      const d = info.render.triangles - before;\n      const o = ro.object, ci = cams.get(ro.camera);\n      if (ci !== undefined) {\n        const s = t.shadow[ci];\n        s.passes.add(r.info.frame); s.tris += d; s.draws++;\n        const k = (o.name || '?') + '|' + (o.material.name || o.material.type) + '|' + tri(o.geometry);\n        t.byKind[k] = (t.byKind[k] || 0) + d;\n      } else {\n        t.view.frames.add(r.info.frame); t.view.tris += d; t.view.draws++;\n      }\n      if (/^People/.test(o.name)) {\n        const p = t.people[o.name + (ci !== undefined ? ':shadow' : ':view')] ||= { draws: 0, tris: 0 };\n        p.draws++; p.tris += d;\n      }\n      return res;\n    };\n    let frames = 0;\n    const tick = () => {\n      if (++frames < 40) return requestAnimationFrame(tick);\n      b.draw = orig;\n      const per = (x, k) => Math.round(x / Math.max(1, k));\n      const out = {\n        q: location.search,\n        shadowPasses: t.shadow.map((s) => s.passes.size),\n        shadowTrisPerPass: t.shadow.map((s) => per(s.tris, s.passes.size)),\n        shadowDrawsPerPass: t.shadow.map((s) => per(s.draws, s.passes.size)),\n        viewFrames: t.view.frames.size,\n        viewTrisPerFrame: per(t.view.tris, t.view.frames.size),\n        viewDrawsPerFrame: per(t.view.draws, t.view.frames.size),\n        shadowByKindPerPass: Object.fromEntries(Object.entries(t.byKind).sort((a, b) => b[1] - a[1]).slice(0, 25)\n          .map(([k, v]) => [k, per(v, t.shadow[0].passes.size + t.shadow[1].passes.size)])),\n        people: Object.fromEntries(Object.entries(t.people).map(([k, v]) => [k, { drawsPerFrame: +(v.draws / Math.max(1, t.view.frames.size)).toFixed(2), trisPerFrame: per(v.tris, t.view.frames.size) }])),\n        peds: app.trafficSystem && app.trafficSystem.stats ? app.trafficSystem.stats : undefined\n      };\n      console.log('[ride-check] tally ' + JSON.stringify({ shadowTrisPerPass: out.shadowTrisPerPass, viewTrisPerFrame: out.viewTrisPerFrame, people: out.people }));\n      resolve(out);\n    };\n    requestAnimationFrame(tick);\n  });\n})()",
+  "record": true
+ },
+ {
+  "name": "king-spadina-crowd-golden",
+  "time": "golden",
+  "wait": 4000
+ },
+ {
+  "name": "queens-quay-crowd",
+  "mode": "person",
+  "time": "midday",
+  "wait": 12000,
+  "js": "(() => { const C = window.CITY, a = C.worldFromLatLon(43.6406, -79.381); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; const x = r.px + nx * off, z = r.pz + nz * off; window.__CITY_APP.cameraSystem.cinema = null; window.__CITY_APP.teleportTo(x, z, Math.atan2(r.dx, r.dz)); window.__CITY_APP.selectCamera('chase', true); console.log('[shot] on', r.road.name, x.toFixed(1), z.toFixed(1)); })()"
+ },
+ {
+  "name": "queens-quay-crowd-tally",
+  "wait": 500,
+  "js": "(function tally() {\n  return new Promise((resolve) => {\n    const app = window.__CITY_APP, r = app.renderer, b = r.backend, sh = app.lightingSystem.sunLight.shadow;\n    const cams = new Map();\n    const n = typeof sh.getViewportCount === 'function' ? sh.getViewportCount() : 2;\n    for (let i = 0; i < n; i++) cams.set(sh.getCamera(i), i);\n    const t = { shadow: [0, 1].map(() => ({ passes: new Set(), tris: 0, draws: 0 })), view: { frames: new Set(), tris: 0, draws: 0 }, byKind: {}, people: {} };\n    const tri = (g) => (g.index ? g.index.count : g.attributes.position.count) / 3;\n    const orig = b.draw;\n    b.draw = function (ro, info) {\n      const before = info.render.triangles;\n      const res = orig.apply(this, arguments);\n      const d = info.render.triangles - before;\n      const o = ro.object, ci = cams.get(ro.camera);\n      if (ci !== undefined) {\n        const s = t.shadow[ci];\n        s.passes.add(r.info.frame); s.tris += d; s.draws++;\n        const k = (o.name || '?') + '|' + (o.material.name || o.material.type) + '|' + tri(o.geometry);\n        t.byKind[k] = (t.byKind[k] || 0) + d;\n      } else {\n        t.view.frames.add(r.info.frame); t.view.tris += d; t.view.draws++;\n      }\n      if (/^People/.test(o.name)) {\n        const p = t.people[o.name + (ci !== undefined ? ':shadow' : ':view')] ||= { draws: 0, tris: 0 };\n        p.draws++; p.tris += d;\n      }\n      return res;\n    };\n    let frames = 0;\n    const tick = () => {\n      if (++frames < 40) return requestAnimationFrame(tick);\n      b.draw = orig;\n      const per = (x, k) => Math.round(x / Math.max(1, k));\n      const out = {\n        q: location.search,\n        shadowPasses: t.shadow.map((s) => s.passes.size),\n        shadowTrisPerPass: t.shadow.map((s) => per(s.tris, s.passes.size)),\n        shadowDrawsPerPass: t.shadow.map((s) => per(s.draws, s.passes.size)),\n        viewFrames: t.view.frames.size,\n        viewTrisPerFrame: per(t.view.tris, t.view.frames.size),\n        viewDrawsPerFrame: per(t.view.draws, t.view.frames.size),\n        shadowByKindPerPass: Object.fromEntries(Object.entries(t.byKind).sort((a, b) => b[1] - a[1]).slice(0, 25)\n          .map(([k, v]) => [k, per(v, t.shadow[0].passes.size + t.shadow[1].passes.size)])),\n        people: Object.fromEntries(Object.entries(t.people).map(([k, v]) => [k, { drawsPerFrame: +(v.draws / Math.max(1, t.view.frames.size)).toFixed(2), trisPerFrame: per(v.tris, t.view.frames.size) }])),\n        peds: app.trafficSystem && app.trafficSystem.stats ? app.trafficSystem.stats : undefined\n      };\n      console.log('[ride-check] tally ' + JSON.stringify({ shadowTrisPerPass: out.shadowTrisPerPass, viewTrisPerFrame: out.viewTrisPerFrame, people: out.people }));\n      resolve(out);\n    };\n    requestAnimationFrame(tick);\n  });\n})()",
+  "record": true
+ }
+]

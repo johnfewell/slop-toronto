@@ -1,0 +1,9 @@
+[
+ {
+  "name": "prop-probe",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 60000,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = null; const s = document.createElement('script'); s.src = './tools/prop-rides.js?' + Date.now(); document.head.appendChild(s); })()"
+ }
+]

@@ -3,7 +3,7 @@
 // The colliders within 30 m of the player (&debugRadius=<m> for more) drawn over the city as the controllers meet them (js/world-collision.js
 // outlines), at the bottom and top of their height range (clipped to a few metres round the player) with posts at their
 // corners: the buildings cyan, the landmarks' drawn outlines magenta, thin walls (the road cuts', the subway's fences,
-// the embankments') orange, poles yellow, the rest green; grey where they don't meet the player's height (a deck's piers
+// the embankments') orange, poles & street furniture yellow, the cycle tracks' separator curbs violet, the rest green; grey where they don't meet the player's height (a deck's piers
 // seen from on top, a cut's wall from the street). The player's body is white, the last contact a red cross with its
 // push-out normal. The panel counts them, and the contacts.
 const { THREE } = window.CITY;
@@ -28,7 +28,7 @@ function createCollisionDebug({ scene, controllerManager: cm }) {
     return { m, a, n: 0 };
   };
   const L = {
-    building: layer(0x39d9ff), landmark: layer(0xff4fd8), thin: layer(0xffa630), pole: layer(0xffe14a),
+    building: layer(0x39d9ff), landmark: layer(0xff4fd8), thin: layer(0xffa630), pole: layer(0xffe14a), curb: layer(0xb07cff),
     other: layer(0x7dff9a), off: layer(0x8a96a0, 0.4), body: layer(0xffffff), contact: layer(0xff3b30)
   };
   const seg = (l, ax, ay, az, bx, by, bz) => {
@@ -40,6 +40,8 @@ function createCollisionDebug({ scene, controllerManager: cm }) {
     for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; seg(l, a.x, y, a.z, b.x, y, b.z); }
   };
   const kindOf = (c) => {
+    if (c.curb) return 'curb';
+    if (c.prop) return 'pole';
     if (c.polygon) return 'landmark';
     const hx = c.obb ? c.obb.hx : (c.maxX - c.minX) / 2, hz = c.obb ? c.obb.hz : (c.maxZ - c.minZ) / 2;
     if (Math.max(hx, hz) < 0.6) return 'pole';
@@ -52,7 +54,7 @@ function createCollisionDebug({ scene, controllerManager: cm }) {
   panel.style.cssText = 'position:fixed;z-index:20000;left:12px;top:72px;background:rgba(12,20,28,.86);color:#e8eef3;padding:10px 12px;border-radius:8px;font:12px/1.45 ui-monospace,Menlo,monospace;pointer-events:none;max-width:300px;white-space:pre';
   document.body.appendChild(panel);
   const swatch = (hex, label) => `<span style="color:#${hex.toString(16).padStart(6, '0')}">■</span> ${label}`;
-  const legend = [swatch(0x39d9ff, 'building'), swatch(0xff4fd8, 'landmark (drawn outline)'), swatch(0xffa630, 'thin wall'), swatch(0xffe14a, 'pole'), swatch(0x7dff9a, 'other'), swatch(0x8a96a0, 'not at your height'), swatch(0xff3b30, 'last contact & normal')].join('\n');
+  const legend = [swatch(0x39d9ff, 'building'), swatch(0xff4fd8, 'landmark (drawn outline)'), swatch(0xffa630, 'thin wall'), swatch(0xffe14a, 'pole & street furniture'), swatch(0xb07cff, 'separator curb'), swatch(0x7dff9a, 'other'), swatch(0x8a96a0, 'not at your height'), swatch(0xff3b30, 'last contact & normal')].join('\n');
 
   let frame = 0, lastCount = 0, contactAt = -1e9, rate = 0, rateT = performance.now(), rateN = 0;
   const counts = {};

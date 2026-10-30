@@ -1,0 +1,20 @@
+[
+  {
+    "name": "meter-roncesvalles-day",
+    "mode": "person",
+    "time": "midday",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,s=C.parkingMeterStats;console.log('[ride-check] meter placement '+JSON.stringify({source:s.sourceCount,placed:s.placed,rejected:s.rejected}));if(s.sourceCount!==776||s.placed<100)throw new Error('Parking meter layer missing');const p=s.sites.find(r=>r.id==='5019-1022');if(!p)throw new Error('Photographed Roncesvalles machine was rejected');window.__meter=p;const x=p.x+Math.sin(p.yaw)*3.5,z=p.z+Math.cos(p.yaw)*3.5;a.teleportTo(x,z,Math.atan2(p.x-x,p.z-z));a.selectCamera('pov',true);const mesh=a.scene.getObjectByName('StreetProps_parkingMeter');if(mesh&&mesh.geometry.index&&mesh.geometry.index.count/3>200)throw new Error('High-poly source shipped');console.log('[ride-check] photo machine '+JSON.stringify(p));})()",
+    "wait": 1500
+  },
+  {
+    "name": "meter-roncesvalles-night",
+    "time": "midnight",
+    "wait": 1500
+  },
+  {
+    "name": "meter-downtown",
+    "time": "midday",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,p=C.parkingMeterStats.sites.find(r=>r.address.includes('Elm'));if(!p)throw new Error('Downtown machine missing');const x=p.x+Math.sin(p.yaw)*3.5,z=p.z+Math.cos(p.yaw)*3.5;a.teleportTo(x,z,Math.atan2(p.x-x,p.z-z));console.log('[ride-check] downtown '+JSON.stringify(p));})()",
+    "wait": 1500
+  }
+]

@@ -67,7 +67,12 @@ function colliderShape(c) {
   let shape = cache.get(c);
   if (shape) return shape;
   let points = c.polygon;
-  if (!points) {
+  if (!points && c.circle) {
+    // a round prop: its outline for the car (and the debug view) a 12-gon whose flats touch the circle; a walker's or a
+    // rider's circle meets the circle itself (circleCircle)
+    const { x, z, r } = c.circle, R = r / Math.cos(Math.PI / 12);
+    points = Array.from({ length: 12 }, (_, i) => ({ x: x + Math.cos((i * Math.PI) / 6) * R, z: z + Math.sin((i * Math.PI) / 6) * R }));
+  } else if (!points) {
     const o = c.obb || { cx: (c.minX + c.maxX) / 2, cz: (c.minZ + c.maxZ) / 2, hx: (c.maxX - c.minX) / 2, hz: (c.maxZ - c.minZ) / 2, cs: 1, sn: 0 };
     points = [[-o.hx, -o.hz], [o.hx, -o.hz], [o.hx, o.hz], [-o.hx, o.hz]].map(([u, v]) => ({ x: o.cx + u * o.cs + v * o.sn, z: o.cz - u * o.sn + v * o.cs }));
   }
@@ -193,9 +198,16 @@ function concaveContact(a, b) {
   }
   return best;
 }
+function circleCircle(a, k) {
+  const dx = a.x - k.x, dz = a.z - k.z, d = Math.hypot(dx, dz), depth = a.radius + k.r - d;
+  if (!(depth > EPS)) return null;
+  const nx = d > 1e-6 ? dx / d : 1, nz = d > 1e-6 ? dz / d : 0;
+  return { depth, nx, nz, x: k.x + nx * k.r, z: k.z + nz * k.r };
+}
 // Shape `a` (carShape / circleShape) against collider `c`: { depth, nx, nz, x, z } (push `a` by n * depth), or null
 function contact(a, c) {
   if (a.maxX < c.minX || a.minX > c.maxX || a.maxZ < c.minZ || a.minZ > c.maxZ) return null;
+  if (c.circle && a.radius !== undefined) return circleCircle(a, c.circle);
   const b = colliderShape(c);
   const hit = a.radius !== undefined ? circleContact(a, b) : b.convex ? convexContact(a, b) : concaveContact(a, b);
   if (hit && hit.x === undefined) {
@@ -499,6 +511,24 @@ function footprintColliders(objects, { ground = 0, cell = 0.15, roof = true } = 
   return out;
 }
 
+// ---- street furniture (street-props.js, cycling.js, street-details.js, pedestrian-signals.js...): `prop` colliders,
+// which a walker & a rider meet with their slim bodies (controllers.js SLIM: not the wide circle they keep from the
+// walls) and the helicopter ignores. Each stands from y0 (a little under its foot, so a road cut's floor still meets it)
+// to y0 + h. `curb`: a cycle track's low separator, a wall to the car, crossed by a bicycle only at a steep angle (along
+// it, it nudges the rider back into the track) and stepped over on foot
+// (kind: what it is, for the debug view & the probes)
+function circleCollider(x, z, r, y0, h, kind = 'pole') {
+  return { minX: x - r, maxX: x + r, minZ: z - r, maxZ: z + r, minY: y0 - 0.3, maxY: y0 + h, circle: { x, z, r }, prop: true, kind };
+}
+// a box: half widths hx (across, the model's x) & hz (along, its z), turned by yaw (as a mesh's rotation.y)
+function boxCollider(cx, cz, hx, hz, yaw, y0, h, kind = 'box') {
+  const cs = Math.cos(yaw), sn = Math.sin(yaw);
+  const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
+  const c = { minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, minY: y0 - 0.3, maxY: y0 + h, obb: { cx, cz, hx, hz, cs, sn }, prop: true, kind };
+  if (kind === 'curb') c.curb = true;
+  return c;
+}
+
 // Colliders replaced after the controllers have them (a model that loads later): the controllers apply `changes` from
 // where they last read
 const changes = [];
@@ -510,7 +540,7 @@ function swap(remove, add) {
 window.CITY.WorldCollision = {
   CAR_FOOTPRINT, CAR_REACH, SKIN,
   carShape, circleShape, colliderShape, contact, inside,
-  footprintColliders, footprintRings, polygonCollider, meshTriangles, hull,
+  footprintColliders, footprintRings, polygonCollider, meshTriangles, hull, circleCollider, boxCollider,
   swap, changes
 };
 })();

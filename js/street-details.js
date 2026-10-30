@@ -5,8 +5,10 @@
 //   every approach, three-aspect heads facing the traffic, a mast arm over the wide roads, each head lit by its
 //   junction's phase for that approach (js/signal-plan.js, which js/traffic.js obeys too); and at the signalised
 //   pedestrian crossings (SIGNAL_CROSSINGS), a red / green man pole on either kerb
-// - Streetlights: the tall double-arm poles down the medians of the dual carriageways, single-arm poles along the
-//   other roads (some with a solar panel on top), their light pooled around the camera at night
+// - Streetlights: the City's mapped street light poles (js/mapped-poles.js), and where it mapped none, the tall
+//   double-arm poles down the medians of the dual carriageways, single-arm poles along the other roads (some with a
+//   solar panel on top); their light pooled around the camera at night. The signal heads go on the City's mapped
+//   signal poles near the corners that want them, else on a pole of their own
 // - Trees: neem, Indian almond & mango on the verges and in the wide medians, royal palms down the medians of the
 //   ceremonial roads, parkland & savanna trees, and the mango & neem trees in the compound yards
 
@@ -158,6 +160,9 @@ function buildPalmGeometries() {
   return { trunk: trunkGeo, fronds: mergeGeometries(fronds, false) };
 }
 
+// A unit pole's sun-shadow stand-in (see buildStreetDetails): open 4-sided, circumradius 1.11, the unit cylinder's height
+const POLE_SHADOW = new THREE.CylinderGeometry(1.11, 1.11, 1, 4, 1, true);
+
 function buildStreetDetails(scene) {
   const group = new THREE.Group();
   group.name = 'CityStreetDetails';
@@ -185,9 +190,12 @@ function buildStreetDetails(scene) {
     }
     return true;
   }
-  function addPole(x, z) {
+  // (and each pole solid: its radius r, standing from y0 h metres high, world-collision.js; a median tree's spot none)
+  const colliders = [];
+  function addPole(x, z, r, y0, h) {
     const k = poleKey(x, z);
     (poleCells.get(k) || poleCells.set(k, []).get(k)).push({ x, z });
+    if (r) colliders.push(window.CITY.WorldCollision.circleCollider(x, z, r, y0, h));
   }
 
   // Every at-grade road, in 40 m cells: what fronts a curb edge (its class, half width)
@@ -235,6 +243,25 @@ function buildStreetDetails(scene) {
       s += L;
     }
   }
+
+  // The City's mapped poles (js/mapped-poles.js; ?mappedpoles=0 leaves them out, the procedural layout alone, for A/B):
+  // the signal poles are drawn here and carry the heads of the approaches whose corners they stand on, the lights in
+  // section 2; the procedural poles only fill the gaps
+  const { LIGHT, LIGHT_SIGNAL, SIGNAL } = window.CITY.POLE_TYPES || {};
+  const useMapped = !!(window.CITY.POLES && window.CITY.mappedPoleSites) && new URLSearchParams(location.search).get('mappedpoles') !== '0';
+  const mappedLayout = useMapped
+    ? window.CITY.mappedPoleSites(window.CITY.POLES, { blockAt, nearestRoads, deckHeightAt: window.CITY.deckHeightAt, cutAt: window.CITY.cutAt, SW_Y })
+    : { sites: [], rejected: {}, nudged: 0 };
+  const mapped = mappedLayout.sites;
+  const mappedIndex = window.CITY.poleIndex ? window.CITY.poleIndex(mapped) : { nearest: () => null };
+  const poleStats = {
+    mapped: useMapped, source: window.CITY.POLES?.source || null, counts: window.CITY.POLES?.counts || null,
+    placed: { light: 0, lightSignal: 0, signal: 0 }, rejected: mappedLayout.rejected, nudged: mappedLayout.nudged,
+    fallback: { median: 0, roadside: 0 }, signals: { approaches: 0, mapped: 0, procedural: 0 }
+  };
+  window.CITY.poleStats = poleStats;
+  // (pedestrian-signals.js mounts its heads on a mapped signal pole near the spot it wants, as the approaches here do)
+  window.CITY.mappedSignalPoleNear = (x, z, r, ok) => mappedIndex.nearest(x, z, r, [LIGHT_SIGNAL, SIGNAL], ok);
 
   // Signal clock (seconds), set every frame by main.js
   const signalClock = uniform(0);
@@ -285,6 +312,20 @@ function buildStreetDetails(scene) {
   // audio: where the crossing signals sound (audio-sources.js): { x, y, z, j & p (the junction & phase people there
   // walk with) | crossing (its index), ns (crossing N-S) }
   const audioSignals = [];
+  // The mapped signal poles, all of them (heads or not): 6.2 m; a light & signal pole 9 m, its light in section 2
+  for (const s of mapped) {
+    if (s.type !== SIGNAL && s.type !== LIGHT_SIGNAL) continue;
+    const h = s.type === SIGNAL ? 6.2 : 9, r = s.type === SIGNAL ? 0.09 : 0.11;
+    addPole(s.x, s.z, r, s.y0, h);
+    addFootprint(s.x, s.z, 0.4, 0.4);
+    dummy.rotation.set(0, 0, 0);
+    dummy.position.set(s.x, s.y0 + h / 2, s.z);
+    dummy.scale.set(r, h, r);
+    dummy.updateMatrix();
+    poleMatrices.push(dummy.matrix.clone());
+    if (s.type === SIGNAL) poleStats.placed.signal++;
+    else poleStats.placed.lightSignal++;
+  }
   {
     const RG = GEO.roadGraph;
     const nodeLinks = new Map();
@@ -327,6 +368,15 @@ function buildStreetDetails(scene) {
         // near-right corner of the approach (traffic heading -u: its right is (u.z, -u.x)), before the crossing road
         const rx = a.uz, rz = -a.ux;
         let pole = null;
+        poleStats.signals.approaches++;
+        // the City's pole on that corner, if it mapped one: on the approach's right, not out in the junction (a corner
+        // pole often carries the heads of both streets)
+        const m = mappedIndex.nearest(a.x + a.ux * a.back + rx * (a.hw + 2), a.z + a.uz * a.back + rz * (a.hw + 2), 10, [LIGHT_SIGNAL, SIGNAL], (s) =>
+          (s.x - a.x) * rx + (s.z - a.z) * rz > a.hw * 0.5 && (s.x - a.x) * a.ux + (s.z - a.z) * a.uz > -3);
+        if (m) {
+          pole = { x: m.x, z: m.z, side: Math.max(a.hw + 0.5, (m.x - a.x) * rx + (m.z - a.z) * rz), mapped: true };
+          poleStats.signals.mapped++;
+        }
         for (const back of [a.back, a.back + 3, a.back + 7]) {
           for (let side = a.hw + 1.2; side <= a.hw + 6 && !pole; side += 0.8) {
             const x = a.x + a.ux * back + rx * side;
@@ -336,17 +386,22 @@ function buildStreetDetails(scene) {
           if (pole) break;
         }
         if (!pole) continue;
-        addPole(pole.x, pole.z);
-        addFootprint(pole.x, pole.z, 0.4, 0.4);
+        if (!pole.mapped) {
+          poleStats.signals.procedural++;
+          addPole(pole.x, pole.z, 0.09, SW_Y, 6.2);
+          addFootprint(pole.x, pole.z, 0.4, 0.4);
+        }
         // (people here cross the road ahead, walking with this approach's traffic)
         const phase = SIGNALS.phaseForDir(ji, a.ux, a.uz);
         audioSignals.push({ x: pole.x, y: SW_Y + 1.1, z: pole.z, j: ji, p: phase, ns: Math.abs(a.uz) > Math.abs(a.ux) }); // audio
         const yaw = Math.atan2(a.ux, a.uz); // heads face the approaching traffic (lenses on both faces anyway)
-        dummy.rotation.set(0, 0, 0);
-        dummy.position.set(pole.x, SW_Y + 3.1, pole.z);
-        dummy.scale.set(0.09, 6.2, 0.09);
-        dummy.updateMatrix();
-        poleMatrices.push(dummy.matrix.clone());
+        if (!pole.mapped) {
+          dummy.rotation.set(0, 0, 0);
+          dummy.position.set(pole.x, SW_Y + 3.1, pole.z);
+          dummy.scale.set(0.09, 6.2, 0.09);
+          dummy.updateMatrix();
+          poleMatrices.push(dummy.matrix.clone());
+        }
         const placeHead = (x, z) => {
           dummy.position.set(x, 5.42, z);
           dummy.rotation.set(0, yaw, 0);
@@ -389,7 +444,7 @@ function buildStreetDetails(scene) {
           if (blockAt(x, z) && isClearOfPoles(x, z, 1.2)) { pole = { x, z }; break; }
         }
         if (!pole) continue;
-        addPole(pole.x, pole.z);
+        addPole(pole.x, pole.z, 0.06, SW_Y, 3.2);
         addFootprint(pole.x, pole.z, 0.3, 0.3);
         audioSignals.push({ x: pole.x, y: SW_Y + 1.1, z: pole.z, crossing: ci, ns: Math.abs(nz) > Math.abs(nx) }); // audio
         dummy.rotation.set(0, 0, 0);
@@ -431,6 +486,37 @@ function buildStreetDetails(scene) {
     dummy.updateMatrix();
     armMatrices.push(dummy.matrix.clone());
   };
+  // The City's mapped lights first: a single-arm 9 m pole (the light & signal poles' shafts are drawn above), the arm
+  // out towards the nearest road; down a median 11 m with an arm over each roadway
+  for (const s of mapped) {
+    if (s.type !== LIGHT && s.type !== LIGHT_SIGNAL) continue;
+    const yaw = Math.atan2(-s.az, s.ax); // (the luminaire's long side along its arm)
+    if (s.type === LIGHT) {
+      const h = s.median ? 11 : 9, r = s.median ? 0.12 : 0.1;
+      addPole(s.x, s.z, r, s.y0, h);
+      addFootprint(s.x, s.z, 0.4, 0.4);
+      dummy.rotation.set(0, 0, 0);
+      dummy.position.set(s.x, s.y0 + h / 2, s.z);
+      dummy.scale.set(r, h, r);
+      dummy.updateMatrix();
+      poleMatrices.push(dummy.matrix.clone());
+      poleStats.placed.light++;
+    }
+    if (s.median && s.type === LIGHT) {
+      for (const sgn of [1, -1]) {
+        placeArm(s.x, s.z, s.ax * sgn, s.az * sgn, 2.4, s.y0 + 10.8);
+        placeLuminaire(s.x, s.z, s.x + s.ax * sgn * 2.4, s.z + s.az * sgn * 2.4, s.y0 + 10.75, yaw);
+      }
+      continue;
+    }
+    // (no further than the road's centre line, nor than the procedural arms reach)
+    const reach = s.road ? Math.max(0.8, Math.min(2.6, s.road.road.w * 0.3 + 1, s.toRoad - 0.5)) : 1.2;
+    placeArm(s.x, s.z, s.ax, s.az, reach, s.y0 + 8.9);
+    placeLuminaire(s.x, s.z, s.x + s.ax * reach, s.z + s.az * reach, s.y0 + 8.85, yaw);
+  }
+  // The procedural lights fill the gaps: none within this of a mapped light (the City's spacing is ~30-40 m)
+  const MAPPED_GAP = { median: 30, roadside: 25 };
+  const mappedLightNear = (x, z, r) => !!mappedIndex.nearest(x, z, r, [LIGHT, LIGHT_SIGNAL]);
   let medianPoles = 0, roadPoles = 0;
   // (down a road cut's sidewalks too: city-config.js cutAt, Strachan Ave under the railway)
   const cutAt = window.CITY.cutAt || (() => 0);
@@ -447,7 +533,8 @@ function buildStreetDetails(scene) {
       alongCurb(b, 36, 12, (x, z, ux, uz, inx, inz) => {
         const px = x + inx * width * 0.5, pz = z + inz * width * 0.5;
         if (blockAt(px, pz) !== b || !isClearOfPoles(px, pz, 28)) return;
-        addPole(px, pz);
+        if (mappedLightNear(px, pz, MAPPED_GAP.median)) return;
+        addPole(px, pz, 0.12, SW_Y + cutAt(px, pz), 11);
         addFootprint(px, pz, 0.45, 0.45);
         dummy.rotation.set(0, 0, 0);
         dummy.position.set(px, SW_Y + cutAt(px, pz) + 5.5, pz);
@@ -460,6 +547,7 @@ function buildStreetDetails(scene) {
           placeLuminaire(px, pz, px + inx * sgn * reach, pz + inz * sgn * reach, SW_Y + cutAt(px, pz) + 10.75, Math.atan2(ux, uz));
         }
         medianPoles++;
+        if (useMapped) poleStats.fallback.median++;
       });
       continue;
     }
@@ -474,7 +562,8 @@ function buildStreetDetails(scene) {
       if (across && across.median) return;
       const px = x + inx * 0.8, pz = z + inz * 0.8;
       if (blockAt(px, pz) !== b || !isClearOfPoles(px, pz, 20)) return;
-      addPole(px, pz);
+      if (mappedLightNear(px, pz, MAPPED_GAP.roadside)) return;
+      addPole(px, pz, 0.1, SW_Y + cutAt(px, pz), 9);
       addFootprint(px, pz, 0.4, 0.4);
       dummy.rotation.set(0, 0, 0);
       dummy.position.set(px, SW_Y + cutAt(px, pz) + 4.5, pz);
@@ -493,9 +582,11 @@ function buildStreetDetails(scene) {
         solarMatrices.push(dummy.matrix.clone());
       }
       roadPoles++;
+      if (useMapped) poleStats.fallback.roadside++;
     });
   }
-  console.info(`[streetDetails] ${medianPoles} median & ${roadPoles} roadside streetlights`);
+  console.info(`[streetDetails] mapped poles: ${JSON.stringify(poleStats.placed)}, rejected ${JSON.stringify(poleStats.rejected)}, ${poleStats.nudged} moved onto the curb; signal approaches ${JSON.stringify(poleStats.signals)}`);
+  console.info(`[streetDetails] ${medianPoles} median & ${roadPoles} roadside procedural streetlights${useMapped ? ' (gap fill)' : ''}`);
 
   // =========================================================================
   // 3. TREES & PALMS
@@ -626,7 +717,7 @@ function buildStreetDetails(scene) {
 
   // Trees: main.js draws these (the parkland & yard trees) with the City's street trees in John's EZ-Tree models
   // (ez-trees.js); mrdoob's procedural trees (js/trees.js) only if those don't load
-  const addFallbackTrees = () => group.add(createTreeField(scene, treePositions).group);
+  const addFallbackTrees = (colliders = []) => group.add(createTreeField(scene, treePositions, colliders).group);
 
   // Instanced poles, arms, luminaires & signal heads
   function addMatrixArrayInstanced(geo, mat, matrices, castShadow = true) {
@@ -639,8 +730,17 @@ function buildStreetDetails(scene) {
     for (let i = 0; i < matrices.length; i++) inst.setMatrixAt(i, matrices[i]);
     inst.instanceMatrix.needsUpdate = true;
     group.add(inst);
+    return inst;
   }
-  addMatrixArrayInstanced(unitCyl, poleMetalMat, poleMatrices);
+  const poles = addMatrixArrayInstanced(unitCyl, poleMetalMat, poleMatrices);
+  // ~31k poles (the City's mapped lights & signals and the procedural fill): their sun shadows come from an open
+  // 4-sided shaft of the same height, 8 triangles instead of the 10-sided capped cylinder's 40 (scene-culling.js
+  // shadow stand-ins, after mrdoob's 0630114). A square's shadow is sqrt(2)..2 times its circumradius wide as the sun
+  // goes round: at 1.11 the cylinder's width on average, 0.79-1.11 of it either way (2-4 cm on a 20 cm pole)
+  if (poles) {
+    poles.name = 'StreetPoles';
+    poles.userData.shadowStandIn = POLE_SHADOW;
+  }
   addMatrixArrayInstanced(unitBox, poleMetalMat, armMatrices);
   addMatrixArrayInstanced(signalHousingGeo, signalHousingMat, headMatrices);
   addMatrixArrayInstanced(pedHousingGeo, signalHousingMat, pedHeadMatrices);
@@ -717,7 +817,7 @@ function buildStreetDetails(scene) {
   }
 
   scene.add(group);
-  return { group, footprints, signalClock, audioSignals, update, treePositions, addFallbackTrees };
+  return { group, footprints, colliders, signalClock, audioSignals, update, treePositions, addFallbackTrees };
 }
 
 Object.assign(window.CITY, { buildStreetDetails });

@@ -30,7 +30,7 @@
  {
   "name": "sc4-queen-night",
   "mode": "person",
-  "time": "night",
+  "time": "midnight",
   "wait": 8000,
   "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6512, -79.387);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) < 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target, speed ' + best.speed.toFixed(1));\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 20 + rx * 4.5, n.y + 1.6, n.z + fz * 20 + rz * 4.5], look: [m.x, m.y + 1.8, m.z], fov: 55 }; };\n})()"
  },

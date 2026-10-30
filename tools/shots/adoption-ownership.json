@@ -1,0 +1,7 @@
+[
+  { "name": "ownership-walk-hold", "js": "window.__testExperience('walk')", "wait": 200 },
+  { "name": "ownership-streetcar", "js": "window.__testExperience('streetcar')", "wait": 400 },
+  { "name": "ownership-subway", "js": "window.__testExperience('subway')", "wait": 400 },
+  { "name": "ownership-panels", "js": "window.__testExperience('panels')", "wait": 200 },
+  { "name": "ownership-reload", "reload": true, "js": "window.__testExperience('reload')", "wait": 200 }
+]

@@ -22,6 +22,10 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   nearest boundary), the substepped movement and wall sliding in `js/controllers.js`, the R key's road reset and the
   idea of the `?debug=collisions` review (`js/collision-debug.js`), adapted to this city. MIT, © 2026 Mr.doob & Kamil.
   https://github.com/unable12/slop-sanfrancisco
+- **Later Slop New York improvements**, reviewed through mrdoob's `2018076` (2026-10-26): vehicle contact physics,
+  pedestrian avoidance/dives, player lamps, audio refinements, procedural tree LODs and filtered fire escapes (MIT,
+  same upstream attribution above). Adapted for Toronto's decks, crossings, quality tiers and existing driving model.
+  See [the integration record](docs/upstream-sync.md) for source commits and scope.
 - **City audio** (`js/audio-*.js`): mrdoob's synthesized spatial audio from Slop New York (MIT, above), with the
   player car's tyre squeal and engine revs from aalghooneh's slop-toronto fork (MIT, © Slop Toronto contributors).
   https://github.com/aalghooneh/slop-toronto. Every sound is synthesized in code; no recordings.
@@ -32,11 +36,13 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   https://threejs.org/
 - **Stylized water** (`js/stylized-water.js`, built from `vendor/stylized-water`): John Fewell's three.js port of
   Uber Stylized Water. MIT, © MatrixRex / norio. See `vendor/stylized-water/LICENSE`.
-- **three-clouds-webgpu** (`js/clouds.js`, built from `vendor/clouds/three-clouds-webgpu-0.1.0-r187.tgz`): John
+- **three-clouds-webgpu** (`js/clouds.js`, built from `vendor/clouds/three-clouds-webgpu-0.1.0-alpha.6.tgz`): John
   Fewell's volumetric clouds for WebGPU, a port of takram's three-clouds. MIT, © Shota Matsuda & John Fewell; notice in the tarball's
-  LICENSE. Built on **@takram/three-atmosphere** and **@takram/three-geospatial** (MIT, © takram).
+  LICENSE. Built on **@takram/three-atmosphere 0.19.1+fork.7** and **@takram/three-geospatial 0.9.1+fork.7** (MIT, © takram; compatibility fixes by John Fewell).
 - **EZ-Tree** by Dan Greenheck: procedural trees. MIT. https://github.com/dgreenheck/ez-tree
 - **lil-gui** (loaded only for the `?waterTune` tuning panel). MIT.
+- **Umami** (https://umami.is), self-hosted at umami.cloud6711.workers.dev: privacy-friendly page analytics, counted
+  only on sloptoronto.ca; no cookies. MIT.
 - **aalghooneh/slop-toronto** by aalghooneh, another Toronto fork of Slop New York. MIT.
   https://github.com/aalghooneh/slop-toronto. Ported from it, adapted to this city's scripts and data:
   - the TTC streetcars (`js/streetcars.js`: track chaining & direction of travel, stops, signals, queuing, the Flexity
@@ -65,6 +71,20 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   from them by `tools/fetch-opendata.mjs` and `tools/build-traffic-data.mjs`. It is keyed to the OpenStreetMap road graph
   below (each street's volume, the junctions each signal controls), so like `js/toronto-geodata.js` it is also made
   available under the ODbL 1.0. Contains information licensed under the Open Government Licence – Toronto.
+- **City of Toronto Open Data, sidewalks**: "Topographic Mapping – Physical area of sidewalks"
+  (https://open.toronto.ca/dataset/topographic-mapping-physical-area-of-sidewalks/), under the Open Government Licence –
+  Toronto as stated on the dataset page (its CKAN record's licence field is empty). `js/toronto-sidewalks.js` (by
+  `tools/build-sidewalks.mjs`, fetched by `tools/fetch-sidewalks.mjs`) keeps the polygons simplified and clipped to the
+  curb islands of `js/toronto-geodata.js`, and records the resource, refresh date and download hash it was built from.
+  Because it is clipped to and indexed by those islands, like `js/toronto-traffic-data.js` it is also made available
+  under the ODbL 1.0. Contains information licensed under the Open Government Licence – Toronto.
+- **City of Toronto Open Data, Topographic Mapping – Poles**, under the Open Government Licence – Toronto
+  (https://open.toronto.ca/dataset/topographic-mapping-poles/): resource "Poles - 4326.gpkg"
+  (`5504d484-1bd6-4330-b43c-d562b74a175d`, updated 2026-02-20, SHA-256 `1b4722aa…57b8ec`; the CKAN package's licence
+  field is empty, as for some other City packages; the portal's terms are the OGL – Toronto). The street light, light & signal and traffic signal poles
+  inside the detail frame are `js/toronto-poles.js` (`tools/fetch-poles.mjs`, `tools/build-poles.mjs`); street-details.js
+  stands the city's poles and signal heads on them. Contains information licensed under the Open Government Licence –
+  Toronto.
 - **TTC timetable**: "Merged GTFS – TTC Routes and Schedules" (the Toronto Transit Commission's GTFS, all modes) from
   City of Toronto Open Data, under the Open Government Licence – Toronto
   (https://open.toronto.ca/dataset/merged-gtfs-ttc-routes-and-schedules/). `js/toronto-transit.js` (by
@@ -80,10 +100,17 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   GBFS feeds (station_information, baked into `js/bike-share-stations.js` by `tools/geo-bikeshare.mjs`; station_status,
   read by the browser once a minute), as published through the City of Toronto's Open Data "Bike Share Toronto" dataset
   under the Open Government Licence – Toronto. https://open.toronto.ca/dataset/bike-share-toronto/
+- **Toronto Parking Authority machine locations**: the public GreenP ArcGIS organization's
+  [2026 On-Street Machines Update](https://www.arcgis.com/home/item.html?id=723d820cbadb44958803713d3cb9652a),
+  specifically its S5 install points and DG4 decommission points, downloaded 2026-10-28.
+  These are a dated machine rollout snapshot, not live availability or parking-zone centroids.
+  The source item's licence field is empty; this layer is recorded separately from the OGL-labelled CKAN sources above.
+  Snapshot, source links and filtering are preserved in `tools/data/parking-meters-20261028.json`;
+  `tools/build-parking-meters.mjs` writes `js/toronto-parking-meters.js`.
 - **OpenStreetMap**: streets, places, water and land use, the streetcar & railway tracks and the streetcar stops, and
   which side of the street each bikeway is on (cycleway tags). © OpenStreetMap contributors, under the Open Database
   License (ODbL). https://www.openstreetmap.org/copyright
-  The city database built from it, `js/toronto-geodata.js` (by `tools/build-geodata.mjs`), is a derivative database
+  The city database built from it, `data/toronto-geodata.bin` and `js/toronto-geodata.js` (by `tools/build-geodata.mjs`), is a derivative database
   and is made available under the ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/), not the MIT License.
 - **AWS Terrain Tiles** (Mapzen "terrarium" tiles, SRTM-derived elevation). https://registry.opendata.aws/terrain-tiles/
 - **Wikimedia Commons photos** of Toronto's buildings: the facade base colours (`tools/data/commons_palette.json`) were
@@ -97,6 +124,10 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   surfaces in the ROM model. https://polyhaven.com/
 - **Street props** (hydrant, mailbox, bike ring, transit shelter, litter & recycling bin: `assets/props/`) by John
   Fewell, simplified for the city (meshoptimizer, textures cut to 512–1024 px).
+- **Parking pay station** (`assets/props/parking-meter.glb`): John Fewell's Meshy source and his
+  2026-10-27 Roncesvalles photographs, rebuilt as clean geometry and baked by `tools/blender/bake_props.py`.
+  Height is John's requested six feet; the solar orientation and front payment panel were corrected against his photos.
+  Green P and Flowbird markings depict the physical machine. See `docs/parking-meters.md` for provenance and verification.
 - **Park name sign** (`assets/props/park-sign.glb`, `assets/props/park-sign-face.webp`): the City of Toronto's "A City
   Within a Park" sign, modelled in Blender from John Fewell's photo of the Ritchie Avenue Parkette sign
   (`tools/blender/bake_props.py park-sign`); its blank face is his photo straightened, the name and address painted out
@@ -138,3 +169,18 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 Slop Toronto is a fan project. It is not affiliated with or endorsed by the City of Toronto, the landmarks shown or
 their owners. Name boards show places' names, not their trademarked logos. The screenshots on the landing page are
 from the app itself.
+# City Open Data additions
+
+Street bench locations, washroom information and park/recreation amenity records: City of Toronto Open Data, dated 2026-10-28 snapshots, under the source packages' Open Government Licence – Toronto. Dataset/resource IDs and dates are preserved in `tools/data/*-20261028.json`; see [the layer documentation](docs/city-open-data-layers.md).
+
+Drinking-water, outdoor rink and tennis discovery metadata: City of Toronto Open Data's Parks Drinking Fountains, Outdoor Artificial Ice Rinks and Tennis Courts Facilities datasets, dated active datastore snapshots under Open Government Licence – Toronto. Related park links preserve outlet types, reported status dates, dimensions and public/club distinctions; see the same layer documentation.
+
+Tennis court footprints: OpenStreetMap contributors, ODbL 1.0, from the existing Geofabrik Ontario cache processed October 23, 2026. Facility associations, counts and pavement boundaries were checked against City of Toronto 2025 aerial imagery; reference images are not shipped. Court markings follow the ITF 2026 Rules of Tennis. Game geometry is original. See [court sources, disagreements and checks](docs/tennis-courts.md).
+
+Outdoor rink and skate-trail footprints: City of Toronto, Outdoor Recreation Area polygons from the City's public GIS service (cot_geospatial13 layer 34, fetched October 28, 2026), joined by asset ID to the Open Data rink inventory. Boards, gates and off-season appearance were reviewed against City of Toronto 2025 aerial imagery and the City's 2019 Dufferin Grove Park presentation; reference images are not shipped. Game geometry is original. See [rink sources, season rule and checks](docs/outdoor-rinks.md).
+
+CaféTO patios: City of Toronto Open Data, [CaféTO Locations](https://open.toronto.ca/dataset/cafeto-curb-lane-parklet-cafe-locations/), a dated 2026-10-29 snapshot (resource refreshed 2026-09-29) under the Open Government Licence – Toronto as stated on the dataset page (the CKAN licence field reads "notspecified"). Resource ID, refresh date, fetch time and SHA-256 are kept in `tools/data/cafeto-20261029.json`. Placement rules follow the City's 2026 CaféTO Curb Lane Café Guidelines; placements were checked against City of Toronto 2025 aerial imagery, which is not shipped. Patio decks, barriers, railings, tables, chairs and umbrellas are original procedural game geometry. See [CaféTO patios](docs/cafeto-patios.md).
+
+Cast-Iron Plaza Bench by [Polyfork](https://polyfork.dev/asset/cast-iron-plaza-bench-b4096d), selected by John. Core bench extracted and meshopt compressed, used under the [Polyfork licence](https://polyfork.dev/licensing). Included inside the game; the standalone model is not distributed in this repository.
+
+TO360 model: John's supplied Meshy Roncesvalles/Dundas sign, rebuilt with clean geometry and a front print projected from John's June 25, 2026 photograph. Information pillar: original game geometry based on the City of Toronto's dimensioned InfoToGo drawings. Wayfinding locations: City Open Data. Local sign maps use the existing OpenStreetMap-derived city geography. Google Street View was used for local reference only; no Google imagery ships in these props. See [wayfinding provenance and validation](docs/wayfinding.md).

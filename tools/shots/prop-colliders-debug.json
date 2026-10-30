@@ -1,0 +1,30 @@
+[
+ {
+  "name": "propcol-bloor",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.selectMode('cyclist'); let best = null; for (const b of C.CYCLING_BANDS) { if (b.cross || (b.kind !== 3 && b.kind !== 4)) continue; for (const p of b.P) if (p.tx > 0.8 && (!best || Math.hypot(p.x + 1060, p.z + 2805) < Math.hypot(best.x + 1060, best.z + 2805))) best = p; } const x = best.x + best.nx * 0.95, z = best.z + best.nz * 0.95; app.teleportTo(x, z, Math.atan2(best.tx, best.tz)); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [x - 9, e.position.y + 8.5, z + 11], look: [x + 9, e.position.y, z - 2], fov: 55 }); })()"
+ },
+ {
+  "name": "propcol-king-bay",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.selectMode('person'); const kb = { x: 132.5, z: -349.6 }; let curb = 8; for (let o = 4; o < 20; o += 0.25) if (C.blockAt(kb.x - 20, kb.z - o)) { curb = o; break; } const x = kb.x - 14, z = kb.z - curb - 1.4; app.teleportTo(x, z, Math.PI / 2); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [x - 10, e.position.y + 13, z + 14], look: [kb.x - 2, e.position.y, kb.z - 4], fov: 60 }); })()"
+ },
+ {
+  "name": "propcol-qq-rings",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode('person'); app.teleportTo(-260, 562, Math.PI / 2); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [-260 - 6, e.position.y + 16, 562 + 12], look: [-260 + 2, e.position.y, 562 - 2], fov: 60 }); })()"
+ },
+ {
+  "name": "propcol-king-shelter",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode('person'); app.teleportTo(289, -358, Math.PI / 2); const e = app.controllerManager.getActiveEntity(); app.cameraSystem.cinema = () => ({ pos: [289 - 6, e.position.y + 16, -358 + 12], look: [289 + 2, e.position.y, -358 - 2], fov: 60 }); })()"
+ }
+]

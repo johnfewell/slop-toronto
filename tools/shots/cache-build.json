@@ -1,0 +1,7 @@
+[
+  {
+    "name": "fingerprinted-production-build",
+    "wait": 500,
+    "js": "(async () => {const manifest=await (await fetch('./asset-manifest.json')).json(),scripts=[...document.scripts].map(s=>s.src).filter(s=>s.includes('/js/'));if(scripts.length<60||scripts.some(s=>!/[.][a-f0-9]{12}[.]js$/.test(s)))throw new Error('Unfingerprinted app script loaded');for(const src of scripts){const rel=new URL(src).pathname.slice(1);if(!Object.values(manifest.assets).includes(rel))throw new Error('Script missing from build manifest: '+rel);}if(![...document.querySelectorAll('link[rel=stylesheet]')].some(l=>/style[.][a-f0-9]{12}[.]css$/.test(l.href)))throw new Error('Stylesheet was not fingerprinted');console.log('[ride-check] production build '+manifest.build+' loaded '+scripts.length+' fingerprinted scripts and stylesheet');})()"
+  }
+]

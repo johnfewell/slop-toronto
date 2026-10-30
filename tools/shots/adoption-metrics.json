@@ -1,0 +1,4 @@
+[
+  { "name": "skyline-golden", "time": "golden", "camera": "skyline", "wait": 5000 },
+  { "name": "street-golden", "time": "golden", "mode": "person", "camera": "pov", "x": 386.5, "z": -343.6, "heading": 3.141592653589793, "wait": 4000 }
+]

@@ -12,7 +12,7 @@
 // - through the junctions: green crossrides with elephant's feet (dashed white edges); sharrows: the bicycle & chevrons
 // - the multi-use trails over the parks & promenades: their asphalt (the Martin Goodman Trail's red, with its dashed
 //   yellow centre line), elephant's feet where they cross a road
-// The paint goes into road-paint.js's one mesh (bikePaint), the separator curbs into city-grid.js's kerb batch
+// The paint goes into road-paint.js's cells (bikePaint), the separator curbs into city-grid.js's kerb batch
 // (bikeSeparatorGeometries) and the posts are one instanced mesh scene-culling.js chunks. road-network.js keeps every
 // traffic lane clear of the bikeways (bikeLaneShift), so the paint and the traffic agree and no car drives in them.
 
@@ -142,26 +142,9 @@ const DIAMOND = [[[0, 0], [0.28, 0.5], [0, 1], [-0.28, 0.5], [0, 0]]];
 const ARROW = [[[0, 0], [0, 0.75]], [[-0.2, 0.52], [0, 0.82], [0.2, 0.52]]];
 const CHEVRONS = [[[-0.32, 0], [0, 0.22], [0.32, 0]], [[-0.32, 0.3], [0, 0.52], [0.32, 0.3]]];
 
-// The pavement symbols are many small strips: they go into meshes of their own, one per kilometre cell (the view frustum
-// skips the far ones), in road-paint.js's material (`material`), the lines & surfaces into its one mesh (strip, ribbon)
-function bikePaint({ strip, ribbon, WHITE, YELLOW, material, scene, height }) {
-  const cells = new Map();
-  const symbolStrip = (ax, ay, az, bx, by, bz, w, col) => {
-    const k = Math.floor(ax / 1000) * 1000 + Math.floor(az / 1000);
-    let c = cells.get(k);
-    if (!c) cells.set(k, (c = { position: [], side: [], paint: [], colors: [], index: [] }));
-    const len = Math.hypot(bx - ax, bz - az);
-    if (len < 0.02) return;
-    const sx = ((az - bz) / len) * w * 0.5, sz = ((bx - ax) / len) * w * 0.5;
-    const i = c.position.length / 3;
-    for (const [x, y, z, sg, u] of [[ax, ay, az, -1, 0], [ax, ay, az, 1, 0], [bx, by, bz, 1, len], [bx, by, bz, -1, len]]) {
-      c.position.push(x + sx * sg, y + height, z + sz * sg);
-      c.side.push(sx * sg, sz * sg);
-      c.paint.push(u, 1, 1);
-      c.colors.push(col.r, col.g, col.b);
-    }
-    c.index.push(i, i + 1, i + 2, i, i + 2, i + 3);
-  };
+// The paint goes into road-paint.js's cells: the lines & surfaces (strip, ribbon) and the pavement symbols' many small
+// strips (symbolStrip: solid, down to 2 cm long)
+function bikePaint({ strip, ribbon, symbolStrip, WHITE, YELLOW }) {
   // a symbol at distance s along P, centred v from the curb, stretched sy along the lane (flip: facing back)
   const symbol = (P, s, v, lines, w, sy, flip = false) => {
     const q = at(P, s);
@@ -261,26 +244,7 @@ function bikePaint({ strip, ribbon, WHITE, YELLOW, material, scene, height }) {
       ribbon(P, w / 2 - 0.42, w / 2, WHITE, 0.9, 0.5);
     }
   }
-  let verts = 0;
-  for (const c of cells.values()) {
-    const g = new THREE.BufferGeometry();
-    const normal = new Float32Array(c.position.length);
-    for (let i = 1; i < normal.length; i += 3) normal[i] = 1;
-    g.setAttribute('position', new THREE.Float32BufferAttribute(c.position, 3));
-    g.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(c.colors, 3));
-    g.setAttribute('side', new THREE.Float32BufferAttribute(c.side, 2));
-    g.setAttribute('paint', new THREE.Float32BufferAttribute(c.paint, 3));
-    g.setIndex(c.index);
-    g.computeBoundingSphere();
-    const mesh = new THREE.Mesh(g, material);
-    mesh.name = 'BikeSymbols';
-    mesh.receiveShadow = true;
-    mesh.renderOrder = -1;
-    scene.add(mesh);
-    verts += c.position.length / 3;
-  }
-  console.info(`[cycling] ${BANDS.length} bikeway pieces painted, ${symbols} symbols (${verts} vertices in ${cells.size} cells), ${trailKm.toFixed(1)} km of trail surface`);
+  console.info(`[cycling] ${BANDS.length} bikeway pieces painted, ${symbols} symbols, ${trailKm.toFixed(1)} km of trail surface`);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -336,18 +300,32 @@ function bikeSeparatorGeometries() {
     return g;
   });
 }
-// White flexi-posts on the separators, one instanced mesh (scene-culling.js chunks it and hides it with distance)
+// White flexi-posts on the separators, one instanced mesh (scene-culling.js chunks it and hides it with distance), and
+// the separators' & posts' colliders (world-collision.js): each post solid, the curb a low wall, piece by piece, that
+// stops a car and that a bicycle crosses only steeply (controllers.js CURB_CROSS)
+const POST_R = 0.06;
 function buildBikePosts(scene) {
-  const spots = [];
+  const spots = [], colliders = [];
+  const { circleCollider, boxCollider } = window.CITY.WorldCollision;
   for (const { P, a, b } of separatorRuns()) {
     const len = P[P.length - 1].s - P[0].s;
     const n = Math.max(1, Math.floor(len / POST_EVERY));
     for (let k = 0; k <= n; k++) {
       const p = at(P, P[0].s + (len * k) / n);
-      spots.push(p.x + p.nx * (a + b) / 2, p.y + SEP_H, p.z + p.nz * (a + b) / 2);
+      const x = p.x + p.nx * (a + b) / 2, z = p.z + p.nz * (a + b) / 2;
+      spots.push(x, p.y + SEP_H, z);
+      colliders.push(circleCollider(x, z, POST_R, p.y, SEP_H + 0.8, 'post'));
+    }
+    for (let i = 0; i + 1 < P.length; i++) {
+      // (each piece between the line's points, its ends a few cm long so the joints leave no gap)
+      const p = P[i], q = P[i + 1], o = (a + b) / 2;
+      const ax = p.x + p.nx * o * p.m, az = p.z + p.nz * o * p.m, bx = q.x + q.nx * o * q.m, bz = q.z + q.nz * o * q.m;
+      const L = Math.hypot(bx - ax, bz - az);
+      if (L < 0.05) continue;
+      colliders.push(boxCollider((ax + bx) / 2, (az + bz) / 2, (b - a) / 2, L / 2 + 0.05, Math.atan2(bx - ax, bz - az), Math.min(p.y, q.y), SEP_H, 'curb'));
     }
   }
-  if (!spots.length) return null;
+  if (!spots.length) return { mesh: null, colliders };
   const geo = new THREE.CylinderGeometry(0.05, 0.06, 0.8, 7, 1);
   geo.translate(0, 0.4, 0);
   // white, with the grey reflective band near the top
@@ -365,8 +343,8 @@ function buildBikePosts(scene) {
   mesh.userData.cullCell = 60;
   mesh.computeBoundingSphere();
   scene.add(mesh);
-  console.info(`[cycling] ${spots.length / 3} flexi-posts on the cycle tracks' separators`);
-  return mesh;
+  console.info(`[cycling] ${spots.length / 3} flexi-posts on the cycle tracks' separators (${colliders.length} colliders with the curbs)`);
+  return { mesh, colliders };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

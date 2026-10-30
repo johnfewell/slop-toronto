@@ -1,0 +1,28 @@
+[
+  {
+    "name": "walking-stays-at-current-location",
+    "wait": 800,
+    "js": "(() => {const a=window.__CITY_APP;document.getElementById('locate-prompt').hidden=true;a.selectMode('cyclist');a.teleportTo(-1000,-350,1.2);const p=a.controllerManager.getActiveEntity().position.clone();document.querySelector('[data-mode=person]').click();const c=a.controllerManager;if(c.activeMode!=='person'||c.getActiveEntity().position.distanceTo(p)>12)throw new Error('Walking returned to an old spawn');if(Math.abs(c.getActiveEntity().heading-1.2)>.01)throw new Error('Mode lost heading');console.log('[ride-check] cycling to walking stays at current location '+JSON.stringify(c.getActiveEntity().position));})()"
+  },
+  {
+    "name": "mode-round-trip",
+    "wait": 800,
+    "js": "(() => {const a=window.__CITY_APP,c=a.controllerManager;for(const mode of ['car','helicopter','cyclist','person']){const p=c.getActiveEntity().position.clone();document.querySelector('[data-mode='+mode+']').click();const q=c.getActiveEntity().position;if(c.activeMode!==mode||Math.hypot(q.x-p.x,q.z-p.z)>16)throw new Error('Mode '+mode+' left current location');}console.log('[ride-check] all four mode buttons retain current area');})()"
+  },
+  {
+    "name": "ordinary-streetcar-rear-door",
+    "wait": 400,
+    "js": "(async () => {const a=window.__CITY_APP,R=a.streetcarRide,c=a.controllerManager;let found=false;a.film.start(10);try{for(let batch=0;batch<240&&!found;batch++){await a.film.step(25);for(const car of a.streetcars.cars){if(!car.placed||car.speed>.1||car.doorState!=='open'||car.stopIndex<0)continue;for(const module of [4,3,1]){const p=R.landingAt(car.track,car.stopIndex,true,car,module);if(!p)continue;a.teleportTo(p.x,p.z,p.heading);R.update(.2);if(R.boardable()!==car)continue;car.hold=12;window.__streetBoardCar=car;window.__streetBoardModule=module;found=true;console.log('[ride-check] ordinary fleet open door '+JSON.stringify({id:car.id,module,stop:car.track.stopNames[car.stopIndex],player:c.getActiveEntity().position,prompt:R.prompt}));break;}if(found)break;}}if(!found)throw new Error('No ordinary fleet rear-door boarding candidate');}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "board-ordinary-streetcar",
+    "tap": "#ride-prompt",
+    "wait": 800,
+    "js": "(() => {const a=window.__CITY_APP;if(a.streetcarRide.boardable()!==window.__streetBoardCar||document.getElementById('ride-prompt').hidden)throw new Error('Rear-door boarding prompt missing');})()"
+  },
+  {
+    "name": "ordinary-streetcar-boarded",
+    "wait": 500,
+    "js": "(() => {const a=window.__CITY_APP;if(!a.streetcarRide.active||a.streetcarRide.car!==window.__streetBoardCar||!a.controllerManager.suspended)throw new Error('Ordinary street boarding failed');console.log('[ride-check] boarded ordinary fleet from door module '+window.__streetBoardModule);a.selectMode('cyclist');const p=a.controllerManager.getActiveEntity().position;if(a.rideSession.active||a.controllerManager.suspended||Math.hypot(p.x-window.__streetBoardCar.sections[window.__streetBoardModule].x,p.z-window.__streetBoardCar.sections[window.__streetBoardModule].z)>30)throw new Error('Mode switch from transit returned to old spawn');console.log('[ride-check] passenger mode change stays beside boarding stop');})()"
+  }
+]

@@ -1,0 +1,138 @@
+[
+ {
+  "name": "fe-kensington-close-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6547, -79.4006); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 9 + oz * 3, best.y + 1.5, best.z + oz * 9 - ox * 3]; const look = [best.x, best.y + best.h * 0.5, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 60 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "fe-cabbagetown-close-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6655, -79.3685); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 9 + oz * 3, best.y + 1.5, best.z + oz * 9 - ox * 3]; const look = [best.x, best.y + best.h * 0.5, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 60 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "fe-kensington-close-midnight",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6547, -79.4006); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 9 + oz * 3, best.y + 1.5, best.z + oz * 9 - ox * 3]; const look = [best.x, best.y + best.h * 0.5, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 60 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "fe-cabbagetown-close-midnight",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6655, -79.3685); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 9 + oz * 3, best.y + 1.5, best.z + oz * 9 - ox * 3]; const look = [best.x, best.y + best.h * 0.5, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 60 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "fe-cabbagetown-mid-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6655, -79.3685); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 45 + oz * 0, best.y + 30, best.z + oz * 45 - ox * 0]; const look = [best.x, best.y + best.h * 0.45, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 40 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "fe-cabbagetown-far150-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6655, -79.3685); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 150 + oz * 0, best.y + 45, best.z + oz * 150 - ox * 0]; const look = [best.x, best.y + best.h * 0.45, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 14 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "fe-cabbagetown-mid-midnight",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6655, -79.3685); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 45 + oz * 0, best.y + 30, best.z + oz * 45 - ox * 0]; const look = [best.x, best.y + best.h * 0.45, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 40 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "fe-cabbagetown-far150-midnight",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6655, -79.3685); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 150 + oz * 0, best.y + 45, best.z + oz * 150 - ox * 0]; const look = [best.x, best.y + best.h * 0.45, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 14 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "fe-cabbagetown-far300-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6655, -79.3685); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 300 + oz * 0, best.y + 70, best.z + oz * 300 - ox * 0]; const look = [best.x, best.y + best.h * 0.45, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 8 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "fe-cabbagetown-close-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6655, -79.3685); let best = null, bd = Infinity; for (const d of app.quadtree.queryRange(a.x, a.z, 400)) for (const fe of d.fireEscapes || []) { const dd = (fe.x - a.x) ** 2 + (fe.z - a.z) ** 2; if (fe.landings >= 4 && dd < bd) { bd = dd; best = fe; } } if (!best) return { none: true }; const th = (best.ry || 0) + best.facing, ox = Math.sin(th), oz = Math.cos(th); const pos = [best.x + ox * 9 + oz * 3, best.y + 1.5, best.z + oz * 9 - ox * 3]; const look = [best.x, best.y + best.h * 0.5, best.z]; app.teleportTo(pos[0], pos[2], 0); app.cameraSystem.cinema = () => ({ pos, look, fov: 60 }); return { fe: best, pos, look }; })()"
+ },
+ {
+  "name": "windows-skyline-island-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6195, -79.377), b = C.worldFromLatLon(43.649, -79.381); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 25, a.z], look: [b.x, 80, b.z], fov: 45 }); })()"
+ },
+ {
+  "name": "windows-skyline-riverdale-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6705, -79.356), b = C.worldFromLatLon(43.65, -79.383); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 40, a.z], look: [b.x, 60, b.z], fov: 40 }); })()"
+ },
+ {
+  "name": "windows-skyline-island-midnight",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6195, -79.377), b = C.worldFromLatLon(43.649, -79.381); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 25, a.z], look: [b.x, 80, b.z], fov: 45 }); })()"
+ },
+ {
+  "name": "windows-skyline-riverdale-midnight",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.6705, -79.356), b = C.worldFromLatLon(43.65, -79.383); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 40, a.z], look: [b.x, 60, b.z], fov: 40 }); })()"
+ },
+ {
+  "name": "fog-horizon-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.672, -79.358), b = C.worldFromLatLon(43.656, -79.43); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 120, a.z], look: [b.x, 70, b.z], fov: 55 }); })()"
+ },
+ {
+  "name": "fog-horizon-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.672, -79.358), b = C.worldFromLatLon(43.656, -79.43); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 120, a.z], look: [b.x, 70, b.z], fov: 55 }); })()"
+ },
+ {
+  "name": "fog-horizon-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.672, -79.358), b = C.worldFromLatLon(43.656, -79.43); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 120, a.z], look: [b.x, 70, b.z], fov: 55 }); })()"
+ },
+ {
+  "name": "fog-horizon-midnight",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.672, -79.358), b = C.worldFromLatLon(43.656, -79.43); app.teleportTo(a.x, a.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 120, a.z], look: [b.x, 70, b.z], fov: 55 }); })()"
+ }
+]

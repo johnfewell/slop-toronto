@@ -19,7 +19,22 @@ const CULL_PER_METRE = 1100;
 const CULL_MIN = 300; // never closer: the shadow cascades reach ~300 m at street level
 const CULL_MAX = 2000; // beyond this the props are kept at any distance
 const PROXY_CELL = 500;
-const STATIC_CELL = 1000; // cells of the big batches kept at any distance, for the view frustum (mrdoob's 539289a) // the far cascade spans ~400 m at street level: a cascade sees a few cells
+// The furthest a caster can throw a shadow into the cascades: their far plane (lighting.js: 720 m from the air, x the
+// quality net's runtime distance scale Q.dist) plus a long golden-hour shadow, which the net does not shorten, all x
+// the tier's shadowFar (820 m x shadowFar at full distance). An opted-in chunk culled any sooner (its cull distance x
+// Q.dist) casts by itself instead
+const SHADOW_FAR = 720;
+const SHADOW_LENGTH = 100;
+const shadowReach = (k) => (SHADOW_FAR * k + SHADOW_LENGTH) * (Q.shadowFar || 1);
+// The stand-ins are chosen once, but Q.dist changes at runtime (quality.js: down to Q.minDist): a chunk qualifies only
+// if it stays shown out to the shadows' reach at every scale in between (both sides are linear in k: the ends suffice)
+function keptToShadowReach(d) {
+  const lo = Math.min(Q.dist ?? 1, Q.minDist ?? 1), hi = Math.max(Q.dist ?? 1, 1);
+  return [lo, hi].every((k) => d * k >= shadowReach(k));
+}
+// ?standins=0 leaves the opt-ins out (every prop casts with its own geometry), for A/B captures
+const OPT_INS = typeof location === 'undefined' || new URLSearchParams(location.search).get('standins') !== '0';
+const STATIC_CELL = 1000; // cells of the big batches kept at any distance, for the view frustum (mrdoob's 539289a), x Q.staticCell
 
 const _m = new THREE.Matrix4();
 const _wm = new THREE.Matrix4();
@@ -124,6 +139,89 @@ function chunkInstancedMesh(mesh, cell) {
   return chunks;
 }
 
+// Plain meshes of one kind cut into many small cells (the cycle tracks' separators & pavement symbols, the mapped
+// walls, the ponds: 40-80 cells each of a few hundred triangles) cost a draw per cell in view, and every scene render
+// (the view & both shadow cascades) walks & frustum-tests every cell: from the waterfront, looking across the city, the
+// view drew ~60 of them for ~70k triangles. The cells of a kind under one parent merge into one mesh (or, for a kind of
+// over MERGE_TRIS triangles, one per MERGE_CELL square): the same triangles in the same material, far fewer draws.
+// Only meshes that nothing can tell apart once merged: untransformed, static, one material, no groups, no callbacks or
+// userData, no children, opaque (transparent ones are sorted per mesh)
+const MERGE_TRIS = 60000;
+const MERGE_CELL = 3000;
+const IDENTITY = new THREE.Matrix4();
+function mergeableMesh(o, seeThrough = false) {
+  if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || o.isBatchedMesh || !isStaticMesh(o)) return false;
+  const g = o.geometry, mat = o.material;
+  if (!g || !g.isBufferGeometry || !mat || Array.isArray(mat) || (mat.transparent && !seeThrough) || g.groups.length) return false;
+  if (Object.keys(g.morphAttributes).length || g.drawRange.start !== 0 || g.drawRange.count !== Infinity) return false;
+  if (o.children.length || Object.keys(o.userData).length || !o.matrix.equals(IDENTITY)) return false;
+  if (Object.prototype.hasOwnProperty.call(o, 'onBeforeRender') || Object.prototype.hasOwnProperty.call(o, 'onAfterRender')) return false;
+  return !!g.attributes.position;
+}
+function mergeKey(o) {
+  const g = o.geometry;
+  const attrs = Object.keys(g.attributes).sort().map((n) => {
+    const a = g.attributes[n];
+    return a.isInterleavedBufferAttribute || a.isInstancedBufferAttribute ? null : `${n}:${a.itemSize}:${a.normalized}:${a.array.constructor.name}`;
+  });
+  if (attrs.includes(null)) return null;
+  return [o.parent.id, o.name, o.material.id, o.castShadow, o.receiveShadow, o.renderOrder, o.layers.mask, g.index ? 1 : 0, ...attrs].join('|');
+}
+// `parents`: the groups whose children may merge (each parent's children merge among themselves only); `names`, when
+// given, limits it to children of those names (for the scene itself, where only the static city's kinds may merge;
+// those may be see-through)
+function mergeSmallMeshes(parents, names = null, stats = { merged: 0, into: 0 }) {
+  const { mergeGeometries } = window.CITY.Addons;
+  for (const parent of parents) {
+    const kinds = new Map();
+    for (const o of parent.children) {
+      if (names && !names.has(o.name)) continue;
+      if (!mergeableMesh(o, !!names)) continue;
+      const k = mergeKey(o);
+      if (!k) continue;
+      let list = kinds.get(k);
+      if (!list) kinds.set(k, (list = []));
+      list.push(o);
+    }
+    for (const list of kinds.values()) {
+      if (list.length < 2) continue;
+      const tris = list.reduce((s, o) => s + triangleCount(o.geometry), 0);
+      const bins = new Map();
+      for (const o of list) {
+        let key = 0;
+        if (tris > MERGE_TRIS) {
+          if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+          const c = o.geometry.boundingSphere.center;
+          key = Math.floor(c.x / MERGE_CELL) + ',' + Math.floor(c.z / MERGE_CELL);
+        }
+        let bin = bins.get(key);
+        if (!bin) bins.set(key, (bin = []));
+        bin.push(o);
+      }
+      for (const bin of bins.values()) {
+        if (bin.length < 2) continue;
+        const g = mergeGeometries(bin.map((o) => o.geometry), false);
+        if (!g) continue;
+        const mesh = new THREE.Mesh(g, bin[0].material);
+        copyObjectState(mesh, bin[0]);
+        mesh.frustumCulled = bin[0].frustumCulled;
+        g.computeBoundingSphere();
+        g.computeBoundingBox();
+        const at = parent.children.indexOf(bin[0]);
+        for (const o of bin) parent.remove(o);
+        parent.add(mesh);
+        // (in the first one's place among its siblings: the draw order of equal render orders stays as it was)
+        parent.children.splice(parent.children.length - 1, 1);
+        parent.children.splice(Math.min(at, parent.children.length), 0, mesh);
+        mesh.updateMatrixWorld(true);
+        stats.merged += bin.length;
+        stats.into++;
+      }
+    }
+  }
+  return stats;
+}
+
 // A caster can stand in as bare positions only if its material neither moves its vertices nor cuts holes in it
 function proxyableMaterial(mat) {
   return !!mat && !Array.isArray(mat) && !mat.transparent && !(mat.alphaTest > 0) && !mat.alphaMap &&
@@ -155,11 +253,27 @@ function setupSceneCulling(scene, roots, shadow = null) {
   const stats = { chunkedMeshes: 0, chunks: 0, proxiedMeshes: 0, proxies: 0, proxyTriangles: 0 };
   const culled = [];
 
-  // 1. Small props: chunked & distance culled
+  // 0. Many small cells of one kind merged (see mergeSmallMeshes) under the roots (the cycle tracks' pavement symbols,
+  //    once merged at the scene's top level, are road-paint.js's cells now)
+  const parents = [];
+  for (const root of roots) root.traverse((o) => { if (o.children.length) parents.push(o); });
+  const merge = mergeSmallMeshes(parents);
+  stats.mergedMeshes = merge.merged;
+  stats.mergedInto = merge.into;
+
+  // 1. Small props: chunked & distance culled; and meshes already cut into cells that set their own cull distance
+  //    (road-paint.js: userData.cullDistance, as is, and cullFixed: kept there by the quality net too, since their
+  //    material fades out to it; mrdoob's 997185d)
   const chunkable = [];
   const largeMeshes = []; // kept at any distance: cut into cells for the view frustum alone (see the end)
   for (const root of roots) {
     root.traverse((o) => {
+      if (!o.isInstancedMesh && isStaticMesh(o) && o.userData.cullDistance > 0) {
+        if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+        const sphere = o.geometry.boundingSphere.clone().applyMatrix4(o.matrixWorld);
+        culled.push({ mesh: o, x: sphere.center.x, y: sphere.center.y, z: sphere.center.z, r: sphere.radius, d: o.userData.cullDistance, fixed: !!o.userData.cullFixed });
+        return;
+      }
       if (!o.isInstancedMesh || !isStaticMesh(o) || o.count < 64 || o.count !== o.instanceMatrix.count) return;
       if (o.count * triangleCount(o.geometry) < 40000) return;
       if (!o.boundingSphere) o.computeBoundingSphere();
@@ -224,11 +338,23 @@ function setupSceneCulling(scene, roots, shadow = null) {
     const cellKey = (x, z) => Math.floor(x / PROXY_CELL) + ',' + Math.floor(z / PROXY_CELL);
 
     const sources = [];
+    const cullDistances = new Map(culled.map((c) => [c.mesh, c.d]));
     for (const root of roots) {
       root.traverse((o) => {
         if (!o.castShadow || !isStaticMesh(o) || !proxyableMaterial(o.material)) return;
         if (o.isInstancedMesh && o.count !== o.instanceMatrix.count) return;
-        const tris = triangleCount(o.geometry) * (o.isInstancedMesh ? o.count : 1);
+        // Opt-ins (userData.shadowStandIn: true, or a coarser BufferGeometry to cast with; mrdoob's c4ab18f & 0630114):
+        // the thin poles' chunks (street-details.js, pedestrian-signals.js) each fall under the size limits below, and
+        // cast the same shadow with far fewer triangles. Only for props kept out to the shadow cascades' reach: a stand-in
+        // is never distance culled with its source chunk (UP-2), so a chunk culled within the shadows' reach casts itself
+        if (OPT_INS && o.userData.shadowStandIn && keptToShadowReach(cullDistances.get(o) ?? Infinity)) {
+          sources.push(o);
+          return;
+        }
+        // a distance-culled mesh never gets a stand-in, which is never culled: hidden, it would still cast (the road
+        // paint's cells, userData.cullDistance, are big enough to qualify below if they ever cast)
+        if (cullDistances.has(o)) return;
+        const tris =triangleCount(o.geometry) * (o.isInstancedMesh ? o.count : 1);
         if (tris < 20000) return;
         let radius;
         if (o.isInstancedMesh) {
@@ -244,7 +370,7 @@ function setupSceneCulling(scene, roots, shadow = null) {
 
     for (const o of sources) {
       const side = sideOf(o.material);
-      const geo = o.geometry;
+      const geo = OPT_INS && o.userData.shadowStandIn?.isBufferGeometry ? o.userData.shadowStandIn : o.geometry;
       if (o.isInstancedMesh) {
         const pos = geo.attributes.position;
         if (!geo.boundingBox) geo.computeBoundingBox();
@@ -328,13 +454,24 @@ function setupSceneCulling(scene, roots, shadow = null) {
       }
     }
     for (const cam of cams) cam.layers.enable(SHADOW_PROXY_LAYER);
+    // ...gathered into PROXY_BUCKET squares: a cascade's render tests the ~100 buckets against its frustum and walks
+    // only the stand-ins of the few it touches, instead of walking & testing all ~1,400 (in both cascades, every frame)
+    const proxyBuckets = bucketProxies(proxyGroup);
+    stats.proxyBuckets = proxyBuckets.length;
     scene.add(proxyGroup);
     proxyGroup.updateMatrixWorld(true);
     proxyGroup.updateMatrixWorld = () => {};
     const shadowCams = new Set(cams);
     const before = scene.onBeforeRender;
     scene.onBeforeRender = function (renderer, s, camera, ...rest) {
-      proxyGroup.visible = shadowCams.has(camera);
+      const shadowPass = shadowCams.has(camera);
+      proxyGroup.visible = shadowPass;
+      // (the warm-up frame draws every bucket: it compiles the stand-ins' pipelines)
+      if (shadowPass && state.started) {
+        _pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        _frustum.setFromProjectionMatrix(_pm, camera.coordinateSystem, camera.reversedDepth);
+        for (const b of proxyBuckets) b.group.visible = _frustum.intersectsSphere(b.sphere);
+      }
       return before.call(this, renderer, s, camera, ...rest);
     };
   }
@@ -343,7 +480,7 @@ function setupSceneCulling(scene, roots, shadow = null) {
   //    kilometre the view frustum can skip, with no per-frame distance checks (mrdoob's 539289a)
   for (const mesh of largeMeshes) {
     if (mesh.castShadow) continue;
-    const chunks = replaceWithChunks(mesh, STATIC_CELL);
+    const chunks = replaceWithChunks(mesh, STATIC_CELL * (Q.staticCell || 1));
     stats.chunkedMeshes++;
     stats.chunks += chunks.length;
   }
@@ -354,7 +491,45 @@ function setupSceneCulling(scene, roots, shadow = null) {
   return stats;
 }
 
-const state = { culled: [], buckets: null };
+const state = { culled: [], buckets: null, started: false };
+
+const PROXY_BUCKET = 1000;
+const _pm = new THREE.Matrix4();
+const _frustum = new THREE.Frustum();
+// The shadow stand-ins (world-space children of `group`) regrouped by square, each bucket with a sphere round its own
+function bucketProxies(group) {
+  const byKey = new Map();
+  for (const mesh of group.children) {
+    const s = mesh.isInstancedMesh ? mesh.boundingSphere : mesh.geometry.boundingSphere; // (both computed when made)
+    const key = Math.floor(s.center.x / PROXY_BUCKET) + ',' + Math.floor(s.center.z / PROXY_BUCKET);
+    let b = byKey.get(key);
+    if (!b) byKey.set(key, (b = { meshes: [], spheres: [] }));
+    b.meshes.push(mesh);
+    b.spheres.push(s);
+  }
+  const buckets = [];
+  group.children.length = 0;
+  for (const b of byKey.values()) {
+    const g = new THREE.Group();
+    g.name = 'ShadowProxyBucket';
+    g.parent = group;
+    group.children.push(g);
+    for (const mesh of b.meshes) {
+      mesh.parent = g;
+      g.children.push(mesh);
+    }
+    const box = new THREE.Box3();
+    for (const s of b.spheres) {
+      box.expandByPoint(_a.copy(s.center).subScalar(s.radius));
+      box.expandByPoint(_a.copy(s.center).addScalar(s.radius));
+    }
+    const sphere = new THREE.Sphere();
+    box.getBoundingSphere(sphere);
+    for (const s of b.spheres) sphere.radius = Math.max(sphere.radius, sphere.center.distanceTo(s.center) + s.radius);
+    buckets.push({ group: g, sphere });
+  }
+  return buckets;
+}
 
 // The culled chunks gathered into groups of BUCKET x BUCKET m under their parent, so
 // a far group hides whole and three's scene walk skips it. CityStreetProps alone holds ~8,400 chunks, nearly all hidden,
@@ -391,7 +566,7 @@ function bucketCulled(culled) {
       group.children.push(c.mesh);
     }
     group.parent = b.parent;
-    buckets.push({ group, parent: b.parent, x: cx, z: cz, r, dMax, entries: b.entries });
+    buckets.push({ group, parent: b.parent, x: cx, z: cz, r, dMax, fixed: b.entries.some((c) => c.fixed), entries: b.entries });
   }
   for (const [parent, set] of moved) parent.children = parent.children.filter((o) => !set.has(o));
   for (const b of buckets) b.parent.children.push(b.group);
@@ -400,20 +575,21 @@ function bucketCulled(culled) {
 
 // Per frame (after the warm-up frame, which must see everything): hide the chunks beyond their cull distance
 function updateSceneCulling(cameraPosition) {
+  state.started = true;
   const { x, y, z } = cameraPosition;
   const k = Q.dist;
   const cull = (c) => {
     const dx = c.x - x;
     const dy = c.y - y;
     const dz = c.z - z;
-    return (c.mesh.visible = Math.sqrt(dx * dx + dy * dy + dz * dz) - c.r < c.d * k);
+    return (c.mesh.visible = Math.sqrt(dx * dx + dy * dy + dz * dz) - c.r < c.d * (c.fixed ? 1 : k));
   };
   if (!state.buckets) {
     for (const c of state.culled) cull(c);
     return;
   }
   for (const b of state.buckets) {
-    if (Math.hypot(b.x - x, b.z - z) - b.r >= b.dMax * k) {
+    if (Math.hypot(b.x - x, b.z - z) - b.r >= b.dMax * (b.fixed ? 1 : k)) {
       b.group.visible = false;
       continue;
     }
@@ -473,5 +649,25 @@ function releaseCpuCopies(renderer, roots, textures = []) {
   return Math.round(bytes / 1048576);
 }
 
-Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, SHADOW_PROXY_LAYER, releaseCpuCopies });
+// Instanced meshes drawn whole (frustum culling off: the traffic, streetcars, trains, bike-share bikes, the near
+// buildings' details...) still cost three a render object each while they hold no instances, in the view & both shadow
+// cascades: ~50 a frame on the waterfront that draw nothing. They now pass the frustum test only while they hold
+// instances (count > 0), and are drawn whole then as before. Indirect draws & meshes with callbacks are left alone.
+// Returns how many
+function gateEmptyInstances(scene) {
+  let n = 0;
+  const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+  scene.traverse((o) => {
+    if (!o.isInstancedMesh || o.frustumCulled || o.geometry.indirect || own(o, 'onBeforeRender') || own(o, 'intersectsFrustum')) return;
+    o.frustumCulled = true;
+    o.intersectsFrustum = holdsInstances;
+    n++;
+  });
+  return n;
+}
+function holdsInstances() {
+  return this.count > 0;
+}
+
+Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, gateEmptyInstances, SHADOW_PROXY_LAYER, releaseCpuCopies });
 })();

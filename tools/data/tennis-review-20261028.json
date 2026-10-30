@@ -1,0 +1,771 @@
+{
+  "groups": [
+    {
+      "cityLocationId": "112",
+      "ways": [
+        891380842,
+        891380843,
+        891380844,
+        891380845
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4385828,43.6331308272,-79.4374884,43.6339231728&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "21024a799a89c7bfc6895d0cdae308a56fa5ad9cafb3861f557ca7a786583979"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "Four marked courts in Marilyn Bell Park on Lakeshore parklands; exclude nearby private Boulevard Club courts.",
+      "colours": "asphalt",
+      "blueWays": []
+    },
+    {
+      "cityLocationId": "155",
+      "ways": [
+        41166489,
+        991367020
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.34469189999999,43.6606918642,-79.34391099999999,43.6612572358&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "d6484ee4d2e41069b7a93211614d2627180625c9024f1e34fcdbf95e40c23909"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "",
+      "colours": "asphalt",
+      "blueWays": []
+    },
+    {
+      "cityLocationId": "177",
+      "ways": [
+        1005081847,
+        1005081848
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.37259221077349,43.65486969999999,-79.37180408922652,43.655440299999995&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "6caa4f973a0b289861d6d37c6aef02a1cd27cde3c966806bb2cba341e5216d87"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "Two marked courts in 2025 imagery; City facility listing says one. Preserve disagreement, never manufacture a count match.",
+      "colours": "asphalt",
+      "blueWays": []
+    },
+    {
+      "cityLocationId": "181",
+      "ways": [
+        1493150603,
+        1493150604,
+        1493150605,
+        1493150606
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.47402310000001,43.644327762,-79.4728991,43.645141538000004&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "a61111599e7c16f68eae1bb545ade1b7b55195729fed1973d4e5ee7a7b8ed1af"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "",
+      "colours": "blue-green",
+      "blueWays": []
+    },
+    {
+      "cityLocationId": "241",
+      "ways": [
+        1246201696,
+        1246201697,
+        1246201698,
+        1246201699,
+        1246201700,
+        1246201701,
+        1246201702,
+        1246201703
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.41307313038675,43.6460195,-79.41177906961326,43.6469564&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "db65c220e5da642107ff175ffcf5160f2314c8b33557f4888dc57151f0c5d0b0"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "",
+      "colours": "asphalt",
+      "blueWays": []
+    },
+    {
+      "cityLocationId": "2750",
+      "ways": [
+        1007513711,
+        1007513712
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.40849962292818,43.641429800000004,-79.40770887707184,43.642002299999994&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "d26f1b1599996e54122709bb0bdb893268ea9f4a922973661e44a72f61d885ea"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "",
+      "colours": "asphalt",
+      "blueWays": []
+    },
+    {
+      "cityLocationId": "306",
+      "ways": [
+        973004648,
+        50873685
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.34880492983424,43.6757141,-79.34801667016575,43.6762848&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "0938a9b50706bdabb87f8b933e62cc2277dd86ac46fb81e4fcb9b520ab8d9812"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "",
+      "colours": "asphalt",
+      "blueWays": []
+    },
+    {
+      "cityLocationId": "343",
+      "ways": [
+        972683105,
+        972683106,
+        972683107,
+        972683108,
+        972683109,
+        972683110,
+        972683111
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3564372,43.6715391766,-79.3551015,43.6725062234&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "980a8f2c0054698edc59908b029fe60439cfc522c73b91759ae3461f90b94667"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "",
+      "colours": "asphalt",
+      "blueWays": []
+    },
+    {
+      "cityLocationId": "348",
+      "ways": [
+        1186573126,
+        390485271
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.44451013149171,43.6488479,-79.44372946850828,43.6494131&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "e5afd23f21aa716bc550fbc8b7b45183e90fd312641cb9e71e4f83e07dc53e76"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "",
+      "colours": "asphalt",
+      "blueWays": []
+    },
+    {
+      "cityLocationId": "77",
+      "ways": [
+        1116260438,
+        1116260439,
+        1116260440,
+        1116259927,
+        1116259928,
+        1116260441,
+        1116260442,
+        1116261446,
+        1116261447,
+        1116261448
+      ],
+      "aerial": {
+        "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.46472080000001,43.6489395022,-79.45876390000001,43.6532522978&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "sha256": "c973643efa31efe6ecab9c0fa0d593cc15dc92e6aaad65d711b832022b3f9190"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "Marked individual court footprints, count and long-axis orientation visually checked against City 2025 8cm aerial imagery.",
+      "notes": "2025 imagery shows seven east and three west courts; exclude three enclosing OSM polygons. City public/club seven-court listings do not establish fourteen or per-court access.",
+      "colours": "asphalt",
+      "blueWays": [
+        1116260438,
+        1116260439,
+        1116260440,
+        1116259927,
+        1116259928,
+        1116260441,
+        1116260442
+      ]
+    }
+  ],
+  "excludedEnclosures": [
+    146992756,
+    146992757,
+    146992758
+  ],
+  "dimensionsSource": "https://www.itftennis.com/media/7221/2026-rules-of-tennis-english.pdf",
+  "pads": [
+    {
+      "id": "112",
+      "cityLocationId": "112",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4385828,43.6331308272,-79.4374884,43.6339231728&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8843062.606143957,
+          "ymin": 5408842.755779204,
+          "xmax": -8842940.739075921,
+          "ymax": 5408964.6228472395,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "21024a799a89c7bfc6895d0cdae308a56fa5ad9cafb3861f557ca7a786583979"
+      },
+      "pixels": [
+        [
+          365,
+          161
+        ],
+        [
+          1009,
+          610
+        ],
+        [
+          799,
+          966
+        ],
+        [
+          146,
+          523
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "155",
+      "cityLocationId": "155",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.34469189999999,43.6606918642,-79.34391099999999,43.6612572358&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8832610.733249389,
+          "ymin": 5413082.7378971055,
+          "xmax": -8832523.736274607,
+          "ymax": 5413169.734871886,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "d6484ee4d2e41069b7a93211614d2627180625c9024f1e34fcdbf95e40c23909"
+      },
+      "pixels": [
+        [
+          235,
+          225
+        ],
+        [
+          893,
+          268
+        ],
+        [
+          853,
+          930
+        ],
+        [
+          168,
+          872
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "177",
+      "cityLocationId": "177",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.37259221077349,43.65486969999999,-79.37180408922652,43.655440299999995&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8835716.57769549,
+          "ymin": 5412186.895709661,
+          "xmax": -8835628.784706136,
+          "ymax": 5412274.688699015,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "6caa4f973a0b289861d6d37c6aef02a1cd27cde3c966806bb2cba341e5216d87"
+      },
+      "pixels": [
+        [
+          212,
+          380
+        ],
+        [
+          728,
+          220
+        ],
+        [
+          900,
+          805
+        ],
+        [
+          392,
+          967
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "181",
+      "cityLocationId": "181",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.47402310000001,43.644327762,-79.4728991,43.645141538000004&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8847007.814495733,
+          "ymin": 5410565.054432762,
+          "xmax": -8846882.62796634,
+          "ymax": 5410690.240962155,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "a61111599e7c16f68eae1bb545ade1b7b55195729fed1973d4e5ee7a7b8ed1af"
+      },
+      "pixels": [
+        [
+          78,
+          466
+        ],
+        [
+          850,
+          231
+        ],
+        [
+          993,
+          715
+        ],
+        [
+          225,
+          950
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "green"
+    },
+    {
+      "id": "241-north",
+      "cityLocationId": "241",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.41307313038675,43.6460195,-79.41177906961326,43.6469564&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8840222.901815735,
+          "ymin": 5410825.303391322,
+          "xmax": -8840078.770405203,
+          "ymax": 5410969.434801854,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "db65c220e5da642107ff175ffcf5160f2314c8b33557f4888dc57151f0c5d0b0"
+      },
+      "pixels": [
+        [
+          120,
+          262
+        ],
+        [
+          708,
+          82
+        ],
+        [
+          818,
+          455
+        ],
+        [
+          230,
+          636
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "241-south",
+      "cityLocationId": "241",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.41307313038675,43.6460195,-79.41177906961326,43.6469564&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8840222.901815735,
+          "ymin": 5410825.303391322,
+          "xmax": -8840078.770405203,
+          "ymax": 5410969.434801854,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "db65c220e5da642107ff175ffcf5160f2314c8b33557f4888dc57151f0c5d0b0"
+      },
+      "pixels": [
+        [
+          230,
+          636
+        ],
+        [
+          829,
+          460
+        ],
+        [
+          959,
+          850
+        ],
+        [
+          358,
+          1045
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "2750",
+      "cityLocationId": "2750",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.40849962292818,43.641429800000004,-79.40770887707184,43.642002299999994&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8839713.762778599,
+          "ymin": 5410119.262718711,
+          "xmax": -8839625.69715977,
+          "ymax": 5410207.328337538,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "d26f1b1599996e54122709bb0bdb893268ea9f4a922973661e44a72f61d885ea"
+      },
+      "pixels": [
+        [
+          187,
+          411
+        ],
+        [
+          837,
+          190
+        ],
+        [
+          1023,
+          827
+        ],
+        [
+          409,
+          1025
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "306",
+      "cityLocationId": "306",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.34880492983424,43.6757141,-79.34801667016575,43.6762848&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8833068.604947185,
+          "ymin": 5415394.573960563,
+          "xmax": -8832980.766075788,
+          "ymax": 5415482.41283196,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "0938a9b50706bdabb87f8b933e62cc2277dd86ac46fb81e4fcb9b520ab8d9812"
+      },
+      "pixels": [
+        [
+          207,
+          400
+        ],
+        [
+          775,
+          230
+        ],
+        [
+          981,
+          876
+        ],
+        [
+          395,
+          1054
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "343-north",
+      "cityLocationId": "343",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3563872,43.671767701,-79.3553727,43.672502199&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8833912.6687064,
+          "ymin": 5414787.189716589,
+          "xmax": -8833799.626265896,
+          "ymax": 5414900.232157093,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "4f460ee33dcc1b6c61aa4df7fc0d8fd5403a899089f0044e810eeab3daea1b0d"
+      },
+      "pixels": [
+        [
+          78,
+          530
+        ],
+        [
+          751,
+          124
+        ],
+        [
+          1020,
+          584
+        ],
+        [
+          320,
+          962
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped. Northeast corner under canopy follows the visible straight pavement/fence edges.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "343-south",
+      "cityLocationId": "343",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.35600930000001,43.67156787639999,-79.3551515,43.672188923600004&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8833870.592462573,
+          "ymin": 5414756.436079917,
+          "xmax": -8833775.011002786,
+          "ymax": 5414852.017539702,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "0c9ebaa12b3b9c85e142362603cbcf59f6f22da78798bac0daa5f917931c2c97"
+      },
+      "pixels": [
+        [
+          104,
+          500
+        ],
+        [
+          716,
+          146
+        ],
+        [
+          999,
+          651
+        ],
+        [
+          366,
+          998
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "348",
+      "cityLocationId": "348",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.44451013149171,43.6488479,-79.44372946850828,43.6494131&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8843722.43936476,
+          "ymin": 5411260.427417585,
+          "xmax": -8843635.48594689,
+          "ymax": 5411347.380835454,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "e5afd23f21aa716bc550fbc8b7b45183e90fd312641cb9e71e4f83e07dc53e76"
+      },
+      "pixels": [
+        [
+          170,
+          337
+        ],
+        [
+          730,
+          193
+        ],
+        [
+          912,
+          792
+        ],
+        [
+          327,
+          971
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "asphalt"
+    },
+    {
+      "id": "77-west",
+      "cityLocationId": "77",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.46467080000001,43.6503341082,-79.46387689999999,43.6509088918&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8845966.71624215,
+          "ymin": 5411489.075459847,
+          "xmax": -8845878.286236342,
+          "ymax": 5411577.505465655,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "737e7427dfbb56e693b484c156fdc0762d83366ec8d09f8559dc6560c25eb1ce"
+      },
+      "pixels": [
+        [
+          176,
+          219
+        ],
+        [
+          924,
+          241
+        ],
+        [
+          915,
+          862
+        ],
+        [
+          158,
+          839
+        ]
+      ],
+      "evidence": "Approximate pavement boundary manually traced from City 2025 8cm aerial; no raster shipped.",
+      "colour": "green"
+    },
+    {
+      "id": "146992756",
+      "cityLocationId": "77",
+      "osmWay": 146992756,
+      "evidence": "Mapped enclosure checked against City 2025 aerial; pavement only, not another playing court.",
+      "colour": "green"
+    },
+    {
+      "id": "146992757",
+      "cityLocationId": "77",
+      "osmWay": 146992757,
+      "evidence": "Mapped enclosure checked against City 2025 aerial; pavement only, not another playing court.",
+      "colour": "green"
+    },
+    {
+      "id": "146992758",
+      "cityLocationId": "77",
+      "evidence": "Approximate pavement boundary checked/traced in City 2025 aerial. Original OSM enclosure trims one net post; canopy-obscured southeast boundary extrapolated from visible straight edges. No raster shipped.",
+      "colour": "green",
+      "sourceOsmEnclosure": 146992758,
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4595747019337,43.6502907,-79.45875439806629,43.6508846&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8845399.422063658,
+          "ymin": 5411482.397176708,
+          "xmax": -8845308.05106621,
+          "ymax": 5411573.768174157,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "2ed46aeb028ef6c474a983c83006b5e8a116685eb023156085b22c76e5398a98"
+      },
+      "pixels": [
+        [
+          163,
+          496
+        ],
+        [
+          650,
+          218
+        ],
+        [
+          918,
+          672
+        ],
+        [
+          423,
+          947
+        ]
+      ]
+    }
+  ]
+}

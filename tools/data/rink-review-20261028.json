@@ -1,0 +1,466 @@
+{
+  "references": [
+    "https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/ice-snow-activities/public-leisure-skating/",
+    "https://www.toronto.ca/wp-content/uploads/2020/03/9735-dufferin-grove-park-improvements-public-meeting-presentation-june-5-2019.pdf",
+    "https://dtah.com/news/2024-06-25-dufferin-grove-park-improvements-are-now-complete"
+  ],
+  "records": [
+    {
+      "assetId": "14282",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.46628236399991,43.649113942999996,-79.4643823639999,43.650489543&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8846146.150524713,
+          "ymin": 5411301.356806366,
+          "xmax": -8845934.518432712,
+          "ymax": 5411512.988898367,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "3f29c7168ff7ca71ede1a23b5eb70773b1f04426898a16a392afc2ba1ac432ff"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": false,
+      "appearance": "pavement",
+      "notes": "High Park source board flags disagree with aerial: south open pad has no dasher boards, north hockey pad has boards. Keep source facts but render the reviewed physical arrangement."
+    },
+    {
+      "assetId": "43569",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3657217709999,43.644022189,-79.36382177099989,43.645397789&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8834951.78754869,
+          "ymin": 5410518.047311692,
+          "xmax": -8834740.173395474,
+          "ymax": 5410729.661464906,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "57ac26fbc3b09334377b45a36e6e95a7137b886fa6d47b9da86d81ee51883d4d"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": false,
+      "appearance": "pavement"
+    },
+    {
+      "assetId": "43573",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4058850329999,43.650489213,-79.4039850329999,43.651864813&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8839422.752815533,
+          "ymin": 5411512.938128237,
+          "xmax": -8839211.115877504,
+          "ymax": 5411724.575066267,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "c328a615f50f6889378363b2f3f2a99df054223177791ef6e9954310163c73f5"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": true,
+      "appearance": "pavement",
+      "gatePixel": [
+        352,
+        555
+      ],
+      "gateNote": "Representative 2m access opening inferred at the aerial-reviewed access side; exact hardware/hinge dimensions are not surveyed."
+    },
+    {
+      "assetId": "43574",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3806808169999,43.656806883,-79.37878081699989,43.658182483000004&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8836617.043457542,
+          "ymin": 5412484.955684631,
+          "xmax": -8836405.384253563,
+          "ymax": 5412696.614888609,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "86efe11b78845a645285ab79113bf4a21e1988fb4629b3a6f84dea2b9421cde6"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": false,
+      "appearance": "pond"
+    },
+    {
+      "assetId": "43587",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.46628236399991,43.649113942999996,-79.4643823639999,43.650489543&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8846146.150524713,
+          "ymin": 5411301.356806366,
+          "xmax": -8845934.518432712,
+          "ymax": 5411512.988898367,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "3f29c7168ff7ca71ede1a23b5eb70773b1f04426898a16a392afc2ba1ac432ff"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": true,
+      "appearance": "pavement",
+      "gatePixel": [
+        352,
+        450
+      ],
+      "gateNote": "Representative 2m access opening inferred at the aerial-reviewed access side; exact hardware/hinge dimensions are not surveyed.",
+      "notes": "High Park source board flags disagree with aerial: south open pad has no dasher boards, north hockey pad has boards. Keep source facts but render the reviewed physical arrangement."
+    },
+    {
+      "assetId": "43591",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3458733139999,43.660341711,-79.3439733139999,43.661717311000004&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8832742.296178441,
+          "ymin": 5413028.858224246,
+          "xmax": -8832530.624513175,
+          "ymax": 5413240.529889511,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "ec3b35f4c9d73bbe38d02c7d4150c8c8065232765f12b284e3c8e14d84a52758"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": true,
+      "appearance": "pavement",
+      "gatePixel": [
+        418,
+        638
+      ],
+      "gateNote": "Representative 2m access opening inferred at the aerial-reviewed access side; exact hardware/hinge dimensions are not surveyed."
+    },
+    {
+      "assetId": "43598",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3603102639999,43.658203347,-79.3584102639999,43.659578947&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8834349.40633174,
+          "ymin": 5412699.82520337,
+          "xmax": -8834137.742205096,
+          "ymax": 5412911.489330014,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "802a481d7a26c36d2d46e1cbb1bdd553e319a15a92ca1d6b3d4ab6e7cd7ef3a3"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": true,
+      "appearance": "pavement",
+      "gatePixel": [
+        439,
+        563
+      ],
+      "gateNote": "Representative 2m access opening inferred at the aerial-reviewed access side; exact hardware/hinge dimensions are not surveyed."
+    },
+    {
+      "assetId": "43599",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3842987789999,43.651568630999996,-79.3823987789999,43.652944231&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8837019.78391401,
+          "ymin": 5411679.006867028,
+          "xmax": -8836808.1431722,
+          "ymax": 5411890.647608835,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "3e460c621a775b607303bed203a3f67ae07154867b82dd0692e3b1d06befc25f"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": false,
+      "appearance": "pond"
+    },
+    {
+      "assetId": "43607",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4143162729999,43.648513832,-79.41241627299989,43.649889432&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8840361.310678825,
+          "ymin": 5411209.032978542,
+          "xmax": -8840149.680701325,
+          "ymax": 5411420.662956042,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "6ee0b957d74849ba00b5a3edb6295785fd92d3df127ec042678d08f70df78c75"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": true,
+      "appearance": "pavement",
+      "gatePixel": [
+        444,
+        548
+      ],
+      "gateNote": "Representative 2m access opening inferred at the aerial-reviewed access side; exact hardware/hinge dimensions are not surveyed."
+    },
+    {
+      "assetId": "43613",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3474676069999,43.67370517,-79.3455676069999,43.67508077&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8832919.795628676,
+          "ymin": 5415085.377620778,
+          "xmax": -8832708.076832816,
+          "ymax": 5415297.096416638,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "341529f6d8a720532e8f45fe5493e544d1984ac8ac335917e7b0ef251d0218b8"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": true,
+      "appearance": "pavement",
+      "gatePixel": [
+        442,
+        467
+      ],
+      "gateNote": "Representative 2m access opening inferred at the aerial-reviewed access side; exact hardware/hinge dimensions are not surveyed."
+    },
+    {
+      "assetId": "43614",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4742645429999,43.643753314,-79.4723645429999,43.645128914000004&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8847034.713183448,
+          "ymin": 5410476.685740978,
+          "xmax": -8846823.099977376,
+          "ymax": 5410688.29894705,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "510e39f4df47e2983ce7aea132e9b46467675233b333bb4939940ab575c0f7f3"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": true,
+      "appearance": "pavement",
+      "gatePixel": [
+        371,
+        641
+      ],
+      "gateNote": "Representative 2m access opening inferred at the aerial-reviewed access side; exact hardware/hinge dimensions are not surveyed."
+    },
+    {
+      "assetId": "59902",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4742645429999,43.643753314,-79.4723645429999,43.645128914000004&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8847034.713183448,
+          "ymin": 5410476.685740978,
+          "xmax": -8846823.099977376,
+          "ymax": 5410688.29894705,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "510e39f4df47e2983ce7aea132e9b46467675233b333bb4939940ab575c0f7f3"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": false,
+      "appearance": "pavement"
+    },
+    {
+      "assetId": "71802",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3571457739999,43.671842582,-79.3552457739999,43.673218182&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8833997.160965437,
+          "ymin": 5414798.714165219,
+          "xmax": -8833785.448740553,
+          "ymax": 5415010.426390103,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "27368f55d192c4ca853cf2d35eec258d97412fd073c2fa61fe793ca52024e972"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": true,
+      "appearance": "pavement",
+      "gatePixel": [
+        430,
+        544
+      ],
+      "gateNote": "Representative 2m access opening inferred at the aerial-reviewed access side; exact hardware/hinge dimensions are not surveyed."
+    },
+    {
+      "assetId": "71803",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3571457739999,43.671842582,-79.3552457739999,43.673218182&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8833997.160965437,
+          "ymin": 5414798.714165219,
+          "xmax": -8833785.448740553,
+          "ymax": 5415010.426390103,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "27368f55d192c4ca853cf2d35eec258d97412fd073c2fa61fe793ca52024e972"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": false,
+      "appearance": "pavement"
+    },
+    {
+      "assetId": "74082",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3847742559999,43.659012765,-79.3828742559999,43.660388365&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8837072.726890668,
+          "ymin": 5412824.370090178,
+          "xmax": -8836861.059910586,
+          "ymax": 5413036.03707026,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "02c875cb3b55e5931a862adfa7a9a6b1868d0061cfc57401bff55da383c38074"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": false,
+      "appearance": "pavement"
+    },
+    {
+      "assetId": "970547",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4340708479999,43.656306076999996,-79.4321708479999,43.657681677&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8842560.39363925,
+          "ymin": 5412407.899459631,
+          "xmax": -8842348.736200571,
+          "ymax": 5412619.556898309,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "31b71fdd58149387be091cda29e88d4c410a2dc1dffc9e107c7aeeb5c4636b81"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": true,
+      "appearance": "pavement",
+      "gatePixel": [
+        547,
+        451
+      ],
+      "gateNote": "Representative 2m access opening inferred at the aerial-reviewed access side; exact hardware/hinge dimensions are not surveyed.",
+      "notes": "City2024 geometry and2025 aerial retained: one long hockey rink and western irregular pleasure pad/plaza. Do not split the hockey rink at its visible slab seam. City2019 redesign document and architect2024 completion report confirm the double-pad configuration."
+    },
+    {
+      "assetId": "970567",
+      "aerial": {
+        "year": 2025,
+        "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4340708479999,43.656306076999996,-79.4321708479999,43.657681677&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+        "extent": {
+          "xmin": -8842560.39363925,
+          "ymin": 5412407.899459631,
+          "xmax": -8842348.736200571,
+          "ymax": 5412619.556898309,
+          "spatialReference": {
+            "wkid": 102100,
+            "latestWkid": 3857
+          }
+        },
+        "width": 1100,
+        "height": 1100,
+        "sha256": "31b71fdd58149387be091cda29e88d4c410a2dc1dffc9e107c7aeeb5c4636b81"
+      },
+      "reviewedAt": "2026-10-28",
+      "evidence": "City ASSET_ID polygon checked against City2025 aerial; preserve mapped curve/holes, do not use inventory dimensions as a replacement outline.",
+      "boards": false,
+      "appearance": "pavement",
+      "notes": "City2024 geometry and2025 aerial retained: one long hockey rink and western irregular pleasure pad/plaza. Do not split the hockey rink at its visible slab seam. City2019 redesign document and architect2024 completion report confirm the double-pad configuration."
+    }
+  ]
+}

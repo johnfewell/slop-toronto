@@ -39,6 +39,10 @@ const TIERS = {
     farCity: 1, // surroundings.js: share of the far city's blocks built up
     lightPool: 1, // x the night's street light & headlight spot pools
     signRes: 1, // signage.js: the name boards' lettering resolution (1: 4096 x 4096 atlases)
+    // tsl-materials.js: wear on the asphalt & sidewalks. 2: everything (utility-cut patches, potholes, tar snakes,
+    // cracks, oil drips; heaved, replaced, cracked & salt-scaled panels, gum); 1: the patches, potholes & panel wear
+    // only (no Voronoi crack networks, gum or scaling); 0: plain asphalt & panels (the shaders before the port)
+    surfaceWear: 2,
     // main.js: once the city is on screen, drop the CPU copies of what the GPU already holds (static vertex & index
     // arrays, the name boards' canvases): hundreds of MB the phone needs
     lean: false,
@@ -51,7 +55,7 @@ const TIERS = {
     shadowTile: 2048, shadowFar: 0.75,
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85,
     cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, subway: 1, farCity: 0.6, lightPool: 0.6,
-    signRes: 1, lean: true,
+    signRes: 1, lean: true, surfaceWear: 1,
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
@@ -59,11 +63,14 @@ const TIERS = {
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7,
     cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
-    signRes: 0.5, lean: true,
+    signRes: 0.5, lean: true, surfaceWear: 1,
     // (measured on the Pixel 8, which is CPU-bound: every shadow caster is drawn again in both cascades) no kerb
     // shadows (~1 ms a frame, unseen at phone size) and an even 30 fps. (Shadows to 100 m instead of 150 m saved under
     // 1 ms in a paired A/B on the phone and lost the far buildings' shadows: not taken)
     kerbShadows: false, maxFps: 30,
+    // the static batches' frustum cells (the building massing, the far city) twice as wide: from the waterfront the
+    // view looks across the whole city, and every cell is a draw (scene-culling.js, surroundings.js)
+    staticCell: 2,
     audio: { motors: 4, sirens: 1, events: 5, hrtf: false }
   }
 };
@@ -104,6 +111,7 @@ const QUALITY = {
   shadowType: 'pcf', // main.js: 'pcf' (filtered) or 'basic' (one tap)
   maxFps: 0, // main.js: frames that come early are skipped (0: every display refresh)
   clusterGrid: [256, 32, 28, 48], // main.js ClusteredLighting: max lights, screen tile px, depth slices, lights per cluster
+  staticCell: 1, // x the static batches' frustum cells (scene-culling.js STATIC_CELL, surroundings.js's far city)
   ...TIERS[tier], dist: 1
 };
 // Profiling knobs: ?q.<key>=<value> overrides one of the tier's settings (numbers, true/false, else the string), e.g.
@@ -124,6 +132,10 @@ console.info(`[quality] ${tier}: ${reason}`);
 const RUNGS = tier === 'high'
   ? [[1, 1]]
   : [[1, 1], [1, 0.8], [1, 0.65], [1, 0.5]];
+const AUTO = params.get('autoscale') !== '0' && !(forcedScale > 0); // (the net runs: attach below)
+// The shortest draw distance scale QUALITY.dist can reach (the net's last rung, or a ?q.dist override below it):
+// scene-culling.js's one-off shadow stand-in choice must hold at every rung
+QUALITY.minDist = Math.min(QUALITY.dist, ...(AUTO ? RUNGS.map(([, d]) => d) : []));
 const SLOW_MS = tier === 'high' ? 50 : 36; // a window's median frame slower than this (~20 / ~28 fps) is too slow...
 const SLOW_WINDOWS = 2; // ...this many windows in a row: a rung down
 const FAST_MS = 22; // ~45 fps: room to step back up...
@@ -138,7 +150,7 @@ function attach(app) {
   let best = 0; // the best rung the net may step back up to
   let lastUpAt = -Infinity, clock = 0, slow = 0, fast = 0, windowStart = SETTLE_S, holdUntil = SETTLE_S;
   const frames = [];
-  const auto = params.get('autoscale') !== '0' && !(forcedScale > 0);
+  const auto = AUTO;
 
   function apply(r) {
     rung = r;

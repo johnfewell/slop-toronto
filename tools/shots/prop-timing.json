@@ -1,0 +1,17 @@
+[
+ {
+  "name": "ptime-bloor-ride",
+  "mode": "cyclist",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 12000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; app.selectMode('cyclist'); let best = null; for (const b of C.CYCLING_BANDS) { if (b.cross || (b.kind !== 3 && b.kind !== 4)) continue; for (const p of b.P) if (p.tx > 0.8 && (!best || Math.hypot(p.x + 1600, p.z + 2815) < Math.hypot(best.x + 1600, best.z + 2815))) best = p; } app.teleportTo(best.x + best.nx * 0.95, best.z + best.nz * 0.95, Math.atan2(best.tx, best.tz)); app.cameraSystem.cinema = null; setTimeout(() => app.cpuTimes(), 3000); setTimeout(() => console.log('[ptime] bloor-ride ' + JSON.stringify(app.cpuTimes())), 11500); })()"
+ },
+ {
+  "name": "ptime-probe",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 60000,
+  "js": "(() => { const s = document.createElement('script'); s.src = './tools/prop-rides.js?' + Date.now(); document.head.appendChild(s); })()"
+ }
+]

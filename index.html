@@ -10,10 +10,10 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Slop Toronto" />
   <meta property="og:locale" content="en_CA" />
-  <meta property="og:url" content="https://slop-toronto.cloud6711.workers.dev/" />
+  <meta property="og:url" content="https://sloptoronto.ca/" />
   <meta property="og:title" content="Slop Toronto · the city and the waterfront in 3D" />
   <meta property="og:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
-  <meta property="og:image" content="https://slop-toronto.cloud6711.workers.dev/assets/og-toronto.jpg" />
+  <meta property="og:image" content="https://sloptoronto.ca/assets/og-toronto.jpg" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -21,7 +21,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Slop Toronto · the city and the waterfront in 3D" />
   <meta name="twitter:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
-  <meta name="twitter:image" content="https://slop-toronto.cloud6711.workers.dev/assets/og-toronto.jpg" />
+  <meta name="twitter:image" content="https://sloptoronto.ca/assets/og-toronto.jpg" />
   <meta name="twitter:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <!-- /social -->
   <meta name="theme-color" content="#07111d" />
@@ -32,7 +32,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&amp;display=swap" />
   <link rel="preload" as="image" href="./assets/site/hero.webp" />
-  <link rel="stylesheet" href="./css/landing.css?v=20261023-toronto1" />
+  <link rel="stylesheet" href="./css/landing.css" />
+  <!-- Umami analytics (self-hosted, no cookies), counting visits only on the production hosts (data-domains).
+       Session replay is deliberately left out (counter only). -->
+  <script defer src="https://umami.cloud6711.workers.dev/script.js" data-website-id="75a0f1a3-3bb4-4dd9-adde-eade0b719665" data-domains="sloptoronto.ca,www.sloptoronto.ca"></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -219,7 +222,7 @@
     <p>Built with <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">three.js</a> (MIT) on the engine of <a href="https://github.com/mrdoob/slop-newyork" target="_blank" rel="noopener noreferrer">Slop New York</a> by mrdoob (MIT), by way of <a href="https://abujatour.site/" target="_blank" rel="noopener noreferrer">Abuja Tour</a> (MIT).</p>
     <p>Data: <a href="https://open.toronto.ca/" target="_blank" rel="noopener noreferrer">City of Toronto Open Data</a> under the <a href="https://open.toronto.ca/open-data-license/" target="_blank" rel="noopener noreferrer">Open Government Licence – Toronto</a> (3D Massing, Edge of Roadway, Street Tree Data, Water Hydrants, Bicycle Parking, TTC Routes and Schedules, TTC BusTime live vehicle positions) · Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) · Terrain: AWS Terrain Tiles (SRTM).</p>
     <p>Stylized water: port of Uber Stylized Water (MIT, © MatrixRex / norio) · Trees: <a href="https://github.com/dgreenheck/ez-tree" target="_blank" rel="noopener noreferrer">EZ-Tree</a> by Dan Greenheck (MIT) · Textures: <a href="https://polyhaven.com/" target="_blank" rel="noopener noreferrer">Poly Haven</a> (CC0) · Street props by John Fewell · <a href="./CREDITS.md">All credits</a></p>
-    <p class="footer-small">A fan project, not affiliated with the City of Toronto or the places shown. Name boards show places' names, not their trademarked logos. Pictures on this page are screenshots of the app.</p>
+    <p class="footer-small">A fan project, not affiliated with the City of Toronto or the places shown. Name boards show places' names, not their trademarked logos. Pictures on this page are screenshots of the app. Privacy-friendly page analytics via a self-hosted Umami instance; no cookies.</p>
   </footer>
 
   <script>

@@ -1,0 +1,39 @@
+[
+  {
+    "name": "subway-phone-seat",
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide;if(!R.active)throw new Error('Phone subway failed');document.getElementById('locate-prompt').hidden=true; R.exit({cancel:true}); a.selectMode('person'); R.update(.1); if(document.getElementById('ride-prompt').hidden)throw new Error('Missing street entrance interaction');})()"
+  },
+  {
+    "name": "subway-phone-enter",
+    "tap": "#ride-prompt",
+    "wait": 700
+  },
+  {
+    "name": "subway-phone-board",
+    "tap": "#ride-status",
+    "wait": 700,
+    "js": "if(!window.__CITY_APP.subwayRide.inside||window.__CITY_APP.subwayRide.active)throw new Error('Touch station entry failed');"
+  },
+  {
+    "name": "subway-phone-arrival",
+    "wait": 500,
+    "js": "(async () => {const a=window.__CITY_APP,R=a.subwayRide; a.film.start(10); try {for(let i=0;i<180 && !(R.car.stopIndex===1&&R.car.doorState==='open');i++) await a.film.step(25); if(!R.active||R.car.stopIndex!==1||R.car.doorState!=='open') throw new Error('Phone arrival failed'); console.log('[ride-check] phone arrived at '+R.car.track.destination.name); } finally {a.film.stop();}})()"
+  },
+  {
+    "name": "subway-phone-alight",
+    "tap": "#ride-status",
+    "wait": 700
+  },
+  {
+    "name": "subway-phone-persist",
+    "wait": 300,
+    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide;if(R.active||!R.inside||a.controllerManager.suspended)throw new Error('Touch alighting failed'); window.dispatchEvent(new Event('pagehide')); const saved=JSON.parse(localStorage.getItem('toronto-player-state')); const p=saved.entities[saved.activeMode],safe=R.savedGround(saved.activeMode); if(Math.hypot(p.x-safe.x,p.z-safe.z)>.01 || Math.abs(p.y-safe.y)>.01)throw new Error('Saved an interior position'); window.__subwaySafe=safe;history.replaceState(null,'',location.pathname+location.search); console.log('[ride-check] phone touch entry/boarding/alighting and safe persistence pass');})()"
+  },
+  {
+    "name": "subway-phone-reload",
+    "reload": true,
+    "wait": 1000,
+    "js": "(() => {const a=window.__CITY_APP;if(a.subwayRide.inside||a.rideSession.active||a.controllerManager.interiorSpace||a.controllerManager.suspended||a.cameraSystem.camera.layers.mask!==1)throw new Error('Reload left player underground');const p=a.controllerManager.getActiveEntity().position;if(Math.abs(p.y-a.controllerManager.getGroundHeight(p.x,p.z,a.controllerManager.activeMode))>.1||Math.hypot(p.x-2736,p.z+2859.4)>160)throw new Error('Reload did not restore Broadview street'); console.log('[ride-check] actual reload restores Broadview street');})()"
+  }
+]

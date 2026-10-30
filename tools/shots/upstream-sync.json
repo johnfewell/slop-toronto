@@ -1,0 +1,7 @@
+[
+  { "name": "upstream-bike-golden", "time": "golden", "wait": 4000 },
+  { "name": "upstream-car-midday", "mode": "car", "time": "midday", "hold": "KeyW", "wait": 6000 },
+  { "name": "upstream-car-night", "time": "midnight", "wait": 4000 },
+  { "name": "upstream-walk", "mode": "person", "time": "golden", "hold": "KeyW", "wait": 3000 },
+  { "name": "upstream-helicopter", "mode": "helicopter", "wait": 3000 }
+]

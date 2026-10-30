@@ -1,0 +1,52 @@
+[
+ {
+  "name": "r3-geodata-boot",
+  "time": "midday",
+  "wait": 1500,
+  "record": true,
+  "js": "(() => {\n  const app = window.__CITY_APP, C = window.CITY;\n  const res = performance.getEntriesByType('resource').filter((e) => /geodata/.test(e.name))\n    .map((e) => ({ file: e.name.split('/').pop(), bytes: e.encodedBodySize, ms: Math.round(e.responseEnd - e.startTime) }));\n  if (res.some((r) => /toronto-geodata\\.js/.test(r.file))) throw new Error('the 10.6 MB js/toronto-geodata.js was loaded');\n  if (!res.some((r) => /toronto-geodata\\.bin/.test(r.file))) throw new Error('data/toronto-geodata.bin was not fetched');\n  const G = C.GEO;\n  if (!(G.roadGraph.links.length > 0 && G.blocks.length > 0)) throw new Error('GEO is empty');\n  const s = app.cullingStats || {};\n  return { geodata: res, decodeMs: performance.getEntriesByName('geodata-decode').map((e) => +e.duration.toFixed(1)),\n    links: G.roadGraph.links.length, blocks: G.blocks.length,\n    culling: { mergedMeshes: s.mergedMeshes, mergedInto: s.mergedInto, proxyBuckets: s.proxyBuckets, gatedInstances: s.gatedInstances },\n    names: { sugarBeach: C.getLocationLabel(1190, 520), eastBayfront: C.districtAt(1200, 500), harbourfront: C.districtAt(-400, 600), kingBay: C.districtAt(132, -350) } };\n})()"
+ },
+ {
+  "name": "r3-harbourfront",
+  "mode": "cyclist",
+  "time": "golden",
+  "wait": 1500,
+  "record": true,
+  "js": "(async () => {\n  const app = window.__CITY_APP;\n  app.teleportTo(60, 540, Math.atan2(-260, 35));\n  const cam = { pos: [60, 2.2, 540], look: [-200, 1.5, 575], fov: 60 };\n  app.cameraSystem.cinema = () => cam;\n  await new Promise((r) => setTimeout(r, 7000));\n  const i = app.renderer.info.render;\n  return { label: window.CITY.getLocationLabel(60, 540), render: { drawCalls: i.drawCalls, calls: i.calls, triangles: i.triangles, frameCalls: i.frameCalls } };\n})()"
+ },
+ {
+  "name": "r3-bus-route",
+  "time": "midday",
+  "wait": 6000,
+  "record": true,
+  "js": "(() => {\n  const app = window.__CITY_APP, B = app.transitBuses;\n  if (!B) throw new Error('no transit buses');\n  const pats = new Map();\n  for (const r of B.routes) pats.set(r.pat, (pats.get(r.pat) || 0) + 1);\n  const split = [...pats].filter(([, n]) => n > 1).map(([p, n]) => p.sign[0] + ' (' + n + ')');\n  const r = B.routes.find((x) => x.pat.route === '6' || x.pat.route === 6) || B.routes[0];\n  const e = r.links[Math.floor(r.links.length / 2)];\n  app.selectMode('helicopter');\n  app.teleportTo(e.sx, e.sz, 0);\n  app.cameraSystem.cinema = () => ({ pos: [e.sx - 70, 90, e.sz + 70], look: [e.sx, 0, e.sz], fov: 50 });\n  return { routePieces: B.routes.length, patternsMatched: pats.size, split, buses: B.routes.reduce((t, x) => t + x.buses.length, 0),\n    shown: { route: r.pat.route, sign: r.sign.join(' / '), links: r.links.length, len: Math.round(r.len), stops: r.stops.length, of: r.pat.stops.length } };\n})()"
+ },
+ {
+  "name": "r3-prop-collisions",
+  "time": "midday",
+  "wait": 5000,
+  "record": true,
+  "js": "(() => {\n  const app = window.__CITY_APP, cm = app.controllerManager;\n  const out = { inventory: {} };\n  for (const c of cm.colliders) if (c.prop) out.inventory[c.kind || 'other'] = (out.inventory[c.kind || 'other'] || 0) + 1;\n  let clock = 5000;\n  // a walker set 2.4 m out on the collider's axis (dir: unit vector from it), walking straight at it for 3 s\n  function walkInto(c, dir) {\n    const cx = c.circle ? c.circle.x : c.obb ? c.obb.cx : (c.minX + c.maxX) / 2, cz = c.circle ? c.circle.z : c.obb ? c.obb.cz : (c.minZ + c.maxZ) / 2;\n    const x = cx + dir[0] * 2.4, z = cz + dir[1] * 2.4, heading = Math.atan2(-dir[0], -dir[1]);\n    if (!cm.findTeleportPosition(x, z, heading, 0, true)) return null;\n    app.selectMode('person');\n    const e = cm.getActiveEntity();\n    cm.resetInput();\n    e.position.set(x, cm.getGroundHeight(x, z, 'person'), z);\n    e.heading = heading; e.speed = 0;\n    for (const k of ['vx', 'vz', 'angularVel', 'verticalSpeed', 'verticalVel']) if (k in e) e[k] = 0;\n    e.mesh.position.copy(e.position);\n    cm.lastWorldContact = null;\n    cm.keys.forward = true;\n    let closest = Infinity;\n    for (let i = 0; i < 180; i++) {\n      e.heading = heading;\n      cm.update(1 / 60, (clock += 1 / 60));\n      closest = Math.min(closest, (e.position.x - cx) * dir[0] + (e.position.z - cz) * dir[1]);\n    }\n    cm.resetInput();\n    const hit = cm.lastWorldContact && cm.lastWorldContact.collider;\n    return { kind: c.kind, at: [Math.round(cx), Math.round(cz)], closestAlongAxis: Math.round(closest * 100) / 100, stoppedBy: hit ? (hit === c ? 'it' : hit.kind || 'other') : 'nothing' };\n  }\n  const near = (kind, x, z) => cm.colliders.filter((c) => c.prop && c.kind === kind)\n    .map((c) => ({ c, d: Math.hypot((c.circle ? c.circle.x : c.obb ? c.obb.cx : (c.minX + c.maxX) / 2) - x, (c.circle ? c.circle.z : c.obb ? c.obb.cz : (c.minZ + c.maxZ) / 2) - z) }))\n    .sort((a, b) => a.d - b.d).slice(0, 40).map((o) => o.c);\n  const dirsFor = (c) => c.obb ? [[c.obb.sn, c.obb.cs], [-c.obb.sn, -c.obb.cs]] : [[1, 0], [0, 1], [-1, 0], [0, -1]];\n  out.walks = {};\n  for (const kind of ['hydrant', 'litterBin', 'postBox', 'bench', 'parkingMeter']) {\n    for (const c of near(kind, 132, -350)) {\n      let r = null;\n      for (const d of dirsFor(c)) if ((r = walkInto(c, d)) && r.stoppedBy === 'it') break;\n      if (r && r.stoppedBy === 'it') { out.walks[kind] = r; break; }\n    }\n    if (!out.walks[kind]) throw new Error('no clear walk into a ' + kind + ' near King & Bay stopped at it');\n    // never through: the walker's middle stays outside the furniture (the slim body: 0.3 m)\n    if (!(out.walks[kind].closestAlongAxis > 0.2)) throw new Error(kind + ': walked through (' + out.walks[kind].closestAlongAxis + ')');\n  }\n  const w = out.walks.hydrant, hx = w.at[0], hz = w.at[1];\n  app.teleportTo(hx + 3, hz + 3, Math.PI);\n  const p = cm.getActiveEntity().position;\n  app.cameraSystem.cinema = () => ({ pos: [hx + 7, p.y + 6, hz + 9], look: [hx, p.y + 0.6, hz], fov: 50 });\n  return out;\n})()"
+ },
+ {
+  "name": "r3-streetcar-seat",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "record": true,
+  "js": "(() => {\n  const a = window.__CITY_APP;\n  a.cameraSystem.cinema = null;\n  document.getElementById('locate-prompt') && (document.getElementById('locate-prompt').hidden = true);\n  if (!a.rideFeatured('504')) throw new Error('featured 504 ride did not start');\n  const R = a.streetcarRide;\n  if (!R.active) throw new Error('not riding');\n  return { active: R.active, car: R.car && (R.car.id ?? null) };\n})()"
+ },
+ {
+  "name": "r3-streetcar-chase",
+  "camera": "chase",
+  "wait": 4000,
+  "record": true,
+  "js": "(() => { const a = window.__CITY_APP; if (!a.streetcarRide.active) throw new Error('ride ended early'); return { active: true }; })()"
+ },
+ {
+  "name": "r3-ride-cleanup",
+  "wait": 2000,
+  "record": true,
+  "js": "(() => { const a = window.__CITY_APP; a.selectMode('cyclist'); if (a.streetcarRide.active || a.controllerManager.suspended) throw new Error('mode change did not end the ride'); a.cameraSystem.cinema = null; return { ended: true }; })()"
+ }
+]

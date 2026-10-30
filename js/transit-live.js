@@ -27,7 +27,10 @@ function headingVector(lat, lon, deg) {
   return { x: (b.x - a.x) / L, z: (b.z - a.z) / L };
 }
 
+let presentationHeld = false, pendingPublish = false;
 function publish() {
+  if (presentationHeld) { pendingPublish = true; return; }
+  pendingPublish = false;
   for (const f of listeners) f(live);
 }
 
@@ -73,6 +76,13 @@ if (!off) {
 
 Object.assign(TRANSIT, {
   live,
+  setPresentationHeld(held) {
+    presentationHeld = Boolean(held);
+    if (!presentationHeld && pendingPublish) {
+      if (live.mode === 'live' && Date.now() - live.at > STALE) { live.mode = 'timetable'; live.vehicles = []; }
+      publish();
+    }
+  },
   onLive(f) {
     listeners.push(f);
   }

@@ -1,0 +1,4 @@
+[
+  { "name": "large-scene", "viewport": { "width": 2200, "height": 1100 }, "js": "window.__testPhoto('skyline', true)", "download": "text=Download JPEG", "wait": 100 },
+  { "name": "default-resize-cancel", "viewport": "default", "js": "window.__testPhotoCancellation()", "wait": 100 }
+]

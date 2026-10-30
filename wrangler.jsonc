@@ -1,9 +1,17 @@
 // Cloudflare: the site is served as a Worker's static assets from dist/ (node tools/build-site.mjs builds it, with
 // dist/_headers); requests no asset matches reach worker/live.js (/live/vehicles: the TTC's live positions, the rest
-// back to the assets). Deploy: node tools/build-site.mjs && npx wrangler@4 deploy
+// back to the assets). The pages (run_worker_first) also reach it first, so the old workers.dev address can redirect
+// to sloptoronto.ca; preview and version URLs (*-slop-toronto.cloud6711.workers.dev) are left alone.
+// Deploy: node tools/build-site.mjs && npx wrangler@4 deploy
 {
   "name": "slop-toronto",
   "main": "worker/live.js",
   "compatibility_date": "2026-10-01",
-  "assets": { "directory": "./dist", "binding": "ASSETS" }
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/", "/index*", "/explore*"] },
+  "workers_dev": true,
+  "preview_urls": true,
+  "routes": [
+    { "pattern": "sloptoronto.ca", "custom_domain": true },
+    { "pattern": "www.sloptoronto.ca", "custom_domain": true }
+  ]
 }

@@ -1,0 +1,7 @@
+[
+  {
+    "name": "geo-bench",
+    "wait": 8000,
+    "js": "(async () => { const m = await import('./js/geodata-loader.js'); const txt = await (await fetch('./js/toronto-geodata.js')).text(); const buf = await (await fetch('./data/toronto-geodata.bin')).arrayBuffer(); const js = [], bin = []; for (let i = 0; i < 5; i++) { let t = performance.now(); new Function('window', txt)({}); js.push(+(performance.now() - t).toFixed(1)); t = performance.now(); await m.unpackGeo(buf.slice(0)); bin.push(+(performance.now() - t).toFixed(1)); } console.log('GEO-BENCH ' + JSON.stringify({ jsParseEvalMs: js, binInflateDecodeMs: bin })); })()"
+  }
+]

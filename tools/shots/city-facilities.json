@@ -1,0 +1,35 @@
+[
+  {
+    "name": "city-washroom",
+    "mode": "person",
+    "time": "midday",
+    "js": "(() => {const a=window.__CITY_APP,C=window.CITY,N=C.Navigation,p=N.buildIndex().find(p=>p.city?.id==='city-washroom:2006');if(!p||p.city.match.name!=='Trinity Community Recreation Centre')throw new Error('Indoor washroom match missing');a.tourGuide.showPlace(p,{fly:false});const t=document.getElementById('pc-city-info').textContent;if(!t.includes('Reported status')||!t.includes('2026-03-10'))throw new Error('Dated status missing');console.log('[ride-check] City washroom card '+t);})()",
+    "wait": 1500
+  },
+  {
+    "name": "city-park",
+    "js": "(() => {const a=window.__CITY_APP,N=window.CITY.Navigation,p=N.buildIndex().find(p=>p.city?.id==='city-facility:1058');if(!p||!N.searchPlaces('pickleball',{limit:50}).some(p=>p.city))throw new Error('Amenity search missing');a.tourGuide.showPlace(p,{fly:false});const t=document.getElementById('pc-city-info').textContent;if(!t.includes('Dog Off-Leash Area')||!t.includes('Washroom')||!t.includes('Drinking Water Station')||!t.includes('tennis courts')||!t.includes('Artificial Ice Rink'))throw new Error('Park amenities missing');console.log('[ride-check] park info '+t);})()",
+    "wait": 1000
+  },
+  {
+    "name": "city-park-directions-tap",
+    "js": "(() => {const a=window.__CITY_APP,b=document.getElementById('pc-directions'),r=b.getBoundingClientRect();if(a.touchControls.available&&!document.getElementById('touch-controls').hidden)throw new Error('Movement controls overlap place card');if(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('button')!==b)throw new Error('Directions tap target is intercepted');})()",
+    "tapMobile": "#pc-directions",
+    "wait": 1000
+  },
+  {
+    "name": "city-water",
+    "js": "(() => {const a=window.__CITY_APP;if(a.touchControls.available&&document.getElementById('directions-panel').hidden)throw new Error('Phone directions tap failed');const N=window.CITY.Navigation,p=N.buildIndex().find(p=>p.city?.id==='city-water:2515:dog-fountain+drinking-fountain');if(!p)throw new Error('Typed water record missing');a.tourGuide.showPlace(p,{fly:false});const t=document.getElementById('pc-city-info').textContent;if(!t.includes(p.city.statusAt.slice(0,10))||!t.includes('Dated City report'))throw new Error('Water status date missing');console.log('[ride-check] water info '+t);})()",
+    "wait": 1000
+  },
+  {
+    "name": "city-rink",
+    "js": "(() => {const a=window.__CITY_APP,p=window.CITY.Navigation.buildIndex().find(p=>p.city?.id==='city-rink:43607');a.tourGuide.showPlace(p,{fly:false});const t=document.getElementById('pc-city-info').textContent;if(!t.includes('54.86')||!t.includes('180 \u00d7 80 ft'))throw new Error('Rink units missing');console.log('[ride-check] rink info '+t);})()",
+    "wait": 1000
+  },
+  {
+    "name": "city-tennis-club",
+    "js": "(() => {const a=window.__CITY_APP,p=window.CITY.Navigation.buildIndex().find(p=>p.city?.id==='city-tennis:77:club');a.tourGuide.showPlace(p,{fly:false});const t=document.getElementById('pc-city-info').textContent;if(!t.includes('Club facility')||!t.includes('Howard Park Tennis Club')||!t.includes('Courts: 7'))throw new Error('Club access metadata missing');console.log('[ride-check] tennis access '+t);})()",
+    "wait": 1000
+  }
+]

@@ -1,0 +1,7 @@
+[
+  { "name": "settling-skyline-golden", "js": "window.__testPhotoConvergence('skyline')", "record": true, "wait": 100 },
+  { "name": "settling-sugar-beach-midday", "js": "window.__testPhotoConvergence('sugarBeach', 'midday')", "record": true, "wait": 100 },
+  { "name": "settling-market-midday", "js": "window.__testPhotoConvergence('stLawrence', 'midday')", "record": true, "wait": 100 },
+  { "name": "settling-viaduct-golden", "js": "window.__testPhotoConvergence('viaduct')", "record": true, "wait": 100 },
+  { "name": "settling-skyline-night", "js": "window.__testPhotoConvergence('skyline', 'midnight')", "record": true, "wait": 100 }
+]

@@ -72,6 +72,15 @@ function buildTerrain(scene) {
   near.receiveShadow = true;
   near.castShadow = true;
   group.add(near);
+  // The near grid's drawn height at (x, z): its triangles (a, d, b) and (b, d, e) interpolate the 60 m corners, which is
+  // not terrainHeightAt's finer lookup. Prepared surfaces cut into it (rinks.js) wall their edge up to this height
+  window.CITY.terrainNearHeightAt = (x, z) => {
+    const fc = (x - nx0) / 60, fr = (z - nz0) / 60;
+    const c = Math.min(Math.max(Math.floor(fc), 0), Math.round((nx1 - nx0) / 60) - 1), r = Math.min(Math.max(Math.floor(fr), 0), Math.round((nz1 - nz0) / 60) - 1);
+    const tx = fc - c, tz = fr - r, xa = nx0 + c * 60, za = nz0 + r * 60;
+    const ha = heightAt(xa, za), hb = heightAt(xa + 60, za), hd = heightAt(xa, za + 60), he = heightAt(xa + 60, za + 60);
+    return tx + tz <= 1 ? ha + (hb - ha) * tx + (hd - ha) * tz : he + (hd - he) * (1 - tx) + (hb - he) * (1 - tz);
+  };
 
   // Far grid: everything else the terrain data covers (sunk a little under the near grid where they overlap)
   const inNear = (x, z) => x >= nx0 && x <= nx1 && z >= nz0 && z <= nz1;

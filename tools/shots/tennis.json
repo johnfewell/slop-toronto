@@ -1,0 +1,62 @@
+[
+  {
+    "name": "tennis-sorauren",
+    "mode": "person",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=null;(() => {const C=window.CITY,a=window.__CITY_APP,s=C.tennisStats;console.log('[ride-check] tennis '+JSON.stringify({sourceCount:s.sourceCount,placed:s.placed,rejected:s.rejected,trianglesPerCourt:s.trianglesPerCourt,terrain:s.terrain,pads:s.pads.length,rejectedPads:s.rejectedPads}));if(s.sourceCount!==43||s.placed!==43||s.pads.length!==14||s.rejectedPads.length!==1||s.rejectedPads[0].id!=='306')throw new Error('Reviewed courts missing');for(const site of s.sites){const h=a.controllerManager.getGroundHeight(site.x,site.z,'person',site.y);if(Math.abs(h-site.y)>.001)throw new Error('Court walking floor mismatch '+site.id+': '+h);}const p=s.sites.find(r=>r.cityLocationId==='348');if(!p)throw new Error('Reviewed facility missing');const q=C.courtPoint(p,0,-16);a.teleportTo(q.x,q.z,Math.atan2(p.x-q.x,p.z-q.z));a.selectCamera('pov',true);window.__court=p;})()",
+    "wait": 1800
+  },
+  {
+    "name": "tennis-ground-review",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,T=C.THREE,ray=new T.Raycaster(),out=[];a.scene.updateMatrixWorld(true);for(const s of C.tennisStats.sites.filter(r=>r.cityLocationId==='241'||r.cityLocationId==='348')){ray.set(new T.Vector3(s.x,3,s.z),new T.Vector3(0,-1,0));out.push({id:s.id,hits:ray.intersectObjects(a.scene.children,true).filter(h=>h.point.y<.8&&h.point.y>-.5).slice(0,8).map(h=>({name:h.object.name,y:h.point.y}))});}if(out.some(r=>r.hits.some(h=>h.name==='TerrainNear'&&h.y>.23)))throw new Error('Terrain covers a reviewed court');console.log('[ride-check] tennis-ground '+JSON.stringify(out));})()",
+    "wait": 500
+  },
+  {
+    "name": "tennis-overview",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,p=window.__court,q=C.courtPoint(p,18,-22);a.cameraSystem.cinema=()=>({pos:[q.x,p.y+25,q.z],look:[p.x,p.y,p.z],fov:55});})()",
+    "wait": 1000
+  },
+  {
+    "name": "tennis-net-approach",
+    "mode": "person",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,p=window.__court,q=C.courtPoint(p,0,-3);a.cameraSystem.cinema=null;a.teleportTo(q.x,q.z,p.yaw);a.selectCamera('pov',true);window.__netStart={x:q.x,z:q.z};})()",
+    "hold": "KeyW",
+    "wait": 2800
+  },
+  {
+    "name": "tennis-net-stop",
+    "js": "(() => {const a=window.__CITY_APP,s=window.__court,e=a.controllerManager.getActiveEntity(),dx=e.position.x-s.x,dz=e.position.z-s.z,v=dx*Math.sin(s.yaw)+dz*Math.cos(s.yaw);console.log('[ride-check] net stop '+JSON.stringify({v,position:e.position}));if(v>-.12||v< -1.2)throw new Error('Walking net collider did not stop the player');})()",
+    "wait": 300
+  },
+  {
+    "name": "tennis-trinity",
+    "mode": "person",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=null;(() => {const C=window.CITY,a=window.__CITY_APP,s=C.tennisStats;console.log('[ride-check] tennis '+JSON.stringify({sourceCount:s.sourceCount,placed:s.placed,rejected:s.rejected}));if(s.sourceCount!==43||s.placed<30)throw new Error('Reviewed courts missing');const p=s.sites.find(r=>r.cityLocationId==='241');if(!p)throw new Error('Reviewed facility missing');const q=C.courtPoint(p,0,-16);a.teleportTo(q.x,q.z,Math.atan2(p.x-q.x,p.z-q.z));a.selectCamera('pov',true);window.__court=p;})()",
+    "wait": 1800
+  },
+  {
+    "name": "tennis-trinity-overview",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,p=window.__court,q=C.courtPoint(p,22,-30);a.cameraSystem.cinema=()=>({pos:[q.x,p.y+32,q.z],look:[p.x,p.y,p.z],fov:58});})()",
+    "wait": 1000
+  },
+  {
+    "name": "tennis-high-park",
+    "mode": "person",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=null;(() => {const C=window.CITY,a=window.__CITY_APP,s=C.tennisStats;console.log('[ride-check] tennis '+JSON.stringify({sourceCount:s.sourceCount,placed:s.placed,rejected:s.rejected}));if(s.sourceCount!==43||s.placed<30)throw new Error('Reviewed courts missing');const p=s.sites.find(r=>r.cityLocationId==='77');if(!p)throw new Error('Reviewed facility missing');const q=C.courtPoint(p,0,-16);a.teleportTo(q.x,q.z,Math.atan2(p.x-q.x,p.z-q.z));a.selectCamera('pov',true);window.__court=p;})()",
+    "wait": 1800
+  },
+  {
+    "name": "tennis-moss",
+    "mode": "person",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=null;(() => {const C=window.CITY,a=window.__CITY_APP,s=C.tennisStats;console.log('[ride-check] tennis '+JSON.stringify({sourceCount:s.sourceCount,placed:s.placed,rejected:s.rejected}));if(s.sourceCount!==43||s.placed<30)throw new Error('Reviewed courts missing');const p=s.sites.find(r=>r.cityLocationId==='177');if(!p)throw new Error('Reviewed facility missing');const q=C.courtPoint(p,0,-16);a.teleportTo(q.x,q.z,Math.atan2(p.x-q.x,p.z-q.z));a.selectCamera('pov',true);window.__court=p;})()",
+    "wait": 1800
+  },
+  {
+    "name": "tennis-night",
+    "time": "midnight",
+    "wait": 1800
+  }
+]

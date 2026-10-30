@@ -291,7 +291,7 @@ async function buildBikeShare(scene) {
       p.set(kx, y, kz);
       m.compose(p, q, sc);
       kiosksMesh.setMatrixAt(ki++, m);
-      colliders.push({ minX: kx - 0.36, maxX: kx + 0.36, minZ: kz - 0.36, maxZ: kz + 0.36, maxY: y + 3.2, obb: { cx: kx, cz: kz, hx: 0.28, hz: 0.22, cs, sn } });
+      colliders.push({ minX: kx - 0.36, maxX: kx + 0.36, minZ: kz - 0.36, maxZ: kz + 0.36, maxY: y + 3.2, obb: { cx: kx, cz: kz, hx: 0.28, hz: 0.22, cs, sn }, prop: true }); // (street furniture: world-collision.js)
     }
   }
   for (const [mesh, cull] of [[docksMesh, DOCK_CULL], [kiosksMesh, KIOSK_CULL]]) {
@@ -361,26 +361,30 @@ async function buildBikeShare(scene) {
   // 4. the live counts
   const stats = { cleared, sites: sites.length, stations: stations.length, docks: nDocks, kiosks: nKiosks, live: false, liveStations: 0, liveAt: null, liveError: null, bikesShown: 0, stationsNear: 0 };
   const byId = new Map(stations.map((st) => [st.id, st]));
-  let nextFetch = 0, failures = 0, inFlight = false;
+  let nextFetch = 0, failures = 0, inFlight = false, pendingStatus = null;
+  function applyStatus(j) {
+    let n = 0;
+    const now = Date.now() / 1000;
+    for (const s of j.data.stations) {
+      const st = byId.get(+s.station_id);
+      if (!st) continue;
+      const fresh = s.is_installed !== 0 && (!s.last_reported || now - s.last_reported < 86400);
+      st.live = fresh ? Math.max(0, (s.num_bikes_available | 0) + (s.num_bikes_disabled | 0)) : null;
+      if (fresh) n++;
+    }
+    Object.assign(stats, { live: true, liveStations: n, liveAt: new Date((j.last_updated || now) * 1000).toISOString(), liveError: null });
+    pendingStatus = null; dirty = true;
+  }
   async function fetchStatus() {
     inFlight = true;
     try {
       const res = await fetch(DATA.statusUrl, { credentials: 'omit', referrerPolicy: 'no-referrer', mode: 'cors' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json();
-      let n = 0;
-      const now = Date.now() / 1000;
-      for (const s of j.data.stations) {
-        const st = byId.get(+s.station_id);
-        if (!st) continue;
-        // a station that hasn't reported in a day (or is not installed) keeps its plausible fill
-        const fresh = s.is_installed !== 0 && (!s.last_reported || now - s.last_reported < 86400);
-        st.live = fresh ? Math.max(0, (s.num_bikes_available | 0) + (s.num_bikes_disabled | 0)) : null;
-        if (fresh) n++;
-      }
-      Object.assign(stats, { live: true, liveStations: n, liveAt: new Date((j.last_updated || now) * 1000).toISOString(), liveError: null });
+      if (!Array.isArray(j?.data?.stations)) throw new Error('missing station status');
+      pendingStatus = j; stats.cachedAt = Date.now();
+      if (!window.CITY.presentationHeld) applyStatus(j);
       failures = 0;
-      dirty = true;
     } catch (e) {
       failures++;
       stats.liveError = String(e && e.message || e);
@@ -397,6 +401,8 @@ async function buildBikeShare(scene) {
   if (!bikesMesh.count) { bikesMesh.count = 1; bikesMesh.setMatrixAt(0, new THREE.Matrix4().makeTranslation(stations[0].x, -50, stations[0].z)); }
 
   function update(cam) {
+    if (window.CITY.presentationHeld) return;
+    if (pendingStatus) applyStatus(pendingStatus);
     if (LIVE && DATA.statusUrl && !inFlight && !document.hidden && performance.now() >= nextFetch) fetchStatus();
     if (dirty || Math.hypot(cam.x - lastX, cam.z - lastZ) > 8) {
       lastX = cam.x; lastZ = cam.z; dirty = false;

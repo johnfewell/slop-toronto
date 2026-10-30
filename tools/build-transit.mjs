@@ -6,11 +6,13 @@
 //   pattern's middle stop in the city: the headway by time of day (3600 / trips that hour);
 // - the scheduled speed through the city (stop to stop, dwell included) for spacing the vehicles at the start;
 // - stops: position & name, shared between patterns.
+// - subway patterns retain representative stop departure times for simulated passenger journeys.
 // usage: node tools/build-transit.mjs [gtfs feed dir] [out.js]     (default ~/.cache/slop-toronto/gtfs/feed)
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
 import vm from 'node:vm';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const FEED = process.argv[2] || path.join(process.env.HOME, '.cache/slop-toronto/gtfs/feed');
@@ -128,6 +130,7 @@ const r1 = (x) => Math.round(x * 10) / 10;
 const stopIndex = new Map();
 const stopOut = [];
 const stopNames = [];
+const stopIds = [];
 const routeIndex = new Map();
 const routeOut = [];
 const patterns = [];
@@ -177,6 +180,7 @@ for (const [shape, r] of rep) {
       stopIndex.set(s.stop, stopOut.length / 2);
       stopOut.push(r1(st.w[0]), r1(st.w[1]));
       stopNames.push(st.name);
+      stopIds.push(st.id);
     }
     return stopIndex.get(s.stop);
   });
@@ -186,19 +190,94 @@ for (const [shape, r] of rep) {
   const m = anyTrip.sign.replace(/^(East|West|North|South)\s*-\s*/i, '').split(/\s+towards\s+/i);
   const label = /^\d/.test(m[0]) ? m[0].replace(/\s*(Short Turn|Replacement Bus)\b/gi, '') : `${route.num} ${route.name}`;
   const dest = (m[1] || '').replace(/\s+via\s+.*$/i, '').replace(/\bStation\b/i, 'Stn');
-  patterns.push({ r: routeIndex.get(route.id), d: anyTrip.dir, t, sign: anyTrip.sign, label: [label.toUpperCase(), dest.toUpperCase()], n, v, perHour, pts, stops: sIdx, len: Math.round(len) });
+  patterns.push({ rid: route.id, sids: on.map((s) => s.stop), r: routeIndex.get(route.id), d: anyTrip.dir, t, sign: anyTrip.sign, label: [label.toUpperCase(), dest.toUpperCase()], n, v, perHour, pts, stops: sIdx, times: on.map((s) => s.t), len: Math.round(len) });
 }
-// The TTC gives the same stopping pattern a shape per time band: one pattern per route, direction and first & last stop in
-// the city, its trips summed (the longest shape kept)
+// The TTC gives the same stopping pattern a shape per time band: one pattern per source identity, its trips summed (the
+// longest shape kept). The identity (docs/geodata-ids.md) is the GTFS route, direction, what it runs as and the ordered
+// GTFS stops in the city, plus a reviewed variant key (tools/data/transit-variants.json) where shapes calling at the same
+// stops take different streets. Grouped by all of it, not by the first & last stop: a branch keeps its own pattern.
+const VARIANTS = JSON.parse(fs.readFileSync(fileURLToPath(new URL('data/transit-variants.json', import.meta.url)), 'utf8'));
+const seqHash = (sids) => createHash('sha256').update(sids.join('>')).digest('hex').slice(0, 10);
+const segDist = (x, z, ax, az, bx, bz) => {
+  const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz;
+  const u = L ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L)) : 0;
+  return Math.hypot(x - ax - u * dx, z - az - u * dz);
+};
+const near = (pts, x, z) => {
+  let d = Infinity;
+  for (let i = 2; i < pts.length; i += 2) d = Math.min(d, segDist(x, z, pts[i - 2], pts[i - 1], pts[i], pts[i + 1]));
+  return d;
+};
+// distance along a line [x, z, ...] to its nearest point to (x, z)
+const along = (pts, x, z) => {
+  let best = Infinity, at = 0, s = 0;
+  for (let i = 2; i < pts.length; i += 2) {
+    const ax = pts[i - 2], az = pts[i - 1], dx = pts[i] - ax, dz = pts[i + 1] - az, L = Math.hypot(dx, dz);
+    const u = L ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (L * L))) : 0;
+    const d = Math.hypot(x - ax - u * dx, z - az - u * dz);
+    if (d < best) { best = d; at = s + u * L; }
+    s += L;
+  }
+  return at;
+};
+// points every 10 m along a line between two distances along it
+const sample = (pts, s0, s1) => {
+  const out = [];
+  let s = 0;
+  for (let i = 2; i < pts.length; i += 2) {
+    const ax = pts[i - 2], az = pts[i - 1], L = Math.hypot(pts[i] - ax, pts[i + 1] - az);
+    for (let t = Math.ceil(s / 10) * 10; t <= s + L; t += 10) {
+      if (t < s0 || t > s1) continue;
+      const u = L ? (t - s) / L : 0;
+      out.push([ax + (pts[i] - ax) * u, az + (pts[i + 1] - az) * u]);
+    }
+    s += L;
+  }
+  return out;
+};
+// how far two shapes of one stopping pattern stray from each other (m), between its first and last stop: each shape's
+// points there from the other's line (the stretches beyond the end stops are clipped at different places)
+const STOP_XZ = (i) => [stopOut[2 * i], stopOut[2 * i + 1]];
+const strays = (p, q, first, last) => {
+  let d = 0;
+  for (const [a, b] of [[p, q], [q, p]]) {
+    const s0 = along(a.pts, ...first), s1 = along(a.pts, ...last);
+    for (const [x, z] of sample(a.pts, Math.min(s0, s1), Math.max(s0, s1))) d = Math.max(d, near(b.pts, x, z));
+  }
+  return d;
+};
+const PATH_TOLERANCE = 20; // m: shapes closer than this along their whole stretch are the same path
+for (const p of patterns) {
+  p.base = `ttc:${p.rid}:${p.d}:${p.t}:${seqHash(p.sids)}`;
+  const v = (VARIANTS.variants || []).find((w) => w.pattern === p.base && near(p.pts, w.near[0], w.near[1]) <= (w.r || 25));
+  p.id = v ? `${p.base}:${v.key}` : p.base;
+}
 const merged = new Map();
 for (const p of patterns) {
-  const k = `${p.r}|${p.d}|${p.stops[0]}|${p.stops.at(-1)}|${p.t}`;
+  const k = p.id;
   const m = merged.get(k);
-  if (!m) { merged.set(k, p); continue; }
-  if (p.len > m.len) Object.assign(m, { pts: p.pts, stops: p.stops, len: p.len, sign: m.n >= p.n ? m.sign : p.sign, v: m.n >= p.n ? m.v : p.v });
+  // (each shape's own path, before the longest is copied over the first)
+  if (!m) { merged.set(k, p); p.members = [{ pts: p.pts, len: p.len }]; continue; }
+  m.members.push({ pts: p.pts, len: p.len });
+  if (p.len > m.len) Object.assign(m, { pts: p.pts, stops: p.stops, times: p.times, len: p.len, sign: m.n >= p.n ? m.sign : p.sign, v: m.n >= p.n ? m.v : p.v });
   m.n += p.n;
   m.perHour = m.perHour.map((x, i) => x + p.perHour[i]);
 }
+// shapes of one identity that take different streets need a reviewed variant key
+const unreviewed = [];
+for (const m of merged.values()) {
+  const longest = m.members.reduce((a, p) => (p.len > a.len ? p : a));
+  // (or a reviewed decision that they are one path: { pattern, same: true, maxStray (m), note })
+  const same = (VARIANTS.reviewed || []).find((w) => w.pattern === m.id && w.same);
+  const first = STOP_XZ(m.stops[0]), last = STOP_XZ(m.stops.at(-1));
+  for (const p of m.members) {
+    const d = strays(p, longest, first, last);
+    if (d > (same ? same.maxStray : PATH_TOLERANCE)) unreviewed.push(`${m.id} (${routeOut[m.r][0]} d${m.d}): a shape strays ${Math.round(d)} m from the longest`);
+  }
+}
+if (unreviewed.length) throw new Error(`shapes calling at the same stops take different paths; add reviewed variants to tools/data/transit-variants.json:\n  ${unreviewed.join('\n  ')}`);
+for (const [id, p] of merged) if ((VARIANTS.aliases || {})[id]) throw new Error(`pattern alias ${id} is a live pattern ID`);
+for (const [from, to] of Object.entries(VARIANTS.aliases || {})) if (!merged.has(to)) throw new Error(`pattern alias ${from} -> ${to}: no such pattern`);
 patterns.length = 0;
 patterns.push(...merged.values());
 patterns.sort((a, b) => a.r - b.r || a.d - b.d || b.n - a.n);
@@ -214,8 +293,11 @@ const data = {
   routes: routeOut,
   stops: stopOut,
   stopNames,
-  // (the subway's only its trips per hour: js/subway.js runs it on OpenStreetMap's lines)
-  patterns: patterns.map(({ r, d, t, label, n, v, perHour, pts, stops: s }) => (t === 1 ? { r, d, t, sign: label, n, h: perHour } : { r, d, t, sign: label, n, v, h: perHour, pts, stops: s }))
+  stopIds,
+  // Subway geometry follows OSM; its retained calls/times inform simulated passenger service.
+  // id: the pattern's durable identity (docs/geodata-ids.md); the other fields as before
+  patterns: patterns.map(({ id, r, d, t, label, n, v, perHour, pts, stops: s, times }) => (t === 1 ? { id, r, d, t, sign: label, n, h: perHour, pts, stops: s, times } : { id, r, d, t, sign: label, n, v, h: perHour, pts, stops: s })),
+  patternAliases: VARIANTS.aliases || {}
 };
 fs.writeFileSync(OUT, `// js/toronto-transit.js — GENERATED by tools/build-transit.mjs, do not edit by hand.
 // The TTC's routes through the detailed city (stopping patterns, stops, trips per hour on a weekday), in the world

@@ -63,6 +63,8 @@ class CameraSystem {
 
     // Follow cameras (chase / action) are smoothed relative to the followed entity, see update()
     this.followEntity = null;
+    // An entity the follow cameras take instead of the player's (streetcar-ride.js: the streetcar the player rides)
+    this.followOverride = null;
     this.followOffset = new THREE.Vector3();
     this.followLookOffset = new THREE.Vector3();
     this.followBaseY = 0;
@@ -79,6 +81,7 @@ class CameraSystem {
     canvas.style.touchAction = 'none';
 
     canvas.addEventListener('pointerdown', (e) => {
+      if (window.CITY.uiOverlay) return;
       if (e.button !== 0 || pointers.size >= 2) return;
       // Only two touch pointers may share a gesture; mouse and pen drags stay independent.
       if (pointers.size && (e.pointerType !== 'touch' || pointers.values().next().value.type !== 'touch')) return;
@@ -131,6 +134,7 @@ class CameraSystem {
 
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
+      if (window.CITY.uiOverlay) return;
       this.zoomMultiplier = Math.max(0.45, Math.min(2.4, this.zoomMultiplier + e.deltaY * 0.001));
     }, { passive: false });
   }
@@ -204,7 +208,7 @@ class CameraSystem {
         return;
       }
     }
-    const entity = this.controllerManager.getActiveEntity();
+    const entity = this.followOverride || this.controllerManager.getActiveEntity();
     const desiredPos = this._desiredPos;
     const desiredLook = this._desiredLook;
 
@@ -235,6 +239,13 @@ class CameraSystem {
           Math.max(0.65, entity.position.y + height),
           entity.position.z - Math.cos(totalYaw) * horizDist
         );
+        // (the streetcar: always over its overhead wire, never down through its roof)
+        if (entity.minCamY) desiredPos.y = Math.max(desiredPos.y, entity.position.y + entity.minCamY);
+        if (entity.chaseSide) {
+          desiredPos.x -= Math.cos(entity.heading) * entity.chaseSide;
+          desiredPos.z += Math.sin(entity.heading) * entity.chaseSide;
+          desiredPos.y = entity.position.y + entity.chaseHeight;
+        }
 
         const lookUpBias = entity.type === 'helicopter' ? 0.2 : (entity.type === 'car' ? 0.52 : 1.55);
         desiredLook.set(
@@ -264,6 +275,17 @@ class CameraSystem {
       }
 
       case 'pov': {
+        if (entity.seatEye) {
+          // a seat aboard the streetcar, looking ahead (drag to look round)
+          const yaw = entity.seatYaw + this.orbitYawOffset;
+          desiredPos.copy(entity.seatEye);
+          desiredLook.set(
+            entity.seatEye.x + Math.sin(yaw) * 40.0,
+            entity.seatEye.y + Math.sin(-this.orbitPitchOffset) * 18.0 + entity.seatLookY,
+            entity.seatEye.z + Math.cos(yaw) * 40.0
+          );
+          break;
+        }
         let fwdOffset = 0.35;
         let eyeY = 1.68;
         if (entity.type === 'car') {

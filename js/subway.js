@@ -1404,7 +1404,7 @@ function buildEntrances(group, colliders) {
     let yaw = Math.atan2(tx, tz);
     if (Math.cos(yaw) * -p.curbSide.x - Math.sin(yaw) * -p.curbSide.z < 0) yaw += Math.PI;
     pylons.push({ x: px, y: py, z: pz, yaw, station: p.name, colour: p.colour, sign: p.sign });
-    colliders.push({ minX: px - 0.3, maxX: px + 0.3, minZ: pz - 0.3, maxZ: pz + 0.3, maxY: py + 4.0 });
+    colliders.push({ minX: px - 0.3, maxX: px + 0.3, minZ: pz - 0.3, maxZ: pz + 0.3, maxY: py + 4.0, prop: true }); // (street furniture: world-collision.js)
   }
   const wallMat = createConcreteMaterial(0x8f8a83);
   const metalMat = new THREE.MeshStandardNodeMaterial({ color: 0x9aa0a5, roughness: 0.3, metalness: 0.85 });
@@ -1480,7 +1480,7 @@ function createSubway(scene) {
     shift = ((((target - (last * SPEED + r.phase * cycle)) / SPEED) % headway) + headway) % headway;
     held = hold ? last + shift : null;
   };
-  const api = { group, colliders, cars: sounding, update, routes, entrances: ent, placeTrain, cuts: SUBWAY_CUTS };
+  const api = { group, colliders, cars: sounding, update, routes, entrances: ent, placeTrain, cuts: SUBWAY_CUTS, passengerRoutes: new Set() };
 
   function update(time, camera) {
     last = time;
@@ -1502,6 +1502,7 @@ function createSubway(scene) {
       }
     }
     routes.forEach((r, ri) => {
+      if (api.passengerRoutes.has(ri)) return;
       // far away: nothing to draw
       if (Math.hypot(r.pts[r.pts.length >> 1].x - camX, r.pts[r.pts.length >> 1].z - camZ) > 3000) return;
       const cycle = headway * SPEED;
@@ -1549,5 +1550,5 @@ function createSubway(scene) {
   return api;
 }
 
-Object.assign(window.CITY, { createSubway, subwayKeepsClear, subwayCutAt, SUBWAY_VIADUCTS: VIADUCTS, SUBWAY_CUTS, SUBWAY_CUT_RECTS, SUBWAY_COVERED: COVERED });
+Object.assign(window.CITY, { createSubway, subwayKeepsClear, subwayCutAt, SUBWAY_VIADUCTS: VIADUCTS, createSubwayCarGeometry: carGeometry, createSubwayCarMaterial: createCarMaterial, SUBWAY_CUTS, SUBWAY_CUT_RECTS, SUBWAY_COVERED: COVERED });
 })();

@@ -1,0 +1,60 @@
+// Slop Toronto's multiplayer rooms (rooms/worker.js, docs/multiplayer-spec.md). Two Workers, each with its own Durable
+// Object namespaces:
+// - production: npx wrangler@4 deploy -c rooms/wrangler.jsonc               -> slop-toronto-rooms
+// - staging:    npx wrangler@4 deploy -c rooms/wrangler.jsonc --env staging -> slop-toronto-rooms-staging
+// Deploy staging first; the first deploy of each carries migration v1. Turning multiplayer off: deploy with
+// --var MP_ENABLED:off (every request then gets a 503 before any Durable Object is reached).
+// Limits (rooms/core.js): ROOM_CAP players a room, PER_IP sockets per address across rooms, PER_MINUTE connections per
+// address, MAX_SOCKETS & MAX_ROOMS for
+// the whole service (they set the spending ceiling, about $50 a month in production), MAX_PUBLIC_ROOMS.
+{
+  "name": "slop-toronto-rooms",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [
+      { "name": "ROOMS", "class_name": "Room" },
+      { "name": "GATE", "class_name": "Gate" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room", "Gate"] }],
+  "vars": {
+    "MP_ENABLED": "on",
+    "ALLOWED_ORIGINS": "https://sloptoronto.ca,https://www.sloptoronto.ca,https://slop-toronto.cloud6711.workers.dev",
+    "ALLOW_LOCALHOST": "0",
+    "ROOM_CAP": "50",
+    "PER_IP": "8",
+    "PER_MINUTE": "10",
+    "PRIVATE_PER_IP": "1",
+    "MAX_SOCKETS": "100",
+    "MAX_ROOMS": "6",
+    "MAX_PUBLIC_ROOMS": "2"
+  },
+  "env": {
+    "staging": {
+      "workers_dev": true,
+      "durable_objects": {
+        "bindings": [
+          { "name": "ROOMS", "class_name": "Room" },
+          { "name": "GATE", "class_name": "Gate" }
+        ]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room", "Gate"] }],
+      "vars": {
+        "MP_ENABLED": "on",
+        // the site's preview aliases & version URLs, and the local dev server
+        "ALLOWED_ORIGINS": "https://*-slop-toronto.cloud6711.workers.dev",
+        "ALLOW_LOCALHOST": "1",
+        "ROOM_CAP": "60",
+        "PER_IP": "60",
+        "PER_MINUTE": "600",
+        // (the performance runs open a private room each, from one address)
+        "PRIVATE_PER_IP": "20",
+        "MAX_SOCKETS": "100",
+        "MAX_ROOMS": "6",
+        "MAX_PUBLIC_ROOMS": "2"
+      }
+    }
+  }
+}

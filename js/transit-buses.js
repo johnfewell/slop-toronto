@@ -61,8 +61,10 @@ function createTransitBuses(traffic) {
       SG.get(k).push(j);
     });
     const R = Math.ceil(REACH / LC);
-    const nearest = (x, z) => {
-      let bj = -1, bd = REACH;
+    // (the nearest point of the line heading the link's way, if any: where the route comes back along the same street,
+    // a loop or a turn back at its end (the 72C on Commissioners Street), each way has its own stretch of the line)
+    const nearest = (x, z, dx, dz) => {
+      let bj = -1, bd = REACH, aj = -1, ad = REACH;
       const ix = Math.floor(x / LC), iz = Math.floor(z / LC);
       for (let a = -R; a <= R; a++) {
         for (let c = -R; c <= R; c++) {
@@ -72,10 +74,14 @@ function createTransitBuses(traffic) {
               bd = d;
               bj = j;
             }
+            if (d < ad && S[j].dx * dx + S[j].dz * dz > 0.3) {
+              ad = d;
+              aj = j;
+            }
           }
         }
       }
-      return bj < 0 ? null : { j: bj, d: bd };
+      return aj >= 0 ? { j: aj, d: ad } : bj < 0 ? null : { j: bj, d: bd };
     };
     // the links along the line
     const cand = new Map();
@@ -92,7 +98,7 @@ function createTransitBuses(traffic) {
             let sum = 0, dot = 0, hits = 0, j0 = Infinity, j1 = -1;
             for (let k = 0; k <= n; k++) {
               const s = (e.len * k) / n;
-              const q = nearest(e.sx + e.dx * s, e.sz + e.dz * s);
+              const q = nearest(e.sx + e.dx * s, e.sz + e.dz * s, e.dx, e.dz);
               if (!q) {
                 sum += REACH;
                 continue;
@@ -149,8 +155,9 @@ function createTransitBuses(traffic) {
       minJ = Math.min(minJ, c.j0);
       maxJ = Math.max(maxJ, c.j1);
     }
-    // (the line may start or end off the roads: in a station's bus bays)
-    if (minJ + 12 > N / 3 || maxJ - 12 < (2 * N) / 3) {
+    // (the line may start or end off the roads, in a station's bus bays, which aren't in the city's road graph: the
+    // 168 at Dundas West, the 189 at High Park: it runs on the roads it has, as long as they take in 300 m of it)
+    if (!(maxJ - minJ >= Math.min(50, N / 2))) {
       match.why = `${N} pts, ${cand.size} links, along ${minJ}-${maxJ}`;
       return null;
     }

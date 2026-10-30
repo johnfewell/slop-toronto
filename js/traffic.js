@@ -13,6 +13,7 @@
 // - Fixed-size local populations replenish distant roads and sidewalks in every direction, protecting the near view.
 // - The player's vehicle or character pushes and is pushed by the traffic (SAT contact, impulses, sparks).
 
+const { vehicleContact, resolveVehicleContact, sweptVehicleContact } = window.CITY;
 const { THREE, buildRoadNetwork, edgeY, SIGNALS, deckHeightAt, SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS } = window.CITY;
 const {
   cityUniforms,
@@ -38,7 +39,7 @@ const {
   createBusWheelMaterial,
   createLoftedBusMaterial
 } = window.CITY;
-const { PersonCrowd, PersonRig, PersonRagdoll } = window.CITY;
+const { PersonCrowd, PersonRig, PersonRagdoll, PEDESTRIAN_DIVE_DURATION } = window.CITY;
 const { mergeGeometries } = window.CITY.Addons;
 
 // (fewer on the phone tiers, quality.js)
@@ -59,6 +60,7 @@ const PED_RADIUS = 320;
 const NEAR_RADIUS = 350;
 const VEHICLE_SPAWN_DISTANCE = 250;
 const PED_SPAWN_DISTANCE = 150;
+const PED_AVOID_INTERVAL = 0.12;
 
 function createBusDestinationTexture() {
   const c = document.createElement('canvas');
@@ -80,7 +82,9 @@ function createBusDestinationTexture() {
 
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 
-function createTrafficSystem(scene, sidewalks, obstacles) {
+// (`pedestrian`: { obstacles: the solid street furniture the walkers' lines go round, pedestrian-routes.js; detours:
+// false for the former dropped lines, ?peddetours=0 })
+function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
   const group = new THREE.Group();
   group.name = 'TrafficAndPedestrians';
   // --- audio: crash sounds (audio-system.js listens). Synchronous: listeners copy what they keep; normal b -> a
@@ -269,7 +273,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       wait: 0, laneTimer: Math.random() * 0.5,
       dl: 0, dlv: 0, blink: 0, blinkPhase: Math.random() * 0.8,
       x: 0, z: 0, prevX: 0, prevZ: 0, tx: 0, tz: 1, nose: 0, yaw: 0, yawRate: 0, steer: 0,
-      pitch: 0, roll: 0, pitchVel: 0, rollVel: 0, vx: 0, vz: 0, yawOffset: 0, yawVel: 0,
+      pitch: 0, roll: 0, pitchVel: 0, rollVel: 0, vx: 0, vz: 0, yawOffset: 0, yawVel: 0, impactTime: 0,
       pAhead: Infinity, pRight: 0, pSpeed: 0, wheelSpin: Math.random() * Math.PI * 2
     };
   }
@@ -312,8 +316,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   let policeCount = 0;
 
   for (let i = 0; i < NUM_CARS; i++) {
-    // one car in forty a police cruiser (mrdoob's 3f5bcda), one in five a taxi: mostly private cars (a1866b7)
-    const isPolice = (i % 40) === 6;
+    // one car in a hundred a police cruiser (mrdoob's 7540282), one in five a taxi: mostly private cars (a1866b7)
+    const isPolice = (i % 100) === 6;
     const isTaxi = !isPolice && (i % 5) === 0;
     const isSUV = !isPolice && !isTaxi && (i % 5) < 3;
 
@@ -479,6 +483,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       coord: 0,
       line: 0, // its line over the crosswalk, off the centre line
       waiting: false,
+      // (mrdoob's 35b0b84) how long after the WALK comes on this person steps off, and when that is (-1: not yet lit)
+      walkDelay: 0.2 + hash(i, 8) * 1.3,
+      walkAt: -1,
       speed: 1.22 + (i % 5) * 0.1 + hash(i, 3) * 0.08, // preferred walking speed
       v: 0, // current speed, easing up to it and down to stops
       pause: 0,
@@ -491,6 +498,16 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       restTime: 0,
       socialTime: 0,
       conversation: null,
+      avoidUntil: 0,
+      avoidCheck: 0,
+      avoidSpeed: 0,
+      avoidT: 0,
+      resumeDir: 0,
+      dodge: 0,
+      dodgeTarget: 0,
+      diveStart: -Infinity,
+      diveHeading: 0,
+      diveT: 0,
       rig: new PersonRig({
         seed: i * 1.6180339 + 0.13,
         female,
@@ -553,7 +570,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   const phaseOf = (e) => SIGNALS.state(e.to.sigJ, e.sigP, clock);
   let focusX = 0;
   let focusZ = 140;
-  const player = { active: false, entity: null, x: 0, z: 0, vx: 0, vz: 0, halfW: 0.86, halfL: 2.18, push: 0.5 };
+  const player = { active: false, entity: null, x: 0, z: 0, vx: 0, vz: 0, fx: 0, fz: 1, halfW: 0.86, halfL: 2.18 };
+  let pedRange = 0;
   // --- Streetcars (streetcars.js, after aalghooneh/slop-toronto) & trains (rail-corridor.js): other moving things the
   // traffic keeps behind, one box per streetcar module or rail car { x, y, z, yaw, halfW, halfL, speed }, handed over
   // every frame (setObstacles) ---
@@ -834,7 +852,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
 
   // --- Streetcars: gap to the nearest streetcar module ahead of v in its path, and how fast it moves v's way ---
   const moverGap = { gap: Infinity, speed: 0 };
-  function obstacleGap(v) {
+  function obstacleGap(v, lateralOffset = 0) {
     moverGap.gap = Infinity;
     moverGap.speed = 0;
     if (!movers.length) return moverGap;
@@ -853,7 +871,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       const across = Math.abs(ox * fz - oz * fx);
       const reachAlong = o.halfL * along + o.halfW * across;
       const reachAcross = o.halfL * across + o.halfW * along;
-      if (Math.abs(dz * fx - dx * fz) > v.halfWidth + reachAcross + 0.3) continue;
+      if (Math.abs(dz * fx - dx * fz - lateralOffset) > v.halfWidth + reachAcross + 0.3) continue;
       const gap = ahead - v.half - reachAlong;
       if (gap < moverGap.gap) {
         moverGap.gap = gap;
@@ -956,6 +974,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       else if (!v.bus) w *= Math.sqrt((m.to.vph + 4) / (e.vph + 4));
       if (v.bus && m.turn !== 'S' && m.to.lanes.length < 2) w *= 0.05;
       if (v.bus && m.to.tram) w *= 0.001; // streetcar routes have streetcars, not buses (e.tram, streetcars.js)
+      if (m.to.busOnly && !v.route) w = 0; // (a contraflow for the TTC's buses on their routes: road-network.js)
       if (fromLane) {
         if (m.out[v.lane] < 0) w = 0;
       } else if (Math.abs(nearestLane(m, v.lane) - v.lane) * 22 > e.len - v.s) {
@@ -1238,7 +1257,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // pulling out of an intersection, nor in the last 12 m before the next.
   function changeLanes(v) {
     const e = v.edge;
-    if (v.conn || v.commit || Math.abs(v.dl) > 0.5 || v.s < v.half || e.len - v.s - v.half < 12) return;
+    if (v.conn || v.commit || Math.abs(v.dl) > 0.5 || v.s < v.half) return;
+    // A stopped driver may clear the shared tram lane before the stop line, using a legal straight-through lane.
+    if (e.len - v.s - v.half < 12 && !(e.tram && v.wait > 4 && v.move.turn === 'S')) return;
     let target = -1;
     const curb = v.route && !v.route.off ? stopLane(v) : -1;
     if (v.move.out[v.lane] < 0) {
@@ -1247,7 +1268,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     } else if (curb >= 0) {
       const t = v.lane + Math.sign(curb - v.lane);
       if (curb !== v.lane && v.move.out[t] >= 0 && laneSafe(v, t, -3)) target = t;
-    } else if (v.speed > 2) {
+    } else if (v.speed > 2 || (e.tram && v.wait > 4)) {
       let best = laneAcc(v, v.lane) + 0.6;
       for (let t = v.lane - 1; t <= v.lane + 1; t += 2) {
         if (t < 0 || t >= e.lanes.length || v.move.out[t] < 0 || !laneSafe(v, t, -3)) continue;
@@ -1286,6 +1307,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       if (gap < 1.5 || freeAcc(f) + brake(f, gap, v.speed) < bSafe) return false;
     }
     const off = v.edge.lanes[t] - v.edge.lanes[v.lane] - v.dl;
+    const og = obstacleGap(v, off);
+    if (og.gap < 1.5 || (og.gap < LOOKAHEAD && freeAcc(v) + brake(v, og.gap, og.speed) < bSafe)) return false;
     const reach = v.half + player.halfL + 6;
     return !(Math.abs(v.pRight - off) < v.halfWidth + player.halfW + 0.4 && v.pAhead > -reach && v.pAhead < reach);
   }
@@ -1296,6 +1319,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     let worst = o ? brake(v, o.s - o.v.half - v.s - v.half, o.v.speed) : 0;
     const pg = playerGap(v, v.edge.lanes[t] - v.edge.lanes[v.lane] - v.dl);
     if (pg < LOOKAHEAD) worst = Math.min(worst, brake(v, pg, v.pSpeed));
+    const og = obstacleGap(v, v.edge.lanes[t] - v.edge.lanes[v.lane] - v.dl);
+    if (og.gap < LOOKAHEAD) worst = Math.min(worst, brake(v, og.gap, og.speed));
     return freeAcc(v) + worst;
   }
 
@@ -1459,10 +1484,13 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       changeLanes(v);
     }
     accelerate(v);
+    // Give the driver a moment to recover after an impact before accelerating again.
+    v.impactTime = Math.max(0, v.impactTime - dt);
+    if (v.impactTime > 0) v.acc = Math.min(0, v.acc);
     const speed = v.speed;
     v.speed = Math.max(0, v.speed + v.acc * dt);
     let ds = v.speed * dt;
-    if (ds > v.gap - 0.3) {
+    if (v.impactTime === 0 && ds > v.gap - 0.3) {
       // never into the vehicle ahead
       ds = Math.max(0, v.gap - 0.3);
       v.speed = Math.min(v.speed, v.leaderSpeed);
@@ -1556,183 +1584,146 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     v.pitch = clamp(v.pitch + v.pitchVel * dt, -0.22, 0.22);
     v.rollVel += ((0.01 * v.speed * v.yawRate - v.roll) * 68.0 - v.rollVel * 10.8) * dt;
     v.roll = clamp(v.roll + v.rollVel * dt, -0.26, 0.26);
-    v.yawOffset += v.yawVel * dt;
-    v.yawVel += (-v.yawOffset * 18.0 - v.yawVel * 6.8) * dt;
-    v.yawOffset = clamp(v.yawOffset * Math.exp(-4.5 * dt), -0.85, 0.85);
+    v.yawOffset = clamp(v.yawOffset + v.yawVel * dt, -1.35, 1.35);
+    v.yawVel += (-v.yawOffset * 3.0 - v.yawVel * 2.5) * dt;
   }
 
   // Knock velocity from collisions carries v along and across its path, and dies down
   function knock(v, dt) {
     if (v.vx === 0 && v.vz === 0) return;
     shove(v, v.vx * dt, v.vz * dt);
-    const damp = Math.exp(-5.5 * dt);
+    const damp = Math.exp(-3.5 * dt);
     v.vx *= damp;
     v.vz *= damp;
     if (v.vx * v.vx + v.vz * v.vz < 1e-4) v.vx = v.vz = 0;
   }
 
-  // A knocked vehicle shunts the vehicles it runs into
-  function knockOn(v) {
-    for (const o of vehicles) {
-      if (o === v || !o.edge) continue;
-      const dx = o.x - v.x;
-      const dz = o.z - v.z;
-      const dist = Math.hypot(dx, dz);
-      if (dist > v.half + o.half || dist < 0.001) continue;
-      if (Math.abs(dz * v.tx - dx * v.tz) > v.halfWidth + o.halfWidth) continue; // side by side
-      const nx = dx / dist;
-      const nz = dz / dist;
-      const relVn = (v.vx - o.vx) * nx + (v.vz - o.vz) * nz;
-      if (relVn <= 0.5) continue;
-      reportCollision(o, v, (v.x + o.x) * 0.5, (v.y || 0) + 0.56, (v.z + o.z) * 0.5, nx, nz, // audio
-        (v.tx * v.speed + v.vx - o.tx * o.speed - o.vx) * nx + (v.tz * v.speed + v.vz - o.tz * o.speed - o.vz) * nz);
-      const transfer = relVn * 0.68;
-      o.vx += nx * transfer;
-      o.vz += nz * transfer;
-      v.vx -= nx * transfer * 0.45;
-      v.vz -= nz * transfer * 0.45;
-      const across = nz * o.tx - nx * o.tz; // hit from the side spins it
-      const along = nx * o.tx + nz * o.tz;
-      o.yawVel += across * Math.min(2.8, relVn * 0.22);
-      o.rollVel += across * Math.min(8.0, relVn) * 0.18;
-      o.pitchVel -= along * Math.min(8.0, relVn) * 0.14;
-      if (relVn > 2.2) spawnCollisionSparks((v.x + o.x) * 0.5, 0.56, (v.z + o.z) * 0.5, nx, nz, relVn);
-    }
+  const contactA = {}, contactB = {}, vehicleHit = {};
+  const impacted = [];
+  let collisionStep = 0;
+
+  function readTrafficBody(v, body) {
+    const heading = v.yaw + v.yawOffset;
+    body.x = v.x; body.z = v.z;
+    body.prevX = v.prevX; body.prevZ = v.prevZ;
+    body.sin = Math.sin(heading); body.cos = Math.cos(heading);
+    body.halfW = v.halfWidth;
+    body.halfL = v.bus ? 5.72 : v.isSUV ? 2.22 : 2.18;
+    body.mass = v.bus ? 12000 : v.isSUV ? 2100 : 1600;
+    body.vx = v.tx * v.speed + v.vx;
+    body.vz = v.tz * v.speed + v.vz;
+    body.angularVel = v.yawRate + v.yawVel;
   }
 
-  // Physical 4-axis 2D SAT OBB test between a vehicle (half extents halfW x halfL, heading rotY) and the player.
-  // Returns the minimum translation axis (pointing from the vehicle towards the player), or null if they don't overlap.
-  const satHit = { nx: 0, nz: 0, pen: 0, localX: 0, localZ: 0, pSin: 0, pCos: 1 };
-  function overlapWithPlayer(relX, relZ, rotY, halfW, halfL, pH, pHalfW, pHalfL) {
-    const sinY = Math.sin(rotY);
-    const cosY = Math.cos(rotY);
-    const localX = relX * cosY - relZ * sinY;
-    const localZ = relX * sinY + relZ * cosY;
-    const pSin = Math.sin(pH);
-    const pCos = Math.cos(pH);
-    const pLocalX = relX * pCos - relZ * pSin;
-    const pLocalZ = relX * pSin + relZ * pCos;
-    const alignCos = Math.abs(Math.cos(pH - rotY));
-    const alignSin = Math.abs(Math.sin(pH - rotY));
-
-    const extX = halfW + pHalfW * alignCos + pHalfL * alignSin;
-    const extZ = halfL + pHalfW * alignSin + pHalfL * alignCos;
-    const pExtX = pHalfW + halfW * alignCos + halfL * alignSin;
-    const pExtZ = pHalfL + halfW * alignSin + halfL * alignCos;
-
-    const penX = extX - Math.abs(localX);
-    const penZ = extZ - Math.abs(localZ);
-    const pPenX = pExtX - Math.abs(pLocalX);
-    const pPenZ = pExtZ - Math.abs(pLocalZ);
-    if (!(penX > 0 && penZ > 0 && pPenX > 0 && pPenZ > 0)) return null;
-
-    let nx, nz, pen;
-    if (penX < penZ) {
-      const signX = localX >= 0 ? 1 : -1;
-      nx = cosY * signX;
-      nz = -sinY * signX;
-      pen = penX;
-    } else {
-      const signZ = localZ >= 0 ? 1 : -1;
-      nx = sinY * signZ;
-      nz = cosY * signZ;
-      pen = penZ;
-    }
-    if (pPenX < pen) {
-      const signPX = pLocalX >= 0 ? 1 : -1;
-      nx = pCos * signPX;
-      nz = -pSin * signPX;
-      pen = pPenX;
-    }
-    if (pPenZ < pen) {
-      const signPZ = pLocalZ >= 0 ? 1 : -1;
-      nx = pSin * signPZ;
-      nz = pCos * signPZ;
-      pen = pPenZ;
-    }
-
-    satHit.nx = nx;
-    satHit.nz = nz;
-    satHit.pen = pen;
-    satHit.localX = localX;
-    satHit.localZ = localZ;
-    satHit.pSin = pSin;
-    satHit.pCos = pCos;
-    return satHit;
+  function writeTrafficVelocity(v, body) {
+    // Keep longitudinal momentum in the driving speed, so it does not disappear
+    // with the short-lived tire slip. Traffic can be knocked backwards too.
+    v.speed = Math.max(0, body.vx * v.tx + body.vz * v.tz);
+    v.vx = body.vx - v.tx * v.speed;
+    v.vz = body.vz - v.tz * v.speed;
+    v.yawVel = body.angularVel - v.yawRate;
   }
 
-  // Player contact: push the player and the vehicle apart (a bus hardly moves) and trade momentum, with spin,
-  // suspension kicks and sparks
-  function collideWithPlayer(v, rotY, halfW, halfL) {
+  function impactSuspension(v, nx, nz, speed) {
+    const along = nx * v.tx + nz * v.tz;
+    const across = nx * v.tz - nz * v.tx;
+    const kick = Math.min(10, speed);
+    v.pitchVel += along * kick * 0.12;
+    v.rollVel -= across * kick * 0.16;
+    v.impactTime = Math.max(v.impactTime, 0.8);
+  }
+
+  function collideWithPlayer(v) {
     const pe = player.entity;
-    const relX = pe.position.x - v.x;
-    const relZ = pe.position.z - v.z;
-    if (Math.abs(relX) > halfL + 3 || Math.abs(relZ) > halfL + 3) return;
-    const hit = overlapWithPlayer(relX, relZ, rotY, halfW, halfL, pe.heading || 0, player.halfW, player.halfL);
-    if (!hit) return;
-    const { nx, nz, pen, localX, localZ, pSin, pCos } = hit;
-    const massRatio = v.bus ? 0.15 : v.isSUV ? 0.58 : 1.0 - player.push;
-    const pPush = 1.0 - massRatio;
-    pe.position.x += nx * pen * pPush;
-    pe.position.z += nz * pen * pPush;
+    if (Math.abs((v.y || 0) - (pe.position.y || 0)) >= 2.5) return;
+    const reach = v.half + player.halfL + player.halfW;
+    const prevX = pe.prevX ?? pe.position.x, prevZ = pe.prevZ ?? pe.position.z;
+    const dx = pe.position.x - prevX - v.x + v.prevX;
+    const dz = pe.position.z - prevZ - v.z + v.prevZ;
+    if (Math.abs(pe.position.x - v.x) > reach + Math.abs(dx)
+      || Math.abs(pe.position.z - v.z) > reach + Math.abs(dz)) return;
+    const a = contactA, b = contactB, hit = vehicleHit;
+    const heading = pe.heading || 0;
+    a.x = pe.position.x; a.z = pe.position.z;
+    a.prevX = prevX; a.prevZ = prevZ;
+    a.sin = Math.sin(heading); a.cos = Math.cos(heading);
+    a.halfW = player.halfW; a.halfL = player.halfL;
+    a.mass = pe.type === 'car' ? 1800 : pe.type === 'cyclist' ? 95 : 80;
+    a.vx = a.sin * (pe.speed || 0) + (pe.vx || 0);
+    a.vz = a.cos * (pe.speed || 0) + (pe.vz || 0);
+    a.angularVel = pe.type === 'car' ? pe.angularVel || 0 : 0;
+    readTrafficBody(v, b);
+    if (!sweptVehicleContact(a, b, hit) && !vehicleContact(a, b, hit)) return;
+    const speed = resolveVehicleContact(a, b, hit);
+    const pShare = b.mass / (a.mass + b.mass);
+    pe.position.x = hit.ax + hit.nx * hit.depth * pShare;
+    pe.position.z = hit.az + hit.nz * hit.depth * pShare;
+    shove(v, hit.bx - v.x - hit.nx * hit.depth * (1 - pShare), hit.bz - v.z - hit.nz * hit.depth * (1 - pShare));
+    // A route boundary can prevent traffic taking its full share of the correction.
+    const remainder = Math.max(0, hit.depth * (1 - pShare) + (v.x - hit.bx) * hit.nx + (v.z - hit.bz) * hit.nz);
+    pe.position.x += hit.nx * remainder;
+    pe.position.z += hit.nz * remainder;
     if (pe.mesh) pe.mesh.position.copy(pe.position);
-    shove(v, -nx * pen * massRatio, -nz * pen * massRatio);
+    if (speed <= 0) return;
+    pe.takeHit?.(speed * (v.bus ? 1.25 : 1));
 
-    const sinY = Math.sin(rotY);
-    const cosY = Math.cos(rotY);
-    const pSpeed = pe.speed || 0;
-    const pvx = pSin * pSpeed + (pe.vx || 0);
-    const pvz = pCos * pSpeed + (pe.vz || 0);
-    const cvx = v.tx * v.speed + v.vx;
-    const cvz = v.tz * v.speed + v.vz;
-    const approachSpeed = (pvx - cvx) * (-nx) + (pvz - cvz) * (-nz);
-    if (approachSpeed <= 0) return;
-    pe.takeHit?.(approachSpeed * (v.bus ? 1.25 : 1)); // crash damage (controllers.js)
-
-    const jImpulse = (1.0 + 0.28) * approachSpeed;
-    const cImpulse = v.bus ? approachSpeed * 0.22 : jImpulse * massRatio * 0.92;
-    v.vx -= nx * cImpulse;
-    v.vz -= nz * cImpulse;
-    v.speed *= v.bus ? 0.55 : 0.35;
-
-    const localNx = nx * cosY - nz * sinY;
-    const localNz = nx * sinY + nz * cosY;
-    if (!v.bus) {
-      const torque = localZ * localNx - localX * localNz;
-      v.yawVel -= torque * Math.min(4.2, approachSpeed * 0.26);
-      v.yawOffset = clamp(v.yawOffset - torque * Math.min(0.35, approachSpeed * 0.025), -0.65, 0.65);
-      v.pitchVel -= localNz * Math.min(12.0, approachSpeed) * 0.18;
-      v.rollVel += localNx * Math.min(12.0, approachSpeed) * 0.24;
+    writeTrafficVelocity(v, b);
+    pe.speed = a.vx * a.sin + a.vz * a.cos;
+    if (pe.type === 'car') {
+      pe.vx = a.vx - a.sin * pe.speed;
+      pe.vz = a.vz - a.cos * pe.speed;
+      pe.angularVel = a.angularVel;
+      const kick = Math.min(12, hit.impulse / a.mass);
+      pe.pitchVel += (hit.nx * a.sin + hit.nz * a.cos) * kick * 0.16;
+      pe.rollVel -= (hit.nx * a.cos - hit.nz * a.sin) * kick * 0.2;
+      pe.heaveVel += Math.min(0.7, kick * 0.06);
     }
+    impactSuspension(v, -hit.nx, -hit.nz, hit.impulse / b.mass);
+    if (pe.type !== 'person') reportCollision(pe, v, hit.x, (v.y || 0) + 0.58, hit.z, hit.nx, hit.nz, speed);
+    if (speed > 2.2) spawnCollisionSparks(hit.x, (v.y || 0) + 0.58, hit.z, hit.nx, hit.nz, speed);
+  }
 
-    const contactLocalX = clamp(localX, -halfW, halfW);
-    const contactLocalZ = clamp(localZ, -halfL, halfL);
-    const contactX = v.x + contactLocalX * cosY + contactLocalZ * sinY;
-    const contactZ = v.z - contactLocalX * sinY + contactLocalZ * cosY;
-    if (pe.type !== 'person') reportCollision(pe, v, contactX, (v.y || 0) + (v.bus ? 0.65 : 0.58), contactZ, nx, nz, approachSpeed); // audio
-
-    if (typeof pe.speed === 'number') {
-      const headOnDot = Math.abs(pSin * nx + pCos * nz);
-      pe.speed *= 1.0 - (v.bus ? 0.68 : 0.50) * headOnDot;
-      if (pe.type === 'car') {
-        const pImpulse = v.bus ? approachSpeed * 0.65 : jImpulse * pPush * 0.48;
-        pe.vx = (pe.vx || 0) + nx * pImpulse;
-        pe.vz = (pe.vz || 0) + nz * pImpulse;
-        const pLocalNx = nx * pCos - nz * pSin;
-        const pLocalNz = nx * pSin + nz * pCos;
-        if (!v.bus) {
-          const pRelX = (contactX - pe.position.x) * pCos - (contactZ - pe.position.z) * pSin;
-          const pRelZ = (contactX - pe.position.x) * pSin + (contactZ - pe.position.z) * pCos;
-          const pTorque = pRelZ * pLocalNx - pRelX * pLocalNz;
-          pe.angularVel = (pe.angularVel || 0) + pTorque * Math.min(3.0, approachSpeed * 0.18) * pPush;
-        }
-        const kick = Math.min(v.bus ? 16.0 : 14.0, approachSpeed);
-        pe.pitchVel = (pe.pitchVel || 0) + pLocalNz * kick * (v.bus ? 0.22 : 0.18);
-        pe.rollVel = (pe.rollVel || 0) - pLocalNx * kick * (v.bus ? 0.28 : 0.24);
-        pe.heaveVel = (pe.heaveVel || 0) + Math.min(v.bus ? 1.6 : 1.4, approachSpeed * (v.bus ? 0.14 : 0.11));
+  // Only disturbed traffic needs pair contacts. Newly struck cars join the same
+  // queue, and each pair is visited once before any instance matrices are written.
+  function collideTraffic() {
+    collisionStep++;
+    impacted.length = 0;
+    for (const v of vehicles) {
+      if (v.edge && (v.impactTime > 0 || Math.abs(v.yawOffset) > 0.05 || v.vx * v.vx + v.vz * v.vz > 0.04)) {
+        v.contactStep = collisionStep;
+        impacted.push(v);
       }
     }
-    if (approachSpeed > 1.8) spawnCollisionSparks(contactX, v.bus ? 0.65 : 0.58, contactZ, nx, nz, approachSpeed);
+    for (let i = 0; i < impacted.length; i++) {
+      const v = impacted[i];
+      for (const o of vehicles) {
+        if (o === v || !o.edge || o.contactDone === collisionStep || Math.abs((v.y || 0) - (o.y || 0)) >= 2.5) continue;
+        const reach = v.half + o.half + 0.5;
+        const dx = v.x - o.x, dz = v.z - o.z;
+        if (Math.abs(dx) > reach + Math.abs(dx - v.prevX + o.prevX)
+          || Math.abs(dz) > reach + Math.abs(dz - v.prevZ + o.prevZ)) continue;
+        readTrafficBody(v, contactA);
+        readTrafficBody(o, contactB);
+        const hit = vehicleHit;
+        if (!sweptVehicleContact(contactA, contactB, hit) && !vehicleContact(contactA, contactB, hit)) continue;
+        const speed = resolveVehicleContact(contactA, contactB, hit);
+        const share = contactB.mass / (contactA.mass + contactB.mass);
+        shove(v, hit.ax - v.x + hit.nx * hit.depth * share, hit.az - v.z + hit.nz * hit.depth * share);
+        shove(o, hit.bx - o.x - hit.nx * hit.depth * (1 - share), hit.bz - o.z - hit.nz * hit.depth * (1 - share));
+        if (speed <= 0) continue;
+        writeTrafficVelocity(v, contactA);
+        writeTrafficVelocity(o, contactB);
+        impactSuspension(v, hit.nx, hit.nz, hit.impulse / contactA.mass);
+        impactSuspension(o, -hit.nx, -hit.nz, hit.impulse / contactB.mass);
+        reportCollision(v, o, hit.x, (v.y || 0) + 0.56, hit.z, hit.nx, hit.nz, speed);
+        if (speed > 2.2) spawnCollisionSparks(hit.x, (v.y || 0) + 0.56, hit.z, hit.nx, hit.nz, speed);
+        if (o.contactStep !== collisionStep) {
+          o.contactStep = collisionStep;
+          impacted.push(o);
+        }
+      }
+      v.contactDone = collisionStep;
+    }
   }
 
   // =========================================================================
@@ -1755,6 +1746,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     v.wait = 0;
     v.speed = v.v0 * 0.5;
     v.acc = 0;
+    v.impactTime = 0;
     v.dl = v.dlv = 0;
     v.vx = v.vz = v.yawOffset = v.yawVel = v.pitch = v.pitchVel = v.roll = v.rollVel = 0;
     locate(v);
@@ -1854,7 +1846,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     for (let attempt = 0; attempt < 12; attempt++) {
       // (a bus anywhere along the wide roads; a car where the City counts the traffic)
       const e = v.bus || !edgeWeights.length ? nearEdges[Math.floor(Math.random() * nearEdges.length)] : nearEdges[pickWeighted(edgeWeights)];
-      if (!e || (v.bus && (e.axis !== 'ave' || e.tram)) || e.len < 2 * v.half + 10) continue;
+      if (!e || e.busOnly || (v.bus && (e.axis !== 'ave' || e.tram)) || e.len < 2 * v.half + 10) continue;
       const lane = Math.floor(Math.random() * e.lanes.length);
       const along = (focusX - e.sx) * e.dx + (focusZ - e.sz) * e.dz;
       const minS = Math.max(v.half + 5, along - rMax);
@@ -1880,11 +1872,12 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   // =========================================================================
   const KERB = 1.6; // how far along a crosswalk track pedestrians wait to cross (the curb is 2 m along)
   // Connected routes (pedestrian-routes.js, mrdoob's 0d5d574): two walking lines along each side of a street between
-  // its crosswalks, on the curb island (city-config.js blockAt) and clear of obstacles; crosswalks over signalized
+  // its crosswalks, on the curb island (city-config.js blockAt) and round its obstacles (2bcd413's detours, cached
+  // per edge); crosswalks over signalized
   // corners, curb to curb plus 2 m of sidewalk at each end, each on its own line clear of the signal poles, where
   // walkers queue at the curb; and the links that carry them round each corner onto the next
   const { blockAt, createPedestrianRoutes } = window.CITY;
-  const pedRoutes = createPedestrianRoutes(network, blockAt);
+  const pedRoutes = createPedestrianRoutes({ ...network, obstacles: pedestrian.obstacles || [], detours: pedestrian.detours !== false }, blockAt);
   const track = { ax: 0, az: 0, ux: 0, uz: 1, len: 1, node: null, mid: null, clx: 0, clz: 1, side: 0, line: 0, route: null };
   // the crossovers' flashing lights (pedestrian-signals.js): 1 while someone waits at one or walks on it
   window.CITY.PXO_ACTIVE = (window.CITY.PXOS || []).map(() => 0);
@@ -1960,6 +1953,13 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       p.z = z;
       p.v = crosswalk ? 0 : p.speed;
       p.pause = 0;
+      p.waiting = false;
+      p.walkAt = -1;
+      p.avoidUntil = 0;
+      p.resumeDir = 0;
+      p.dodge = p.dodgeTarget = 0;
+      p.diveStart = -Infinity;
+      p.avoidCheck = clock + Math.random() * PED_AVOID_INTERVAL;
       p.nextRoute = null;
       p.nextLeg = 0;
       p.goalTime = 0;
@@ -2022,8 +2022,192 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
   const PED_ACCEL = 1.3; // m/s^2 setting off
   const PED_BRAKE = 1.6; // m/s^2 easing to a stop
   const TURN_TIME = 0.85; // s turning round at the end of the track
+  const PED_ESCAPE_SPEED = 5;
+  const PED_ESCAPE_ACCEL = 9;
+  const PED_ESCAPE_BRAKE = 6;
+  const PED_LOOKAHEAD = 1.5;
+  const PED_DIVE_DISTANCE = 1.9;
+  const PED_DODGE_SPEED = PED_DIVE_DISTANCE / 0.5;
+
+  // Limit an escape to the current validated track, respecting curbs and people in either direction.
+  // Only threatened pedestrians do this local scan, at most once every 120 ms.
+  function escapeRoom(p, dir) {
+    let room = dir > 0 ? p.len - p.t : p.t;
+    const s = dir > 0 ? p.t : p.len - p.t;
+    if ((p.node || p.mid) && s <= KERB + 1e-6 && !(p.mid ? mayCrossMid(p) : mayCross(p))) room = Math.min(room, Math.max(0, KERB - s));
+    for (const q of peds) {
+      if (q === p || !q.placed) continue;
+      const dx = q.x - p.x, dz = q.z - p.z;
+      const forward = (dx * p.ux + dz * p.uz) * dir;
+      if (forward <= 0 || forward > Math.min(room + QUEUE_GAP, 6)) continue;
+      const side = dx * p.uz - dz * p.ux;
+      if (Math.abs(side) < QUEUE_GAP) room = Math.min(room, Math.max(0, forward - Math.sqrt(QUEUE_GAP * QUEUE_GAP - side * side)));
+    }
+    return room;
+  }
+
+  // Sweep the pedestrian against the player's oriented footprint. Short linear segments account for braking,
+  // acceleration and track ends without missing fast vehicles between samples or allocating temporary vectors.
+  function playerContactTime(p, speed, room, emergency = true, dodgeTarget = p.dodgeTarget, diving = false) {
+    const dir = speed < 0 ? -1 : speed > 0 ? 1 : p.dir;
+    let v = diving ? speed : dir === p.dir ? p.v * p.dir : 0;
+    let moved = 0;
+    let side = p.dodge;
+    const dx = p.x - player.x, dz = p.z - player.z;
+    let x = dx * player.fz - dz * player.fx, z = dx * player.fx + dz * player.fz;
+    const ux = p.ux * player.fz - p.uz * player.fx, uz = p.ux * player.fx + p.uz * player.fz;
+    const vx = player.vx * player.fz - player.vz * player.fx, vz = player.vx * player.fx + player.vz * player.fz;
+    const sideways = dodgeTarget !== p.dodge;
+    const diveX = Math.abs(sideways ? uz : ux), diveZ = Math.abs(sideways ? ux : uz);
+    // A prone pedestrian is longer than a standing one; project that body into the car's frame too.
+    const halfW = player.halfW + (diving ? diveX + 0.4 * diveZ : 0.45);
+    const halfL = player.halfL + (diving ? diveZ + 0.4 * diveX : 0.45);
+    const acceleration = emergency ? PED_ESCAPE_ACCEL : PED_ACCEL;
+    const braking = emergency ? PED_ESCAPE_BRAKE : 2 * PED_BRAKE;
+    const step = 0.25;
+    for (let time = 0; time < PED_LOOKAHEAD; time += step) {
+      const rate = Math.abs(speed) > Math.abs(v) ? acceleration : braking;
+      const nextV = diving ? speed : v + clamp(speed - v, -rate * step, rate * step);
+      const distance = Math.min(room - moved, Math.abs((v + nextV) * 0.5 * step));
+      moved += distance;
+      const sideStep = clamp(dodgeTarget - side, -(diving || dodgeTarget ? PED_DODGE_SPEED : 1.8) * step, (diving || dodgeTarget ? PED_DODGE_SPEED : 1.8) * step);
+      side += sideStep;
+      const sx = ux * dir * distance + uz * sideStep - vx * step;
+      const sz = uz * dir * distance - ux * sideStep - vz * step;
+      let enter = 0, exit = 1;
+      for (let axis = 0; axis < 2; axis++) {
+        const pos = axis ? z : x, delta = axis ? sz : sx;
+        const extent = axis ? halfL : halfW;
+        if (Math.abs(delta) < 1e-6) {
+          if (Math.abs(pos) > extent) { exit = -1; break; }
+        } else {
+          const a = (-extent - pos) / delta, b = (extent - pos) / delta;
+          enter = Math.max(enter, Math.min(a, b));
+          exit = Math.min(exit, Math.max(a, b));
+        }
+      }
+      if (enter <= exit) return time + enter * step;
+      x += sx; z += sz; v = nextV;
+    }
+    return Infinity;
+  }
+
+  function turnPed(p, dir) {
+    p.walkAt = -1;
+    p.dir = dir;
+    p.v = 0;
+    p.nextRoute = null;
+    p.nextLeg = 0;
+    p.waiting = false;
+  }
+
+  function dodgeClear(p, offset, diving = false) {
+    // Reserve space for the outstretched body as well as its centre when landing.
+    const end = offset + (diving ? Math.sign(offset - p.dodge) * 0.9 : 0);
+    if (!pedRoutes.canDodge(p, end)) return false;
+    const dx = p.uz * (end - p.dodge), dz = -p.ux * (end - p.dodge);
+    const lengthSq = dx * dx + dz * dz;
+    for (const q of peds) {
+      if (q === p || !q.placed) continue;
+      const t = clamp(((q.x - p.x) * dx + (q.z - p.z) * dz) / lengthSq, 0, 1);
+      if ((p.x + dx * t - q.x) ** 2 + (p.z + dz * t - q.z) ** 2 < QUEUE_GAP ** 2) return false;
+    }
+    return true;
+  }
+
+  function avoidPlayer(p) {
+    if (p.knock || Math.abs(pedGround(p, p.x, p.z) - player.y) >= 2.5) return;
+    // Commit to the landing and get-up; steering or walking during this pose would slide across the ground.
+    if (clock - p.diveStart < PEDESTRIAN_DIVE_DURATION) return;
+    // Stay off the walking line until the approaching vehicle has passed; returning is swept too.
+    if (p.dodgeTarget && clock >= p.avoidUntil) {
+      if ((!p.dodge || dodgeClear(p, 0)) && (!pedRange || playerContactTime(p, 0, 0, true, 0) === Infinity)) p.dodgeTarget = 0;
+      else p.avoidUntil = clock + 0.6;
+    }
+    // A retreat is temporary: once clear, turn back toward the original destination instead of walking into
+    // the people behind. Corner transitions below discard this old direction along with the escape boundary.
+    if (p.resumeDir && (clock >= p.avoidUntil || !pedRange)) {
+      if (p.dir !== p.resumeDir) {
+        turnPed(p, p.resumeDir);
+        p.pause = TURN_TIME;
+      }
+      p.resumeDir = 0;
+      p.avoidCheck = 0;
+    }
+    if (!pedRange) { if (!p.dodgeTarget) p.avoidUntil = 0; return; }
+    const dx = p.x - player.x, dz = p.z - player.z;
+    if (dx * dx + dz * dz > pedRange * pedRange || clock < p.avoidCheck) return;
+    p.avoidCheck = clock + PED_AVOID_INTERVAL;
+    const ahead = p.dir > 0 ? p.len - p.t : p.t;
+    const dodging = p.dodge !== 0 || p.dodgeTarget !== 0;
+    const normalSpeed = dodging || p.pause > 0 || p.conversation || p.waiting ? 0 : p.speed;
+    const normalRoom = (p.node || p.mid) && curbProgress(p) <= KERB + 1e-6 && !(p.mid ? mayCrossMid(p) : mayCross(p)) ? Math.max(0, KERB - curbProgress(p)) : ahead;
+    const avoiding = clock < p.avoidUntil;
+    const escapeAhead = Math.max(0, Math.min(ahead, (p.avoidT - p.t) * p.dir));
+    const contact = playerContactTime(p, p.dir * normalSpeed, normalRoom, false);
+    if (contact === Infinity
+      && (!avoiding || playerContactTime(p, p.dir * p.avoidSpeed, escapeAhead) === Infinity)) return;
+
+    const forward = escapeRoom(p, p.dir);
+    const stop = playerContactTime(p, 0, forward);
+    const inRoad = (p.node || p.mid) && p.t > 2 && p.t < p.len - 2;
+    let dir = p.dir, speed = 0, room = forward, best = stop, dodgeTarget = p.dodgeTarget;
+    if (!dodging && ((inRoad && player.vx * player.vx + player.vz * player.vz > 1) || stop !== Infinity)) {
+      speed = PED_ESCAPE_SPEED;
+      best = playerContactTime(p, dir * speed, forward);
+      // Corner connectors need their pending route; only full sidewalk/crosswalk tracks can turn around.
+      if (p.node || p.mid || p.route?.edge) {
+        const back = escapeRoom(p, -dir);
+        const retreat = playerContactTime(p, -dir * speed, back);
+        if (retreat > best + (avoiding ? 0.2 : 0)
+          || (!avoiding && retreat === Infinity && inRoad && ahead > p.len * 0.5)) {
+          dir = -dir; room = back; best = retreat;
+        }
+      }
+      if (stop > best) { dir = p.dir; speed = 0; room = forward; best = stop; }
+    }
+    if (!inRoad && player.vx * player.vx + player.vz * player.vz > 4 && best !== Infinity) {
+      for (const offset of [p.dodge - PED_DIVE_DISTANCE, p.dodge + PED_DIVE_DISTANCE]) {
+        if (!dodgeClear(p, offset, true)) continue;
+        const escape = playerContactTime(p, 0, 0, true, offset, true);
+        if (escape > best + 0.1) {
+          best = escape; dodgeTarget = offset; dir = p.dir; speed = 0; room = 0;
+        }
+      }
+    }
+    const sideDive = Math.abs(dodgeTarget - p.dodgeTarget) > 0.5;
+    const diveT = p.t + dir * PED_DIVE_DISTANCE;
+    const flatLanding = !(p.node || p.mid) || (Math.abs(diveT - 2) > 1 && Math.abs(diveT - (p.len - 2)) > 1);
+    // In a crosswalk, dive along the checked escape route when the car is close. Include the prone body in
+    // the room check and predict the stop at the landing, rather than assuming they keep running afterwards.
+    const forwardDive = !dodging && !sideDive && contact < 1 && speed > 0 && room >= PED_DIVE_DISTANCE + 0.9 && flatLanding
+      && player.vx * player.vx + player.vz * player.vz > 4
+      && playerContactTime(p, dir * PED_DODGE_SPEED, PED_DIVE_DISTANCE, true, dodgeTarget, true) === Infinity;
+    if (sideDive || forwardDive) {
+      p.diveStart = clock;
+      p.diveT = forwardDive ? diveT : p.t;
+      const side = Math.sign(dodgeTarget - p.dodge);
+      p.diveHeading = forwardDive ? Math.atan2(p.ux * dir, p.uz * dir) : Math.atan2(p.uz * side, -p.ux * side);
+      speed = 0;
+    }
+    p.dodgeTarget = dodgeTarget;
+    if (p.conversation) endConversation(p.conversation);
+    if (!p.resumeDir) p.resumeDir = p.dir;
+    if (dir !== p.dir) turnPed(p, dir);
+    p.pause = 0;
+    p.avoidSpeed = speed;
+    p.avoidT = p.t + dir * room;
+    p.avoidUntil = Math.max(clock + 0.6, p.diveStart + PEDESTRIAN_DIVE_DURATION);
+    p.restTime = Math.max(p.restTime, clock + 5);
+    p.socialTime = Math.max(p.socialTime, clock + 5);
+  }
+
   const walkedNodes = [];
   function walk(p, dt) {
+    const avoiding = clock < p.avoidUntil;
+    const diving = clock - p.diveStart < PEDESTRIAN_DIVE_DURATION;
+    const dodging = p.dodge !== 0 || p.dodgeTarget !== 0;
+    const brake = avoiding ? PED_ESCAPE_BRAKE : PED_BRAKE;
     if (p.pause > 0) p.pause = Math.max(0, p.pause - dt);
     const ahead = p.dir > 0 ? p.len - p.t : p.t;
     if (clock >= p.goalTime || Math.hypot(p.x - p.goalX, p.z - p.goalZ) < 25) {
@@ -2041,8 +2225,9 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       p.pause = 1.5 + Math.random() * 3;
       p.restTime = clock + 35 + Math.random() * 55;
     }
-    let vMax = p.pause > 0 || p.conversation ? 0 : p.speed;
-    if (!p.nextRoute) vMax = Math.min(vMax, Math.sqrt(2 * PED_BRAKE * ahead));
+    let vMax = avoiding ? p.avoidSpeed : p.pause > 0 || p.conversation ? 0 : p.speed;
+    if (dodging || diving) p.v = vMax = 0;
+    if (!p.nextRoute) vMax = Math.min(vMax, Math.sqrt(2 * brake * ahead));
     let room = Infinity;
     if (!p.node && p.nextRoute) {
       // A queue can reach back onto the sidewalk. Keep clear before entering its track, including short corner
@@ -2082,50 +2267,64 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         }
       }
     }
-    if (p.mid) {
+    let canCross = true;
+    if (p.node || p.mid) {
+      // room to walk before standing: up to the curb unless p may cross, and (at a junction) up to the back of whoever
+      // is ahead. Each person reacts to the WALK on their own (mrdoob's 35b0b84): walkDelay s after it comes on, however
+      // the queue or the vehicles still clearing the crossing stand; an escape from the player doesn't wait for it. A
+      // crossover (PXO) has no WALK: there people go as soon as the drivers have stopped (mayCrossMid).
       const s = curbProgress(p);
-      room = s <= KERB && !mayCrossMid(p) ? KERB - s : Infinity;
-    } else if (p.node) {
-      // room to walk before standing: up to the curb unless p may cross, and up to the back of whoever is ahead
-      const s = curbProgress(p);
-      room = s <= KERB && !mayCross(p) ? KERB - s : Infinity;
-      for (const q of p.node.curb) {
+      if (s <= KERB + 1e-6) {
+        const pxo = p.mid && p.mid.kind !== 'signal';
+        const walk = pxo || (p.mid ? SIGNALS.walk(SIGNALS.crossingIndex(p.mid.i), 1, clock) : walkOn(p.node, p.side));
+        if (!walk) p.walkAt = -1;
+        else if (p.walkAt < 0) p.walkAt = clock + (pxo ? 0 : p.walkDelay);
+        canCross = walk && (avoiding || clock >= p.walkAt) && (p.mid ? mayCrossMid(p) : mayCross(p));
+      }
+      room = s <= KERB + 1e-6 && !canCross ? Math.max(0, KERB - s) : Infinity;
+      if (p.node) for (const q of p.node.curb) {
         if (q === p || q.node !== p.node || q.side !== p.side || q.dir !== p.dir || Math.abs(q.line - p.line) > 0.55) continue;
         const gap = curbProgress(q) - s;
         if (gap > 0) room = Math.min(room, Math.max(0, gap - QUEUE_GAP));
       }
     }
-    vMax = Math.min(vMax, Math.sqrt(2 * PED_BRAKE * room));
-    p.v += Math.max(-2 * PED_BRAKE * dt, Math.min(PED_ACCEL * dt, vMax - p.v));
-    const movement = Math.min(p.v * dt, room);
+    if (avoiding) room = Math.min(room, Math.max(0, (p.avoidT - p.t) * p.dir));
+    vMax = Math.min(vMax, Math.sqrt(2 * brake * room));
+    p.v += clamp(vMax - p.v, -(avoiding ? brake : 2 * brake) * dt, (avoiding ? PED_ESCAPE_ACCEL : PED_ACCEL) * dt);
+    const movement = diving ? Math.min(Math.abs(p.diveT - p.t), PED_DODGE_SPEED * dt) : Math.min(p.v * dt, room);
     if (p.v * dt > room) p.v = 0;
     let t = p.t + p.dir * movement;
-    const reachesCurb = !!(p.node || p.mid) && curbProgress(p) <= KERB && (p.dir > 0 ? t : p.len - t) >= KERB - 1e-6;
-    p.waiting = reachesCurb && !(p.mid ? mayCrossMid(p) : mayCross(p));
+    const reachesCurb = !!(p.node || p.mid) && curbProgress(p) <= KERB + 1e-6 && (p.dir > 0 ? t : p.len - t) >= KERB - 1e-6;
+    p.waiting = !diving && reachesCurb && !canCross;
     if (p.waiting) {
       t = p.dir > 0 ? Math.min(t, KERB) : Math.max(t, p.len - KERB);
       p.v = 0;
     }
     // along a sidewalk past the end of a midblock crossing: some take it
     const offs = !p.node && !p.mid && p.route && p.route.offs;
-    if (offs && p.conversation === null) {
+    if (offs && !avoiding && !dodging && !diving && p.conversation === null) {
       for (const off of offs) {
         if ((off.t - p.t) * (off.t - t) > 0 || !nearMidSet.has(off.track.mid) || Math.random() > CROSS_CHANCE[off.track.mid.kind]) continue;
         Object.assign(p, off.track);
         p.route = off.track;
+        p.walkAt = -1;
         p.dir = off.end === 0 ? 1 : -1;
         t = off.end === 0 ? 0 : p.len;
         p.nextRoute = null;
         break;
       }
     }
-    if (p.dir > 0 ? t >= p.len : t <= 0) {
+    if (!dodging && !diving && (p.dir > 0 ? t >= p.len : t <= 0)) {
+      p.avoidUntil = 0;
+      p.resumeDir = 0;
+      p.avoidCheck = 0;
       t = p.dir > 0 ? p.len : 0;
       if (p.mid) {
         // over: onto the sidewalk there, on towards the goal
         const land = p.route.lands[p.dir > 0 ? 1 : 0];
         Object.assign(p, land.track);
         p.route = land.track;
+        p.walkAt = -1;
         t = land.t;
         p.dir = (p.goalX - p.x) * p.ux + (p.goalZ - p.z) * p.uz >= 0 ? 1 : -1;
         p.nextRoute = null;
@@ -2133,23 +2332,27 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
         const leg = p.nextRoute[p.nextLeg++];
         Object.assign(p, leg.track);
         p.route = leg.track;
+        p.walkAt = -1;
         p.dir = leg.dir;
         t = p.dir > 0 ? 0 : p.len;
         p.t = t;
         if (p.node) atCurb(p); // later arrivals this frame must see the newly occupied entrance
         if (p.nextLeg === p.nextRoute.length) p.nextRoute = null;
-      } else if (p.route && p.route.stub && !nearView(p.x, p.z, 2, PED_SPAWN_DISTANCE)) {
+      } else if (!avoiding && p.route && p.route.stub && !nearView(p.x, p.z, 2, PED_SPAWN_DISTANCE)) {
         p.placed = false; // (off a midblock crossing's stub, out of sight: gone on)
         return;
-      } else {
+      } else if (!avoiding) {
         p.dir = -p.dir;
+        p.walkAt = -1;
         p.v = 0;
         p.pause = TURN_TIME;
       }
     }
     p.t = t;
-    p.x = p.ax + p.ux * t;
-    p.z = p.az + p.uz * t;
+    const dodgeStep = (diving || p.dodgeTarget ? PED_DODGE_SPEED : 1.8) * dt;
+    p.dodge += clamp(p.dodgeTarget - p.dodge, -dodgeStep, dodgeStep);
+    p.x = p.ax + p.ux * t + p.uz * p.dodge;
+    p.z = p.az + p.uz * t - p.ux * p.dodge;
     if (p.mid) {
       if (t > KERB && t < p.len - KERB) markMid(p, true);
       else if (p.waiting) markMid(p, false);
@@ -2471,15 +2674,28 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     return (t > 2 && t < p.len - 2 ? CROSSWALK_Y : SIDEWALK_Y) + cutAt(x, z);
   }
 
-  // Every rig's gait advances every frame; only those the camera may see (or whose shadow it may see) solve their
-  // bone transforms and are drawn, the far ones with the light LOD.
+  // Visible people (and hidden ones within footstep range) advance their gait; only those the camera may see (or whose
+  // shadow it may see) solve their bone transforms and are drawn, the far ones with the light LOD. A hidden person more
+  // than 50 m away skips the gait entirely and re-plants its feet when it next comes into view (mrdoob, Slop New York
+  // 1fe128d).
   function renderPed(p, dt) {
     const draw = !hasView || visible(p.x, p.z, 7);
+    const diveTime = clock - p.diveStart;
+    const diving = diveTime < PEDESTRIAN_DIVE_DURATION;
+    const dx = p.x - focusX, dz = p.z - focusZ;
+    const distSq = dx * dx + dz * dz;
+    if (!draw && !diving && distSq > 2500) {
+      p.rig.placed = false;
+      return;
+    }
     const partner = p.conversation && (p.conversation.a === p ? p.conversation.b : p.conversation.a);
-    const heading = partner ? Math.atan2(partner.x - p.x, partner.z - p.z) : Math.atan2(p.ux * p.dir, p.uz * p.dir);
-    p.rig.update(dt, p.x, p.z, heading, pedGround, p, 0, draw);
+    const sideStep = p.dodgeTarget - p.dodge;
+    const heading = diving ? p.diveHeading : partner ? Math.atan2(partner.x - p.x, partner.z - p.z)
+      : Math.abs(sideStep) > 0.01 ? Math.atan2(p.uz * Math.sign(sideStep), -p.ux * Math.sign(sideStep))
+      : Math.atan2(p.ux * p.dir, p.uz * p.dir);
+    p.rig.update(dt, p.x, p.z, heading, pedGround, p, 0, draw, diving ? diveTime : -1);
     if (!draw) return;
-    pedCrowd.add(p.rig, Math.hypot(p.x - focusX, p.z - focusZ));
+    pedCrowd.add(p.rig, Math.sqrt(distSq));
   }
 
   // ---------------------------------------------------------------------------------------------------------------
@@ -2536,12 +2752,17 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     let nx, nz;
     if (outA < outL) { const s = Math.sign(across) || 1; nx = cs * s; nz = -sn * s; }
     else { const s = Math.sign(along) || 1; nx = sn * s; nz = cs * s; }
+    p.avoidUntil = 0;
+    p.dodge = p.dodgeTarget = 0;
+    p.diveStart = -Infinity;
+    p.resumeDir = 0;
     const bike = pe.type === 'cyclist';
     const fall = speed > (bike ? 4.5 : 2.8);
     p.v = 0;
     p.waiting = false;
     if (p.conversation) endConversation(p.conversation);
     if (fall) {
+      if (!p.rig.placed) p.rig.reset(p.x, p.z, Math.atan2(p.ux * p.dir, p.uz * p.dir), pedGround, p); // skipped its gait far off
       p.rig.solve(); // (its pose, even if it was out of sight)
       p.rag ??= new PersonRagdoll();
       // the legs go with the bumper, the upper body is left behind and folds over it
@@ -2693,6 +2914,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     if (playerEntity) {
       const heading = playerEntity.heading || 0;
       const speed = playerEntity.speed || 0;
+      player.fx = Math.sin(heading);
+      player.fz = Math.cos(heading);
       player.entity = playerEntity;
       player.x = playerEntity.position.x;
       player.z = playerEntity.position.z;
@@ -2701,7 +2924,8 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
     }
     player.halfW = activeMode === 'cyclist' ? 0.35 : activeMode === 'person' ? 0.32 : 0.86;
     player.halfL = activeMode === 'cyclist' ? 0.85 : activeMode === 'person' ? 0.32 : 2.18;
-    player.push = activeMode === 'cyclist' ? 0.82 : activeMode === 'person' ? 0.88 : 0.50;
+    pedRange = player.active && (activeMode === 'car' || activeMode === 'cyclist')
+      ? Math.hypot(player.vx, player.vz) * PED_LOOKAHEAD + player.halfL + 6 : 0;
 
     // 1. Cars & buses
     // Limit attempted placements, not just successes, and rotate through the pool so an awkward location
@@ -2748,9 +2972,13 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       locate(v);
       knock(v, dt);
       pose(v, dt);
-      if (player.active && Math.abs((v.y || 0) - player.y) < 2.5) collideWithPlayer(v, v.yaw + v.yawOffset, v.bus ? 1.30 : v.isSUV ? 0.92 : 0.86, v.bus ? 5.72 : v.isSUV ? 2.22 : 2.18);
-      if (v.vx * v.vx + v.vz * v.vz > 0.36) knockOn(v);
-
+    }
+    if (player.active) {
+      for (const v of vehicles) if (v.edge && Math.abs((v.y || 0) - player.y) < 2.5) collideWithPlayer(v);
+    }
+    collideTraffic();
+    for (const v of vehicles) {
+      if (!v.edge) continue;
       if (v.bus) renderBus(v);
       else renderCar(v);
     }
@@ -2825,6 +3053,7 @@ function createTrafficSystem(scene, sidewalks, obstacles) {
       const was = p.placed;
       if (spawnPed(p, jump ? 0 : 60, jump ? NEAR_RADIUS : 280, !jump) && !was) placedPeds++;
     }
+    for (const p of peds) if (p.placed) avoidPlayer(p);
     meet(dt);
     gatherCurbs();
     for (const c of nearMids) {

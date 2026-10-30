@@ -280,24 +280,67 @@ function blocksInRect(minX, maxX, minZ, maxZ) {
   }
   return [...out];
 }
-
 // ---------------------------------------------------------------------------------------------------------------------
-// Districts (the mapped district points; a place belongs to the nearest, the Three Arms Zone reaching a little further)
+// Districts: the waterfront's own names, else the smallest mapped neighbourhood around a place, else the riding, else the
+// nearest district point
 // ---------------------------------------------------------------------------------------------------------------------
-const DISTRICTS = GEO.districts;
-// District boundaries as mapped (OpenStreetMap admin_level 7)
+// GEO.districtBounds mixes Toronto's 158 neighbourhoods with the federal ridings (Spadina—Fort York, Toronto Centre…), which
+// come first in the list and take in the whole waterfront; and a few district points are ridings too. The ridings are not
+// places anyone names, so they only answer where no neighbourhood does, and their points are left off the map.
+const RIDINGS = new Set(['Spadina—Fort York', 'Toronto Centre', 'University—Rosedale', 'Toronto—Danforth', 'Davenport',
+  'Parkdale—High Park', 'Toronto—St. Paul\'s', 'Beaches—East York', 'Etobicoke—Lakeshore', 'Etobicoke Centre', 'Etobicoke North',
+  'York South—Weston', 'Eglinton—Lawrence', 'Humber River—Black Creek', 'York Centre', 'Willowdale', 'Don Valley West',
+  'Don Valley North', 'Don Valley East', 'Scarborough Southwest', 'Scarborough Centre', 'Scarborough—Guildwood',
+  'Scarborough North', 'Scarborough—Rouge Park', 'Scarborough—Agincourt']);
+const isRiding = (name) => RIDINGS.has(name.replace(/–/g, '—'));
+// Map names for a few district points (OpenStreetMap's "East Bayfront Precinct" is the planners' name; the Canary District
+// is the West Don Lands' new neighbourhood)
+const DISTRICT_RENAME = { 'East Bayfront Precinct': 'East Bayfront', Canary: 'West Don Lands' };
+const DISTRICTS = GEO.districts.filter((d) => !isRiding(d.name)).map((d) => (DISTRICT_RENAME[d.name] ? { ...d, name: DISTRICT_RENAME[d.name] } : d));
+// District boundaries as mapped (OpenStreetMap admin_level 7 ridings and admin_level 10 neighbourhoods), smallest first
+const polyArea = (poly) => {
+  let a = 0;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) a += (poly[j].x + poly[i].x) * (poly[j].z - poly[i].z);
+  return Math.abs(a / 2);
+};
 const DISTRICT_BOUNDS = (GEO.districtBounds || []).map(([name, flat]) => {
   const poly = [];
   for (let i = 0; i < flat.length; i += 2) poly.push({ x: flat[i], z: flat[i + 1] });
-  return { name, poly, ...polyBounds(poly) };
+  return { name, poly, riding: isRiding(name), area: polyArea(poly), ...polyBounds(poly) };
+}).sort((a, b) => a.riding - b.riding || a.area - b.area);
+// The waterfront's places by the names people use (the mapped neighbourhoods here are long compounds such as
+// "St Lawrence-East Bayfront-The Islands"): world rectangles [x0, x1, z0, z1] south of Lake Shore, or a mapped area's outline
+const WATERFRONT_NAMES = [
+  { name: 'Distillery District', area: 'Distillery District' },
+  { name: 'Ontario Place', box: [-3800, -2450, 720, 1400] },
+  { name: 'Harbourfront', poly: [[-1700, 500], [-1000, 460], [-500, 480], [0, 350], [350, 320], [350, 900], [-1700, 900]] },
+  { name: 'East Bayfront', box: [840, 1600, 215, 800] },
+  { name: 'West Don Lands', box: [1990, 2620, -470, 10] },
+  { name: 'Port Lands', box: [1600, 3700, 330, 2200] }
+].map((w) => {
+  const a = w.area && AREAS.find((r) => r.name === w.area);
+  const poly = a ? a.pts : w.poly ? w.poly.map(([x, z]) => ({ x, z }))
+    : [{ x: w.box[0], z: w.box[2] }, { x: w.box[1], z: w.box[2] }, { x: w.box[1], z: w.box[3] }, { x: w.box[0], z: w.box[3] }];
+  return { name: w.name, poly, ...polyBounds(poly) };
 });
-// The Three Arms Zone (within 900 m of the seats of government), else the mapped district around the point, else the
-// nearest district point
+const inBounds = (d, x, z) => x >= d.minX && x <= d.maxX && z >= d.minZ && z <= d.maxZ && pointInPoly(d.poly, x, z);
 function districtAt(x, z) {
   const taz = DISTRICTS.find((d) => d.r);
   if (taz && Math.hypot(taz.x - x, taz.z - z) < 900) return taz.name;
+  for (const d of WATERFRONT_NAMES) if (inBounds(d, x, z)) return d.name;
   for (const d of DISTRICT_BOUNDS) {
-    if (x >= d.minX && x <= d.maxX && z >= d.minZ && z <= d.maxZ && pointInPoly(d.poly, x, z)) return d.name;
+    if (!inBounds(d, x, z)) continue;
+    // a compound neighbourhood ("Kensington-Chinatown", "St Lawrence-East Bayfront-The Islands") answers with its nearest
+    // district point (Chinatown, St. Lawrence) when one is close
+    if (d.name.includes('-') && !d.riding) {
+      let near = null, nd = 1200;
+      for (const p of DISTRICTS) {
+        const dist = Math.hypot(p.x - x, p.z - z);
+        if (dist < nd && !p.r && inBounds(d, p.x, p.z)) { nd = dist; near = p; }
+      }
+      if (near) return near.name;
+    }
+    return d.name;
   }
   let best = null, bd = Infinity;
   for (const d of DISTRICTS) {
@@ -306,6 +349,19 @@ function districtAt(x, z) {
     if (dist < bd) { bd = dist; best = d; }
   }
   return best ? best.name : 'Toronto';
+}
+// The named park around a place (Sugar Beach, HTO Park, Corktown Common…), for the location label
+const NAMED_PARKS = AREAS.filter((a) => a.kind === 'park' && a.name);
+function parkAt(x, z) {
+  let best = null;
+  for (const a of NAMED_PARKS) {
+    if (x >= a.minX && x <= a.maxX && z >= a.minZ && z <= a.maxZ && pointInPoly(a.pts, x, z)) {
+      // the largest (Corktown Common over its Central Lawn)
+      const size = (a.maxX - a.minX) * (a.maxZ - a.minZ);
+      if (!best || size > best.size) best = { name: a.name, size };
+    }
+  }
+  return best && best.name;
 }
 for (const b of BLOCKS) b.district = districtAt(b.cx, b.cz);
 
@@ -374,6 +430,74 @@ for (const d of DECKS) {
     }
   }
 }
+// Road bridges over the water at street level: the stretches of the roads at grade (not service roads) whose centre
+// line crosses a river, a channel or a slip, dry ground at both ends (The Queensway over the Humber, Cherry Street &
+// Commissioners Street over the Don's new mouth and the Ship Channel). The geodata has no decks for them (its decks are
+// the flyovers over roads & railways) and the street level is open water there: city-grid.js lays a deck on each, and
+// road-network.js drives the road's lanes across it. [{ name, w, pts: [{ x, z, h: 0 }] }]
+const ROAD_BRIDGES = [];
+const BRIDGE_CELL = 32;
+const BRIDGE_GRID = new Map(); // cell -> [[a, b, half width]]
+const roadEnds = new Map(); // (a road's end shared with another road goes on: a bridge mapped as a way of its own)
+const endKey = (p) => `${Math.round(p.x)},${Math.round(p.z)}`;
+for (const r of ROADS) for (const p of [r.pts[0], r.pts[r.pts.length - 1]]) roadEnds.set(endKey(p), (roadEnds.get(endKey(p)) || 0) + 1);
+for (const r of ROADS) {
+  if (r.raised || r.cls === 'service' || r.pts.length < 2) continue;
+  const S = []; // the line every 2 m: [x, z, wet]
+  for (let i = 0; i + 1 < r.pts.length; i++) {
+    const a = r.pts[i], b = r.pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 2));
+    for (let k = 0; k < n; k++) {
+      const x = a.x + ((b.x - a.x) * k) / n, z = a.z + ((b.z - a.z) * k) / n;
+      S.push([x, z, !!waterAt(x, z)]);
+    }
+  }
+  const e = r.pts[r.pts.length - 1];
+  S.push([e.x, e.z, !!waterAt(e.x, e.z)]);
+  const goesOn = (p) => roadEnds.get(endKey(p)) > 1;
+  for (let i = 0; i < S.length; i++) {
+    if (!S[i][2] || (i > 0 && S[i - 1][2])) continue;
+    let j = i;
+    while (j + 1 < S.length && S[j + 1][2]) j++;
+    // (wet to a road's end that no other road goes on from: a pier, or a road running off into the lake)
+    if ((i > 0 || goesOn(r.pts[0])) && (j + 1 < S.length || goesOn(e)) && j - i < 125) {
+      const pts = [];
+      const i0 = Math.max(0, i - 3), i1 = Math.min(S.length - 1, j + 3); // (a few metres onto the banks)
+      for (let k = i0; k <= i1; k++) if (k === i0 || k === i1 || (k - i0) % 4 === 0) pts.push({ x: S[k][0], z: S[k][1], h: 0 });
+      ROAD_BRIDGES.push({ name: r.name, w: r.w, pts });
+      for (let k = 0; k + 1 < pts.length; k++) {
+        const a = pts[k], b = pts[k + 1];
+        const key = Math.floor((a.x + b.x) / 2 / BRIDGE_CELL) * 100000 + Math.floor((a.z + b.z) / 2 / BRIDGE_CELL);
+        for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+          const kk = key + dx * 100000 + dz;
+          (BRIDGE_GRID.get(kk) || BRIDGE_GRID.set(kk, []).get(kk)).push([a, b, r.w / 2]);
+        }
+      }
+    }
+    i = j;
+  }
+}
+// One-way streets the TTC's buses run both ways on (OpenStreetMap: oneway:bus=no; the geodata's road graph has no such
+// tag yet): the one-way link of that name nearest the point (road-network.js) runs both ways, against the one-way for
+// buses only. The Esplanade from George Street to Jarvis Street (westbound only for the rest: the 121 & 75 eastbound)
+const BUS_CONTRAFLOWS = [{ name: 'The Esplanade', lat: 43.64836, lon: -79.37032 }].map((c) => ({ ...c, ...worldFromLatLon(c.lat, c.lon) }));
+
+// Pieces of road the geodata's road graph lacks (road-network.js joins them in, junctions where they cross a road).
+// Ellis Avenue under the Gardiner: OpenStreetMap maps it as a tunnel (way 83146127), which tools/geo-roads.mjs leaves
+// out with the other underpasses, while the city draws the crossing at grade, crosswalks & signals and all; joined at
+// grade here so the 80 Queensway runs on along Ellis (a road cut under the Gardiner in the geodata would be the real fix)
+const ROAD_LINKS = [{ name: 'Ellis Avenue', w: 11.3, lanes: 3, rank: 2, from: [43.6371191, -79.4659272], to: [43.6368311, -79.4656913] }]
+  .map((l) => ({ ...l, from: worldFromLatLon(...l.from), to: worldFromLatLon(...l.to) }));
+
+/** On a road bridge's deck (within `margin` m of its edge) */
+function bridgeAt(x, z, margin = 0) {
+  for (const [a, b, hw] of BRIDGE_GRID.get(Math.floor(x / BRIDGE_CELL) * 100000 + Math.floor(z / BRIDGE_CELL)) || []) {
+    const ex = b.x - a.x, ez = b.z - a.z;
+    const t = Math.max(0, Math.min(1, ((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez || 1)));
+    if (Math.hypot(a.x + ex * t - x, a.z + ez * t - z) <= hw + margin) return true;
+  }
+  return false;
+}
+
 // The railway's grade separations (GEO.railLifts & railFills, tools/geo-rails.mjs): the height the heavy-rail tracks run
 // at, one field for every track (parallel tracks & crossovers agree). A lift is a street the tracks bridge: level over
 // the street, its sidewalks & abutments, then down at 2%; a fill joins two lifts (level inside its hull, down at 2%
@@ -813,6 +937,8 @@ function getLocationLabel(x, z) {
   }
   if (pair) return pair;
   if (near.length && near[0].dist < 25) return shortName(near[0].road.name);
+  const park = parkAt(x, z);
+  if (park) return `${park} · ${districtAt(x, z)}`;
   return `${districtAt(x, z)}${near.length ? ` · near ${shortName(near[0].road.name)}` : ''}`;
 }
 
@@ -856,6 +982,10 @@ Object.assign(window.CITY, {
   DISTRICTS,
   DISTRICT_BOUNDS,
   DECKS,
+  ROAD_BRIDGES,
+  bridgeAt,
+  BUS_CONTRAFLOWS,
+  ROAD_LINKS,
   SIGNAL_JUNCTIONS,
   SIGNAL_CROSSINGS,
   PXOS,

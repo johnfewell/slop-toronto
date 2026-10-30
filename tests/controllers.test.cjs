@@ -43,6 +43,29 @@ function keyboardHarness(nyc = {}) {
   };
 }
 
+test('overlays reject keyboard and synthetic movement and do not revive a held key through auto-repeat', () => {
+  const h = keyboardHarness();
+  h.key('keydown', 'KeyW'); assert.equal(h.controller.keys.forward, true);
+  h.window.CITY.uiOverlay = 'photo'; h.controller.resetInput();
+  h.key('keydown', 'KeyW'); h.controller.setTouchInput('forward', 1); h.controller.setGamepadInput('right', 1);
+  assert.equal(h.controller.keys.forward, false); assert.equal(h.controller.keys.right, false);
+  h.window.CITY.uiOverlay = null;
+  h.window.dispatch('keydown', { code: 'KeyW', repeat: true, target: { tagName: 'BODY' } });
+  assert.equal(h.controller.keys.forward, false);
+  h.key('keyup', 'KeyW'); h.key('keydown', 'KeyW'); assert.equal(h.controller.keys.forward, true);
+});
+
+test('a verified sports floor replaces local coarse terrain while preserving interiors and raised decks', () => {
+  const {controller,window}=keyboardHarness({CITY_BOUNDS:{sidewalkHeight:.22},blockAt:()=>({}),terrainHeightAt:()=>1.3,deckHeightAt:(x,z,y)=>y>5?6:0});
+  assert.equal(controller.getGroundHeight(0,0,'person',0),1.3);
+  window.CITY.sportsGroundAt=(x)=>x===0?.22:null;
+  assert.equal(controller.getGroundHeight(0,0,'person',0),.22);
+  assert.equal(controller.getGroundHeight(1,0,'person',0),1.3,'surrounding hill is preserved');
+  assert.equal(controller.getGroundHeight(0,0,'person',6),6,'an occupied raised deck takes precedence');
+  controller.interiorSpace={floor:17.4};
+  assert.equal(controller.getGroundHeight(0,0,'person',0),17.4);
+});
+
 test('releasing a movement key after focusing search stops movement', () => {
   const { controller, key } = keyboardHarness();
   key('keydown', 'KeyW');
@@ -141,7 +164,7 @@ for (const interruption of ['blur', 'hidden', 'reset']) {
   });
 }
 
-function advanceWithTouch(mode, strength, reverse) {
+function advanceWithTouch(mode, strength, reverse, configure = () => {}) {
   const { controller } = keyboardHarness();
   const entity = { position: { x: 0, y: 0, z: 0 }, heading: 0, speed: 0 };
   if (mode === 'Person') Object.assign(entity, { verticalVel: 0 });
@@ -166,6 +189,7 @@ function advanceWithTouch(mode, strength, reverse) {
   controller.setTouchInput(reverse ? 'backward' : 'forward', strength);
   controller.setTouchInput(reverse ? 'right' : 'left', strength);
   if (mode === 'Helicopter') controller.setTouchInput(reverse ? 'down' : 'up', strength);
+  configure(entity, controller);
   controller[`update${mode}`](0.1, 0);
   return entity;
 }
@@ -393,4 +417,105 @@ test('fast bodies stop at a thin wall instead of passing through it when frames 
     for (let i = 0; i < 12; i++) controller.moveBody(ent, mode, 0.05);
     assert.ok(ent.position.x < -0.2, `the ${mode} stays on its side of the wall (x ${ent.position.x.toFixed(2)})`);
   }
+});
+
+
+test('player lamps distinguish parked, braking, reversing and the custom handbrake', () => {
+  const step = (strength, reverse, speed = 0, handbrake = false) => advanceWithTouch('Car', strength, reverse, (car, controller) => {
+    car.speed = speed;
+    car.carState = { value: { x: 0, w: 0 } };
+    controller.keys.up = handbrake;
+  }).carState.value;
+  assert.deepEqual(step(0, false), { x: 0, w: 0 }, 'parked lamps are off');
+  assert.deepEqual(step(1, true, 10), { x: 1, w: 0 }, 'backward input brakes before reversing');
+  assert.deepEqual(step(1, true), { x: 0, w: 1 }, 'white reverse lights when backing up');
+  assert.deepEqual(step(0, false, 10, true), { x: 1, w: 0 }, 'handbrake still lights the brake lamps');
+});
+
+test('leaving the car clears its brake and reverse lights', () => {
+  const { controller } = keyboardHarness();
+  const car = { carState: { value: { x: 1, w: 1 } } };
+  controller.entities = { car, person: {} };
+  controller.setMode('person');
+  assert.deepEqual(car.carState.value, { x: 0, w: 0 });
+});
+
+test('user mode changes follow the current player instead of selecting a mode left at spawn', () => {
+  const { controller, ent: cyclist, key } = teleportHarness('cyclist');
+  controller.entities = Object.fromEntries(['person', 'car', 'cyclist', 'helicopter'].map((mode) =>
+    [mode, mode === 'cyclist' ? cyclist : teleportHarness(mode).ent]));
+  Object.assign(cyclist.position, { x: -150, y: 0, z: 120 }); cyclist.heading = 0.7;
+  let previous = cyclist;
+  for (const mode of ['person', 'car', 'helicopter', 'cyclist']) {
+    key('keydown', 'KeyW');
+    const origin = { ...previous.position };
+    assert.equal(controller.switchMode(mode), true);
+    const current = controller.getActiveEntity();
+    assert.equal(controller.activeMode, mode);
+    assert.ok(Math.hypot(current.position.x - origin.x, current.position.z - origin.z) <= 12, 'stay beside the current player');
+    assert.equal(current.heading, 0.7); assert.equal(current.speed, 0);
+    assert.equal(controller.keys.forward, false);
+    assert.ok(Math.hypot(current.position.x - 400, current.position.z - 400) > 100, 'never return to the old spawn');
+    assert.deepEqual([previous.position.x, previous.position.z], [origin.x, origin.z], 'the outgoing vehicle stays parked');
+    previous = current;
+  }
+});
+
+test('a mode change with no safe arrival keeps the current mode and location', () => {
+  const { controller, ent: cyclist } = teleportHarness('cyclist');
+  controller.entities.person = teleportHarness('person').ent;
+  controller.findTeleportPosition = () => null;
+  assert.equal(controller.switchMode('person'), false);
+  assert.equal(controller.activeMode, 'cyclist'); assert.equal(controller.getActiveEntity(), cyclist);
+  assert.equal(controller.switchMode('invalid'), false);
+});
+
+test('mode changes preserve an elevated deck instead of dropping the player to the street below', () => {
+  const { controller, ent: cyclist } = teleportHarness('cyclist');
+  controller.entities.person = teleportHarness('person').ent;
+  Object.assign(cyclist.position, { x: 30, y: 12, z: 20 });
+  controller.getGroundHeight = (x, z, mode, y) => y > 10 ? 12 : 0;
+  assert.equal(controller.switchMode('person'), true);
+  assert.equal(controller.getActiveEntity().position.y, 12);
+});
+
+
+test('ground passenger interaction does not jump, while E still ascends in flight', () => {
+  const { controller, key } = keyboardHarness();
+  controller.activeMode = 'person'; key('keydown', 'KeyE'); assert.equal(controller.keys.up, false);
+  controller.activeMode = 'helicopter'; key('keydown', 'KeyE'); assert.equal(controller.keys.up, true);
+  key('keyup', 'KeyE'); assert.equal(controller.keys.up, false);
+});
+
+test('station interiors ground and constrain walking independently of overlapping outdoor buildings', () => {
+  const { controller, ent } = teleportHarness('person', [{ minX: -100, maxX: 100, minZ: -100, maxZ: 100, maxY: 90 }]);
+  delete controller.getGroundHeight;
+  controller.interiorSpace = { floor: 17.4, constrain(p, radius) { return { x: Math.max(-4 + radius, Math.min(-2 - radius, p.x)), z: Math.max(-80 + radius, Math.min(80 - radius, p.z)) }; } };
+  controller.teleportActiveTo(-3, 0, Math.PI / 2);
+  assert.equal(ent.position.x, -3); assert.equal(ent.position.y, 17.4);
+  ent.speed = 20; controller.moveBody(ent, 'person', 1);
+  assert.equal(ent.position.x, -2.5, 'cannot step into the track area');
+  assert.equal(controller.findTeleportPosition(0, 0, 0, 0, true), null);
+  controller.keys.up = true; controller.updatePerson(0.1);
+  assert.equal(ent.position.y, 17.4); assert.equal(ent.verticalVel, 0, 'a platform jump cannot escape its cell');
+  controller.interiorSpace = null;
+  assert.equal(controller.getGroundHeight(0, 0), 0, 'outdoor grounding resumes when the visit ends');
+});
+
+test('a cycle track separator is crossed on a bicycle only steeply, held along at a glance, and stops a car', () => {
+  // a separator curb along z at x = 0 (world-collision.js boxCollider, kind curb: 0.45 m wide, 13 cm high)
+  const curbAt = (h) => h.window.CITY.WorldCollision.boxCollider(0, 0, 0.225, 50, 0, 0, 0.13, 'curb');
+  const run = (mode, x, heading, speed, steps) => {
+    const h = teleportHarness(mode);
+    h.controller.colliders = [curbAt(h)];
+    Object.assign(h.ent.position, { x, y: 0, z: 0 });
+    Object.assign(h.ent, { heading, speed, vx: 0, vz: 0, angularVel: 0 });
+    for (let i = 0; i < steps; i++) h.controller.moveBody(h.ent, mode, 1 / 60);
+    return h.ent.position;
+  };
+  assert.ok(run('cyclist', -1.5, Math.PI / 4, 6, 40).x > 0.5, 'a bicycle crosses at 45 degrees');
+  const along = run('cyclist', -0.8, (10 * Math.PI) / 180, 6, 40);
+  assert.ok(along.x < -0.45 && along.z > 3, `a bicycle at 10 degrees is held in the track and rides on (x ${along.x.toFixed(2)}, z ${along.z.toFixed(2)})`);
+  assert.ok(run('person', -1.5, Math.PI / 2, 1.6, 120).x > 0.5, 'a walker steps over it');
+  assert.ok(run('car', -3, Math.PI / 2, 10, 60).x < -1, 'a car is stopped by it');
 });

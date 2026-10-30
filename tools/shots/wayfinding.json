@@ -1,0 +1,46 @@
+[
+  {
+    "name": "wayfinding-day",
+    "mode": "person",
+    "time": "midday",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,s=C.wayfindingStats;console.log('[ride-check] signs '+JSON.stringify({source:s.sourceCount,placed:s.placed,unsupported:s.unsupported,rejected:s.rejected}));if(s.sourceCount!==272||s.unsupported!==0||s.placed<100)throw new Error('TO360 source layer missing');const p=s.sites.find(r=>r.id==='IP-00839')||s.sites[0];window.__sign=p;if(p.id==='IP-00839'&&Math.abs(p.yaw-(C.GEO.frame.bearingDeg-90)*Math.PI/180)>.001)throw new Error('Photo legend orientation missing');const x=p.x+Math.sin(p.yaw)*2.4,z=p.z+Math.cos(p.yaw)*2.4;a.teleportTo(x,z,Math.atan2(p.x-x,p.z-z));a.selectCamera('pov',true);console.log('[ride-check] sign '+JSON.stringify(p));})()",
+    "wait": 2000
+  },
+  {
+    "name": "wayfinding-map",
+    "js": "(() => {const s=window.CITY.wayfindingMapStats;if(!s.active.includes(window.__sign.id)||s.slots!==8)throw new Error('Nearby local-map pool did not run');console.log('[ride-check] map pool '+JSON.stringify(s));})()",
+    "wait": 1000
+  },
+  {
+    "name": "wayfinding-generated",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,p=C.wayfindingStats.sites.find(r=>r.id!=='IP-00839');window.__genericSign=p;const x=p.x+Math.sin(p.yaw)*2.8,z=p.z+Math.cos(p.yaw)*2.8;a.teleportTo(x,z,Math.atan2(p.x-x,p.z-z));a.selectCamera('pov',true);})()",
+    "wait": 1500
+  },
+  {
+    "name": "wayfinding-generated-map",
+    "js": "(() => {const s=window.CITY.wayfindingMapStats;if(!s.generatedFaces.includes(window.__genericSign.id+':front'))throw new Error('Generated local-map path missing');console.log('[ride-check] generated faces '+JSON.stringify(s));})()",
+    "wait": 500
+  },
+  {
+    "name": "wayfinding-photo-print",
+    "js": "(() => {const a=window.__CITY_APP,p=window.__sign,x=p.x+Math.sin(p.yaw)*3.2,z=p.z+Math.cos(p.yaw)*3.2;a.teleportTo(x,z,Math.atan2(p.x-x,p.z-z));a.selectCamera('pov',true);document.body.classList.add('film');for(const n of ['WayfindingBlankFaces','WayfindingNearbyMaps'])a.scene.getObjectByName(n).visible=false;})()",
+    "wait": 1000
+  },
+  {
+    "name": "info-pillar",
+    "mode": "person",
+    "time": "midday",
+    "js": "(() => {document.body.classList.remove('film');const C=window.CITY,a=window.__CITY_APP,s=C.infoPillarStats;for(const n of ['WayfindingBlankFaces','WayfindingNearbyMaps'])a.scene.getObjectByName(n).visible=true;console.log('[ride-check] info pillars '+JSON.stringify({source:s.sourceCount,placed:s.placed,rejected:s.rejected}));if(s.sourceCount!==44||s.placed<10)throw new Error('InfoPillar family missing');const p=s.sites.find(r=>r.id==='IP-00062')||s.sites[0];window.__info=p;const x=p.x+Math.sin(p.yaw)*3.2,z=p.z+Math.cos(p.yaw)*3.2;a.teleportTo(x,z,Math.atan2(p.x-x,p.z-z));a.selectCamera('pov',true);console.log('[ride-check] info pillar site '+JSON.stringify(p));})()",
+    "wait": 2000
+  },
+  {
+    "name": "info-pillar-map",
+    "js": "(() => {if(!window.CITY.wayfindingMapStats.active.includes(window.__info.id))throw new Error('InfoPillar local map missing');const low=window.CITY.QUALITY.lean;if(low&&window.CITY.wayfindingMapStats.textureWidth!==512)throw new Error('Phone map pool did not shrink');})()",
+    "wait": 1000
+  },
+  {
+    "name": "info-pillar-quarter",
+    "js": "(() => {const a=window.__CITY_APP,p=window.__info,x=p.x+Math.sin(p.yaw)*3+Math.cos(p.yaw)*2,z=p.z+Math.cos(p.yaw)*3-Math.sin(p.yaw)*2;a.teleportTo(x,z,Math.atan2(p.x-x,p.z-z));a.selectCamera('pov',true);})()",
+    "wait": 1500
+  }
+]

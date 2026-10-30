@@ -1,0 +1,7 @@
+[
+ {
+  "name": "geo-timing",
+  "wait": 300,
+  "js": "console.log('GEO-TIMING ' + JSON.stringify({ resources: performance.getEntriesByType('resource').filter((e) => /geodata/.test(e.name)).map((e) => ({ file: e.name.split('/').pop(), start: Math.round(e.startTime), end: Math.round(e.responseEnd), bytes: e.encodedBodySize })), decodeMs: performance.getEntriesByName('geodata-decode').map((e) => +e.duration.toFixed(1)), geoReadyMs: performance.getEntriesByName('geodata-decode').map((e) => Math.round(e.startTime + e.duration)), brotliStream: (() => { try { new DecompressionStream('brotli'); return true; } catch (e) { return false; } })() }))"
+ }
+]

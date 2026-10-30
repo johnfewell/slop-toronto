@@ -1,0 +1,22 @@
+[
+ {
+  "name": "residential-wide",
+  "mode": "person",
+  "time": "midday",
+  "x": -2042.6,
+  "z": -2306.9,
+  "heading": 0,
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-2012.6, 75, -2376.9], look: [-2042.6, 0, -2306.9], fov: 50 }); })()"
+ },
+ {
+  "name": "king-spadina-wide",
+  "mode": "person",
+  "time": "midday",
+  "x": -1091.2,
+  "z": -307.6,
+  "heading": 0,
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1061.2, 75, -377.6], look: [-1091.2, 0, -307.6], fov: 50 }); })()"
+ }
+]

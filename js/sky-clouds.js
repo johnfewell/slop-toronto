@@ -85,9 +85,7 @@ async function setupClouds(renderer) {
   if (ctx) {
     ctx.qualityPreset = preset;
     ctx.resolutionScale = Q.cloudScale;
-    // The medium & low presets' approximate sun & sky light breaks the clouds pass on three's dev build: its shader
-    // reads the atmosphere's parameters without ever declaring their struct ('Member "bottomRadius" not found in struct
-    // "AtmosphereParameters"', then nothing renders). The accurate light costs nothing measurable here
+    // Keep the physical atmosphere's accurate sun/sky lighting across quality tiers.
     ctx.clouds.accurateSunSkyLight = true;
     Clouds.applyCloudTypePreset(ctx, 'fairWeatherCumulus');
     // The sky lives: cells grow & dissipate on a swirling wind (the library's evolvingWeather), on a clock running
@@ -101,8 +99,7 @@ async function setupClouds(renderer) {
       ctx.moonGain = numParam('atmoMoon', 3e5);
       ctx.moonColor.set(0.72, 0.8, 1);
     }
-    // (The city's reversed depth buffer: the library fits its shadow cascades & reads the scene depth the reversed way
-    // itself since PR #382 (tools/build-clouds.mjs), so the ordinary-depth camera copy f0b2133 handed it is gone)
+    // Alpha.6 handles reversed-depth shadow fitting and scene-depth reads directly; use the real scene camera.
     ctx.stbnTexture = Clouds.createJitterTexture();
     Clouds.loadBakedCloudTextures({
       localWeather: Clouds.DEFAULT_LOCAL_WEATHER_URL,
@@ -208,7 +205,10 @@ async function setupClouds(renderer) {
       const c = cloudsPass ? cloudsPass.composite(colorNode) : colorNode;
       return skyGlow ? TSL.vec4(c.rgb.add(skyGlow), c.a) : c;
     },
-    resetHistory: () => ctx && ctx.resetHistory(),
+    resetHistory(sampleFrame = null) {
+      if (Number.isSafeInteger(sampleFrame) && sampleFrame >= 0) frame = sampleFrame;
+      ctx?.resetHistory();
+    },
     update(dt) {
       // the clouds replace the sky dome's painted ones
       if (ctx && lightingSystem.sky && lightingSystem.sky.cloudCoverage) lightingSystem.sky.cloudCoverage.value = 0;

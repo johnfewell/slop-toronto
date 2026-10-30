@@ -1,0 +1,68 @@
+[
+  {
+    "name": "rinks-dufferin",
+    "mode": "person",
+    "time": "midday",
+    "js": "(() => {window.__rk=(asset)=>{const C=window.CITY,r=C.RINKS.records.find(q=>q.assetId===asset),site=C.rinkStats.sites.find(q=>q.assetId===asset);if(!r||!site)throw new Error('Rink not drawn '+asset);const rect=C.outlineRectangle(r.polygons[0].outer);let p=[rect.x,rect.z];if(!C.inRecord(r,...p)){const xs=r.polygons[0].outer.map(q=>q[0]),zs=r.polygons[0].outer.map(q=>q[1]);outer:for(let x=Math.min(...xs);x<Math.max(...xs);x+=1)for(let z=Math.min(...zs);z<Math.max(...zs);z+=1)if(C.inRecord(r,x,z)){p=[x,z];break outer;}}return {r,site,rect,p,px:-rect.az,pz:rect.ax};};window.__rkView=(asset,{side=1,along=.45,dist=1,height=1,fov=55}={})=>{const {site,rect,px,pz}=window.__rk(asset),d=(rect.width/2+rect.length*.35+14)*dist,x=rect.x+px*d*side+rect.ax*rect.length*along,z=rect.z+pz*d*side+rect.az*rect.length*along;window.__CITY_APP.cameraSystem.cinema=()=>({pos:[x,site.y+18*height+rect.length*.25*height,z],look:[rect.x,site.y,rect.z],fov});};const C=window.CITY,a=window.__CITY_APP,s=C.rinkStats;console.log('[ride-check] rinks '+JSON.stringify({season:s.season,forced:s.forced,placed:s.placed,rejected:s.rejected,terrain:s.terrain,terrainPieces:s.terrainPieces,triangles:[s.surfaceTriangles,s.boardTriangles],colliders:s.colliders,boards:s.boards,lines:s.lines,walls:s.walls,wallColliders:s.wallColliders,maxWall:s.maxWall,overlaps:s.sites.filter(x=>x.overlap).map(x=>[x.id,x.overlap]),surfaces:s.sites.map(x=>x.assetId+':'+x.surface)}));if(s.sourceCount!==17)throw new Error('Rink source missing');for(const id of ['970547','970567','14282','43587','43607'])window.__rk(id);const floors=[];for(const site of s.sites){const {p}=window.__rk(site.assetId),h=a.controllerManager.getGroundHeight(p[0],p[1],'person',site.y);floors.push([site.assetId,+h.toFixed(3)]);if(Math.abs(h-site.y)>.001)throw new Error('Rink walking floor mismatch '+site.id+': '+h);}console.log('[ride-check] rink floors '+JSON.stringify(floors));const {rect}=window.__rk('970547'),d=rect.length/2+7,q={x:rect.x-rect.ax*d,z:rect.z-rect.az*d};a.cameraSystem.cinema=null;a.teleportTo(q.x,q.z,Math.atan2(rect.x-q.x,rect.z-q.z));a.selectCamera('pov',true);})()",
+    "wait": 2200
+  },
+  {
+    "name": "rinks-ground-review",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,T=C.THREE,ray=new T.Raycaster(),terrain=a.scene.getObjectByName('TerrainNear'),bad=[];let rays=0;a.scene.updateMatrixWorld(true);for(const site of C.rinkStats.sites){const {r}=window.__rk(site.assetId),xs=r.polygons[0].outer.map(q=>q[0]),zs=r.polygons[0].outer.map(q=>q[1]);for(let i=1;i<4;i++)for(let j=1;j<4;j++){const x=Math.min(...xs)+(Math.max(...xs)-Math.min(...xs))*i/4,z=Math.min(...zs)+(Math.max(...zs)-Math.min(...zs))*j/4;if(!C.inRecord(r,x,z))continue;rays++;ray.set(new T.Vector3(x,site.y+6,z),new T.Vector3(0,-1,0));const hit=ray.intersectObject(terrain,false).find(h=>h.point.y>site.y+.01);if(hit)bad.push({id:site.id,x,z,y:hit.point.y});}}console.log('[ride-check] rink ground '+JSON.stringify({rays,bad}));if(bad.length)throw new Error('Terrain covers a rink');})()",
+    "wait": 400
+  },
+  {
+    "name": "rinks-dufferin-overview",
+    "js": "window.__rkView('970547',{side:-1,along:.1})",
+    "wait": 1400
+  },
+  {
+    "name": "rinks-highpark-overview",
+    "js": "window.__rkView('43587',{side:-1,along:.6,dist:1.2})",
+    "wait": 1400
+  },
+  {
+    "name": "rinks-nps-overview",
+    "js": "window.__rkView('43599',{side:1,along:.2})",
+    "wait": 1400
+  },
+  {
+    "name": "rinks-riverdale-overview",
+    "js": "window.__rkView('71802',{side:1,along:.3,dist:1.3})",
+    "wait": 1400
+  },
+  {
+    "name": "rinks-withrow-overview",
+    "js": "window.__rkView('43613',{side:-1,along:.3})",
+    "wait": 1400
+  },
+  {
+    "name": "rinks-withrow-close",
+    "js": "window.__rkView('43613',{side:1,along:-.2,dist:.55,height:.45,fov:60})",
+    "wait": 1400
+  },
+  {
+    "name": "rinks-board-walk",
+    "mode": "person",
+    "js": "(() => {const a=window.__CITY_APP,{rect,px,pz}=window.__rk('43607');a.cameraSystem.cinema=null;a.teleportTo(rect.x,rect.z,Math.atan2(px,pz));a.selectCamera('pov',true);window.__walk={x:rect.x,z:rect.z};})()",
+    "hold": "KeyW",
+    "wait": 6000
+  },
+  {
+    "name": "rinks-board-stop",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,{r,rect,px,pz}=window.__rk('43607'),e=a.controllerManager.getActiveEntity(),moved=(e.position.x-window.__walk.x)*px+(e.position.z-window.__walk.z)*pz;console.log('[ride-check] board stop '+JSON.stringify({moved,half:rect.width/2,inside:C.inRecord(r,e.position.x,e.position.z)}));if(moved<rect.width/2-2.5)throw new Error('Player did not reach the boards');if(!C.inRecord(r,e.position.x,e.position.z))throw new Error('Boards did not stop the player');})()",
+    "wait": 300
+  },
+  {
+    "name": "rinks-night",
+    "time": "midnight",
+    "js": "window.__rkView('970547',{side:-1,along:.1})",
+    "wait": 1800
+  },
+  {
+    "name": "rinks-card",
+    "time": "midday",
+    "js": "(() => {const a=window.__CITY_APP;a.cameraSystem.cinema=null;const p=window.CITY.Navigation.buildIndex().find(p=>p.city?.id==='city-rink:43587');a.tourGuide.showPlace(p,{fly:false});const t=document.getElementById('pc-city-info').textContent;if(!t.includes('In the city')||!t.includes('aerial review')||!t.includes('Boards: No'))throw new Error('Rink card link missing');console.log('[ride-check] rink card '+t);})()",
+    "wait": 1000
+  }
+]

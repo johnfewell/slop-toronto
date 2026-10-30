@@ -1,0 +1,177 @@
+[
+ {
+  "name": "hud",
+  "mode": "person",
+  "time": "midday",
+  "wait": 300,
+  "js": "document.getElementById('btn-toggle-hud')?.click()"
+ },
+ {
+  "name": "residential-close-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -2047, Z = -2306.9, SX = 1, SZ = 0, KIND = 'close';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "residential-medium-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -2047, Z = -2306.9, SX = 1, SZ = 0, KIND = 'medium';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "offgrid-close-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -5160, Z = -2460, SX = -1, SZ = 1, KIND = 'close';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "offgrid-medium-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -5160, Z = -2460, SX = -1, SZ = 1, KIND = 'medium';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "offgrid-aerial-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -5160, Z = -2460, SX = -1, SZ = 1, KIND = 'aerial';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "downtown-close-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -820, Z = -348.8, SX = 0, SZ = -1, KIND = 'close';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "downtown-medium-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -820, Z = -348.8, SX = 0, SZ = -1, KIND = 'medium';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "queen-tracks-road-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -1000, Z = -730, SX = 0, SZ = 1, KIND = 'road';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "queen-tracks-roadhigh-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -1000, Z = -730, SX = 0, SZ = 1, KIND = 'roadhigh';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "stamp-euclid-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const app = window.__CITY_APP;\n  const X = -2042.6, Z = -2303.314, UX = 0, UZ = -1;\n  app.teleportTo(X - UX * 20, Z - UZ * 20, Math.atan2(UX, UZ));\n  const cam = { pos: [X - UX * 0.55, 0.22 + 0.75, Z - UZ * 0.55], look: [X, 0.22, Z], fov: 50 };\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] stamp ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "stamp-dundas-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => {\n  const app = window.__CITY_APP;\n  const X = -5164.613, Z = -2453.718, UX = 0.6616, UZ = 0.7498;\n  app.teleportTo(X - UX * 20, Z - UZ * 20, Math.atan2(UX, UZ));\n  const cam = { pos: [X - UX * 0.55, 0.22 + 0.75, Z - UZ * 0.55], look: [X, 0.22, Z], fov: 50 };\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] stamp ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "patio-aerial-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => {\n  const app = window.__CITY_APP, C = window.CITY;\n  const all = C.patioStats.sites.filter((s) => s.kind === 'sidewalk' && s.outerLine !== null && s.outerLine !== undefined);\n  const s = all.find((p) => /OSSINGTON/.test(p.address)) || all.find((p) => /COLLEGE/.test(p.address)) || all[0];\n  const x = s.cx + s.tx * 14 - s.nx * 1.2, z = s.cz + s.tz * 14 - s.nz * 1.2;\n  app.teleportTo(x, z, Math.atan2(-s.tx, -s.tz));\n  const cam = [s.cx - s.nx * 9 + s.tx * 6, 9, s.cz - s.nz * 9 + s.tz * 6];\n  app.cameraSystem.cinema = () => ({ pos: cam, look: [s.cx - s.nx * 1.5, 0.3, s.cz - s.nz * 1.5], fov: 55 });\n  console.log('[ride-check] patio ' + s.address);\n})()"
+ },
+ {
+  "name": "residential-close-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -2047, Z = -2306.9, SX = 1, SZ = 0, KIND = 'close';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "residential-medium-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -2047, Z = -2306.9, SX = 1, SZ = 0, KIND = 'medium';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "offgrid-close-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -5160, Z = -2460, SX = -1, SZ = 1, KIND = 'close';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "offgrid-medium-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -5160, Z = -2460, SX = -1, SZ = 1, KIND = 'medium';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "offgrid-aerial-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -5160, Z = -2460, SX = -1, SZ = 1, KIND = 'aerial';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "downtown-close-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -820, Z = -348.8, SX = 0, SZ = -1, KIND = 'close';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "downtown-medium-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -820, Z = -348.8, SX = 0, SZ = -1, KIND = 'medium';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "queen-tracks-road-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -1000, Z = -730, SX = 0, SZ = 1, KIND = 'road';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "queen-tracks-roadhigh-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const C = window.CITY, app = window.__CITY_APP;\n  const X = -1000, Z = -730, SX = 0, SZ = 1, KIND = 'roadhigh';\n  let best = null, bd = 1e9;\n  for (const r of C.ROADS) { if (!r.name) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1];\n    const dx = b.x - a.x, dz = b.z - a.z, L2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((X - a.x) * dx + (Z - a.z) * dz) / L2));\n    const px = a.x + dx * t, pz = a.z + dz * t, d = Math.hypot(X - px, Z - pz); if (d < bd) { bd = d; best = { r, px, pz, dx, dz, L: Math.sqrt(L2) }; } } }\n  const ux = best.dx / best.L, uz = best.dz / best.L; let nx = -uz, nz = ux; if (nx * SX + nz * SZ < 0) { nx = -nx; nz = -nz; }\n  const h = best.r.w / 2, cx = best.px, cz = best.pz;\n  const P = (o, a, y) => [cx + nx * o + ux * a, y, cz + nz * o + uz * a];\n  let cam;\n  if (KIND === 'close') cam = { pos: P(h + 1.7, -1, 1.65), look: P(h + 1.3, 7, 0.1), fov: 55 };\n  else if (KIND === 'medium') cam = { pos: P(h + 0.4, -6, 6.5), look: P(h + 2.0, 16, 0), fov: 50 };\n  else if (KIND === 'aerial') cam = { pos: P(h - 3, -14, 14), look: P(h + 2.5, 8, 0), fov: 50 };\n  else if (KIND === 'road') cam = { pos: P(h - 2.2, -2, 1.5), look: P(0, 22, 0), fov: 55 };\n  else cam = { pos: P(h - 3.5, -8, 5.5), look: P(0, 18, 0), fov: 55 };\n  app.teleportTo(cx - nx * (h + 2) - ux * 25, cz - nz * (h + 2) - uz * 25, Math.atan2(ux, uz));\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] aim ' + KIND + ' ' + best.r.name + ' w' + best.r.w + ' ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "stamp-euclid-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const app = window.__CITY_APP;\n  const X = -2042.6, Z = -2303.314, UX = 0, UZ = -1;\n  app.teleportTo(X - UX * 20, Z - UZ * 20, Math.atan2(UX, UZ));\n  const cam = { pos: [X - UX * 0.55, 0.22 + 0.75, Z - UZ * 0.55], look: [X, 0.22, Z], fov: 50 };\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] stamp ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "stamp-dundas-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => {\n  const app = window.__CITY_APP;\n  const X = -5164.613, Z = -2453.718, UX = 0.6616, UZ = 0.7498;\n  app.teleportTo(X - UX * 20, Z - UZ * 20, Math.atan2(UX, UZ));\n  const cam = { pos: [X - UX * 0.55, 0.22 + 0.75, Z - UZ * 0.55], look: [X, 0.22, Z], fov: 50 };\n  app.cameraSystem.cinema = () => cam;\n  console.log('[ride-check] stamp ' + JSON.stringify(cam));\n})()"
+ },
+ {
+  "name": "patio-aerial-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(() => {\n  const app = window.__CITY_APP, C = window.CITY;\n  const all = C.patioStats.sites.filter((s) => s.kind === 'sidewalk' && s.outerLine !== null && s.outerLine !== undefined);\n  const s = all.find((p) => /OSSINGTON/.test(p.address)) || all.find((p) => /COLLEGE/.test(p.address)) || all[0];\n  const x = s.cx + s.tx * 14 - s.nx * 1.2, z = s.cz + s.tz * 14 - s.nz * 1.2;\n  app.teleportTo(x, z, Math.atan2(-s.tx, -s.tz));\n  const cam = [s.cx - s.nx * 9 + s.tx * 6, 9, s.cz - s.nz * 9 + s.tz * 6];\n  app.cameraSystem.cinema = () => ({ pos: cam, look: [s.cx - s.nx * 1.5, 0.3, s.cz - s.nz * 1.5], fov: 55 });\n  console.log('[ride-check] patio ' + s.address);\n})()"
+ }
+]

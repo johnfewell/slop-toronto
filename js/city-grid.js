@@ -887,6 +887,67 @@ function buildCityGrid(scene) {
     if (!lawn.length) return null;
     return { lawn: flatPiecesGeometry(lawn, SW_TOP + 0.004), paths: flatPiecesGeometry(paths, SW_TOP + 0.008), beds: flatPiecesGeometry(beds, SW_TOP + 0.011) };
   };
+  // The City's physical sidewalks (js/toronto-sidewalks.js, js/sidewalk-polygons.js): per island, the City's own
+  // polygons, clipped at build time to the island's slab. Where an island has them, its yard runs out to the slab's edge
+  // (the verges, front yards & forecourts between the curb, the walk & the buildings) and the sidewalks lie on it in
+  // concrete; an island without them (a gap in the City's mapping, newer streets) keeps the fixed band. Only the
+  // surface changes: the slab, its height and so the walking floor & the props on it stay exactly as they were.
+  // (?sidewalks=0: the fixed band everywhere, for comparison)
+  const cityWalks = window.CITY.sidewalkPieces && new URLSearchParams(location.search).get('sidewalks') !== '0'
+    ? window.CITY.sidewalkPieces(window.CITY.SIDEWALKS, GEO.blocks) : null;
+  window.CITY.sidewalkPieceMap = cityWalks; // (patio-layout.js keeps the CaféTO cafés on them)
+  let walkIslands = 0, walkBands = 0, walkTris = 0, walkMs = 0;
+  // the slab's sides alone (its top is the yard's), facing out, in the walkway's concrete
+  const slabSides = (pts, y0, y1) => {
+    const A = makeAcc();
+    let area = 0;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) area += pts[j].x * pts[i].z - pts[i].x * pts[j].z;
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], c = pts[(i + 1) % pts.length];
+      const L = Math.hypot(c.x - a.x, c.z - a.z);
+      if (L < 0.01) continue;
+      const ux = (c.x - a.x) / L, uz = (c.z - a.z) / L;
+      const uv = [[0, y0], [L, y0], [L, y1], [0, y1]];
+      // (positive area: the inside lies left of a -> c, along (-uz, ux), so the outward face is c -> a)
+      if (area > 0) accQuad(A, [c.x, y0, c.z], [a.x, y0, a.z], [a.x, y1, a.z], [c.x, y1, c.z], [uz, 0, -ux], uv);
+      else accQuad(A, [a.x, y0, a.z], [c.x, y0, c.z], [c.x, y1, c.z], [a.x, y1, a.z], [-uz, 0, ux], uv);
+    }
+    return accGeometry(A);
+  };
+  const walkPieces = (pieces, y) => {
+    const shapes = pieces.map(({ outer, holes }) => {
+      const s = createWorldXZShape(outer);
+      for (const h of holes) s.holes.push(new THREE.Path(h.map((p) => new THREE.Vector2(p.x, -p.z))));
+      return s;
+    });
+    const t0 = performance.now();
+    const g = new THREE.ShapeGeometry(shapes, 1);
+    g.rotateX(-Math.PI / 2);
+    g.translate(0, y, 0);
+    walkMs += performance.now() - t0;
+    walkTris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+    return g;
+  };
+  // Each walk triangle gets the frame of the run of curb it lies along (js/sidewalk-sections.js), so the shader scores
+  // Toronto's joints across the walk on every street, the off-grid ones included: `walkFrame` (the run's direction, curb
+  // line, seed & whether the island is downtown) and `walkSpan` (how far in from the curb the walk runs there)
+  let frameMs = 0;
+  const framed = (g, runs, rings, seeds, downtown) => {
+    const t0 = performance.now();
+    const ni = g.index ? g.toNonIndexed() : g;
+    const a = ni.attributes;
+    const r = window.CITY.walkFrames(a.position.array, a.normal.array, runs, window.CITY.ringSegments(rings), seeds, downtown);
+    if (ni !== g) ni.dispose();
+    g.dispose();
+    // (no uv: the walkway material works in world & walk coordinates)
+    const out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.BufferAttribute(r.pos, 3));
+    out.setAttribute('normal', new THREE.BufferAttribute(r.nor, 3));
+    out.setAttribute('walkFrame', new THREE.BufferAttribute(r.frame, 4));
+    out.setAttribute('walkSpan', new THREE.BufferAttribute(r.span, 2));
+    frameMs += performance.now() - t0;
+    return out;
+  };
   // --- end Toronto layer ---
   for (const b of BLOCKS) {
     // kerb ring under the slab (the slab is inset 0.25 m, so the kerb's top & face show)
@@ -899,10 +960,28 @@ function buildCityGrid(scene) {
     }
     const prop = b.area > 400 ? offsetPolygonInward(b.poly, SW) : null;
     const yard = isRailLand(b) ? 'rail' : b.park > 0.6 ? 'lawn' : b.wild > 0.5 ? 'wild' : isPaved(b) ? 'paved' : 'plot'; // (rail: Toronto layer)
-    if (prop) {
+    const walks = cityWalks && b.area > 400 ? cityWalks.get(b.id) : null; // (Toronto layer: the City's sidewalks)
+    const runs = window.CITY.curbRuns(inner);
+    const seeds = runs.map((_, i) => window.CITY.runSeed(b.id, i));
+    const downtown = isPaved(b) ? 1 : 0;
+    if (walks) {
+      walkIslands++;
+      const sides = slabSides(inner, 0.03, SW_TOP);
+      if (sides) geos.walk.push(framed(sides, runs, [], seeds, downtown));
+      geos[yard].push(flatShape(inner, SW_TOP));
+      // (over the small parks' lawns, +0.004, under their paths & beds)
+      geos.walk.push(framed(walkPieces(walks, SW_TOP + 0.006), runs, walks.flatMap((w) => [w.outer, ...w.holes]), seeds, downtown));
+      const pk = prop && (yard === 'paved' || yard === 'plot') ? parkettesOf(b, prop) : null;
+      if (pk) {
+        geos.lawn.push(pk.lawn);
+        if (pk.paths) geos.paved.push(pk.paths);
+        if (pk.beds) geos.rail.push(pk.beds);
+      }
+    } else if (prop) {
+      if (cityWalks) walkBands++;
       const ring = createWorldXZShape(inner);
       ring.holes.push(new THREE.Path(prop.map((p) => new THREE.Vector2(p.x, -p.z))));
-      geos.walk.push(extrude(ring, 0.03, SW_TOP - 0.03));
+      geos.walk.push(framed(extrude(ring, 0.03, SW_TOP - 0.03), runs, [inner, prop], seeds, downtown));
       geos[yard].push(flatShape(prop, SW_TOP - 0.002));
       const pk = yard === 'paved' || yard === 'plot' ? parkettesOf(b, prop) : null; // (Toronto layer: the small parks)
       if (pk) {
@@ -911,7 +990,7 @@ function buildCityGrid(scene) {
         if (pk.beds) geos.rail.push(pk.beds);
       }
     } else {
-      geos.walk.push(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03));
+      geos.walk.push(framed(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03), runs, [inner], seeds, downtown));
     }
     // rectangular cover for the consumers that work on rectangles: the lot rects grown back out to the kerb
     if (b.rect) {
@@ -958,6 +1037,7 @@ function buildCityGrid(scene) {
   mergeInto(geos.rail, new THREE.MeshStandardNodeMaterial({ color: 0x5f5850, roughness: 0.97 }), false, 'RailLands'); // Toronto layer
   window.CITY.parketteTrees = parketteTrees; // (street-details.js plants them)
   console.info(`[cityGrid] ${parketteCount} small parks laid in lawn, ${parketteTrees.length} trees in their beds`);
+  console.info(cityWalks ? `[cityGrid] City sidewalks on ${walkIslands} islands (${walkTris} triangles, ${walkMs.toFixed(0)} ms), the fixed ${SW} m band on ${walkBands}; walk frames ${frameMs.toFixed(0)} ms` : `[cityGrid] no City sidewalks: the fixed ${SW} m band on every island; walk frames ${frameMs.toFixed(0)} ms`);
 
   // ===================================================================================================================
   // 3. STREAMS & RIVERS (the Wupa, the Jabi, Lobito Creek...): water channels across the islands (culverted under
@@ -1126,6 +1206,30 @@ function buildCityGrid(scene) {
         s += L;
       }
     }
+    // The road bridges over the water at street level (city-config.js ROAD_BRIDGES): a slab across at the street's
+    // height, its faces down into the water, parapets where no sidewalk runs beside it
+    for (const d of window.CITY.ROAD_BRIDGES || []) {
+      const P = d.pts, hw = d.w / 2 + 0.3, yTop = 0.03, yBot = CITY_BOUNDS.waterLevel - 0.3;
+      let s = 0;
+      for (let i = 0; i + 1 < P.length; i++) {
+        const a = P[i], b = P[i + 1], L = Math.hypot(b.x - a.x, b.z - a.z);
+        if (L < 0.01) continue;
+        const nx = (b.z - a.z) / L, nz = -(b.x - a.x) / L;
+        const aL = [a.x + nx * hw, yTop, a.z + nz * hw], aR = [a.x - nx * hw, yTop, a.z - nz * hw];
+        const bL = [b.x + nx * hw, yTop, b.z + nz * hw], bR = [b.x - nx * hw, yTop, b.z - nz * hw];
+        accQuad(top, aR, bR, bL, aL, [0, 1, 0], [[0, 0], [1, 0], [1, 1], [0, 1]]);
+        const lo = (p) => [p[0], yBot, p[2]];
+        accQuad(faces, aL, bL, lo(bL), lo(aL), [nx, 0, nz], [[s, 1], [s + L, 1], [s + L, 0], [s, 0]]);
+        accQuad(faces, bR, aR, lo(aR), lo(bR), [-nx, 0, -nz], [[s + L, 1], [s, 1], [s, 0], [s + L, 0]]);
+        for (const sgn of [1, -1]) {
+          const ax = a.x + nx * (hw - 0.25) * sgn, az = a.z + nz * (hw - 0.25) * sgn;
+          const bx = b.x + nx * (hw - 0.25) * sgn, bz = b.z + nz * (hw - 0.25) * sgn;
+          const mx = (ax + bx) / 2 + nx * 1.5 * sgn, mz = (az + bz) / 2 + nz * 1.5 * sgn;
+          if (!blockAt(mx, mz) && window.CITY.waterAt(ax, az) && window.CITY.waterAt(bx, bz)) accWall(faces, ax, az, bx, bz, yTop, 0.9, 0.4);
+        }
+        s += L;
+      }
+    }
     for (const p of piers) {
       // a column and its crosshead across the deck
       accWall(faces, p.x - p.ux * 0.7, p.z - p.uz * 0.7, p.x + p.ux * 0.7, p.z + p.uz * 0.7, 0, p.h, 1.6);
@@ -1148,7 +1252,7 @@ function buildCityGrid(scene) {
       m.name = 'FlyoverStructure';
       group.add(m);
     }
-    if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] ${DECKS.length} flyover decks & ramps, ${piers.length} piers`);
+    if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] ${DECKS.length} flyover decks & ramps, ${piers.length} piers, ${(window.CITY.ROAD_BRIDGES || []).length} road bridges over the water`);
   }
 
   // ===================================================================================================================
@@ -1265,10 +1369,41 @@ function buildCityGrid(scene) {
     }
     // (the banks: the parks' lawn, its own instance: the street level's carries the mask, which would cut the banks away)
     const mats = [[bankAcc, createParkLawnMaterial(false), 'RoadCutBanks'], [road, createRoadSurfaceMaterial(), 'RoadCutRoadway'], [walk, createSidewalkMaterial(), 'RoadCutSidewalks'], [curb, createCurbMaterial(), 'RoadCutKerbs'], [wall, window.CITY.createConcreteMaterial ? window.CITY.createConcreteMaterial() : new THREE.MeshStandardNodeMaterial({ color: 0xa8a297, roughness: 0.88 }), 'RoadCutWalls']];
+    // the cut's sidewalks run along its axis: each triangle the frame of the nearest piece of axis, in from the kerb on
+    // its side (js/sidewalk-sections.js; the walks on the islands get theirs from their curbs)
+    const cutWalkFrames = (g) => {
+      const P = g.attributes.position.array, nv = P.length / 3;
+      const frame = new Float32Array(nv * 4), span = new Float32Array(nv * 2);
+      for (let v = 0; v + 2 < nv; v += 3) {
+        const cx = (P[v * 3] + P[v * 3 + 3] + P[v * 3 + 6]) / 3, cz = (P[v * 3 + 2] + P[v * 3 + 5] + P[v * 3 + 8]) / 3;
+        let best = null, bd = Infinity;
+        ROAD_CUTS.forEach((c, ci) => c.segs.forEach((sg, si) => {
+          const dx = sg.b.x - sg.a.x, dz = sg.b.z - sg.a.z, L2 = dx * dx + dz * dz || 1e-9;
+          const t = Math.max(0, Math.min(1, ((cx - sg.a.x) * dx + (cz - sg.a.z) * dz) / L2));
+          const d = Math.hypot(sg.a.x + dx * t - cx, sg.a.z + dz * t - cz);
+          if (d < bd) { bd = d; best = { sg, ci, si }; }
+        }));
+        const { sg, ci } = best;
+        const l = (i) => (P[i * 3] - sg.a.x) * -sg.uz + (P[i * 3 + 2] - sg.a.z) * sg.ux; // across the axis
+        const side = l(v) + l(v + 1) + l(v + 2) >= 0 ? 1 : -1;
+        const ls = [0, 1, 2].map((k) => Math.abs(l(v + k)));
+        const kerb = Math.min(...ls);
+        // (along the axis with the walk on the left: the inward normal (-uz, ux) points from the kerb to the wall)
+        const ux = sg.ux * side, uz = sg.uz * side;
+        const c = (sg.a.x * -sg.uz + sg.a.z * sg.ux) * side + kerb;
+        for (let k = 0; k < 3; k++) {
+          frame.set([ux, uz, c, window.CITY.runSeed(20000 + ci, side > 0 ? 0 : 1) * 2], (v + k) * 4);
+          span.set([0, Math.max(...ls) - kerb], (v + k) * 2);
+        }
+      }
+      g.setAttribute('walkFrame', new THREE.BufferAttribute(frame, 4));
+      g.setAttribute('walkSpan', new THREE.BufferAttribute(span, 2));
+    };
     for (const [A, mat, name] of mats) {
       const g = accGeometry(A);
       if (!g) continue;
       g.computeVertexNormals();
+      if (A === walk) cutWalkFrames(g);
       const m = new THREE.Mesh(g, mat);
       m.receiveShadow = true;
       m.castShadow = name === 'RoadCutWalls' || name === 'RoadCutBanks';
