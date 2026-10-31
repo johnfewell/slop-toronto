@@ -1,0 +1,42 @@
+[
+  {
+    "name": "seat-castle-frank",
+    "wait": 1000,
+    "js": "(()=>{const a=window.__CITY_APP,R=a.subwayRide;if(!R.active)throw new Error('No subway ride');document.getElementById('locate-prompt').hidden=true;const c=a.cameraSystem.camera;console.log('[ride-check] seat '+JSON.stringify({car:R.car&&R.car.id,s:R.car&&Math.round(R.car.s),eye:R.entity.seatEye,yaw:R.entity.seatYaw,lookY:R.entity.seatLookY,aspect:+c.aspect.toFixed(3),fov:c.fov,mask:c.layers.mask,preset:a.cameraSystem.activePresetId}));})()"
+  },
+  {
+    "name": "seat-viaduct",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{for(let i=0;i<140&&!R.canChase;i++)await a.film.step(25);if(!R.canChase)throw new Error('Did not reach open viaduct');for(let i=0;i<6;i++)await a.film.step(25);a.selectCamera('pov',true);await a.film.step(2);const c=a.cameraSystem.camera;console.log('[ride-check] seat '+JSON.stringify({car:R.car&&R.car.id,s:R.car&&Math.round(R.car.s),eye:R.entity.seatEye,yaw:R.entity.seatYaw,lookY:R.entity.seatLookY,aspect:+c.aspect.toFixed(3),fov:c.fov,mask:c.layers.mask,preset:a.cameraSystem.activePresetId}));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "seat-viaduct-2",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{for(let i=0;i<1;i++)await a.film.step(14);const c=a.cameraSystem.camera;console.log('[ride-check] seat '+JSON.stringify({car:R.car&&R.car.id,s:R.car&&Math.round(R.car.s),eye:R.entity.seatEye,yaw:R.entity.seatYaw,lookY:R.entity.seatLookY,aspect:+c.aspect.toFixed(3),fov:c.fov,mask:c.layers.mask,preset:a.cameraSystem.activePresetId}));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "seat-viaduct-3",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{for(let i=0;i<1;i++)await a.film.step(14);const c=a.cameraSystem.camera;console.log('[ride-check] seat '+JSON.stringify({car:R.car&&R.car.id,s:R.car&&Math.round(R.car.s),eye:R.entity.seatEye,yaw:R.entity.seatYaw,lookY:R.entity.seatLookY,aspect:+c.aspect.toFixed(3),fov:c.fov,mask:c.layers.mask,preset:a.cameraSystem.activePresetId}));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "seat-viaduct-4",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{for(let i=0;i<1;i++)await a.film.step(14);const c=a.cameraSystem.camera;console.log('[ride-check] seat '+JSON.stringify({car:R.car&&R.car.id,s:R.car&&Math.round(R.car.s),eye:R.entity.seatEye,yaw:R.entity.seatYaw,lookY:R.entity.seatLookY,aspect:+c.aspect.toFixed(3),fov:c.fov,mask:c.layers.mask,preset:a.cameraSystem.activePresetId}));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "seat-viaduct-5",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{for(let i=0;i<1;i++)await a.film.step(14);const c=a.cameraSystem.camera;console.log('[ride-check] seat '+JSON.stringify({car:R.car&&R.car.id,s:R.car&&Math.round(R.car.s),eye:R.entity.seatEye,yaw:R.entity.seatYaw,lookY:R.entity.seatLookY,aspect:+c.aspect.toFixed(3),fov:c.fov,mask:c.layers.mask,preset:a.cameraSystem.activePresetId}));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "seat-line1-queen",
+    "wait": 1000,
+    "js": "(async()=>{const a=window.__CITY_APP;if(!a.rideFeatured('1'))throw new Error('No Line 1 ride');const R=a.subwayRide;a.film.start(10);try{await a.film.step(3);const c=a.cameraSystem.camera;console.log('[ride-check] seat '+JSON.stringify({car:R.car&&R.car.id,s:R.car&&Math.round(R.car.s),eye:R.entity.seatEye,yaw:R.entity.seatYaw,lookY:R.entity.seatLookY,aspect:+c.aspect.toFixed(3),fov:c.fov,mask:c.layers.mask,preset:a.cameraSystem.activePresetId}));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "seat-line1-tunnel",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{for(let i=0;i<80&&!(R.car.speed>7&&R.car.k===1);i++)await a.film.step(5);const c=a.cameraSystem.camera;console.log('[ride-check] seat '+JSON.stringify({car:R.car&&R.car.id,s:R.car&&Math.round(R.car.s),eye:R.entity.seatEye,yaw:R.entity.seatYaw,lookY:R.entity.seatLookY,aspect:+c.aspect.toFixed(3),fov:c.fov,mask:c.layers.mask,preset:a.cameraSystem.activePresetId}));}finally{a.film.stop();}})()"
+  }
+]

@@ -1,7 +1,7 @@
 # Don Valley terrain pilot: datum and surface migration contract
 
-Design, contract and pilot · 2026-10-30, lidar 2026-10-31 · Beads `st-wt0.20` (design), `st-wt0.21` (pilot) and
-`st-wt0.21.4` (lidar floor, Rosedale ravine) · Spec
+Design, contract and pilot · 2026-10-30, lidar 2026-10-31 · Beads `st-wt0.20` (design), `st-wt0.21` (pilot),
+`st-wt0.21.4` (lidar floor, Rosedale ravine), `st-wt0.21.2` (ramp profiles), `st-wt0.21.1` (arrivals), `st-wt0.21.3` (between points), `st-051` (river) · Spec
 §11 TE (an internal planning document, not published here)
 
 Without a valley, the Prince Edward Viaduct crosses flat ground. Its road deck is a 22.5 m flyover, and Castle Frank and
@@ -23,7 +23,7 @@ lidar.
 | Horizontal frame | The geodata's world frame: a WGS84 tangent plane at Union Station, turned −16.59° (`GEO.frame.projection`); x east along the grid, z south. The DTM's NAD83(CSRS) / UTM zone 17N (EPSG:2958) is reached through `latLonFromWorld` and a UTM projection; NAD83(CSRS) and the OpenStreetMap frame differ by about 1.5 m, under the 10 m grid |
 | DTM vertical datum | Metres above CGVD2013 (EPSG:6647). A constant offset from any other datum cancels in DTM − T |
 | Game vertical datum | Metres above the **local street datum** T(x, z). The flat city's y = 0 is T everywhere. |
-| Grid | 10 m, 121 × 163 samples over x 1600…2800, z −3500…−1880; aligned with `terrain.js`'s 60 m grid. Each node is the mean of the lidar's pixels in its 10 m cell (100 one-metre sub-samples) |
+| Grid | 10 m, 121 × 193 samples over x 1600…2800, z −3800…−1880; aligned with `terrain.js`'s 60 m grid. Each node is the mean of the lidar's pixels in its 10 m cell (100 one-metre sub-samples) |
 
 **Choice of source.** In the brief's order:
 
@@ -70,8 +70,9 @@ from the tiles (`DON_VALLEY_DTM`, default `~/.cache/slop-toronto/raw/ontario-dtm
 SHA-256 differs from the manifest, and the rebuild is tested when the tiles are present. `tools/tiff-f32.mjs` reads
 the tiles: float32 GeoTIFF, LZW or Deflate, with no dependency.
 
-**Size.** `js/don-valley-data.js` is 222,000 bytes, against 190,308 for the SRTM build: 87,012 against 80,377 gzipped,
-and 71,314 against 64,772 with Brotli. The box grew by 180 m west, and lidar heights compress less well than SRTM's.
+**Size.** `js/don-valley-data.js` is 277,253 bytes (109,847 gzipped, 87,764 with Brotli). The lidar build was 222,000
+(87,012 and 71,314), the SRTM build 190,308 (80,377 and 64,772). The ramps' profiles (rule 8) add about 20 KB, and
+extending the box 300 m north adds about 30 KB.
 
 ### Conditioning rules, in order
 
@@ -84,6 +85,8 @@ and 71,314 against 64,772 with Brotli. The box grew by 180 m west, and lidar hei
 | roads | Each road on the valley's ground gets a profile smoothed along it (60 m window). The roadway is level across and blends back over 12 m. Where corridors meet, their profiles blend. Ramps are decks and do not shape the ground. | 2,064 samples, up to 17.1 m |
 | portals | The ground in front of the two tunnel portals is lowered below the portal floor (y −6.0). | 6 samples, up to 6.2 m |
 | boundary | The surface tapers to 0 at the box's edges (§4). | taper distances |
+| river | Rule 9: the Don's water level for each row of the grid, from the city's edge south: one level across, 0.7 m under the channel's lowest ground, never falling going south, and the flat city's −0.7 m at the box's south edge. | 113 rows, −40.4 m to −0.7 m, steepest rise 7.9% |
+| decks | The ramps down the valley's sides get vertical profiles from the 0.5 m lidar along their OpenStreetMap alignment (§6). Where the 10 m grid's ground stands above a ramp's profile, it is cut down to 0.35 m under it. The viaduct's Rosedale section is level with the street, and the flat city's flyovers that climbed onto it are back at the street. | 21 ramps, 306 samples cut, up to 4.7 m; 5 flyovers flattened; 8 junctions recorded |
 
 **Footing (TE-5).** Buildings keep their street-level base (y = 0) and their colliders. Where the valley falls away
 under a footprint, the runtime adds a concrete plinth from the lowest ground under it up to the base. Nothing is
@@ -117,6 +120,7 @@ splitting each 10 m cell along its b–d diagonal exactly as `terrain.js` does (
 | yHint / previous surface | `getGroundHeight(x, z, mode, y)`: a deck counts only within the step (0.6 m walking, 0.9 m driving) of y. Under the viaduct you stay on the valley floor; on it you stay on the deck. |
 | kind | ground (draped), roadDeck (`DECKS`), railDeck (subway lower deck, ride profile), platform (interior spaces), water (river patch) |
 | normal | `gradientAt(x, z)` (the surface's triangle) |
+| arrival (yHint unknown) | in the box, the street level (y 0) is the hint. So a teleport lands on a deck that is level with the street (the viaduct's two sections) or below it (a ramp), not on the floor under it. Any arrival meant for the floor carries its y: `streetArrival` for search results and map spots, the navigation graph's heights for routes and Tour Drive (§3). |
 | surfaceId, connection, quality | **Not built.** Connectivity comes from yHint, not IDs (§7). |
 
 ## 3. Migration inventory: every consumer and how it migrates
@@ -126,9 +130,11 @@ splitting each 10 m cell along its b–d diagonal exactly as `terrain.js` does (
 | Street level (roads are its asphalt), curb islands, kerbs, walks, City sidewalks, lawns, plots, park paths, streams, mapped walls (`CityGround`) | `drape()` after the world is built (`main.js`) | done, exact |
 | Heavy-rail track beds (Bala Subdivision, Rosedale Siding) | `drape()` of `RailTracks`; GO trains add `heightAt` to their route points (`rail-corridor.js`) | done; trains are interpolated every 4 m |
 | Road markings, bike paint, trail surfaces | `road-paint.js`: strips and ribbons on the valley's ground follow it in 2 m parts | done, approximate (cm) |
-| Traffic, buses | the street graph's node heights (`road-network.js`, `roadHeight`): ground nodes on the valley, Bloor's nodes on the deck | done; edges interpolate linearly between OSM nodes |
+| Traffic, buses | the street graph's node heights (`road-network.js`, `roadHeight`): ground nodes on the valley, Bloor's nodes on the deck. Between them, `edgeY` follows each edge's own surface: the valley under the lane's own point (`heightAt`) or a ramp's profile (`rampAt`), plus the ends' offsets from it (a road cut's depth). The turns through junctions follow it too (`curvePoint`); the viaduct's level deck keeps its straight line | done (`st-wt0.21.3`): lanes and turns within 0.05 m of the surface; a straight line between nodes was up to 2.5 m off |
 | Bloor Street / Danforth Avenue over the valley | `deckHeight`: the deck at y 0.4, ramped to the street within 10 m of where the ground comes up | done |
-| Ramps down the valley's sides (Bayview–Bloor, Royal Drive, DVP links, Drumsnab, Castle Frank Road) | decks 0.35 m over their own ground, slab faces and piers from the ground (`city-grid.js`) | done; steep (§6) |
+| Ramps down the valley's sides (Bayview–Bloor, Royal Drive, the DVP links) | their lidar profiles (`D.decks.ramps`, every 4 m or less), standing 0.35 m or more over the ground cut under them; slab faces, and piers where a ramp bridges something (`city-grid.js`); `rampAt` gives the road graph's raised nodes their height | done (§6) |
+| Bloor Street over the Rosedale ravine (the viaduct's Rosedale section) | level with the street at y 0.4, like the Don's deck; the flat city's 7.5 m flyover onto it from Parliament Street and Bloor west of the box is the street again (`D.decks.flattened`, `roadHeight`) | done |
+| Other decks in the box over shallow ground (Drumsnab, Castle Frank Road, McKenzie Avenue) | 0.35 m over their own ground | done |
 | Other flyovers in the box that only climbed to the 22.5 m deck | 0: the street again | done |
 | Walking floor, cycling, driving | `getGroundHeight` = street/island + `cutAt` (valley) or a deck in reach | done |
 | Colliders | viaduct piers and abutments stand on the valley (`subway.js`); flyover piers from their ground; buildings keep their 2D colliders | done |
@@ -138,28 +144,30 @@ splitting each 10 m cell along its b–d diagonal exactly as `terrain.js` does (
 | Patios | `cutAt`; the prebuilt layout's collider fingerprint changes, so with the flag on it lays out at startup (same 70 sidewalk + 119 curb cafés) | fallback accepted; flag off: fingerprint ok |
 | Prince Edward Viaduct | deck 0.4, soffit −0.85, lower-deck rails −5.8, piers from the valley floor, arches clear 6.5 m of the highest ground under each span, abutments and portals in the valley's sides | done |
 | Subway ride Castle Frank ↔ Broadview | route depth profile; platform cells and walking floor at depth (§5) | done |
-| Water | the Don: a water surface 0.7 m under the valley floor where the street level opens over the river; streams draped | done (no flow conditioning) |
+| Water | the Don, where the street level opens over the river: one level across the river for each 10 m row (`D.river`, rule 9), at least 0.7 m under its channel's lowest ground. Earth banks run down to it from the ground round the open cells. Streams are draped | levelled (`st-051`); see §7 for the direction |
 | Terrain beyond the city (north of z −3000) | a 10 m patch on the same grid: `terrainRawAt` + valley. `terrain.js` leaves its cells in the box out. | done |
 | Surroundings beyond the city | `groundAt` adds the valley | done |
 | Bayview Extension, DVP | ground roads: draped asphalt, conditioned profiles, traffic on the valley | done; DVP lanes not separately graded |
 | Buildings | plinths (§1) | done |
-| Navigation route points, `findTeleportPosition`, `teleportToPlace` | `getGroundHeight` with y unknown lands on the ground, so a teleport onto the viaduct lands under it unless given y | **not migrated** |
-| Separator curbs and flexi-posts (cycling) | vertices on `cutAt`, not split along the grid | **partial** |
-| Pedestrian walk lines, crowd | `cutAt` at their points; long lines interpolate | **partial** |
+| Navigation route points, `findTeleportPosition`, `teleportToPlace` | `getGroundHeight` with y unknown arrives at the street level, so a teleport onto either viaduct section lands on its deck and one onto a ramp lands on the ramp. `streetArrival` (`city-config.js`) picks the street in front of a search result or map spot, now including the box's decks, and returns its surface's y. The navigation graph (`navigation.js`) takes `roadHeight` like the traffic, so a route across the viaduct is at 0.4 m, one along Bayview Avenue under it is on the floor, and Tour Drive's hops keep the route's y | done (`st-wt0.21.1`) |
+| Separator curbs, flexi-posts, bike lanes and trails (cycling) | `cycling.js`: where a line crosses relief it gets points every 2 m, and the separators' corners, the posts and `at()` take the surface where they stand (`P.yAt`). A bikeway on a road takes Bloor's deck where the deck is level with the street | done (`st-wt0.21.3`): separators and posts within 0.01 m of the surface |
+| Pedestrians, crowd | each foot and the body take `cutAt` where they are (`traffic.js` pedGround, the rig's ground function), not a line between points | done (always was) |
 | Shadows | draped meshes keep their cast/receive flags; scene-culling stand-ins are built after the drape | done (visual) |
 
 ## 4. The pilot area and its boundary (TE-4)
 
 The box runs from the subway's Rosedale Valley bridge, west of Castle Frank, to Broadview: x 1600…2800. The SRTM
-build stopped at x 1780, at Castle Frank. North–south it runs from 500 m beyond the city's north edge (z −3500,
-terrain only, outside the playable city) to 900 m south of the viaduct (z −1880). The surface is 0 on every edge, so no
+build stopped at x 1780, at Castle Frank. North–south it runs from 800 m beyond the city's north edge (z −3800,
+terrain only, outside the playable city) to 900 m south of the viaduct (z −1880). The lidar build stopped at z −3500.
+There, the north taper crossed the Bayview–Bloor and Parkway interchange, which OpenStreetMap maps to about z −3570, so
+its ramps and roads climbed the taper at 14–24%. Now the taper lies beyond them. The surface is 0 on every edge, so no
 seam, wall, wheel step or water dam can form there. The tapers are smooth (smoothstep):
 
 | Edge | Taper | Notes |
 | --- | --- | --- |
 | West | 80 m | The Rosedale ravine's seam is the subway's bridge, not the edge (below) |
 | East | 80 m | The tableland is at 0 there anyway |
-| North | 280 m, outside the playable city | The valley's floor rises to the plain 300–500 m beyond the edge, seen from the viaduct as the valley's end |
+| North | 280 m, outside the playable city | The valley's floor rises to the plain 520–800 m beyond the edge, seen from the viaduct as the valley's end |
 | South | 700 m (z −2580…−1880) | The transition: Bayview, the DVP, the river and the rail climb back to the flat city at 5–7% |
 
 **The Rosedale ravine.** In the lidar the ravine runs from Park Road east to the Don. It is about 26 m deep where the
@@ -230,30 +238,73 @@ Initial triggers: road grade over 12%, curb or road step over 0.15 m, rendered-v
   river" (39.6 m), and the commonly cited figure is 40 m. The SRTM build had 35.1 m. The ground is −4.4 m at the
   west portal and −4.5 m at the east one; the portal rule lowers the 6 samples in front of them below the portal
   floor (−6.0 m).
-- **Road grades (`diagnostics.roads`, 23 entries over 12%; review, not suppressed).** They are measured on the
-  road's own surface: the valley plus, for a ground road, the flat city's road cut. 20 of the 23 lie outside the
-  playable city (z < −3000), where the ramps up to Bloor and the DVP links are OSM stubs hugging the lidar's steepest
-  slopes. In the playable city, the steepest 20 m:
+- **Road grades (`diagnostics.roads`: the steepest 20 m of each road in the box; review over 12%, not suppressed).**
+  Each road is measured on its own surface. A ground road's is the valley plus the flat city's road cut. A raised
+  road's is its deck: a ramp's profile or a viaduct section's deck, not the ground under it. Two entries are left over
+  12%, each with its recorded resolution. `playableMaxPct` is the steepest 20 m inside the playable city.
 
-| Road | SRTM | Lidar | Note |
-| --- | --- | --- | --- |
-| Bayview–Bloor Ramp (deck) | 38.3% | 10.5% | Now on its real embankment |
-| Drumsnab Road (deck) | 22.3% | 0 | The lidar has no valley under it |
-| Royal Drive (deck) | 13.8% | 14.3% | Still over 12%: the ramp hugs the east slope; it needs a profile (`st-wt0.21.2`) |
-| Rosedale Valley Road | 15.1% | 9.0% | The cut's climb out meeting the valley (§4); 6.4% at most from 150 m past the bridge |
-| Bayview Avenue | 9.7% | 7.3% | |
-| Don Valley Parkway | 6.9% | 4.8% | |
-| Castle Frank Road (deck) | 4.0% | 2.6% | |
-| Two unnamed service lanes | 15% | 18.6%, 16.6% | Lanes down the ravine's sides (the lidar's slope); recorded |
+| Road | SRTM | Lidar (#43) | Profiles (this revision) | Note |
+| --- | --- | --- | --- | --- |
+| Bayview–Bloor Ramp (deck), playable city | 38.3% | 10.5% | 6.9% | its lidar profile |
+| Royal Drive (deck) | 13.8% | 14.3% | 8.5% | its lidar profile; the 8.5% is the last 20 m into the valley's ground road (below) |
+| Ramp and Parkway link stubs north of the city's edge (decks) | | up to 42% | up to 9.7%, one junction 14% | the north taper moved beyond them (§4) |
+| Ground roads north of the city's edge | | up to 24% | up to 7.4% | the same |
+| Drumsnab Road (deck) | 22.3% | 0 | 0 | the lidar has no valley under it |
+| Rosedale Valley Road | 15.1% | 9.0% | 9.0% | the cut's climb out meeting the valley (§4); 6.7% at most from 150 m past the bridge |
+| Bayview Avenue | 9.7% | 7.3% | 7.3% | |
+| Don Valley Parkway | 6.9% | 4.8% | 4.8% | |
+| Unnamed service lane down the ravine's side (1732, −2459) | 15% | 16.6% | 16.2% | **review**, its own slope: 17.1% in the 0.5 m lidar along its centreline (`lidarPct`); left as surveyed |
+| Unnamed service lane (2131, −2317) | | 18.6% | 10.0% | under 12% over 20 m (the #43 figure was over 5 m) |
+| Bayview–Bloor Ramp junction north of the edge (2233, −3367) | | | 14.0% | **review**, `junction`: OpenStreetMap's ground way goes on over the ramp's bridge, where the 10 m grid's road lies 6.8 m under the lidar's |
 
-So the ramps' grades were the SRTM's: of the reviews in the playable city, only Royal Drive's ramp and the two lanes
-remain. `tests/don-valley.test.mjs` holds these bounds.
+### The ramps' profiles (rule 8, `st-wt0.21.2`)
+
+The ramps used to be decks hugging the 10 m grid 0.35 m up. They took its grade, and the grid is not the road. Near
+the rim, the shallow rule zeroes depths under 1 m and keeps only part of those under 6 m. So Royal Drive's ramp stayed
+level for 50 m from Danforth Avenue, then fell at 14%. The real road starts down at the street. Each ramp now gets a
+profile of its own (`tools/build-don-valley.mjs`, rule 8):
+
+1. **Stations every 2 m** along its OpenStreetMap alignment. Ramps that meet are joined into one graph, which links
+   the interchange's 21 decks.
+2. **The lidar's road** under each station: the median of three 0.5 m DTM pixels across it, less the datum, tapered
+   like the ground. Near the rim the datum rides 0.5–1.4 m over the real street (§1), so each ramp is measured from its
+   own street: the lidar's bias at its street-level end, faded out from 1 m to 6 m deep.
+3. **Bridges.** Where a ramp crosses a road or the river, the bare earth falls away under it. A closing along the graph
+   (the highest within 30 m, then the lowest of those) spans dips up to 60 m long.
+4. **Pins.** Each free end meets what it joins: a viaduct section's deck, the street, or 0.35 m over the valley's
+   ground road.
+5. **The profile** is the smooth line through the pins nearest the lidar's road, a membrane over about 15 m.
+6. **The ground** under it is cut to 0.35 m under the deck, level across the roadway and 1.5 m beyond, blending out
+   over 8 m. Then any grid triangle still above a station comes down by the difference. Over lower ground a ramp
+   stands on its piers.
+
+On grade, the profiles lie within 0.47 m RMS of the province's 2023 lidar surface model (485 points where it was
+fetched). The worst are the ends pinned to a ground road and the top's bias correction. Eight ends meet a ground road
+more than 1.5 m from the lidar's road (`alterations.ramps.junctions`). The 10 m grid's roads run low along the valley's
+sides. In the playable city that is only Royal Drive's foot, 2.0 m, which makes its 8.5% over the last 20 m.
+
+**Real ramp grades.** In the lidar the Bayview–Bloor ramp and Royal Drive fall at 5.8% and 8.1% over their steepest 20
+m. That fits highway practice. NCDOT's *Roadway Design Manual* (§8-4, "Maximum ramp grades") keeps desirable ramp
+grades to 5% at 50 mph and 6% at 40 mph. It allows "as steep as 10%" for "loops and urban area ramps", limited to
+"minor ramps with low volumes"
+([PDF](https://connect.ncdot.gov/projects/Roadway/Roadway%20Design%20Manual/08.%20Interchanges.pdf)). Ontario municipal
+road standards cap road grades at 8% ([Pickering](https://pickering.ca/media/0evdypkt/roads.pdf)). Not quoted:
+
+- TAC's *Geometric Design Guide for Canadian Roads* (§10.6) has its own ramp tables, but they are not openly available.
+- No grade limit was found in Toronto's published design guidelines.
+
+**The Rosedale section.** Bloor Street crosses the Rosedale ravine on the Prince Edward Viaduct's Rosedale section,
+beside the subway's covered bridge. The flat city raised it as a generic 7.5 m flyover. The lidar build then dropped
+that flyover 0.35 m over the ravine's fill, up to 9 m down, and left a 4.7 m step where the flyover's approach from
+Parliament Street met the box's edge. The section is now level with the street at y 0.4, like the Don's. The five
+approach decks outside the box are at the street (`decks.flattened`), and their road graph nodes are too.
 
 ## 7. Risks and limits
 
-- **Dev pilot.** The surface has no IDs or connectivity; a deck is chosen by yHint and step alone. A teleport or
-  search arrival onto the viaduct without y lands on the valley floor. This is not production-ready, and the spec's
-  connected-surface contract is not built.
+- **Dev pilot.** The surface has no IDs or connectivity. A deck is chosen by yHint and step alone, and an arrival
+  without a y takes the street level as its hint. A map click exactly over the viaduct lands on the deck. To land on the
+  floor under it, an arrival needs a y: a route, a search result in the valley or a saved place. This is not
+  production-ready, and the spec's connected-surface contract is not built.
 - **Grid resolution.** The lidar is 0.5 m, but the pilot keeps a 10 m grid (cell means): kerbs, the river's channel
   and retaining walls are smoothed, and the steepest slopes read as 10 m facets. A finer grid would cost about four
   times the data and the draping.
@@ -264,15 +315,28 @@ remain. `tests/don-valley.test.mjs` holds these bounds.
   machine. Production replacement needs the idle-machine comparison the spec requires.
 - **The Rosedale seam** (§4) fills the ravine up to the flat city's cut near the subway's bridge, like an embankment
   under the box. The real 26 m ravine and bridge need the flat city west of the pilot to have terrain.
-- **Steep ramps and boundary grades** (§6).
-- **Water.** The river surface follows the valley floor down the south transition. Water "flows" with the taper, and
-  nothing levels it.
+- **Grades** (§6). One service lane down the ravine's side is 16% (its real slope). One ramp junction north of the
+  city's edge is 14%: the 10 m grid's ground roads run up to 2 m (once 7 m) under the lidar's road along the valley's
+  sides, and a ramp's end meets them there.
+- **Water: the direction (st-051, open).** The river is now one level across, and it never falls going south. Through
+  the south transition it can't fall either: it climbs at up to 7.9% to the flat city's −0.7 m at the box's edge.
+  - In the game's frame (heights over a street datum that falls towards the lake), the real Don rises. The lidar has it
+    level, 74.7–75.2 m above CGVD2013, through the whole box, while T falls from 114.9 m to 99.8 m. So even under the
+    viaduct the water rises 0.9 m going south.
+  - The taper then lifts the floor 39 m to the flat city's level.
+  - The Don flows south, so a surface that falls downstream and still meets the flat city's water at the edge would
+    need a step (a dam, which TE-4 forbids).
+  - What there is now is the nearest plausible water: level across, no bumps, pools that stay level until the floor
+    lifts them, banks closing the open cells, and a clean, step-free join with the flat city's water. It reads as a
+    river rising through rapids towards the city.
+  - Making it fall downstream needs a decision: extend the pilot along the lower Don to the lake, where the valley's
+    depth runs out, or accept a weir.
 - **Patios** fall back to the startup layout with the flag on, about 0.3 s.
 - **Under the viaduct** the lidar's ground class is interpolated by the survey where the deck hid the ground; the
   pilot no longer interpolates it itself.
 - **Station depths** are derived, not measured (§5). Castle Frank's rests on the bridge roof and an assumed 5.4 m from
   roof to rail. Broadview's is a plausible shallowest layout.
-- **Not every consumer is migrated:** navigation and teleport heights, cycling separators, walk lines, parked cars (§3).
+- **Not every consumer is migrated:** parked cars stay off the slopes (§3).
 
 ## 8. Verification
 
@@ -280,18 +344,38 @@ remain. `tests/don-valley.test.mjs` holds these bounds.
   - the declared source (the GTA 2023 DTM, its licence, its tiles' SHA-256s), frame and datum, with separate grids;
   - datum mapping at the river (DTM ≈ 75 m, T ≈ 114 m, y ≈ −39 m), and the street at the viaduct's ends;
   - the deck to floor height: the lidar's 38.9 m, and the game's within 1 m of it (38–41 m);
-  - max grades: Rosedale Valley Road (under 10%, under 7% down the ravine), the ramps the SRTM build had at 38% and
-    22% under 12%, and only the recorded reviews left in the playable city;
+  - max grades on each road's own surface: Rosedale Valley Road (under 10%, under 7% down the ravine), the Bayview–Bloor
+    ramp and Royal Drive on their profiles under 10% (the stubs under 14.5%), and every review recorded with its lidar
+    slope or junction;
+  - the ramps: profiles every 4 m or less, standing at least 0.35 m over the drawn ground, the road graph on them,
+    Royal Drive from the street to the valley; the Rosedale section level with the street and its approaches flattened;
   - grid nodes, continuity, and the box edges and stations at 0;
   - a monotone south transition;
   - draped geometry lying on `heightAt` to under 1 mm, with tilted normals;
   - `cutAt` = `roadCutAt` + valley, and decks over and under the viaduct;
-  - ramps hugging their ground, the road graph's heights, and nothing changed without the flag;
+  - ramps over their ground, the road graph's heights, and nothing changed without the flag;
   - a byte-identical rebuild from the lidar tiles;
   - the station depths: their derived facts and confidences, the shipped lidar's street at each station, and the
     derivation's grades within the TTC's 3.5%;
   - the ride: profiles within 3.5%, platform cells at −9.9 m and −8.6 m, the walking floor at −8.8 m (Castle Frank)
     and −7.5 m (Broadview), and a seated crossing from −9.9 m up to −5.8 m and down to −8.6 m.
+- `tests/don-valley.test.mjs`, arrivals:
+  - in every mode, a teleport lands on the Don's deck and on the Rosedale section, and with a floor y it lands under them;
+  - a teleport onto a ramp lands on the ramp;
+  - search results and map spots land on Bloor's deck over the valley and on Bayview's floor;
+  - routes cross the viaduct at 0.4 m and run along Bayview at −34 m;
+  - without the flag the street level and the old arrival are unchanged.
+- `tests/don-valley.test.mjs`, between points:
+  - on the valley's ground edges every lane, sampled each metre, and every turn through a junction lie within 0.1 m of
+    `cutAt`, where a straight line between the nodes was up to 2.5 m off;
+  - the viaduct's deck keeps its straight line, and without the flag `edgeY` is unchanged;
+  - separator corners, posts and trail points lie on their surface, the trails with points 2 m apart over relief;
+  - walkers take `cutAt` per foot.
+- `tests/don-valley.test.mjs`, the river:
+  - every row of the water patch is level across, and the levels never fall going south;
+  - it rises at most 8%, and stays nearly level under the viaduct, around −40 m;
+  - it is never above its channel's ground;
+  - it is at the flat city's −0.7 m at the box's south edge, and the banks are there.
 - `tests/boot.test.cjs`: the two scripts load only with `?donvalley=1`, just before `city-config.js`.
 - `tools/shots/don-valley.json` (the Mac mini, flag on and off, desktop and phone) covers:
   - the walking floor and the patio fingerprint;
@@ -304,6 +388,36 @@ remain. `tests/don-valley.test.mjs` holds these bounds.
   - the ride's end.
 - `tools/shots/subway-riding-journey.json` runs with the flag on up to its last step. That step's failure is known on
   `main` (`st-fcm`).
+
+### Results on 2026-10-31, follow-ups (Mac mini, contended: functional evidence, not timings)
+
+Captures are in `ride-anywhere-geo/review/gpu2/slop-toronto-r3-ride/`: `fu3-*` from
+`tools/shots/don-valley-followups.json`, and `fu2-*` from it, `don-valley.json` and the journey.
+
+- **Arrivals, flag on, desktop and phone** (`fu-teleport-viaduct`, `fu-search-*`, `fu-rosedale-deck`):
+  - a teleport onto the viaduct lands on the deck at 0.4 m, with the floor at −37.0 m under it;
+  - a map or search spot on the viaduct (driving) lands at 0.4 m;
+  - a spot in the valley lands on Bayview's floor at −35.2 m;
+  - a teleport onto the Rosedale section lands at 0.4 m over the ravine's −8.5 m.
+- **River** (`fu-river-*`): level across, rising from −38.6 m at z −2600 to −0.7 m at the edge, with banks. The black
+  band between the box's south edge and the flat city's water is the flat city's own: it is there with the flag off
+  too (`st-w1l`).
+- **Ramps** (`fu-bayview-bloor-ramp`, `fu-royal-drive`, `fu-aerial-north`): both ramps run on their profiles down the
+  valley's sides. North of the city's edge the interchange is clear of the taper.
+- **Traffic and walkers on the slopes** (`fu-traffic-slope*`, `fu-walkers-slope*`). Each sample counts 54–58 cars in
+  the box's valley:
+  - nearly all are within 0.05 m of their surface;
+  - the worst were 0.14 m and 0.12 m, both on Bayview by the steep service lanes. That is the car's body centre, between
+    two axles that stand on the surface either side of a crease in the 10 m grid. The wheels are on the ground;
+    `tests/don-valley.test.mjs` holds the lanes themselves within 0.05 m.
+  - every walker's feet are on the ground.
+- **`don-valley.json`, flag on:** every step passes. The walking floor is 0.4 m on the deck and −37.0 m under it,
+  Castle Frank's platform −8.8 m and Broadview's −7.5 m, both exits 0.22 m. The seated crossing runs from −9.9 m to
+  −5.8 m. Draping takes about 0.46 s, with 21 plinths.
+- **Flag off, desktop and phone:** every step passes. The patio fingerprint is ok. The platforms and the train are at
+  17.4 m and 16.3 m, and arrivals are as on `main`.
+- **`subway-riding-journey.json`, flag on:** every step passes through the round trip. Only the known last step
+  (`st-fcm`) fails.
 
 ### Results on 2026-10-31, lidar (Mac mini, contended: functional evidence, not timings)
 
@@ -367,11 +481,13 @@ Only the last step (restart, then switch to the car) fails, as it does on `main`
 
 ## 9. Remaining work (child beads of `st-wt0.21`)
 
-- `st-wt0.21.1`: teleport, navigation and search arrivals get a surface (deck versus ground) and a y.
-- `st-wt0.21.2`: the ramps get their own profiles instead of hugging the ground. With the lidar only Royal Drive's
-  ramp (14%) is over 12% in the playable city; the DVP links north of it are still steep stubs.
-- `st-wt0.21.3`: traffic, cycling separators and posts, and pedestrian walk lines follow the valley between their
-  points, using shape nodes or a split along the grid. The DVP's lanes are graded.
-- `st-wt0.21.4`: the lidar floor and the Rosedale ravine boundary are done (this revision). Levelled water is not:
-  the river still follows the floor down the south transition.
+- `st-wt0.21.1`: done in this revision. Teleport, navigation and search arrivals get a surface (deck versus ground)
+  and a y (§2, §3).
+- `st-wt0.21.2`: done in this revision (§6). The ramps follow their lidar profiles, and the box reaches past the
+  interchange. A service lane at its real 16% and one junction north of the edge are recorded.
+- `st-wt0.21.3`: done in this revision (§3). Traffic lanes and turns, cycling separators, posts and paint follow the
+  surface between their points. Walkers always took it per foot.
+- `st-wt0.21.4`: the lidar floor and the Rosedale ravine boundary are done.
+- `st-051`: the river is level across, step-free and meets the flat city's water (rule 9). It can't fall downstream
+  through the south transition in this frame, so a decision is needed (§7).
 - `st-wt0.21.5`: an idle-machine resource comparison before any production use. It depends on the other four.

@@ -14,36 +14,27 @@ const { Fn, float, color, uv, attribute, fract, smoothstep, mix, abs } = window.
 const { GEO, CITY_BOUNDS, nearestRoads } = window.CITY;
 const { createRenderedFacadeMaterial, createCurtainWallMaterial, createFacadeBoxes, createFootprintFacades, WALL_KINDS } = window.CITY;
 
-// ---- ?massing=1 (docs/massing-buildings.md, st-2nl): the pilot area's buildings stand on their City 3D Massing
-// polygons (js/toronto-massing-pilot.js, which main.js loads only then) instead of their L/T/U boxes. A record is used
-// only if its row still has the centre it was built against; anything else keeps its boxes.
-function massingPilot() {
-  const P = window.CITY.MASSING_PILOT;
-  if (!P || P.schema !== 1 || !Array.isArray(P.records)) return null;
-  const rows = new Map();
-  let rejected = 0;
-  for (const [row, id, cx, cz, base, rings, party, hidden] of P.records) {
-    const b = GEO.buildings[row];
-    const pts = (rings || []).map((flat) => {
-      const out = [];
-      for (let i = 0; i + 1 < flat.length; i += 2) out.push([flat[i], flat[i + 1]]);
-      return out;
-    });
-    if (!b || b[0] !== cx || b[1] !== cz || !pts.length || pts[0].length < 3 || !pts.flat(2).every(Number.isFinite)) { rejected++; continue; }
-    const covered = new Map();
-    for (let i = 0; i + 1 < (party || []).length; i += 2) covered.set(party[i], party[i + 1]);
-    rows.set(row, { id, base: base || 0, rings: pts, covered, hidden: new Set(hidden || []) });
-  }
-  return { rows, rejected, area: P.area };
+// ---- ?massing=1 (docs/massing-buildings.md, st-2nl): every building stands on its City 3D Massing polygon
+// (data/toronto-massing.bin, which main.js loads through js/massing-data.js only then, onto window.CITY.MASSING) instead
+// of its L/T/U boxes. The sidecar is used only if it was built for exactly these rows; a record it rejects keeps its
+// boxes.
+function massingFootprints() {
+  const M = window.CITY.MASSING;
+  if (!M || !(M.rows instanceof Map)) return null;
+  if (M.error) console.warn(`[buildings] massing: ${M.error}; the buildings stay on their boxes`);
+  return M.error ? null : M;
 }
 
-// Each outer edge's treatment: an edge another part's wall stands on (the build's `hidden`) has no wall (-1); walls
-// against a neighbour's mass are windowless party walls (lotLine, the build's sampled `covered`), so are slivers under
-// 2 m; edges looking onto a street within 15 m of its kerb are street fronts:
-// the best (longest, a main street's counting double) takes the building's front kind (its storefront or entrance), and
-// on a shop every other street edge of 3 m or more is a shop front too (corner stores wrap round). The rest are rear.
+// Each outer edge's treatment, from the sidecar's classification inputs (tools/build-massing.mjs): an edge another
+// part's wall stands on (`hidden`) has no wall (-1); a wall a neighbour's mass covers for at least half its height
+// above its own foot (`covered`: the neighbour's roof; a tower's podium below its `base` covers none of it, and a
+// tower beside a low block keeps its windows) is a windowless party wall (lotLine), so are slivers under 2 m; edges
+// looking onto a street within 15 m of its kerb (`street`, true
+// on a main street) are street fronts: the best (longest, a main street's counting double) takes the building's front
+// kind (its storefront or entrance), and on a shop every other street edge of 3 m or more is a shop front too (corner
+// stores wrap round). The rest are rear.
 // Returns { kinds, edges: [{ ax, az, bx, bz, nx, nz, len, kind, street }] }
-function footprintEdges(outer, covered, hidden, frontKind, shopFront) {
+function footprintEdges(outer, covered, hidden, street, frontKind, shopFront, base, h) {
   const n = outer.length;
   const edges = [];
   let best = -1, bestScore = 0;
@@ -53,16 +44,12 @@ function footprintEdges(outer, covered, hidden, frontKind, shopFront) {
     const e = { ax, az, bx, bz, nx: dz / len, nz: -dx / len, len, kind: WALL_KINDS.rear, street: false };
     edges.push(e);
     if (hidden.has(i)) { e.kind = -1; continue; }
-    if (covered.has(i) || len < 2) { e.kind = WALL_KINDS.lotLine; continue; }
-    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
-    const road = nearestRoads(mx, mz, 40)[0];
-    if (!road) continue;
-    const tx = road.px - mx, tz = road.pz - mz, d = Math.hypot(tx, tz);
-    if (d > 0.5 && (tx * e.nx + tz * e.nz) / d > 0.7 && d - (road.road.w || 0) / 2 < 15) {
-      e.street = true;
-      const score = len * ((road.road.w || 0) >= 9 ? 2 : 1);
-      if (score > bestScore) { bestScore = score; best = i; }
-    }
+    const cover = covered.has(i) ? covered.get(i) - base : 0;
+    if ((cover > 0.5 && cover >= (h - base) / 2) || len < 2) { e.kind = WALL_KINDS.lotLine; continue; }
+    if (!street.has(i)) continue;
+    e.street = true;
+    const score = len * (street.get(i) ? 2 : 1);
+    if (score > bestScore) { bestScore = score; best = i; }
   }
   for (const e of edges) if (shopFront && e.street && e.len >= 3) e.kind = WALL_KINDS.shop;
   if (best >= 0) edges[best].kind = frontKind;
@@ -363,10 +350,10 @@ function buildCityBlocks(scene) {
   ];
   const materials = facadeStyles.map(([create, opts]) => create(opts));
   const buckets = materials.map(() => []);
-  // ?massing=1: the pilot's polygon buildings, by facade style (their own footprintLocal materials, made only then)
-  const massing = massingPilot();
+  // ?massing=1: the polygon buildings, by facade style (their own footprintLocal materials, made only then)
+  const massing = massingFootprints();
   const footBuckets = materials.map(() => []);
-  const massingStats = massing && { buildings: 0, rejected: massing.rejected, courtyards: 0, partyWalls: 0, onPodium: 0, boxesReplaced: 0, ms: 0 };
+  const massingStats = massing && { buildings: 0, records: massing.records, rejected: massing.rejected, courtyards: 0, partyWalls: 0, onPodium: 0, boxesReplaced: 0, ms: 0 };
   const roofTiles = { pos: [], nor: [], uv: [], col: [] };
   const roofSheets = { pos: [], nor: [], uv: [], col: [] };
 
@@ -425,7 +412,7 @@ function buildCityBlocks(scene) {
     let edges = null;
     if (foot) {
       const tf = performance.now();
-      const fr = footprintEdges(foot.rings[0], foot.covered, foot.hidden, faces[front], shopFront);
+      const fr = footprintEdges(foot.rings[0], foot.covered, foot.hidden, foot.street, faces[front], shopFront, Math.min(foot.base, h - 0.5), h);
       edges = fr.edges;
       const pitched = (roof === 1 && kind !== 3) || roof === 2;
       footBuckets[mat].push({
@@ -440,7 +427,7 @@ function buildCityBlocks(scene) {
       colliders.push({ minX: x0, maxX: x1, minZ: z0, maxZ: z1, maxY: h, polygon: outer.map(([x, z]) => ({ x, z })), massing: foot.id });
       massingStats.buildings++;
       massingStats.courtyards += foot.rings.length - 1;
-      massingStats.partyWalls += foot.covered.size;
+      massingStats.partyWalls += fr.edges.filter((e, i) => e.kind === WALL_KINDS.lotLine && foot.covered.has(i)).length;
       if (foot.base > 0) massingStats.onPodium++;
       massingStats.boxesReplaced += parts.filter(([u0, u1, v0, v1]) => u1 - u0 >= 1 && v1 - v0 >= 1).length;
       massingStats.ms += performance.now() - tf;
@@ -551,23 +538,26 @@ function buildCityBlocks(scene) {
     }
   }
 
-  // ?massing=1: the pilot's polygons, merged per facade style and 1 km cell, in footprintLocal copies of the materials
+  // ?massing=1: the polygons, merged per facade style and 1 km cell, in footprintLocal copies of the materials
   if (massing) {
     const tm = performance.now();
-    let triangles = 0, meshes = 0, walls = 0;
+    let triangles = 0, meshes = 0, walls = 0, vertices = 0;
     footBuckets.forEach((items, i) => {
       if (!items.length) return;
       const [create, opts] = facadeStyles[i];
       const built = createFootprintFacades(create({ ...opts, footprintLocal: true }), items);
-      for (const m of built.meshes) { m.name = `MassingBuildings_${i}`; group.add(m); }
+      for (const m of built.meshes) { m.name = `MassingBuildings_${i}`; group.add(m); vertices += m.geometry.attributes.position.count; }
       triangles += built.triangles; meshes += built.meshes.length; walls += built.walls;
     });
-    Object.assign(massingStats, { triangles, meshes, walls, boxTriangles: massingStats.boxesReplaced * 12, area: massing.area && massing.area.name });
+    // (the footprint vertex format: position, normal, facadeWall 3 floats each, box & paint 4)
+    Object.assign(massingStats, { triangles, meshes, walls, vertices, geometryMiB: Math.round(vertices * 17 * 4 / 1048576 * 10) / 10, boxTriangles: massingStats.boxesReplaced * 12 });
+    massingStats.meshMs = Math.round((performance.now() - tm) * 10) / 10;
     massingStats.ms = Math.round((massingStats.ms + performance.now() - tm) * 10) / 10;
-    window.CITY.massingPilotStats = massingStats;
-    console.info(`[buildings] massing pilot (${massingStats.area}): ${massingStats.buildings} buildings from their polygons (${massingStats.rejected} records rejected), ` +
-      `${massingStats.courtyards} courtyards, ${massingStats.partyWalls} party walls, ${massingStats.onPodium} on a podium; ${triangles} triangles in ${meshes} meshes ` +
-      `(the ${massingStats.boxesReplaced} boxes they replace: ${massingStats.boxTriangles} triangles, instanced); ${massingStats.ms} ms`);
+    window.CITY.massingStats = massingStats;
+    console.info(`[buildings] massing: ${massingStats.buildings} buildings from their polygons (${massingStats.rejected} of ${massingStats.records} records rejected), ` +
+      `${massingStats.courtyards} courtyards, ${massingStats.partyWalls} party walls, ${massingStats.onPodium} on a podium; ${triangles} triangles, ${vertices} vertices ` +
+      `(~${massingStats.geometryMiB} MiB) in ${meshes} meshes (the ${massingStats.boxesReplaced} boxes they replace: ${massingStats.boxTriangles} triangles, instanced); ` +
+      `${massingStats.ms} ms (${massingStats.meshMs} ms merging)`);
   }
   buckets.forEach((items, i) => {
     if (!items.length) return;

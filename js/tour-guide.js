@@ -546,16 +546,10 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
         return;
       }
     }
-    const near = nearestRoads(p.x, p.z, 400).filter((n) => !n.road.raised && n.road.cls !== 'motorway');
-    let spot = null;
-    for (const n of near) {
-      if (!blockAt(n.px, n.pz)) {
-        spot = n;
-        break;
-      }
-    }
-    if (spot) teleportTo(spot.px, spot.pz, Math.atan2(p.x - spot.px, p.z - spot.pz));
-    else teleportTo(p.x, p.z);
+    // (city-config.js streetArrival: the nearest street in front of it, and in the Don Valley pilot which surface: the
+    // viaduct's deck or the valley's floor)
+    const a = window.CITY.streetArrival(p.x, p.z);
+    teleportTo(a.x, a.z, a.heading, a.y);
   }
 
   // ---- the search box ----------------------------------------------------------------------------------------------
@@ -883,7 +877,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
       const t = Math.max(0, Math.min(1, (s - r.cum[i]) / L));
       const dx = (B[0] - A[0]) / L, dz = (B[2] - A[2]) / L;
       const off = A[3] || 0;
-      return { x: A[0] + (B[0] - A[0]) * t - dz * off, z: A[2] + (B[2] - A[2]) * t + dx * off, dx, dz };
+      return { x: A[0] + (B[0] - A[0]) * t - dz * off, z: A[2] + (B[2] - A[2]) * t + dx * off, y: A[1] + (B[1] - A[1]) * t, dx, dz };
     };
     const v = Math.abs(ent.speed || 0);
     const look = mode === 'person' ? 4 : mode === 'cyclist' ? 7 : Math.max(9, v * 1.1);
@@ -931,7 +925,8 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     if (nav.stuck > 4) {
       nav.stuck = 0;
       const p = pointAt(Math.min(r.distance, nav.along + 12));
-      controllerManager.teleportActiveTo(p.x, p.z, Math.atan2(p.dx, p.dz));
+      // (on the route's own surface: a deck or the ground under it, in the Don Valley pilot)
+      controllerManager.teleportActiveTo(p.x, p.z, Math.atan2(p.dx, p.dz), mode === 'helicopter' ? null : p.y);
       cameraSystem.resetForTeleport();
     }
   }

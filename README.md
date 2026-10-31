@@ -3,7 +3,8 @@
 Downtown Toronto and the waterfront in 3D, in the browser: walk, cycle, drive or fly from the Humber Bay Arch Bridge
 along the lake to Sugar Beach, past the CN Tower and through downtown. Built with [three.js](https://threejs.org/)
 WebGPURenderer and TSL on the engine of [Slop New York](https://github.com/mrdoob/slop-newyork) by mrdoob, by way of
-its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
+its fork Abuja Tour. Best in a WebGPU browser (recent Chrome or Edge); without WebGPU it runs on WebGL2, without the
+volumetric clouds ([why](docs/clouds-alpha6.md#webgl2-backend)).
 
 **Live: https://sloptoronto.ca/explore**
 

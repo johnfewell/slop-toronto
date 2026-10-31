@@ -34,6 +34,10 @@ are a third layer on the same terms.
 The sidecar is about 1.9 MB. Pages don't reference it, so `tools/build-site.mjs` doesn't ship it until a feature
 loads it (lazily, within the startup payload gate).
 
+`data/toronto-massing.bin` (`tools/build-massing.mjs`, loaded only by `?massing=1`; [massing-buildings.md](massing-buildings.md#city-wide-sidecar-st-2nl2))
+keys each building polygon by these massing IDs and carries its own slim ID→row index. That index is valid only for
+the rows it was built for (`rowCheck`), so the page never loads this sidecar to place the polygons.
+
 `js/toronto-transit.js` patterns each gain an `id`. `patternAliases` carries authored pattern aliases. All other
 fields are unchanged; in the 2026-09-30 feed they are byte-identical to before.
 

@@ -60,3 +60,23 @@ test('geodata builds with default paths in a checkout containing spaces and non-
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// The massing sidecar (data/toronto-massing.bin, tools/build-massing.mjs, docs/massing-buildings.md) from the 3D Massing
+// shapefile in PROPS_DATA: twice, byte for byte the committed file both times
+const SHP = PROPS_DATA && path.join(PROPS_DATA, 'massing2025/3DMassingShapefile_2025_WGS84.shp');
+const skipMassing = !PROPS_DATA ? 'PROPS_DATA is not set: run npm run test:geodata'
+  : !fs.existsSync(SHP) ? `needs the 3D Massing shapefile (${SHP})` : false;
+test('the massing sidecar rebuilds byte for byte from the shapefile', { skip: skipMassing, timeout: 300000 }, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'massing '));
+  try {
+    for (const run of [1, 2]) {
+      const out = path.join(dir, `massing-${run}.bin`);
+      const result = spawnSync(process.execPath, [path.join(root, 'tools/build-massing.mjs'), SHP, '--out', out], { encoding: 'utf8', timeout: 300000 });
+      assert.ifError(result.error);
+      assert.equal(result.status, 0, result.stderr + result.stdout);
+      assert.ok(fs.readFileSync(out).equals(fs.readFileSync(path.join(root, 'data/toronto-massing.bin'))), `run ${run}: data/toronto-massing.bin differs from the rebuild`);
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

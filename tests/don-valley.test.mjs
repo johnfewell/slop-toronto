@@ -24,6 +24,7 @@ function city(pilot) {
 const ON = city(true), OFF = city(false);
 const DV = ON.DON_VALLEY, D = ON.DON_VALLEY_DATA;
 const grid = (b64, scale) => { const b = Buffer.from(b64, 'base64'); return [...new Int16Array(b.buffer, b.byteOffset, b.length / 2)].map((v) => v / scale); };
+const BW = D.box.x1 - D.box.x0, BD = D.box.z1 - D.box.z0; // (the box's width and depth)
 const node = (arr, x, z) => arr[Math.round((z - D.box.z0) / D.box.step) * D.nx + Math.round((x - D.box.x0) / D.box.step)];
 // a little pseudo-random sequence (repeatable)
 const rand = (() => { let s = 6711; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
@@ -88,7 +89,7 @@ test('the surface: grid nodes, continuity, the tableland and the box edges at th
   }
   // the edges (and beyond): the street level
   for (let s = 0; s <= 1; s += 0.01) {
-    for (const [x, z] of [[D.box.x0, D.box.z0 + s * 1620], [D.box.x1, D.box.z0 + s * 1620], [D.box.x0 + s * 1020, D.box.z0], [D.box.x0 + s * 1020, D.box.z1]]) {
+    for (const [x, z] of [[D.box.x0, D.box.z0 + s * BD], [D.box.x1, D.box.z0 + s * BD], [D.box.x0 + s * BW, D.box.z0], [D.box.x0 + s * BW, D.box.z1]]) {
       assert.ok(Math.abs(DV.heightAt(x, z)) < 0.01, `edge (${x}, ${z})`);
       assert.equal(DV.heightAt(x + (x === D.box.x1 ? 5 : x === D.box.x0 ? -5 : 0), z + (z === D.box.z1 ? 5 : z === D.box.z0 ? -5 : 0)), 0);
     }
@@ -109,9 +110,12 @@ test('the surface: grid nodes, continuity, the tableland and the box edges at th
   }
 });
 
-test('max grades: the lidar\'s roads and ramps, and Rosedale Valley Road down its ravine (TE-3)', () => {
-  // the steepest 20 m of a road in the playable city (its own surface: cutAt on the ground, the ground a ramp hugs)
-  const steepest = (name, raised, from = null) => {
+// a raised road's own surface: its ramp's profile, or the viaduct's deck (js/don-valley.js)
+const deckY = (x, z) => DV.rampAt(x, z) ?? DV.deckHeight(x, z, 1);
+test('max grades: the lidar\'s roads, the ramps on their profiles, and Rosedale Valley Road down its ravine (TE-3)', () => {
+  // the steepest 20 m of a road (its own surface: cutAt on the ground, its deck for a raised road), in the playable city
+  // unless `everywhere`
+  const steepest = (name, raised, from = null, everywhere = false) => {
     let worst = 0;
     for (const r of ON.ROADS) {
       if (r.name !== name || !!r.raised !== raised) continue;
@@ -120,32 +124,77 @@ test('max grades: the lidar\'s roads and ramps, and Rosedale Valley Road down it
         const a = r.pts[i], b = r.pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 5));
         for (let j = i ? 1 : 0; j <= n; j++) st.push({ x: a.x + ((b.x - a.x) * j) / n, z: a.z + ((b.z - a.z) * j) / n });
       }
-      const h = (p) => (raised ? DV.heightAt(p.x, p.z) : ON.cutAt(p.x, p.z));
+      const h = (p) => (raised ? deckY(p.x, p.z) : ON.cutAt(p.x, p.z));
       for (let i = 4; i < st.length; i++) {
         const a = st[i - 4], b = st[i];
-        if (![a, b].every((p) => DV.inBox(p.x, p.z) && p.z > -3000 && !DV.onViaductLine(p.x, p.z, 20))) continue;
+        if (![a, b].every((p) => DV.inBox(p.x, p.z) && (everywhere || p.z > -3000) && !DV.onViaductLine(p.x, p.z, 20))) continue;
         if (from && Math.min(...[a, b].map((p) => Math.hypot(p.x - from.x, p.z - from.z))) < from.r) continue;
-        if (Math.min(h(a), h(b)) > -0.5) continue;
+        if (Math.min(DV.heightAt(a.x, a.z), DV.heightAt(b.x, b.z)) > -0.5) continue;
         worst = Math.max(worst, Math.abs(h(b) - h(a)) / Math.hypot(b.x - a.x, b.z - a.z));
       }
     }
     return worst;
   };
+  const pct = (v) => `${(v * 100).toFixed(1)}%`;
   // Rosedale Valley Road: 15% at the SRTM build's west taper; now under 10% where the flat city's cut hands over to the
   // ravine, and about the ravine rule's 5% on the way down from 150 m past the bridge (6.4% where the rule fades out
   // 300-450 m from it, 6.1% on the south transition's climb back to the flat city)
   const [A, B] = D.alterations.ravine.bridge, mid = { x: (A[0] + B[0]) / 2, z: (A[1] + B[1]) / 2 };
-  assert.ok(steepest('Rosedale Valley Road', false) < 0.10, `Rosedale Valley Road ${(steepest('Rosedale Valley Road', false) * 100).toFixed(1)}%`);
+  assert.ok(steepest('Rosedale Valley Road', false) < 0.10, `Rosedale Valley Road ${pct(steepest('Rosedale Valley Road', false))}`);
   assert.ok(steepest('Rosedale Valley Road', false, { ...mid, r: 150 }) < 0.07, 'down the ravine');
-  // the ramps the SRTM build reported at 38% and 22% now lie on the lidar's own embankments
-  assert.ok(steepest('Bayview-Bloor Ramp', true) < 0.12, `Bayview-Bloor Ramp ${(steepest('Bayview-Bloor Ramp', true) * 100).toFixed(1)}%`);
+  // the ramps on their lidar profiles (st-wt0.21.2): the SRTM build's 38% (Bayview-Bloor) and 14% (Royal Drive, which
+  // hugged the ground's shallow knee) within the 8-10% of real ramps, in the playable city and beyond its edge
+  for (const n of ['Bayview-Bloor Ramp', 'Royal Drive']) {
+    assert.ok(steepest(n, true) < 0.10, `${n} ${pct(steepest(n, true))}`);
+    assert.ok(steepest(n, true, null, true) < (n === 'Royal Drive' ? 0.10 : 0.145), `${n} everywhere ${pct(steepest(n, true, null, true))}`);
+  }
   assert.ok(steepest('Drumsnab Road', true) < 0.12);
   for (const n of ['Bayview Avenue', 'Don Valley Parkway']) assert.ok(steepest(n, false) < 0.08, n);
-  // what is still over 12% in the playable city is recorded for review: Royal Drive's ramp and service lanes down the
-  // ravine's sides (st-wt0.21.2)
-  const review = D.diagnostics.roads.filter((r) => r.review && r.at[1] > -3000);
+  // what is still over 12% is recorded with its resolution: in the playable city only a service lane down the ravine's
+  // side, whose lidar slope is the same (17%, John: leave the real slopes); beyond the city's edge, one ramp junction
+  // where OpenStreetMap's ground way goes on over the ramp's bridge (the 10 m grid's ground road lies under it)
+  const review = D.diagnostics.roads.filter((r) => r.review);
   assert.ok(review.every((r) => r.maxGradePct > 12));
-  assert.deepEqual([...new Set(review.map((r) => r.name))].sort(), ['(unnamed)', 'Royal Drive']);
+  assert.deepEqual([...new Set(review.filter((r) => r.playableMaxPct > 12).map((r) => r.name))], ['(unnamed)']);
+  for (const r of review) {
+    if (r.raised) assert.ok(r.junction && r.at[1] < -3000, `${r.name}: a recorded junction, outside the playable city`);
+    else assert.ok(r.lidarPct >= r.maxGradePct - 1.5, `${r.name}: ${r.maxGradePct}% in the game, ${r.lidarPct}% in the lidar`);
+  }
+  // the north stubs (42% on the SRTM-era ramps) on their profiles: no deck in the box steeper than that junction
+  for (const r of D.diagnostics.roads.filter((q) => q.raised)) assert.ok(r.maxGradePct <= 14.5, `${r.name} at ${r.at}: ${r.maxGradePct}%`);
+});
+
+test('the ramps: profiles from the lidar, standing clear of the ground they cross, and the Rosedale section level (st-wt0.21.2)', () => {
+  const rampDecks = ON.DECKS.filter((d) => DV.rampProfile(OFF.DECKS[ON.DECKS.indexOf(d)].pts));
+  assert.equal(rampDecks.length, D.decks.ramps.length);
+  assert.ok(rampDecks.length > 15);
+  for (const d of rampDecks) {
+    // every few metres (the profile, not the OpenStreetMap vertices 100 m apart)
+    for (let i = 1; i < d.pts.length; i++) assert.ok(Math.hypot(d.pts[i].x - d.pts[i - 1].x, d.pts[i].z - d.pts[i - 1].z) <= 4.01, `${d.name}: a piece ${i}`);
+    // over the drawn ground by the deck's own height or more: never buried in it
+    for (const p of d.pts) if (DV.inBox(p.x, p.z)) assert.ok(p.h - DV.heightAt(p.x, p.z) > D.decks.hug - 0.02, `${d.name} at (${p.x}, ${p.z}): ${p.h} over ${DV.heightAt(p.x, p.z)}`);
+    // the road graph's raised nodes on it take its height there
+    const p = d.pts[d.pts.length >> 1];
+    assert.ok(Math.abs(DV.roadHeight(p.x, p.z, 7) - p.h) < 0.05, `${d.name}: road graph height`);
+  }
+  // the Royal Drive ramp runs down from Danforth Avenue's street level to the valley's ground road
+  const royal = rampDecks.find((d) => d.name === 'Royal Drive');
+  assert.ok(Math.abs(royal.pts[0].h) < 0.05 && royal.pts.at(-1).h < -15, 'from the street to the valley');
+  // the Prince Edward Viaduct's Rosedale section: Bloor Street level with the street over the ravine (the flat city had a
+  // 7.5 m flyover there, the SRTM-era pilot let it sag 9 m into the ravine), its approaches from outside the box back at
+  // the street: no step at the box's west edge
+  const [rs, re] = [D.decks.sections[1].from, D.decks.sections[1].to];
+  assert.equal(D.decks.sections[1].name, 'Rosedale');
+  const mid = { x: (rs[0] + re[0]) / 2, z: (rs[1] + re[1]) / 2 };
+  assert.ok(DV.heightAt(mid.x, mid.z) < -4, 'the ravine under it');
+  assert.equal(ON.deckHeightAt(mid.x, mid.z, 0.4, 0.6), D.deckTop, 'on the Rosedale section');
+  assert.equal(ON.deckHeightAt(mid.x, mid.z, DV.heightAt(mid.x, mid.z) + 0.2, 0.6), 0, 'nothing in reach under it');
+  const bloor = (C) => C.DECKS.filter((d) => /^(Bloor Street East|Parliament Street|)$/.test(d.name) && d.pts.some((p) => p.x > 1480 && p.x < 1760 && p.z > -2720 && p.z < -2500));
+  assert.ok(Math.max(...bloor(OFF).flatMap((d) => d.pts.map((p) => p.h))) > 7, 'the flat city\'s flyover');
+  assert.ok(Math.max(...bloor(ON).flatMap((d) => d.pts.map((p) => p.h))) <= D.deckTop + 1e-9, 'level with the street in the pilot');
+  assert.ok(D.decks.flattened.length >= 3 && D.decks.flattened.every((f) => DV.flattenedAt(f.pts[0], f.pts[1])));
+  // the build records its ramp rule and the junctions it could not meet the lidar at
+  assert.ok(D.alterations.ramps.ramps === D.decks.ramps.length && D.alterations.ramps.cutSamples > 0);
 });
 
 test('drawn and sampled agree: a draped mesh lies on heightAt to well under 3 cm everywhere (TE-2, TE-3)', () => {
@@ -195,7 +244,7 @@ test('drawn and sampled agree: a draped mesh lies on heightAt to well under 3 cm
 test('cutAt, the decks and the road graph read the valley; without the flag nothing changes', () => {
   // cutAt = the road cuts + the valley; the road cuts alone stay roadCutAt (trees, rail bridges)
   for (let i = 0; i < 300; i++) {
-    const x = D.box.x0 + rand() * 1020, z = D.box.z0 + rand() * 1620;
+    const x = D.box.x0 + rand() * BW, z = D.box.z0 + rand() * BD;
     assert.ok(Math.abs(ON.cutAt(x, z) - ON.roadCutAt(x, z) - DV.heightAt(x, z)) < 1e-9);
     assert.equal(OFF.cutAt(x, z), OFF.roadCutAt(x, z));
   }
@@ -208,9 +257,9 @@ test('cutAt, the decks and the road graph read the valley; without the flag noth
     assert.equal(ON.deckHeightAt(x, -2803, DV.heightAt(x, -2803) + 0.2, 0.6), 0, `nothing in reach under it at ${x}`);
     assert.ok(OFF.deckHeightAt(x, -2803, 30, 0.6) > 20, 'the flat city\'s 22.5 m deck without the flag');
   }
-  // the ramps down the valley's sides hug their own ground
+  // the ramps down the valley's sides on their own profiles, over their ground
   const ramp = ON.DECKS.filter((d) => d.name === 'Bayview-Bloor Ramp').flatMap((d) => d.pts).find((p) => DV.inBox(p.x, p.z) && (p.g ?? 0) < -10);
-  assert.ok(ramp && Math.abs(ramp.h - ramp.g - 0.35) < 1e-9, 'a ramp 0.35 m over its ground');
+  assert.ok(ramp && ramp.h - ramp.g >= D.decks.hug - 0.02, 'a ramp over its ground');
   // decks elsewhere are untouched
   const gardiner = ON.DECKS.find((d) => d.pts.some((p) => p.h > 10 && !DV.inBox(p.x, p.z)));
   const twin = OFF.DECKS.find((d) => d.name === gardiner.name && d.pts[0].x === gardiner.pts[0].x);
@@ -369,3 +418,187 @@ ON_SAMPLE.f = (route, s) => {
   for (let i = 1; i < P.length; i++) if (s <= P[i][0]) { const [s0, y0] = P[i - 1], [s1, y1] = P[i]; return y0 + (y1 - y0) * ((s - s0) / ((s1 - s0) || 1)); }
   return P.at(-1)[1];
 };
+
+// --- arrivals (st-wt0.21.1): a teleport, a search result or a route arrives on the surface it means
+function pilotWith(files) {
+  const context = vm.createContext({ window: { CITY: { THREE, Addons: { mergeGeometries }, DEBUG_ROADS: false }, addEventListener() {} }, document: { addEventListener() {}, hidden: false },
+    console: { info() {}, warn() {}, log() {} }, atob });
+  for (const f of ['toronto-geodata', 'toronto-subway', 'toronto-subway-topology', 'don-valley-data', 'don-valley', 'city-config', ...files]) vm.runInContext(read(f), context);
+  return context.window.CITY;
+}
+test('arrivals: on the viaduct\'s decks without a y, on the valley floor under them with one, and search results say which (st-wt0.21.1)', () => {
+  const C = pilotWith(['world-collision', 'controllers']);
+  const cm = Object.create(C.ThirdPersonControllerManager.prototype);
+  cm.interiorSpace = null;
+  const ground = (x, z, y = null, mode = 'person') => cm.getGroundHeight(x, z, mode, y);
+  const [rs, re] = [D.decks.sections[1].from, D.decks.sections[1].to], rosedale = { x: (rs[0] + re[0]) / 2, z: (rs[1] + re[1]) / 2 };
+  for (const mode of ['person', 'cyclist', 'car']) {
+    // a teleport (no y) onto either section of the Prince Edward Viaduct: its deck, not the floor 40 m (or 9 m) under it
+    assert.equal(ground(2240, -2803, null, mode), D.deckTop, `${mode} onto the Don's deck`);
+    assert.equal(ground(rosedale.x, rosedale.z, null, mode), D.deckTop, `${mode} onto the Rosedale section`);
+    // an arrival that knows it is under the deck (a route along Bayview Avenue, a saved place): the floor
+    const floor = C.cutAt(2240, -2803);
+    assert.ok(floor < -30 && Math.abs(ground(2240, -2803, floor, mode) - floor) < 0.25, `${mode} under the Don's deck`);
+  }
+  // a ramp's deck (no y): the ramp, not the slope beside it under it; the valley floor away from any deck: the floor
+  const royal = C.DECKS.find((d) => d.name === 'Royal Drive' && d.pts.length > 30), p = royal.pts[royal.pts.length >> 1];
+  assert.ok(Math.abs(ground(p.x, p.z, null, 'car') - p.h) < 0.4 && p.h < -5, `onto Royal Drive's ramp at ${p.h}`);
+  assert.ok(Math.abs(ground(2205, -2650) - (C.cutAt(2205, -2650) + (C.blockAt(2205, -2650) ? 0.22 : 0))) < 1e-9 && C.cutAt(2205, -2650) < -30, 'the valley floor');
+  // without the flag: unchanged (the street level, a deck only in reach of it)
+  const F = (() => { const context = vm.createContext({ window: { CITY: { DEBUG_ROADS: false }, addEventListener() {} }, document: { addEventListener() {} }, console: { info() {}, warn() {}, log() {} }, atob });
+    for (const f of ['toronto-geodata', 'toronto-subway', 'city-config', 'world-collision', 'controllers']) vm.runInContext(read(f), context); return context.window.CITY; })();
+  const off = Object.create(F.ThirdPersonControllerManager.prototype);
+  off.interiorSpace = null;
+  assert.equal(off.getGroundHeight(2240, -2803, 'person', null), 0, 'the flat city: the street under the 22.5 m flyover');
+
+  // search results and map spots (tour-guide.js teleportToPlace -> streetArrival): on the viaduct, Bloor Street's deck;
+  // down in the valley, Bayview Avenue's floor; and the y they carry lands there
+  const onDeck = C.streetArrival(2240, -2805);
+  assert.ok(Math.abs(onDeck.z - -2803) < 12 && Math.abs(onDeck.y - D.deckTop) < 0.01, `a spot on the viaduct: ${JSON.stringify(onDeck)}`);
+  assert.equal(ground(onDeck.x, onDeck.z, onDeck.y), D.deckTop);
+  const inValley = C.streetArrival(2190, -2600);
+  assert.ok(inValley.y < -30 && Math.abs(ground(inValley.x, inValley.z, inValley.y) - inValley.y) < 0.25, `a spot in the valley: ${JSON.stringify(inValley)}`);
+  const onRosedale = C.streetArrival(rosedale.x, rosedale.z);
+  assert.ok(Math.abs(onRosedale.y - D.deckTop) < 0.01, `a spot on the Rosedale section: ${JSON.stringify(onRosedale)}`);
+  // without the flag: the old arrival on a road at grade, no y
+  assert.equal(OFF.streetArrival(2240, -2805).y, null);
+  assert.equal(OFF.streetArrival(2240, -2805).x, OFF.nearestRoads(2240, -2805, 400).find((n) => !n.road.raised && n.road.cls !== 'motorway' && !OFF.blockAt(n.px, n.pz)).px);
+});
+
+test('routes carry their surface: across the viaduct on its deck, along Bayview Avenue on the valley floor (st-wt0.21.1)', () => {
+  const C = pilotWith(['navigation']), N = C.Navigation;
+  const across = N.findRoute({ x: 1975, z: -2803 }, { x: 2520, z: -2797 }, 'car');
+  const onDeck = across.points.filter((q) => q[0] > 1995 && q[0] < 2480); // (the viaduct is one link, 470 m)
+  assert.ok(onDeck.length >= 2 && onDeck.every((q) => Math.abs(q[1] - D.deckTop) < 0.01), `over the valley: ${onDeck.map((q) => q[1].toFixed(2))}`);
+  const along = N.findRoute({ x: 2195, z: -2580 }, { x: 2160, z: -2950 }, 'car');
+  const under = along.points.filter((q) => q[2] < -2700 && q[2] > -2900);
+  assert.ok(under.length >= 2 && under.every((q) => q[1] < -25), `Bayview under the viaduct: ${under.map((q) => q[1].toFixed(1))}`);
+  // each lands on its own surface (tour-guide.js: getGroundHeight with the route's y, as its ribbon and Tour Drive do)
+  const G = pilotWith(['world-collision', 'controllers']), cm = Object.create(G.ThirdPersonControllerManager.prototype);
+  cm.interiorSpace = null;
+  for (const q of [...onDeck, ...under]) assert.ok(Math.abs(cm.getGroundHeight(q[0], q[2], 'car', q[1] + 1) - q[1]) < 0.6, `route point ${q.map((v) => v.toFixed(1))}`);
+});
+
+// --- between their points (st-wt0.21.3): traffic, cycling furniture and walkers on the valley's slopes
+test('traffic follows the valley between its graph\'s points: lanes and turns within 0.1 m of the surface (st-wt0.21.3)', () => {
+  const C = pilotWith(['toronto-traffic-data', 'road-network']), N = C.buildRoadNetwork([], []), T = C.DON_VALLEY;
+  let lanes = 0, worst = 0, linearWorst = 0, turns = 0, turnWorst = 0;
+  const names = new Set();
+  for (const e of N.edges) {
+    if (!T.inBox(e.sx, e.sz)) continue;
+    for (let s = 0; s <= e.len; s += 1) for (let i = 0; i < e.lanes.length; i++) {
+      const x = e.sx + e.dx * s + e.rx * e.lanes[i], z = e.sz + e.dz * s + e.rz * e.lanes[i], y = C.edgeY(e, s, x, z);
+      if (!e.dv || e.dv.kind !== 'ground') continue;
+      lanes++;
+      worst = Math.max(worst, Math.abs(y - C.cutAt(x, z)));
+      linearWorst = Math.max(linearWorst, Math.abs(e.h0 + (e.h1 - e.h0) * Math.min(1, ((e.b0 || 0) + s) / e.span) - C.cutAt(x, z)));
+    }
+    // the turns through the junctions on the slopes
+    for (const m of e.moves) for (let i = 0; i < m.out.length; i++) {
+      if (!(m.out[i] >= 0) || !e.dv || !m.to.dv || e.dv.kind !== 'ground' || m.to.dv.kind !== 'ground') continue;
+      const c = N.connector(e, i, m.to, m.out[i]), p = { x: 0, y: 0, z: 0 };
+      for (let s = 0; s <= c.len; s += 1) { N.curvePoint(c, s, p); turns++; turnWorst = Math.max(turnWorst, Math.abs(p.y - C.cutAt(p.x, p.z))); }
+    }
+  }
+  assert.ok(lanes > 5000 && turns > 200, `${lanes} lane and ${turns} turn samples`);
+  // (a road cut's depth between two nodes is still interpolated: Rosedale Valley Road's cut, within a few cm)
+  assert.ok(worst < 0.1 && turnWorst < 0.1, `lanes within ${worst.toFixed(3)} m, turns within ${turnWorst.toFixed(3)} m of the ground`);
+  assert.ok(linearWorst > 1, `a straight line between the nodes would be ${linearWorst.toFixed(1)} m off`);
+  // the viaduct's deck is level: its edges keep the straight line at the deck's height
+  const deck = N.edges.filter((e) => T.sectionAt(e.sx, e.sz) && Math.abs(e.h0 - D.deckTop) < 1e-9 && Math.abs(e.h1 - D.deckTop) < 1e-9);
+  assert.ok(deck.length && deck.every((e) => !e.dv && Math.abs(C.edgeY(e, e.len / 2) - D.deckTop) < 1e-9), 'on the viaduct\'s deck');
+  // without the flag edgeY is the straight line it was
+  const F = (() => { const context = vm.createContext({ window: { CITY: { DEBUG_ROADS: false } }, console: { info() {}, warn() {}, log() {} }, atob });
+    for (const f of ['toronto-geodata', 'city-config', 'road-network']) vm.runInContext(read(f), context); return context.window.CITY; })();
+  const e = { h0: 2, h1: 6, b0: 1, span: 41, x0: 2200, z0: -2700, dx: 1, dz: 0 };
+  assert.equal(F.edgeY(e, 19.5, 2219, -2700), 4);
+  assert.equal(e.dv, undefined);
+});
+
+test('cycling separators, flexi-posts and trails, and walkers, follow the valley between their points (st-wt0.21.3)', () => {
+  // cycling.js in the pilot: the multi-use trails down the valley and the cycle tracks at its rims, every point and
+  // everything between them on the surface
+  const C = pilotWith([]);
+  Object.assign(C, { THREE, TSL: {}, WorldCollision: { circleCollider: (x, z, r, y, h) => ({ x, z, y, h }), boxCollider: (x, z, a, b, ang, y, h) => ({ x, z, y, h }) } });
+  const context = vm.createContext({ window: { CITY: C }, console: { info() {}, warn() {}, log() {} } });
+  vm.runInContext(read('cycling'), context);
+  // trails: the paving's level over the ground; sampled every metre between their points
+  let trail = 0, trailWorst = 0;
+  const T = C.DON_VALLEY;
+  const trails = C.GEO.cycling.trails.filter(([, , , flat]) => { for (let i = 0; i < flat.length; i += 2) if (T.heightAt(flat[i], flat[i + 1]) < -1) return true; return false; });
+  assert.ok(trails.length > 5, 'the trails down the valley');
+  // (cycling.js keeps its prepared lines private: the posts, the separators and the paint come from them; here the
+  // geometry it emits is checked against the surface under each vertex)
+  // (a bikeway's surface: the road's, the viaduct's deck where Bloor Street's deck is level with the street)
+  const surface = (x, z) => { const g = Math.min(0, C.cutAt(x, z)), d = C.deckHeightAt(x, z, 0, 0.6); return d !== 0 && d > g ? d : g; };
+  const geos = C.bikeSeparatorGeometries();
+  let sep = 0, sepWorst = 0;
+  for (const g of geos) {
+    const P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) {
+      const x = P.getX(i), y = P.getY(i), z = P.getZ(i);
+      if (!T.inBox(x, z) || T.heightAt(x, z) > -0.2) continue;
+      const base = surface(x, z), d = Math.min(Math.abs(y - base), Math.abs(y - base - 0.13));
+      sep++; sepWorst = Math.max(sepWorst, d);
+    }
+  }
+  const posts = C.buildBikePosts({ add() {} });
+  let post = 0, postWorst = 0;
+  for (const c of posts.colliders) if (c.h > 0.5 && T.inBox(c.x, c.z) && T.heightAt(c.x, c.z) < -0.2) { post++; postWorst = Math.max(postWorst, Math.abs(c.y - surface(c.x, c.z))); }
+  assert.ok(sepWorst < 0.1 && postWorst < 0.1, `separators within ${sepWorst.toFixed(3)} m (${sep}), posts within ${postWorst.toFixed(3)} m (${post})`);
+  // the trails' paint (road-paint.js ribbons) through cycling.js bikePaint: every vertex on the surface
+  let rib = 0;
+  const api = { WHITE: 0, YELLOW: 0, strip() {}, ribbon(P) {
+    for (let k = 0; k < P.length; k++) {
+      const p = P[k];
+      if (!T.inBox(p.x, p.z) || T.heightAt(p.x, p.z) > -1) continue;
+      rib++; trailWorst = Math.max(trailWorst, Math.min(Math.abs(p.y - (C.CITY_BOUNDS.sidewalkHeight + T.heightAt(p.x, p.z))), Math.abs(p.y - surface(p.x, p.z))));
+      if (k) { const q = P[k - 1]; trail++; assert.ok(Math.hypot(p.x - q.x, p.z - q.z) <= 2.01 || T.heightAt((p.x + q.x) / 2, (p.z + q.z) / 2) > -0.05 || !T.reliefUnder(Math.min(p.x, q.x), Math.max(p.x, q.x), Math.min(p.z, q.z), Math.max(p.z, q.z)), `a trail piece ${Math.hypot(p.x - q.x, p.z - q.z).toFixed(1)} m over relief at (${p.x}, ${p.z})`); }
+    }
+  } };
+  C.bikePaint(new Proxy(api, { get: (t, k) => (k in t ? t[k] : () => {}) }));
+  assert.ok(rib > 500 && trail > 400, `${rib} trail points`);
+  assert.ok(trailWorst < 0.01, `trail points within ${trailWorst.toFixed(3)} m of their surface`);
+  // walkers: traffic.js's people stand on cutAt (+ the sidewalk) wherever each foot and the body are, not between
+  // points (pedGround), so they follow the surface exactly; the source says so
+  const src = read('traffic');
+  assert.match(src, /return \(t > 2 && t < p\.len - 2 \? CROSSWALK_Y : SIDEWALK_Y\) \+ cutAt\(x, z\);/);
+  assert.match(src, /if \(!p\.node\) return SIDEWALK_Y \+ cutAt\(x, z\);/);
+});
+
+// --- the river (st-051)
+test('the river: level across, never falling going south, under its banks, and the flat city\'s water at the box\'s edge (st-051)', () => {
+  const R = D.river, wl = ON.CITY_BOUNDS.waterLevel;
+  assert.ok(R && R.level.length > 100 && R.step === 10);
+  // one level across each row of the water patch: every water vertex in a row at the same height
+  const C = pilotWith([]);
+  const scene = { add(g) { this.g = g; } };
+  Object.assign(ON, { createTerrainMaterial: () => new THREE.MeshBasicNodeMaterial(), createWaterMaterial: () => new THREE.MeshBasicNodeMaterial() });
+  DV.buildPatches(scene);
+  const river = scene.g.children.find((m) => m.name === 'DonValleyRiver'), P = river.geometry.attributes.position;
+  const rows = new Map();
+  for (let i = 0; i < P.count; i++) { const z = Math.round(P.getZ(i)); (rows.get(z) || rows.set(z, []).get(z)).push(P.getY(i)); }
+  for (const [z, ys] of rows) assert.ok(Math.max(...ys) - Math.min(...ys) < 1e-4, `level across at z ${z}: ${Math.min(...ys)}..${Math.max(...ys)}`);
+  // along the river: from the city's edge south, flat pools that never fall (the frame's datum falls towards the lake;
+  // the taper lifts the floor), rising at most 8% where the transition lifts the floor
+  const zs = [...rows.keys()].sort((a, b) => a - b), lv = zs.map((z) => rows.get(z)[0]);
+  for (let i = 1; i < lv.length; i++) {
+    assert.ok(lv[i] >= lv[i - 1] - 1e-6, `no fall at z ${zs[i]}`);
+    assert.ok((lv[i] - lv[i - 1]) / (zs[i] - zs[i - 1]) < 0.08, `a gentle rise at z ${zs[i]}`);
+  }
+  // under the viaduct, the Don ~40 m down, nearly level (the real river is; the datum over it falls 1 m towards the lake)
+  const under = zs.filter((z) => z > -2950 && z < -2650).map((z) => rows.get(z)[0]);
+  assert.ok(Math.max(...under) - Math.min(...under) < 1.2 && Math.max(...under) < -39, `under the viaduct: ${Math.min(...under).toFixed(2)}..${Math.max(...under).toFixed(2)}`);
+  // never above the ground of its own channel (no water standing over its banks), 0.7 m under its lowest
+  for (let i = 0; i < R.level.length; i++) {
+    const z = R.z0 + i * R.step;
+    for (let x = D.box.x0; x <= D.box.x1; x += 2.5) if (C.waterAt(x, z)) assert.ok(R.level[i] / 100 <= DV.heightAt(x, z) + wl + 0.011, `under the ground at (${x}, ${z})`);
+  }
+  // the south edge: the flat city's water, at the flat city's level (no step, no dam)
+  assert.equal(R.level.at(-1) / 100, wl);
+  assert.ok(Math.abs(DV.riverLevelAt(2500, D.box.z1) - wl) < 1e-9 && Math.abs(lv.at(-1) - wl) < 0.05);
+  // banks close the gap from the ground round the open cells down to the water
+  assert.ok(scene.g.children.some((m) => m.name === 'DonValleyRiverBanks'));
+  // the build records the rule
+  assert.ok(D.alterations.river.steepestRisePct < 8);
+});

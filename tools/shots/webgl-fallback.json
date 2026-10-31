@@ -1,0 +1,39 @@
+[
+  {
+    "name": "webgl-start",
+    "wait": 3000,
+    "js": "(()=>{const a=window.__CITY_APP;document.getElementById('locate-prompt').hidden=true;if(!a.renderer?.backend?.isWebGLBackend)throw new Error('Not on the WebGL2 backend');console.log('[ride-check] backend '+JSON.stringify({navigatorGpu:typeof navigator.gpu,webgl:!!a.renderer?.backend?.isWebGLBackend,webgpu:!!a.renderer?.backend?.isWebGPUBackend,tier:window.CITY.QUALITY.tier,reason:window.CITY.QUALITY.reason}));})()"
+  },
+  {
+    "name": "webgl-cn-tower",
+    "camera": "cnTower",
+    "time": "golden",
+    "wait": 3000
+  },
+  {
+    "name": "webgl-street",
+    "camera": "chase",
+    "wait": 3000
+  },
+  {
+    "name": "webgl-midday",
+    "time": "midday",
+    "wait": 3000
+  },
+  {
+    "name": "webgl-midnight",
+    "time": "midnight",
+    "wait": 3000
+  },
+  {
+    "name": "webgl-king-walk",
+    "x": -200,
+    "z": -330,
+    "heading": 1.57,
+    "mode": "person",
+    "time": "golden",
+    "camera": "chase",
+    "wait": 3000,
+    "js": "(async()=>{const a=window.__CITY_APP,b=a.renderer.backend,gl=b.gl;if(!gl)throw new Error('Not on the WebGL2 backend');const orig=b.draw,bad=new Map();let n=0;b.draw=function(ro,info){gl.getError();const r=orig.call(this,ro,info);const e=gl.getError();n++;if(e){const o=ro.object,m=ro.material;const k=[o.name||o.type,o.parent&&o.parent.name,o.isInstancedMesh?'inst':'',o.count??'',m&&(m.name||m.type),e].join('|');bad.set(k,(bad.get(k)||0)+1);}return r;};await new Promise(r=>setTimeout(r,1500));b.draw=orig;if(bad.size)throw new Error('WebGL draw errors: '+JSON.stringify([...bad].slice(0,20)));console.log('[ride-check] '+n+' WebGL draws without an error');})()"
+  }
+]

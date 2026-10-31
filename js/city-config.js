@@ -407,9 +407,19 @@ const DV = window.CITY.DON_VALLEY || null;
 // (in the Don Valley pilot: Bloor Street's deck level with the streets over the valley, the ramps down its sides on
 // their own ground; each point's `g` the ground under it)
 const DECKS = GEO.decks.map(([name, w, rank, flat]) => {
-  const pts = [];
+  let pts = [];
   for (let i = 0; i < flat.length; i += 3) pts.push({ x: flat[i], z: flat[i + 1], h: flat[i + 2] });
-  if (DV) for (const p of pts) if (DV.inBox(p.x, p.z)) { p.h = DV.deckHeight(p.x, p.z, p.h); p.g = DV.heightAt(p.x, p.z); }
+  if (DV) {
+    // (a ramp down the valley's side: its profile, every few metres; a flyover onto the Rosedale section from outside
+    // the box: the street; any other deck point in the box: the viaduct's deck, or hugging the ground)
+    const profile = DV.rampProfile(pts), flattened = DV.isFlattened(pts);
+    if (profile) pts = profile;
+    for (const p of pts) {
+      if (flattened) p.h = 0;
+      else if (!profile && DV.inBox(p.x, p.z)) p.h = DV.deckHeight(p.x, p.z, p.h);
+      if (DV.inBox(p.x, p.z)) p.g = DV.heightAt(p.x, p.z);
+    }
+  }
   return { name, w, rank, pts };
 });
 const DECK_CELL = 4;
@@ -898,6 +908,25 @@ function arrivalFor(x, z, reach) {
   }
   return best;
 }
+/** Where a search result, a map spot or a place is arrived at (js/tour-guide.js teleportToPlace): onto the nearest
+ *  street in front of it, off the curb islands, facing it: { x, z, heading, y }. y is the surface arrived on, or null
+ *  for the street level. In the Don Valley pilot a street may be a deck (the viaduct over the valley, a ramp down its
+ *  side) or the valley's floor under it, so the arrival says which, and the nearer one to the street level wins a
+ *  near tie (st-wt0.21.1); without the flag this is the old arrival on a road at grade, and y is null. */
+function streetArrival(x, z) {
+  const near = nearestRoads(x, z, 400).filter((n) => n.road.cls !== 'motorway' && (!n.road.raised || (DV && DV.inBox(n.px, n.pz))));
+  let spot = null, best = Infinity, y = null;
+  for (const n of near) {
+    if (blockAt(n.px, n.pz)) continue;
+    if (!DV) { spot = n; break; }
+    // (the road's own surface there: its deck, or the ground under the street level)
+    const h = n.road.raised && DV.inBox(n.px, n.pz) ? DV.roadHeight(n.px, n.pz, 1) : cutAt(n.px, n.pz);
+    const score = n.dist + Math.min(25, Math.abs(h) * 0.5);
+    if (score < best) { best = score; spot = n; y = h; }
+  }
+  if (!spot) return { x, z, heading: undefined, y: null };
+  return { x: spot.px, z: spot.pz, heading: Math.atan2(x - spot.px, z - spot.pz), y };
+}
 const TELEPORT_TARGETS = { cnTower: 'cnTower', rogersCentre: 'rogersCentre', unionStation: 'unionStation', cityHall: 'cityHall', rom: 'rom', ontarioPlace: 'ontarioPlace', stLawrence: 'stLawrence', distillery: 'distillery', sugarBeach: 'sugarBeach', harbourfront: 'harbourfront', legislature: 'legislature', kensington: 'kensington' };
 const TELEPORT_LOCATIONS = {};
 for (const [key, id] of Object.entries(TELEPORT_TARGETS)) {
@@ -1007,6 +1036,7 @@ Object.assign(window.CITY, {
   LANDMARK_SITES,
   TELEPORT_LOCATIONS,
   arrivalFor,
+  streetArrival,
   shortName,
   waterAt,
   isOnLand,

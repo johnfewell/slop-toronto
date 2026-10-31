@@ -26,6 +26,8 @@ const {
   attribute,
   instanceIndex,
   attributeArray,
+  textureLoad,
+  ivec2,
   normalLocal,
   varying,
   vertexStage,
@@ -977,6 +979,23 @@ function createPersonMaterial(pose, detail = 1) {
 // ============================================================================
 // 4. CROWD: ONE INSTANCED, SKINNED DRAW PER LEVEL OF DETAIL
 // ============================================================================
+// A crowd's poses (STRIDE vec4s per person): a storage buffer the vertex stage reads, on WebGPU. Three's WebGL2 backend
+// (?webgl=1, or a browser without WebGPU; window.CITY.RENDER_BACKEND, main.js) turns a storage buffer into a vertex
+// attribute, one vec4 per vertex rather than an array the shader can index, too short for a person's vertices: no
+// person was drawn (st-osz). There a float texture holds them instead, a row per person, read with textureLoad. Either
+// way it has element(i) for the material and value { array, update ranges, needsUpdate } for PersonCrowd.end()
+function createPoseStore(count) {
+  if (window.CITY.RENDER_BACKEND !== 'webgl2') return attributeArray(count * STRIDE, 'vec4').toReadOnly();
+  const map = new THREE.DataTexture(new Float32Array(count * STRIDE * 4), STRIDE, count, THREE.RGBAFormat, THREE.FloatType);
+  map.needsUpdate = true;
+  const width = int(STRIDE);
+  return {
+    texture: map,
+    element: (i) => textureLoad(map, ivec2(i.mod(width), i.div(width))),
+    value: { array: map.image.data, clearUpdateRanges() {}, addUpdateRange() {}, set needsUpdate(v) { if (v) map.needsUpdate = true; } }
+  };
+}
+
 class PersonCrowd {
   /**
    * @param {number} maxCount - most people drawn at once
@@ -987,7 +1006,7 @@ class PersonCrowd {
     this.updates = 0;
     const levels = Number.isFinite(farDistance) ? [1, 0] : [1];
     this.lods = levels.map((detail) => {
-      const pose = attributeArray(maxCount * STRIDE, 'vec4').toReadOnly();
+      const pose = createPoseStore(maxCount);
       const mesh = new THREE.Mesh(buildPersonGeometry(detail), createPersonMaterial(pose, detail));
       mesh.name = detail ? 'PeopleNear' : 'PeopleFar';
       mesh.count = 1; // one (degenerate) person until warm-up finishes, so the pipelines compile up front

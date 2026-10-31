@@ -5,6 +5,11 @@ const { uniform, float, positionGeometry, normalGeometry, fract, abs, step, mix,
 const { mergeGeometries } = window.CITY.Addons;
 const INTERIOR_LAYER = 2, DOORS = [-8.625, -2.875, 2.875, 8.625];
 const FLOOR = 1.1, EYE_Z = 0.8;
+// The rider's views from the first car (riderView below; the interior's boxes: the windows between the door leaves at
+// DOORS +- 0.8, the pillars at 0 & +-5.75 and the seat backs at 0 +- 1.15 & +-5.75 +- 1.15, their tops FLOOR + 1.05)
+const SEAT_VIEW = { x: -0.72, y: FLOOR + 1.3, z: EYE_Z, yaw: -Math.PI * 0.35, lookY: 0, id: 'seat' };
+const WINDOW_VIEW = { x: -1.05, y: FLOOR + 1.25, z: 4.14, yaw: -Math.PI / 2, lookY: -5.6, id: 'window' };
+const AISLE_VIEW = { x: 0, y: FLOOR + 1.55, z: -4, yaw: 0, lookY: -3, id: 'aisle' };
 const ST_LEN = 6.4; // js/subway.js: a street stairway's open stairwell
 
 // The supported rides (js/toronto-subway-topology.js rides): Castle Frank ↔ Broadview across the viaduct, and the track
@@ -15,11 +20,13 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
   session, selectCamera, onChange = () => {}, canInteract = () => true }) {
   const api = { active: false, inside: false, entity: null, car: null, station: null, pair: null, routes: [], cars: [], pairs: [],
     action, exit, featured, update, enterStation, changePlatform, savedGround, warmGraphics,
-    get canChase() { return !!api.car && outside(api.car) && api.car.s - 141 > api.car.track.open0 && api.car.s < api.car.track.open1 - 25; },
+    get canChase() { return !!api.car && outside(api.car, EYE_Z) && api.car.s - 141 > api.car.track.open0 && api.car.s < api.car.track.open1 - 25; },
     get hasEntranceCandidate() { return !!nearestEntrance; },
+    get riderView() { return view.id; },
     get surfaceMode() { return visit?.mode; },
     get onPlatform() { return !!visit && !api.active && visit.onPlatform; } };
   let visit = null, shown = '', ownedPrompt = false, nearestEntrance = null, fadeTimer = 0, fadeRelease = null;
+  let view = SEAT_VIEW; // (the rider's current view: riderView)
   const pairs = [];
 
   // --- Castle Frank ↔ Broadview (the viaduct): unchanged since its first release
@@ -410,7 +417,8 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
     seatEye: new THREE.Vector3(), seatYaw: 0, seatLookY: 0 };
   api.entity = entity;
   const dummy = new THREE.Object3D(), point = new THREE.Vector3(), doorMatrix = new THREE.Matrix4();
-  function outside(train) { const s = train.sections[0].s + EYE_Z; return s > train.track.open0 && s < train.track.open1; }
+  // (z: the eye's place along the first car, from its centre; the rider's view's, else the seat's)
+  function outside(train, z = view.z) { const s = train.sections[0].s + z; return s > train.track.open0 && s < train.track.open1; }
 
   function surfaceAnchor(station) {
     const previousMode = controller.activeMode, previousSpace = controller.interiorSpace;
@@ -528,7 +536,11 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
     if (session.overlay) return false;
     const previousSpace = controller.interiorSpace;
     controller.interiorSpace = null;
-    const safe = controller.findTeleportPosition(target.x, target.z, target.heading, target.y || 0, true);
+    // The entrance's street anchor, else the nearest clear ground round it: the player's own car or bike may be left
+    // standing on the anchor (st-fcm: switching to the car on the street, then riding again, refused every way out,
+    // a mode change included, and kept the rider aboard)
+    const safe = controller.findTeleportPosition(target.x, target.z, target.heading, target.y || 0, true)
+      || controller.findTeleportPosition(target.x, target.z, target.heading, target.y || 0);
     controller.interiorSpace = previousSpace;
     if (!safe) return false;
     if (api.active) {
@@ -540,8 +552,8 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
     api.active = false; api.car = null; api.inside = false; api.station = null; api.pair = null;
     controller.interiorSpace = null;
     for (const [object, mask] of saved.personLayers) object.layers.mask = mask;
-    controller.setMode('person'); controller.teleportActiveTo(target.x, target.z, target.heading);
-    controller.setMode(saved.mode); controller.teleportActiveTo(target.x, target.z, target.heading);
+    controller.setMode('person'); controller.teleportActiveTo(safe.x, safe.z, target.heading);
+    controller.setMode(saved.mode); controller.teleportActiveTo(safe.x, safe.z, target.heading);
     camera.camera.layers.mask = saved.cameraMask; camera.followOverride = null;
     camera.resetForTeleport(); selectCamera(saved.cameraPreset, true);
     window.CITY.restoreExperienceCamera(camera, saved.cameraState);
@@ -590,9 +602,21 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
     const front = train.sections[0];
     entity.position.set(front.x, front.y, front.z); entity.heading = front.yaw; entity.speed = train.speed;
     dummy.position.set(front.x, front.y, front.z); dummy.rotation.set(0, front.yaw, 0); dummy.updateMatrix();
-    entity.seatEye.set(-0.72, FLOOR + 1.3, EYE_Z).applyMatrix4(dummy.matrix);
-    entity.seatYaw = front.yaw - Math.PI * 0.35;
+    view = riderView(train, camera.camera.aspect);
+    entity.seatEye.set(view.x, view.y, view.z).applyMatrix4(dummy.matrix);
+    entity.seatYaw = front.yaw + view.yaw; entity.seatLookY = view.lookY;
     interior.position.copy(dummy.position); interior.rotation.copy(dummy.rotation);
+  }
+  // Where the rider's eye is in the first car (x across, -x the platform side; z along, from its centre) and where it
+  // looks (yaw from the car's heading; lookY: the look point's height over the eye, 40 m out). In landscape, the seat
+  // on the left looking across its front half at the windows. A portrait screen (a phone held upright: the camera's
+  // aspect under 1) sees a third of that width, which the seat, the wall panels and the pillars filled (st-sq2): there
+  // the rider kneels on the bench at a window clear of the door leaves and the seat back, 0.45 m from it, looking out
+  // and a little down at the valley in the open; underground, where a window shows the tunnel wall, they stand in the
+  // aisle looking down the car instead
+  function riderView(train, aspect) {
+    if (!(aspect < 1)) return SEAT_VIEW;
+    return outside(train, WINDOW_VIEW.z) ? WINDOW_VIEW : AISLE_VIEW;
   }
   function hud() {
     if (!visit || !elHud) return;

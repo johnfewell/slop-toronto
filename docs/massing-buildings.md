@@ -15,8 +15,9 @@ shadows through stand-ins. Toronto reimplements the technique on its own data an
 
 | | |
 |---|---|
-| Pilot | **Done, flag only.** `?massing=1` loads `js/toronto-massing-pilot.js` (184 KiB, fetched only then). Its 647 Kensington Market buildings stand on their polygons; everything else, and the default page, is unchanged. |
-| City-wide | Planned, in the child beads below. |
+| Pilot (st-2nl.1) | **Done.** Kensington Market's 647 buildings on their polygons behind `?massing=1` (PR #34). Superseded by the city-wide data below. |
+| City-wide data (st-2nl.2) | **Done, flag only.** `?massing=1` fetches `js/massing-data.js` and `data/toronto-massing.bin` (852 KiB, only then) and stands all 35,254 detailed-city buildings on their polygons. The default page loads neither and is unchanged. See [City-wide sidecar](#city-wide-sidecar-st-2nl2). |
+| Default on | Planned, in the child beads below: the vertex format, tiers and build cost (st-2nl.3) come first. |
 
 ## 1. Data
 
@@ -80,6 +81,7 @@ that form is about 4 bytes per corner. Estimate:
 
 The polygons should ship as their own lazily loaded sidecar. That keeps the main geodata byte-identical and its
 startup payload unchanged, and the sidecar loads within the startup payload gate once the polygons become the default.
+St-2nl.2 did this: about 1.8 bytes per corner gzip'd, 2.2 with every other field (below).
 
 ## 2. Geometry
 
@@ -205,6 +207,10 @@ The hipped roofs are unchanged in both columns. GPU figures from the Mac mini ar
 
 ### Extrapolated to the whole detailed city (× 54.5)
 
+Measured since (st-2nl.2, [Cost city-wide](#cost-city-wide-input-for-st-2nl3)): 1.11 M triangles, 1.96 M vertices,
+about 127 MiB at this format, 259 meshes; 0.34–0.39 s to build in the browser on the Mac mini.
+
+
 - **Triangles:** about 1.2 M, about twice the boxes.
 - **Geometry memory:** about 150 MiB at the pilot's vertex format, which is the real problem.
 - **JS build:** about 1.4 s on a fast laptop, which is too slow for the main thread on a phone.
@@ -239,14 +245,16 @@ The hipped roofs are unchanged in both columns. GPU figures from the Mac mini ar
 
 ## 6. Durable IDs
 
-- **Row keys.** The pilot keys each polygon to its `GEO.buildings` row. It refuses the record (and keeps the boxes)
-  unless that row still has the same centre. It carries the row's durable ID (`to-3dmassing-2025:<fid>`) and the
-  geodata hash it was built against. The test checks all three against `js/toronto-geodata-ids.js`.
-- **City-wide sidecar.**
-  - Key polygons by the durable massing ID, not the row. A geodata rebuild that reorders or filters rows then can't
-    attach a polygon to the wrong building.
-  - The loader maps IDs to rows through `GEO_IDS.buildings`. That sidecar is 1.9 MB, so ship a slim ID→row index in
-    the polygon sidecar, checked against the geodata hash.
+- **Row keys (pilot).** The pilot keyed each polygon to its `GEO.buildings` row and refused a record whose row had
+  moved.
+- **City-wide sidecar (st-2nl.2, done).**
+  - Records are keyed by the durable massing ID (`fid`, `part`), in record order, not by row.
+  - A slim ID→row index (`row`) rides along, so the page never needs the 1.9 MB `GEO_IDS`. It is valid only for the
+    rows it was built for: the file carries the geodata hash (for the tools) and `rowCheck`, a hash of every row's
+    centre and height. The page computes `rowCheck` itself and uses nothing on a mismatch. A geodata rebuild that
+    reorders or filters rows therefore can't attach a polygon to the wrong building; it needs `tools/build-massing.mjs`
+    re-run, and `tests/massing.test.mjs` fails until it is.
+  - Each record is also checked on its own: its row's centre must lie within its outline's bounds (2 m margin).
 - **New editions.** A new 3D Massing edition renumbers its records, so it is a new dataset prefix (`MASSING_EDITIONS`).
   Buildings that matter (face records, storefronts, photo facades) are carried across with aliases in
   `tools/data/geo-id-aliases.json`, matched by polygon overlap (IoU over 0.8) and reviewed. Unmatched records lose
@@ -274,42 +282,252 @@ The hipped roofs are unchanged in both columns. GPU figures from the Mac mini ar
 
 | Bead | Phase | Depends on |
 |---|---|---|
-| st-2nl.1 | Pilot: Kensington Market behind `?massing=1` (this PR) | — |
-| st-2nl.2 | City-wide polygon sidecar: pack all buildings' rings, holes, bases and party edges, keyed by durable ID, lazily loaded, byte-identical rebuilds | st-2nl.1 |
+| st-2nl.1 | Pilot: Kensington Market behind `?massing=1` (PR #34, done) | — |
+| st-2nl.2 | City-wide polygon sidecar: pack all buildings' rings, holes, bases and party edges, keyed by durable ID, lazily loaded, byte-identical rebuilds (done, flag only: [below](#city-wide-sidecar-st-2nl2)) | st-2nl.1 |
 | st-2nl.3 | Compact vertex format, distance tiers and worker-built cells; matched idle baseline on both tiers | st-2nl.2 |
 | st-2nl.4 | Polygon consumers: courtyards in collision, acoustics, and the box consumers (signs, patios, entrances, yards, map) through one footprint accessor | st-2nl.2 |
 | st-2nl.5 | Roofs from the data: straight-skeleton hips and gables from max/avg heights; multipatch roofs for complex ones | st-2nl.3 |
 | st-2nl.6 | Edge faces: polygon-edge face IDs, party-wall ghost signs, storefront and photo-facade hooks (with st-wt0.15 and st-wt0.16) | st-2nl.2 |
 | st-2nl.7 | Default on: remove the boxes from the detailed city once 3–6 pass; upstream-sync and credits | st-2nl.3, st-2nl.4, st-2nl.5 |
 
-## Pilot evidence
+## City-wide sidecar (st-2nl.2)
+
+### What ships, and when
+
+`?massing=1` now stands every building of the detailed city on its polygon, not only Kensington Market's.
+
+- **`data/toronto-massing.bin`** (852.2 KiB, written by `tools/build-massing.mjs`): every `GEO.buildings` row's 3D
+  Massing outer ring and courtyards, keyed by durable massing ID, with the wall classification inputs. Format in
+  `js/massing-data.js`.
+- **`js/massing-data.js`** reads it. `main.js` imports it only under the flag (`import('./massing-data.js')`), and it
+  fetches the file by its hash (`?v=`, set by the tool; `/data/*` is cached for good).
+- **The default page** loads neither. `data/toronto-geodata.bin`, its hash and every flag-off path are unchanged:
+  `buildCityBlocks` without the data gives byte-identical meshes, instance attributes and colliders to main's (one-off
+  digest of everything it returns), so the CaféTO collider fingerprint holds.
+- **Replaced:** `js/toronto-massing-pilot.js` and `tools/build-massing-pilot.mjs`. The tool is generalised, not
+  forked; `tests/massing-pilot.test.mjs` is now `tests/massing.test.mjs`.
+
+**Why a separate file, not a section of the geodata binary.** Packing it into `data/toronto-geodata.bin` would add
+852 KiB (39%) to a 2.14 MiB file every visitor downloads and decodes at startup, for a flag. The separate file reuses
+the binary's own container (`tools/geo-pack.mjs` `packGeo`, `js/geodata-loader.js` `unpackGeo`), so there is no new
+encoder or decoder to maintain. If the polygons become the default (st-2nl.7), the same layer can move into the main
+binary in one line of `tools/geo-bin.mjs`, or keep loading beside it.
+
+### Format
+
+One TGB1 layer, `MASSING`, in columns (one entry per record unless noted):
+
+| Column | Holds |
+|---|---|
+| `fid`, `part` | the durable ID: `to-3dmassing-2025:<fid>`, or `.<part − 1>` for a multi-polygon record's polygon. Records are in ID order |
+| `row` | the slim ID→row index into `GEO.buildings`, valid only when `rowCheck` matches |
+| `base` | the roof of a lower part it stands on (a tower on its podium), else 0 |
+| `holes`, `corners` | courtyards per record; corners per ring |
+| `start`, `step` | per ring, its first corner (m on the decimetre grid), then each next corner as whole decimetres from the one before. Outer rings counter-clockwise in (x, z), courtyards clockwise |
+| `partyN`, `partyEdge`, `partyCover` | party edges: outer edge, and how high the neighbour covers it (the page decides which are drawn windowless, below) |
+| `hiddenN`, `hiddenEdge` | outer edges another part's wall stands on (no wall, no flicker) |
+| `streetN`, `streetEdge` | street fronts: `edge × 2 + 1` on a main street (9 m or wider), else `edge × 2` |
+| `skipRow`, `skipWhy`, `reasons` | rows left on their boxes, and why |
+| `geodata`, `rows`, `rowCheck` | what it was built for: the geodata script's hash (tools), the row count and a hash of every row's centre and height (page) |
+
+The street fronts are new: the pilot searched the roads for them at startup (`nearestRoads` per edge). The tool now
+runs `js/city-config.js` and stores the result, so the page does no road lookups for the polygons. A test recomputes
+them for Kensington from the roads and gets the same edges.
+
+**Party walls are height-aware now.** The pilot drew every party edge windowless. City-wide that blanked the towers:
+a tower part's probes land on its own podium (a ground-standing neighbour), so every wall of a tower on a wider
+podium, and every tower wall beside a low block, came out as a blank lot line (the first city-wide captures: white
+slabs on Bay Street, windowless towers in the Financial District aerial). `buildings.js footprintEdges` now draws an
+edge as a party wall only when the neighbour covers at least half the wall above its own foot (`partyCover − base ≥
+(h − base) / 2`, and more than 0.5 m). Of the 66,151 party edges, 12,410 are covered only below their foot and 6,388
+less than half; 51,490 walls (slivers included) stay party walls. The exposed upper part of a party wall (ghost
+signs) is st-2nl.6's.
+
+**The decimetre grid.** The rings are cleaned as in the pilot (repeats dropped, points under 0.02 m apart merged,
+Douglas-Peucker at 0.2 m), then snapped to 0.1 m and cleaned again (repeats and straight-through corners). The party,
+hidden and street tests then run on the snapped corners, exactly what the page draws. A centimetre grid would cost 39%
+more (1,204,506 bytes) to keep 8 more buildings off their boxes.
+
+### Size and decode time
+
+| | Bytes |
+|---|---|
+| Shipped (gzip -9, the file itself: Cloudflare doesn't compress `application/octet-stream`) | 872,639 (852.2 KiB) |
+| Raw container | 2,684,600 |
+| Brotli 11 of the container (for comparison) | 799,249 |
+| Of the gzip'd payload, the ring coordinates (`start` + `step`, each column deflated alone) | 720,691, 1.8 bytes per corner |
+
+Encodings tried for the coordinates (gzip of that column alone): absolute decimetres, deltas across the whole column,
+758,486; per-ring deltas with each first corner relative to the previous ring's, 757,548; first corners in their
+own column plus per-ring deltas (shipped), 722,195; first corners relative to the row's box centre, 688,267. The last
+saves another 34 KB but makes the polygons meaningless without the matching geodata, so it was not used.
+
+**Decode** (node, M5 Pro laptop, median of 8, three runs): inflate and decode 13–18 ms, then expanding the columns to
+per-row rings 30–43 ms. On the Mac mini in the page: 26.5 ms and 34–41 ms (captures below). The page logs `[massing] data/toronto-massing.bin: … decoded in … ms, rows in … ms` and leaves a
+`massing-decode` performance measure.
+
+### What the build found
+
+`node tools/build-massing.mjs` (3 s, most of it reading the 428,184-record shapefile):
+
+| Measure | City-wide |
+|---|---|
+| Rows of `GEO.buildings` | 35,266 |
+| Records written | 35,254 |
+| Skipped (keep their boxes) | 12: 11 outer rings that cross themselves on the decimetre grid, 1 that crosses or touches itself in the source |
+| Rings retried unsimplified because the simplified one crossed itself | 13 |
+| Parts of multi-polygon records | 244 |
+| Courtyards | 199 (3 dropped: under 4 m², or not cleanly inside the outline) |
+| Parts on a podium (`base` > 0) | 1,823 |
+| Outer edges | 399,144 |
+| Party walls | 66,151 |
+| Hidden walls (another part's wall stands on the edge) | 11,326 |
+| Street fronts | 59,916 (10,187 on main streets), party edges included |
+| Corners after cleaning | 400,630; median 9 per outer ring, p90 20, max 280 |
+
+The skipped rows (`node tools/report-massing.mjs --json …` lists them with positions):
+
+- `to-3dmassing-2025:136943.17` and `:136945.16`, two parts of multi-polygon records at (−1384, −334)
+- `:137520` at (−778, −323), the one whose source ring touches itself
+- `:138821`, `:139670`, `:141395`, `:170234`, `:173415`, `:361614`
+- `:355128`, `:355131` and `:355132`, three neighbours at about (250, 600)
+
+All but `:137520` are notches narrower than the grid. On a centimetre grid 4 remain skipped; 12 of 35,266 was not
+worth a 39% larger file or a second grid.
+
+### Box fit city-wide
+
+`node tools/report-massing.mjs` compares each polygon (less its courtyards) with the union of the box parts
+`buildings.js` draws (sides of 1 m or more), integrated on 0.1 m scan lines:
+
+| | All 35,254 | Houses (16,073) | Mid-rise (9,503) | Towers (3,981) |
+|---|---|---|---|---|
+| IoU p10 / median / p90 | 0.731 / 0.903 / 0.983 | 0.747 / 0.899 / 0.980 | 0.725 / 0.899 / 0.982 | 0.633 / 0.936 / 0.990 |
+| IoU under 0.9 / 0.8 / 0.5 | 17,089 / 6,543 / 717 | 8,116 / 2,733 / 128 | 4,798 / 1,886 / 212 | 1,577 / 854 / 249 |
+| Box area vs polygon, median / p90 | +2.0% / +14.1% | +4.3% / +14.1% | +1.3% / +14.1% | +0.4% / +15.1% |
+
+- **Totals.** Polygons 11.96 km², boxes 11.52 km². The boxes reach 0.65 km² outside the polygons (onto lanes, yards
+  and neighbours) and leave 1.09 km² of the polygons uncovered. 27,964 buildings overshoot their outline by more than
+  1 m².
+- **More boxes fit worse.** Median IoU 0.909 with one box (29,975 buildings), 0.865 with two or three, 0.857 with four
+  and 0.830 with five.
+- **The worst fits** are outlines too thin for the box decomposition. It needs pieces at least 5 m across, so a thin
+  L or U (a canopy, a perimeter block a few metres deep) becomes its whole rectangle: 68 m² of polygon under a
+  1,487 m² box (`to-3dmassing-2025:101649`), 163 m² under 2,229 m² (`:352247`). A 142 m × 0.8 m structure
+  (`:361571`, IoU 0) has no box at all, because both sides must be 1 m. Some go the other way: a 626 m² outline whose
+  decomposition kept only one 48 m² piece (`:138536`).
+- **Kensington Market**, for comparison, measured median 0.89 and p10 0.73 in the pilot, so the pilot area was
+  typical of the city.
+
+### Cost city-wide (input for st-2nl.3)
+
+**Setup.** Mac mini (Apple M4, Metal WebGPU) through `gpu2` (`slop-toronto-r3-phone`), serving `dist/`, on
+2026-10-31; shared machine, so functional evidence, not an idle baseline. Shots `tools/shots/massing-citywide.json`
+(16): the pilot's nine Kensington views, King & Bay looking north up Bay and west along King, a Financial District
+aerial, Cabbagetown's Spruce and Winchester streets and an aerial over it, and a high aerial over downtown. Desktop
+1600×900 `?quality=high`; phone 412×915 at DPR 2.625, touch, `?quality=low`. Each shot logs a census over 10 frames
+(the phone tier renders every other frame, so its per-frame figures are halves).
+
+**Startup** (`[init]`, one run each):
+
+| | Desktop off → on | Phone off → on |
+|---|---|---|
+| `massingData` (module, fetch, decode) | — → 92 ms | — → 92 ms |
+| of which decode / rows (`[massing]` line) | 28.0 / 31.2 ms | 25.2 / 36.6 ms |
+| `blocks` | 155 → 511 ms | 169 → 617 ms |
+| of which the polygons (`[buildings] massing`) | 336 ms, 266 ms merging | 394 ms, 295 ms merging |
+| `culling` | 229 → 450 ms | 237 → 351 ms |
+| `compile` (5 more pipelines) | 1,867 → 2,034 ms | 1,945 → 1,978 ms |
+| `streetProps` | the CaféTO layout runs at startup with the flag (400–425 ms instead of 23–26 ms prebuilt), as for the pilot | |
+
+**Geometry:** 1,109,110 triangles and 1,957,846 vertices in 259 meshes (one per facade style per 1 km cell), about
+127 MiB at the pilot's 17-float vertex format, replacing 43,923 instanced boxes (527,076 triangles). The JS arrays
+that build it are plain number arrays, so the transient heap during the build is about twice that. Node (M5 Pro,
+stand-in materials) takes 1.7–1.9 s for the polygons in `buildCityBlocks`, the browser on the mini 0.34–0.39 s.
+
+**Per shot** (view = the main camera; buildings = the `CityBuildings` group; desktop):
+
+| Shot | Whole view draws | Buildings view draws | Buildings view triangles | Shadow triangles |
+|---|---|---|---|---|
+| Kensington Ave | 397 → 414 | 28 → 45 | 401,844 → 473,650 | 1,830,217 → 1,917,619 |
+| Baldwin St | 389 → 458 | 63 → 131 | 547,958 → 836,296 | 2,435,276 → 2,519,412 |
+| Kensington oblique aerial | 364 → 415 | 57 → 108 | 561,492 → 848,322 | 1,112,222 → 1,255,640 |
+| Bay St at King | 457 → 485 | 43 → 73 | 430,778 → 577,015 | 1,413,459 → 1,445,785 |
+| King St W from Bay | 383 → 471 | 72 → 156 | 549,540 → 901,854 | 1,300,341 → 1,338,978 |
+| Financial District aerial | 457 → 539 | 73 → 154 | 579,860 → 995,616 | 1,384,375 → 1,497,383 |
+| Cabbagetown, Spruce St | 525 → 635 | 89 → 194 | 633,570 → 1,116,207 | 2,750,912 → 2,828,742 |
+| Cabbagetown, Winchester St | 514 → 622 | 91 → 196 | 640,726 → 1,133,599 | 2,764,850 → 2,819,687 |
+| Cabbagetown aerial | 456 → 507 | 54 → 106 | 549,576 → 841,661 | 1,117,227 → 1,187,751 |
+| Downtown aerial | 418 → 525 | 83 → 188 | 622,584 → 1,116,257 | 847,188 → 874,830 |
+
+- **Draws.** Up to about 100 more building draws in view (cells × facade styles), +15 to +110 for the whole frame.
+  City-wide, the cells' count, not their size, is the draw cost.
+- **Triangles.** +0.07 to +0.49 M in view: the polygons draw the whole 1 km cells in view at full detail, with no
+  distance tier, while the boxes they replace were 12 triangles each.
+- **Shadows.** +28 to +161 k stand-in triangles; shadow draws within ±40 (other systems).
+- **Phone tier** (per rendered frame): −20 to +59 whole-view draws; building triangles −62 k to +181 k (the far boxes
+  it already thins are gone, the near polygon cells are new); shadow −108 k to +37 k.
+- **Errors:** none. Every run's only console errors are the capture server's missing `/live/vehicles` (both sides).
+- **Flag off:** the prebuilt CaféTO layout is used (fingerprint ok) on both tiers, as on main.
+
+**What the frames show** (in `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-r3-phone/`:
+`desk-off--*`, `desk-on2--*`, `phone-off--*`, `phone-on2--*`, each with its `console.log`):
+
+- **Towers** keep their curtain walls and gain their real plans: chamfered and stepped towers in the Financial
+  District aerial, podium steps under them.
+- **Victorian streets** (Cabbagetown) look as before from the sidewalk, the rows now on their outlines.
+- **The first run** (`desk-on--*`, `phone-on--*`) drew every party edge windowless and blanked many towers (Bay St:
+  white slabs; Financial District: flat walls). Fixed by the height-aware rule above; `*-on2--*` are after it.
+- **From high up** the polygon city reads a little lighter and flatter than the boxes: no window rows resolve on the
+  far cells. A tier question for st-2nl.3.
 
 ### Running it
 
-`?massing=1` on `explore.html` (any quality tier). Startup logs a `[buildings] massing pilot …` line, and
-`window.CITY.massingPilotStats` has the same numbers. The `[init]` line gains a `massingData` phase for the script
-load.
+`?massing=1` on `explore.html` (any quality tier). Startup logs:
 
-### Rebuilding the pilot data
+- `[massing] data/toronto-massing.bin: <bytes> bytes, <records> records, decoded in … ms, rows in … ms`
+- `[buildings] massing: <n> buildings from their polygons (<rejected> of <records> records rejected), …; <triangles>
+  triangles, <vertices> vertices (~<MiB> MiB) in <meshes> meshes …; <ms> ms (<ms> ms merging)`
+
+`window.CITY.massingStats` has the same numbers, and the `[init]` line gains a `massingData` phase (the module, the
+fetch and the decode). A sidecar built for other rows logs a warning and the buildings stay on their boxes.
+
+### Rebuilding the data
 
 ```sh
-node tools/build-massing-pilot.mjs [<3DMassingShapefile_2025_WGS84.shp>]
+node tools/build-massing.mjs [<3DMassingShapefile_2025_WGS84.shp>]   # writes data/toronto-massing.bin, sets its ?v=
+node tools/report-massing.mjs [--json report.json]                   # box fit and skips, from the committed file
 ```
 
-The default path is `~/.cache/slop-toronto/raw/massing2025/`. The tool needs the committed geodata and its IDs
-sidecar, and refuses a mismatched hash. It reads the shapefile in 0.4 s.
+The default shapefile path is `~/.cache/slop-toronto/raw/massing2025/`. The tool needs the committed geodata and its
+IDs sidecar, and refuses a mismatched hash. Rebuild it whenever `js/toronto-geodata.js` changes:
+`tests/massing.test.mjs` fails on a stale sidecar.
 
 ### Tests
 
-`tests/massing-pilot.test.mjs` (6 tests, about 7 s) checks:
+`tests/massing.test.mjs` (8 tests, about 15 s) checks:
 
-- the data against the geodata and the durable IDs
-- ring hygiene
-- the extruded geometry: winding, outward walls, roof area equal to the footprint area, frame ranges
-- the collision runs
-- the 28c0af7 fixtures
-- `buildCityBlocks` with stand-in materials: without the pilot data, no footprint material, mesh or polygon collider;
-  with it, exactly the pilot rows lose their boxes, and every footprint vertex has its normal, frame and paint
+- **Lossless decode.** The decoded layer repacks to the committed bytes; `js/massing-data.js` asks for the file by
+  its hash; every corner is on the grid; the columns' lengths agree.
+- **Durable IDs.** Every record's ID is its row's in `js/toronto-geodata-ids.js` and resolves to that row through
+  `idResolver`; IDs are unique and in record order; every row is a record or a listed skip; a sidecar for other rows
+  is refused whole, and a record whose row has moved is rejected on its own.
+- **Ring hygiene.** City-wide: winding, no repeats, no self-crossing outer ring, courtyards inside their outline, and
+  party, hidden and street edges valid and disjoint.
+- **Street fronts.** Recomputed from the roads for Kensington, they match the stored ones.
+- **Geometry** (Kensington and the Financial District, 1,000-odd buildings): winding, outward walls, roof area equal
+  to the footprint area, frame ranges.
+- **Collision runs** (Kensington) and the **28c0af7 fixtures**, as in the pilot.
+- **`buildCityBlocks`** with stand-in materials: without the data, no footprint material, mesh or polygon collider;
+  with it, exactly the records' rows lose their boxes, and every footprint vertex has its normal, frame and paint.
+  It prints the city-wide build cost.
+
+`npm run test:geodata` also rebuilds the sidecar twice from the shapefile (in `PROPS_DATA/massing2025/`) and checks
+both runs are byte for byte the committed file. The geodata itself still rebuilds byte for byte.
+
+## Pilot evidence
+
+The pilot's data and tool were replaced by the city-wide ones (above); its captures stay here as the pilot's record.
 
 ### Captures
 

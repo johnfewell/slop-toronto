@@ -34,7 +34,13 @@ function harness() {
   const person = { position: new THREE.Vector3(), heading: 0, speed: 0, mesh: new THREE.Group() };
   const controller = { activeMode: 'person', interiorSpace: null, suspended: false, entities: { person }, colliders: [],
     getActiveEntity: () => person, isPointOnSidewalk: () => true, setMode(m) { this.activeMode = m; }, resetInput() {},
-    findTeleportPosition(x, z, h, y) { return this.interiorSpace ? this.interiorSpace.constrain({ x, z, y }, 0.5) : { x, z }; },
+    findTeleportPosition(x, z, h, y, exact = false) {
+      if (this.interiorSpace) return this.interiorSpace.constrain({ x, z, y }, 0.5);
+      // (occupied: the ground within 3 m of it, as the real controller keeps clear of the player's parked vehicles)
+      const o = this.occupied;
+      if (o && Math.hypot(x - o.x, z - o.z) < 3) return exact ? null : { x: o.x + 4, z: o.z };
+      return { x, z };
+    },
     getGroundHeight(x, z, mode, y) { return this.interiorSpace ? (this.interiorSpace.floorAt ? this.interiorSpace.floorAt(x, z, y) : this.interiorSpace.floor) : 0.22; },
     teleportActiveTo(x, z, heading, y) {
       const d = this.findTeleportPosition(x, z, heading, y);
@@ -178,5 +184,96 @@ test('Line 1: the northbound return, changing platforms, and cancelling aboard',
   assert.equal(ride.changePlatform(), true); ride.update(0.05);
   assert.match(els['ride-route'].textContent, /Northbound · Ride ends here/);
   assert.equal(ride.station, queen);
+  assert.equal(ride.exit({ cancel: true }), true);
+});
+
+// st-sq2: the share of a view's rays (a grid over its frustum) that end on the car's own interior boxes
+function blockedShare(h, aspect) {
+  const { ride, scene } = h, e = ride.entity, interior = scene.getObjectByName('SubwayPassengerInterior');
+  scene.updateMatrixWorld(true);
+  const cam = new THREE.PerspectiveCamera(68, aspect, 0.12, 2000);
+  cam.position.copy(e.seatEye);
+  cam.lookAt(e.seatEye.x + Math.sin(e.seatYaw) * 40, e.seatEye.y + e.seatLookY, e.seatEye.z + Math.cos(e.seatYaw) * 40);
+  cam.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster();
+  let hit = 0, n = 0;
+  for (let i = 0; i <= 12; i++) for (let j = 0; j <= 24; j++) {
+    ray.setFromCamera(new THREE.Vector2(-1 + i / 6, -1 + j / 12), cam);
+    if (ray.intersectObject(interior, true).length) hit++;
+    n++;
+  }
+  return hit / n;
+}
+// the eye in the first car's frame (x across, z along from its centre)
+function eyeInCar(ride) {
+  const f = ride.car.sections[0], dx = ride.entity.seatEye.x - f.x, dz = ride.entity.seatEye.z - f.z;
+  return { x: dx * Math.cos(f.yaw) - dz * Math.sin(f.yaw), y: ride.entity.seatEye.y - f.y, z: dx * Math.sin(f.yaw) + dz * Math.cos(f.yaw) };
+}
+
+test('st-sq2: on a portrait screen the viaduct seat view looks out of a clear window; landscape keeps the seat', () => {
+  const h = harness(), { ride, camera } = h;
+  // landscape (desktop): the seat on the left, looking across the car's front half, as before
+  camera.camera.aspect = 16 / 9;
+  assert.equal(ride.featured(), true);
+  for (let i = 0; i < 4000 && !ride.canChase; i++) ride.update(0.1);
+  assert.equal(ride.canChase, true, 'reached the open viaduct');
+  assert.equal(ride.riderView, 'seat');
+  const seat = eyeInCar(ride);
+  assert.ok(Math.abs(seat.x + 0.72) < 1e-6 && Math.abs(seat.z - 0.8) < 1e-6 && Math.abs(seat.y - 2.4) < 1e-6, JSON.stringify(seat));
+  assert.ok(Math.abs(ride.entity.seatYaw - (ride.car.sections[0].yaw - Math.PI * 0.35)) < 1e-9);
+  assert.equal(ride.entity.seatLookY, 0);
+  // a portrait screen from that seat (the bug): most of the frame is the car's own panels, seat & pillars
+  const before = blockedShare(h, 412 / 915);
+  console.log("before", before); assert.ok(before > 0.2, `the seat in portrait was ${before.toFixed(2)} interior`);
+  // portrait (a phone held upright): the window view, out over the valley
+  camera.camera.aspect = 412 / 915;
+  ride.update(0.05);
+  assert.equal(ride.riderView, 'window');
+  const win = eyeInCar(ride);
+  assert.ok(Math.abs(win.x + 1.05) < 1e-6 && Math.abs(win.z - 4.14) < 1e-6, JSON.stringify(win));
+  const after = blockedShare(h, 412 / 915);
+  console.log("after", after); assert.ok(after < 0.05, `the window view is ${after.toFixed(2)} interior`);
+  // the camera layers follow the eye: outside on the viaduct
+  assert.equal(camera.camera.layers.mask, 1);
+  // back in landscape the seat returns
+  camera.camera.aspect = 16 / 9;
+  ride.update(0.05);
+  assert.equal(ride.riderView, 'seat');
+});
+
+test('st-sq2: on a portrait screen underground (stations, Line 1) the rider looks down the car', () => {
+  const h = harness(), { ride, camera } = h;
+  camera.camera.aspect = 412 / 915;
+  assert.equal(ride.featured(), true); ride.update(0.05);
+  assert.equal(ride.riderView, 'aisle', 'at Castle Frank');
+  assert.equal(ride.exit({ cancel: true }), true);
+  assert.equal(ride.featured('queen'), true); ride.update(0.05);
+  assert.equal(ride.riderView, 'aisle', 'at Queen');
+  for (let i = 0; i < 300 && !(ride.car.speed > 7); i++) ride.update(0.1);
+  assert.ok(ride.car.speed > 7, 'under way');
+  assert.equal(ride.riderView, 'aisle', 'in the Line 1 tunnel');
+  assert.equal(camera.camera.layers.mask, 1 << 2);
+  const aisle = eyeInCar(ride);
+  assert.ok(Math.abs(aisle.x) < 1e-6 && Math.abs(aisle.z + 4) < 1e-6, JSON.stringify(aisle));
+  assert.ok(Math.abs(ride.entity.seatYaw - ride.car.sections[0].yaw) < 1e-9, 'looking down the car');
+  assert.equal(ride.exit({ cancel: true }), true);
+});
+
+test('st-fcm: cancelling aboard (a mode change) still leaves when the player\'s own car stands on the entrance anchor', () => {
+  const h = harness(), { ride, controller, person, session } = h;
+  assert.equal(ride.featured(), true);
+  const station = ride.station, anchor = station.anchor;
+  // the fixture's case: the car left parked on Castle Frank's street exit, then the ride started again
+  controller.occupied = { x: anchor.x, z: anchor.z };
+  assert.equal(session.cancel(), true, 'the cancel (as selectMode does) succeeds');
+  assert.equal(ride.inside, false); assert.equal(ride.active, false);
+  assert.equal(session.active, false); assert.equal(session.owner, null);
+  assert.equal(controller.suspended, false); assert.equal(controller.interiorSpace, null);
+  // on the street beside the car, not in it
+  assert.ok(Math.abs(Math.hypot(person.position.x - anchor.x, person.position.z - anchor.z) - 4) < 0.01, JSON.stringify(person.position));
+  assert.equal(person.position.y, 0.22);
+  // and the station is free to enter again
+  controller.occupied = null;
+  assert.equal(ride.featured(), true);
   assert.equal(ride.exit({ cancel: true }), true);
 });

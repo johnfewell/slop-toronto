@@ -75,7 +75,7 @@ function buildRoadPaint(scene, network) {
   const strip = (...args) => stripMin(0.05, ...args);
 
   // Edges run between stop lines; s is measured from the start one and o to the right of the centre line
-  const at = (e, s, o) => [e.sx + e.dx * s + e.rx * o, edgeY(e, s), e.sz + e.dz * s + e.rz * o];
+  const at = (e, s, o) => { const x = e.sx + e.dx * s + e.rx * o, z = e.sz + e.dz * s + e.rz * o; return [x, edgeY(e, s, x, z), z]; };
   // (lines along a road are gathered first: where a street bends they join the next piece's, see below)
   const along = (e, o, w, col, period = 1, duty = 1) => {
     const start = (e.sx - e.x0) * e.dx + (e.sz - e.z0) * e.dz;

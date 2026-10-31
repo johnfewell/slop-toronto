@@ -1432,10 +1432,36 @@ function largestComponent(list, next) {
   return new Set(list.filter((_, i) => comp[i] === best));
 }
 
-// Road height at distance s past edge e's start stop line (the decks & ramps; 0 on the ground; below 0 in a road cut)
-function edgeY(e, s) {
-  if (!e.h0 && !e.h1) return 0;
-  return e.h0 + (e.h1 - e.h0) * Math.min(1, Math.max(0, ((e.b0 || 0) + s) / e.span));
+// Road height at distance s past edge e's start stop line (the decks & ramps; 0 on the ground; below 0 in a road cut).
+// In the Don Valley pilot (js/don-valley.js) an edge in the box follows its own surface between its ends, not the
+// straight line between them (st-wt0.21.3): the valley's ground (heightAt) or a ramp's profile (rampAt), at (x, z) if
+// given (a lane's point), else on the centre line, plus its ends' offsets from it (a road cut's depth) interpolated.
+function edgeY(e, s, x, z) {
+  const DV = window.CITY.DON_VALLEY;
+  if (DV && e.dv === undefined) e.dv = edgeSurface(e, DV);
+  if (!e.dv) {
+    if (!e.h0 && !e.h1) return 0;
+    return e.h0 + (e.h1 - e.h0) * Math.min(1, Math.max(0, ((e.b0 || 0) + s) / e.span));
+  }
+  const u = (e.b0 || 0) + s, t = Math.min(1, Math.max(0, u / e.span));
+  const y = e.dv.at(x ?? e.x0 + e.dx * u, z ?? e.z0 + e.dz * u);
+  return Number.isFinite(y) ? y + e.dv.o0 + (e.dv.o1 - e.dv.o0) * t : e.h0 + (e.h1 - e.h0) * t;
+}
+// The surface an edge in the Don Valley pilot's box follows: { kind, at(x, z), o0, o1 }, or false (a level deck, the
+// viaduct's: the straight line is the deck; or outside the box)
+function edgeSurface(e, DV) {
+  const ax = e.x0, az = e.z0, bx = e.x0 + e.dx * e.span, bz = e.z0 + e.dz * e.span;
+  if (!DV.inBox(ax, az) && !DV.inBox(bx, bz) && !DV.inBox((ax + bx) / 2, (az + bz) / 2)) return false;
+  const h0 = e.h0 || 0, h1 = e.h1 || 0;
+  // on the ground (or under it, in a road cut): the valley's surface
+  const ga = DV.heightAt(ax, az), gb = DV.heightAt(bx, bz);
+  if (h0 <= ga + 0.05 && h1 <= gb + 0.05) return { kind: 'ground', at: DV.heightAt, o0: h0 - ga, o1: h1 - gb };
+  // on a ramp: its profile
+  const ra = DV.rampAt(ax, az), rb = DV.rampAt(bx, bz);
+  if (ra !== null && rb !== null && Math.abs(h0 - ra) < 0.1 && Math.abs(h1 - rb) < 0.1) {
+    return { kind: 'ramp', at: (x, z) => DV.rampAt(x, z) ?? NaN, o0: h0 - ra, o1: h1 - rb };
+  }
+  return false;
 }
 
 // Cubic Bézier from the end of lane i on edge e to the start of lane j on edge f: a quarter-circle-like
@@ -1458,7 +1484,7 @@ function makeCurve(e, i, f, j) {
   }
   const c = {
     x0, z0, x3, z3,
-    y0: edgeY(e, e.len), y3: edgeY(f, 0),
+    y0: edgeY(e, e.len, x0, z0), y3: edgeY(f, 0, x3, z3), sE: e.dv, sF: f.dv, // (sE, sF: the Don Valley pilot's surfaces, edgeY)
     x1: x0 + e.dx * k0, z1: z0 + e.dz * k0,
     x2: x3 - f.dx * k3, z2: z3 - f.dz * k3,
     lut: new Float32Array(17),
@@ -1496,6 +1522,16 @@ function curvePoint(c, s, out) {
   out.x = u * u * u * c.x0 + 3 * u * u * t * c.x1 + 3 * u * t * t * c.x2 + t * t * t * c.x3;
   out.z = u * u * u * c.z0 + 3 * u * u * t * c.z1 + 3 * u * t * t * c.z2 + t * t * t * c.z3;
   out.y = c.y0 + (c.y3 - c.y0) * t;
+  // (the Don Valley pilot: a turn between two edges on the same surface follows it too, edgeY)
+  if (c.sE && c.sF && c.dv === undefined) {
+    const a = c.sE, b = c.sF;
+    c.dv = a && b && a.kind === b.kind ? { at: a.at, o0: c.y0 - a.at(c.x0, c.z0), o3: c.y3 - b.at(c.x3, c.z3) } : false;
+    if (c.dv && !(Number.isFinite(c.dv.o0) && Number.isFinite(c.dv.o3))) c.dv = false;
+  }
+  if (c.dv) {
+    const y = c.dv.at(out.x, out.z);
+    if (Number.isFinite(y)) out.y = y + c.dv.o0 + (c.dv.o3 - c.dv.o0) * t;
+  }
   const dx = 3 * u * u * (c.x1 - c.x0) + 6 * u * t * (c.x2 - c.x1) + 3 * t * t * (c.x3 - c.x2);
   const dz = 3 * u * u * (c.z1 - c.z0) + 6 * u * t * (c.z2 - c.z1) + 3 * t * t * (c.z3 - c.z2);
   const l = Math.hypot(dx, dz) || 1;

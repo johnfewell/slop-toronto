@@ -909,7 +909,11 @@ class ThirdPersonControllerManager {
     if (Number.isFinite(sportsGround)) ground = sportsGround;
     // (a deck only counts where one is in reach: deckHeightAt's 0 is "none", not the street level; in the Don Valley
     // pilot a ramp's deck may lie under the street level, so below 0 too)
-    const deck = deckHeightAt(x, z, y === null ? ground : y, mode === 'car' ? 0.9 : 0.6);
+    // (y unknown, an arrival: at the street level. In the Don Valley pilot that is the viaduct's deck over the valley,
+    // not the floor 40 m under it, and a ramp's deck rather than the slope it crosses; an arrival meant for the floor
+    // under a deck says so with its y: js/city-config.js streetArrival, navigation.js's route heights)
+    const DV = window.CITY.DON_VALLEY, reach = y === null ? (DV && DV.inBox(x, z) ? Math.max(ground, 0) : ground) : y;
+    const deck = deckHeightAt(x, z, reach, mode === 'car' ? 0.9 : 0.6);
     return deck !== 0 ? Math.max(ground, deck) : ground;
   }
 

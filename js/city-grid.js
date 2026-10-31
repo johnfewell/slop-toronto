@@ -1322,7 +1322,14 @@ function buildCityGrid(scene) {
           // grassed bank up to the street level, and a strip of lawn along its top (over the mask's ragged edge)
           const bA = c.bankSt ? cutBankAt(c, a.t, sg) : null, bB = c.bankSt ? cutBankAt(c, b.t, sg) : null;
           const footA = bA ? bA.top : sw - 0.05, footB = bB ? bB.top : sw - 0.05;
-          const capA = bA && bA.w >= 0.5 ? 0.12 : Math.min(PARAPET, -a.h * 2), capB = bB && bB.w >= 0.5 ? 0.12 : Math.min(PARAPET, -b.h * 2);
+          let capA = bA && bA.w >= 0.5 ? 0.12 : Math.min(PARAPET, -a.h * 2), capB = bB && bB.w >= 0.5 ? 0.12 : Math.min(PARAPET, -b.h * 2);
+          // (the Don Valley pilot: under a deck level with the street, Bloor Street's Rosedale section, the wall stops at
+          // the street under the deck: no parapet up through it)
+          if (window.CITY.DON_VALLEY) {
+            const under = (q) => { const [x, , z] = P(q, (c.half + THICK / 2) * sg, 0), d = window.CITY.deckHeightAt(x, z, 1, 1); return d > 0.3 && d < 2; };
+            if (under(a)) capA = 0;
+            if (under(b)) capB = 0;
+          }
           const ta = (bA ? Math.max(bA.top, a.h + sw) : sw) + capA, tb = (bB ? Math.max(bB.top, b.h + sw) : sw) + capB;
           quad(wall, P(a, wa, a.h + sw), P(b, wb, b.h + sw), P(b, wb, tb), P(a, wa, ta), [-nx * sg, 0, -nz * sg]);
           quad(wall, P(a, ow, footA), P(b, ow, footB), P(b, ow, tb), P(a, ow, ta), [nx * sg, 0, nz * sg]);

@@ -45,8 +45,8 @@ const ATMO_CITY_FOG = { golden: numParam('atmoFog', 0), midday: numParam('atmoFo
 const ATMO_NIGHT_GLOW = { golden: 0, midday: 0, twilight: 0, midnight: 1 };
 
 // Called right after renderer.init(), before anything renders or builds (the contexts must be on the renderer first);
-// attach() hands it the camera & the lighting once they exist
-async function setupClouds(renderer) {
+// attach() hands it the camera & the lighting once they exist. (load: the library module, a test's stand-in)
+async function setupClouds(renderer, { load = () => import('./clouds.js') } = {}) {
   // on by default; ?clouds=0 turns them off, ?clouds=low|medium|high picks the library's quality preset (the tier's by
   // default, quality.js: none leaves the sky dome's painted clouds)
   const Q = window.CITY.QUALITY;
@@ -56,13 +56,21 @@ async function setupClouds(renderer) {
   if (!withClouds && !ATMOSPHERE) return null;
   let M;
   try {
-    M = await import('./clouds.js');
+    M = await load();
   } catch (e) {
     console.warn('[clouds] js/clouds.js did not load:', e);
     return null;
   }
   const { Clouds, Atmosphere, Geospatial } = M;
   const { cityUniforms, GEO } = window.CITY;
+  // The WebGL2 backend (?webgl=1, or a browser without WebGPU, where three's WebGPURenderer falls back to it on its own
+  // in renderer.init()): the cloud library refuses it (its pass throws while building, which left the whole frame
+  // black), so that sky goes without volumetric clouds. The atmosphere builds its tables with WebGL render targets
+  // there and stays. Decided on the renderer's backend after init, so the flag and a real fallback take the same path
+  const cloudsBackend = cloudsSupported(Clouds, renderer);
+  if (withClouds && !cloudsBackend.ok) console.warn(`[clouds] volumetric clouds off: ${cloudsBackend.reason}`);
+  const marchClouds = withClouds && cloudsBackend.ok;
+  if (!marchClouds && !ATMOSPHERE) return null;
 
   // The atmosphere lights the clouds in its own luminance units, which came out far darker than the city's sun & sky
   // (grey-brown clouds at noon): its luminance scale is raised to the city's exposure. ?cloudGain=<n> tries another
@@ -75,7 +83,7 @@ async function setupClouds(renderer) {
   const atmosphere = new Atmosphere.AtmosphereContext(params);
   atmosphere.raymarchScattering = false;
   atmosphere.accurateShadowScattering = false;
-  const cloudsPass = withClouds ? Clouds.clouds({ sceneDepth: null }) : null;
+  const cloudsPass = marchClouds ? Clouds.clouds({ sceneDepth: null }) : null;
   const ctx = cloudsPass ? cloudsPass.cloudsContext : null;
   renderer.contextNode = TSL.context({
     ...(renderer.contextNode?.value ?? {}),
@@ -144,6 +152,9 @@ async function setupClouds(renderer) {
   const camWorld = TSL.uniform(new THREE.Matrix4()).setGroup(TSL.renderGroup);
   return {
     atmosphereEnabled: ATMOSPHERE,
+    // (false on the WebGL2 backend: cloudsSupported above)
+    cloudsEnabled: !!cloudsPass,
+    backend: cloudsBackend.backend,
     attach(cam, lighting) {
       camera = cam;
       lightingSystem = lighting;
@@ -238,5 +249,17 @@ async function setupClouds(renderer) {
   };
 }
 
-Object.assign(window.CITY, { setupClouds });
+// Whether the cloud library runs on this renderer: its own refusal (assertWebGPUSupported, the check its pass makes
+// while building) after renderer.init(), when the backend three chose is known
+function cloudsSupported(Clouds, renderer) {
+  const backend = renderer?.backend?.isWebGPUBackend ? 'webgpu' : renderer?.backend?.isWebGLBackend ? 'webgl2' : 'unknown';
+  try {
+    Clouds.assertWebGPUSupported(renderer);
+    return { ok: true, backend, reason: null };
+  } catch (e) {
+    return { ok: false, backend, reason: e?.message || String(e) };
+  }
+}
+
+Object.assign(window.CITY, { setupClouds, cloudsSupported });
 })();

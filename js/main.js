@@ -90,6 +90,10 @@ async function initApp() {
 
   await renderer.init();
   markInit('renderer');
+  // The backend three chose: WebGPU, or WebGL2 (?webgl=1, or on its own where the browser has no WebGPU); what can't run
+  // on WebGL2 reads it (the crowd's poses: pedestrians.js; the clouds ask their library: sky-clouds.js)
+  window.CITY.RENDER_BACKEND = renderer.backend.isWebGLBackend ? 'webgl2' : 'webgpu';
+  if (window.CITY.RENDER_BACKEND === 'webgl2') console.info('[renderer] WebGL2 backend (no WebGPU): the sky goes without volumetric clouds');
   // The clouds' atmosphere & clouds contexts go on the renderer before anything renders (sky-clouds.js)
   const skyClouds = await window.CITY.setupClouds(renderer);
 
@@ -115,15 +119,18 @@ async function initApp() {
   markInit('terrain');
   const { colliders: landmarkColliders } = buildLandmarks(scene);
   markInit('landmarks');
-  // ?massing=1: the Kensington Market pilot's buildings from the City's 3D Massing polygons instead of their boxes
-  // (docs/massing-buildings.md; js/toronto-massing-pilot.js is fetched only then, so normal play never loads it)
+  // ?massing=1: every building from the City's 3D Massing polygons instead of its boxes (docs/massing-buildings.md;
+  // js/massing-data.js and data/toronto-massing.bin are fetched only then, so normal play never loads them)
   if (new URLSearchParams(location.search).get('massing') === '1') {
-    await new Promise((resolve) => {
-      const s = document.createElement('script');
-      s.src = './js/toronto-massing-pilot.js';
-      s.onload = s.onerror = resolve;
-      document.head.appendChild(s);
-    });
+    try {
+      const { loadMassing } = await import('./massing-data.js');
+      const M = await loadMassing(window.CITY.GEO);
+      window.CITY.MASSING = M;
+      console.info(`[massing] data/toronto-massing.bin: ${M.bytes} bytes, ${M.records} records, decoded in ${M.decodeMs.toFixed(1)} ms, ` +
+        `rows in ${M.expandMs.toFixed(1)} ms${M.error ? '; ' + M.error : ''}`);
+    } catch (err) {
+      console.warn('[massing] could not load the polygons; the buildings stay on their boxes', err);
+    }
     markInit('massingData');
   }
   const cityBlocks = buildCityBlocks(scene);
@@ -203,7 +210,7 @@ async function initApp() {
     // routes.js detours, after mrdoob's 2bcd413): what the filter above leaves out, the street props, benches, shelters,
     // Bike Share, every café and the turned buildings among it, at ground level (not a deck's or a soffit's); the poles
     // are in streetDetails.footprints already. ?peddetours=0: the lines an obstacle crosses dropped, as before
-    // (?massing=1: the pilot's polygon buildings too, in place of the turned boxes they replace)
+    // (?massing=1: the polygon buildings too, in place of the turned boxes they replace)
     obstacles: allColliders.filter((c) => (c.obb || c.circle || c.massing) && c.kind !== 'pole' && !(c.minY > 2)),
     detours: new URLSearchParams(location.search).get('peddetours') !== '0',
     // the City's sidewalks the walking lines follow where an island has them (st-2t9, sidewalk-polygons.js): the
@@ -745,10 +752,13 @@ async function initApp() {
     elLocation.replaceChildren(...nodes);
   }
 
-  function teleportTo(x, z, heading = Math.PI) {
+  // y: the surface arrived on, where it matters (the Don Valley pilot: a deck or the valley's floor under it;
+  // city-config.js streetArrival), else the street level
+  function teleportTo(x, z, heading = Math.PI, y = null) {
     if (!cancelTransit()) return null;
     tourGuide?.setAutoDrive(false);
-    const destination = controllerManager.teleportActiveTo(x, z, heading);
+    const destination = y === null || controllerManager.activeMode === 'helicopter' ? controllerManager.teleportActiveTo(x, z, heading)
+      : controllerManager.teleportActiveTo(x, z, heading, y);
     touchControls.reset();
     gamepadControls.reset();
     cameraSystem.resetForTeleport();

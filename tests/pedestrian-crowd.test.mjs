@@ -48,6 +48,7 @@ class TNode {
   sub(b) { return new TNode(() => broadcast(this, b, (x, y) => x - y)); }
   mul(b) { return new TNode(() => broadcast(this, b, (x, y) => x * y)); }
   div(b) { return new TNode(() => broadcast(this, b, (x, y) => x / y)); }
+  mod(b) { return new TNode(() => broadcast(this, b, (x, y) => x % y)); }
   lessThan(b) { return new TNode(() => broadcast(this, b, (x, y) => (x < y ? 1 : 0))); }
   greaterThan(b) { return new TNode(() => broadcast(this, b, (x, y) => (x > y ? 1 : 0))); }
   toVar() {
@@ -177,6 +178,14 @@ const window = { CITY: { THREE, TSL, Addons: { mergeGeometries } } };
 vm.runInNewContext(read('js/pedestrians.js'), { window, Math, console, Float32Array, Uint32Array, Uint16Array, Array, Number, Object, Map, Set, Symbol, Infinity, NaN });
 const { PersonCrowd, PersonRig, buildPersonGeometry, createPersonMaterial } = window.CITY;
 const STRIDE = 31; // vec4s per person in a crowd's pose buffer (15 bones x 2 + the person's info)
+// The same module on three's WebGL2 backend (main.js sets window.CITY.RENDER_BACKEND after renderer.init()): a texture
+// holds the poses, read with textureLoad (st-osz: the storage buffer drew nobody there)
+const TSL_GL = { ...TSL, ivec2: vecN(2), textureLoad: (map, at) => new TNode(() => {
+  const [x, y] = arr(at), i = ((y | 0) * map.image.width + (x | 0)) * 4, d = map.image.data;
+  return [d[i], d[i + 1], d[i + 2], d[i + 3]];
+}) };
+const windowGL = { CITY: { THREE, TSL: TSL_GL, Addons: { mergeGeometries }, RENDER_BACKEND: 'webgl2' } };
+vm.runInNewContext(read('js/pedestrians.js'), { window: windowGL, Math, console, Float32Array, Uint32Array, Uint16Array, Array, Number, Object, Map, Set, Symbol, Infinity, NaN });
 
 test('PersonCrowd makes a far LOD only for a finite farDistance, and the far LOD casts no shadow', () => {
   const street = new PersonCrowd(16, { farDistance: 34, castShadow: true });
@@ -349,4 +358,35 @@ test('the parked bike is posed once while still; walker and rider stop and hide 
   c.poseCharacters(1 / 60, { x: 0, y: 2, z: 10 });
   assert.equal(walks, 7, 'back in range, the walker walks again');
   assert.equal(person.mesh.visible, false, 'and a hidden player root stays hidden');
+});
+
+test('on the WebGL2 backend the crowd keeps its poses in a texture and skins exactly as from the storage buffer', () => {
+  const gl = new windowGL.CITY.PersonCrowd(3, { farDistance: Infinity }), gpu = new PersonCrowd(3, { farDistance: Infinity });
+  const store = gl.lods[0].pose;
+  assert.ok(store.texture?.isDataTexture, 'a texture, not a storage buffer');
+  assert.deepEqual([store.texture.image.width, store.texture.image.height], [STRIDE, 3], 'a row of STRIDE texels per person');
+  assert.equal(store.texture.type, THREE.FloatType); assert.equal(store.texture.format, THREE.RGBAFormat);
+  assert.equal(gpu.lods[0].pose.texture, undefined, 'WebGPU keeps the storage buffer');
+  // two people: both stores hold the same values and the texture is flagged for upload
+  const rigs = [1.3, 7.9].map((seed, k) => {
+    const rig = new PersonRig({ seed });
+    rig.reset(4 * k, 2, 0.4 * k, () => 0, null);
+    return rig;
+  });
+  const before = store.texture.version;
+  for (const crowd of [gl, gpu]) { crowd.begin(); for (const rig of rigs) crowd.add(rig, 5); crowd.end(); }
+  assert.ok(store.texture.version > before, 'uploaded');
+  assert.deepEqual([...store.value.array.slice(0, 2 * STRIDE * 4)], [...gpu.lods[0].pose.value.array.slice(0, 2 * STRIDE * 4)]);
+  assert.equal(gl.meshes[0].count, 2);
+  // the vertex stage reads the second person's bones the same way from either store
+  const geo = buildPersonGeometry(1);
+  const P = geo.getAttribute('position').array, S = geo.getAttribute('skin').array, E = geo.getAttribute('extra').array;
+  shaderState.instanceIndex = 1;
+  for (let v = 0; v < P.length / 3; v += 97) {
+    Object.assign(shaderState.attrs, { position: [P[v * 3], P[v * 3 + 1], P[v * 3 + 2]], skin: [S[v * 4], S[v * 4 + 1], S[v * 4 + 2], S[v * 4 + 3]],
+      extra: [E[v * 3], E[v * 3 + 1], E[v * 3 + 2]] });
+    const a = gl.meshes[0].material.positionNode.eval(), b = gpu.meshes[0].material.positionNode.eval();
+    assert.ok(a.every((x, i) => Number.isFinite(x) && Math.abs(x - b[i]) < 1e-12), `vertex ${v}: ${a} vs ${b}`);
+  }
+  shaderState.instanceIndex = 0;
 });

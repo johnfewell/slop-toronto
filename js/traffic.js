@@ -2116,7 +2116,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
   function lanePoint(e, i, s, out) {
     out.x = e.sx + e.dx * s + e.rx * e.lanes[i];
     out.z = e.sz + e.dz * s + e.rz * e.lanes[i];
-    out.y = edgeY(e, s);
+    out.y = edgeY(e, s, out.x, out.z); // (the Don Valley pilot: the surface under the lane itself)
     out.dx = e.dx;
     out.dz = e.dz;
     return out;

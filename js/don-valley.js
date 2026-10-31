@@ -75,32 +75,81 @@ function lowestAround(x, z, r) {
   return lo;
 }
 
-// --- the viaduct's road deck: Bloor Street & Danforth Avenue over the valley stand DECK_TOP above the datum, level
-// with the streets either side (the real deck meets the tableland at both ends); off the valley (the ramps' old climbs
-// to the flat city's 22.5 m deck) they are the street again. The other decks in the box (the ramps down the valley's
-// sides) hug the ground 0.35 m up, a road on its own surface over the parkland islands.
-const V = D.diagnostics.viaduct;
-const VA = { x: V.from[0], z: V.from[1] }, VB = { x: V.to[0], z: V.to[1] };
-const VL = Math.hypot(VB.x - VA.x, VB.z - VA.z), VU = { x: (VB.x - VA.x) / VL, z: (VB.z - VA.z) / VL };
-function onViaductLine(x, z, reach = 16) {
-  const a = (x - VA.x) * VU.x + (z - VA.z) * VU.z, l = -(x - VA.x) * VU.z + (z - VA.z) * VU.x;
-  return a > -140 && a < VL + 140 && Math.abs(l) < reach;
+// --- the decks (tools/build-don-valley.mjs rule 8, st-wt0.21.2). The Prince Edward Viaduct's two road sections, the
+// Don's (Bloor Street & Danforth Avenue over the valley) and the Rosedale section (Bloor Street over the ravine west of
+// Castle Frank), stand DECK_TOP above the datum, level with the streets either side (the real deck meets the tableland
+// at both ends); off the valley (the old climbs to the flat city's 22.5 m and 7.5 m decks) they are the street again.
+// The ramps down the valley's sides follow their own profiles, from the lidar along their alignment (D.decks.ramps).
+// Any other deck in the box hugs the ground 0.35 m up, a road on its own surface over the parkland islands; and the
+// flat city's flyovers that only climbed onto the Rosedale section from outside the box are the street again.
+const DK = D.decks || { hug: 0.35, sections: [{ name: 'Don', from: D.diagnostics.viaduct.from, to: D.diagnostics.viaduct.to, ext: 140 }], ramps: [], flattened: [] };
+const SECTIONS = DK.sections.map((s) => {
+  const a = { x: s.from[0], z: s.from[1] }, b = { x: s.to[0], z: s.to[1] }, L = Math.hypot(b.x - a.x, b.z - a.z);
+  return { name: s.name, a, b, L, ux: (b.x - a.x) / L, uz: (b.z - a.z) / L, ext: s.ext };
+});
+/** The viaduct section (Don or Rosedale) whose line (x, z) lies on, within `reach` m of its axis, or null */
+function sectionAt(x, z, reach = 16) {
+  for (const s of SECTIONS) {
+    const a = (x - s.a.x) * s.ux + (z - s.a.z) * s.uz, l = -(x - s.a.x) * s.uz + (z - s.a.z) * s.ux;
+    if (a > -s.ext && a < s.L + s.ext && Math.abs(l) < reach) return s;
+  }
+  return null;
 }
-const HUG = 0.35;
+const onViaductLine = (x, z, reach = 16) => !!sectionAt(x, z, reach);
+const HUG = DK.hug;
+// the ramps' profiles and the flattened flyovers, by their deck's key (its flat-city ends: deckKey), and their pieces
+// in 20 m cells for rampAt / flattenedAt
+const deckKey = (pts) => { const a = pts[0], b = pts[pts.length - 1]; return `${a.x.toFixed(1)},${a.z.toFixed(1)},${b.x.toFixed(1)},${b.z.toFixed(1)},${pts.length}`; };
+const RAMPS = new Map(DK.ramps.map((r) => { const P = []; for (let i = 0; i < r.pts.length; i += 3) P.push({ x: r.pts[i], z: r.pts[i + 1], h: r.pts[i + 2] }); return [r.key, { ...r, P }]; }));
+const FLATTENED = new Map(DK.flattened.map((f) => { const P = []; for (let i = 0; i < f.pts.length; i += 2) P.push({ x: f.pts[i], z: f.pts[i + 1] }); return [f.key, { ...f, P }]; }));
+const PCELL = 20, pkey = (ix, iz) => ix * 100000 + iz;
+function pieceGrid(list) {
+  const g = new Map();
+  for (const r of list) for (let i = 1; i < r.P.length; i++) {
+    const a = r.P[i - 1], b = r.P[i], m = r.w / 2 + 2;
+    for (let ix = Math.floor((Math.min(a.x, b.x) - m) / PCELL); ix <= Math.floor((Math.max(a.x, b.x) + m) / PCELL); ix++)
+      for (let iz = Math.floor((Math.min(a.z, b.z) - m) / PCELL); iz <= Math.floor((Math.max(a.z, b.z) + m) / PCELL); iz++)
+        (g.get(pkey(ix, iz)) || g.set(pkey(ix, iz), []).get(pkey(ix, iz))).push([a, b, r.w / 2]);
+  }
+  return g;
+}
+const RAMP_GRID = pieceGrid([...RAMPS.values()]), FLAT_GRID = pieceGrid([...FLATTENED.values()]);
+// the piece of `grid` nearest (x, z) within its half width + `margin`: { a, b, t, d }, or null
+function nearestPiece(grid, x, z, margin) {
+  let best = null;
+  for (const [a, b, hw] of grid.get(pkey(Math.floor(x / PCELL), Math.floor(z / PCELL))) || []) {
+    const ex = b.x - a.x, ez = b.z - a.z, t = Math.max(0, Math.min(1, ((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez || 1)));
+    const d = Math.hypot(a.x + ex * t - x, a.z + ez * t - z);
+    if (d <= hw + margin && (!best || d < best.d)) best = { a, b, t, d };
+  }
+  return best;
+}
+/** A ramp's deck height at (x, z) (on its roadway, or within 1.5 m of it), or null where no ramp is */
+function rampAt(x, z) {
+  const p = nearestPiece(RAMP_GRID, x, z, 1.5);
+  return p ? p.a.h + (p.b.h - p.a.h) * p.t : null;
+}
+/** Whether (x, z) is on one of the flat city's flyovers the pilot puts back at the street (outside the box) */
+const flattenedAt = (x, z) => !!nearestPiece(FLAT_GRID, x, z, 1);
+/** The profile of the ramp whose flat-city points are `pts` ([{ x, z, h }]), as [{ x, z, h }], or null */
+const rampProfile = (pts) => { const r = RAMPS.get(deckKey(pts)); return r ? r.P.map((p) => ({ ...p })) : null; };
+const isFlattened = (pts) => FLATTENED.has(deckKey(pts));
 /** A deck or raised road's height at (x, z), given its height `h` in the flat city (> 0) */
 function deckHeight(x, z, h) {
-  if (!inBox(x, z)) return h;
+  if (!inBox(x, z)) return flattenedAt(x, z) ? 0 : h;
   const g = heightAt(x, z);
-  if (onViaductLine(x, z)) {
+  if (sectionAt(x, z)) {
     // over the valley: the road deck; within ~10 m of where the ground comes up to the street: ramped to it
     const low = Math.min(g, lowestAround(x, z, 10));
     return low < -0.3 ? D.deckTop * Math.min(1, -low / 1.5) : 0;
   }
+  const r = rampAt(x, z);
+  if (r !== null) return r;
   return g < -0.3 ? g + HUG : 0;
 }
-/** A street graph node's height (road-network.js): its deck's, or the ground's */
+/** A street graph node's height (road-network.js, navigation.js): its deck's, or the ground's */
 function roadHeight(x, z, h) {
-  if (!inBox(x, z)) return h;
+  if (!inBox(x, z)) return h > 0 && flattenedAt(x, z) ? 0 : h;
   return h > 0 ? deckHeight(x, z, h) : h + heightAt(x, z);
 }
 
@@ -308,6 +357,39 @@ function patchGeometry(x0, z0, x1, z1, yAt, keepCell = null) {
   g.setAttribute('uv', new C.THREE.Float32BufferAttribute(uvs, 2));
   return g;
 }
+/** The water's level at (x, z): the river's for its row (D.river), else 0.7 m under the ground as before */
+function riverLevelAt(x, z) {
+  const R = D.river;
+  if (!R || x < box.x0 || x > box.x1) return heightAt(x, z) + C.CITY_BOUNDS.waterLevel;
+  const f = (z - R.z0) / R.step, i = Math.floor(f);
+  if (i < 0 || i >= R.level.length) return heightAt(x, z) + C.CITY_BOUNDS.waterLevel;
+  const a = R.level[i], b = R.level[Math.min(R.level.length - 1, i + 1)];
+  return (a + (b - a) * (f - i)) / 100;
+}
+// Banks: a wall of earth on each open water cell's edge to a dry cell, from the ground there down under the water
+function riverBanks(x0, z0, x1, z1, keepCell) {
+  const pos = [], nrm = [];
+  const cx = Math.round((x1 - x0) / S), cz = Math.round((z1 - z0) / S), open = new Set();
+  for (let r = 0; r < cz; r++) for (let c = 0; c < cx; c++) if (keepCell(x0 + c * S, z0 + r * S)) open.add(r * cx + c);
+  const wall = (ax, az, bx, bz, nx, nz) => {
+    const ta = heightAt(ax, az), tb = heightAt(bx, bz), ba = riverLevelAt(ax, az) - 0.4, bb = riverLevelAt(bx, bz) - 0.4;
+    if (ta <= ba && tb <= bb) return;
+    for (const v of [[ax, ta, az], [bx, tb, bz], [bx, bb, bz], [ax, ta, az], [bx, bb, bz], [ax, ba, az]]) { pos.push(...v); nrm.push(nx, 0, nz); }
+  };
+  for (const k of open) {
+    const r = Math.floor(k / cx), c = k % cx, xa = x0 + c * S, za = z0 + r * S;
+    if (c === 0 || !open.has(k - 1)) wall(xa, za + S, xa, za, 1, 0);
+    if (c === cx - 1 || !open.has(k + 1)) wall(xa + S, za, xa + S, za + S, -1, 0);
+    if (r === 0 || !open.has(k - cx)) wall(xa, za, xa + S, za, 0, 1);
+    // (not along the box's south edge: the flat city's water goes on there at the same level)
+    if (r < cz - 1 && !open.has(k + cx)) wall(xa + S, za + S, xa, za + S, 0, -1);
+  }
+  if (!pos.length) return null;
+  const g = new C.THREE.BufferGeometry();
+  g.setAttribute('position', new C.THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new C.THREE.Float32BufferAttribute(nrm, 3));
+  return g;
+}
 function buildPatches(scene) {
   const { THREE, CITY_BOUNDS: B } = C;
   const group = new THREE.Group(); group.name = 'DonValley';
@@ -320,12 +402,23 @@ function buildPatches(scene) {
       group.add(m);
     }
   }
-  // the Don itself: water 0.7 m under the valley floor wherever the street level opens over it (its water mask)
-  const water = patchGeometry(box.x0, Math.max(box.z0, B.minZ), box.x1, box.z1, (x, z) => heightAt(x, z) + B.waterLevel,
-    (x, z) => [[0, 0], [S, 0], [0, S], [S, S], [S / 2, S / 2]].some(([dx, dz]) => C.waterAt(x + dx, z + dz)));
+  // the Don itself wherever the street level opens over it (its water mask): level across, at the river's level for its
+  // row (D.river, st-051: never falling going south, the flat city's at the box's south edge), with earth banks down to
+  // it from the ground round the open cells
+  // (a cell is open if the water mask is set anywhere in it, sampled every 2.5 m: a narrow channel between the corners
+  // still gets its water under the street level's hole)
+  const wet = (x, z) => { for (let dx = 0; dx <= S; dx += S / 4) for (let dz = 0; dz <= S; dz += S / 4) if (C.waterAt(x + dx, z + dz)) return true; return false; };
+  const wz0 = Math.max(box.z0, B.minZ);
+  const water = patchGeometry(box.x0, wz0, box.x1, box.z1, (x, z) => riverLevelAt(x, z), wet);
   if (water) {
     const m = new THREE.Mesh(water, C.createWaterMaterial()); m.name = 'DonValleyRiver'; m.receiveShadow = true;
     group.add(m);
+    const banks = riverBanks(box.x0, wz0, box.x1, box.z1, wet);
+    if (banks) {
+      const b = new THREE.Mesh(banks, new THREE.MeshStandardNodeMaterial({ color: 0x6f4a32, roughness: 0.95, side: THREE.DoubleSide }));
+      b.name = 'DonValleyRiverBanks'; b.receiveShadow = true;
+      group.add(b);
+    }
   }
   // plinths: concrete foundation walls from the lowest ground under a building up to its street-level base
   const concrete = [];
@@ -360,7 +453,8 @@ function platformFloor(id) {
   return st?.facts?.depth?.donValley?.platformFloor?.value ?? null;
 }
 
-C.DON_VALLEY = { data: D, box, step: S, heightAt, gradientAt, lowestAround, inBox, reliefUnder, deckHeight, roadHeight, onViaductLine,
-  drape, drapeMesh, buildPatches, platformFloor, deckTop: D.deckTop, railY: D.railY };
+C.DON_VALLEY = { data: D, box, step: S, heightAt, gradientAt, lowestAround, inBox, reliefUnder, deckHeight, roadHeight, onViaductLine, sectionAt,
+  rampAt, rampProfile, isFlattened, flattenedAt, deckKey, hug: HUG,
+  drape, drapeMesh, buildPatches, riverLevelAt, platformFloor, deckTop: D.deckTop, railY: D.railY };
 console.info(`[don-valley] pilot on: ${nx} x ${nz} at ${S} m over x ${box.x0}..${box.x1}, z ${box.z0}..${box.z1}; deepest ${D.diagnostics.deepestM} m`);
 })();

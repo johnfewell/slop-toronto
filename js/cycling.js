@@ -61,6 +61,29 @@ function prepare(flat, nRight, y = null) {
     if ((ux * vx + uz * vz) / (lu * lv) < 0.6 && Math.min(lu, lv) < 3) { P.splice(i, 1); i = Math.max(0, i - 2); }
   }
   if (P.length < 2) return null;
+  // (the Don Valley pilot, js/don-valley.js: the line follows the valley between its points, st-wt0.21.3. Where the
+  // ground under a piece has relief, points every 2 m or less, and at(), the separators and the posts take the
+  // surface's own height wherever they stand: yAt)
+  const DV = window.CITY.DON_VALLEY;
+  if (DV) {
+    // (a bikeway on a road: the road's surface, a deck level with the street where one is, as at the viaduct's ends; a
+    // trail over the paving: the ground)
+    const deckAt = window.CITY.deckHeightAt;
+    P.yAt = (x, z) => {
+      if (y !== null) return y + DV.heightAt(x, z);
+      const g = cutY(x, z), d = DV.inBox(x, z) && deckAt ? deckAt(x, z, 0, 0.6) : 0;
+      return d !== 0 && d > g ? d : g;
+    };
+    for (const p of P) p.y = P.yAt(p.x, p.z);
+    for (let i = 0; i + 1 < P.length; i++) {
+      const a = P[i], b = P[i + 1], L = Math.hypot(b.x - a.x, b.z - a.z);
+      if (L <= 2 || !DV.reliefUnder(Math.min(a.x, b.x), Math.max(a.x, b.x), Math.min(a.z, b.z), Math.max(a.z, b.z))) continue;
+      const n = Math.ceil(L / 2), add = [];
+      for (let k = 1; k < n; k++) { const x = a.x + ((b.x - a.x) * k) / n, z = a.z + ((b.z - a.z) * k) / n; add.push({ x, z, y: P.yAt(x, z) }); }
+      P.splice(i + 1, 0, ...add);
+      i += add.length;
+    }
+  }
   const seg = [];
   for (let i = 0; i + 1 < P.length; i++) {
     const dx = P[i + 1].x - P[i].x, dz = P[i + 1].z - P[i].z, L = Math.hypot(dx, dz);
@@ -95,6 +118,7 @@ function slice(P, s0, s1) {
   out.push(at(P, s1));
   out.len = P.len;
   out.nRight = P.nRight;
+  out.yAt = P.yAt;
   return out;
 }
 // The point at distance s along P (interpolated)
@@ -105,7 +129,7 @@ function at(P, s) {
   const t = Math.max(0, Math.min(1, (s - a.s) / ((b.s - a.s) || 1)));
   const tx = b.x - a.x, tz = b.z - a.z, L = Math.hypot(tx, tz) || 1;
   return {
-    x: a.x + tx * t, z: a.z + tz * t, y: a.y + (b.y - a.y) * t, s,
+    x: a.x + tx * t, z: a.z + tz * t, y: P.yAt ? P.yAt(a.x + tx * t, a.z + tz * t) : a.y + (b.y - a.y) * t, s,
     tx: tx / L, tz: tz / L, nx: P.nRight ? -tz / L : tz / L, nz: P.nRight ? tx / L : -tx / L, m: 1,
     sq: (a.sq || 0) + ((b.sq || 0) - (a.sq || 0)) * t
   };
@@ -435,7 +459,8 @@ function bikeSeparatorGeometries() {
     const mid = P[P.length >> 1], key = Math.floor(mid.x / 500) * 1000 + Math.floor(mid.z / 500);
     if (!cells.has(key)) cells.set(key, { pos: [], nor: [], uv: [] });
     ({ pos, nor, uv } = cells.get(key));
-    const off = (p, o, h) => [p.x + p.nx * o * p.m, p.y + h, p.z + p.nz * o * p.m];
+    // (where it stands: on the Don Valley pilot's surface there, P.yAt)
+    const off = (p, o, h) => { const x = p.x + p.nx * o * p.m, z = p.z + p.nz * o * p.m; return [x, (P.yAt ? P.yAt(x, z) : p.y) + h, z]; };
     for (let i = 0; i + 1 < P.length; i++) {
       const p = P[i], q = P[i + 1];
       const nx = (p.nx + q.nx) / 2, nz = (p.nz + q.nz) / 2;
@@ -469,9 +494,9 @@ function buildBikePosts(scene) {
     const n = Math.max(1, Math.floor(len / POST_EVERY));
     for (let k = 0; k <= n; k++) {
       const p = at(P, P[0].s + (len * k) / n), o = (a(p) + b(p)) / 2;
-      const x = p.x + p.nx * o, z = p.z + p.nz * o;
-      spots.push(x, p.y + SEP_H, z);
-      colliders.push(circleCollider(x, z, POST_R, p.y, SEP_H + 0.8, 'post'));
+      const x = p.x + p.nx * o, z = p.z + p.nz * o, y = P.yAt ? P.yAt(x, z) : p.y;
+      spots.push(x, y + SEP_H, z);
+      colliders.push(circleCollider(x, z, POST_R, y, SEP_H + 0.8, 'post'));
     }
     for (let i = 0; i + 1 < P.length; i++) {
       // (each piece between the line's points, its ends a few cm long so the joints leave no gap)

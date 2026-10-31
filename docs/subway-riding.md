@@ -12,12 +12,20 @@ Bicycles remain outside as a game convenience and are restored on street exit.
   front car's open doors. **E**, **Board the train**, or gamepad **A** boards; a moving train or closed doors cannot.
 - Drag or use the right stick to look from the seat. **V**, the camera arrows or gamepad **Y** selects the exterior
   view while the full train is on the viaduct. The camera returns to the seat before entering a tunnel.
+- On a portrait screen (a phone held upright), the seat's narrow slice of the view was mostly the car's own seat,
+  wall panels and pillars, so the rider looks from elsewhere in the first car instead (`riderView` in
+  `js/subway-ride.js`). In the open (the viaduct) they kneel at a window between the door leaves and the seat back,
+  0.45 m from it, looking out and a little down at the valley. Underground (stations, tunnels, all of Line 1) they
+  stand in the aisle looking down the car. Landscape screens keep the seat, unchanged. `tools/shots/subway-seat-views.json`
+  frames them at Castle Frank, at five points on the viaduct and on Line 1 (run it with `#ride=subway&film`).
 - At arrival, **E** or **Get off** places you on the destination platform. The train holds its doors while occupied
   at the end of this supported ride. Castle Frank and Broadview are boundaries of this feature, not Line 2 termini.
 - **Change to the other platform** lets you wait for the return train. **Exit to [station]** returns to that station's
   mapped street entrance. While aboard, **Return to departure station** cancels safely.
 - Changing mode, searching/teleporting or resetting ends the station visit and restores surface controls. Reloading
-  restores the last safe station entrance, including when saved from a seat or platform.
+  restores the last safe station entrance, including when saved from a seat or platform. When the entrance's street
+  anchor is taken (the player's own parked car standing on it, for one), the rider leaves to the nearest clear ground
+  beside it rather than staying aboard.
 
 ## Ride Line 1 between Queen and King
 

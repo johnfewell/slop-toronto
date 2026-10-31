@@ -225,11 +225,15 @@ function buildGraph() {
   const n = RG.nodes.length / 2;
   const nodeH = new Float32Array(n);
   for (let i = 0; i < (RG.raised || []).length; i += 2) nodeH[RG.raised[i]] = RG.raised[i + 1];
+  // (the Don Valley pilot, js/don-valley.js: each point on its own surface, the valley's ground or a deck, as
+  // road-network.js gives the traffic: a route's heights say which surface an arrival on it is on, st-wt0.21.1)
+  const DV = window.CITY.DON_VALLEY, vh = DV ? (x, z, h) => DV.roadHeight(x, z, h) : (x, z, h) => h;
+  if (DV) for (let i = 0; i < n; i++) nodeH[i] = vh(RG.nodes[2 * i], RG.nodes[2 * i + 1], nodeH[i]);
   const out = Array.from({ length: n }, () => []);
   const links = RG.links.map((l, id) => {
     const [a, b, nameIdx, w, lanes, dir, inner, rank, innerH] = l;
     const pts = [[RG.nodes[2 * a], RG.nodes[2 * a + 1], nodeH[a]]];
-    for (let i = 0; i < inner.length; i += 2) pts.push([inner[i], inner[i + 1], innerH ? innerH[i / 2] : 0]);
+    for (let i = 0; i < inner.length; i += 2) pts.push([inner[i], inner[i + 1], vh(inner[i], inner[i + 1], innerH ? innerH[i / 2] : 0)]);
     pts.push([RG.nodes[2 * b], RG.nodes[2 * b + 1], nodeH[b]]);
     let len = 0;
     for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
@@ -444,7 +448,9 @@ function findRoute(from, to, mode = 'car') {
       const last = points[points.length - 1];
       if (last && Math.hypot(last[0] - p[0], last[2] - p[1]) < 0.3) continue;
       const ground = terrainHeightAt ? terrainHeightAt(p[0], p[1]) : 0;
-      points.push([p[0], Math.max(p[2], ground), p[1], leg.off]);
+      // (in the Don Valley pilot's box the height is the road's own surface, below the street level on the valley)
+      const DV = window.CITY.DON_VALLEY;
+      points.push([p[0], DV && DV.inBox(p[0], p[1]) ? p[2] : Math.max(p[2], ground), p[1], leg.off]);
     }
   }
   const cum = [0];

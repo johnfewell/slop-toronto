@@ -1,0 +1,127 @@
+[
+  {
+    "name": "fu-stats",
+    "time": "midday",
+    "mode": "person",
+    "x": 2205,
+    "z": -2650,
+    "heading": 3.14159,
+    "wait": 3000,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,C=window.CITY,DV=C.DON_VALLEY; if(!DV) return {pilot:false, patios:C.patioStats&&C.patioStats.fingerprint}; const D=DV.data; return {pilot:true, patios:C.patioStats&&C.patioStats.fingerprint, box:D.box, ramps:D.alterations.ramps, river:D.alterations.river, reviews:D.diagnostics.roads.filter(r=>r.review), stats:C.donValleyStats?{plinths:C.donValleyStats.plinths,ms:Math.round(C.donValleyStats.ms)}:null}; })()"
+  },
+  {
+    "name": "fu-teleport-viaduct",
+    "mode": "person",
+    "x": 2240,
+    "z": -2803,
+    "heading": 1.5708,
+    "camera": "chase",
+    "wait": 4000,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,cm=a.controllerManager,p=cm.getActiveEntity().position,d=window.CITY.DON_VALLEY?window.CITY.DON_VALLEY.deckTop:null; if(d!==null&&Math.abs(p.y-d)>0.05) throw new Error('A teleport onto the viaduct landed at '+p.y+' (deck '+d+')'); return {player:{x:p.x,y:p.y,z:p.z},deck:d,floorUnder:window.CITY.cutAt(p.x,p.z)};})()"
+  },
+  {
+    "name": "fu-search-viaduct-car",
+    "mode": "car",
+    "camera": "chase",
+    "wait": 4000,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,cm=a.controllerManager; a.tourGuide.teleportToPlace({kind:'spot',name:'On the viaduct',x:2330,z:-2806}); a.selectCamera('chase',true); const p=cm.getActiveEntity().position,d=window.CITY.DON_VALLEY?window.CITY.DON_VALLEY.deckTop:null; if(d!==null&&Math.abs(p.y-d)>0.05) throw new Error('A map/search arrival on the viaduct landed at '+p.y); return {player:{x:p.x,y:p.y,z:p.z},deck:d};})()"
+  },
+  {
+    "name": "fu-search-valley",
+    "mode": "person",
+    "camera": "chase",
+    "wait": 4000,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,cm=a.controllerManager,C=window.CITY; a.tourGuide.teleportToPlace({kind:'spot',name:'In the valley',x:2190,z:-2600}); a.selectCamera('chase',true); const p=cm.getActiveEntity().position; if(C.DON_VALLEY&&p.y>-25) throw new Error('A search arrival in the valley landed at '+p.y); return {player:{x:p.x,y:p.y,z:p.z},cutAt:C.cutAt(p.x,p.z)};})()"
+  },
+  {
+    "name": "fu-rosedale-deck",
+    "mode": "cyclist",
+    "x": 1672,
+    "z": -2648,
+    "heading": 2.0,
+    "camera": "chase",
+    "wait": 4000,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,cm=a.controllerManager,C=window.CITY,p=cm.getActiveEntity().position,d=C.DON_VALLEY?C.DON_VALLEY.deckTop:null; if(d!==null&&Math.abs(p.y-d)>0.05) throw new Error('A teleport onto the Rosedale section landed at '+p.y); return {player:{x:p.x,y:p.y,z:p.z},ravineUnder:C.cutAt(p.x,p.z)};})()"
+  },
+  {
+    "name": "fu-river-transition-aerial",
+    "time": "midday",
+    "wait": 5000,
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2700,80,-1860],look:[2360,-28,-2460],fov:52});"
+  },
+  {
+    "name": "fu-river-transition-low",
+    "time": "midday",
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,DV=C.DON_VALLEY,lv=(z)=>DV?DV.riverLevelAt(2410,z):-0.7; window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2470,lv(-2120)+9,-2080],look:[2395,lv(-2330)+1,-2330],fov:60}); return DV?{levels:[-2600,-2500,-2400,-2300,-2200,-2100,-2000,-1900,-1880].map(z=>[z,+lv(z).toFixed(2)])}:null;})()"
+  },
+  {
+    "name": "fu-river-edge",
+    "time": "midday",
+    "wait": 5000,
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2560,14,-1760],look:[2490,-4,-1990],fov:60});"
+  },
+  {
+    "name": "fu-bayview-bloor-ramp",
+    "time": "midday",
+    "wait": 5000,
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2075,12,-2885],look:[1985,-9,-2965],fov:60});"
+  },
+  {
+    "name": "fu-royal-drive",
+    "time": "midday",
+    "wait": 5000,
+    "js": "(() => {const C=window.CITY,y=C.cutAt(2592,-2495); window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2592,y+7,-2495],look:[2614,C.cutAt(2614,-2720)+1,-2720],fov:58}); return {camY:y+7};})()"
+  },
+  {
+    "name": "fu-traffic-slope",
+    "time": "midday",
+    "mode": "person",
+    "x": 2285,
+    "z": -2340,
+    "heading": 0,
+    "wait": 9000,
+    "js": "(() => {const C=window.CITY,y=C.cutAt(2300,-2300); window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2318,y+5,-2290],look:[2262,y-3,-2395],fov:58});})()"
+  },
+  {
+    "name": "fu-traffic-slope-check",
+    "wait": 1500,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,C=window.CITY,DV=C.DON_VALLEY,t=a.trafficSystem; const near=(o)=>DV&&DV.inBox(o.x,o.z)&&C.cutAt(o.x,o.z)<-1; const surf=(x,z,y)=>{const g=C.cutAt(x,z),d=C.deckHeightAt(x,z,y+1,2.5);return d!==0&&Math.abs(d-y)<Math.abs(g-y)?d:g;}; const cars=t.cars.filter(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)&&near(v)).map(v=>({x:+v.x.toFixed(1),z:+v.z.toFixed(1),d:+Math.abs(v.y-surf(v.x,v.z,v.y)).toFixed(3)})).sort((p,q)=>q.d-p.d); const feet=t.peds.filter(p=>p.rig&&near(p)).flatMap(p=>p.rig.feet.map(f=>+Math.min(Math.abs(f.py-C.cutAt(f.px,f.pz)),Math.abs(f.py-C.cutAt(f.px,f.pz)-0.22),Math.abs(f.py-C.cutAt(f.px,f.pz)-0.012)).toFixed(3))); return {cars:cars.length,carWorst:cars.slice(0,3),feet:feet.length,footWorst:feet.length?Math.max(...feet):null};})()"
+  },
+  {
+    "name": "fu-walkers-slope",
+    "time": "midday",
+    "mode": "person",
+    "x": 1860,
+    "z": -2505,
+    "heading": 4.0,
+    "wait": 9000,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,C=window.CITY,p=a.controllerManager.getActiveEntity().position,y=C.cutAt(1905,-2478); a.cameraSystem.cinema=()=>({pos:[1905,y+2.6,-2478],look:[1800,C.cutAt(1800,-2530)+1,-2530],fov:58}); return {player:{x:p.x,y:p.y,z:p.z},ground:C.cutAt(p.x,p.z)};})()"
+  },
+  {
+    "name": "fu-walkers-slope-check",
+    "wait": 1000,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,C=window.CITY,DV=C.DON_VALLEY,t=a.trafficSystem; const near=(o)=>DV&&DV.inBox(o.x,o.z)&&C.cutAt(o.x,o.z)<-1; const surf=(x,z,y)=>{const g=C.cutAt(x,z),d=C.deckHeightAt(x,z,y+1,2.5);return d!==0&&Math.abs(d-y)<Math.abs(g-y)?d:g;}; const cars=t.cars.filter(v=>Number.isFinite(v.x)&&Number.isFinite(v.y)&&near(v)).map(v=>({x:+v.x.toFixed(1),z:+v.z.toFixed(1),d:+Math.abs(v.y-surf(v.x,v.z,v.y)).toFixed(3)})).sort((p,q)=>q.d-p.d); const feet=t.peds.filter(p=>p.rig&&near(p)).flatMap(p=>p.rig.feet.map(f=>+Math.min(Math.abs(f.py-C.cutAt(f.px,f.pz)),Math.abs(f.py-C.cutAt(f.px,f.pz)-0.22),Math.abs(f.py-C.cutAt(f.px,f.pz)-0.012)).toFixed(3))); return {cars:cars.length,carWorst:cars.slice(0,3),feet:feet.length,footWorst:feet.length?Math.max(...feet):null};})()"
+  },
+  {
+    "name": "fu-aerial",
+    "time": "midday",
+    "wait": 6000,
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2560,150,-2420],look:[2240,-12,-2810],fov:50});"
+  },
+  {
+    "name": "fu-aerial-north",
+    "time": "midday",
+    "wait": 6000,
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2420,130,-2620],look:[2080,-25,-3300],fov:55});"
+  }
+]

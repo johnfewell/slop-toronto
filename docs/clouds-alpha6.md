@@ -27,6 +27,32 @@ The evidence here qualifies this specific app/renderer combination. It does not 
 support range or establish arbitrary r187 compatibility. The app's npm Three.js 0.186.1 remains its build/test peer;
 the browser uses the explicit pinned import map, as before this upgrade.
 
+## WebGL2 backend
+
+Three's `WebGPURenderer` runs on its WebGL2 backend with `?webgl=1`, and also on its own when the browser has no
+WebGPU: `renderer.init()` falls back to the WebGL backend when the WebGPU one cannot start. Alpha.6 refuses that
+backend: its cloud pass throws while building (`assertWebGPUBackend`), which left the whole frame black (`st-osz`).
+`js/sky-clouds.js` now asks the library itself (`Clouds.assertWebGPUSupported`) once the renderer has initialised, so
+the flag and a real fallback take the same path. On WebGL2 it builds no cloud pass and logs
+`[clouds] volumetric clouds off: ...`; the takram atmosphere stays (it builds its tables with WebGL render targets
+there), so that sky has the physical atmosphere, sun, moon and stars without volumetric clouds. `tests/sky-clouds.test.mjs`
+covers the decision with the real library module.
+
+Once the clouds were out of the way the frame showed one more WebGL2 gap: nobody was drawn, neither the pedestrians nor
+the player's own walker and rider (`GL_INVALID_OPERATION: Vertex buffer is not big enough` on every `PeopleNear` draw).
+The crowds skin from a storage buffer (`attributeArray`), which the WebGL2 backend turns into a per-vertex attribute.
+`main.js` now records the chosen backend in `window.CITY.RENDER_BACKEND`, and on `webgl2` `js/pedestrians.js` keeps the
+poses in a float texture (a row per person, read with `textureLoad`) instead; `tests/pedestrian-crowd.test.mjs` checks
+that it skins exactly as the storage buffer does. `tools/capture-no-webgpu.js` (a `CAPTURE_INIT_SCRIPT`) removes
+`navigator.gpu` before the page loads, to capture the city as a browser without WebGPU sees it.
+`tools/shots/webgl-fallback.json` asserts the WebGL2 backend, then frames the CN Tower, the waterfront at golden hour,
+midday and midnight, and a walk on King Street, where it fails on any WebGL error from a draw call.
+
+```sh
+GPU2_LOCK_WAIT=60 gpu2 slop-toronto-alpha6 -- env CAPTURE_ROOT=dist CAPTURE_QUERY='?webgl=1&quality=high&autoscale=0' CAPTURE_PROGRESS=1 node tools/capture.mjs tools/shots/webgl-fallback.json
+GPU2_LOCK_WAIT=60 gpu2 slop-toronto-alpha6 -- env CAPTURE_ROOT=dist CAPTURE_QUERY='?autoscale=0' CAPTURE_INIT_SCRIPT=tools/capture-no-webgpu.js CAPTURE_PROGRESS=1 node tools/capture.mjs tools/shots/webgl-fallback.json
+```
+
 ## Verification
 
 - Archive checksum matches the supplied SHA256SUMS. The generated module imports and constructs a context in Node;
