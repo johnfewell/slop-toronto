@@ -6,9 +6,13 @@
 //   to the vehicles within the city as compact JSON:
 //   { t: feed time (s), v: [[route, direction (0/1, -1 unknown), lat, lon, bearing (deg, -1 unknown), time (s), id], ...] }
 //   (the TTC's feed has no CORS header, so the browser can't read it itself)
+// - the landing page's clips (assets/site/clips/*, also run_worker_first): the asset with byte-range (206) support,
+//   which the assets binding lacks and Safari needs to play a <video> (worker/range.js); on every host, no redirect
 // - the pages (wrangler.jsonc run_worker_first) on the old workers.dev address: a permanent redirect to the same path
 //   on sloptoronto.ca (the browser keeps the #room / #ride fragment)
 // - everything else: the assets binding (its 404s).
+
+import { isClip, serveClip } from './range.js';
 
 const OLD_HOST = 'slop-toronto.cloud6711.workers.dev', SITE = 'https://sloptoronto.ca';
 const FEED = 'https://bustime.ttc.ca/gtfsrt/vehicles';
@@ -113,6 +117,7 @@ async function vehicles(ctx) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (isClip(url.pathname)) return serveClip(request, env);
     if (url.hostname === OLD_HOST && url.pathname !== '/live/vehicles') {
       return new Response(null, { status: 301, headers: { location: SITE + url.pathname + url.search, 'cache-control': 'public, max-age=3600' } });
     }

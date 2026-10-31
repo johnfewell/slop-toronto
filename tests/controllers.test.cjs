@@ -479,6 +479,82 @@ test('mode changes preserve an elevated deck instead of dropping the player to t
   assert.equal(controller.getActiveEntity().position.y, 12);
 });
 
+// st-hqa: getting off the bike lands the walker on the nearest clear ground beside it, not on the old 4 m rings
+function dismountHarness(heading = 0) {
+  const h = teleportHarness('cyclist');
+  const { controller, ent: bike } = h;
+  controller.entities.person = teleportHarness('person').ent;
+  Object.assign(bike.position, { x: 0, y: 0, z: 0 }); bike.heading = heading;
+  controller.getGroundHeight = () => 0; // (level ground: the harness's step at x = 0 is not at issue here)
+  return { ...h, bike, walker: controller.entities.person };
+}
+const flat = (p) => Math.hypot(p.x, p.z);
+
+test('st-hqa: getting off the bike puts the walker on the nearest clear ground, on the kerb side', () => {
+  const { controller, walker } = dismountHarness(0);
+  assert.equal(controller.switchMode('person'), true);
+  const d = flat(walker.position);
+  // clear of the bike's body and the walker's chase view (1.0 + 0.5 + 0.1 m), and no further
+  assert.ok(d >= 1.6 && d <= 1.75 + 1e-9, `walker ${d.toFixed(2)} m from the bike`);
+  // facing +z (heading 0) the rider's right is -x
+  assert.ok(walker.position.x < -1.5 && Math.abs(walker.position.z) < 0.3, JSON.stringify(walker.position));
+  assert.equal(walker.heading, 0);
+  assert.deepEqual([controller.entities.cyclist.position.x, controller.entities.cyclist.position.z], [0, 0], 'the bike stays parked');
+  // and back on the bike: beside the walker (who stays standing, as a parked vehicle does), not 4 m round it
+  controller.entities.cyclist.position.x = 50;
+  assert.equal(controller.switchMode('cyclist'), true);
+  const bike = controller.entities.cyclist.position, e = Math.hypot(bike.x - walker.position.x, bike.z - walker.position.z);
+  assert.ok(e >= 1.6 && e <= 1.75 + 1e-9, `bike ${e.toFixed(2)} m from the walker`);
+});
+
+test('st-hqa: a walker getting off steps onto a sidewalk in reach rather than into the roadway', () => {
+  const { controller, walker } = dismountHarness(0);
+  // a sidewalk on the rider's left (x >= 2.5), the roadway everywhere else
+  controller.isRoadway = (x) => x < 2.5;
+  assert.equal(controller.switchMode('person'), true);
+  assert.ok(walker.position.x >= 2.5 && flat(walker.position) < 3, JSON.stringify(walker.position));
+  // with no sidewalk in reach, the nearest clear roadway beside the bike
+  const far = dismountHarness(0);
+  far.controller.isRoadway = (x) => x < 20;
+  assert.equal(far.controller.switchMode('person'), true);
+  assert.ok(flat(far.walker.position) <= 1.75 + 1e-9, JSON.stringify(far.walker.position));
+});
+
+test('st-hqa: the walker getting off never lands in a wall, in the lake or off the deck the bike is on', () => {
+  // a building on the right, the lake on the left: behind the bike is the nearest clear ground
+  const lake = (x) => (x > 1 ? { name: 'Lake Ontario' } : null);
+  const h = teleportHarness('cyclist', [{ minX: -6, maxX: -0.9, minZ: -0.9, maxZ: 6, maxY: 30 }], lake);
+  h.controller.entities.person = teleportHarness('person').ent;
+  Object.assign(h.ent.position, { x: 0, y: 0, z: 0 }); h.ent.heading = 0;
+  assert.equal(h.controller.switchMode('person'), true);
+  const p = h.controller.entities.person.position;
+  assert.ok(!lake(p.x), 'not in the lake');
+  const before = [p.x, p.z];
+  h.controller.resolveHorizontalCollision(p, 0.48, p.y + 1);
+  assert.deepEqual([p.x, p.z], before, 'already clear of the building');
+  assert.ok(flat(p) < 4, `beside the bike (${flat(p).toFixed(2)} m)`);
+  // a deck 2 m wide at 12 m: the walker stays on it (behind the bike), not on the street under it
+  const deck = dismountHarness(0);
+  deck.bike.position.y = 12;
+  deck.controller.getGroundHeight = (x, z, mode, y) => (y > 10 && Math.abs(x) < 1 ? 12 : 0);
+  assert.equal(deck.controller.switchMode('person'), true);
+  assert.equal(deck.walker.position.y, 12);
+  assert.ok(Math.abs(deck.walker.position.x) < 1 && flat(deck.walker.position) <= 1.75 + 1e-9, JSON.stringify(deck.walker.position));
+});
+
+test('st-hqa: out of a station on the bike, then off it, the walker is still within the entrance pylon\'s 5 m', () => {
+  // js/subway-ride.js leaveStation for a cyclist's visit: the bike on the anchor, the walker beside it; then walking
+  const { controller, walker } = dismountHarness(0);
+  const anchor = { x: 0, z: 0 }, pylon = { x: -2, z: 0 };
+  controller.teleportActiveTo(anchor.x, anchor.z, 0);
+  controller.setMode('person'); controller.teleportActiveTo(anchor.x, anchor.z, 0, null, true);
+  controller.setMode('cyclist');
+  assert.deepEqual([controller.entities.cyclist.position.x, controller.entities.cyclist.position.z], [0, 0], 'the bike takes the anchor');
+  assert.ok(flat(walker.position) < 2, 'the walker waits beside the bike');
+  assert.equal(controller.switchMode('person'), true);
+  const d = Math.hypot(walker.position.x - pylon.x, walker.position.z - pylon.z);
+  assert.ok(d < 5, `walker ${d.toFixed(2)} m from the pylon`);
+});
 
 test('ground passenger interaction does not jump, while E still ascends in flight', () => {
   const { controller, key } = keyboardHarness();

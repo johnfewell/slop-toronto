@@ -26,6 +26,9 @@ Bicycles remain outside as a game convenience and are restored on street exit.
   restores the last safe station entrance, including when saved from a seat or platform. When the entrance's street
   anchor is taken (the player's own parked car standing on it, for one), the rider leaves to the nearest clear ground
   beside it rather than staying aboard.
+- A visit begun on the bike comes out on the bike, on the anchor, with the walker beside it. Getting off the bike (a
+  mode change), the walker lands on the nearest clear ground beside it at the same level, on the sidewalk if one is in
+  reach, so the entrance's **Enter** prompt is still there (st-hqa; `js/controllers.js` `nearbyOffsets`).
 
 ## Ride Line 1 between Queen and King
 

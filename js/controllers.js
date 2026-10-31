@@ -161,6 +161,28 @@ const SLIM = { person: 0.3, cyclist: 0.3, cyclistAlong: [-0.55, 0, 0.55] };
 // A separator curb (`curb`, ~15 cm) is crossed on a bicycle only steeply: more than ~25 degrees across it (the sine of the
 // angle between the way the bicycle goes & the curb). Shallower it holds the wheel and turns it back along the track
 const CURB_CROSS = 0.42;
+// Getting off a bicycle, out of a car or back on the bike (switchMode), or out of a station beside the player's own
+// bike or car (subway-ride.js): the arrival is the nearest clear ground to where the rider was, not the old 4 m rings
+// (st-hqa: off the bike at Castle Frank's anchor, the rings set the walker 8 m off, out of the entrance's reach).
+// The offsets tried, nearest first: every 25 cm out to 4 m, then every 50 cm out to NEAR_REACH, about every 50 cm round
+// each ring; on a ring the rider's right (the kerb side: Toronto drives on the right) first, the left last.
+// [{ dx, dz, d }] in world axes, for a rider facing `heading`
+const NEAR_REACH = 8;
+const NEAR_LEVEL = 0.5; // (no higher or lower than the rider's ground: not off a deck, down a cut or up a step)
+function nearbyOffsets(heading) {
+  const fx = Math.sin(heading), fz = Math.cos(heading), rx = -fz, rz = fx;
+  const out = [];
+  for (let d = 0.25; d <= NEAR_REACH + 1e-9; d += d < 4 ? 0.25 : 0.5) {
+    const n = Math.max(8, Math.ceil((2 * Math.PI * d) / 0.5 / 4) * 4), ring = [];
+    for (let i = 0; i < n; i++) {
+      const a = (i * 2 * Math.PI) / n, side = Math.cos(a), along = Math.sin(a);
+      ring.push({ dx: (rx * side + fx * along) * d, dz: (rz * side + fz * along) * d, d, side, along });
+    }
+    ring.sort((p, q) => q.side - p.side || p.along - q.along);
+    for (const p of ring) out.push({ dx: p.dx, dz: p.dz, d });
+  }
+  return out;
+}
 // --- end world contact
 
 // Ontario number plate: white, blue lettering, "ONTARIO" along the top, a small crown-like mark in the number and the
@@ -320,7 +342,9 @@ class ThirdPersonControllerManager {
     const altitude = mode === 'helicopter' ? Math.max(92, y) : y;
     let destination;
     this.activeMode = mode;
-    try { destination = this.findTeleportPosition(x, z, heading, altitude); }
+    // (getting off the bike, out of the car or onto the bike: as close as is clear to where the rider was)
+    const nearby = mode === 'person' || mode === 'cyclist';
+    try { destination = this.findTeleportPosition(x, z, heading, altitude, false, nearby); }
     finally { this.activeMode = previousMode; }
     if (!destination) return false;
     this.setMode(mode);
@@ -333,13 +357,14 @@ class ThirdPersonControllerManager {
   }
 
   // savedAltitude also selects the current deck for ground arrivals; flight defaults to a safe 92 m or more.
-  teleportActiveTo(x, z, heading = Math.PI, savedAltitude = null) {
+  // nearby: if (x, z) isn't clear, the nearest clear ground at its level (findTeleportPosition)
+  teleportActiveTo(x, z, heading = Math.PI, savedAltitude = null, nearby = false) {
     const ent = this.getActiveEntity();
     this.resetInput();
     if (!Number.isFinite(heading)) heading = ent.heading;
     const heli = this.activeMode === 'helicopter';
     const altitude = heli ? Math.max(0.25, Math.min(380, savedAltitude ?? Math.max(92, ent.position.y))) : savedAltitude;
-    const destination = this.findTeleportPosition(x, z, heading, altitude);
+    const destination = this.findTeleportPosition(x, z, heading, altitude, false, nearby);
     if (destination) {
       ent.position.x = destination.x;
       ent.position.z = destination.z;
@@ -378,7 +403,9 @@ class ThirdPersonControllerManager {
   // Find a fully clear arrival before moving the player. Sequential collision pushes can leave a player trapped
   // between overlapping buildings, so test whole candidate footprints instead; retain the old position if none fits.
   // exact: only (x, z) itself (null if it isn't clear), no search round it
-  findTeleportPosition(x, z, heading, altitude, exact = false) {
+  // nearby (getting off or on, beside a vehicle): first the nearest clear ground within NEAR_REACH at the level of
+  // (x, z)'s, a walker's off the roadway wherever a sidewalk in that reach is clear; then the rings as before
+  findTeleportPosition(x, z, heading, altitude, exact = false, nearby = false) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
     if (this.interiorSpace && this.activeMode === 'person') {
       const point = this.interiorSpace.constrain({ x, z, y: altitude }, 0.5);
@@ -434,6 +461,19 @@ class ThirdPersonControllerManager {
     const origin = clampPoint(x, z);
     if (exact) return origin && Math.hypot(origin.x - x, origin.z - z) < 0.01 && clear(origin) ? origin : null;
     if (clear(origin)) return origin;
+    if (nearby && origin && !heli) {
+      const level = this.getGroundHeight(origin.x, origin.z, this.activeMode, altitude);
+      const walker = this.activeMode === 'person';
+      const tries = nearbyOffsets(heading).map((o) => {
+        const p = clampPoint(origin.x + o.dx, origin.z + o.dz);
+        // (a walker steps onto the sidewalk rather than into the traffic: any sidewalk in reach before the roadway)
+        return { p, score: o.d + (p && walker && this.isRoadway(p.x, p.z) ? NEAR_REACH : 0) };
+      }).filter((t) => t.p).sort((a, b) => a.score - b.score);
+      for (const { p } of tries) {
+        if (Math.abs(this.getGroundHeight(p.x, p.z, this.activeMode, altitude) - level) > NEAR_LEVEL) continue;
+        if (clear(p)) return p;
+      }
+    }
     // Four-metre rings cover nearby streets and courtyards, with bounded work even for a click inside a large block.
     const cx = origin ? origin.x : Math.max(CITY_BOUNDS.minX + 8, Math.min(CITY_BOUNDS.maxX - 8, x));
     const cz = origin ? origin.z : Math.max(CITY_BOUNDS.minZ + 8, Math.min(CITY_BOUNDS.maxZ - 8, z));
@@ -890,6 +930,12 @@ class ThirdPersonControllerManager {
   isPointOnSidewalk(x, z) {
     const b = blockAt(x, z);
     return !!b;
+  }
+
+  // In the traffic's way: off the curb islands, or on a median between a dual carriageway's two roadways
+  isRoadway(x, z) {
+    const b = blockAt(x, z);
+    return !b || !!b.median;
   }
 
   // Height of what stands under (x, z): the raised curb island (walking), the hills (Aso Rock, the ridges), or a flyover

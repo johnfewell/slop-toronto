@@ -96,6 +96,10 @@ Cloudflare serves `dist/` as a Worker's static assets (`wrangler.jsonc`):
 - **Production** is deployed from `main` (since 2026-10-29; the old `release` branch is retired). The Cloudflare
   Worker is deployed manually with Wrangler; its dashboard has no Git build connected, so merging alone does not
   publish the site. It serves sloptoronto.ca and www; the old workers.dev address redirects its pages there.
+- The static-asset server ignores `Range` (it sends the whole file as 200), and Safari / iOS won't play a `<video>`
+  without byte ranges, so the landing clips (`/assets/site/clips/*`) go through the Worker first, which answers
+  ranges with 206 (`worker/range.js`). Check after a deploy:
+  `curl -sI -H 'Range: bytes=0-1023' https://sloptoronto.ca/assets/site/clips/cinesphere.mp4` should say 206.
 - Deploy, from a clean checkout of `main`: `npm ci && npm run build && npx wrangler@4 deploy`. The multiplayer rooms
   are a separate Worker (`rooms/wrangler.jsonc`); deploy them only when `rooms/` changes.
 - `node tools/build-site.mjs` alone assembles the already-generated scripts without installing or rebuilding dependencies.

@@ -1,13 +1,15 @@
 // Cloudflare: the site is served as a Worker's static assets from dist/ (node tools/build-site.mjs builds it, with
 // dist/_headers); requests no asset matches reach worker/live.js (/live/vehicles: the TTC's live positions, the rest
 // back to the assets). The pages (run_worker_first) also reach it first, so the old workers.dev address can redirect
-// to sloptoronto.ca; preview and version URLs (*-slop-toronto.cloud6711.workers.dev) are left alone.
+// to sloptoronto.ca; preview and version URLs (*-slop-toronto.cloud6711.workers.dev) are left alone. The landing clips
+// (/assets/site/clips/*) reach it first too: the assets binding ignores Range, so the Worker answers ranges with 206
+// (worker/range.js), without which Safari / iOS won't play the clips.
 // Deploy: node tools/build-site.mjs && npx wrangler@4 deploy
 {
   "name": "slop-toronto",
   "main": "worker/live.js",
   "compatibility_date": "2026-10-01",
-  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/", "/index*", "/explore*"] },
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/", "/index*", "/explore*", "/assets/site/clips/*"] },
   "workers_dev": true,
   "preview_urls": true,
   "routes": [

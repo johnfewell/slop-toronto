@@ -28,7 +28,7 @@
   {
     "name": "subway-phone-persist",
     "wait": 300,
-    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide;if(R.active||!R.inside||a.controllerManager.suspended)throw new Error('Touch alighting failed'); window.dispatchEvent(new Event('pagehide')); const saved=JSON.parse(localStorage.getItem('toronto-player-state')); const p=saved.entities[saved.activeMode],safe=R.savedGround(saved.activeMode); if(Math.hypot(p.x-safe.x,p.z-safe.z)>.01 || Math.abs(p.y-safe.y)>.01)throw new Error('Saved an interior position'); window.__subwaySafe=safe;history.replaceState(null,'',location.pathname+location.search); console.log('[ride-check] phone touch entry/boarding/alighting and safe persistence pass');})()"
+    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide;if(R.active||!R.inside||a.controllerManager.suspended)throw new Error('Touch alighting failed'); const safe=R.savedGround('person'); window.dispatchEvent(new Event('pagehide')); const saved=JSON.parse(localStorage.getItem('toronto-player-state')); const p=saved.entities[saved.activeMode]; if(Math.hypot(p.x-safe.x,p.z-safe.z)>.01 || Math.abs(p.y-safe.y)>.01)throw new Error('Saved an interior position'); window.__subwaySafe=safe;history.replaceState(null,'',location.pathname+location.search); console.log('[ride-check] phone touch entry/boarding/alighting and safe persistence pass');})()"
   },
   {
     "name": "subway-phone-reload",

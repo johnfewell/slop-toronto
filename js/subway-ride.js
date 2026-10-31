@@ -538,9 +538,16 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
     controller.interiorSpace = null;
     // The entrance's street anchor, else the nearest clear ground round it: the player's own car or bike may be left
     // standing on the anchor (st-fcm: switching to the car on the street, then riding again, refused every way out,
-    // a mode change included, and kept the rider aboard)
-    const safe = controller.findTeleportPosition(target.x, target.z, target.heading, target.y || 0, true)
-      || controller.findTeleportPosition(target.x, target.z, target.heading, target.y || 0);
+    // a mode change included, and kept the rider aboard). Found for the body the player surfaces with: a cyclist's
+    // visit comes out on the bike (st-hqa: the walker took the anchor and set the bike 4 m off it, and getting off
+    // that bike 4 m further put the walker out of the entrance's reach)
+    const stationMode = controller.activeMode;
+    controller.activeMode = saved.mode;
+    let safe;
+    try {
+      safe = controller.findTeleportPosition(target.x, target.z, target.heading, target.y || 0, true)
+        || controller.findTeleportPosition(target.x, target.z, target.heading, target.y || 0, false, true);
+    } finally { controller.activeMode = stationMode; }
     controller.interiorSpace = previousSpace;
     if (!safe) return false;
     if (api.active) {
@@ -552,8 +559,10 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
     api.active = false; api.car = null; api.inside = false; api.station = null; api.pair = null;
     controller.interiorSpace = null;
     for (const [object, mask] of saved.personLayers) object.layers.mask = mask;
-    controller.setMode('person'); controller.teleportActiveTo(safe.x, safe.z, target.heading);
-    controller.setMode(saved.mode); controller.teleportActiveTo(safe.x, safe.z, target.heading);
+    // the player on the anchor (or beside what stands on it); a cyclist's walker beside the bike
+    if (saved.mode !== 'person') { controller.setMode(saved.mode); controller.teleportActiveTo(safe.x, safe.z, target.heading); }
+    controller.setMode('person'); controller.teleportActiveTo(safe.x, safe.z, target.heading, null, true);
+    controller.setMode(saved.mode);
     camera.camera.layers.mask = saved.cameraMask; camera.followOverride = null;
     camera.resetForTeleport(); selectCamera(saved.cameraPreset, true);
     window.CITY.restoreExperienceCamera(camera, saved.cameraState);

@@ -277,3 +277,31 @@ test('st-fcm: cancelling aboard (a mode change) still leaves when the player\'s 
   assert.equal(ride.featured(), true);
   assert.equal(ride.exit({ cancel: true }), true);
 });
+
+test('st-hqa: a cyclist\'s visit comes out on the bike on the entrance anchor, the walker beside it', () => {
+  const h = harness(), { ride, controller } = h;
+  const placed = [], searched = [];
+  const find = controller.findTeleportPosition, teleport = controller.teleportActiveTo;
+  controller.findTeleportPosition = function (x, z, heading, y, exact = false, nearby = false) {
+    if (!this.interiorSpace) searched.push({ mode: this.activeMode, exact, nearby });
+    return find.call(this, x, z, heading, y, exact);
+  };
+  controller.teleportActiveTo = function (x, z, heading, y, nearby = false) {
+    if (!this.interiorSpace) placed.push({ mode: this.activeMode, x, z, nearby });
+    return teleport.call(this, x, z, heading, y);
+  };
+  controller.activeMode = 'cyclist';
+  assert.equal(ride.featured(), true);
+  const anchor = ride.station.anchor;
+  assert.equal(ride.exit({ cancel: true }), true);
+  same(searched[0], { mode: 'cyclist', exact: true, nearby: false }, 'the anchor is tested for the bike\'s body');
+  same(placed.map((p) => [p.mode, p.nearby]), [['cyclist', false], ['person', true]]);
+  assert.ok(Math.hypot(placed[0].x - anchor.x, placed[0].z - anchor.z) < 0.01, 'the bike on the anchor');
+  assert.equal(controller.activeMode, 'cyclist', 'still cycling');
+  // when the anchor is taken (the player's own car parked on it), the nearest clear ground round it
+  searched.length = placed.length = 0;
+  controller.occupied = { x: anchor.x, z: anchor.z };
+  assert.equal(ride.featured(), true);
+  assert.equal(ride.exit({ cancel: true }), true);
+  same(searched.slice(0, 2), [{ mode: 'cyclist', exact: true, nearby: false }, { mode: 'cyclist', exact: false, nearby: true }]);
+});
