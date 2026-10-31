@@ -52,6 +52,8 @@
         './js/toronto-transit.js',
         './js/transit.js',
         './js/transit-live.js',
+        // ?donvalley=1: the Don Valley terrain pilot (docs/don-valley-terrain.md), before city-config.js reads it
+        ...(new URLSearchParams(location.search).get('donvalley') === '1' ? ['./js/don-valley-data.js', './js/don-valley.js'] : []),
         './js/city-config.js',
         './js/toronto-signal-plan.js',
         './js/signal-plan.js',
@@ -72,7 +74,6 @@
         './js/buildings.js',
         './js/toronto-landmarks.js',
         './js/landmarks.js',
-        './js/signage.js',
         './js/storefront-signs.js',
         './js/mapped-poles.js',
         './js/street-details.js',
@@ -95,6 +96,7 @@
         './js/pedestrian-routes.js',
         './js/vehicle-physics.js',
         './js/traffic.js',
+        './js/parked-cars.js',
         './js/pedestrian-signals.js',
         './js/transit-riding.js',
         './js/streetcars.js',
@@ -136,11 +138,11 @@
         './js/main.js'
       ];
     })();
-    // The city database (window.CITY.GEO) and the mapped poles (window.CITY.POLES): data/toronto-geodata.bin
+    // The city database (window.CITY.GEO), the mapped poles (POLES) and the parked cars (PARKED_CARS): data/toronto-geodata.bin
     // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by
     // js/geodata-loader.js while three.js loads
     const cityGeo = (() => {
-      const bin = fetch('./data/toronto-geodata.bin?v=b90a31de521d');
+      const bin = fetch('./data/toronto-geodata.bin?v=547a42cc2424');
       return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
     for (const src of cityAppScripts) {
@@ -744,7 +746,7 @@
           <ul><li>Drag to orbit · scroll to zoom</li><li><kbd>V</kbd> Next camera · <kbd>5</kbd>–<kbd>0</kbd> Cameras &amp; sights</li><li><kbd>H</kbd> Clean view · <kbd>?</kbd> This help</li><li><kbd>N</kbd> Sound on / off</li></ul>
         </section>
       </div>
-      <p class="help-foot">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) and City of Toronto Open Data (Open Government Licence – Toronto). Built on <a href="https://github.com/mrdoob/slop-newyork" target="_blank" rel="noopener noreferrer">Slop New York</a> by mrdoob and Abuja Tour (MIT). <a href="./index.html#credits">All credits</a>. Name boards show each place's name, not its trademarked logo. <span class="help-fps">three.js WebGPU · <span id="hud-fps" class="fps-ok">60</span> fps</span></p>
+      <p class="help-foot">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) and City of Toronto Open Data (Open Government Licence – Toronto). Built on <a href="https://github.com/mrdoob/slop-newyork" target="_blank" rel="noopener noreferrer">Slop New York</a> by mrdoob and Abuja Tour (MIT). <a href="./index.html#credits">All credits</a>. Storefront signs show each shop's name, not its trademarked logo. <span class="help-fps">three.js WebGPU · <span id="hud-fps" class="fps-ok">60</span> fps</span></p>
     </div>
   </div>
 
@@ -790,7 +792,7 @@
       ])
       : null;
 
-    Object.assign(window.CITY, await cityGeo); // { GEO, POLES }
+    Object.assign(window.CITY, await cityGeo); // { GEO, POLES, PARKED_CARS }
 
     for (const src of cityAppScripts) {
       const s = document.createElement('script');

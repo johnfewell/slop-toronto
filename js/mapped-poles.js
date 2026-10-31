@@ -11,15 +11,20 @@
 //   wooden hydro poles (a crossarm with the line's insulators, some with a transformer, the LED head on a bracket
 //   below; the lines strung between them on the high tier), the Distillery's on black heritage lantern posts; the
 //   pedestrian light poles are lantern posts, the waterfront's slim promenade posts or park lamps (pole models below)
-// - Miscellaneous (utility, trolley-wire) poles and hydro towers have no model: not shipped.
+// - Miscellaneous poles: the unlit poles of the overhead hydro lines (tools/build-poles.mjs miscPoles tells them from
+//   the bollards, trolley-wire, railway and park poles, which are not shipped) are the wooden hydro pole without its
+//   light; down a laneway or a rear lot line, away from the streets, their crossarms square to their line. Hydro
+//   towers have no model: not shipped.
 // A pole is moved at most NUDGE metres off the roadway onto its curb island, never drawn under a flyover deck, and a
 // light at the wrong height there (a road cut) follows cutAt. Mapped lights also keep the procedural streetlights
 // away (a fallback where the source has a gap: poles beside tall buildings or in deep shadow were not digitized).
 
-const LIGHT = 6006, LIGHT_SIGNAL = 6005, SIGNAL = 6008, PEDESTRIAN = 6004;
+const LIGHT = 6006, LIGHT_SIGNAL = 6005, SIGNAL = 6008, PEDESTRIAN = 6004, MISC = 6003;
 const NUDGE = 1.5; // m: the furthest a pole moves off the roadway (the source's accuracy is +-0.3 m; curbs are approximate)
 
-// Each pole's look where its type's default is not it (galvanised steel; a pedestrian light's lantern post)
+// Each pole's look where its type's default is not it (galvanised steel; a pedestrian light's lantern post; an unlit
+// hydro pole's wood)
+const DEFAULT_LOOK = { [PEDESTRIAN]: 'lantern', [MISC]: 'wood' };
 function decodeLooks(data) {
   const looks = new Map();
   for (const [look, ids] of Object.entries(data?.looks || {})) {
@@ -38,7 +43,7 @@ function decode(data) {
     for (let i = 0; i < t.ids.length; i++) {
       id += t.ids[i];
       const type = Number(code);
-      out.push({ id, type, x: t.xz[2 * i] / 10, z: t.xz[2 * i + 1] / 10, look: looks.get(id) || (type === PEDESTRIAN ? 'lantern' : 'steel') });
+      out.push({ id, type, x: t.xz[2 * i] / 10, z: t.xz[2 * i + 1] / 10, look: looks.get(id) || DEFAULT_LOOK[type] || 'steel' });
     }
   }
   return out;
@@ -72,7 +77,28 @@ function mappedPoleSites(data, { blockAt, nearestRoads, deckHeightAt = () => 0, 
     if (block.median && road) { ax = -road.dz; az = road.dx; }
     sites.push({ id: p.id, type: p.type, look: p.look, x, z, block, median: !!block.median, road, toRoad, ax, az, y0: SW_Y + cutAt(x, z) });
   }
+  squareToLine(sites);
   return { sites, rejected, nudged };
+}
+
+// An unlit hydro pole away from the streets (a laneway's, a rear lot line's: more than BACK metres from a named road's
+// centre line) faces its line, not the road: its crossarm square to the way to its nearest wooden neighbour (within
+// SPAN.max), turned towards the road where there is one, so neighbours down the same line agree (woodSpans)
+const BACK = 12;
+const SPAN = { min: 8, max: 48, inLine: 1.5 };
+function squareToLine(sites) {
+  const back = sites.filter((s) => s.type === MISC && !s.median && (!s.road || s.toRoad > BACK));
+  if (!back.length) return;
+  const idx = poleIndex(sites.filter((s) => s.look === 'wood' && !s.median), 24);
+  for (const s of back) {
+    const n = idx.nearest(s.x, s.z, SPAN.max, null, (o) => o !== s && Math.hypot(o.x - s.x, o.z - s.z) >= SPAN.min);
+    if (!n) continue;
+    const d = Math.hypot(n.x - s.x, n.z - s.z);
+    let ax = -(n.z - s.z) / d, az = (n.x - s.x) / d; // across the line
+    const ref = s.road && s.toRoad > 0.3 ? [s.road.px - s.x, s.road.pz - s.z] : [1, 0.001];
+    if (ax * ref[0] + az * ref[1] < 0) { ax = -ax; az = -az; }
+    s.ax = ax; s.az = az;
+  }
 }
 
 // A cell index of sites for the "is there a mapped pole near here" questions
@@ -219,27 +245,42 @@ function wireSpanGeometry(THREE, SEG = 4, W = 0.03, SAG = 0.35) {
   return g;
 }
 
-// The spans between the placed wooden poles: each pole to its nearest wooden neighbour ahead along its street (the
-// road's direction, across its arm), on the same side, 12-48 m away: { a, b } site pairs, each pair once
-const SPAN = { min: 12, max: 48 };
+// The spans between the placed wooden poles, lit and unlit: each pole to its nearest wooden neighbour ahead along its
+// line (the road's direction, across its arm), on the same side, SPAN.min-SPAN.max away (the City's poles stand 25-45 m
+// apart; closer a laneway's mouth, a corner): { a, b } site pairs, each pair once
 function woodSpans(sites) {
   const wood = sites.filter((s) => s.look === 'wood' && !s.median);
   const idx = poleIndex(wood, 24);
-  const spans = [];
+  const spans = [], strung = new Set();
   for (const a of wood) {
     const dx = -a.az, dz = a.ax; // along the street
     const b = idx.nearest(a.x, a.z, SPAN.max, null, (b) => {
-      const ox = b.x - a.x, oz = b.z - a.z, d = Math.hypot(ox, oz);
-      // ahead, nearly along the street, its arm the same way (the same side)
-      return d >= SPAN.min && (ox * dx + oz * dz) / d > 0.94 && a.ax * b.ax + a.az * b.az > 0.8;
+      const ox = b.x - a.x, oz = b.z - a.z, d = Math.hypot(ox, oz), along = (ox * dx + oz * dz) / d;
+      // ahead, nearly along the street, its arm the same way (the same side), or standing right in the line's way (a
+      // corner's pole facing the other street, a back lane's turned another way: the line runs through it, not past)
+      return d >= SPAN.min && along > 0.94 && (a.ax * b.ax + a.az * b.az > 0.8 || d * Math.sqrt(1 - along * along) < SPAN.inLine);
     });
-    if (b) spans.push({ a, b });
+    // (a pole facing the other way may have found this one ahead of it already)
+    if (b && !strung.has(`${b.id}:${a.id}`)) { spans.push({ a, b }); strung.add(`${a.id}:${b.id}`); }
   }
   return spans;
 }
 
+// The matrix of a span's wires, wireSpanGeometry's unit span from pole a to pole b (`dummy`: a spare Object3D): turned to
+// b and stretched to it. On the Don Valley pilot's slopes (?donvalley=1) the poles' feet differ: sheared up or down to b's.
+function wireSpanMatrix(dummy, a, b) {
+  const dx = b.x - a.x, dz = b.z - a.z;
+  dummy.position.set(a.x, a.y0, a.z);
+  dummy.rotation.set(0, Math.atan2(dx, dz), 0);
+  dummy.scale.set(1, 1, Math.hypot(dx, dz));
+  dummy.updateMatrix();
+  const m = dummy.matrix.clone();
+  if (window.CITY.DON_VALLEY) m.elements[9] = b.y0 - a.y0;
+  return m;
+}
+
 Object.assign(window.CITY, {
-  mappedPoleSites, poleIndex, woodSpans, POLE_TYPES: { LIGHT, LIGHT_SIGNAL, SIGNAL, PEDESTRIAN },
-  poleModels: { WOOD, PED_LAMPS, woodPoleGeometry, pedLampGeometry, shadowStandIn, wireSpanGeometry, SPAN }
+  mappedPoleSites, poleIndex, woodSpans, POLE_TYPES: { LIGHT, LIGHT_SIGNAL, SIGNAL, PEDESTRIAN, MISC },
+  poleModels: { WOOD, PED_LAMPS, woodPoleGeometry, pedLampGeometry, shadowStandIn, wireSpanGeometry, wireSpanMatrix, SPAN }
 });
 })();

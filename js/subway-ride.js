@@ -34,6 +34,17 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
     });
     if (stations.some((s) => !s) || !SUBWAY_VIADUCTS.length) return;
     const routes = buildSubwayRidePaths(stations, SUBWAY_VIADUCTS[0]);
+    // The Don Valley pilot (js/don-valley.js): the viaduct's lower deck 5.8 m under the street, the platforms at their
+    // depth below it (js/toronto-subway-topology.js facts, depth.donValley): level 80 m either side of each platform's
+    // centre and on through the abutments' 31 m, an even grade between
+    const V0 = SUBWAY_VIADUCTS[0], DV = window.CITY.DON_VALLEY;
+    if (V0.pilot && DV) {
+      const railTop = (st) => (DV.platformFloor(st.id) ?? V0.railY + 1.1) - FLOOR;
+      for (const route of routes) {
+        const sO = route.calls[0] - 70.5, sD = route.calls[1] - 70.5, yO = railTop(route.origin), yD = railTop(route.destination);
+        route.profile = [[0, yO], [sO + 80, yO], [route.open0 - 31, V0.railY], [route.open1 + 31, V0.railY], [sD - 80, yD], [route.len, yD]];
+      }
+    }
     pairs.push({ id: 'l2-castle-frank-broadview', kind: 'viaduct', line: '2', stations, routes,
       label: (dir) => (dir === 0 ? 'Eastbound' : 'Westbound') });
   })();
@@ -162,7 +173,7 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
     const routes = pair.routes;
     const frame = subwayRidePlatform(routes[0], index).centre;
     const group = new THREE.Group(); group.name = `SubwayPlatform_${station.id}`;
-    group.position.set(frame.x + Math.cos(frame.yaw) * 2, routes[0].y, frame.z - Math.sin(frame.yaw) * 2);
+    group.position.set(frame.x + Math.cos(frame.yaw) * 2, frame.y, frame.z - Math.sin(frame.yaw) * 2);
     group.rotation.y = frame.yaw;
     box(15, 0.2, 170, 0, -0.2, 0, dark, group);
     for (const x of [-2.7475, -1.2525, 1.2525, 2.7475]) box(0.07, 0.12, 170, x, 0.06, 0, steel, group);
@@ -332,7 +343,7 @@ function createSubwayRide({ scene, subway, controllerManager: controller, camera
       // The direction-0 track is 2 m (half the track spacing) to the right of the tunnel's centre.
       const half = pair.kind === 'viaduct' ? 2 : pair.stations[0].walk?.layout.frame.h || 2.2;
       const x = (a.x + b.x) / 2 + Math.cos(yaw) * half, z = (a.z + b.z) / 2 - Math.sin(yaw) * half;
-      const y = pair.kind === 'viaduct' ? route.y : (sampleSubwayRide(route, s).y + sampleSubwayRide(route, end).y) / 2;
+      const y = pair.kind === 'viaduct' && !route.profile ? route.y : (sampleSubwayRide(route, s).y + sampleSubwayRide(route, end).y) / 2;
       for (const [w, h, across, dy] of [[12, 0.15, 0, -0.3], [12, 0.15, 0, 4.8], [0.15, 5.1, -6, 2.25], [0.15, 5.1, 6, 2.25]]) {
         const geo = new THREE.BoxGeometry(w, h, length).translate(across, dy, 0).rotateY(yaw).translate(x, y, z);
         parts.push(geo);

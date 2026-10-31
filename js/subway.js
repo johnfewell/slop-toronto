@@ -113,13 +113,18 @@ const VIADUCTS = (() => {
       const p = at(pts, (len * k) / 8);
       deck = Math.max(deck, deckHeightAt(p.x, p.z, 200, 200));
     }
-    if (deck < 12) continue; // (no deck to hang from: not one of ours)
+    const a = at(pts, 0), b = at(pts, len);
+    // (the Don Valley pilot, js/don-valley.js: Bloor's deck level with the streets, the real valley under it)
+    const DV = window.CITY.DON_VALLEY;
+    const pilot = !!DV && DV.onViaductLine(a.x, a.z) && DV.onViaductLine(b.x, b.z);
+    if (pilot) deck = DV.deckTop;
+    else if (deck < 12) continue; // (no deck to hang from: not one of ours)
     const soffit = deck - DECK_SLAB;
     const railY = soffit - 4.95;
-    const a = at(pts, 0), b = at(pts, len);
     // the line from the far end of one abutment to the far end of the other
     const ends = [{ x: a.x - a.tx * ABUT, z: a.z - a.tz * ABUT }, ...pts, { x: b.x + b.tx * ABUT, z: b.z + b.tz * ABUT }];
-    out.push({ pts, len, deck, soffit, railY, floorTop: railY - 0.2, floorBot: railY - 0.9, ends });
+    out.push({ pts, len, deck, soffit, railY, floorTop: railY - 0.2, floorBot: railY - 0.9, ends, pilot,
+      groundAt: pilot ? DV.heightAt : () => 0, lowestAround: pilot ? DV.lowestAround : () => 0 });
   }
   return out;
 })();
@@ -392,7 +397,7 @@ const COVERED = (() => {
     const len = lenOf(pts);
     // a road cut under it: the deepest floor under the box
     let floor = 0;
-    const cutAt = window.CITY.cutAt || (() => 0);
+    const cutAt = window.CITY.roadCutAt || window.CITY.cutAt || (() => 0);
     for (let s = 0; s <= len; s += 1) {
       const p = at(pts, s);
       for (const c of [-CB_HALF, 0, CB_HALF]) floor = Math.min(floor, cutAt(p.x - p.tz * c, p.z + p.tx * c));
@@ -649,8 +654,9 @@ function buildViaduct(V, group, colliders) {
     for (const [a0, a1] of [[-PIER_HALF, PIER_HALF]]) {
       // a tapered block: quads by hand
       const P = (a, c, y) => [p.x + p.tx * a + nx * c, y, p.z + p.tz * a + nz * c];
-      const w = (y) => foot + ((top - foot) * y) / floorBot;
-      const y0 = -0.5, y1 = floorBot;
+      // (from the ground: the street level, or the Don Valley pilot's valley floor under the pier)
+      const y0 = V.lowestAround(p.x, p.z, foot) - 0.5, y1 = floorBot;
+      const w = (y) => foot + ((top - foot) * (y - y0)) / (y1 - y0);
       quad(concrete, P(a0, -w(y0), y0), P(a1, -w(y0), y0), P(a1, -w(y1), y1), P(a0, -w(y1), y1), -nx, 0, -nz);
       quad(concrete, P(a0, w(y0), y0), P(a1, w(y0), y0), P(a1, w(y1), y1), P(a0, w(y1), y1), nx, 0, nz);
       quad(concrete, P(a0, -w(y0), y0), P(a0, w(y0), y0), P(a0, w(y1), y1), P(a0, -w(y1), y1), -p.tx, 0, -p.tz);
@@ -668,7 +674,11 @@ function buildViaduct(V, group, colliders) {
   for (let k = 0; k + 1 < supports.length; k++) {
     const sA = supports[k] + (k === 0 ? 0 : PIER_HALF), sB = supports[k + 1] - (k + 1 === supports.length - 1 ? 0 : PIER_HALF);
     const L = sB - sA;
-    const rise = Math.min(L * 0.19, floorBot - 6.5); // (springing 6.5 m up: clear of the trucks & trains under it)
+    // (springing 6.5 m up from the highest ground under the span: clear of the trucks & trains under it)
+    let ground = 0;
+    if (V.pilot) { ground = -Infinity; for (let t = 0; t <= 1; t += 0.1) { const q = at(pts, sA + L * t); ground = Math.max(ground, V.groundAt(q.x, q.z)); } }
+    const rise = Math.min(L * 0.19, floorBot - ground - 6.5);
+    if (rise < 1.5) continue; // (too little room under it: the lower deck spans it alone)
     const spring = floorBot - rise;
     const yAt = (t) => spring + rise * 4 * t * (1 - t);
     const N = Math.max(8, Math.round(L / 3));
@@ -760,8 +770,9 @@ function buildViaduct(V, group, colliders) {
     const P = (a, c, y) => [e.x + tx * a + nx * c, y, e.z + tz * a + nz * c];
     for (let i = 0; i < nA; i++) {
       const a0 = (ABUT * i) / nA, a1 = (ABUT * (i + 1)) / nA;
-      const h0 = Math.min(soffit, roadAt(a0)), h1 = Math.min(soffit, roadAt(a1));
-      for (const c of [-W, W]) quad(concrete, P(a0, c, -0.5), P(a1, c, -0.5), P(a1, c, h1), P(a0, c, h0), nx * Math.sign(c), 0, nz * Math.sign(c));
+      const g = (a, c) => (V.pilot ? V.groundAt(...[e.x + tx * a + nx * c, e.z + tz * a + nz * c]) : 0) - 0.5;
+      const h0 = Math.max(Math.min(soffit, roadAt(a0)), g(a0, 0) + 0.5), h1 = Math.max(Math.min(soffit, roadAt(a1)), g(a1, 0) + 0.5);
+      for (const c of [-W, W]) quad(concrete, P(a0, c, Math.min(g(a0, c), h0 - 0.1)), P(a1, c, Math.min(g(a1, c), h1 - 0.1)), P(a1, c, h1), P(a0, c, h0), nx * Math.sign(c), 0, nz * Math.sign(c));
       quad(concrete, P(a0, -W, h0), P(a1, -W, h1), P(a1, W, h1), P(a0, W, h0), 0, 1, 0);
       // the tunnel lining inside
       if (a0 < TUNNEL) {
@@ -772,12 +783,15 @@ function buildViaduct(V, group, colliders) {
       }
     }
     // its back face (under the road ramp) and the tunnel's dark end
-    const hb = Math.min(soffit, roadAt(ABUT));
-    quad(concrete, P(ABUT, -W, -0.5), P(ABUT, W, -0.5), P(ABUT, W, hb), P(ABUT, -W, hb), tx, 0, tz);
+    const gb = V.pilot ? Math.min(V.groundAt(...[e.x + tx * ABUT - nx * W, e.z + tz * ABUT - nz * W]), V.groundAt(...[e.x + tx * ABUT + nx * W, e.z + tz * ABUT + nz * W])) - 0.5 : -0.5;
+    const hb = Math.max(Math.min(soffit, roadAt(ABUT)), gb + 0.5);
+    quad(concrete, P(ABUT, -W, gb), P(ABUT, W, gb), P(ABUT, W, hb), P(ABUT, -W, hb), tx, 0, tz);
     quad(dark, P(TUNNEL, -HOLE.c, HOLE.y0), P(TUNNEL, HOLE.c, HOLE.y0), P(TUNNEL, HOLE.c, HOLE.y1), P(TUNNEL, -HOLE.c, HOLE.y1), -tx, 0, -tz);
     // the valley face, round the portal (its top at the road's slab)
     const hf = soffit;
-    quad(concrete, P(0, -W, -0.5), P(0, W, -0.5), P(0, W, HOLE.y0), P(0, -W, HOLE.y0), -tx, 0, -tz);
+    // (its foot: the lowest ground along the valley face, in the Don Valley pilot)
+    const gf = V.pilot ? Math.min(...[-W, -W / 2, 0, W / 2, W].map((c) => V.groundAt(e.x + nx * c, e.z + nz * c))) - 0.5 : -0.5;
+    quad(concrete, P(0, -W, gf), P(0, W, gf), P(0, W, HOLE.y0), P(0, -W, HOLE.y0), -tx, 0, -tz);
     quad(concrete, P(0, -W, HOLE.y0), P(0, -HOLE.c, HOLE.y0), P(0, -HOLE.c, hf), P(0, -W, hf), -tx, 0, -tz);
     quad(concrete, P(0, HOLE.c, HOLE.y0), P(0, W, HOLE.y0), P(0, W, hf), P(0, HOLE.c, hf), -tx, 0, -tz);
     quad(concrete, P(0, -HOLE.c, HOLE.y1), P(0, HOLE.c, HOLE.y1), P(0, HOLE.c, hf), P(0, -HOLE.c, hf), -tx, 0, -tz);
@@ -1033,7 +1047,7 @@ function buildCovered(V, parent, colliders, mats) {
   const concrete = [], grass = [];
   const { pts, len, top, W, Sp } = V;
   const y0 = V.soffit;
-  const cutAt = window.CITY.cutAt || (() => 0);
+  const cutAt = window.CITY.roadCutAt || window.CITY.cutAt || (() => 0);
   const overCut = (x, z) => cutAt(x, z) < y0 - 0.3; // (the floor well below the box: open under it)
   const C = (p, c, y) => [p.x - p.tz * c, y, p.z + p.tx * c];
   // the box: its top, cornice & pilasters every ~6 m; its sides & underside in 1 m slices (at grade: down into the

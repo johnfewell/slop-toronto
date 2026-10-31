@@ -247,7 +247,7 @@ function buildTrackwork(group) {
         const ya = Math.max(railLiftAt(ax, az), block), yb = Math.max(railLiftAt(bx, bz), block);
         const T = tileOf(mx, mz);
         // (a bridge at grade over a road cut, city-config.js cutAt, counts as raised: a deck on its own)
-        const overCut = cutAt(mx, mz) < -0.5;
+        const overCut = (window.CITY.roadCutAt || cutAt)(mx, mz) < -0.5; // (the road cuts alone: not the Don Valley pilot's ground)
         const raised = Math.max(ya, yb) > 0.4 || overCut;
         const street = !raised && onRoad(mx, mz, 1.0);
         if (!street) strip(T.bed, T.bedUv, ax, ya + 0.02, az, bx, yb + 0.02, bz, BED_HALF, s, s + seg);
@@ -449,7 +449,9 @@ function makeRoute(src) {
   }
   const cum = [0];
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
-  for (const p of pts) p.y = Math.max(railLiftAt(p.x, p.z), blockAt(p.x, p.z) ? CITY_BOUNDS.sidewalkHeight : 0) + 0.18; // on the rails
+  // on the rails (and down the Don Valley pilot's ground with the tracks it drapes: js/don-valley.js)
+  const valley = window.CITY.DON_VALLEY ? window.CITY.DON_VALLEY.heightAt : () => 0;
+  for (const p of pts) p.y = Math.max(railLiftAt(p.x, p.z), blockAt(p.x, p.z) ? CITY_BOUNDS.sidewalkHeight : 0) + 0.18 + valley(p.x, p.z);
   const route = { pts, cum, len: cum[cum.length - 1], union: -1 };
   // Union Station's platforms: the point of the route nearest them, if it passes within 60 m
   let best = 60;

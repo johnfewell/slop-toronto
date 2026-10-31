@@ -261,3 +261,14 @@ test('the storefront & entrance shaders build to WGSL on both detail levels', as
   assert.match(quality, /storefronts: 2,\n/);
   assert.match(quality, /signRes: 0\.5, lean: true, surfaceWear: 1, storefronts: 1,/);
 });
+
+test('the generic city-wide name boards stay retired: only source-keyed signs name places on facades (st-qaz)', () => {
+  assert.ok(!fs.existsSync(new URL('../js/signage.js', import.meta.url)), 'js/signage.js is gone');
+  const explore = read('explore.html');
+  assert.doesNotMatch(explore, /signage\.js/);
+  assert.match(explore, /'\.\/js\/storefront-signs\.js'/);
+  const main = read('js/main.js');
+  assert.doesNotMatch(main, /buildSignage|CitySignage/);
+  assert.match(main, /buildStorefrontSigns/);
+  assert.match(read('js/quality.js'), /signRes: 1, \/\/ storefront-signs\.js/, 'signRes now serves the storefront signs only');
+});

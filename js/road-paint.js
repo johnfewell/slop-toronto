@@ -56,10 +56,19 @@ function buildRoadPaint(scene, network) {
     if (len < min) return;
     const sx = ((az - bz) / len) * w * 0.5;
     const sz = ((bx - ax) / len) * w * 0.5;
-    const parts = Math.ceil(len / MAX_SEGMENT);
+    // (the Don Valley pilot, js/don-valley.js: a strip on the valley's ground, or on a ramp hugging it, follows the
+    // surface in 2 m parts, not the line between its ends)
+    const DV = window.CITY.DON_VALLEY;
+    let follow = null;
+    if (DV && (DV.inBox(ax, az) || DV.inBox(bx, bz))) {
+      const ga = DV.heightAt(ax, az), gb = DV.heightAt(bx, bz);
+      for (const lift of [0, 0.35]) if (Math.abs(ay - ga - lift) < 0.25 && Math.abs(by - gb - lift) < 0.25 && Math.min(ga, gb) < -0.05) follow = lift;
+    }
+    const parts = Math.ceil(len / (follow === null ? MAX_SEGMENT : 2));
+    const yAt = (t) => (follow === null ? ay + (by - ay) * t : DV.heightAt(ax + (bx - ax) * t, az + (bz - az) * t) + follow + 0.02);
     for (let k = 0; k < parts; k++) {
       const t0 = k / parts, t1 = (k + 1) / parts;
-      quad(ax + (bx - ax) * t0, ay + (by - ay) * t0, az + (bz - az) * t0, ax + (bx - ax) * t1, ay + (by - ay) * t1, az + (bz - az) * t1,
+      quad(ax + (bx - ax) * t0, yAt(t0), az + (bz - az) * t0, ax + (bx - ax) * t1, yAt(t1), az + (bz - az) * t1,
         sx, sz, col, period, duty, phase + len * t0 * flow, phase + len * t1 * flow);
     }
   }
@@ -240,6 +249,27 @@ function buildRoadPaint(scene, network) {
   // where it crosses over)
   function ribbon(P, o0, o1, col, period = 1, duty = 1) {
     if (!P || P.length < 2) return;
+    // (the Don Valley pilot: a band on the valley's ground follows it between its points, every 2 m)
+    const DV = window.CITY.DON_VALLEY;
+    if (DV && P.some((p) => DV.inBox(p.x, p.z))) {
+      const Q = [], per = (o, k) => (Array.isArray(o) ? o[k] : o), A0 = [], A1 = [];
+      for (let k = 0; k < P.length; k++) {
+        const p = P[k];
+        if (k) {
+          const q = P[k - 1], gq = DV.heightAt(q.x, q.z), gp = DV.heightAt(p.x, p.z), L = Math.hypot(p.x - q.x, p.z - q.z);
+          if (Math.abs(q.y - gq) < 0.5 && Math.abs(p.y - gp) < 0.5 && Math.min(gq, gp) < -0.05 && L > 2) {
+            const n = Math.ceil(L / 2);
+            for (let i = 1; i < n; i++) {
+              const t = i / n, x = q.x + (p.x - q.x) * t, z = q.z + (p.z - q.z) * t;
+              Q.push({ ...q, x, z, s: q.s + (p.s - q.s) * t, y: DV.heightAt(x, z) + (q.y - gq) * (1 - t) + (p.y - gp) * t });
+              A0.push(per(o0, k - 1) + (per(o0, k) - per(o0, k - 1)) * t); A1.push(per(o1, k - 1) + (per(o1, k) - per(o1, k - 1)) * t);
+            }
+          }
+        }
+        Q.push(p); A0.push(per(o0, k)); A1.push(per(o1, k));
+      }
+      if (Q.length > P.length) { Q.nRight = P.nRight; P = Q; o0 = A0; o1 = A1; }
+    }
     const vertices = (c, k) => {
       const p = P[k];
       const a = Array.isArray(o0) ? o0[k] : o0, b = Array.isArray(o1) ? o1[k] : o1;

@@ -1,13 +1,15 @@
 // tools/build-geodata.mjs — writes the city database: js/toronto-geodata.js (GEO as a script, for the node tools and
 // tests) and data/toronto-geodata.bin, which the site loads (js/geodata-loader.js; lossless, tools/geo-pack.mjs): this
-// GEO packed with the mapped poles of js/toronto-poles.js (tools/geo-bin.mjs). Sets the file's hash as its version in
-// explore.html (it is cached for good). See geo-base.mjs for the frame and sources.
+// GEO packed with the mapped poles of js/toronto-poles.js and the parked cars of js/toronto-parked-cars.js
+// (tools/geo-bin.mjs). Sets the file's hash as its version in explore.html (it is cached for good). See geo-base.mjs for
+// the frame and sources.
 // It also writes js/toronto-geodata-ids.js, the durable source IDs of the geodata's rows (docs/geodata-ids.md).
 // usage: node --max-old-space-size=8192 tools/build-geodata.mjs [--out out.js] [--bin out.bin] [--ids out-ids.js]
-//          [--poles poles.js]
+//          [--poles poles.js] [--parked parked.js]
 //   With no flags it writes the committed files and sets the hash in explore.html. --out alone puts the binary and
 //   the ID sidecar beside it (out.bin, out-ids.js) and leaves explore.html alone. A lone positional path means --out.
-//   --poles names the poles script to pack (default: js/toronto-poles.js beside this checkout's tools/).
+//   --poles and --parked name the scripts to pack (default: js/toronto-poles.js and js/toronto-parked-cars.js beside this
+//   checkout's tools/).
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -54,6 +56,8 @@ const BIN = ARGS.bin || (ARGS.out ? OUT.replace(/\.js$/, '') + '.bin' : fileURLT
 const IDS_OUT = ARGS.ids || OUT.replace(/\.js$/, '-ids.js');
 // the mapped poles packed beside GEO (tools/build-poles.mjs's script, not rebuilt here)
 const POLES_IN = ARGS.poles || fileURLToPath(new URL('../js/toronto-poles.js', import.meta.url));
+// and the parked cars (tools/build-parked-cars.mjs's script, not rebuilt here)
+const PARKED_IN = ARGS.parked || fileURLToPath(new URL('../js/toronto-parked-cars.js', import.meta.url));
 const q = (v) => Math.round(v * 10) / 10;
 const flat = (pts) => pts.flatMap(([x, z]) => [q(x), q(z)]);
 
@@ -316,11 +320,11 @@ log(`wrote ${OUT} (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB)`);
 for (const [k, v] of Object.entries(GEO)) log(`  ${k}: ${(JSON.stringify(v).length / 1024).toFixed(0)} KB`);
 
 // The site's copy: the same object, packed (base64 rasters as their raw Int16 / Uint16 values) with the mapped poles
-const packed = packCity({ GEO, POLES: readLayer(POLES_IN, 'POLES') });
+const packed = packCity({ GEO, POLES: readLayer(POLES_IN, 'POLES'), PARKED_CARS: readLayer(PARKED_IN, 'PARKED_CARS') });
 fs.mkdirSync(path.dirname(BIN), { recursive: true });
 fs.writeFileSync(BIN, packed.file);
 const hash = packed.hash;
-log(`wrote ${BIN} (${(packed.file.length / 1024).toFixed(0)} KB gzip, ${(packed.raw.length / 1024).toFixed(0)} KB inflated, hash ${hash}; GEO + the poles of ${POLES_IN})`);
+log(`wrote ${BIN} (${(packed.file.length / 1024).toFixed(0)} KB gzip, ${(packed.raw.length / 1024).toFixed(0)} KB inflated, hash ${hash}; GEO + the poles of ${POLES_IN} + the parked cars of ${PARKED_IN})`);
 // its version in the page: the hash, so a rebuild is fetched fresh and an unchanged file stays cached
 const PAGE = fileURLToPath(new URL('../explore.html', import.meta.url));
 if (!ARGS.out && fs.existsSync(PAGE)) {

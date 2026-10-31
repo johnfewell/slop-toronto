@@ -216,7 +216,7 @@ async function buildParkSigns(scene) {
   const top = geo.boundingBox.max.y;
   const sites = [];
   signs.forEach(([x, z, yaw, name], i) => {
-    const y = blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0;
+    const y = (blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0) + (window.CITY.DON_VALLEY ? window.CITY.DON_VALLEY.heightAt(x, z) : 0);
     p.set(x, y, z);
     q.setFromAxisAngle(up, yaw);
     m.compose(p, q, sc);

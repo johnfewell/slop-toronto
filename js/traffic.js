@@ -1896,7 +1896,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
 
   // Is the way clear for v to swerve or steer `shift` m over from where it is (right; left if negative), and keep on
   // there for a while (panic: AVOID_HOLD, and until it is back in its lane; passing: as long as the pass takes)? On its
-  // roadway: over no curb, island or median (road-network.js isRoadClear) along the way it goes, nor, on a deck or a
+  // roadway: over no curb, island, median or parked car (road-network.js isRoadClear, parked-cars.js parkedAt) along the way it goes, nor, on a deck or a
   // ramp, off its own lanes; across the centre line of a two-way street only where it is not divided. And nobody there
   // or coming, keeping on as they go, all the while v could be anywhere from where it is now to where it steers, a
   // little faster or slower than it means to: no other vehicle (bar those behind it in its lane, who follow it), no
@@ -1926,6 +1926,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
         pathPoint(v, c + a, wayPoint);
         const x = wayPoint.x - wayPoint.dz * lateral, z = wayPoint.z + wayPoint.dx * lateral;
         if (!network.isRoadClear(x, z, 0.2)) return false;
+        if (network.parkedAt && network.parkedAt(x, z, 0.3)) return false; // (a parked car: parked-cars.js)
       }
     }
     const y = v.y || 0;

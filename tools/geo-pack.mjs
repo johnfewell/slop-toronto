@@ -1,4 +1,4 @@
-// tools/geo-pack.mjs — packs the city's layers ({ GEO, POLES }: tools/geo-bin.mjs) into data/toronto-geodata.bin (format
+// tools/geo-pack.mjs — packs the city's layers (tools/geo-bin.mjs) into data/toronto-geodata.bin (format
 // and reader: js/geodata-loader.js).
 // Lossless: each column of numbers is stored as integers at the fewest decimals that reproduce every value exactly
 // (Math.round(v * 10^d) / 10^d === v, the reader's own division: decimetres for the 0.1 m coordinates); a column no

@@ -907,9 +907,10 @@ class ThirdPersonControllerManager {
     // lookup below: a bridge above a court is still a separate surface.
     const sportsGround = window.CITY.sportsGroundAt?.(x,z);
     if (Number.isFinite(sportsGround)) ground = sportsGround;
-    // (a deck only counts where one is in reach: deckHeightAt's 0 is "none", not the street level)
+    // (a deck only counts where one is in reach: deckHeightAt's 0 is "none", not the street level; in the Don Valley
+    // pilot a ramp's deck may lie under the street level, so below 0 too)
     const deck = deckHeightAt(x, z, y === null ? ground : y, mode === 'car' ? 0.9 : 0.6);
-    return deck > 0 ? Math.max(ground, deck) : ground;
+    return deck !== 0 ? Math.max(ground, deck) : ground;
   }
 
   // The colliders whose bounds come within `r` of (x, z), in their original order. They never move, so they are

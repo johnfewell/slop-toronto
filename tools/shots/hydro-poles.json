@@ -1,0 +1,8 @@
+[
+  {"name": "stats", "mode": "person", "time": "midday", "x": -5586, "z": -2245, "heading": 3.1416, "js": "(() => {const C=window.CITY,s=C.poleStats||null;const r=s&&{counts:s.counts,placed:s.placed,looks:s.looks,rejected:s.rejected,fallback:s.fallback,tier:C.QUALITY.tier,wires:C.QUALITY.poleWires,misc:C.POLES&&C.POLES.misc};console.log('[ride-check] hydro poles '+JSON.stringify(r));return r;})()", "record": true, "wait": 2500},
+  {"name": "indian-road-day", "mode": "person", "time": "midday", "x": -5586, "z": -2245, "heading": 3.1416, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-5586, 1.7, -2245],look:[-5600, 7, -2100],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 3500},
+  {"name": "grenadier-road-day", "mode": "person", "time": "midday", "x": -5280, "z": -1978, "heading": -1.5708, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-5280, 1.7, -1977],look:[-5420, 7, -1980],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 3500},
+  {"name": "grenadier-pole-day", "mode": "person", "time": "midday", "x": -5345, "z": -1976, "heading": -1.5708, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-5343, 1.7, -1975],look:[-5356, 9.5, -1983],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 3500},
+  {"name": "aerial-indian-road-day", "mode": "person", "time": "midday", "x": -5586, "z": -2245, "heading": 3.1416, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-5576, 22, -2250],look:[-5598, 0, -2160],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 4000},
+  {"name": "aerial-sparkhall-rear-lots-day", "mode": "person", "time": "midday", "x": 3290, "z": -2095, "heading": 3.1416, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[3290, 24, -2092],look:[3330, 0, -2123],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 4000}
+]

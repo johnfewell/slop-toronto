@@ -44,7 +44,8 @@ function prepare(flat, nRight, y = null) {
   for (let i = 0; i < flat.length; i += 2) {
     const x = flat[i], z = flat[i + 1];
     if (P.length && Math.hypot(x - P[P.length - 1].x, z - P[P.length - 1].z) < 0.05) continue;
-    P.push({ x, z, y: y === null ? cutY(x, z) : y });
+    // (a level given, a trail's over the paving: on the Don Valley pilot's ground too, js/don-valley.js)
+    P.push({ x, z, y: y === null ? cutY(x, z) : y + (window.CITY.DON_VALLEY ? window.CITY.DON_VALLEY.heightAt(x, z) : 0) });
   }
   // (a sharp kink on a short piece, where a line ends at a slant, would fan a wide band out: straightened)
   for (let i = 1; i + 1 < P.length; i++) {

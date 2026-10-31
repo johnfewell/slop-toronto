@@ -17,7 +17,8 @@ The packed `data/toronto-geodata.bin` it also writes holds the same `GEO`, so th
 `GEO`. The sidecar stays keyed to the script alone: the poles are not rows of `GEO` and never change
 `js/toronto-geodata.js`, its hash or the row alignment, and the binary's `GEO` decodes to exactly that script
 (`tests/geodata-binary.test.mjs`). Repacking the poles changes the binary's bytes (and its `?v=` in `explore.html`),
-never the sidecar.
+never the sidecar. The parked cars (`PARKED_CARS`, from `js/toronto-parked-cars.js`, [docs/parked-cars.md](parked-cars.md#packed))
+are a third layer on the same terms.
 
 | Field | Meaning |
 |---|---|

@@ -59,7 +59,7 @@ maintenance date reads 2021-01-01. **Heights and headings are therefore inferred
 | 6005 | Street Light and Traffic Signal Pole | 1,566 | a 9 m pole with the same light; carries signal heads where a junction approach snaps to it |
 | 6008 | Traffic Signal Pole | 1,518 | a 6.2 m signal pole; carries the heads of the approaches and crosswalks that snap to it |
 | 6004 | Pedestrian Light Pole | 1,901 | a lamp post: 789 heritage lanterns, 366 waterfront promenade posts, 746 park lamps (see *Looks*) |
-| 6003 | Miscellaneous Pole | 7,171 | **not rendered**: utility, trolley-wire and other poles without a model |
+| 6003 | Miscellaneous Pole | 7,171 | 4,318 unlit hydro poles: the wooden pole without its light (see *Unlit hydro poles*); the rest (posts, trolley-wire, railway and park poles, duplicates) **not rendered** |
 | 6001 | Circular Hydro Tower | 3 | **not rendered** |
 
 The overlays in `~/.cache/slop-toronto/props/poles/refs/` compare the points with the City's 2025 8 cm aerials at Queen &
@@ -128,7 +128,46 @@ posts' night pools use the same bounded spotlight pool, aimed straight down. The
 streetlight's because they are lower. `QUALITY.poleWires` turns the wires on for the high tier only; use
 `?q.poleWires=false` for an A/B. `CITY.poleStats.looks` counts what was drawn.
 
-The layer is 482 KB as a script, about 128 KB with Brotli (438 KB and 116 KB before the pedestrian lights and looks).
+**Unlit hydro poles** (bead `st-27x`; `tools/build-poles.mjs` `miscPoles`, the result in the layer as `misc`). The
+7,171 miscellaneous poles carry no finer subtype, material or owner: every record says only "Miscellaneous Pole". On the
+City's 2025 aerials most are the unlit poles of Toronto Hydro's overhead lines (and the telecom cables sharing them):
+down the other side of a street whose lights hang on the line (Indian Road's east side), between the lit poles, down
+laneways and rear lot lines (Huron-Sussex, Riverdale, Ward's Island). The rest are other things, told apart by where
+they stand, checked on overlays at Indian Rd, Shannon St, the Roncesvalles carhouse, Fort York, Phoebe St, the Canary
+District, Huron-Sussex, Broadview at Riverdale Park, Dufferin and Ward's Island:
+
+| Class | Rule | Poles | Drawn |
+| --- | --- | ---: | --- |
+| hydro | the rest | 4,318 | yes |
+| dup | within 1.2 m of a drawn pole (mapped twice, or a stub beside it) | 205 | no |
+| post | three or more within 7 m (bollards on Phoebe St, the Canary District plaza, Fort York's installation, Broadview's park edge) | 194 | no |
+| double | the second of a pair within 4 m (a double pole, a stub) | 138 | no, the first is |
+| trolley | within 9 m of a streetcar track (the TTC's steel span poles, the carhouse yards) | 1,026 | no |
+| rail | within 15 m of a railway and not within 12 m of a street | 284 | no |
+| park | inside a park, pitch, golf course or cemetery and not by a street (field lights, flag poles) | 268 | no |
+| core | in the rebuilt core and waterfront neighbourhoods of the lights' looks, except University (Huron-Sussex keeps its rear-lot line) | 712 | no |
+| median | down a median | 11 | no |
+| building | inside a building footprint (by a wall the footprint is simplified over) | 15 | no |
+
+The hydro poles are shipped as type 6003, look `wood`, and laid out on the same curb rules as the lights
+(`mappedPoleSites`): 4,041 are placed, the rest off the curb islands or under a deck. A pole within 12 m of a named
+street faces it, its crossarm across the street. A laneway's or rear lot line's pole, further away, has its crossarm
+square to its nearest wooden neighbour, so its line strings along. Each pole is the wooden model without the LED head
+and bracket: the crossarm, three insulators and the transformer on about one in five. They share the lit poles'
+instanced meshes, so they add no draw calls, and have the same colliders, footprints and shadow stand-ins. They are
+placed after the procedural lights, since a hydro pole is not a light and must not hold back a gap-filling light, and
+never on top of a pole standing already (`poleStats.placed.hydro`, `hydroBlocked`).
+
+The overhead lines now run through them: `woodSpans` strings each wooden pole, lit or unlit, to its nearest wooden
+neighbour ahead on the same side, 8–48 m away. A pole standing right in the line's way (within 1.5 m of it, for example
+a corner pole facing the cross street) takes the line too. That gives 6,504 spans instead of 4,323: 4,293 lit to lit,
+699 lit to unlit and 1,512 unlit to unlit. 64 spans still pass within 1.5 m of a wooden pole they are not strung on,
+where two poles stand closer than 8 m. Of the unlit poles, 2,623 are strung. The rest stand alone, down a back lane or
+by a steel-lit arterial. The wires stay on the high tier only. The miscellaneous poles' rules are approximations. A
+parking lot's light standards can come out as hydro poles, and wooden hydro poles that also carry a streetcar's span
+wires (Queen East, Gerrard, Broadview) come out as trolley poles, which are not drawn.
+
+The layer is 549 KB as a script, about 147 KB with Brotli (482 KB and 128 KB before the unlit hydro poles; 438 KB and 116 KB before the pedestrian lights and looks).
 Since `st-mf8` the site no longer loads that script: `window.CITY.POLES` arrives packed in `data/toronto-geodata.bin`
 beside `GEO` (`tools/geo-bin.mjs`; `js/geodata-loader.js` puts both on `window.CITY` before the classic scripts run),
 where it cost 95.6 KB of the gzip'd file before the pedestrian lights and looks. The script stays the node tools' and
@@ -137,4 +176,7 @@ binary is the committed scripts packed. Tests: `node --test tests/mapped-poles.t
 GPU captures: run `gpu2 <name> -- env CAPTURE_PORT=… node tools/check-poles.mjs <tag>` for desktop and low-tier phone
 captures, day and midnight, at Queen West, University Ave, Palmerston Blvd and Queens Quay. For the looks, run
 `node tools/check-poles.mjs looks tools/shots/pole-looks.json`. It captures Euclid Avenue (with an aerial),
-Queens Quay at Spadina, the Distillery's Distillery Lane and Allan Gardens.
+Queens Quay at Spadina, the Distillery's Distillery Lane and Allan Gardens. For the unlit hydro poles, run
+`node tools/check-poles.mjs hydro tools/shots/hydro-poles.json`. It records the stats, then captures Indian Road (the
+unlit east side's line beside the lit west side), Grenadier Road (lit and unlit poles on one line, and an unlit pole close up)
+and oblique aerials of Indian Road and the rear lot line behind Sparkhall Avenue in Riverdale.

@@ -1,0 +1,86 @@
+[
+ {
+  "name": "king-west-along-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1489.0, -365.8, 1.616); const cam = { pos: [-1485,1.65,-366], look: [-1430,2.8,-368.5], fov: 55 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "king-west-across-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1452.0, -342.5, 3.142); const cam = { pos: [-1452,1.65,-346.5], look: [-1452,4,-368], fov: 62 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "danforth-along-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(3161.0, -2782.7, 1.649); const cam = { pos: [3165,1.65,-2783], look: [3235,3.2,-2788.5], fov: 55 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "danforth-across-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(3216.5, -2763.4, -2.467); const cam = { pos: [3214,1.65,-2766.5], look: [3196,4.2,-2789], fov: 62 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "yonge-dundas-along-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(324.9, -1146.0, -3.050); const cam = { pos: [324.5,1.65,-1150], look: [318.5,4,-1215], fov: 55 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "yonge-dundas-across-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(334.6, -1215.7, -1.131); const cam = { pos: [331,1.65,-1214], look: [314,4.5,-1206], fov: 62 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "king-west-along-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1489.0, -365.8, 1.616); const cam = { pos: [-1485,1.65,-366], look: [-1430,2.8,-368.5], fov: 55 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "king-west-across-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1452.0, -342.5, 3.142); const cam = { pos: [-1452,1.65,-346.5], look: [-1452,4,-368], fov: 62 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "danforth-along-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(3161.0, -2782.7, 1.649); const cam = { pos: [3165,1.65,-2783], look: [3235,3.2,-2788.5], fov: 55 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "danforth-across-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(3216.5, -2763.4, -2.467); const cam = { pos: [3214,1.65,-2766.5], look: [3196,4.2,-2789], fov: 62 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "yonge-dundas-along-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(324.9, -1146.0, -3.050); const cam = { pos: [324.5,1.65,-1150], look: [318.5,4,-1215], fov: 55 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "yonge-dundas-across-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(334.6, -1215.7, -1.131); const cam = { pos: [331,1.65,-1214], look: [314,4.5,-1206], fov: 62 }; app.cameraSystem.cinema = () => cam; const g = app.scene && app.scene.getObjectByName('CitySignage'); console.log('[boards-shot] ' + JSON.stringify({ nameBoards: g ? g.children.length : 0, storefronts: window.CITY.storefrontStats && window.CITY.storefrontStats.placed, buildings: window.CITY.storefrontBuildingStats })); })()"
+ }
+]

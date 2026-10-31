@@ -25,6 +25,16 @@ const YONGE_BOX = {
   note: 'Cut-and-cover box under Yonge Street (transittoronto.ca); depths assumed from its two levels below the street, not measured'
 };
 
+// Castle Frank and Broadview in the Don Valley pilot: platforms below the street, as the Yonge stations' (three TTC
+// levels: street, concourse, platforms). Assumed, and bounded by the ride's profile: the viaduct's lower deck carries
+// the rails 5.8 m under the street datum and the platforms end 119 m (Castle Frank) and 158 m (Broadview) short of its
+// abutments, so at the 4% limit the rails can lie at most 10.6 m down. Rail top -10.1 m (floor -9.0 m) climbs 3.6%.
+const VALLEY_PLATFORMS = {
+  worldDatum: 'donvalley-pilot',
+  platformFloor: { value: -9.0, range: [-9.5, -7], basis: 'assumed' },
+  note: 'Below the street in the Don Valley pilot; assumed from the station\'s three levels and bounded by the 4% climb to the viaduct\'s lower deck, not measured'
+};
+
 export const STATION_FACTS = {
   king: {
     levels: 3, levelNames: ['Street', 'Concourses (north: King Street; south: Commerce Court)', 'Platforms'],
@@ -48,12 +58,16 @@ export const STATION_FACTS = {
     // stands 16.3 m above the street (js/subway.js railY). In Toronto the lower deck is a few metres under the road,
     // about level with these stations. The ride keeps the platforms on the deck's level (worldDatum 'viaduct'): a real
     // depth below the flat street would need a 24 m climb in the ~160 m to the viaduct, an impossible 15% grade.
-    depth: { worldDatum: 'viaduct', note: 'Platforms at the viaduct deck level; the flat city cannot hold their real depth below the street' },
+    // The Don Valley terrain pilot (?donvalley=1, docs/don-valley-terrain.md) digs the valley out: the road deck is
+    // level with the street and the lower deck 5.8 m under it, so the platforms go below the street (donValley).
+    depth: { worldDatum: 'viaduct', note: 'Platforms at the viaduct deck level; the flat city cannot hold their real depth below the street',
+      donValley: VALLEY_PLATFORMS },
     entrances: []
   },
   broadview: {
     levels: 3, platformType: 'side', sources: [TTC('broadview')],
-    depth: { worldDatum: 'viaduct', note: 'Platforms at the viaduct deck level; the flat city cannot hold their real depth below the street' },
+    depth: { worldDatum: 'viaduct', note: 'Platforms at the viaduct deck level; the flat city cannot hold their real depth below the street',
+      donValley: VALLEY_PLATFORMS },
     entrances: []
   }
 };

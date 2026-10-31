@@ -19,6 +19,7 @@ function buildTerrain(scene) {
   const tx1 = T.x0 + (T.n - 1) * T.step, tz1 = T.z0 + (T.n - 1) * T.step;
   const inDetail = (x, z) => x > CITY_BOUNDS.minX && x < CITY_BOUNDS.maxX && z > CITY_BOUNDS.minZ && z < CITY_BOUNDS.maxZ;
   const SUNK = -3.0;
+  const DVB = window.CITY.DON_VALLEY ? window.CITY.DON_VALLEY.box : null;
   const LAKE_BED = -25.0;
   const heightAt = (x, z) => {
     const h = terrainRawAt(x, z);
@@ -49,6 +50,11 @@ function buildTerrain(scene) {
         if (skip) {
           const xa = x0 + c * step, za = z0 + r * step;
           if (skip(xa, za) && skip(xa + step, za) && skip(xa, za + step) && skip(xa + step, za + step)) continue;
+        }
+        // the Don Valley pilot's box (js/don-valley.js builds its own terrain there, on its finer grid)
+        if (DVB) {
+          const xa = x0 + c * step, za = z0 + r * step;
+          if (xa >= DVB.x0 && xa + step <= DVB.x1 && za >= DVB.z0 && za + step <= DVB.z1) continue;
         }
         // all corners sunk under the street level: nothing to see
         if (pos[a * 3 + 1] === SUNK && pos[b * 3 + 1] === SUNK && pos[d * 3 + 1] === SUNK && pos[e * 3 + 1] === SUNK) continue;

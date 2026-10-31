@@ -93,8 +93,8 @@ says that King has a single mezzanine fare area.
 | --- | --- | --- | --- | --- | --- |
 | King | 3: street, two concourses, platforms | side | no | concourse floor −4.5 (range −6 to −3.5); platform floor −9.5 (−12 to −8); rail top −10.6 | **assumed** |
 | Queen | 4: street, concourses, platforms, underpass below the platforms | side | yes (4 elevators) | as King; the underpass is not modelled | **assumed** |
-| Castle Frank | 3 | side | — | rail on the viaduct deck, 16.3 m | world datum: viaduct |
-| Broadview | 3 | side | — | as Castle Frank | world datum: viaduct |
+| Castle Frank | 3 | side | — | rail on the viaduct deck, 16.3 m; with `?donvalley=1` platform floor −9.0 (range −9.5 to −7), rail top −10.1 | world datum: viaduct; pilot: **assumed** |
+| Broadview | 3 | side | — | as Castle Frank | world datum: viaduct; pilot: **assumed** |
 
 The King and Queen depths assume two storeys under Yonge Street. The concourse floor is one storey (3 m clear) plus
 the slab and street cover below the street. The platform floor is a second storey below that, under the platform
@@ -113,9 +113,15 @@ changes `basis`; nothing else needs to change.
 - A real depth below the flat street would need a 24 m climb in the 160 m between a platform end and the viaduct.
   That is a 15% grade; the game's limit is 4%.
 
-Putting these stations underground needs a valley in the terrain, which is outside this work. Until then their
-platforms are representative cells on the deck's level, entered through the explicit transition. The Bloor Viaduct
-ride is unchanged.
+Putting these stations underground needs a valley in the terrain. Without it, their platforms are representative
+cells on the deck's level, entered through the explicit transition, and the Bloor Viaduct ride is unchanged.
+
+The [Don Valley terrain pilot](don-valley-terrain.md) (`?donvalley=1`) adds that valley:
+
+- The road deck is level with the street, and the lower deck's rails are 5.8 m below it.
+- Each station's facts carry `depth.donValley`: a platform floor 9.0 m down. This is assumed from the three levels,
+  and the 4% climb to the viaduct, 119 m and 158 m away, allows at most about 9.5 m.
+- The ride's routes get a depth profile, and the platform cells stand at it.
 
 ## Ride rules
 

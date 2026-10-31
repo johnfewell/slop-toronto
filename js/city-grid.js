@@ -1165,8 +1165,11 @@ function buildCityGrid(scene) {
         return [(b.z - a.z) / L, -(b.x - a.x) / L];
       });
       const hw = d.w / 2 + 0.6; // carriageway + the parapets' footing
-      const yTop = (p) => Math.max(0.03, p.h + 0.03);
-      const yBot = (p) => (p.h > 4.6 ? p.h - 1.25 : 0);
+      // (p.g: the ground under it, below the street level in the Don Valley pilot, else 0)
+      const gOf = (p) => p.g || 0;
+      const deep = (p) => p.h - gOf(p) > 4.6;
+      const yTop = (p) => Math.max(gOf(p) + 0.03, p.h + 0.03);
+      const yBot = (p) => (deep(p) ? p.h - 1.25 : gOf(p));
       let s = 0;
       for (let i = 0; i + 1 < P.length; i++) {
         const a = P[i], b = P[i + 1];
@@ -1182,24 +1185,24 @@ function buildCityGrid(scene) {
         // a missing soffit)
         accQuad(faces, aL, bL, lo(bL, yBot(b)), lo(aL, yBot(a)), [anx, 0, anz], [[s, 1], [s + L, 1], [s + L, 0], [s, 0]]);
         accQuad(faces, bR, aR, lo(aR, yBot(a)), lo(bR, yBot(b)), [-anx, 0, -anz], [[s + L, 1], [s, 1], [s, 0], [s + L, 0]]);
-        if (a.h > 4.6 && b.h > 4.6) accQuad(faces, lo(aL, yBot(a)), lo(bL, yBot(b)), lo(bR, yBot(b)), lo(aR, yBot(a)), [0, -1, 0], [[0, 1], [1, 1], [1, 0], [0, 0]]);
+        if (deep(a) && deep(b)) accQuad(faces, lo(aL, yBot(a)), lo(bL, yBot(b)), lo(bR, yBot(b)), lo(aR, yBot(a)), [0, -1, 0], [[0, 1], [1, 1], [1, 0], [0, 0]]);
         // parapets (0.9 m concrete barriers) along both edges
         for (const sgn of [1, -1]) {
           const ax = a.x + anx * (hw - 0.25) * sgn, az = a.z + anz * (hw - 0.25) * sgn;
           const bx = b.x + bnx * (hw - 0.25) * sgn, bz = b.z + bnz * (hw - 0.25) * sgn;
-          if (a.h > 0.4 || b.h > 0.4) accWall(faces, ax, az, bx, bz, Math.min(yTop(a), yTop(b)), 0.9, 0.4);
+          if (a.h - gOf(a) > 0.4 || b.h - gOf(b) > 0.4) accWall(faces, ax, az, bx, bz, Math.min(yTop(a), yTop(b)), 0.9, 0.4);
         }
         // piers under the raised stretch, every ~24 m, moved along (or left out) where they'd stand in a road below
         for (let t = Math.ceil(s / 24) * 24 - s; t < L; t += 24) {
           for (const shift of [0, 4, -4, 8, -8]) {
             const tt = t + shift;
             if (tt < 0 || tt > L) continue;
-            const h = a.h + ((b.h - a.h) * tt) / L;
-            if (h < 4.6) break;
+            const h = a.h + ((b.h - a.h) * tt) / L, g = gOf(a) + ((gOf(b) - gOf(a)) * tt) / L;
+            if (h - g < 4.6) break;
             const x = a.x + ((b.x - a.x) * tt) / L, z = a.z + ((b.z - a.z) * tt) / L;
             if (onGroundRoad(x, z, 1.2) || onRail(x, z, 3.2)) continue;
             if (window.CITY.subwayKeepsClear && window.CITY.subwayKeepsClear(x, z)) continue; // (subway.js: its own piers)
-            piers.push({ x, z, h: h - 1.25, w: Math.min(d.w * 0.7, 9), ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
+            piers.push({ x, z, h: h - 1.25, g: window.CITY.DON_VALLEY ? Math.min(g, window.CITY.DON_VALLEY.heightAt(x, z)) : 0, w: Math.min(d.w * 0.7, 9), ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
             break;
           }
         }
@@ -1232,7 +1235,7 @@ function buildCityGrid(scene) {
     }
     for (const p of piers) {
       // a column and its crosshead across the deck
-      accWall(faces, p.x - p.ux * 0.7, p.z - p.uz * 0.7, p.x + p.ux * 0.7, p.z + p.uz * 0.7, 0, p.h, 1.6);
+      accWall(faces, p.x - p.ux * 0.7, p.z - p.uz * 0.7, p.x + p.ux * 0.7, p.z + p.uz * 0.7, p.g, p.h - p.g, 1.6);
       accWall(faces, p.x + p.uz * p.w * 0.5, p.z - p.ux * p.w * 0.5, p.x - p.uz * p.w * 0.5, p.z + p.ux * p.w * 0.5, p.h - 1.4, 1.4, 1.6);
       colliders.push({ minX: p.x - 1.0, maxX: p.x + 1.0, minZ: p.z - 1.0, maxZ: p.z + 1.0, maxY: p.h });
     }
@@ -1351,7 +1354,7 @@ function buildCityGrid(scene) {
           const n = Math.max(1, Math.ceil(Math.hypot(q.x - p.x, q.z - p.z) / 1.5));
           for (let k = 0; k < n; k++) ring.push({ x: p.x + ((q.x - p.x) * k) / n, z: p.z + ((q.z - p.z) * k) / n });
         }
-        for (const p of ring) p.y = cutAt(p.x, p.z);
+        for (const p of ring) p.y = (window.CITY.roadCutAt || cutAt)(p.x, p.z);
         const tris = THREE.ShapeUtils.triangulateShape(ring.map((p) => new THREE.Vector2(p.x, p.z)), []);
         for (const [i0, i1, i2] of tris) {
           const v = [ring[i0], ring[i1], ring[i2]].map((p) => [p.x, p.y + SW_TOP, p.z]);

@@ -145,7 +145,7 @@ edge) against concave ones, for the car; nearest boundary for walkers, riders an
 - **Still on boxes.** Other modules place things against `GEO.buildings` box parts:
   - `city-grid.js` (yards and lots)
   - `street-details.js`
-  - `signage.js` (shop signs)
+  - `storefront-signs.js` (the source-keyed signs, on the walls `buildings.js` reports)
   - `patio-layout.js` (CaféTO clearance)
   - `subway.js` (entrances)
   - `rail-corridor.js`

@@ -400,10 +400,16 @@ function terrainRawAt(x, z) {
   return ((h[k] * (1 - tc) + h[k + 1] * tc) * (1 - tr) + (h[k + n] * (1 - tc) + h[k + n + 1] * tc) * tr) * 0.1;
 }
 
+// The Don Valley terrain pilot (?donvalley=1: js/don-valley.js, loaded before this file only with the flag): the real
+// valley under the Prince Edward Viaduct. Null without the flag, and nothing below changes.
+const DV = window.CITY.DON_VALLEY || null;
 // Flyover decks & ramps: [{ name, w, rank, pts: [{x, z, h}] }] and a 4 m grid of deck surfaces for the player
+// (in the Don Valley pilot: Bloor Street's deck level with the streets over the valley, the ramps down its sides on
+// their own ground; each point's `g` the ground under it)
 const DECKS = GEO.decks.map(([name, w, rank, flat]) => {
   const pts = [];
   for (let i = 0; i < flat.length; i += 3) pts.push({ x: flat[i], z: flat[i + 1], h: flat[i + 2] });
+  if (DV) for (const p of pts) if (DV.inBox(p.x, p.z)) { p.h = DV.deckHeight(p.x, p.z, p.h); p.g = DV.heightAt(p.x, p.z); }
   return { name, w, rank, pts };
 });
 const DECK_CELL = 4;
@@ -417,7 +423,8 @@ for (const d of DECKS) {
     for (let k = 0; k <= n; k++) {
       const t = k / n;
       const cx = a.x + (b.x - a.x) * t, cz = a.z + (b.z - a.z) * t, h = a.h + (b.h - a.h) * t;
-      if (h < 0.3) continue;
+      // (a deck under the street level in the Don Valley pilot: wherever it stands clear of its own ground)
+      if (h < 0.3 && !(DV && DV.inBox(cx, cz) && h > DV.heightAt(cx, cz) + 0.25)) continue;
       for (let o = -d.w / 2 + 0.5; o <= d.w / 2 - 0.5; o += DECK_CELL / 2) {
         const x = cx - uz * o, z = cz + ux * o;
         const key = Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL);
@@ -678,12 +685,17 @@ function cutLocal(c, x, z) {
   return best;
 }
 /** The floor of a road cut at (x, z) (negative), or 0 outside the cuts */
-function cutAt(x, z) {
+function roadCutAt(x, z) {
   for (const c of ROAD_CUTS) {
     const p = cutLocal(c, x, z);
     if (p) return p.h;
   }
   return 0;
+}
+/** The ground's drop below the street level at (x, z): a road cut's floor, and in the Don Valley pilot the valley's
+ *  (js/don-valley.js heightAt; without the flag this is roadCutAt). Whatever stands on the ground adds it. */
+function cutAt(x, z) {
+  return DV ? roadCutAt(x, z) + DV.heightAt(x, z) : roadCutAt(x, z);
 }
 
 // ...and the raised tracks are decks too (sampled across the track bed, every 2 m): the player can climb the
@@ -699,7 +711,7 @@ for (const [kind, , , flags, flat] of GEO.rails || []) {
     for (let k = 0; k <= n; k++) {
       const cx = ax + ((bx - ax) * k) / n, cz = az + ((bz - az) * k) / n;
       let h = railLiftAt(cx, cz);
-      if (h < 0.3 && cutAt(cx, cz) < -0.5) h = Math.max(h, 0.25);
+      if (h < 0.3 && roadCutAt(cx, cz) < -0.5) h = Math.max(h, 0.25);
       else if (h < 0.3) continue;
       for (const o of [-2, 0, 2]) {
         const x = cx - uz * o, z = cz + ux * o;
@@ -731,7 +743,7 @@ for (const [kind, , , flags, flat] of GEO.rails || []) {
 /** Whether a tree may stand at (x, z): clear of the rail corridor & the subway's open cuts */
 function treeOffRail(x, z) {
   // (nor down in a road cut; on its grassed banks, yes, up from their foot: js/ez-trees.js sets them on the slope)
-  if (cutAt(x, z) < 0 && !ROAD_CUTS.some((c) => { const p = c.bankSt && cutLocal(c, x, z); return p && p.bank && p.into > 2.5; })) return false;
+  if (roadCutAt(x, z) < 0 && !ROAD_CUTS.some((c) => { const p = c.bankSt && cutLocal(c, x, z); return p && p.bank && p.into > 2.5; })) return false;
   if (window.CITY.subwayCutAt && window.CITY.subwayCutAt(x, z, 2)) return false; // (nor in the subway's trenches, subway.js)
   const r = 7 + 1.6 * railLiftAt(x, z), c = Math.ceil(r / 8);
   for (let a = -c; a <= c; a++) for (let b = -c; b <= c; b++) {
@@ -744,9 +756,10 @@ function treeOffRail(x, z) {
 function deckHeightAt(x, z, y = 0, step = 0.6) {
   const list = DECK_GRID.get(Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL));
   if (!list) return 0;
-  let best = 0;
+  // (in the Don Valley pilot a deck may lie under the street level: 0 still means none)
+  let best = DV ? -Infinity : 0;
   for (const e of list) if (e.h <= y + step && e.h > best) best = e.h;
-  return best;
+  return best === -Infinity ? 0 : best;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1014,6 +1027,7 @@ Object.assign(window.CITY, {
   cutBankAt,
   cutAxisAt,
   cutAt,
+  roadCutAt,
   getLocationLabel,
   worldFromLatLon,
   latLonFromWorld,

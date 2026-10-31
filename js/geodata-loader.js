@@ -1,7 +1,7 @@
 // js/geodata-loader.js — reads data/toronto-geodata.bin (written by tools/build-geodata.mjs and tools/pack-geodata.mjs,
 // encoder tools/geo-pack.mjs, layers tools/geo-bin.mjs) back into the very objects the generated scripts hold: { GEO,
-// POLES }, window.CITY.GEO (js/toronto-geodata.js) and window.CITY.POLES (js/toronto-poles.js), the same keys, arrays
-// and numbers (lossless: every number is stored as an integer count of its own decimals, e.g. decimetres for the 0.1 m
+// POLES, PARKED_CARS }, window.CITY.GEO (js/toronto-geodata.js), window.CITY.POLES (js/toronto-poles.js) and
+// window.CITY.PARKED_CARS (js/toronto-parked-cars.js, which js/parked-cars.js decodes), the same keys, arrays and numbers (lossless: every number is stored as an integer count of its own decimals, e.g. decimetres for the 0.1 m
 // coordinates, and divided back here, which gives the same double as parsing the JS file's decimal text).
 // The page (explore.html) fetches the file while three.js loads and puts its layers on window.CITY before the classic
 // scripts run, so no consumer changes. tests/geodata-binary.test.mjs compares them against the scripts key by key.
@@ -113,7 +113,7 @@ function column(u8, base, c) {
   };
 }
 
-/** The container (uncompressed) -> its layers ({ GEO, POLES }) */
+/** The container (uncompressed) -> its layers ({ GEO, POLES, PARKED_CARS }) */
 export function decodeGeo(buffer) {
   const u8 = new Uint8Array(buffer);
   const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
@@ -151,7 +151,7 @@ export function decodeGeo(buffer) {
   return build(head.skeleton, root);
 }
 
-/** The file as fetched (gzip, or already inflated by a server that sent it with a Content-Encoding) -> { GEO, POLES } */
+/** The file as fetched (gzip, or already inflated by a server that sent it with a Content-Encoding) -> { GEO, POLES, PARKED_CARS } */
 export async function unpackGeo(buffer) {
   const u8 = new Uint8Array(buffer);
   if (u8[0] !== 0x1f || u8[1] !== 0x8b) return decodeGeo(u8);
@@ -161,7 +161,7 @@ export async function unpackGeo(buffer) {
 
 /**
  * The fetch (a URL, or a fetch already under way: the page starts it before this module has loaded) -> the layers,
- * { GEO, POLES }, for window.CITY.
+ * { GEO, POLES, PARKED_CARS }, for window.CITY.
  * Leaves a 'geodata-decode' performance measure (inflate + decode, main thread).
  */
 export async function loadGeo(request) {

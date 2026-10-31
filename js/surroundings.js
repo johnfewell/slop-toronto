@@ -322,7 +322,8 @@ const excluded = (x, z, r = 0) => EXCLUSIONS.some((e) => Math.hypot(x - e.x, z -
 const MAX_BUILD_DIST = 10000;
 // dry land outside the detailed city (and 60 m clear of it): not in the lake, not in the terrain's water cells
 const onLand = (x, z) => !inDetail(x, z, 60) && terrainRawAt(x, z) > -1 && !waterAt(x, z);
-const groundAt = (x, z) => Math.max(0, terrainRawAt(x, z));
+// (the Don Valley pilot carries the valley on north of the city: js/don-valley.js)
+const groundAt = (x, z) => Math.max(0, terrainRawAt(x, z)) + (window.CITY.DON_VALLEY ? window.CITY.DON_VALLEY.heightAt(x, z) : 0);
 
 function generateBuildings(density) {
   const rand = mulberry32(416);

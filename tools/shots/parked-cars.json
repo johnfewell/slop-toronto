@@ -1,0 +1,90 @@
+[
+ {
+  "name": "stats",
+  "mode": "person",
+  "time": "midday",
+  "wait": 500,
+  "js": "(() => { const C = window.CITY, s = C.parkedStats, p = C.patioStats || {}; const q = new URLSearchParams(location.search); const app = window.__CITY_APP; const out = { parked: s && { enabled: s.enabled, tier: s.tier, cap: s.cap, kept: s.kept, laneDropped: s.laneDropped, laneDroppedBy: s.laneDroppedBy, laneDrops: s.laneDrops, patioDropped: s.patioDropped, colliders: s.colliders, ms: s.ms, decodeMs: s.decodeMs, kinds: s.kinds, cats: s.cats, source: s.source && { stalls: s.source.stalls, cars: s.source.cars } }, patios: { layout: p.layout, fingerprint: p.fingerprint, check: p.check, placed: p.placed, laneConflicts: p.laneConflicts && p.laneConflicts.length }, q: location.search }; console.log('[ride-check] parked ' + JSON.stringify(out)); if (q.get('parked') !== '0') { if (!s || !s.enabled || s.kept < 3000) throw new Error('Parked cars missing: ' + JSON.stringify(out.parked)); if (s.colliders !== s.kept) throw new Error('A parked car without its collider'); if (s.laneDropped > s.kept * 0.06) throw new Error('Too many parked cars in the built lanes: ' + s.laneDropped); } if (p.fingerprint && !p.fingerprint.ok) throw new Error('The prebuilt patio layout is stale: ' + JSON.stringify(p.fingerprint)); if (q.get('patios') === 'check' && !(p.check && p.check.identical)) throw new Error('The prebuilt patio layout is not the runtime algorithm\\'s: ' + JSON.stringify(p.check)); return out; })()",
+  "record": true
+ },
+ {
+  "name": "euclid-street",
+  "mode": "person",
+  "time": "midday",
+  "x": -2058.5,
+  "z": -1765,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-2057.6, 1.65, -1766], look: [-2052.4, 1.0, -1700], fov: 55 }); const s = window.CITY.parkedStats; console.log('[ride-check] euclid ' + JSON.stringify({ near: s && s.near, far: s && s.far })); })()"
+ },
+ {
+  "name": "euclid-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -2058.5,
+  "z": -1765,
+  "heading": 0,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-2030, 26, -1770], look: [-2052, 0, -1712], fov: 50 }); })()"
+ },
+ {
+  "name": "palmerston-street",
+  "mode": "person",
+  "time": "midday",
+  "x": -1941.8,
+  "z": -1548,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-1942.0, 1.65, -1548], look: [-1945.6, 1.0, -1470], fov: 55 }); const s = window.CITY.parkedStats; console.log('[ride-check] palmerston ' + JSON.stringify({ near: s && s.near, far: s && s.far })); })()"
+ },
+ {
+  "name": "roncesvalles-street",
+  "mode": "person",
+  "time": "midday",
+  "x": -5266.8,
+  "z": -1975,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-5266.6, 1.65, -1972], look: [-5261.5, 1.0, -1905], fov: 55 }); const s = window.CITY.parkedStats; console.log('[ride-check] roncesvalles ' + JSON.stringify({ near: s && s.near, far: s && s.far })); })()"
+ },
+ {
+  "name": "roncesvalles-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -5266.8,
+  "z": -1975,
+  "heading": 0,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-5256, 20, -1995], look: [-5262, 0, -1925], fov: 50 }); })()"
+ },
+ {
+  "name": "king-street",
+  "mode": "person",
+  "time": "midday",
+  "x": -612,
+  "z": -338.5,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-612, 1.65, -338.6], look: [-700, 1.0, -345.5], fov: 55 }); const s = window.CITY.parkedStats; console.log('[ride-check] king ' + JSON.stringify({ near: s && s.near, far: s && s.far })); })()"
+ },
+ {
+  "name": "king-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -612,
+  "z": -338.5,
+  "heading": 0,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-590, 20, -349], look: [-700, 0, -349], fov: 50 }); })()"
+ },
+ {
+  "name": "euclid-midnight",
+  "mode": "person",
+  "time": "midnight",
+  "x": -2058.5,
+  "z": -1765,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-2057.6, 1.65, -1766], look: [-2052.4, 1.0, -1700], fov: 55 }); })()"
+ }
+]

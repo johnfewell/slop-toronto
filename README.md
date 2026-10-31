@@ -32,6 +32,10 @@ its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
 - **CaféTO patios:** the summer's curb lane platforms and sidewalk cafés on Ossington, Queen West, College, Dundas West,
   King West, the Danforth and more, placed from the City's CaféTO permits by its own clearance rules
   ([how they are placed](docs/cafeto-patios.md)).
+- **Parked cars:** about 10,800 cars at the curbs where the City's parking by-laws, permit areas and pay stations allow
+  it: along Euclid and Palmerston, Roncesvalles' paid curbs, but never in King's streetcar lanes. They are clear of
+  hydrants, corners, crossings, stops, bike lanes and patios, solid to the player, and kept out of the traffic's way
+  ([how they are placed](docs/parked-cars.md)).
 - **Sky and sound:** volumetric clouds with golden hour, sunset and night, and a city that sounds like one: traffic,
   streetcars, the lake.
 
@@ -105,23 +109,24 @@ that editing CSS reloads the real city and preserves the player (`GPU2_LOCK_WAIT
 The project code is open source under the [MIT License](LICENSE). Data, models and third-party code keep their own
 licences: see [CREDITS.md](CREDITS.md). In short: City of Toronto Open Data (Open Government Licence – Toronto),
 © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL; the built city database
-`data/toronto-geodata.bin` / `js/toronto-geodata.js` is ODbL too; the binary also carries the City's mapped poles,
-OGL – Toronto), AWS Terrain Tiles (SRTM). The ROM model is not under the MIT License.
+`data/toronto-geodata.bin` / `js/toronto-geodata.js` is ODbL too; the binary also carries the City's mapped poles and
+the parked cars placed from its by-laws, OGL – Toronto), AWS Terrain Tiles (SRTM). The ROM model is not under the MIT License.
 
 ## Rebuild the city data
 
 `node tools/build-geodata.mjs` rebuilds the city database from the raw downloads (`tools/fetch-*.mjs`: OSM via
 the Geofabrik Ontario extract and GDAL, the City of Toronto Open Data sets, AWS terrain tiles), with `GEO_DATA`
 pointing at the downloaded folder (`~/.cache/slop-toronto/osm-ids`, see [docs/geodata-ids.md](docs/geodata-ids.md#raw-data-cache)).
-It writes `data/toronto-geodata.bin`, which the site loads (a lossless packed binary, 2.1 MB, read by
-`js/geodata-loader.js` into the same `window.CITY.GEO`, with the mapped poles of `js/toronto-poles.js` packed beside it
-as `window.CITY.POLES`; it sets the file's hash in `explore.html`. `node tools/pack-geodata.mjs` repacks it from the two
-committed scripts without the raw downloads, and `tools/build-poles.mjs` does so after writing the poles),
+It writes `data/toronto-geodata.bin`, which the site loads (a lossless packed binary, 2.2 MB, read by
+`js/geodata-loader.js` into the same `window.CITY.GEO`, with the mapped poles of `js/toronto-poles.js` and the parked cars
+of `js/toronto-parked-cars.js` packed beside it as `window.CITY.POLES` and `window.CITY.PARKED_CARS`; it sets the file's
+hash in `explore.html`. `node tools/pack-geodata.mjs` repacks it from the three committed scripts without the raw
+downloads, and `tools/build-poles.mjs` and `tools/build-parked-cars.mjs` do so after writing theirs),
 `js/toronto-geodata.js`, the same object as a script for the node tools and tests, and `js/toronto-geodata-ids.js`, the
 durable source IDs of its places and buildings ([docs/geodata-ids.md](docs/geodata-ids.md);
 `tools/check-geodata-ids.mjs` proves they survive shuffled inputs). `--out <file.js>` writes elsewhere, with the binary
-and the IDs beside it and `explore.html` untouched; `--bin` and `--ids` name those two separately, `--poles` the poles
-script to pack. A rebuild from the
+and the IDs beside it and `explore.html` untouched; `--bin` and `--ids` name those two separately, `--poles` and
+`--parked` the scripts to pack. A rebuild from the
 same inputs is byte-identical (`npm run test:geodata`); `tests/geodata-binary.test.mjs` checks the binary and the
 scripts agree on every value, and that the committed binary is the committed scripts packed.
 The City's physical sidewalks are their own file too: `node tools/fetch-sidewalks.mjs` caches the City's polygons in
@@ -132,3 +137,6 @@ The subway (lines, stations, street entrances) is its own file: `node tools/buil
 `js/toronto-subway.js` (`tools/fetch-osm.mjs` with `ONLY=rails` and `ONLY=subway` fetch its inputs). Then `node tools/build-subway-topology.mjs` writes
 `js/toronto-subway-topology.js`, the stations, platforms, track segments and rides, from the committed files
 ([docs/subway-topology.md](docs/subway-topology.md)).
+The Don Valley terrain pilot (`explore.html?donvalley=1`: the real valley under the Bloor Viaduct, Castle Frank and
+Broadview below the street) is its own file: `node tools/build-don-valley.mjs` writes `js/don-valley-data.js` from the
+same DEM cache (`GEO_DATA`) and the committed geodata ([docs/don-valley-terrain.md](docs/don-valley-terrain.md)).

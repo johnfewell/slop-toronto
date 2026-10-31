@@ -1,6 +1,7 @@
 // The site's city database (data/toronto-geodata.bin, read by js/geodata-loader.js) against the scripts it packs
-// (tools/geo-bin.mjs): GEO against js/toronto-geodata.js, the same build's script, and POLES against js/toronto-poles.js,
-// every key, every number. The packing is lossless, so every value must come back identical.
+// (tools/geo-bin.mjs): GEO against js/toronto-geodata.js, the same build's script, POLES against js/toronto-poles.js and
+// PARKED_CARS against js/toronto-parked-cars.js, every key, every number. The packing is lossless, so every value must
+// come back identical.
 // Prints, per top-level key: numbers compared, how many are identical, the largest difference.
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -17,10 +18,10 @@ const layer = (rel, name) => {
   vm.runInNewContext(read(rel).toString('utf8'), context);
   return context.window.CITY[name];
 };
-const scripts = { GEO: 'js/toronto-geodata.js', POLES: 'js/toronto-poles.js' };
+const scripts = { GEO: 'js/toronto-geodata.js', POLES: 'js/toronto-poles.js', PARKED_CARS: 'js/toronto-parked-cars.js' };
 const packedLayers = await unpackGeo(read('data/toronto-geodata.bin'));
 
-test('data/toronto-geodata.bin holds exactly the GEO and POLES layers', () => {
+test('data/toronto-geodata.bin holds exactly the GEO, POLES and PARKED_CARS layers', () => {
   assert.deepEqual(Object.keys(packedLayers), LAYERS);
   assert.deepEqual(Object.keys(scripts), LAYERS);
 });
@@ -68,8 +69,9 @@ for (const [name, rel] of Object.entries(scripts)) test(`data/toronto-geodata.bi
 });
 
 test('the committed binary is the committed scripts packed (rebuild with tools/pack-geodata.mjs)', () => {
-  // (a poles or geodata script changed without repacking fails here; tools/build-poles.mjs repacks by itself)
-  const packed = packCity({ GEO: layer(scripts.GEO, 'GEO'), POLES: layer(scripts.POLES, 'POLES') });
+  // (a poles, parked cars or geodata script changed without repacking fails here; tools/build-poles.mjs and
+  // tools/build-parked-cars.mjs repack by themselves)
+  const packed = packCity(Object.fromEntries(Object.entries(scripts).map(([name, rel]) => [name, layer(rel, name)])));
   assert.ok(packed.file.equals(read('data/toronto-geodata.bin')), 'data/toronto-geodata.bin is stale: node tools/pack-geodata.mjs');
 });
 

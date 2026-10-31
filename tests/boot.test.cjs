@@ -54,14 +54,17 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
     }
   };
   // (no WebGPU here: the module's capability probe awaits nothing and the loader runs straight on)
-  const context = vm.createContext({ window, document, navigator: {}, THREE, TSL: {}, StylizedWater: {}, setTimeout, fetch, __import, ...imports });
+  const context = vm.createContext({ window, document, navigator: {}, THREE, TSL: {}, StylizedWater: {}, setTimeout, fetch, __import,
+    URLSearchParams, location: { search: '' }, ...imports });
   vm.runInContext(preloadScript[1].replace(/\bimport\(/g, '__import('), context);
   assert.equal(scripts.length, 0);
   assert.equal(fetched.length, 1);
   assert.match(fetched[0], /^\.\/data\/toronto-geodata\.bin\?v=[0-9a-f]{12}$/);
   // every script the loader lists, once (the count follows the list: scripts are added often; the geodata loader is
   // imported, not listed)
-  assert.equal(links.length, preloadScript[1].match(/'\.\/js\/[\w-]+\.js'/g).filter((s) => !s.includes('geodata-loader')).length);
+  // (the Don Valley pilot's two scripts load only with ?donvalley=1: see the next test)
+  assert.equal(links.length, preloadScript[1].match(/'\.\/js\/[\w-]+\.js'/g).filter((s) => !s.includes('geodata-loader') && !s.includes('/don-valley')).length);
+  assert.ok(!links.some((src) => src.includes('/don-valley')), 'the terrain pilot is not loaded without its flag');
   assert.ok(links.findIndex((src) => src.includes('/audio-system.js')) < links.findIndex((src) => src.includes('/main.js')));
   assert.equal(new Set(links).size, links.length, 'each script is preloaded once');
 
@@ -72,7 +75,17 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   assert.match(scripts[0], /\/quality\.js$/); // source URLs; the production build fingerprints them
   assert.ok(!scripts.some((src) => src.includes('/toronto-geodata.js')), 'the site loads data/toronto-geodata.bin instead');
   assert.ok(!scripts.some((src) => src.includes('/toronto-poles.js')), 'the poles come packed in data/toronto-geodata.bin');
+  assert.ok(!scripts.some((src) => src.includes('/toronto-parked-cars.js')), 'so do the parked cars');
   assert.match(scripts.at(-1), /\/main\.js$/);
   for (const name of ['photo-mode', 'multiplayer']) assert.ok(scripts.includes(`./js/${name}.js`), `${name} loads before app startup`);
   assert.ok(scripts.indexOf('./js/mp-protocol.js') < scripts.indexOf('./js/multiplayer.js'));
+});
+
+test('?donvalley=1 loads the terrain pilot\'s data and module just before city-config.js', () => {
+  const list = (search) => vm.runInContext(`${preloadScript[1].match(/const cityAppScripts = (\(\(\) => \{[\s\S]*?\}\)\(\));/)[1]}`,
+    vm.createContext({ URLSearchParams, location: { search } }));
+  const on = [...list('?donvalley=1')], off = [...list('')]; // (out of the vm's realm)
+  assert.deepEqual(on.filter((s) => !s.includes('/don-valley')), off);
+  const at = on.indexOf('./js/city-config.js');
+  assert.deepEqual(on.slice(at - 2, at), ['./js/don-valley-data.js', './js/don-valley.js']);
 });

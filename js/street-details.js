@@ -9,7 +9,8 @@
 //   double-arm poles down the medians of the dual carriageways, single-arm poles along the other roads (some with a
 //   solar panel on top); their light pooled around the camera at night. The signal heads go on the City's mapped
 //   signal poles near the corners that want them, else on a pole of their own. The older residential streets' lights
-//   hang on wooden hydro poles (their lines strung between them on the high tier), the Distillery's on lantern posts,
+//   hang on wooden hydro poles, between the City's unlit ones (their lines strung pole to pole on the high tier), the
+//   Distillery's on lantern posts,
 //   and the City's mapped pedestrian lights are lantern posts, the waterfront's promenade posts or park lamps
 //   (js/mapped-poles.js pole models)
 // - Trees: neem, Indian almond & mango on the verges and in the wide medians, royal palms down the medians of the
@@ -250,7 +251,7 @@ function buildStreetDetails(scene) {
   // The City's mapped poles (js/mapped-poles.js; ?mappedpoles=0 leaves them out, the procedural layout alone, for A/B):
   // the signal poles are drawn here and carry the heads of the approaches whose corners they stand on, the lights in
   // section 2; the procedural poles only fill the gaps
-  const { LIGHT, LIGHT_SIGNAL, SIGNAL, PEDESTRIAN } = window.CITY.POLE_TYPES || {};
+  const { LIGHT, LIGHT_SIGNAL, SIGNAL, PEDESTRIAN, MISC } = window.CITY.POLE_TYPES || {};
   const useMapped = !!(window.CITY.POLES && window.CITY.mappedPoleSites) && new URLSearchParams(location.search).get('mappedpoles') !== '0';
   const mappedLayout = useMapped
     ? window.CITY.mappedPoleSites(window.CITY.POLES, { blockAt, nearestRoads, deckHeightAt: window.CITY.deckHeightAt, cutAt: window.CITY.cutAt, SW_Y })
@@ -259,7 +260,7 @@ function buildStreetDetails(scene) {
   const mappedIndex = window.CITY.poleIndex ? window.CITY.poleIndex(mapped) : { nearest: () => null };
   const poleStats = {
     mapped: useMapped, source: window.CITY.POLES?.source || null, counts: window.CITY.POLES?.counts || null,
-    placed: { light: 0, lightSignal: 0, signal: 0, pedestrian: 0 }, looks: { wood: 0, lantern: 0, promenade: 0, park: 0, spans: 0 }, rejected: mappedLayout.rejected, nudged: mappedLayout.nudged,
+    placed: { light: 0, lightSignal: 0, signal: 0, pedestrian: 0, hydro: 0, hydroBlocked: 0 }, looks: { wood: 0, lantern: 0, promenade: 0, park: 0, spans: 0 }, rejected: mappedLayout.rejected, nudged: mappedLayout.nudged,
     fallback: { median: 0, roadside: 0 }, signals: { approaches: 0, mapped: 0, procedural: 0 }
   };
   window.CITY.poleStats = poleStats;
@@ -629,6 +630,17 @@ function buildStreetDetails(scene) {
       if (useMapped) poleStats.fallback.roadside++;
     });
   }
+  // The unlit hydro poles (the City's miscellaneous poles that tools/build-poles.mjs judged to be on the overhead lines):
+  // the wooden pole without its light, after the procedural lights so they don't hold those back (a hydro pole is no
+  // light), not on top of a pole standing already
+  for (const s of mapped) {
+    if (s.type !== MISC || s.look !== 'wood') continue;
+    if (s.median || !isClearOfPoles(s.x, s.z, 0.8)) { poleStats.placed.hydroBlocked++; continue; }
+    addPole(s.x, s.z, PM.WOOD.r, s.y0, PM.WOOD.h);
+    addFootprint(s.x, s.z, 0.45, 0.45);
+    placeModel(hashPos(s.x, 8.1, s.z) < PM.WOOD.transformerShare ? 'woodTransformer' : 'wood', s, Math.atan2(-s.az, s.ax));
+    poleStats.placed.hydro++;
+  }
   console.info(`[streetDetails] mapped poles: ${JSON.stringify(poleStats.placed)}, looks ${JSON.stringify(poleStats.looks)}, rejected ${JSON.stringify(poleStats.rejected)}, ${poleStats.nudged} moved onto the curb; signal approaches ${JSON.stringify(poleStats.signals)}`);
   console.info(`[streetDetails] ${medianPoles} median & ${roadPoles} roadside procedural streetlights${useMapped ? ' (gap fill)' : ''}`);
 
@@ -819,14 +831,7 @@ function buildStreetDetails(scene) {
     // the lines between the wooden poles (the high tier: thin, many and only seen close up)
     if (window.CITY.QUALITY.poleWires && window.CITY.woodSpans) {
       const spans = window.CITY.woodSpans(mapped);
-      const wireMatrices = spans.map(({ a, b }) => {
-        const dx = b.x - a.x, dz = b.z - a.z;
-        dummy.position.set(a.x, a.y0, a.z);
-        dummy.rotation.set(0, Math.atan2(dx, dz), 0);
-        dummy.scale.set(1, 1, Math.hypot(dx, dz));
-        dummy.updateMatrix();
-        return dummy.matrix.clone();
-      });
+      const wireMatrices = spans.map(({ a, b }) => PM.wireSpanMatrix(dummy, a, b));
       const wireMat = new THREE.MeshStandardNodeMaterial({ color: 0x1c1d1f, roughness: 0.6, metalness: 0.2, side: THREE.DoubleSide });
       const wires = addMatrixArrayInstanced(PM.wireSpanGeometry(THREE), wireMat, wireMatrices, false);
       if (wires) {

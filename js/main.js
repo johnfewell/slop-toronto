@@ -27,7 +27,6 @@ const { buildTerrain } = window.CITY;
 const { buildLandmarks } = window.CITY;
 const { buildCityBlocks } = window.CITY;
 const { buildStreetDetails } = window.CITY;
-const { buildSignage } = window.CITY;
 const { createTourGuide } = window.CITY;
 const { createTrafficSystem, createHighwayTraffic } = window.CITY;
 const { buildRoadPaint } = window.CITY;
@@ -129,8 +128,7 @@ async function initApp() {
   }
   const cityBlocks = buildCityBlocks(scene);
   markInit('blocks');
-  const signage = buildSignage(scene);
-  const uploadedTextures = [...signage.textures]; // (the phone tiers drop their CPU copies once on screen, see below)
+  const uploadedTextures = []; // (the phone tiers drop their CPU copies once on screen, see below)
   // Source-keyed storefront signs over their shops' fascias (storefront-signs.js; js/toronto-storefronts.js)
   const storefrontSigns = window.CITY.buildStorefrontSigns ? window.CITY.buildStorefrontSigns(scene, { facadeOf: cityBlocks.facadeOf })
     : { texture: null, gpuBytes: 0, cpuBytes: 0 };
@@ -215,6 +213,16 @@ async function initApp() {
   });
   window.CITY.auditPatioLanes?.(trafficSystem.network);
   markInit('traffic');
+  // the cars parked at the curbs where the City allows it, clear of the lanes just built (parked-cars.js): solid to the
+  // player and the walkers, and the traffic's swerves keep off them (traffic.js wayRound). ?parked=0 leaves them out
+  const parkedCars = window.CITY.buildParkedCars
+    ? window.CITY.buildParkedCars(scene, trafficSystem.network, { patioColliders: patios.colliders })
+    : null;
+  if (parkedCars) {
+    allColliders.push(...parkedCars.colliders);
+    trafficSystem.network.parkedAt = parkedCars.parkedAt;
+  }
+  markInit('parkedCars');
   // the people's heads at every crosswalk, the midblock signals & the pedestrian crossovers (pedestrian-signals.js)
   if (window.CITY.buildPedestrianSignals) propColliders.push(...(window.CITY.buildPedestrianSignals(scene, trafficSystem, streetDetails.signalClock)?.colliders || []));
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
@@ -237,6 +245,20 @@ async function initApp() {
   // --- end Toronto layer ---
   buildRoadPaint(scene, trafficSystem.network);
   markInit('roadPaint');
+  // ?donvalley=1: the Don Valley terrain pilot (js/don-valley.js): the static ground (street level, curb islands,
+  // walks, lawns, streams, road markings, track beds) split along its grid and lowered onto the valley; its terrain
+  // north of the city, the river and the buildings' plinths. The decks and the viaduct carry their own heights.
+  if (window.CITY.DON_VALLEY) {
+    const DV = window.CITY.DON_VALLEY, t0 = performance.now();
+    // (the road markings follow the surface themselves: road-paint.js)
+    const stats = [scene.getObjectByName('CityGround'), scene.getObjectByName('RailTracks')]
+      .map((root) => DV.drape(root, { except: /^(Flyover|LakeOntario|RoadCut|BikeSeparators)/ }));
+    const patches = DV.buildPatches(scene);
+    const sum = (k) => stats.reduce((t, s) => t + s[k], 0);
+    console.info(`[don-valley] draped ${sum('meshes')} meshes (${sum('triangles')} triangles into ${sum('pieces')} pieces), ${patches.plinths} plinths, in ${Math.round(performance.now() - t0)} ms${stats.some((s) => s.skipped.length) ? `; skipped ${stats.flatMap((s) => s.skipped).join(', ')}` : ''}`);
+    window.CITY.donValleyStats = { stats, plinths: patches.plinths, ms: performance.now() - t0 };
+    markInit('donValley');
+  }
 
   // 4. Initialize Third-Person Controllers (Person, Car, Cyclist, Helicopter) & Multi-Camera System
   const controllerManager = new ThirdPersonControllerManager(scene, allColliders);
@@ -1314,6 +1336,7 @@ async function initApp() {
       mapSystem.update(); tourGuide.update(dt, elapsed); renderCarCondition(); cityAudio.update(dt, elapsed);
     }
     if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
+    if (parkedCars) parkedCars.update(cameraSystem.camera); // (the cells in view, re-picked when the camera moves)
     if (warmedUp && bikeShare) bikeShare.update(cameraSystem.camera.position); // the nearby stations' bikes
     if (warmedUp && wayfindingMaps) wayfindingMaps.update(cameraSystem.camera.position,dt);
 
@@ -1368,7 +1391,7 @@ async function initApp() {
         // for what the first frames uploaded
         if (QUALITY.lean) {
           const LEAN_ROOTS = new Set(['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns',
-            'CityLandmarks', 'Terrain', 'CitySignage', 'StorefrontSigns', 'RoadMarkings', 'Trees', 'RailCorridor', 'Streetcars', 'Subway', 'ShadowProxy', 'ShadowProxies']);
+            'CityLandmarks', 'Terrain', 'StorefrontSigns', 'RoadMarkings', 'Trees', 'RailCorridor', 'Streetcars', 'Subway', 'ShadowProxy', 'ShadowProxies']);
           const release = () => {
             // the static city's groups (only their vertex data: the trains & streetcars move by their matrices)
             const roots = scene.children.filter((o) => LEAN_ROOTS.has(o.name));

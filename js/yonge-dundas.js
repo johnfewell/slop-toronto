@@ -79,7 +79,7 @@ function buildYongeDundas(scene) {
         if (faceW < 6) continue;
         const fu = nu ? (nu > 0 ? u1 : u0) : (u0 + u1) / 2;
         const fv = nv ? (nv > 0 ? v1 : v0) : (v0 + v1) / 2;
-        // world: x = cx + u cs + v sn, z = cz - u sn + v cs (as signage.js)
+        // world: x = cx + u cs + v sn, z = cz - u sn + v cs (a GEO.buildings row's frame)
         const fx = cx + fu * cs + fv * sn, fz = cz - fu * sn + fv * cs;
         const nx = nu * cs + nv * sn, nz = -nu * sn + nv * cs;
         const onYonge = Math.abs(nx) > 0.85 && (IX - fx) * nx > 0 && Math.abs(fx - IX) < FRONT && Math.abs(fz - IZ) < REACH;

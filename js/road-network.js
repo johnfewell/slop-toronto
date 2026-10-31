@@ -259,6 +259,10 @@ function buildRoadNetwork(sidewalks, obstacles) {
     const pos = [];
     for (let i = 0; i < RG.nodes.length; i += 2) pos.push({ x: RG.nodes[i], z: RG.nodes[i + 1], h: 0 });
     for (let i = 0; RG.raised && i < RG.raised.length; i += 2) pos[RG.raised[i]].h = RG.raised[i + 1];
+    // (the Don Valley pilot, js/don-valley.js: the valley's roads on its ground, Bloor Street's deck level with the street)
+    const DV = window.CITY.DON_VALLEY;
+    const vh = DV ? (x, z, h) => DV.roadHeight(x, z, h) : (x, z, h) => h;
+    if (DV) for (const p of pos) p.h = vh(p.x, p.z, p.h);
     for (const i of RG.rim || []) pos[i].rim = true;
     const pieceRows = new Map();
     for (const p of pieces) {
@@ -306,7 +310,7 @@ function buildRoadNetwork(sidewalks, obstacles) {
     for (let li = 0; li < RG.links.length; li++) {
       const [a, b, ni, w, lanes, dir, inner, rank, ih] = RG.links[li];
       const pts = [pos[a]];
-      for (let k = 0; k < inner.length; k += 2) pts.push({ x: inner[k], z: inner[k + 1], h: ih ? ih[k / 2] : 0 });
+      for (let k = 0; k < inner.length; k += 2) pts.push({ x: inner[k], z: inner[k + 1], h: vh(inner[k], inner[k + 1], ih ? ih[k / 2] : 0) });
       pts.push(pos[b]);
       let n = 0;
       let hit = 0;

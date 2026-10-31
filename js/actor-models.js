@@ -1392,10 +1392,11 @@ function polygonPlanes(points, margins) {
 // and utility fleet graphics in made-up colours: no company names, wordmarks or logos.
 const CAR_LIVERY = { NONE: 0, POLICE: 1, COURIER_TEAL: 2, UTILITY: 3, TWO_TONE: 4, COURIER_ORANGE: 5 };
 
-// Packs per-instance style fields into carState.w (livery 0..7, metallic 0..1, trim 0..3, wheelStyle 0..3).
-// Livery 1 with default options encodes to 1, keeping the police carState.w = 1 checks compatible.
-function carStyleCode({ livery = 0, metallic = 0, trim = 0, wheel = 0 } = {}) {
-  return (livery & 7) + ((metallic & 1) << 3) + ((trim & 3) << 4) + ((wheel & 3) << 6);
+// Packs per-instance style fields into carState.w (livery 0..7, metallic 0..1, trim 0..3, wheelStyle 0..3, and `parked`:
+// its lamps off, parked-cars.js). Livery 1 with default options encodes to 1, keeping the police carState.w = 1 checks
+// compatible.
+function carStyleCode({ livery = 0, metallic = 0, trim = 0, wheel = 0, parked = false } = {}) {
+  return (livery & 7) + ((metallic & 1) << 3) + ((trim & 3) << 4) + ((wheel & 3) << 6) + (parked ? 256 : 0);
 }
 
 // A generic crown-like mark (a band, three points with a ball on each, a jewel in the band): not the province's emblem
@@ -1619,7 +1620,7 @@ function createLoftedCarMaterial(spec, fixedColorHex = null) {
   const state = fixed ? stateUniform : attribute('carState', 'vec4');
   const paint = fixed ? color(fixedColorHex) : attribute('paintColor', 'vec3');
 
-  // Decode per-instance style code (livery 0..7, metallic 0..1, trim 0..3, wheel 0..3) in the vertex stage
+  // Decode per-instance style code (livery 0..7, metallic 0..1, trim 0..3, wheel 0..3, parked) in the vertex stage
   const wCode = fixed ? float(0.0) : state.w;
   const vStyle = varying(
     vertexStage(
@@ -1627,10 +1628,12 @@ function createLoftedCarMaterial(spec, fixedColorHex = null) {
         floor(fract(wCode.div(8.0)).mul(8.0).add(0.5)),
         step(0.5, fract(floor(wCode.div(8.0).add(0.01)).mul(0.5))),
         floor(fract(floor(wCode.div(16.0).add(0.01)).mul(0.25)).mul(4.0).add(0.5)),
-        floor(wCode.div(64.0).add(0.01))
+        floor(fract(floor(wCode.div(64.0).add(0.01)).mul(0.25)).mul(4.0).add(0.5))
       )
     )
   );
+  // a parked car (style code bit 8): every lamp off
+  const lampsOn = fixed ? float(1.0) : varying(vertexStage(float(1.0).sub(step(255.5, wCode))));
   const livery = vStyle.x;
   const isMetallic = vStyle.y;
   const trimCode = vStyle.z;
@@ -2187,7 +2190,7 @@ function createLoftedCarMaterial(spec, fixedColorHex = null) {
   mat.colorNode = colorFn();
   mat.roughnessNode = roughFn();
   mat.metalnessNode = metalFn();
-  mat.emissiveNode = emissiveFn();
+  mat.emissiveNode = emissiveFn().mul(lampsOn);
 
   _carMaterialCache.set(cacheKey, mat);
   return mat;

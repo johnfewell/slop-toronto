@@ -112,7 +112,34 @@ recompiling fails `tests/storefronts.test.mjs`. The compile also writes [the rev
   tiers' CPU copy is released once on screen.
 - `?storefronts=0` leaves the signs out; the generated storefronts stay.
 - **The map's place card** for a signed place says so ("Storefront sign: “…” (OpenStreetMap)"), as plain text.
-- **No duplicate boards.** `js/signage.js` puts no generic name board on a building that has storefront signs.
+- **No other name boards.** These are the only shop and place names on Toronto's facades: the older generic boards
+  are retired (below).
+
+## Retired: the generic name boards (`st-qaz`, 2026-10-30)
+
+`js/signage.js`, left from the Abuja and New York era, put a board on every building with a named place
+(the first `GEO.pois` place inside it, else the OpenStreetMap building name): 8,315 boards on 8,327 buildings, in
+category colours (blue banks, maroon hotels...). Each went on the largest box part's wall nearest a road, at a height
+from a formula, with no check that the place is still there, that it is on that wall or that the building shows that
+name. That gave, for example, a restaurant's name at the top of a 277 m Scotia Plaza tower, thirteen SCOTIA PLAZA
+boards (one per building record of the complex), loading docks as boards ("CF Toronto Eaton Centre Shipping /
+Receiving"), and, at corners, names on whichever wall happened to be nearest a road. They fail the adoption spec's evidence and provenance rules (ID-1, ID-2, ID-7), so John
+retired them.
+
+- Removed: `js/signage.js` (`buildSignage`, `SIGN_STYLE`, the `CitySignage` group and its up to 17 canvas atlases,
+  4096² each on high), its script tag, main.js's call and lean-mode root, and the landing page and help text that
+  described the boards. `quality.js`'s `signRes` stays: the storefront signs' atlas reads it.
+- Ground floors are unchanged: shops keep the generated storefronts with their blank fascias; other fronts keep their
+  residential or office fronts.
+- Nothing else read the boards. The search, the map's place cards and labels, the tour guide and navigation read
+  `GEO.pois` and `GEO.buildings` directly, and still find every place.
+- None of the boards was a real sign: each was a generic coloured board, not the building's own lettering. The real
+  City, TTC and landmark signs are separate modules and stay: the source-keyed storefront signs
+  (`storefront-signs.js`), the City's park name signs (`park-signs.js`), TO360 wayfinding pillars and maps
+  (`wayfinding.js`), the TTC insignia pylons and entry ID signs (`ttc-pylons.js`), the Yonge & Dundas screens
+  (`yonge-dundas.js`), the waterfront letter signs (`boroughs.js`) and the street name and traffic signs.
+- Verification: `tests/storefronts.test.mjs` checks that the boards stay gone; gpu2 before/after captures of King West,
+  the Danforth at Chester and Yonge & Dundas, desktop high and phone low, midday and twilight (`tools/shots/name-boards.json`).
 
 ## Generated storefronts (`js/tsl-materials.js`, `js/buildings.js`)
 
@@ -183,7 +210,7 @@ walls.
 - A person's review of the 107 records (the review sheet), then `review.status: "reviewed"`.
 - More corridors (Spadina, Kensington Market, Ossington, King West) with the same rules: they need only a corridor
   entry and a propose run. Kensington's Augusta and Kensington Avenues have many unsurveyed places.
-- City-wide, `js/signage.js` still puts an unverified name board on every building with a named place, on the nearest
-  street's face. These boards predate the adoption spec, which they do not meet. Retiring them, or limiting them to
-  landmarks, is a separate decision.
+- Landmark signage built from evidence, if wanted: a few buildings' own signs are part of what they look like (Massey
+  Hall, the Ed Mirvish and Elgin & Winter Garden theatres, police divisions, library branches). Each would need its
+  own record of the real sign, not the retired generic boards.
 - Photo-export validation of the boards once M1 (`st-wt0.5`) lands.
