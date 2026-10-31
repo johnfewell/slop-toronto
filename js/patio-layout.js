@@ -11,8 +11,12 @@
 //   simulated walkers' lines clear, an entrance gap at the address, and clear of corners, furniture, trees, stops and
 //   subway entrances.
 // - Curb lane café: a 1.8 m platform in the curb lane against the curb with a barrier on its road sides, kept clear of
-//   the game's traffic lanes, streetcar tracks and bikeways, set back from intersections, laneways, crossings and
-//   transit stops as the City requires (direction-aware), and from hydrants and street furniture.
+//   the game's traffic lanes and streetcar tracks, set back from intersections, laneways, crossings and transit stops as
+//   the City requires (direction-aware), and from hydrants and street furniture. Where a curbside bikeway runs (the
+//   Danforth's and Bloor's cycle tracks) the platform still stands against the curb, in the bikeway's place, as the
+//   City's 2025 aerials show: the bikeway is routed round its road side (cycling.js routeRoundPatios), so there must be
+//   room for that between the platform and the traffic lane. The site's `bikeway` is the reserve the bikeway may take
+//   there (m; 0: none), narrower than mapped only where the lane needs it.
 // - Private property patios are never placed (they are on private land the game does not model).
 //
 // The page does not run this at startup: tools/build-patios.mjs keeps its result, computed in the browser with the
@@ -44,6 +48,10 @@ const RULES = Object.freeze({
   curbWidth: 1.8, // CaféTO: the average curb lane café width
   curbGap: 0.1, // the gutter left open for drainage under/at the platform's curb edge
   curbLengths: [7, 5], // game choice: a storefront and a bit (CaféTO: the business frontage, up to 12 m)
+  bikewayReach: 4, // how far out from the curb a curbside bikeway is looked for (m; a two-way track's reserve is 3.55 m)
+  detourGap: 0.2, // game: between the platform's barrier and the bikeway routed round it (cycling.js DETOUR.gap)
+  cyclistClear: 1.2, // CaféTO: the platform's perimeter leaves cyclists 1.2 m before the lane line of traffic
+  trackSeparator: 0.55, // cycling.js: a cycle track's separator curb (0.45 m) and 0.1 m, beyond the cyclists' width
   carClear: 1.5, // game: a lane's centre keeps a bus's half width & a little clear (cycling.js CAR_CLEAR)
   streetcarClear: 1.8, // game: a Flexity's half width (1.27 m) + 0.5 m from the track's centre
   signalAhead: 30.5, unsignalAhead: 15, junctionBehind: 9, // CaféTO: from the closest curb edge of an intersection
@@ -184,6 +192,18 @@ function patioSites(records, deps) {
       if (bikeShareAt && samples(r, 1).some(([x, z]) => bikeShareAt(x, z, 'prop'))) { blocker = 'bikeShare'; return false; }
       return true;
     };
+    // how far out from the curb a curbside bikeway reaches along [u - L/2, u + L/2] (m; 0: none): the outermost point any
+    // cross-section finds in it, scanning out from the curb
+    const bikewayFrom = (u, L, curb) => {
+      let reach = 0;
+      for (let s = -L / 2; s <= L / 2 + 1e-6; s += 0.5) {
+        for (let d = 0.05; d <= R.bikewayReach; d += 0.05) {
+          const [x, z] = at(u + s, curb - d);
+          if (bikewayAt(x, z)) reach = Math.max(reach, d);
+        }
+      }
+      return reach;
+    };
     // sidewalk cafés keep 0.4 m apart; neighbours' curb lane platforms may run on end to end, as on Ossington
     const free = (r, gap) => !placed.some((q) => overlaps(q.rect, r, gap));
 
@@ -259,7 +279,26 @@ function patioSites(records, deps) {
           const pts = samples(r);
           if (pts.some(([x, z]) => blockAt(x, z))) { note('curb'); continue; }
           if (pts.some(([x, z]) => railDist(x, z) < R.streetcarClear)) { note('streetcar'); continue; }
-          if (pts.some(([x, z]) => bikewayAt(x, z))) { note('bikeway'); continue; }
+          // in a curbside bikeway's place: the bikeway is routed round the platform's road side (cycling.js), so its
+          // reserve (the cyclists' width, the separator and 0.1 m) must fit between the barrier and the traffic lane,
+          // narrowed if need be but never under CaféTO's 1.2 m for cyclists
+          let bikeway = 0;
+          if (pts.some(([x, z]) => bikewayAt(x, z))) {
+            const reach = bikewayFrom(u, L, curb);
+            if (!(reach > 0 && reach < R.bikewayReach - 0.1)) { note('bikeway'); continue; }
+            bikeway = Math.floor(Math.min(reach, innerEdge - R.detourGap - (lane + R.carClear)) * 100) / 100;
+            // (and clear of a streetcar track beyond it, as the platform is)
+            const railShort = () => {
+              let short = 0;
+              for (let s = -L / 2 - 1; s <= L / 2 + 1 + 1e-6; s += 0.5) {
+                short = Math.max(short, R.streetcarClear - railDist(...at(u + s, innerEdge - R.detourGap - bikeway)));
+              }
+              return short;
+            };
+            let rail = false;
+            for (let k = 0, short; k < 4 && (short = railShort()) > 0; k++) { bikeway = Math.floor((bikeway - short - 0.01) * 100) / 100; rail = true; }
+            if (bikeway < R.cyclistClear + R.trackSeparator) { note(rail ? 'streetcar' : 'bikeway'); continue; }
+          }
           // intersections & laneways: the island's ends along the sidewalk beside the curb
           let bad = false;
           for (const dir of [1, -1]) {
@@ -295,7 +334,7 @@ function patioSites(records, deps) {
           if (!clearOf(r)) { note('obstruction'); continue; }
           if (!free(r, -0.05)) { note('overlap'); continue; }
           site = { ...record, kind: 'curb', cx, cz, tx, tz, nx, nz, length: L, depth: R.curbWidth, along: u, curb,
-            yaw: Math.atan2(nx, nz), rect: r, roadName: road.road.name, travel, entrance: 0 };
+            yaw: Math.atan2(nx, nz), rect: r, roadName: road.road.name, travel, entrance: 0, bikeway };
           break outer;
         }
       }

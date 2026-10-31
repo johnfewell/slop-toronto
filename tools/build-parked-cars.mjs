@@ -31,6 +31,8 @@ export function loadParkingWorld(root = ROOT) {
   for (const file of ['js/toronto-patios.js', 'js/toronto-parking.js', 'js/parking-layout.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   }
+  // the bikeways as the page builds them: routed round the prebuilt CaféTO platforms in their place (cycling.js)
+  CITY.routeRoundPatios(CITY.patioRows(CITY.PATIOS));
   return world;
 }
 
@@ -60,7 +62,8 @@ export function parkingDeps(CITY) {
   return {
     roads: CITY.ROADS, blockAt: CITY.blockAt, lanes: CITY.parkingLaneSegments(GEO), hydrants, stops: pd.stops,
     crossings: pd.crossings, junctions: pd.junctions, driveways, railDist: pd.railDist,
-    bikewayAt: (x, z) => CITY.bikewayIntrusion(x, z, 0.05) > 0, bikeShareAt: CITY.bikeShareAt, patios,
+    bikewayAt: (x, z) => CITY.routedBikewayIntrusion(x, z, 0.05) > 0, trackAt: (x, z) => CITY.routedBikewayIntrusion(x, z, 0.05, true) > 0,
+    bikeShareAt: CITY.bikeShareAt, patios,
     payStations: (CITY.PARKING_METERS?.records || []).map((r) => ({ x: r.x, z: r.z, zone: r.zone })), parking: CITY.PARKING,
     inFrame: (x, z) => CITY.isOnLand(x, z, 10), heightAt: (x, z) => CITY.cutAt(x, z),
     nearestRoad: (x, z) => CITY.nearestRoads(x, z, 30).filter((r) => !r.road.raised)[0]?.road.name || null

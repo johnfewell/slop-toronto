@@ -72,7 +72,7 @@ gap):
 | Width | 1.8 m | CaféTO: the average curb lane café |
 | Clear of the game's traffic lanes | lane centre + 1.5 m | game (`road-network.js` lanes; `cycling.js` CAR_CLEAR) |
 | Clear of streetcar tracks | 1.8 m from the track centre | game (Flexity half width + 0.5 m) |
-| Not over a mapped bikeway | `bikewayIntrusion` | CaféTO cycling clearance; layouts beyond a curbside bikeway not modelled |
+| In a curbside bikeway's place: room to route it round the platform | the bikeway's reserve (≥ 1.2 m for cyclists + the separator) + 0.2 m between the platform and lane centre + 1.5 m, and 1.8 m from a streetcar track | CaféTO platform guideline 4 (1.2 m for cyclists to the lane line); 2025 aerials ([below](#curb-lane-cafés-in-a-bikeways-place-st-74e)) |
 | Signalised intersection ahead / unsignalised ahead / any behind | 30.5 / 15 / 9 m to the cross street's curb | CaféTO roadway placement |
 | Laneway or driveway (a curb gap under 8 m) | 1 m | CaféTO |
 | Pedestrian crossover or midblock signal ahead / behind | 15 / 9 m | CaféTO |
@@ -90,8 +90,8 @@ within the platform's reach plus 1.3 m is logged.
 
 ## Results (2026-10-29 snapshot)
 
-In the browser (desktop and phone tiers alike), **71 sidewalk cafés and 119 curb lane cafés** are placed from 577
-records, with 0 lane conflicts. Node's test harness places 71 and 118, because it uses the source points of benches, pay
+In the browser (desktop and phone tiers alike), **70 sidewalk cafés and 130 curb lane cafés** are placed from 577
+records, with 0 lane conflicts (before `st-74e`: 70 and 119). Node's test harness places 71 and 128, because it uses the source points of benches, pay
 stations and wayfinding in place of the browser's placed sites. 11 sidewalk cafés use the flanking street. Rejections in
 the browser:
 
@@ -103,8 +103,8 @@ the browser:
 | junction | 20 | inside an intersection setback |
 | frontage | 19 | no game road of that name within 45 m of the address |
 | lane | 16 | the curb lane is too narrow beside the game's lane |
-| bikeway | 13 | a curbside bikeway (Danforth, Bloor, College) |
-| overlap / stop / streetcar | 10 / 8 / 1 | |
+| bikeway | 1 | no room to route the cycle track round the platform beside the game's lane (2200 Bloor W; 13 before `st-74e`) |
+| overlap / stop / streetcar | 11 / 8 / 1 | (overlap 10 before `st-74e`: 351 Danforth now meets 347) |
 
 Validated corridors (node audit, `tools/review-cafeto.mjs`):
 
@@ -120,7 +120,7 @@ Validated corridors (node audit, `tools/review-cafeto.mjs`):
 | King St W | curb | 18 | 13 | stop 2 |
 | King St W | sidewalk | 24 | 8 | narrow 9, sidewalk 6 |
 | Danforth Ave | sidewalk | 37 | 20 | obstruction 9, frontage 5 |
-| Danforth Ave | curb | 11 | 0 | bikeway 8, frontage 3 |
+| Danforth Ave | curb | 11 | 7 | frontage 3, overlap 1 (`st-74e`; before it, 0 placed, bikeway 8) |
 
 ## Validation against the City's 2025 aerials
 
@@ -138,8 +138,9 @@ sheets stay in `~/.cache/slop-toronto/raw/cafeto/` and are never committed. Revi
 - **Queen West, Dundas West, College, King West:** curb platforms land in the curb lane beside the streetcar tracks, in
   front of the address. Some 2025 frames show parked cars there, because the imagery predates the 2026 permits. Sidewalk
   cafés placed on College, King and the Danforth sit against the building face with the clearway to the curb.
-- **Danforth:** real curb lane cafés sit beyond the curbside cycle track (tents outside the bike lane). The rules reject
-  them (`bikeway`) rather than invent a layout around the cycle track.
+- **Danforth and Bloor:** real curb lane platforms stand against the curb in the cycle track's place, and the track is
+  routed round their road side ([below](#curb-lane-cafés-in-a-bikeways-place-st-74e)). The game builds them that way
+  since `st-74e`; before it, the rules rejected them (`bikeway`).
 - **Address quality:** a few records are geocoded to a rear lot more than 45 m from their street (189/193 Danforth).
   They are rejected as `frontage`.
 
@@ -253,12 +254,100 @@ in `ride-anywhere-geo/review/gpu2/claude-patios/` (`before-*`, `after3-*`, `chec
 - `?patios=check` finds the prebuilt layout identical to the live algorithm's on both tiers.
 - Patio startup went from 266–269 ms to 22–25 ms.
 
+## Curb lane cafés in a bikeway's place (`st-74e`)
+
+The City's 2025 aerials show the Danforth's and Bloor's curb lane platforms **against the curb**, where the cycle
+track normally runs. The track is routed round their road side, between the platform's barrier and the separator posts,
+and the parking lane gives way there. A cyclist rides that detour at 494 Danforth
+(`~/.cache/slop-toronto/raw/cafeto/review-20261029/bikeway/zoom-494-danforth-cyclist.jpg`). `st-r40` (PR #22) put the
+platforms beyond the bike lane instead, because the track was built before the patios. That PR is superseded. The
+layout is now prebuilt (`st-cmf`), so `js/toronto-patios.js` is loaded before `js/cycling.js`, and the track bends
+round platforms that are already known.
+
+**Placement (`js/patio-layout.js`).** A curb lane footprint that meets a mapped bikeway (`bikewayIntrusion`, the bikeways
+as mapped) is no longer rejected. The platform stands against the curb as anywhere else, with the 0.1 m gutter. The
+layout then needs room to route the bikeway round it:
+
+- It scans out from the curb (0.05 m steps, every 0.5 m along) for the bikeway's reach: 2.4 m on a cycle track, made up
+  of the 1.85 m track, the 0.45 m separator and 0.1 m. PR #22 wrote this scan. A bikeway reaching 3.9 m or more is not a
+  curbside one, and the platform is rejected (`bikeway`).
+- The routed reserve must fit between the platform's road side plus a 0.2 m gap (`detourGap`) and the game's lane centre
+  plus 1.5 m. It is narrowed if need be, but never below 1.75 m. That minimum is CaféTO's 1.2 m for cyclists (platform
+  guideline 4: the platform's perimeter keeps 1.2 m clear of the lane line) plus the separator and 0.1 m. A streetcar
+  track beyond the detour narrows it too, to 1.8 m from the track's centre (503 College).
+- The site records `bikeway`: the reserve the routed bikeway may take beside it, in metres; 0 where there is none. It
+  is a new field of `js/toronto-patios.js` (`PATIO_SITE_FIELDS`).
+- Every other rule applies unchanged. Every site off a bikeway is the same as before, to the bit.
+
+**Platform.** It is the same as any curb lane café: deck, planter barrier on its three road sides, the 1 m emergency gap
+in the side facing the cycle track, and reflective posts at both ends (guideline 12). The side against the sidewalk is
+open, as the guidelines require. PR #22's barrier on the curb side, with its access opening, is not needed, because no
+bike lane runs between this platform and the curb.
+
+**The detour (`js/cycling.js`, `routeRoundPatios`).** At load, if the patios will be built (in season, not
+`?patios=0`), every bikeway piece beside such a platform is bent:
+
+- The band's curb line moves out to the platform's road side plus 0.2 m. It runs fully out from 0.6 m before the
+  platform to 0.6 m past it, and bends out and back over 5.5 m on each side as a smooth S, as the 2025 aerial of
+  494 Danforth shows (about 5–6 m). A 2 m shift averages 1 in 2.75, 1 in 1.8 at its steepest.
+- Platforms on one curb less than 12.2 m apart end to end share one detour: the margin and the bend at both ends
+  (`DETOUR.bridge`, 2 × (0.6 + 5.5) m). Closer than that, the track could not bend back to the curb between them, so
+  it runs straight across instead of dipping part way. The shared detours are 335-341 and 347 Danforth (5.1 m apart),
+  407 and 411-417 Danforth (11.1 m) and 494 and 500 Danforth (2.6 m). With the earlier 8 m bend the threshold was 16 m,
+  and the same three pairs shared.
+- The stretch is resampled every 0.5 m and prepared again (normals, mitres, distances, levels). Each point carries `sq`:
+  how much narrower than mapped the track is there, eased in and out with the bend.
+- Everything drawn from the band follows it: the green paint, symbols, separator curb, flexi-posts, their colliders,
+  and the reserve that `bikeLaneShift` keeps the traffic lanes clear of. So the track stays continuous and keeps its
+  separator.
+- `bikewayIntrusion` still answers for the bikeways as mapped, because the layout decides where they bend.
+  `routedBikewayIntrusion` answers for them as built, and the parked cars keep out of those.
+- `CITY.bikeDetourStats` holds the counts, and `[cycling]` logs them, with the lane edges a detour bounds more tightly
+  than the mapped bikeway.
+- There are no simulated cyclists. The player's bicycle rides the bent track between the platform's collider and the
+  separator curb's.
+
+**Result.** 11 platforms stand in a bikeway's place, in 8 detours over 7 bent track pieces:
+
+| Platform | Routed reserve beside it |
+| --- | --- |
+| 335-341, 347, 407 and 411-417 Danforth; 1165, 1241 and 1566 Bloor W | the whole 2.4 m |
+| 456 Danforth | 1.91 m; the track narrows to 1.36 m |
+| 494 and 500 Danforth | 1.94–1.98 m; the track narrows to 1.39 m |
+| 503 College | 2.13 m (the streetcar track); the track narrows to 1.58 m |
+
+Routing takes about 4 ms at load. In the browser, one 62 m edge beside 494 and 500 Danforth is bounded more tightly by
+its detour than by the mapped track. Its lane moves 2 cm, from 1.80 m to 1.78 m off the centre line
+(`CITY.bikeDetourStats.laneEdgesAt`); no other lane moves. 351 Danforth now overlaps 347 (`overlap`). 2200 Bloor W is rejected (`bikeway`): the game's curb there leaves no room
+beside its lane. The parked cars float beyond the track and give way at each detour (docs/parked-cars.md).
+
+**Verification (2026-10-31).** These ran on gpu2 (`merge-captain-rinks`, the Mac mini, shared). They are functional
+evidence only. Receipts are in `ride-anywhere-geo/review/gpu2/merge-captain-rinks/danforth-*`:
+
+- **Layout.** `?patios=layout` was recorded, then `tools/build-patios.mjs` was run. The `js/toronto-patios.js` it wrote
+  is byte-identical to node's replay. The page reports 70 + 130 placed, 0 lane conflicts, and a fresh fingerprint.
+- **Captures.** `tools/shots/danforth-bikeway.json` ran on desktop (high tier, 1600×900) and phone (low tier,
+  412×915 mobile), before (main) and after. The shots are:
+  - 494 Danforth, 335-341 Danforth and 1165 Bloor W, each from near-nadir and north up (about 28 m top to bottom, as
+    the City's orthophoto crops), at street level from the sidewalk, and from a 7 m oblique;
+  - a cyclist riding the track through 494/500 Danforth's detour.
+- **The ride.** No contact in the detour. The rider passes 0.91 m or more clear of the platform's road side, on the
+  narrowed track. The desktop runs log 2 contacts about 47 m past 494, where the scripted rider turns off the track at
+  Logan Avenue; that happens with either bend, and the phone runs log none.
+- **Errors.** No page errors.
+- **The 5.5 m bends (`danforth-v2-*`).** After the bends were tightened from 8 m, `?patios=layout` was recorded again.
+  `tools/build-patios.mjs` wrote both files unchanged and the fingerprint held, so the layout did not drift. The same
+  shots ran on desktop and phone, with the PR's earlier `danforth-after-*` frames as the before: 8 detours as before,
+  70 + 130 placed, no page errors.
+
 ## Limitations and follow-ups
 
 - No frontage widths: lengths are fixed (7/5 m and 6/4.5 m), and real Ossington platforms that run a whole block are
   shorter here.
-- Danforth/Bloor curb cafés beyond a curbside cycle track are rejected. Modelling them needs the cycle track's real
-  position and a platform outside it.
+- A platform in a bikeway's place bends the bikeway built at startup from the prebuilt layout. If the page lays the
+  patios out again (stale inputs, `?patios=layout|check`), the bikeways still follow the prebuilt sites.
+- 2200 Bloor W is rejected: the game's road there is narrower than the real one, which leaves no room for the detour
+  beside the game's lane.
 - The 2.5 m clearway that Chapter 742 requires on some downtown streets is not modelled; 2.1 m is used everywhere.
 - Doors are assumed at the address point, and neighbours' doors are unknown.
 - The flank rule for corner businesses is a heuristic backed by the aerials. It is not in the data.

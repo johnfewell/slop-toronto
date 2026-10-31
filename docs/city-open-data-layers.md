@@ -59,7 +59,7 @@ maintenance date reads 2021-01-01. **Heights and headings are therefore inferred
 | 6005 | Street Light and Traffic Signal Pole | 1,566 | a 9 m pole with the same light; carries signal heads where a junction approach snaps to it |
 | 6008 | Traffic Signal Pole | 1,518 | a 6.2 m signal pole; carries the heads of the approaches and crosswalks that snap to it |
 | 6004 | Pedestrian Light Pole | 1,901 | a lamp post: 789 heritage lanterns, 366 waterfront promenade posts, 746 park lamps (see *Looks*) |
-| 6003 | Miscellaneous Pole | 7,171 | 4,318 unlit hydro poles: the wooden pole without its light (see *Unlit hydro poles*); the rest (posts, trolley-wire, railway and park poles, duplicates) **not rendered** |
+| 6003 | Miscellaneous Pole | 7,171 | 4,318 unlit hydro poles: the wooden pole without its light (see *Unlit hydro poles*); 856 poles holding up the streetcar overhead: the TTC's steel span and centre poles, east of the Don the wooden pole (see *Poles on the streetcar streets*); the rest (posts, the carhouse yards' and loops', railway and park poles, duplicates) **not rendered** |
 | 6001 | Circular Hydro Tower | 3 | **not rendered** |
 
 The overlays in `~/.cache/slop-toronto/props/poles/refs/` compare the points with the City's 2025 8 cm aerials at Queen &
@@ -142,7 +142,10 @@ District, Huron-Sussex, Broadview at Riverdale Park, Dufferin and Ward's Island:
 | dup | within 1.2 m of a drawn pole (mapped twice, or a stub beside it) | 205 | no |
 | post | three or more within 7 m (bollards on Phoebe St, the Canary District plaza, Fort York's installation, Broadview's park edge) | 194 | no |
 | double | the second of a pair within 4 m (a double pole, a stub) | 138 | no, the first is |
-| trolley | within 9 m of a streetcar track (the TTC's steel span poles, the carhouse yards) | 1,026 | no |
+| trolley | within 9 m of a streetcar track and by a street (the TTC's steel span poles) | 780 | yes, the steel span pole |
+| trolleyWood | the same, in South Riverdale, North Riverdale or Playter Estates-Danforth (east of the Don) | 48 | yes, the wooden pole |
+| trolleyCentre | within 9 m of a streetcar track, between two tracks (not a yard's), each within 2.5 m | 28 | yes, the steel centre pole |
+| trolleyYard | within 9 m of a streetcar track, not by a street (the carhouse yards and the loops) | 170 | no |
 | rail | within 15 m of a railway and not within 12 m of a street | 284 | no |
 | park | inside a park, pitch, golf course or cemetery and not by a street (field lights, flag poles) | 268 | no |
 | core | in the rebuilt core and waterfront neighbourhoods of the lights' looks, except University (Huron-Sussex keeps its rear-lot line) | 712 | no |
@@ -164,10 +167,78 @@ a corner pole facing the cross street) takes the line too. That gives 6,504 span
 699 lit to unlit and 1,512 unlit to unlit. 64 spans still pass within 1.5 m of a wooden pole they are not strung on,
 where two poles stand closer than 8 m. Of the unlit poles, 2,623 are strung. The rest stand alone, down a back lane or
 by a steel-lit arterial. The wires stay on the high tier only. The miscellaneous poles' rules are approximations. A
-parking lot's light standards can come out as hydro poles, and wooden hydro poles that also carry a streetcar's span
-wires (Queen East, Gerrard, Broadview) come out as trolley poles, which are not drawn.
+parking lot's light standards can come out as hydro poles. The poles by the streetcar tracks have their own rules
+(next section).
 
-The layer is 549 KB as a script, about 147 KB with Brotli (482 KB and 128 KB before the unlit hydro poles; 438 KB and 116 KB before the pedestrian lights and looks).
+**Poles on the streetcar streets** (bead `st-625`; `tools/build-poles.mjs` `miscPoles`, shipped in the layer's 6003
+rows with the looks `trolley` and `trolleyCentre` and the list `tram`). PR #39 left out the 1,026 miscellaneous poles
+standing within 9 m of a streetcar track. They hold up the overhead: the TTC's tapered steel poles carry the span wires
+across the street, often with a streetlight pole across from them, and in the older east end Toronto Hydro's wooden
+poles carry them too. The source says no more than "Miscellaneous Pole", so they are told apart by where they stand,
+in this order:
+
+- **centre** (28): between two tracks (not a yard's), each within 2.5 m. These are the centre poles of The Queensway's
+  and Spadina's rights-of-way and Fleet Street, with a bracket arm over each track.
+- **yard** (170): no named street within 12 m. These are the Roncesvalles carhouse, the Exhibition, Broadview station
+  and other loops, and the yards. The city does not draw their tracks' overhead, so these poles are **not drawn**.
+- **wood** (48): beside the street in South Riverdale, North Riverdale or Playter Estates-Danforth, the neighbourhoods
+  east of the Don: Queen East through Riverside and Leslieville, Gerrard at Broadview, Broadview and Dundas East.
+- **steel** (780): beside the street anywhere else: King, Queen West, College, Dundas West, Roncesvalles, Bathurst...
+
+*Accuracy.* Overlays of the City's 2025 8 cm aerials checked a seeded random sample of 32 (16 steel, 6 wood, 4 centre and
+6 yard). Every point sits on a pole's base or shadow. After one rule change, centre before yard, the position classes
+were right for all 32. The first order had called a centre pole in the Spadina right-of-way south of Front a yard pole.
+Full-resolution overlays at Queen & Broadview, Broadview at Riverdale Park, Gerrard & Broadview and King & Spadina show
+the span wires as thin lines across the street, where the pairing below puts them. **The material is not verified.** A
+nadir 8 cm aerial shows a pole's position, its shadow and the wires, not whether it is wood or steel. The wooden class
+follows the observation behind PR #39's note (Queen East, Gerrard and Broadview), applied by neighbourhood. A Street
+View pass would settle it. The steel streets' rule is the TTC's standard construction.
+
+*Placement* (`js/mapped-poles.js`, `js/street-details.js`): the same curb rules as the other mapped poles. 849 of the
+856 shipped are drawn (776 steel, 26 centre, 47 wooden). Six are off the curb islands, and one steel pole is left out
+because a pole stands there already (`poleStats.placed.tram`, `tramCentre`, `tramWood`, `tramBlocked`). A side pole faces the nearest track. A centre pole's
+arms run across it. The wooden ones are the wooden hydro pole and are on its line (`woodSpans`, high tier). The steel
+pole is a new model: a 9.6 m tapered galvanised pole on a base collar, 0.34 m across at the foot and 0.17 m under its
+cap, with a clamp and eye bolts at 6.3 m for the span wires. The centre pole adds a braced 1.5 m bracket arm each way.
+They are 68 and 104 triangles, one instanced mesh each in the poles' shared material. Each has a player collider
+(0.17 m), a street-furniture footprint and a coarse sun-shadow stand-in (8 and 10 triangles). They are culled at 1.5 km
+like the wooden poles, on every tier.
+
+*Span wires* (`tramSpans` in `js/mapped-poles.js`; `stringTramSpans` in `js/streetcars.js`). The game already hangs a
+contact wire 5.6 m over every streetcar track it draws. Each side pole's span wire leaves its clamp at 6.3 m and runs
+across the street:
+
+- to the pole across from it, a span pole or a lit steel or wooden pole: 7–30 m across, within 4 m of square, and
+  each pole strung once (466);
+- else to the wall of the building across the street, at least 6.5 m high, where the TTC anchors spans on rosettes
+  (139);
+- else as a 12 m bracket out over the tracks (144).
+
+A centre pole gets an arm each way. `stringTramSpans` finds where each span crosses the contact wire. It pulls the span
+down to 0.3 m over the wire there, drops a hanger to it, and ends an arm or a bracket at its last wire. A span crossing
+no contact wire is left out. In the browser, 657 spans are strung with 1,148 hangers, and 143 are left out (`CITY.poleStats.tramSpans`). The
+spans left out are almost all by the non-revenue tracks on McCaul, Church, Ossington, Dufferin, Shaw, Parliament and
+Adelaide, whose rails and wire the city does not draw. Those poles stand bare. The spans are about 2,800 line segments
+in the contact wire's own `LineSegments` tiles and add no draw calls. `QUALITY.tramSpans` is on for every tier, and
+`?q.tramSpans=false` gives an A/B. The wooden ones east of the Don also join the hydro lines: `woodSpans` goes from 6,504 to 6,525.
+
+*Parked cars and patios.* The parked cars (`docs/parked-cars.md`) stand in the curb lane and do not read the poles. All
+the new poles stand on the curb islands. Against the committed cars, with every body taken as 4.9 × 2.0 m (the largest),
+none overlaps and the closest clearance is 6 cm. A new pole near a café is a new collider for the patio layout, so the
+patio record was redone (`docs/cafeto-patios.md`). Its sites, counts, reasons and blockers are unchanged (189).
+The fingerprint changed: there are 404 more colliders near the cafés, and the layout touches 626 recorded colliders
+instead of 603. `tools/build-parked-cars.mjs` rebuilds byte-identical (10,775 cars). After merging the Danforth/Bloor
+layout (`st-74e`, 200 sites) it was recorded again on the mini: the same 200 sites, counts and reasons as main, a new
+fingerprint (625 recorded colliders), and the parked cars still byte-identical (11,012).
+
+Not done, follow-ups: the yards' and loops' overhead and poles; the non-revenue tracks' rails and wire, which would
+string the bare poles; the span wires from the streetlight poles that also carry them (only the miscellaneous poles and
+their partners are strung); and a Street View check of the wooden class. Tests: `node --test tests/tram-poles.test.mjs`.
+Captures: `node tools/check-poles.mjs tram tools/shots/tram-poles.json`. This records the stats, then captures Queen
+East at Broadview, Gerrard at Broadview, King West at Spadina and Spadina's right-of-way south of Front, from street
+level and an oblique aerial, at midday and twilight.
+
+The layer is 566 KB as a script, about 152 KB with Brotli (549 KB and 147 KB before the streetcar streets' poles; 482 KB and 128 KB before the unlit hydro poles; 438 KB and 116 KB before the pedestrian lights and looks).
 Since `st-mf8` the site no longer loads that script: `window.CITY.POLES` arrives packed in `data/toronto-geodata.bin`
 beside `GEO` (`tools/geo-bin.mjs`; `js/geodata-loader.js` puts both on `window.CITY` before the classic scripts run),
 where it cost 95.6 KB of the gzip'd file before the pedestrian lights and looks. The script stays the node tools' and

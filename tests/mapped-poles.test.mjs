@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import * as CORE from '../vendor/three/three.core.js';
 import { mergeGeometries } from '../node_modules/three/examples/jsm/utils/BufferGeometryUtils.js';
-import { buildPoles, miscPoles, SHIPPED, LOOKS, DISTILLERY, MISC_CLASSES } from '../tools/build-poles.mjs';
+import { buildPoles, miscPoles, SHIPPED, LOOKS, DISTILLERY, MISC_CLASSES, MISC_DRAWN, TRAM_CLASSES } from '../tools/build-poles.mjs';
 
 const context = { window: { CITY: { TSL: {} } }, location: { search: '' } };
 for (const file of ['toronto-geodata', 'toronto-traffic-data', 'city-config', 'toronto-poles', 'mapped-poles'])
@@ -35,7 +35,7 @@ test('the pole build keeps the modelled types, counts the rest and clips to the 
   assert.equal(data.misc, undefined);
   // with the city: the pedestrian light (Queens Quay & Bay) is a promenade post; two lights alone are steel
   const judged = buildPoles(fixture, C.GEO.frame, { package: 'x' }, C.GEO);
-  assert.deepEqual(JSON.parse(JSON.stringify(judged.looks)), { wood: [], lantern: [], promenade: [9], park: [] });
+  assert.deepEqual(JSON.parse(JSON.stringify(judged.looks)), { wood: [], lantern: [], promenade: [9], park: [], trolley: [], trolleyCentre: [] });
   assert.throws(() => buildPoles({ features: [fixture.features[0], fixture.features[0]] }, C.GEO.frame, {}), /duplicate/);
   assert.throws(() => buildPoles({ features: [feature(1, 6002, 'Mystery Pole', [43.6487, -79.3959])] }, C.GEO.frame, {}), /Unknown pole subtype/);
   assert.throws(() => buildPoles({ features: [feature(1, 6006, 'Traffic Signal Pole', [43.6487, -79.3959])] }, C.GEO.frame, {}), /Unknown pole subtype/);
@@ -53,7 +53,8 @@ test('the shipped layer is the reviewed 2026-02-20 snapshot with its provenance'
   assert.deepEqual(Object.keys(P.types).map(Number).sort(), [MISC, PEDESTRIAN, LIGHT_SIGNAL, LIGHT, SIGNAL].sort());
   assert.deepEqual(Object.keys(P.misc), MISC_CLASSES);
   assert.equal(Object.values(P.misc).reduce((a, b) => a + b, 0), P.counts[MISC], 'every miscellaneous pole classed once');
-  assert.equal(P.types[MISC].ids.length, P.misc.hydro);
+  assert.equal(P.types[MISC].ids.length, MISC_DRAWN.reduce((n, k) => n + P.misc[k], 0), 'the unlit hydro poles and the streetcar streets\' poles');
+  assert.equal(P.tram.reduce((n, d) => n + (d > 0), 0), TRAM_CLASSES.reduce((n, k) => n + P.misc[k], 0), 'the poles holding up the overhead listed');
 });
 
 test('mapped poles stand on the curb islands, off the flyovers, their arms towards the road', () => {
@@ -67,7 +68,7 @@ test('mapped poles stand on the curb islands, off the flyovers, their arms towar
     assert.ok(C.blockAt(s.x, s.z), `pole ${s.id} off the curb`);
     assert.ok(C.deckHeightAt(s.x, s.z, 1000) <= 1);
     assert.ok(Math.abs(Math.hypot(s.ax, s.az) - 1) < 1e-6);
-    if (s.road && !s.median && s.toRoad > 0.3 && !(s.type === MISC && s.toRoad > 12)) assert.ok((s.road.px - s.x) * s.ax + (s.road.pz - s.z) * s.az > 0);
+    if (s.road && !s.median && !s.tram && s.toRoad > 0.3 && !(s.type === MISC && s.toRoad > 12)) assert.ok((s.road.px - s.x) * s.ax + (s.road.pz - s.z) * s.az > 0);
   }
   // Queen & Spadina (aerial-checked 2025): the combined light & signal poles on its corners
   const qs = C.worldFromLatLon(43.64867, -79.39592);
@@ -97,10 +98,12 @@ test('every pole has one look, of its type: wooden & lantern street lights, thre
   assert.deepEqual(Object.keys(L), LOOKS);
   const looks = Object.fromEntries(LOOKS.map((k) => [k, undelta(L[k])]));
   // the reviewed 2026-02-20 snapshot's split
-  assert.deepEqual(Object.fromEntries(LOOKS.map((k) => [k, looks[k].length])), { wood: 5505, lantern: 814, promenade: 366, park: 746 });
+  assert.deepEqual(Object.fromEntries(LOOKS.map((k) => [k, looks[k].length])), { wood: 5505, lantern: 814, promenade: 366, park: 746, trolley: 780, trolleyCentre: 28 });
   const lights = idsOf(LIGHT), peds = idsOf(PEDESTRIAN);
   assert.ok(looks.wood.every((id) => lights.has(id)), 'only street light poles are wooden');
   assert.ok([...looks.promenade, ...looks.park].every((id) => peds.has(id)));
+  const misc = idsOf(MISC);
+  assert.ok([...looks.trolley, ...looks.trolleyCentre].every((id) => misc.has(id)), 'the steel span poles are miscellaneous poles');
   assert.equal(looks.lantern.filter((id) => lights.has(id)).length, 25, 'the Distillery\'s lights are lantern posts');
   const all = Object.values(looks).flat();
   assert.equal(new Set(all).size, all.length, 'no pole has two looks');
@@ -186,8 +189,8 @@ test('the miscellaneous poles: the unlit hydro poles drawn, the others told apar
   const P = C.POLES;
   // the reviewed 2026-02-20 snapshot's split (City 2025 aerials: Indian Rd, Shannon St, the Roncesvalles carhouse,
   // Fort York, Phoebe St, the Canary District, Huron-Sussex, Broadview at Riverdale Park, Dufferin, Ward's Island)
-  assert.deepEqual(JSON.parse(JSON.stringify(P.misc)), { hydro: 4318, dup: 205, post: 194, double: 138, trolley: 1026, rail: 284,
-    park: 268, core: 712, median: 11, building: 15 });
+  assert.deepEqual(JSON.parse(JSON.stringify(P.misc)), { hydro: 4318, dup: 205, post: 194, double: 138, trolley: 780, trolleyWood: 48,
+    trolleyCentre: 28, trolleyYard: 170, rail: 284, park: 268, core: 712, median: 11, building: 15 });
   // each rule on its own: rows [OBJECTID, x dm, z dm] round a light at Queen & Spadina, on Euclid Ave, on King St's
   // tracks, in the Financial District
   const dm = (p, dx = 0, dz = 0) => [Math.round((p.x + dx) * 10), Math.round((p.z + dz) * 10)];
@@ -207,12 +210,12 @@ test('the miscellaneous poles: the unlit hydro poles drawn, the others told apar
   assert.deepEqual(Object.fromEntries(cls), { 10: 'dup', 11: 'hydro', 12: 'double', 20: 'post', 21: 'post', 22: 'post', 30: 'trolley', 40: 'core' });
   assert.equal(counts.hydro, 1);
   // drawn: on the curb islands (or back lanes and lots), never down a median; most placed
-  const unlit = sites.filter((s) => s.type === MISC);
+  const unlit = sites.filter((s) => s.type === MISC && !s.tram);
   assert.ok(unlit.length >= P.misc.hydro * 0.9 && unlit.every((s) => s.look === 'wood' && C.blockAt(s.x, s.z)), `${unlit.length} of ${P.misc.hydro} placed`);
   // none on a pole drawn already, nor in the core's rebuilt streets
   const drawn = C.poleIndex(sites.filter((s) => s.type !== MISC));
   assert.equal(unlit.filter((s) => drawn.nearest(s.x, s.z, 1)).length, 0);
-  assert.equal(near(43.6487, -79.3812, 500).filter((s) => s.type === MISC).length, 0, 'none in the Financial District');
+  assert.equal(near(43.6487, -79.3812, 500).filter((s) => s.type === MISC && !s.tram).length, 0, 'none in the Financial District (but the streetcar streets\' span poles)');
   // a back lane's pole faces its line: its crossarm square to its nearest wooden neighbour
   const back = unlit.filter((s) => !s.road || s.toRoad > 12);
   const wood = C.poleIndex(sites.filter((s) => s.look === 'wood' && !s.median), 24);

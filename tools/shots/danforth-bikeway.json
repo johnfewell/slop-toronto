@@ -1,0 +1,133 @@
+[
+ {
+  "name": "stats",
+  "mode": "person",
+  "time": "midday",
+  "wait": 500,
+  "record": true,
+  "js": "(() => { const C = window.CITY, p = C.patioStats || {}, k = C.parkedStats || {}; const bw = (p.sites || []).filter((s) => s.kind === 'curb' && s.bikeway > 0).map((s) => s.address + ' ' + s.bikeway); const out = { patios: { layout: p.layout, fingerprint: p.fingerprint, placed: p.placed, rejected: p.rejected, inBikeway: bw, laneConflicts: p.laneConflicts && p.laneConflicts.length }, detours: C.bikeDetourStats || null, parked: { kept: k.kept, laneDropped: k.laneDropped, laneDroppedBy: k.laneDroppedBy, patioDropped: k.patioDropped, source: k.source && { stalls: k.source.stalls, cars: k.source.cars } }, q: location.search }; console.log('[ride-check] danforth ' + JSON.stringify(out)); if (p.fingerprint && !p.fingerprint.ok) throw new Error('The prebuilt patio layout is stale: ' + JSON.stringify(p.fingerprint)); if (p.laneConflicts && p.laneConflicts.length) throw new Error('A curb lane platform in a traffic lane: ' + JSON.stringify(p.laneConflicts.slice(0, 5))); return out; })()"
+ },
+ {
+  "name": "danforth-494-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": 3485.4,
+  "z": -2777.54,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [3485.22, 30, -2770.04], look: [3485.22, 0, -2771.04], fov: 50 }); const s = (window.CITY.patioStats.sites || []).find((p) => p.address === \"494 DANFORTH AVE\" && p.kind === 'curb'); console.log('[ride-check] danforth-494 ' + JSON.stringify(s ? { id: s.id, x: +s.cx.toFixed(2), z: +s.cz.toFixed(2), length: s.length, bikeway: s.bikeway } : 'not placed')); })()"
+ },
+ {
+  "name": "danforth-494-street",
+  "mode": "person",
+  "time": "midday",
+  "x": 3470.41,
+  "z": -2778.11,
+  "heading": 0,
+  "wait": 4000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [3470.39, 1.87, -2777.31], look: [3488.27, 0.7, -2772.27], fov: 55 }); })()"
+ },
+ {
+  "name": "danforth-494-oblique",
+  "mode": "person",
+  "time": "midday",
+  "x": 3470.41,
+  "z": -2778.11,
+  "heading": 0,
+  "wait": 3000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [3476.15, 7, -2767.27], look: [3486.29, 0.3, -2773.02], fov: 50 }); })()"
+ },
+ {
+  "name": "danforth-335-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": 3127.33,
+  "z": -2766.73,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [3127.51, 30, -2774.23], look: [3127.51, 0, -2775.23], fov: 50 }); const s = (window.CITY.patioStats.sites || []).find((p) => p.address === \"335-341 DANFORTH AVE\" && p.kind === 'curb'); console.log('[ride-check] danforth-335 ' + JSON.stringify(s ? { id: s.id, x: +s.cx.toFixed(2), z: +s.cz.toFixed(2), length: s.length, bikeway: s.bikeway } : 'not placed')); })()"
+ },
+ {
+  "name": "danforth-335-street",
+  "mode": "person",
+  "time": "midday",
+  "x": 3112.33,
+  "z": -2766.88,
+  "heading": 0,
+  "wait": 4000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [3112.35, 1.87, -2767.68], look: [3130.45, 0.7, -2771.86], fov: 55 }); })()"
+ },
+ {
+  "name": "danforth-335-oblique",
+  "mode": "person",
+  "time": "midday",
+  "x": 3112.33,
+  "z": -2766.88,
+  "heading": 0,
+  "wait": 3000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [3118.58, 7, -2777.44], look: [3128.44, 0.3, -2771.21], fov: 50 }); })()"
+ },
+ {
+  "name": "bloor-1165-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -4001.73,
+  "z": -2806.78,
+  "heading": 0,
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-4001.58, 30, -2814.28], look: [-4001.58, 0, -2815.28], fov: 50 }); const s = (window.CITY.patioStats.sites || []).find((p) => p.address === \"1165 BLOOR ST W\" && p.kind === 'curb'); console.log('[ride-check] bloor-1165 ' + JSON.stringify(s ? { id: s.id, x: +s.cx.toFixed(2), z: +s.cz.toFixed(2), length: s.length, bikeway: s.bikeway } : 'not placed')); })()"
+ },
+ {
+  "name": "bloor-1165-street",
+  "mode": "person",
+  "time": "midday",
+  "x": -4016.73,
+  "z": -2806.89,
+  "heading": 0,
+  "wait": 4000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-4016.72, 1.87, -2807.68], look: [-3998.63, 0.7, -2811.92], fov: 55 }); })()"
+ },
+ {
+  "name": "bloor-1165-oblique",
+  "mode": "person",
+  "time": "midday",
+  "x": -4016.73,
+  "z": -2806.89,
+  "heading": 0,
+  "wait": 3000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-4010.52, 7, -2817.46], look: [-4000.64, 0.3, -2811.26], fov: 50 }); })()"
+ },
+ {
+  "name": "danforth-494-ride-0",
+  "mode": "cyclist",
+  "time": "midday",
+  "wait": 2600,
+  "hold": "KeyW",
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;const S={\"cx\":3485.33,\"cz\":-2774.54,\"tx\":0.9997,\"tz\":0.0249,\"nx\":0.0249,\"nz\":-0.9997};\nconst fr=(x,z)=>({u:(x-S.cx)*S.tx+(z-S.cz)*S.tz,v:(x-S.cx)*S.nx+(z-S.cz)*S.nz});\n// this curb's cycle track pieces within 90 m along\nconst pieces=C.CYCLING_BANDS.filter(b=>!b.cross&&b.kind===3&&b.P.some(p=>{const f=fr(p.x,p.z);return Math.abs(f.u)<90&&f.v<1&&f.v>-7;}));\nconst near=(x,z)=>{let best=null,bd=1e9;for(const b of pieces){const Q=b.P;for(let i=0;i+1<Q.length;i++){const a=Q[i],c=Q[i+1];const ex=c.x-a.x,ez=c.z-a.z,L2=ex*ex+ez*ez;if(L2<1e-6)continue;let t=((x-a.x)*ex+(z-a.z)*ez)/L2;t=Math.max(0,Math.min(1,t));const qx=a.x+ex*t,qz=a.z+ez*t,d=Math.hypot(qx-x,qz-z);if(d<bd){bd=d;const L=Math.sqrt(L2);best={qx,qz,tx:ex/L,tz:ez/L,nx:a.nx,nz:a.nz,sq:(a.sq||0)+((c.sq||0)-(a.sq||0))*t};}}}return best;};\n// start 30 m before the platform the way the track runs\nconst d0=near(S.cx,S.cz);const dir=Math.sign(d0.tx*S.tx+d0.tz*S.tz)||1;\nlet q=near(S.cx-S.tx*dir*30-S.nx*3,S.cz-S.tz*dir*30-S.nz*3);const half=(1.85-q.sq)/2;\napp.teleportTo(q.qx+q.nx*half,q.qz+q.nz*half,Math.atan2(q.tx,q.tz));app.cameraSystem.cinema=null;\nconst cm=app.controllerManager,bike=cm.entities.cyclist,c0=cm.worldContactCount||0,t0=performance.now();let minBarrier=99,minV=99,maxV=-99,log=[];\n(function f(){const p=bike.position,r=near(p.x,p.z),h=(1.85-r.sq)/2;const ax=r.qx+r.tx*6+r.nx*h,az=r.qz+r.tz*6+r.nz*h;bike.heading=Math.atan2(ax-p.x,az-p.z);\n const g=fr(p.x,p.z);if(Math.abs(g.u)<4.1){minBarrier=Math.min(minBarrier,-g.v-0.9);}minV=Math.min(minV,g.v);maxV=Math.max(maxV,g.v);\n log.push([+g.u.toFixed(1),+g.v.toFixed(2),+bike.speed.toFixed(1),+r.sq.toFixed(2)]);\n if(performance.now()-t0<11000)setTimeout(f,100);else console.log('[ride] '+JSON.stringify({contacts:(cm.worldContactCount||0)-c0,minClearOfPlatformEdge:+minBarrier.toFixed(2),vRange:[+maxV.toFixed(2),+minV.toFixed(2)],samples:log.filter((_,i)=>i%5==0)}));})();})()"
+ },
+ {
+  "name": "danforth-494-ride-1",
+  "wait": 1400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "danforth-494-ride-2",
+  "wait": 1400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "danforth-494-ride-3",
+  "wait": 1400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "danforth-494-ride-4",
+  "wait": 1400,
+  "hold": "KeyW"
+ },
+ {
+  "name": "danforth-494-ride-5",
+  "wait": 2400,
+  "hold": "KeyW"
+ }
+]

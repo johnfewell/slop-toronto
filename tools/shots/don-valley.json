@@ -8,7 +8,7 @@
     "heading": 3.14159,
     "wait": 3000,
     "record": true,
-    "js": "(() => {const a=window.__CITY_APP,C=window.CITY,cm=a.controllerManager,DV=C.DON_VALLEY; const g=(x,z,y)=>+cm.getGroundHeight(x,z,'person',y).toFixed(2); return {pilot:!!DV, stats:C.donValleyStats?{plinths:C.donValleyStats.plinths,ms:Math.round(C.donValleyStats.ms),meshes:C.donValleyStats.stats.map(s=>[s.meshes,s.triangles,s.pieces,s.skipped])}:null, patios:C.patioStats&&C.patioStats.fingerprint, viaduct:C.SUBWAY_VIADUCTS.map(v=>({railY:v.railY,deck:v.deck,pilot:!!v.pilot})), ground:{riverUnderViaduct:g(2280,-2880,null), deckOnViaduct:g(2240,-2803,0.4), underViaduct:g(2240,-2803,-30), castleFrank:g(1790,-2720,null), broadview:g(2736,-2840,null), bayviewFloor:g(2205,-2650,null)}, player:a.controllerManager.getActiveEntity().position}; })()"
+    "js": "(() => {const a=window.__CITY_APP,C=window.CITY,cm=a.controllerManager,DV=C.DON_VALLEY; const g=(x,z,y)=>+cm.getGroundHeight(x,z,'person',y).toFixed(2); return {pilot:!!DV, stats:C.donValleyStats?{plinths:C.donValleyStats.plinths,ms:Math.round(C.donValleyStats.ms),meshes:C.donValleyStats.stats.map(s=>[s.meshes,s.triangles,s.pieces,s.skipped])}:null, patios:C.patioStats&&C.patioStats.fingerprint, viaduct:C.SUBWAY_VIADUCTS.map(v=>({railY:v.railY,deck:v.deck,pilot:!!v.pilot})), ground:{riverUnderViaduct:g(2280,-2880,null), deckOnViaduct:g(2240,-2803,0.4), underViaduct:g(2240,-2803,-30), castleFrank:g(1790,-2720,null), broadview:g(2736,-2840,null), bayviewFloor:g(2205,-2650,null), rosedaleValleyRoad:g(1850,-2510,null), rosedaleBridgeRoad:g(1640,-2687,null)}, player:a.controllerManager.getActiveEntity().position}; })()"
   },
   {
     "name": "dv-aerial",
@@ -21,6 +21,18 @@
     "time": "midday",
     "wait": 5000,
     "js": "(() => {const C=window.CITY,y=C.cutAt(2205,-2650); window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2205,y+1.7,-2650],look:[2240,y+16,-2803],fov:64});})()"
+  },
+  {
+    "name": "dv-aerial-ravine",
+    "time": "midday",
+    "wait": 5000,
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[2020,110,-2330],look:[1700,-12,-2640],fov:55});"
+  },
+  {
+    "name": "dv-rosedale-valley-road",
+    "time": "midday",
+    "wait": 5000,
+    "js": "(() => {const C=window.CITY,y=C.cutAt(1880,-2500); window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1880,y+1.7,-2500],look:[1700,C.cutAt(1700,-2650)+4,-2650],fov:62}); return {y};})()"
   },
   {
     "name": "dv-from-deck",
@@ -45,6 +57,18 @@
   },
   {
     "name": "dv-castle-frank-exit",
+    "wait": 1500,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide,cm=a.controllerManager; document.getElementById('ride-cancel').click(); if(R.inside||cm.interiorSpace) throw new Error('Did not leave the station'); const p=cm.getActiveEntity().position; const g=cm.getGroundHeight(p.x,p.z,cm.activeMode); if(Math.abs(p.y-g)>.1) throw new Error('Unsafe street exit'); return {street:{x:p.x,y:p.y,z:p.z,ground:g}};})()"
+  },
+  {
+    "name": "dv-broadview-platform",
+    "wait": 3000,
+    "record": true,
+    "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide,cm=a.controllerManager; if(!R.enterStation('broadview',0)) throw new Error('Could not enter Broadview'); const e=cm.getActiveEntity(),p=e.position; if(Math.abs(p.y-cm.interiorSpace.floor)>.01) throw new Error('Wrong platform elevation'); e.heading-=Math.PI/2; a.selectCamera('chase',true); console.log('[ride-check] on Broadview platform '+JSON.stringify(p)); return {platform:{x:p.x,y:p.y,z:p.z,floor:cm.interiorSpace.floor}};})()"
+  },
+  {
+    "name": "dv-broadview-exit",
     "wait": 1500,
     "record": true,
     "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide,cm=a.controllerManager; document.getElementById('ride-cancel').click(); if(R.inside||cm.interiorSpace) throw new Error('Did not leave the station'); const p=cm.getActiveEntity().position; const g=cm.getGroundHeight(p.x,p.z,cm.activeMode); if(Math.abs(p.y-g)>.1) throw new Error('Unsafe street exit'); return {street:{x:p.x,y:p.y,z:p.z,ground:g}};})()"

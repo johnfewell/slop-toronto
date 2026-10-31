@@ -10,7 +10,8 @@
 //   solar panel on top); their light pooled around the camera at night. The signal heads go on the City's mapped
 //   signal poles near the corners that want them, else on a pole of their own. The older residential streets' lights
 //   hang on wooden hydro poles, between the City's unlit ones (their lines strung pole to pole on the high tier), the
-//   Distillery's on lantern posts,
+//   Distillery's on lantern posts; the streetcar streets' TTC span poles (and east of the Don the wooden poles) hold up
+//   the overhead's span wires (strung by js/streetcars.js),
 //   and the City's mapped pedestrian lights are lantern posts, the waterfront's promenade posts or park lamps
 //   (js/mapped-poles.js pole models)
 // - Trees: neem, Indian almond & mango on the verges and in the wide medians, royal palms down the medians of the
@@ -260,7 +261,8 @@ function buildStreetDetails(scene) {
   const mappedIndex = window.CITY.poleIndex ? window.CITY.poleIndex(mapped) : { nearest: () => null };
   const poleStats = {
     mapped: useMapped, source: window.CITY.POLES?.source || null, counts: window.CITY.POLES?.counts || null,
-    placed: { light: 0, lightSignal: 0, signal: 0, pedestrian: 0, hydro: 0, hydroBlocked: 0 }, looks: { wood: 0, lantern: 0, promenade: 0, park: 0, spans: 0 }, rejected: mappedLayout.rejected, nudged: mappedLayout.nudged,
+    placed: { light: 0, lightSignal: 0, signal: 0, pedestrian: 0, hydro: 0, hydroBlocked: 0, tram: 0, tramWood: 0, tramCentre: 0, tramBlocked: 0 },
+    looks: { wood: 0, lantern: 0, promenade: 0, park: 0, spans: 0 }, rejected: mappedLayout.rejected, nudged: mappedLayout.nudged,
     fallback: { median: 0, roadside: 0 }, signals: { approaches: 0, mapped: 0, procedural: 0 }
   };
   window.CITY.poleStats = poleStats;
@@ -494,7 +496,7 @@ function buildStreetDetails(scene) {
   // out towards the nearest road; down a median 11 m with an arm over each roadway
   // The pole models (mapped-poles.js): per model, its instances' matrices
   const PM = window.CITY.poleModels;
-  const modelMatrices = { wood: [], woodTransformer: [], lantern: [], promenade: [], park: [] };
+  const modelMatrices = { wood: [], woodTransformer: [], lantern: [], promenade: [], park: [], trolley: [], trolleyCentre: [] };
   const placeModel = (kind, s, yaw) => {
     dummy.position.set(s.x, s.y0, s.z);
     dummy.rotation.set(0, yaw, 0);
@@ -633,13 +635,31 @@ function buildStreetDetails(scene) {
   // The unlit hydro poles (the City's miscellaneous poles that tools/build-poles.mjs judged to be on the overhead lines):
   // the wooden pole without its light, after the procedural lights so they don't hold those back (a hydro pole is no
   // light), not on top of a pole standing already
+  // (east of the Don the wooden poles beside the streetcar streets carry its span wires too: `tram`)
+  const tramBlocked = new Set();
   for (const s of mapped) {
     if (s.type !== MISC || s.look !== 'wood') continue;
-    if (s.median || !isClearOfPoles(s.x, s.z, 0.8)) { poleStats.placed.hydroBlocked++; continue; }
+    if (s.median || !isClearOfPoles(s.x, s.z, 0.8)) { if (s.tram) tramBlocked.add(s); poleStats.placed[s.tram ? 'tramBlocked' : 'hydroBlocked']++; continue; }
     addPole(s.x, s.z, PM.WOOD.r, s.y0, PM.WOOD.h);
     addFootprint(s.x, s.z, 0.45, 0.45);
     placeModel(hashPos(s.x, 8.1, s.z) < PM.WOOD.transformerShare ? 'woodTransformer' : 'wood', s, Math.atan2(-s.az, s.ax));
-    poleStats.placed.hydro++;
+    if (s.tram) poleStats.placed.tramWood++;
+    else poleStats.placed.hydro++;
+  }
+  // The streetcar streets' steel poles (tools/build-poles.mjs miscPoles): the TTC's tapered span pole beside the street,
+  // its centre pole (a bracket arm over each track) between the tracks; not on top of a pole standing already
+  for (const s of mapped) {
+    if (s.type !== MISC || (s.look !== 'trolley' && s.look !== 'trolleyCentre')) continue;
+    if (!isClearOfPoles(s.x, s.z, 0.8)) { tramBlocked.add(s); poleStats.placed.tramBlocked++; continue; }
+    addPole(s.x, s.z, PM.TROLLEY.r, s.y0, PM.TROLLEY.h);
+    addFootprint(s.x, s.z, 0.45, 0.45);
+    placeModel(s.look, s, Math.atan2(-s.az, s.ax));
+    poleStats.placed[s.look === 'trolleyCentre' ? 'tramCentre' : 'tram']++;
+  }
+  // their span wires, for js/streetcars.js to string to its contact wire (every tier: a few thousand line vertices in
+  // the contact wire's own draws; ?q.tramSpans=false for an A/B)
+  if (window.CITY.QUALITY.tramSpans && window.CITY.tramSpans) {
+    window.CITY.tramSpanSites = window.CITY.tramSpans(mapped.filter((s) => !tramBlocked.has(s)), { buildingAt: window.CITY.buildingIndex(GEO) });
   }
   console.info(`[streetDetails] mapped poles: ${JSON.stringify(poleStats.placed)}, looks ${JSON.stringify(poleStats.looks)}, rejected ${JSON.stringify(poleStats.rejected)}, ${poleStats.nudged} moved onto the curb; signal approaches ${JSON.stringify(poleStats.signals)}`);
   console.info(`[streetDetails] ${medianPoles} median & ${roadPoles} roadside procedural streetlights${useMapped ? ' (gap fill)' : ''}`);
@@ -817,7 +837,9 @@ function buildStreetDetails(scene) {
       woodTransformer: () => PM.woodPoleGeometry(THREE, mergeGeometries, { transformer: true }),
       lantern: () => PM.pedLampGeometry(THREE, mergeGeometries, 'lantern'),
       promenade: () => PM.pedLampGeometry(THREE, mergeGeometries, 'promenade'),
-      park: () => PM.pedLampGeometry(THREE, mergeGeometries, 'park')
+      park: () => PM.pedLampGeometry(THREE, mergeGeometries, 'park'),
+      trolley: () => PM.trolleyPoleGeometry(THREE, mergeGeometries),
+      trolleyCentre: () => PM.trolleyPoleGeometry(THREE, mergeGeometries, { centre: true })
     };
     for (const [kind, geometry] of Object.entries(models)) {
       const inst = addMatrixArrayInstanced(geometry(), modelMat, modelMatrices[kind]);
@@ -826,7 +848,7 @@ function buildStreetDetails(scene) {
       inst.userData.shadowStandIn = PM.shadowStandIn(THREE, mergeGeometries, kind === 'woodTransformer' ? 'wood' : kind);
       // culled as far out as the steel poles (~1.5 km; the crossarm would keep them at any distance), the lamp posts at
       // 900 m (4-6 m tall: a few pixels there); both still past the shadows' reach, so the stand-ins hold on every tier
-      inst.userData.cullDistance = kind.startsWith('wood') ? 1500 : 900;
+      inst.userData.cullDistance = kind.startsWith('wood') || kind.startsWith('trolley') ? 1500 : 900;
     }
     // the lines between the wooden poles (the high tier: thin, many and only seen close up)
     if (window.CITY.QUALITY.poleWires && window.CITY.woodSpans) {

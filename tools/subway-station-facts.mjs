@@ -1,7 +1,8 @@
 // Authored, sourced facts about the subway stations a passenger can ride between, and the rides the game supports.
 // tools/subway-topology.mjs joins them to the OpenStreetMap track and the TTC's GTFS; docs/subway-topology.md explains
 // the contract. Nothing here is measured from drawings: where a number is an assumption it says so (basis 'assumed')
-// and gives the range it may lie in. No published source gives these stations' depths below the street.
+// and gives the range it may lie in; where it is derived from measurements (basis 'derived') it gives the derivation.
+// No published source gives these stations' depths below the street.
 //
 // Retrieved 2026-10-29:
 //   TTC station pages (levels, platform type, accessibility):
@@ -25,15 +26,48 @@ const YONGE_BOX = {
   note: 'Cut-and-cover box under Yonge Street (transittoronto.ca); depths assumed from its two levels below the street, not measured'
 };
 
-// Castle Frank and Broadview in the Don Valley pilot: platforms below the street, as the Yonge stations' (three TTC
-// levels: street, concourse, platforms). Assumed, and bounded by the ride's profile: the viaduct's lower deck carries
-// the rails 5.8 m under the street datum and the platforms end 119 m (Castle Frank) and 158 m (Broadview) short of its
-// abutments, so at the 4% limit the rails can lie at most 10.6 m down. Rail top -10.1 m (floor -9.0 m) climbs 3.6%.
-const VALLEY_PLATFORMS = {
-  worldDatum: 'donvalley-pilot',
-  platformFloor: { value: -9.0, range: [-9.5, -7], basis: 'assumed' },
-  note: 'Below the street in the Don Valley pilot; assumed from the station\'s three levels and bounded by the 4% climb to the viaduct\'s lower deck, not measured'
+// Castle Frank and Broadview in the Don Valley pilot (?donvalley=1): their platforms below the street. No published
+// source gives either depth (TTC station pages, Transit Toronto, OpenStreetMap: no ele or step_count tags), so each is
+// derived from the 2023 lidar (Ontario Elevation Mapping Program, GTA 2023: the bare-earth DTM and the surface model,
+// CGVD2013 metres) and the viaduct's design drawing, and checked against the TTC's design maximum grade. Retrieved
+// 2026-10-31:
+//   Prince Edward Viaduct: top of rail 21'-6 3/4" (6.57 m) below the road surface at the kerb, 16'-3" (4.95 m) clear
+//     to the steelwork, the road "nearly level" (T. Taylor, "The Bloor Street Viaduct", Journal of the Engineering
+//     Institute of Canada, July 1919, Fig. 2: https://historicbridges.org/ontario/bloorstreetprinceedwardviaduct/articles.pdf)
+//   TTC Design Manual vertical alignment: at most 3.5% on running structure, at least 0.3% at stations (as quoted in
+//     Metrolinx's Relief Line EPR Appendix 2-3, "Subway Design Standards and Construction Methods"; a secondary copy)
+//   Levels: Castle Frank street, concourse, platforms, elevators street to platform; Broadview street (with the bus and
+//     streetcar platforms), concourse, subway platforms (TTC pages); Broadview's platforms are layer -2 under a
+//     layer -1 concourse in OpenStreetMap (ways 745459353, 745459354)
+// The lidar, from tools/fetch-don-valley-dtm.mjs's tiles (DTM) and the same project's surface model:
+//   the viaduct's road deck 113.3 m (west end), 114.1 m (mid-span: its camber) and 113.6 m (east end): rail top on the
+//   lower deck about 106.7 m and 107.0 m at its ends
+//   the roof of the covered Rosedale Valley bridge, just west of Castle Frank (its platforms start at the bridge's east
+//     end): 108.4 m; rail top inside it assumed 5.4 m lower (4.95 m clear plus a 0.45 m roof; range 5.1 to 5.8): 103.0
+//   the street at the stations (the DTM's 10 m cell mean): Castle Frank 112.9 m, Broadview 114.5 m
+// Rail top is the platform floor less the passenger model's 1.1 m platform height (js/subway-service.js; not sourced).
+export const DON_VALLEY_EVIDENCE = {
+  viaductRailBelowRoad: 6.57, roadDeck: { west: 113.3, middle: 114.1, east: 113.6 }, rosedaleBridgeRoof: 108.4, roofToRail: { value: 5.4, range: [5.1, 5.8] },
+  street: { 'castle-frank': 112.9, broadview: 114.5 }, ttcMaxGrade: 0.035, platformHeight: 1.1
 };
+const valley = (value, range, confidence, derivation) => ({
+  worldDatum: 'donvalley-pilot',
+  platformFloor: { value, range, basis: 'derived', confidence },
+  railTop: +(value - DON_VALLEY_EVIDENCE.platformHeight).toFixed(2),
+  note: derivation
+});
+// Castle Frank: rail level with the Rosedale Valley bridge's (103.0 m), 9.9 m under the street; the platform floor
+// 8.8 m down. The climb to the viaduct's rail (106.8 m) over the ~150 m from the platform's east end to the west
+// abutment is 2.5%, within the TTC's 3.5%; a rail deeper than 101.5 m would break it. Range: the roof-to-rail
+// assumption and a station grade of up to 0.3% either way.
+const CASTLE_FRANK_VALLEY = valley(-8.8, [-9.6, -8.0], 'medium',
+  'Derived: rail top level with the covered Rosedale Valley bridge (lidar roof 108.4 m less 5.4 m), 9.9 m under the street (112.9 m); the 2.5% climb to the viaduct\'s lower deck is within the TTC\'s 3.5%');
+// Broadview: nothing measures its rail. Two levels under the street (concourse, platforms), as shallow as the
+// concourse allows (two storeys, about 7.5 m to the platform floor), the track falling 1.1 m (0.6%) from the viaduct's
+// east abutment (107.0 m) over the ~185 m to the platform's west end. Bounds: two storeys at least (-6.5 m); the
+// TTC's 3.5% at most (rail no deeper than ~100.5 m: -12.9 m), narrowed to -9.5 m as a deeper box has no reason here.
+const BROADVIEW_VALLEY = valley(-7.5, [-9.5, -6.5], 'low',
+  'Derived: two levels below the street (TTC; OpenStreetMap layer -2 platforms under a layer -1 concourse), as shallow as a concourse allows, the track falling 0.6% from the viaduct\'s lower deck (rail about 107.0 m) to 105.9 m');
 
 export const STATION_FACTS = {
   king: {
@@ -59,15 +93,16 @@ export const STATION_FACTS = {
     // about level with these stations. The ride keeps the platforms on the deck's level (worldDatum 'viaduct'): a real
     // depth below the flat street would need a 24 m climb in the ~160 m to the viaduct, an impossible 15% grade.
     // The Don Valley terrain pilot (?donvalley=1, docs/don-valley-terrain.md) digs the valley out: the road deck is
-    // level with the street and the lower deck 5.8 m under it, so the platforms go below the street (donValley).
+    // level with the street and the lower deck 5.8 m under it, so the platforms go below the street (donValley,
+    // derived from the lidar above).
     depth: { worldDatum: 'viaduct', note: 'Platforms at the viaduct deck level; the flat city cannot hold their real depth below the street',
-      donValley: VALLEY_PLATFORMS },
+      donValley: CASTLE_FRANK_VALLEY },
     entrances: []
   },
   broadview: {
     levels: 3, platformType: 'side', sources: [TTC('broadview')],
     depth: { worldDatum: 'viaduct', note: 'Platforms at the viaduct deck level; the flat city cannot hold their real depth below the street',
-      donValley: VALLEY_PLATFORMS },
+      donValley: BROADVIEW_VALLEY },
     entrances: []
   }
 };

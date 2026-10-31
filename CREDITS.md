@@ -127,6 +127,15 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   The city database built from it, `data/toronto-geodata.bin` and `js/toronto-geodata.js` (by `tools/build-geodata.mjs`), is a derivative database
   and is made available under the ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/), not the MIT License.
 - **AWS Terrain Tiles** (Mapzen "terrarium" tiles, SRTM-derived elevation). https://registry.opendata.aws/terrain-tiles/
+- **Ontario Elevation Mapping Program, GTA 2023 lidar** (Ontario Ministry of Natural Resources), under the Open
+  Government Licence – Ontario (https://www.ontario.ca/page/open-government-licence-ontario). The Don Valley terrain
+  pilot (`?donvalley=1`): `js/don-valley-data.js` (by `tools/build-don-valley.mjs`) is built from the bare-earth
+  Digital Terrain Model (0.5 m, NAD83(CSRS) / UTM 17N, CGVD2013), 16 one-kilometre tiles fetched from the Ontario
+  GeoHub image service `Elevation/Ontario_DTM_LidarDerived` by `tools/fetch-don-valley-dtm.mjs` (retrieved 2026-10-31;
+  tile names and SHA-256s in the data file). The same project's surface model gave the viaduct's deck and the Rosedale
+  Valley subway bridge's roof heights behind Castle Frank's and Broadview's derived platform depths
+  (`tools/subway-station-facts.mjs`). The raw tiles are not in this repository. Contains information licensed under the
+  Open Government Licence – Ontario.
 - **Wikimedia Commons photos** of Toronto's buildings: the facade base colours (`tools/data/commons_palette.json`) were
   measured from 384 freely licensed photos (CC0, public domain, CC BY, CC BY-SA). The photos are not in this
   repository; each is credited with its author, licence and link in

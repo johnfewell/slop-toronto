@@ -10,9 +10,21 @@
 //   signal), a laneway or driveway's mouth, the crossings, the TTC's stops
 // - it is clear of the traffic: off the game's traffic lanes (a lane's centre keeps 1.5 m from it, as the CaféTO
 //   platforms do), the streetcar tracks (1.8 m from a track's centre), the bikeways, and the CaféTO curb platforms
+// - beside a curbside cycle track on the streets in FLOATING_STREETS (the Danforth, Bloor), the stall floats beyond it,
+//   against its separator, as the City built them; where the track is routed out round a CaféTO platform (cycling.js)
+//   it takes that parking lane, so no stall stands there. Every other cycle track keeps its curb clear
 // Deterministic: the same inputs give the same stalls (tools/build-parked-cars.mjs records them in
 // js/toronto-parked-cars.js; tests/parked-cars.test.mjs replays it). Rejections are counted by reason.
 
+// The streets whose curbside cycle tracks have floating parking beyond them (curb, track, separator, parked cars,
+// traffic), each checked against the City's 2025 aerials (docs/parked-cars.md). On any other street a mapped cycle
+// track keeps its curb clear: no stall stands beside it. Add a street (its GEO.roads name) only after its aerials show
+// cars parked beyond the track.
+const FLOATING_STREETS = Object.freeze([
+  'Danforth Avenue', // (the 2025 aerials of 335-341, 456 and 494-500 Danforth, 1165 Bloor W: docs/cafeto-patios.md)
+  'Bloor Street West',
+  'Bloor Street East'
+]);
 const RULES = Object.freeze({
   stall: 6.4, // m along the curb per car (Toronto's marked on-street stalls run 6-6.7 m)
   width: 2.0, // m out from the curb a parked car takes (a car's 1.9 m and the gap to the curb)
@@ -30,7 +42,10 @@ const RULES = Object.freeze({
   bikeShareGap: 1.0,
   paidReach: 60, // m: a payment zone's curb runs this far past its first and last machines
   maxCurb: 12, // m from the centre line: a curb further out is a square or a forecourt, not a parking lane
-  step: 1 // m: where a stall fails, the next one tried along the curb
+  step: 1, // m: where a stall fails, the next one tried along the curb
+  trackReach: 5, // m out from the curb a curbside cycle track is looked for (floating parking beyond it)
+  trackGap: 0.1, // m between the cycle track's reserve (its separator and 0.1 m) and a floating stall
+  floatingStreets: FLOATING_STREETS // the streets parked beyond their curbside cycle tracks (above)
 });
 // Toronto's streets by class (GEO.roads cls): those parked on, and the arterials (left clear unless the data says so)
 const PARKED_CLASSES = new Set(['residential', 'living_street', 'unclassified', 'tertiary', 'secondary', 'primary']);
@@ -130,7 +145,9 @@ const inRing = (ring, x, z) => {
  * - roads: [{ name, w, dir, rank, raised, cls, pts }] (city-config.js ROADS), blockAt (curb islands)
  * - lanes: the traffic lanes' centre lines [[ax, az, bx, bz]] (road-network.js, or laneSegments from the road graph)
  * - hydrants, stops, crossings, junctions: [{ x, z }]; driveways: [{ x, z, w }] (where a service road meets a street)
- * - railDist(x, z): to the nearest streetcar track; bikewayAt(x, z): on a bikeway; bikeShareAt(x, z)
+ * - railDist(x, z): to the nearest streetcar track; bikewayAt(x, z): on a bikeway (as built, routed round the CaféTO
+ *   platforms); trackAt(x, z): on a cycle track (likewise; on R.floatingStreets a stall floats beyond one at the curb);
+ *   bikeShareAt(x, z)
  * - patios: the CaféTO curb platforms [{ cx, cz, tx, tz, nx, nz, length, depth }]
  * - payStations: [{ x, z, zone }]; parking: CITY.PARKING (rules, names, permit areas); inFrame(x, z); heightAt(x, z) (0 at grade)
  * Returns { stalls, rejected, stats }: each stall { x, z, tx, tz, nx, nz (out to the curb), road, side, cat, curb }.
@@ -138,7 +155,7 @@ const inRing = (ring, x, z) => {
 function parkingStalls(deps) {
   const R = { ...RULES, ...(deps.rules || {}) };
   const { roads, blockAt, lanes = [], hydrants = [], stops = [], crossings = [], junctions = [], driveways = [],
-    railDist = () => Infinity, bikewayAt = () => false, bikeShareAt = null, patios = [], payStations = [], parking = null,
+    railDist = () => Infinity, bikewayAt = () => false, trackAt = () => false, bikeShareAt = null, patios = [], payStations = [], parking = null,
     inFrame = () => true, heightAt = () => 0, nearestRoad = null } = deps;
   const laneAt = segmentGrid(lanes);
   const nearHydrant = pointGrid(hydrants);
@@ -194,6 +211,7 @@ function parkingStalls(deps) {
   const rejected = { curb: 0, lane: 0, streetcar: 0, bikeway: 0, junction: 0, laneway: 0, driveway: 0, hydrant: 0, crossing: 0,
     stop: 0, patio: 0, bikeShare: 0, bylaw: 0, reserved: 0, arterial: 0, overlap: 0, grade: 0 };
   const cats = {};
+  let floating = 0;
 
   // the curb out from the centre line at (x, z), on the side (nx, nz): its distance and block, or null
   const curbAt = (x, z, nx, nz) => {
@@ -255,9 +273,11 @@ function parkingStalls(deps) {
     return seen;
   };
 
+  const floatingStreets = new Set(R.floatingStreets || []);
   for (const road of roads) {
     if (!road.name || road.raised || road.highway || !PARKED_CLASSES.has(road.cls)) continue;
     const key = streetKey(road.name);
+    const floats = floatingStreets.has(road.name);
     const pts = road.pts;
     for (let i = 0; i + 1 < pts.length; i++) {
       const a = pts[i], b = pts[i + 1];
@@ -296,6 +316,20 @@ function parkingStalls(deps) {
           }
           return { run, gap };
         };
+        // a cycle track along the curb over [u0, u1]: how far out from the curb it reaches (m), 0 where there is none (most
+        // curbs: a quick look first, finer than any track is wide), -1 where one is not along the whole stall from the
+        // curb, the same width (it ends, or bends out round a CaféTO platform there: no car floats beside that)
+        const trackFrom = (u0, u1, curb) => {
+          const ss = [u0, (u0 + u1) / 2, u1];
+          if (!ss.some((s) => [0.3, 1.0, 1.7].some((d) => trackAt(...at(s, curb - d))))) return 0;
+          const reach = ss.map((s) => {
+            let first = null, last = 0;
+            for (let d = 0.05; d <= R.trackReach; d += 0.05) if (trackAt(...at(s, curb - d))) { if (first === null) first = d; last = d; }
+            return first !== null && first <= 0.6 ? last : null;
+          });
+          if (reach.some((r) => r === null) || Math.max(...reach) - Math.min(...reach) > 0.3) return -1;
+          return Math.max(...reach);
+        };
         const check = (rect, curb, u, block) => {
           if (!inFrame(rect.cx, rect.cz)) return 'curb';
           const pts2 = rectSamples(rect, 0.8);
@@ -303,7 +337,8 @@ function parkingStalls(deps) {
           if (pts2.some(([x, z]) => Math.abs(heightAt(x, z)) > 0.05)) return 'grade';
           for (const s of lanesNear(rect, R.carClear)) if (segRectDist(s, rect) < R.carClear) return 'lane';
           if (pts2.some(([x, z]) => railDist(x, z) < R.streetcarClear)) return 'streetcar';
-          if (pts2.some(([x, z]) => bikewayAt(x, z))) return 'bikeway';
+          // (a car may stand up to 0.35 m past its stall's ends: its body jittered along, the longest vans)
+          if (pts2.some(([x, z]) => bikewayAt(x, z)) || rectSamples({ ...rect, hl: rect.hl + 0.35 }, 0.4).some(([x, z]) => bikewayAt(x, z))) return 'bikeway';
           if (nearHydrant(rect.cx, rect.cz, 8, (h) => rectDist(rect, h.x, h.z) < R.hydrant)) return 'hydrant';
           if (nearPatio(rect.cx, rect.cz, 12, (p) => overlaps(p.r, rect, R.patioGap))) return 'patio';
           if (nearDriveway(rect.cx, rect.cz, 12, (d) => rectDist(rect, d.x, d.z) < (d.w || 3) / 2 + R.driveway)) return 'driveway';
@@ -351,11 +386,14 @@ function parkingStalls(deps) {
                 const curbs = ps.map((p) => p.v), curb = Math.min(...curbs);
                 if (Math.max(...curbs) - curb > 0.6) why = 'curb';
                 else {
-                  const outer = curb - R.gutter, inner = outer - R.width, mid = (outer + inner) / 2;
+                  // against the curb, or floating beyond a curbside cycle track (on the floating streets only; elsewhere
+                  // a stall at a cycle track's curb stands in it, and is rejected)
+                  const track = floats ? trackFrom(u0, u0 + R.stall, curb) : 0;
+                  const outer = track > 0 ? curb - track - R.trackGap : curb - R.gutter, inner = outer - R.width, mid = (outer + inner) / 2;
                   const [cx, cz] = at(u, mid);
                   const rect = { cx, cz, tx, tz, nx, nz, hl: R.stall / 2 - 0.3, hd: R.width / 2 };
-                  site = { rect, curb, cx, cz };
-                  why = check(rect, curb, u, pm.block);
+                  site = { rect, curb, cx, cz, track };
+                  why = track < 0 ? 'bikeway' : check(rect, curb, u, pm.block);
                 }
               }
             }
@@ -366,7 +404,8 @@ function parkingStalls(deps) {
             continue;
           }
           const s = { x: site.cx, z: site.cz, tx: tx * travel, tz: tz * travel, nx, nz, road: road.name, side, cat: legal.cat,
-            permit: legal.permit, curb: site.curb, rect: site.rect, rank: road.rank };
+            permit: legal.permit, curb: site.curb, rect: site.rect, rank: road.rank, track: site.track };
+          if (site.track > 0) floating++;
           stalls.push(s);
           addPlaced(s);
           cats[legal.cat] = (cats[legal.cat] || 0) + 1;
@@ -375,7 +414,7 @@ function parkingStalls(deps) {
       }
     }
   }
-  return { stalls, rejected, stats: { stalls: stalls.length, cats } };
+  return { stalls, rejected, stats: { stalls: stalls.length, cats, floating } };
 }
 
 // The traffic lanes' centre lines from the road graph alone (road-network.js lanesOf on GEO.roadGraph's links, along

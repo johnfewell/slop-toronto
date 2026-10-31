@@ -52,6 +52,9 @@ const TIERS = {
     // street-details.js: the overhead lines strung between the wooden hydro poles (thin, many and only seen close up;
     // the poles' crossarms, insulators & transformers stay on every tier)
     poleWires: true,
+    // streetcars.js: the span wires from the streetcar streets' poles to the contact wire (thin lines drawn with the
+    // contact wire, in its draws: every tier)
+    tramSpans: true,
     // main.js: once the city is on screen, drop the CPU copies of what the GPU already holds (static vertex & index
     // arrays, the sign atlases' pixels): hundreds of MB the phone needs
     lean: false,
@@ -65,7 +68,7 @@ const TIERS = {
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85,
     cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, subway: 1, farCity: 0.6, lightPool: 0.6,
     parkedCars: 7000, parkedNear: 50, parkedFar: 200, parkedShadows: true,
-    signRes: 1, lean: true, surfaceWear: 1, storefronts: 2, poleWires: false,
+    signRes: 1, lean: true, surfaceWear: 1, storefronts: 2, poleWires: false, tramSpans: true,
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
@@ -75,7 +78,7 @@ const TIERS = {
     cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
     // (parked cars: about half, the full model only close by and no shadows from them)
     parkedCars: 5000, parkedNear: 30, parkedFar: 140, parkedShadows: false,
-    signRes: 0.5, lean: true, surfaceWear: 1, storefronts: 1, poleWires: false,
+    signRes: 0.5, lean: true, surfaceWear: 1, storefronts: 1, poleWires: false, tramSpans: true,
     // (measured on the Pixel 8, which is CPU-bound: every shadow caster is drawn again in both cascades) no kerb
     // shadows (~1 ms a frame, unseen at phone size) and an even 30 fps. (Shadows to 100 m instead of 150 m saved under
     // 1 ms in a paired A/B on the phone and lost the far buildings' shadows: not taken)

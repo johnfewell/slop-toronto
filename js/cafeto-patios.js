@@ -29,8 +29,11 @@ function patioSeason(date = { month: 8, day: 22 }) {
 
 // A prebuilt site's fields (js/toronto-patios.js `sites` rows, in this order), merged over its CaféTO record as the
 // layout makes them: everything the patio's instances, collider, walkers' detour and lane audit read
-const SITE_FIELDS = ['id', 'kind', 'cx', 'cz', 'tx', 'tz', 'nx', 'nz', 'length', 'depth', 'entrance', 'outerLine', 'flank'];
-const siteRow = (s) => SITE_FIELDS.map((k) => (k === 'flank' ? (s.flank ? 1 : 0) : k === 'outerLine' ? s.outerLine ?? null : s[k]));
+// (`bikeway`: a curb lane platform in a bikeway's place, the reserve the bikeway routed round it may take, m; 0: none.
+// cycling.js reads it from js/toronto-patios.js to bend the bikeways before the patios are built)
+const SITE_FIELDS = ['id', 'kind', 'cx', 'cz', 'tx', 'tz', 'nx', 'nz', 'length', 'depth', 'entrance', 'outerLine', 'flank', 'bikeway'];
+const siteRow = (s) => SITE_FIELDS.map((k) => (k === 'flank' ? (s.flank ? 1 : 0) : k === 'outerLine' ? s.outerLine ?? null
+  : k === 'bikeway' ? s.bikeway || 0 : s[k]));
 function builtSites(PATIOS, records) {
   const byId = new Map(records.map((r) => [r.id, r]));
   return PATIOS.sites.map((row) => {

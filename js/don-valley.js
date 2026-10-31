@@ -28,6 +28,24 @@ const grid = (b64, scale) => {
 };
 const H = grid(D.height, 100);
 const inBox = (x, z) => x > box.x0 && x < box.x1 && z > box.z0 && z < box.z1;
+// Cells whose four corners are all 0 (the tableland in the box): heightAt is exactly 0 there, so a triangle lying only
+// on such cells needs no draping. A summed-area table of the others answers "any relief under this rectangle?"
+const RELIEF = (() => {
+  const w = nx - 1, sat = new Int32Array((w + 1) * nz);
+  for (let r = 0; r < nz - 1; r++) for (let c = 0; c < w; c++) {
+    const k = r * nx + c, v = H[k] || H[k + 1] || H[k + nx] || H[k + nx + 1] ? 1 : 0;
+    sat[(r + 1) * (w + 1) + c + 1] = v + sat[r * (w + 1) + c + 1] + sat[(r + 1) * (w + 1) + c] - sat[r * (w + 1) + c];
+  }
+  return { w, sat };
+})();
+/** Whether any cell under the rectangle (world x, z bounds) has relief */
+function reliefUnder(minX, maxX, minZ, maxZ) {
+  const c0 = Math.max(0, Math.floor((minX - box.x0) / S)), c1 = Math.min(nx - 2, Math.floor((maxX - box.x0) / S));
+  const r0 = Math.max(0, Math.floor((minZ - box.z0) / S)), r1 = Math.min(nz - 2, Math.floor((maxZ - box.z0) / S));
+  if (c0 > c1 || r0 > r1) return false;
+  const { w, sat } = RELIEF, at = (r, c) => sat[r * (w + 1) + c];
+  return at(r1 + 1, c1 + 1) - at(r0, c1 + 1) - at(r1 + 1, c0) + at(r0, c0) > 0;
+}
 
 // The cell and triangle under (x, z): corners a (c, r), b (c+1, r), d (c, r+1), e (c+1, r+1); the lower triangle
 // (a, d, b) where tx + tz <= 1, else (b, d, e)
@@ -149,7 +167,8 @@ function drapeMesh(mesh, stats) {
   for (let t = 0; t < nTri; t++) {
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
     for (let k = 0; k < 3; k++) { const i = vi(t, k), x = pos.getX(i) + ox, z = pos.getZ(i) + oz; minX = Math.min(minX, x); maxX = Math.max(maxX, x); minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); }
-    if (maxX <= box.x0 || minX >= box.x1 || maxZ <= box.z0 || minZ >= box.z1) keep.push(vi(t, 0), vi(t, 1), vi(t, 2));
+    // (outside the box, or over the box's flat cells only: unchanged)
+    if (maxX <= box.x0 || minX >= box.x1 || maxZ <= box.z0 || minZ >= box.z1 || !reliefUnder(minX, maxX, minZ, maxZ)) keep.push(vi(t, 0), vi(t, 1), vi(t, 2));
     else hit.push(t);
   }
   if (!hit.length) return null;
@@ -341,7 +360,7 @@ function platformFloor(id) {
   return st?.facts?.depth?.donValley?.platformFloor?.value ?? null;
 }
 
-C.DON_VALLEY = { data: D, box, step: S, heightAt, gradientAt, lowestAround, inBox, deckHeight, roadHeight, onViaductLine,
+C.DON_VALLEY = { data: D, box, step: S, heightAt, gradientAt, lowestAround, inBox, reliefUnder, deckHeight, roadHeight, onViaductLine,
   drape, drapeMesh, buildPatches, platformFloor, deckTop: D.deckTop, railY: D.railY };
 console.info(`[don-valley] pilot on: ${nx} x ${nz} at ${S} m over x ${box.x0}..${box.x1}, z ${box.z0}..${box.z1}; deepest ${D.diagnostics.deepestM} m`);
 })();

@@ -108,6 +108,26 @@ test('never on a bikeway or a streetcar track, nor in a TTC stop zone', () => {
   }
 });
 
+test('beside a curbside cycle track: floating beyond it on the listed streets only, the curb clear elsewhere', () => {
+  // a 2.4 m cycle track reserve (track, separator and 0.1 m) against the +z curb, 9 m out
+  const track = (x, z) => z > 9 - 2.4 && z < 9;
+  const extra = { bikewayAt: track, trackAt: track };
+  assert.ok(!L.PARKING_RULES.floatingStreets.includes('Test Street'));
+  assert.deepEqual([...L.PARKING_RULES.floatingStreets], ['Danforth Avenue', 'Bloor Street West', 'Bloor Street East']);
+  const off = L.parkingStalls(street({ half: 9, extra }));
+  assert.equal(south(off).length, 0, 'an unlisted street: no stall beside its cycle track');
+  assert.ok(off.rejected.bikeway > 0 && north(off).length > 30);
+  const on = L.parkingStalls(street({ half: 9, extra: { ...extra, rules: { floatingStreets: ['Test Street'] } } }));
+  assert.ok(south(on).length > 30, `${south(on).length} floating stalls`);
+  for (const s of south(on)) {
+    assert.ok(Math.abs(s.track - 2.4) < 0.06, `the track's reach ${s.track}`);
+    // the stall's curb side 0.1 m beyond the track's reserve
+    assert.ok(Math.abs(s.rect.cz + s.rect.hd - (9 - s.track - 0.1)) < 1e-6);
+  }
+  assert.equal(on.stats.floating, south(on).length);
+  assert.deepEqual(north(on).map((s) => s.x), north(off).map((s) => s.x), 'the far curb unchanged');
+});
+
 test('the by-laws decide: a no-parking side, a reserved curb, an arterial kept clear unless paid or restricted parking', () => {
   const parking = (rules) => ({ names: ['Test Street'], rules, permitAreas: [] });
   // no parking anytime on the south side (bit 2) all along

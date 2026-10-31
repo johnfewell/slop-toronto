@@ -99,7 +99,7 @@ test('records are placed only on their own street, and private property patios n
   assert.equal(out.rejected.unsupported, 1);
 });
 
-test('a curb lane café is a platform in the curb lane, clear of the traffic lanes, the curb and the bikeway', () => {
+test('a curb lane café is a platform in the curb lane, clear of the traffic lanes, the curb and the streetcar', () => {
   const out = patioSites([rec('curb', 0, 20)], street({ width: 15 }));
   assert.equal(out.sites.length, 1);
   const s = out.sites[0];
@@ -108,8 +108,35 @@ test('a curb lane café is a platform in the curb lane, clear of the traffic lan
   assert.ok(s.cz - s.depth / 2 >= 1.8 + PATIO_RULES.carClear - 1e-6, "clear of the game's lane");
   // a 10 m street has no room beside its lanes
   assert.equal(patioSites([rec('curb', 0, 20)], street({ width: 10 })).rejected.lane, 1);
-  assert.equal(patioSites([rec('curb', 0, 20)], street({ width: 15, extra: { bikewayAt: (x, z) => z > 5.5 } })).rejected.bikeway, 1);
   assert.equal(patioSites([rec('curb', 0, 20)], street({ width: 15, extra: { railDist: (x, z) => Math.abs(z - 4) } })).rejected.streetcar, 1);
+  assert.equal(s.bikeway, 0, 'no bikeway beside it');
+});
+
+test('in a curbside bikeway the platform still stands at the curb, with room to route the bikeway round its road side', () => {
+  // a cycle track's 2.4 m reserve along the z > 0 curb of a 16.8 m street (curb 8.4 m out; the game's lane at 1.8 m)
+  const track = (curb) => ({ bikewayAt: (x, z) => z > curb - 2.4 && z < curb });
+  const out = patioSites([rec('curb', 0, 20)], street({ width: 16.8, extra: track(8.4) }));
+  assert.equal(out.sites.length, 1);
+  const s = out.sites[0];
+  assert.ok(Math.abs(s.cz + s.depth / 2 - (8.4 - PATIO_RULES.curbGap)) < 0.02, 'against the curb, the gutter open, in the bike lane');
+  assert.ok(Math.abs(s.bikeway - 2.4) < 0.06, 'the bikeway keeps its whole reserve beside it');
+  // routed round it: the platform, the gap and the reserve clear the game's lane
+  const edge = s.cz - s.depth / 2 - PATIO_RULES.detourGap - s.bikeway;
+  assert.ok(edge >= 1.8 + PATIO_RULES.carClear - 1e-6, 'the detour clears the traffic lane');
+  // a narrower street: the reserve is squeezed beside it, as far as the lane needs, but never under CaféTO's 1.2 m for
+  // cyclists (and the track's separator)
+  const tight = patioSites([rec('curb', 0, 20)], street({ width: 15.2, extra: track(7.6) })).sites[0];
+  assert.ok(tight && tight.bikeway < 2.4 && tight.bikeway >= PATIO_RULES.cyclistClear + PATIO_RULES.trackSeparator, 'narrowed');
+  assert.ok(tight.cz - tight.depth / 2 - PATIO_RULES.detourGap - tight.bikeway >= 1.8 + PATIO_RULES.carClear - 1e-6);
+  // too narrow for the detour: rejected, never built over the bikeway with no way round
+  assert.equal(patioSites([rec('curb', 0, 20)], street({ width: 14, extra: track(7) })).rejected.bikeway, 1);
+  // a bikeway wider than the look-out (4 m) is not a curbside one to route round
+  assert.equal(patioSites([rec('curb', 0, 20)], street({ width: 16.8, extra: { bikewayAt: (x, z) => z > 3 && z < 8.4 } })).rejected.bikeway, 1);
+  // a streetcar track beyond the detour narrows it too, or turns the platform away
+  const rail = patioSites([rec('curb', 0, 20)], street({ width: 16.8, extra: { ...track(8.4), railDist: (x, z) => Math.abs(z - 2.6) } }));
+  const r = rail.sites[0];
+  assert.ok(r && r.bikeway < s.bikeway && r.cz - r.depth / 2 - PATIO_RULES.detourGap - r.bikeway >= 2.6 + PATIO_RULES.streetcarClear - 1e-6);
+  assert.equal(patioSites([rec('curb', 0, 20)], street({ width: 16.8, extra: { ...track(8.4), railDist: (x, z) => Math.abs(z - 3.2) } })).rejected.streetcar, 1);
 });
 
 test('curb lane cafés keep the City setbacks from intersections, transit stops and hydrants, by direction of travel', () => {
@@ -144,7 +171,7 @@ test('on the real city: every placed patio keeps its footprint rules and clears 
   const out = CITY.patioSites(records, deps);
   const kinds = (k) => out.sites.filter((s) => s.kind === k).length;
   // (the counts are this snapshot's; a rule or data change must update them knowingly)
-  assert.deepEqual({ sidewalk: kinds('sidewalk'), curb: kinds('curb') }, { sidewalk: 71, curb: 118 });
+  assert.deepEqual({ sidewalk: kinds('sidewalk'), curb: kinds('curb') }, { sidewalk: 71, curb: 128 });
   assert.equal(Object.values(out.rejected).reduce((a, b) => a + b, 0) + out.sites.length, records.length);
   const corners = (s) => [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]].map(([a, b]) => [s.cx + s.tx * a * s.length / 2 + s.nx * b * s.depth / 2, s.cz + s.tz * a * s.length / 2 + s.nz * b * s.depth / 2]);
   for (const s of out.sites) {
@@ -169,6 +196,16 @@ test('on the real city: every placed patio keeps its footprint rules and clears 
   // the aerial-checked Ossington platforms (2025 City orthophoto, docs/cafeto-patios.md)
   const byAddress = (a) => out.sites.find((s) => s.address === a);
   for (const a of ['146 OSSINGTON AVE', '188 OSSINGTON AVE', '72 OSSINGTON AVE', '225 OSSINGTON AVE']) assert.equal(byAddress(a)?.kind, 'curb', a);
+  // the Danforth's and Bloor's platforms against the curb in the cycle track's place, as the 2025 aerials show them
+  // (docs/cafeto-patios.md), the track routed round them; 2200 Bloor W's curb leaves no room for that beside the lane
+  for (const a of ['335-341 DANFORTH AVE', '347 DANFORTH AVE', '407 DANFORTH AVE', '411-417 DANFORTH AVE', '456 DANFORTH AVE',
+    '494 DANFORTH AVE', '500 DANFORTH AVE', '1165 BLOOR ST W', '1566 BLOOR ST W']) {
+    const s = out.sites.find((q) => q.address === a && q.kind === 'curb');
+    assert.ok(s && s.bikeway >= PATIO_RULES.cyclistClear + PATIO_RULES.trackSeparator, `${a} in the cycle track's place`);
+    const v = s.depth / 2 + PATIO_RULES.curbGap + 0.3; // (just past the platform's curb edge: the sidewalk)
+    assert.ok(deps.blockAt(s.cx + s.nx * v, s.cz + s.nz * v), `${a} against the curb`);
+  }
+  assert.equal(out.reasons[records.find((r) => r.address === '2200 BLOOR ST W' && r.type === 'curb').id], 'bikeway');
 });
 
 test('explore.html loads the layer and its prebuilt layout before the builder, not the rules', () => {

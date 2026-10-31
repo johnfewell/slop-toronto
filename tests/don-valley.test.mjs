@@ -11,6 +11,7 @@ import { execFileSync } from 'node:child_process';
 import * as THREE from 'three/webgpu';
 import * as TSL from 'three/tsl';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { DON_VALLEY_EVIDENCE } from '../tools/subway-station-facts.mjs';
 
 const read = (f) => fs.readFileSync(new URL(`../js/${f}.js`, import.meta.url), 'utf8');
 function city(pilot) {
@@ -28,31 +29,50 @@ const node = (arr, x, z) => arr[Math.round((z - D.box.z0) / D.box.step) * D.nx +
 const rand = (() => { let s = 6711; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
 
 test('the pilot declares its source, frame and datum, and keeps raw, datum and conditioned heights apart (TE-1)', () => {
-  assert.match(D.source.dataset, /AWS Terrain Tiles/);
+  assert.match(D.source.dataset, /Ontario Elevation Mapping Program, GTA 2023 lidar, Digital Terrain Model \(bare earth\)/);
+  assert.match(D.source.licence, /Open Government Licence – Ontario/);
+  assert.equal(D.source.resolutionM, 0.5);
+  assert.ok(D.source.tiles.length >= 4 && D.source.tiles.every((t) => /^[0-9a-f]{64}$/.test(t.sha256)), 'each tile named with its checksum');
   assert.match(D.crs.horizontal, /Union Station/);
-  assert.match(D.crs.vertical, /sea level/);
-  assert.match(D.datum, /y = DEM - T/);
+  assert.match(D.crs.horizontal, /EPSG:2958/);
+  assert.match(D.crs.vertical, /CGVD2013/);
+  assert.match(D.datum, /y = DTM - T/);
   assert.equal(D.box.step, 10);
   for (const k of ['height', 'raw', 'datumGrid', 'unconditioned']) assert.equal(grid(D[k], 1).length, D.nx * D.nz, k);
-  for (const rule of ['bridge', 'cover', 'roads', 'portals', 'boundary', 'footing']) assert.ok(D.alterations[rule], `alteration ${rule} recorded`);
+  for (const rule of ['bridge', 'cover', 'ravine', 'roads', 'portals', 'boundary', 'footing']) assert.ok(D.alterations[rule], `alteration ${rule} recorded`);
+  // (bare earth: nothing to take out under the viaduct)
+  assert.equal(D.alterations.bridge.samples, 0);
   // (aligned with js/terrain.js's 60 m grid, so its cells are either the pilot's or its own)
   for (const v of [D.box.x0, D.box.x1, D.box.z0, D.box.z1]) assert.equal((v + 26000) % 60, 0);
 });
 
-test('datum mapping: the Don under the viaduct lies ~35 m below a street datum ~112 m above sea level', () => {
+test('datum mapping: the Don under the viaduct lies ~39 m below a street datum ~114 m above CGVD2013', () => {
   const raw = grid(D.raw, 10), datum = grid(D.datumGrid, 10), unc = grid(D.unconditioned, 100);
-  // the river under the viaduct, south of the bridge's own deck in the DEM
-  const [x, z] = [2280, -2880];
+  // the river under the viaduct (the lidar's ground: no deck in it)
+  const [x, z] = [2280, -2800];
   const r = node(raw, x, z), t = node(datum, x, z), u = node(unc, x, z);
-  assert.ok(r > 72 && r < 80, `the Don's floor ${r} m above sea level`);
-  assert.ok(t > 106 && t < 118, `the street datum there ${t} m`);
-  assert.ok(Math.abs(u - (r - t)) < 2.5, `game height ${u} = DEM ${r} - datum ${t}`);
+  assert.ok(r > 74 && r < 77, `the Don's floor ${r} m above CGVD2013`);
+  assert.ok(t > 112 && t < 116, `the street datum there ${t} m`);
+  assert.ok(Math.abs(u - (r - t)) < 0.1, `game height ${u} = DTM ${r} - datum ${t}`); // (decimetres and centimetres)
   assert.ok(Math.abs(DV.heightAt(x, z) - u) < 1.5, 'unconditioned on the valley floor');
-  // the viaduct's ends meet the datum on the tableland (Castle Frank 111.7 m, Broadview 113.4 m in the build)
-  for (const v of D.diagnostics.datumAtViaductEnds) assert.ok(v > 106 && v < 118, `datum at the viaduct's ends: ${v}`);
-  // the road deck stands ~35 m over the Don (the real viaduct: about 40 m)
-  assert.ok(D.diagnostics.viaduct.deckOverFloorM > 30 && D.diagnostics.viaduct.deckOverFloorM < 42);
-  assert.ok(D.diagnostics.deepestM < -30 && D.diagnostics.deepestM > -42);
+  // the tableland at both of the viaduct's ends: the datum sits on it (within the 1 m the shallow knee flattens and the
+  // smoothing's ~1.5 m), and the raw lidar there is the street the TTC's stations stand on
+  for (const v of D.diagnostics.datumAtViaductEnds) assert.ok(v > 112 && v < 116, `datum at the viaduct's ends: ${v}`);
+  assert.ok(Math.abs(node(raw, 1990, -2810) - 113.5) < 0.6 && Math.abs(node(raw, 2490, -2800) - 113.6) < 0.6, 'the street at the viaduct\'s ends');
+  assert.ok(D.diagnostics.deepestM < -36 && D.diagnostics.deepestM > -42);
+});
+
+test('the deck stands ~39 m over the Don: the lidar\'s, and the game\'s within 1 m of it', () => {
+  const raw = grid(D.raw, 10), V = D.diagnostics.viaduct;
+  // surveyed: the road deck's surface (the lidar surface model, DON_VALLEY_EVIDENCE) over the lowest bare earth under it
+  let river = Infinity;
+  for (let t = 0.05; t <= 0.95; t += 0.01) river = Math.min(river, node(raw, V.from[0] + (V.to[0] - V.from[0]) * t, V.from[1] + (V.to[1] - V.from[1]) * t));
+  const surveyed = DON_VALLEY_EVIDENCE.roadDeck.middle - river;
+  assert.ok(surveyed > 38 && surveyed < 40, `surveyed ${surveyed.toFixed(1)} m (Taylor 1919: 130 ft, 39.6 m, "above the river")`);
+  // in the game: the deck's top over the deepest ground under it
+  assert.ok(Math.abs(V.deckOverFloorM - surveyed) < 1, `game ${V.deckOverFloorM} m vs surveyed ${surveyed.toFixed(1)} m`);
+  assert.ok(V.deckOverFloorM > 38 && V.deckOverFloorM < 41, 'near the commonly cited 40 m');
+  // (the SRTM build had it at 35.1 m)
 });
 
 test('the surface: grid nodes, continuity, the tableland and the box edges at the street level (TE-4)', () => {
@@ -78,7 +98,7 @@ test('the surface: grid nodes, continuity, the tableland and the box edges at th
     const s = ON.GEO_SUBWAY.stations.find((q) => q[2] === n);
     assert.ok(Math.abs(DV.heightAt(s[0], s[1])) < 0.05, n);
   }
-  assert.equal(DV.heightAt(1700, -2750), 0);
+  assert.equal(DV.heightAt(1550, -2750), 0);
   // the south transition: the valley floor climbs back to the city's plane, no step
   let prev = -Infinity;
   for (let z = -2600; z <= -1880; z += 10) {
@@ -87,6 +107,45 @@ test('the surface: grid nodes, continuity, the tableland and the box edges at th
     assert.ok(floor >= prev - 1.2, `no dip at z ${z}`);
     prev = floor;
   }
+});
+
+test('max grades: the lidar\'s roads and ramps, and Rosedale Valley Road down its ravine (TE-3)', () => {
+  // the steepest 20 m of a road in the playable city (its own surface: cutAt on the ground, the ground a ramp hugs)
+  const steepest = (name, raised, from = null) => {
+    let worst = 0;
+    for (const r of ON.ROADS) {
+      if (r.name !== name || !!r.raised !== raised) continue;
+      const st = [];
+      for (let i = 0; i + 1 < r.pts.length; i++) {
+        const a = r.pts[i], b = r.pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 5));
+        for (let j = i ? 1 : 0; j <= n; j++) st.push({ x: a.x + ((b.x - a.x) * j) / n, z: a.z + ((b.z - a.z) * j) / n });
+      }
+      const h = (p) => (raised ? DV.heightAt(p.x, p.z) : ON.cutAt(p.x, p.z));
+      for (let i = 4; i < st.length; i++) {
+        const a = st[i - 4], b = st[i];
+        if (![a, b].every((p) => DV.inBox(p.x, p.z) && p.z > -3000 && !DV.onViaductLine(p.x, p.z, 20))) continue;
+        if (from && Math.min(...[a, b].map((p) => Math.hypot(p.x - from.x, p.z - from.z))) < from.r) continue;
+        if (Math.min(h(a), h(b)) > -0.5) continue;
+        worst = Math.max(worst, Math.abs(h(b) - h(a)) / Math.hypot(b.x - a.x, b.z - a.z));
+      }
+    }
+    return worst;
+  };
+  // Rosedale Valley Road: 15% at the SRTM build's west taper; now under 10% where the flat city's cut hands over to the
+  // ravine, and about the ravine rule's 5% on the way down from 150 m past the bridge (6.4% where the rule fades out
+  // 300-450 m from it, 6.1% on the south transition's climb back to the flat city)
+  const [A, B] = D.alterations.ravine.bridge, mid = { x: (A[0] + B[0]) / 2, z: (A[1] + B[1]) / 2 };
+  assert.ok(steepest('Rosedale Valley Road', false) < 0.10, `Rosedale Valley Road ${(steepest('Rosedale Valley Road', false) * 100).toFixed(1)}%`);
+  assert.ok(steepest('Rosedale Valley Road', false, { ...mid, r: 150 }) < 0.07, 'down the ravine');
+  // the ramps the SRTM build reported at 38% and 22% now lie on the lidar's own embankments
+  assert.ok(steepest('Bayview-Bloor Ramp', true) < 0.12, `Bayview-Bloor Ramp ${(steepest('Bayview-Bloor Ramp', true) * 100).toFixed(1)}%`);
+  assert.ok(steepest('Drumsnab Road', true) < 0.12);
+  for (const n of ['Bayview Avenue', 'Don Valley Parkway']) assert.ok(steepest(n, false) < 0.08, n);
+  // what is still over 12% in the playable city is recorded for review: Royal Drive's ramp and service lanes down the
+  // ravine's sides (st-wt0.21.2)
+  const review = D.diagnostics.roads.filter((r) => r.review && r.at[1] > -3000);
+  assert.ok(review.every((r) => r.maxGradePct > 12));
+  assert.deepEqual([...new Set(review.map((r) => r.name))].sort(), ['(unnamed)', 'Royal Drive']);
 });
 
 test('drawn and sampled agree: a draped mesh lies on heightAt to well under 3 cm everywhere (TE-2, TE-3)', () => {
@@ -192,7 +251,7 @@ test('parked cars keep off the valley and hydro wires reach the next pole, only 
   assert.ok(Math.abs(span(false) - 3) < 1e-6, 'level without it');
 });
 
-test('the build is reproducible from the DEM cache', { skip: !fs.existsSync(path.join(process.env.GEO_DATA || path.join(os.homedir(), '.cache/slop-toronto/osm-ids'), 'dem.i16')) && 'no DEM cache (GEO_DATA)' }, () => {
+test('the build is reproducible from the lidar tiles', { skip: !fs.existsSync(path.join(process.env.DON_VALLEY_DTM || path.join(os.homedir(), '.cache/slop-toronto/raw/ontario-dtm-gta2023'), 'manifest.json')) && 'no lidar tiles (node tools/fetch-don-valley-dtm.mjs)' }, () => {
   const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'don-valley-')), 'data.js');
   execFileSync(process.execPath, [fileURLToPathLocal('../tools/build-don-valley.mjs'), '--out', out], { stdio: 'pipe' });
   assert.equal(fs.readFileSync(out, 'utf8'), read('don-valley-data'));
@@ -232,15 +291,37 @@ function rideHarness() {
   return { C, ride, controller, person };
 }
 
-test('Castle Frank and Broadview: platforms 9 m below the street, a climb within 4% to the viaduct 5.8 m down', () => {
+test('station depths: derived from the lidar and the viaduct\'s drawing, within the TTC\'s 3.5% to the lower deck', () => {
+  const E = DON_VALLEY_EVIDENCE, raw = grid(D.raw, 10);
   const st = (id) => ON.SUBWAY_TOPOLOGY.stations.find((s) => s.id === id);
-  for (const id of ['castle-frank', 'broadview']) {
-    const d = st(id).facts.depth;
+  const want = { 'castle-frank': { floor: -8.8, confidence: 'medium' }, broadview: { floor: -7.5, confidence: 'low' } };
+  for (const [id, w] of Object.entries(want)) {
+    const d = st(id).facts.depth, f = d.donValley.platformFloor;
     assert.equal(d.worldDatum, 'viaduct', 'the flat city keeps the viaduct datum');
-    assert.equal(d.donValley.platformFloor.value, -9);
-    assert.equal(d.donValley.platformFloor.basis, 'assumed');
-    assert.equal(DV.platformFloor(id), -9);
+    assert.equal(f.value, w.floor);
+    assert.equal(f.basis, 'derived');
+    assert.equal(f.confidence, w.confidence);
+    assert.ok(f.range[0] <= f.value && f.value <= f.range[1]);
+    assert.equal(d.donValley.railTop, +(w.floor - E.platformHeight).toFixed(2));
+    assert.equal(DV.platformFloor(id), w.floor);
+    // the street the derivation used is the shipped lidar's at the station
+    const s = ON.GEO_SUBWAY.stations.find((q) => q[2] === st(id).name);
+    assert.ok(Math.abs(node(raw, s[0], s[1]) - E.street[id]) < 0.3, `${id}: street ${node(raw, s[0], s[1])} m`);
   }
+  // Castle Frank: rail level with the covered Rosedale Valley bridge's (its lidar roof less the roof-to-rail allowance)
+  const cfRail = E.rosedaleBridgeRoof - E.roofToRail.value;
+  assert.ok(Math.abs(cfRail - E.street['castle-frank'] - st('castle-frank').facts.depth.donValley.railTop) < 0.1);
+  // ... and the real climb from it to the viaduct's lower deck (the road deck less Taylor's 6.57 m) over the ~150 m from
+  // the platform's east end to the west abutment is within the TTC's 3.5%, at either end of the allowance's range
+  const viaductRail = { west: E.roadDeck.west - E.viaductRailBelowRoad, east: E.roadDeck.east - E.viaductRailBelowRoad };
+  for (const r2r of E.roofToRail.range) assert.ok((viaductRail.west - (E.rosedaleBridgeRoof - r2r)) / 150 <= E.ttcMaxGrade, `roof to rail ${r2r} m`);
+  // Broadview: within 3.5% of the east abutment's rail over the ~185 m to its platform
+  const bvRail = E.street.broadview + st('broadview').facts.depth.donValley.railTop;
+  assert.ok(Math.abs(viaductRail.east - bvRail) / 185 <= E.ttcMaxGrade);
+});
+
+test('Castle Frank and Broadview in the ride: platforms at their depths, climbs within 3.5% to the viaduct 5.8 m down', () => {
+  const rail = { 'castle-frank': -9.9, broadview: -8.6 };
   const { ride, controller, person } = rideHarness();
   const pair = ride.pairs[0];
   assert.equal(pair.id, 'l2-castle-frank-broadview');
@@ -252,28 +333,34 @@ test('Castle Frank and Broadview: platforms 9 m below the street, a climb within
       assert.ok(s1 >= s0, 'in order');
       grade = Math.max(grade, Math.abs(y1 - y0) / Math.max(1e-9, s1 - s0));
     }
-    assert.ok(grade <= 0.04, `${r.id}: steepest grade ${(grade * 100).toFixed(1)}%`);
-    assert.equal(ride.pairs[0].routes[0].profile[2][1], D.railY);
-    // on the viaduct the rails are on the lower deck; at both platforms 10.1 m down
+    // (the TTC Design Manual's maximum on running structure)
+    assert.ok(grade <= DON_VALLEY_EVIDENCE.ttcMaxGrade, `${r.id}: steepest grade ${(grade * 100).toFixed(2)}%`);
+    assert.equal(r.profile[2][1], D.railY);
+    // on the viaduct the rails are on the lower deck; at each platform its own depth
     const mid = (r.open0 + r.open1) / 2;
     assert.equal(ON_SAMPLE(r, mid), D.railY);
-    for (const call of r.calls) assert.equal(ON_SAMPLE(r, call - 70.5), -10.1);
+    assert.equal(ON_SAMPLE(r, r.calls[0] - 70.5), rail[r.origin.id]);
+    assert.equal(ON_SAMPLE(r, r.calls[1] - 70.5), rail[r.destination.id]);
   }
   // the platform cells stand at their depth, and a passenger alights onto the floor
-  for (const s of pair.stations) assert.ok(Math.abs(s.group.position.y - -10.1) < 1e-9, `${s.id} platform cell`);
+  for (const s of pair.stations) assert.ok(Math.abs(s.group.position.y - rail[s.id]) < 1e-9, `${s.id} platform cell at ${s.group.position.y}`);
   assert.equal(ride.enterStation('castle-frank', 0), true);
-  assert.ok(Math.abs(person.position.y - -9) < 1e-9, `on Castle Frank's platform at ${person.position.y}`);
+  assert.ok(Math.abs(person.position.y - -8.8) < 1e-9, `on Castle Frank's platform at ${person.position.y}`);
   assert.ok(controller.interiorSpace);
+  assert.equal(ride.exit({ cancel: true }), true);
+  assert.equal(ride.enterStation('broadview', 0), true);
+  assert.ok(Math.abs(person.position.y - -7.5) < 1e-9, `on Broadview's platform at ${person.position.y}`);
   assert.equal(ride.exit({ cancel: true }), true);
   // the ride: seated at Castle Frank, the train climbs onto the viaduct and down again into Broadview
   assert.equal(ride.featured(), true);
-  let lo = Infinity, hi = -Infinity;
+  let lo = Infinity, hi = -Infinity, end = null;
   for (let i = 0; i < 3000 && !(ride.car.stopIndex === 1 && ride.car.doorState === 'open'); i++) {
     ride.update(0.1);
-    lo = Math.min(lo, ride.car.sections[0].y); hi = Math.max(hi, ride.car.sections[0].y);
+    lo = Math.min(lo, ride.car.sections[0].y); hi = Math.max(hi, ride.car.sections[0].y); end = ride.car.sections[0].y;
   }
   assert.equal(ride.car.track.destination.id, 'broadview');
-  assert.ok(Math.abs(hi - D.railY) < 1e-6 && Math.abs(lo - -10.1) < 0.2, `rails from ${lo} to ${hi}`);
+  assert.ok(Math.abs(hi - D.railY) < 1e-6 && Math.abs(lo - -9.9) < 0.2, `rails from ${lo} to ${hi}`);
+  assert.ok(Math.abs(end - -8.6) < 0.2, `into Broadview at ${end}`);
 });
 function ON_SAMPLE(route, s) { return +ON_SAMPLE.f(route, s).toFixed(6); }
 ON_SAMPLE.f = (route, s) => {

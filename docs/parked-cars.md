@@ -51,7 +51,8 @@ these hold:
 | On the roadway, against one curb island that runs straight (curb within 0.6 m along the stall, at most 12 m from the centre line) | | game |
 | A traffic lane's centre line keeps clear of the stall | 1.5 m | game (as the CaféTO platforms: a bus's half width and a little) |
 | A streetcar track's centre line keeps clear | 1.8 m | game (a Flexity's half width + 0.5 m) |
-| Not on a bike lane or cycle track | `bikewayIntrusion` | game / City cycling network |
+| Not on a bike lane or cycle track, as built (routed round the CaféTO platforms in their place), nor a car's 0.35 m overhang past its stall | `routedBikewayIntrusion` | game / City cycling network |
+| Beside a cycle track at the curb, on the Danforth and Bloor only (`FLOATING_STREETS`): floating beyond it, against its separator, 0.1 m off its reserve; the track along the whole stall at one width (not where it ends or bends out round a platform). Elsewhere a cycle track keeps its curb clear | | City (the Danforth's and Bloor's cycle tracks, 2025 aerials) |
 | Hydrant | 3 m | City: no parking within 3 m of a hydrant |
 | Intersection: the cross street's curb | 9 m (15 m approaching a signal) | City general rule (9 m); 15 m at signals is a game choice |
 | Laneway or driveway (a curb gap under 8 m) | 1 m | City (driveways and laneways) |
@@ -103,22 +104,23 @@ The build's output is a row `[x, z, yaw, kind, paint, style, cat, order]` per ca
 `order` is a seeded rank: a tier that shows fewer cars keeps the lowest ones. The rows are not what ships
 ([Packed](#packed)).
 
-Results (2026-10-30 snapshots): **14,522 legal stalls and 10,775 parked cars**.
+Results (2026-10-30 snapshots, with the floating parking of `st-74e`, below): **14,857 legal stalls and 11,012 parked
+cars** (14,522 and 10,775 before).
 
 | Category | Cars |
 | --- | --- |
 | Permit | 5,108 |
-| Restricted | 2,097 |
-| Paid | 2,084 |
-| Local | 1,486 |
+| Paid | 2,322 |
+| Restricted | 2,099 |
+| Local | 1,483 |
 
 | Body | Cars |
 | --- | --- |
-| SUV | 4,024 |
-| Sedan | 3,801 |
-| Minivan | 1,243 |
-| Van | 989 |
-| Pickup | 718 |
+| SUV | 4,105 |
+| Sedan | 3,881 |
+| Minivan | 1,271 |
+| Van | 1,020 |
+| Pickup | 735 |
 
 Layout takes about 16 s in node. The streets the brief asked about:
 
@@ -132,8 +134,37 @@ Layout takes about 16 s in node. The streets the brief asked about:
   stops, clear.
 - **Bay, Yonge, Jarvis:** none.
 
-Rejections, counted stall by stall: in the curb island 211,702; in a lane 159,316; by-law 109,792; arterial 18,663;
-bikeway 14,976; junction 11,412; hydrant 3,398; stop 2,864; reserved 2,408; crossing 409; patio 371; streetcar 844.
+Rejections, counted stall by stall: in the curb island 211,696; in a lane 160,579; by-law 109,745; arterial 18,659;
+junction 11,574; bikeway 11,408; hydrant 3,445; stop 2,963; reserved 2,395; crossing 409; patio 371; streetcar 844.
+
+## Floating parking beside the cycle tracks (`st-74e`)
+
+On the Danforth and Bloor the parking lane sits outside the cycle track: curb, track, separator with posts, parked
+cars, traffic. The rule applies only to the streets in `js/parking-layout.js` `FLOATING_STREETS` (Danforth Avenue,
+Bloor Street West and Bloor Street East), the ones checked against the City's 2025 aerials. Every other mapped cycle
+track keeps its curb clear, as before `st-74e`. A street is added to the list after its aerials show cars parked beyond
+the track. On a listed street, where a stall's curb has a cycle track (`trackAt`: kinds `track` and `track2`, as built), the layout scans
+out from the curb for the track's reach, as `js/patio-layout.js` does. The stall then floats beyond it, 0.1 m off the
+track's reserve, and every other rule applies to it there. The track must run from the curb along the whole stall at
+one width (within 0.3 m at the stall's ends and middle). Where it ends, or bends out round a CaféTO platform standing
+in its place (`js/cycling.js` `routeRoundPatios`, docs/cafeto-patios.md), the stall is rejected (`bikeway`). So the
+detour takes the parking lane there, as in the City's 2025 aerials, and no car stands in it. Painted bike lanes keep
+their curbs clear as before. Parking beyond them would stand in the traffic.
+
+Legality is unchanged: an arterial is parked on only along a pay station's zone or a by-law's restricted-period
+stretch. Of the Danforth's long curbs, only those parts qualify. The cars, by street:
+
+| Street | Stalls before → after (floating) | Cars before → after |
+| --- | --- | --- |
+| Danforth Avenue | 2 → 78 (76) | 1 → 54 |
+| Bloor Street West | 25 → 281 (256) | 18 → 206 |
+| Bloor Street East | 0 → 6 (6) | 0 → 5 |
+
+The detours' 5.5 m bends (docs/cafeto-patios.md) leave the Danforth two stalls more than the earlier 8 m ones did.
+Every other street keeps main's stalls, except where the car's 0.35 m overhang now meets a bikeway at a stall's end:
+University Avenue (112 → 110 stalls, 93 → 87 cars, the stalls after them shifting along the curb) and Villiers Street
+(175 → 174, 111 → 108). Applied everywhere, the rule would have parked beside Shuter, Gerrard East, Commissioners,
+Saulter South, Hoskin, Mill, Harbord and others: about 340 stalls and 240 cars on streets nobody has checked.
 
 ## Packed
 
@@ -285,8 +316,8 @@ captured again with the same shots and flags, tagged `parked-bin-{desk,phone}--*
   driveways that OpenStreetMap does not map are not known.
 - The pay station layer is the 2026 S5 rollout, not a complete inventory. Some paid streets (Roncesvalles south of its
   zones, much of the Danforth) are left clear for want of evidence.
-- The Danforth's parking sits outside its curbside cycle track (floating parking). That layout is not modelled, so the
-  Danforth's curbs stay clear.
+- Floating parking (`st-74e`) is limited to the Danforth and Bloor. It follows the cycle track as mapped and built. The track's own gaps (driveways, loading
+  zones) are not in the data, so stalls run on past them where the other rules allow.
 - The by-laws are resolved onto centre lines by rule. Offsets move along the street's direction at the cross street,
   which is approximate on curves. "The lane first south of" is taken as 40 m.
 - Parked cars are static: a rush-hour ban keeps the curb clear all day, and the cars do not leave at night.

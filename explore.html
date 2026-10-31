@@ -142,7 +142,7 @@
     // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by
     // js/geodata-loader.js while three.js loads
     const cityGeo = (() => {
-      const bin = fetch('./data/toronto-geodata.bin?v=547a42cc2424');
+      const bin = fetch('./data/toronto-geodata.bin?v=d0f4a95703d2');
       return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
     for (const src of cityAppScripts) {

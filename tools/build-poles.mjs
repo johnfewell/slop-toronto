@@ -2,9 +2,9 @@
 // from the cut made by tools/fetch-poles.mjs (~/.cache/slop-toronto/poles). node tools/build-poles.mjs [dir] [output.js]
 //
 // Only the types the city has a model for are written (street light, light + signal, signal, pedestrian light:
-// js/street-details.js), and of the miscellaneous poles the unlit hydro poles (miscPoles, below: classified on their
-// positions, the source has no finer subtype); the other miscellaneous poles and the hydro towers are counted, not
-// shipped (`misc` counts each class). Each type is its OBJECTIDs (ascending, as deltas) and positions in world
+// js/street-details.js), and of the miscellaneous poles the unlit hydro poles and the poles holding up the streetcar
+// overhead (miscPoles, below: classified on their positions, the source has no finer subtype; `tram` lists the latter);
+// the other miscellaneous poles and the hydro towers are counted, not shipped (`misc` counts each class). Each type is its OBJECTIDs (ascending, as deltas) and positions in world
 // decimetres (the City's stated accuracy is +-30 cm).
 // `looks` (poleLooks, below) names the model each pole is drawn with where it is not its type's default: the street
 // lights on wooden hydro poles, the Distillery's lantern posts and the pedestrian lights' three lamp posts. The source
@@ -48,16 +48,20 @@ export function buildPoles(geojson, frame, source, GEO = null) {
     counts[code] = (counts[code] || 0) + 1;
     if (SHIPPED.includes(code)) (byType[code] ||= []).push([id, Math.round(x * 10), Math.round(z * 10)]);
   }
-  // the miscellaneous poles: only the unlit hydro poles are drawn (with the city to judge them by; none without)
+  // the miscellaneous poles: only the unlit hydro poles and the streetcar streets' span poles are drawn (with the city
+  // to judge them by; none without)
   const misc = GEO ? miscPoles(byType, GEO) : null;
-  byType[MISC] = misc ? (byType[MISC] || []).filter((r) => misc.class.get(r[0]) === 'hydro') : [];
+  byType[MISC] = misc ? (byType[MISC] || []).filter((r) => MISC_DRAWN.includes(misc.class.get(r[0]))) : [];
   const types = {};
   for (const code of SHIPPED) {
     const rows = (byType[code] || []).sort((r, s) => r[0] - s[0]);
     types[code] = { name: TYPES[code], ids: rows.map((r, i) => r[0] - (i ? rows[i - 1][0] : 0)), xz: rows.flatMap((r) => [r[1], r[2]]) };
   }
-  const looks = GEO ? poleLooks(byType, GEO) : {};
-  return { source, counts, ...(misc ? { misc: misc.counts } : {}), shipped: SHIPPED, types, looks };
+  const looks = GEO ? poleLooks(byType, GEO, misc) : {};
+  // the miscellaneous poles that carry the streetcar overhead's span wires (steel, centre and wooden), OBJECTID deltas
+  const tram = misc ? byType[MISC].filter((r) => TRAM_CLASSES.includes(misc.class.get(r[0]))).map((r) => r[0]).sort((a, b) => a - b)
+    .map((id, i, a) => id - (i ? a[i - 1] : 0)) : null;
+  return { source, counts, ...(misc ? { misc: misc.counts, tram } : {}), shipped: SHIPPED, types, looks };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -73,7 +77,10 @@ export function buildPoles(geojson, frame, source, GEO = null) {
 // - promenade: the waterfront's slim modern posts, within PROMENADE_QQ of Queens Quay, or in the MODERN_PED neighbourhoods
 // - park: a park lamp, inside a park, pitch, golf course or cemetery
 // - lantern: the heritage lantern post everywhere else (Old Town, Cabbagetown, the Danforth, St. James Town...)
-export const LOOKS = ['wood', 'lantern', 'promenade', 'park'];
+// Miscellaneous poles (6003) are the wooden hydro pole unless listed (miscPoles, below):
+// - trolley: the TTC's tapered steel span pole beside a streetcar street; trolleyCentre: its centre pole between the
+//   tracks, with a bracket arm over each (The Queensway's and Spadina's rights-of-way, Fleet St)
+export const LOOKS = ['wood', 'lantern', 'promenade', 'park', 'trolley', 'trolleyCentre'];
 const LOCAL = new Set(['residential', 'unclassified', 'living_street', 'tertiary', 'service']);
 export const WOOD_RADIUS = 90, WOOD_SHARE = 0.8, WOOD_MIN = 3, WOOD_ROAD = 14; // m, share, lights, m to the street
 const MODERN = ['Financial', 'Yonge-Bay Corridor', 'Wellington Place', 'Harbourfront-CityPlace', 'St Lawrence-East Bayfront-The Islands',
@@ -94,8 +101,8 @@ function inPoly(flat, x, z) {
   return c;
 }
 
-// rows by type ([id, x dm, z dm]) -> { look: OBJECTID deltas (ascending) }
-export function poleLooks(byType, GEO) {
+// rows by type ([id, x dm, z dm]), miscPoles' result -> { look: OBJECTID deltas (ascending) }
+export function poleLooks(byType, GEO, misc = null) {
   const p = GEO.frame.projection;
   const world = ([lat, lon]) => {
     const e = (lon - p.lon0) * p.kx, n = (lat - p.lat0) * p.ky;
@@ -169,6 +176,11 @@ export function poleLooks(byType, GEO) {
         : modernPed.some((poly) => inPoly(poly, x, z)) ? 'promenade' : 'lantern';
     looks[look].push(id);
   }
+  // the streetcar streets' steel poles
+  for (const [id] of byType[MISC] || []) {
+    const c = misc?.class.get(id);
+    if (c === 'trolley' || c === 'trolleyCentre') looks[c].push(id);
+  }
   for (const k of LOOKS) looks[k] = looks[k].sort((a, b) => a - b).map((id, i, a) => id - (i ? a[i - 1] : 0));
   return looks;
 }
@@ -182,8 +194,17 @@ export function poleLooks(byType, GEO) {
 // - post: three or more within MISC_POST of each other (bollards, a plaza's light posts or art installation, a park
 //   edge's posts; a hydro line's poles stand 20-45 m apart); double: the second of a pair within MISC_DOUBLE (a
 //   double pole, a stub beside it): one is drawn
-// - trolley: within MISC_TRAM of a streetcar track (the TTC's steel span poles down its streets and in its carhouse
-//   yards, carrying the overhead the city does not model)
+// - within MISC_TRAM of a streetcar track: the poles holding up the streetcar overhead, by where they stand
+//   (docs/city-open-data-layers.md, *Poles on the streetcar streets*):
+//   - trolleyCentre: between two tracks (not a yard's), each within MISC_CENTRE (The Queensway's and Spadina's rights-of-way, Fleet
+//     St): the TTC's centre pole, a bracket arm over each track
+//   - trolleyYard: else not by a named street (within MISC_STREET): the carhouse yards and the loops, whose overhead the
+//     city does not model; not drawn
+//   - trolleyWood: beside the street in the neighbourhoods east of the Don (TROLLEY_WOOD: Riverside, Leslieville, East
+//     Chinatown, Riverdale), where Toronto Hydro's wooden poles carry the line and the span wires (Queen East, Gerrard,
+//     Broadview): the wooden hydro pole
+//   - trolley: beside the street anywhere else: the TTC's tapered steel span pole
+//   The span wires run from each across the street to the contact wire (js/streetcars.js tramSpans)
 // - rail: within MISC_RAIL of a railway and not by a street (signal masts, the corridors' pole lines)
 // - park: inside a park, pitch, golf course or cemetery and not by a street (sports-field lights, flag poles)
 // - core: in the rebuilt core and waterfront neighbourhoods (MODERN, as the lights' looks: buried services; but not
@@ -191,8 +212,12 @@ export function poleLooks(byType, GEO) {
 // - median: down a median (trolley, sign and signal poles)
 // - building: inside a building's footprint (a pole by a wall, the footprint simplified over it)
 // - hydro: the rest, drawn as the wooden hydro pole without its light (js/mapped-poles.js)
-export const MISC_CLASSES = ['hydro', 'dup', 'post', 'double', 'trolley', 'rail', 'park', 'core', 'median', 'building'];
-export const MISC_DUP = 1.2, MISC_DOUBLE = 4, MISC_POST = 7, MISC_TRAM = 9, MISC_RAIL = 15, MISC_STREET = 12; // m
+export const MISC_CLASSES = ['hydro', 'dup', 'post', 'double', 'trolley', 'trolleyWood', 'trolleyCentre', 'trolleyYard', 'rail', 'park',
+  'core', 'median', 'building'];
+export const MISC_DRAWN = ['hydro', 'trolley', 'trolleyWood', 'trolleyCentre'];
+export const TRAM_CLASSES = ['trolley', 'trolleyWood', 'trolleyCentre'];
+export const MISC_DUP = 1.2, MISC_DOUBLE = 4, MISC_POST = 7, MISC_TRAM = 9, MISC_RAIL = 15, MISC_STREET = 12, MISC_CENTRE = 2.5; // m
+export const TROLLEY_WOOD = ['South Riverdale', 'North Riverdale', 'Playter Estates-Danforth'];
 const MISC_CORE = MODERN.filter((name) => name !== 'University');
 
 // rows by type ([id, x dm, z dm]) -> { class: Map(OBJECTID -> class), counts: { class: n } }
@@ -229,12 +254,38 @@ export function miscPoles(byType, GEO) {
   const segsOf = (flat) => { const out = []; for (let i = 0; i + 3 < flat.length; i += 2) out.push([flat[i], flat[i + 1], flat[i + 2], flat[i + 3]]); return out; };
   const streets = segGrid(GEO.roads.filter((r) => r[0] && !r[5]).flatMap((r) => segsOf(r[6])));
   const trams = segGrid(GEO.rails.filter((r) => r[0] === 0).flatMap((r) => segsOf(r[4])));
+  // (the tracks through the streets: not the carhouse yards')
+  const tramSegs = GEO.rails.filter((r) => r[0] === 0 && r[1] !== 'yard').flatMap((r) => segsOf(r[4]));
+  // between two tracks: a track within MISC_CENTRE on either side (by the nearest segment's direction)
+  const tramNear = (() => {
+    const cells = new Map(), key = (i, j) => i * 100000 + j;
+    for (const s of tramSegs) for (let a = Math.floor(Math.min(s[0], s[2]) / 20); a <= Math.floor(Math.max(s[0], s[2]) / 20); a++)
+      for (let b = Math.floor(Math.min(s[1], s[3]) / 20); b <= Math.floor(Math.max(s[1], s[3]) / 20); b++) (cells.get(key(a, b)) || cells.set(key(a, b), []).get(key(a, b))).push(s);
+    return (x, z) => {
+      const out = [];
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const s of cells.get(key(Math.floor(x / 20) + a, Math.floor(z / 20) + b)) || []) out.push(s);
+      return out;
+    };
+  })();
+  const betweenTracks = (x, z) => {
+    let ref = null, rd = MISC_CENTRE;
+    const near = tramNear(x, z).map(([ax, az, bx, bz]) => {
+      const ex = bx - ax, ez = bz - az, L = Math.hypot(ex, ez) || 1, t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / (L * L)));
+      const d = Math.hypot(ax + ex * t - x, az + ez * t - z);
+      return { d, ux: ex / L, uz: ez / L, side: Math.sign(ex * (z - az) - ez * (x - ax)), inside: t > 0 && t < 1 };
+    }).filter((s) => s.d < MISC_CENTRE && s.inside);
+    for (const s of near) if (s.d < rd) { rd = s.d; ref = s; }
+    if (!ref) return false;
+    // the side of each track it stands, in the nearest track's sense
+    return near.some((s) => s !== ref && Math.abs(s.ux * ref.ux + s.uz * ref.uz) > 0.9 && s.side * Math.sign(s.ux * ref.ux + s.uz * ref.uz) === -ref.side);
+  };
+  const woodHoods = GEO.districtBounds.filter(([name]) => TROLLEY_WOOD.includes(name)).map((b) => bboxed(b[1]));
   const railways = segGrid(GEO.rails.filter((r) => r[0] === 1).flatMap((r) => segsOf(r[4])));
-  const bboxed = (flat) => {
+  function bboxed(flat) {
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
     for (let i = 0; i < flat.length; i += 2) { x0 = Math.min(x0, flat[i]); x1 = Math.max(x1, flat[i]); z0 = Math.min(z0, flat[i + 1]); z1 = Math.max(z1, flat[i + 1]); }
     return { flat, x0, x1, z0, z1 };
-  };
+  }
   const inAny = (polys) => (x, z) => polys.some((p) => x >= p.x0 && x <= p.x1 && z >= p.z0 && z <= p.z1 && inPoly(p.flat, x, z));
   const inPark = inAny(GEO.areas.filter((a) => PARKS.has(a[0])).map((a) => bboxed(a[2])));
   const inCore = inAny(GEO.districtBounds.filter(([name]) => MISC_CORE.includes(name)).map((b) => bboxed(b[1])));
@@ -262,7 +313,8 @@ export function miscPoles(byType, GEO) {
     if (close.length >= 3 || close.some((q) => q !== p && others(q.x, q.z, MISC_POST).length >= 3)) { cls.set(p.id, 'post'); continue; }
     if (others(p.x, p.z, MISC_DOUBLE).some((q) => q.id < p.id)) { cls.set(p.id, 'double'); continue; }
     const street = streets(p.x, p.z, MISC_STREET) < MISC_STREET;
-    cls.set(p.id, trams(p.x, p.z, MISC_TRAM) < MISC_TRAM ? 'trolley'
+    cls.set(p.id, trams(p.x, p.z, MISC_TRAM) < MISC_TRAM ? (betweenTracks(p.x, p.z) ? 'trolleyCentre' : !street ? 'trolleyYard'
+      : inAny(woodHoods)(p.x, p.z) ? 'trolleyWood' : 'trolley')
       : !street && railways(p.x, p.z, MISC_RAIL) < MISC_RAIL ? 'rail'
         : !street && inPark(p.x, p.z) ? 'park'
           : inCore(p.x, p.z) ? 'core'

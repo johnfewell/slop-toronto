@@ -139,4 +139,5 @@ The subway (lines, stations, street entrances) is its own file: `node tools/buil
 ([docs/subway-topology.md](docs/subway-topology.md)).
 The Don Valley terrain pilot (`explore.html?donvalley=1`: the real valley under the Bloor Viaduct, Castle Frank and
 Broadview below the street) is its own file: `node tools/build-don-valley.mjs` writes `js/don-valley-data.js` from the
-same DEM cache (`GEO_DATA`) and the committed geodata ([docs/don-valley-terrain.md](docs/don-valley-terrain.md)).
+Ontario GTA 2023 lidar DTM tiles (`node tools/fetch-don-valley-dtm.mjs` puts them in
+`~/.cache/slop-toronto/raw/ontario-dtm-gta2023`) and the committed geodata ([docs/don-valley-terrain.md](docs/don-valley-terrain.md)).

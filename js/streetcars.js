@@ -738,8 +738,54 @@ function createTrackBedMaterial() {
   return mat;
 }
 
+// The span wires: each span (mapped-poles.js tramSpans: pole to pole, pole to a wall, a centre pole's bracket arm) where
+// it crosses the contact wire (`contact`: its segments [ax, ay, az, bx, by, bz]) pulled down to SPAN_HANG m over it and
+// a hanger down to it; a span crossing no contact wire is not strung, and an arm (`trim`) ends at its last. `push(x, z,
+// ...segment)`: a line segment into the tile at (x, z). -> { spans, hangers, dropped }
+const SPAN_HANG = 0.3;
+function stringTramSpans(spans, contact, push) {
+  const CELL = 16, grid = new Map(), key = (i, j) => i * 100000 + j;
+  contact.forEach((c, n) => {
+    for (let i = Math.floor(Math.min(c[0], c[3]) / CELL); i <= Math.floor(Math.max(c[0], c[3]) / CELL); i++)
+      for (let j = Math.floor(Math.min(c[2], c[5]) / CELL); j <= Math.floor(Math.max(c[2], c[5]) / CELL); j++) (grid.get(key(i, j)) || grid.set(key(i, j), []).get(key(i, j))).push(n);
+  });
+  const stats = { spans: 0, hangers: 0, dropped: 0 };
+  for (const { a, b, trim } of spans) {
+    const ex = b.x - a.x, ez = b.z - a.z;
+    // the contact wire's segments in the cells along the span, and where the span crosses each (t along the span)
+    const seen = new Set(), hits = [];
+    const L = Math.hypot(ex, ez), n = Math.ceil(L / (CELL / 2));
+    for (let k = 0; k <= n; k++) {
+      const x = a.x + (ex * k) / n, z = a.z + (ez * k) / n;
+      for (const i of grid.get(key(Math.floor(x / CELL), Math.floor(z / CELL))) || []) {
+        if (seen.has(i)) continue;
+        seen.add(i);
+        const [cx, cy, cz, dx, dy, dz] = contact[i], fx = dx - cx, fz = dz - cz;
+        const den = ex * fz - ez * fx;
+        if (Math.abs(den) < 1e-6) continue;
+        const t = ((cx - a.x) * fz - (cz - a.z) * fx) / den, u = ((cx - a.x) * ez - (cz - a.z) * ex) / den;
+        if (t > 0.02 && t < 0.98 && u >= 0 && u <= 1) hits.push({ t, x: a.x + ex * t, z: a.z + ez * t, y: cy + (dy - cy) * u });
+      }
+    }
+    hits.sort((p, q) => p.t - q.t);
+    // (two contact wires' segments meeting at the crossing: one hanger)
+    const wires = hits.filter((h, i) => !i || Math.hypot(h.x - hits[i - 1].x, h.z - hits[i - 1].z) > 0.4);
+    if (!wires.length) { stats.dropped++; continue; }
+    const pts = [a, ...wires.map((h) => ({ x: h.x, y: h.y + SPAN_HANG, z: h.z })), ...(trim ? [] : [b])];
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const p = pts[i], q = pts[i + 1];
+      push((p.x + q.x) / 2, (p.z + q.z) / 2, p.x, p.y, p.z, q.x, q.y, q.z);
+    }
+    for (const h of wires) push(h.x, h.z, h.x, h.y + SPAN_HANG, h.z, h.x, h.y, h.z);
+    stats.spans++;
+    stats.hangers += wires.length;
+  }
+  return stats;
+}
+
 function buildTrackwork(group, tracks) {
   const tiles = new Map(); // key -> { rail: [], bed: [], wire: [] }
+  const contact = []; // the contact wire's segments, for the span wires
   const tileOf = (x, z) => {
     const k = Math.floor(x / TILE) * 100000 + Math.floor(z / TILE);
     let t = tiles.get(k);
@@ -776,9 +822,13 @@ function buildTrackwork(group, tracks) {
       if (i % 4 === 0) {
         const c = P[Math.min(P.length - 1, i + 4)];
         T.wire.push(a.x, wireY(a), a.z, c.x, wireY(c), c.z);
+        contact.push([a.x, wireY(a), a.z, c.x, wireY(c), c.z]);
       }
     }
   }
+  // the span wires holding it up, from the streetcar streets' poles across the street (street-details.js,
+  // mapped-poles.js tramSpans), with the contact wire's other lines
+  const spanStats = stringTramSpans(window.CITY.tramSpanSites || [], contact, (x, z, ...seg) => tileOf(x, z).wire.push(...seg));
   const railMat = createRailMaterial();
   const bedMat = createTrackBedMaterial();
   const wireMat = new THREE.LineBasicNodeMaterial({ color: 0x1a1a1a });
@@ -812,6 +862,8 @@ function buildTrackwork(group, tracks) {
     ].filter(Boolean);
     out.push({ x: T.x, z: T.z, meshes });
   }
+  if (window.CITY.poleStats) Object.assign(window.CITY.poleStats, { tramSpans: spanStats });
+  console.info(`[streetcars] span wires: ${spanStats.spans} strung (${spanStats.hangers} hangers), ${spanStats.dropped} crossing no contact wire left out`);
   return out;
 }
 
@@ -1464,5 +1516,5 @@ function createStreetcars(scene, trafficSystem) {
   return { group, update, cars, tracks, routes, sample, simulate, liveCars, spawnAt, retire, shape, whyWaiting };
 }
 
-Object.assign(window.CITY, { createStreetcars });
+Object.assign(window.CITY, { stringTramSpans, createStreetcars });
 })();

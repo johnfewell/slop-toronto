@@ -93,15 +93,15 @@ says that King has a single mezzanine fare area.
 | --- | --- | --- | --- | --- | --- |
 | King | 3: street, two concourses, platforms | side | no | concourse floor −4.5 (range −6 to −3.5); platform floor −9.5 (−12 to −8); rail top −10.6 | **assumed** |
 | Queen | 4: street, concourses, platforms, underpass below the platforms | side | yes (4 elevators) | as King; the underpass is not modelled | **assumed** |
-| Castle Frank | 3 | side | — | rail on the viaduct deck, 16.3 m; with `?donvalley=1` platform floor −9.0 (range −9.5 to −7), rail top −10.1 | world datum: viaduct; pilot: **assumed** |
-| Broadview | 3 | side | — | as Castle Frank | world datum: viaduct; pilot: **assumed** |
+| Castle Frank | 3 | side | — | rail on the viaduct deck, 16.3 m; with `?donvalley=1` platform floor −8.8 (range −9.6 to −8.0), rail top −9.9 | world datum: viaduct; pilot: **derived** (medium) |
+| Broadview | 3 | side | — | rail on the viaduct deck, 16.3 m; with `?donvalley=1` platform floor −7.5 (range −9.5 to −6.5), rail top −8.6 | world datum: viaduct; pilot: **derived** (low) |
 
 The King and Queen depths assume two storeys under Yonge Street. The concourse floor is one storey (3 m clear) plus
 the slab and street cover below the street. The platform floor is a second storey below that, under the platform
 ceiling and the concourse slab. Rail top is the platform floor less the passenger model's 1.1 m platform height,
 which is also not sourced.
 
-The fact file holds each depth as `{ value, range, basis: 'assumed' }`. The topology build refuses a track ride
+The fact file holds each depth as `{ value, range, basis: 'assumed' }` (or `basis: 'derived'` with a `confidence`). The topology build refuses a track ride
 without a platform depth. A measured depth (from TTC drawings or a City structure record) replaces the value and
 changes `basis`; nothing else needs to change.
 
@@ -119,8 +119,10 @@ cells on the deck's level, entered through the explicit transition, and the Bloo
 The [Don Valley terrain pilot](don-valley-terrain.md) (`?donvalley=1`) adds that valley:
 
 - The road deck is level with the street, and the lower deck's rails are 5.8 m below it.
-- Each station's facts carry `depth.donValley`: a platform floor 9.0 m down. This is assumed from the three levels,
-  and the 4% climb to the viaduct, 119 m and 158 m away, allows at most about 9.5 m.
+- Each station's facts carry `depth.donValley`, derived from the 2023 lidar and the viaduct's 1919 drawing (basis
+  `derived`, with a confidence; [the derivation](don-valley-terrain.md#5-castle-frank-and-broadview-at-depth)):
+  Castle Frank's platform floor 8.8 m down (medium confidence), Broadview's 7.5 m (low). The climbs to the viaduct's
+  lower deck, 119 m and 158 m away, are 3.4% and 1.8%, within the TTC's 3.5% design maximum.
 - The ride's routes get a depth profile, and the platform cells stand at it.
 
 ## Ride rules
