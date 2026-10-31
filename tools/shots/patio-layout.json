@@ -1,0 +1,10 @@
+[
+ {
+  "name": "patio-layout",
+  "mode": "person",
+  "time": "midday",
+  "wait": 500,
+  "record": true,
+  "js": "(() => { const d = window.CITY.patioLayoutDump; if (!d) throw new Error('no CITY.patioLayoutDump: load the page with ?patios=layout'); const s = window.CITY.patioStats; console.log('[ride-check] patio-layout ' + JSON.stringify({ sites: d.sites.length, placed: s.placed, rejected: s.rejected, colliders: d.replay.colliders.length, furniture: d.replay.furniture.length, fingerprint: d.fingerprint, ms: s.ms, q: location.search })); return d; })()"
+ }
+]

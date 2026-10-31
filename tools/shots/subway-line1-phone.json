@@ -1,0 +1,48 @@
+[
+  {
+    "name": "l1-phone-seat",
+    "wait": 1000,
+    "js": "window.__l1={ st(id){return window.__CITY_APP.subwayRide.pairs.flatMap(p=>p.stations).find(s=>s.id===id);}, pt(c,u,v){return {x:c.cx+Math.cos(c.yaw)*u+Math.sin(c.yaw)*v,z:c.cz-Math.sin(c.yaw)*u+Math.cos(c.yaw)*v};}, clampIn(c,p){const dx=p.x-c.cx,dz=p.z-c.cz,cs=Math.cos(c.yaw),sn=Math.sin(c.yaw);let u=dx*cs-dz*sn,v=dx*sn+dz*cs;u=Math.max(-c.hx+.25,Math.min(c.hx-.25,u));v=Math.max(-c.hz+.25,Math.min(c.hz-.25,v));return this.pt(c,u,v);}, cells(id,dirFrom,dirTo){const L=this.st(id).walk.layout.cells,k=(x,d)=>L.find(c=>c.kind===x&&(d===undefined||c.dir===d));const cor=L.filter(c=>c.kind==='corridor').reverse(); const up=d=>[k('platform',d),k('stair',d),k('mezzanine'),...cor,k('landing'),k('entrance')]; if(dirTo===undefined) return up(dirFrom); if(dirFrom===undefined) return up(dirTo).reverse(); return [k('platform',dirFrom),k('stair',dirFrom),k('mezzanine'),k('stair',dirTo),k('platform',dirTo)];}, route(cells,end){const out=[];for(let i=0;i+1<cells.length;i++){const A=cells[i],B=cells[i+1];out.push(this.clampIn(A,this.clampIn(B,{x:A.cx,z:A.cz})));}if(end)out.push(end);return out;}, async walk(points,max=1500){const a=window.__CITY_APP,C=a.controllerManager,p=C.getActiveEntity();let n=0,lo=Infinity,hi=-Infinity; for(const q of points){for(;;){const d=Math.hypot(q.x-p.position.x,q.z-p.position.z);if(d<.45)break;if(++n>max){C.keys.forward=0;throw new Error('walk stuck at '+JSON.stringify(p.position)+' toward '+JSON.stringify(q));} p.heading=Math.atan2(q.x-p.position.x,q.z-p.position.z);C.keys.forward=d>1.5?1:.3;await a.film.step(1); const S=C.interiorSpace;if(!S)throw new Error('left the station');const f=S.floorAt(p.position.x,p.position.z,p.position.y);if(Math.abs(p.position.y-f)>.02)throw new Error('off the floor '+p.position.y+' vs '+f);lo=Math.min(lo,p.position.y);hi=Math.max(hi,p.position.y);}} C.keys.forward=0;await a.film.step(2);return {frames:n,lo,hi};}, async approach(id){const a=window.__CITY_APP,R=a.subwayRide,C=a.controllerManager,e=this.st(id).entrances[0],t=e.opening,n={x:-t.tz,z:t.tx}; for(const [b,c] of [[0,0],[-1,0],[-1.5,0],[0,1],[0,-1],[-1,1],[-1,-1],[-2,0]]){C.teleportActiveTo(e.prompt.x+t.tx*b+n.x*c,e.prompt.z+t.tz*b+n.z*c,Math.atan2(t.tx,t.tz));await a.film.step(2);if(R.hasEntranceCandidate)break;} const p=C.getActiveEntity().position;console.log('[ride-check] approach '+id+' '+JSON.stringify({at:p,prompt:e.prompt,anchor:this.st(id).anchor,candidate:R.hasEntranceCandidate,promptShown:!document.getElementById('ride-prompt').hidden,text:document.getElementById('ride-prompt-text').textContent,mode:C.activeMode})); if(!R.hasEntranceCandidate)throw new Error('No entrance candidate at the stairway');}, async until(test,steps=360,frames=25){const a=window.__CITY_APP;for(let i=0;i<steps&&!test();i++)await a.film.step(frames);return test();} }; (()=>{const a=window.__CITY_APP,R=a.subwayRide;if(!R.active)throw new Error('Phone Line 1 ride failed');document.getElementById('locate-prompt').hidden=true;R.exit({cancel:true});a.selectMode('person');a.film.start(10);return __l1.approach('queen').then(()=>{if(document.getElementById('ride-prompt').hidden)throw new Error('Missing street entrance interaction');}).finally(()=>a.film.stop());})()"
+  },
+  {
+    "name": "l1-phone-enter",
+    "tap": "#ride-prompt",
+    "wait": 700
+  },
+  {
+    "name": "l1-phone-walk-down",
+    "wait": 700,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;if(!R.inside||R.active)throw new Error('Touch entry failed');a.film.start(10);try{const st=__l1.st('queen'),cells=__l1.cells('queen',undefined,0);const w=await __l1.walk(__l1.route(cells,st.walk.platforms[0].landing));if(!R.onPlatform)throw new Error('Not on the platform');console.log('[ride-check] phone walked down to the southbound platform '+JSON.stringify(w));if(!await __l1.until(()=>!document.getElementById('ride-status').disabled,320))throw new Error('No southbound train');}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-phone-boarding",
+    "tap": "#ride-status",
+    "wait": 700
+  },
+  {
+    "name": "l1-phone-tunnel",
+    "wait": 500,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;if(!R.active)throw new Error('Touch boarding failed');a.film.start(10);try{if(!await __l1.until(()=>R.car.speed>7&&R.car.k===1,80,5))throw new Error('Did not get going');}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-phone-arrival",
+    "wait": 500,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{if(!await __l1.until(()=>R.car.stopIndex===1&&R.car.doorState==='open',180))throw new Error('Phone arrival failed');console.log('[ride-check] phone arrived at '+R.car.track.destination.name);}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-phone-alight",
+    "tap": "#ride-status",
+    "wait": 700
+  },
+  {
+    "name": "l1-phone-persist",
+    "wait": 300,
+    "js": "(()=>{const a=window.__CITY_APP,R=a.subwayRide;if(R.active||!R.inside||a.controllerManager.suspended)throw new Error('Touch alighting failed');const safe=R.savedGround('person');window.dispatchEvent(new Event('pagehide'));const saved=JSON.parse(localStorage.getItem('toronto-player-state'));const p=saved.entities[saved.activeMode];if(Math.hypot(p.x-safe.x,p.z-safe.z)>.01||Math.abs(p.y-safe.y)>.01)throw new Error('Saved an interior position');history.replaceState(null,'',location.pathname+location.search);console.log('[ride-check] phone Line 1 entry, walk, boarding, alighting and safe persistence pass');})()"
+  },
+  {
+    "name": "l1-phone-reload",
+    "reload": true,
+    "wait": 1000,
+    "js": "(()=>{const a=window.__CITY_APP;if(a.subwayRide.inside||a.rideSession.active||a.controllerManager.interiorSpace||a.controllerManager.suspended||a.cameraSystem.camera.layers.mask!==1)throw new Error('Reload left player underground');const p=a.controllerManager.getActiveEntity().position;if(Math.abs(p.y-a.controllerManager.getGroundHeight(p.x,p.z,a.controllerManager.activeMode))>.1||Math.hypot(p.x-335.8,p.z+323)>120)throw new Error('Reload did not restore King street '+JSON.stringify(p));console.log('[ride-check] actual reload restores King street');})()"
+  }
+]

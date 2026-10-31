@@ -239,3 +239,164 @@ test('dodges keep clear of the furniture too', () => {
   assert.equal(f.routes.canDodge(p, -0.6), true, 'into the free sidewalk');
   assert.equal(f.routes.canDodge(p, -1.7), false, 'onto the hydrant');
 });
+
+// --- st-2t9: the walking lines on the City's sidewalk polygons (js/sidewalk-polygons.js's point test) ---
+// A crossroads at the origin: four 84 m streets out of it along the axes (their stop lines 8 m out), a curb island in
+// each quadrant from the curbs at |x|, |z| >= 5 out to 100 m, buildings (the road network's footprints) from `lot`, and
+// on each island the walk `walk(lo, hi)` metres from the streets' centre lines, an L round the corner, with its inside
+// corner cut back diagonally by `cut` (the walk sweeping round it, as the City maps a residential corner). `half` is
+// the streets' half width as the road graph has it (on Toronto's one-way side streets narrower than the curbs).
+const walkIndexOf = () => {
+  const context = { window: { CITY: {} }, console };
+  vm.createContext(context);
+  vm.runInContext(readFileSync(join(__dirname, '../js/sidewalk-polygons.js'), 'utf8'), context);
+  return context.window.CITY.sidewalkWalkIndex;
+};
+function crossroads({ half = 5, lo, hi, lot, cut = 0, mapped = [true, true, true, true], walkSides = null, signal = false, furniture = [] }) {
+  const createPedestrianRoutes = load();
+  const quads = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+  const blocks = quads.map(([qx, qz], id) => ({ id, qx, qz, poly: [[5, 5], [100, 5], [100, 100], [5, 100]].map(([x, z]) => ({ x: x * qx, z: z * qz })) }));
+  const blockAt = (x, z) => blocks.find((b) => Math.abs(x) >= 5 && Math.abs(x) <= 100 && Math.abs(z) >= 5 && Math.abs(z) <= 100 && Math.sign(x) === b.qx && Math.sign(z) === b.qz) || null;
+  // (the L in the first quadrant, mirrored into the others; `walkSides` [along x, along z] leaves an arm out)
+  const pieces = new Map();
+  blocks.forEach((b, id) => {
+    if (!mapped[id]) return;
+    const [ax, az] = walkSides ? walkSides[id] : [true, true];
+    const rings = [];
+    if (ax && az) rings.push(cut ? [[lo, 100], [lo, lo + cut], [lo + cut, lo], [100, lo], [100, hi], [hi + cut, hi], [hi, hi + cut], [hi, 100]]
+      : [[lo, 100], [lo, lo], [100, lo], [100, hi], [hi, hi], [hi, 100]]);
+    else if (ax) rings.push([[lo, lo], [100, lo], [100, hi], [lo, hi]]);
+    else if (az) rings.push([[lo, lo], [hi, lo], [hi, 100], [lo, 100]]);
+    else rings.push([[60, 60], [70, 60], [70, 70], [60, 70]]); // (mapped, but no walk along either street)
+    pieces.set(id, rings.map((r) => ({ outer: r.map(([x, z]) => ({ x: x * b.qx, z: z * b.qz })), holes: [] })));
+  });
+  const walks = walkIndexOf()(pieces);
+  const lots = quads.map(([qx, qz]) => [Math.min(lot * qx, 100 * qx), Math.max(lot * qx, 100 * qx), Math.min(lot * qz, 100 * qz), Math.max(lot * qz, 100 * qz)]);
+  const walkable = (minX, maxX, minZ, maxZ) => !lots.some(([x0, x1, z0, z1]) => maxX > x0 && minX < x1 && maxZ > z0 && minZ < z1);
+  const n = { x: 0, z: 0, general: true, signal, sideCount: 4, in: [], out: [], road: [], crosswalk: null };
+  const edges = [[1, 0], [0, 1], [-1, 0], [0, -1]].map(([dx, dz], side) => {
+    const far = { x: dx * 100, z: dz * 100, in: [], out: [], road: [] };
+    const e = { from: n, to: far, sx: dx * 8, sz: dz * 8, dx, dz, rx: -dz, rz: dx, half, len: 84, general: true, clx: Math.abs(dz), clz: Math.abs(dx) };
+    n.out.push(e); far.in.push(e); n.road[side] = e;
+    return e;
+  });
+  const build = (w) => createPedestrianRoutes({ walkable, onSidewalk: (x, z) => !!blockAt(x, z), edges,
+    obstacles: furniture.map((f) => f((x, z) => ({ x, z }), 1, 0)), walks: w }, blockAt);
+  return { routes: build(walks), band: build(null), walks, blockAt, walkable, edges, n, blocks };
+}
+const onWalkAt = (f, x, z) => { const b = f.blockAt(x, z); return !!b && f.walks.inside(b.id, x, z) === true; };
+// metres of track t (every 10 cm) off the walk, past `skip` m at either end
+function offWalk(f, t, skip = 0) {
+  let off = 0;
+  for (let s = skip; s <= t.len - skip + 1e-9; s += 0.1) if (!onWalkAt(f, t.ax + t.ux * s, t.az + t.uz * s)) off += 0.1;
+  return off;
+}
+// the lateral offset of a track along the x street (its z) or the z street (its x)
+const lateral = (t) => (Math.abs(t.ux) > 0.9 ? t.az : t.ax);
+
+test('Euclid-style residential street: the lines move off the grass boulevard onto the mapped walk', () => {
+  // a one-way side street whose road graph half width (3.5 m) is narrower than its curbs (5 m), a 3 m grass boulevard,
+  // the City's 1.5 m walk 8 - 9.5 m from the centre line, the front lawns and then the houses from 14 m
+  const f = crossroads({ half: 3.5, lo: 8, hi: 9.5, lot: 14, cut: 4 });
+  const east = f.edges[0];
+  // before (the fixed lanes, 1.7 & 2.8 m beyond the half width): both of the north side's lines on the boulevard
+  const before = f.band.along(east).filter((t) => t.az > 0);
+  assert.equal(before.length, 2);
+  for (const t of before) {
+    assert.ok(Math.abs(offWalk(f, t) - t.len) < 0.2, 'the fixed lane is on the grass all the way');
+    assert.ok(t.az > 5 && t.az < 8);
+  }
+  // after: two lines on the walk, a third and two thirds across it, every 10 cm on it and the island
+  const after = f.routes.along(east).filter((t) => t.az > 0);
+  assert.equal(after.length, 2);
+  assert.ok(after.every((t) => t.walk === 1 && !t.after && !t.before));
+  const zs = after.map(lateral).sort((p, q) => p - q);
+  assert.ok(zs[0] > 8.2 && zs[0] < 8.8 && zs[1] > 8.7 && zs[1] < 9.3 && zs[1] - zs[0] > 0.4, zs.join(', '));
+  for (const t of after) assert.equal(offWalk(f, t), 0);
+  // both sides of all four streets: 16 lines on the walks, none on the lawns
+  const all = f.edges.flatMap((e) => f.routes.along(e));
+  assert.equal(all.length, 16);
+  assert.ok(all.every((t) => offWalk(f, t) === 0));
+  assert.equal(f.routes.stats.walkSides, 8);
+  assert.equal(f.routes.stats.bandSides, 0);
+});
+
+test('Euclid-style residential corner: the link round it follows the walk where it sweeps round the lawn', () => {
+  const f = crossroads({ half: 3.5, lo: 8, hi: 9.5, lot: 14, cut: 4 });
+  const east = f.routes.along(f.edges[0]).filter((t) => t.az > 0), north = f.routes.along(f.edges[1]).filter((t) => t.ax > 0);
+  for (const t of east) {
+    // walking west along the east street's north side to the corner, then up the north street's east side
+    const ways = f.routes.links(t, -1).filter((path) => north.includes(path.at(-1).track));
+    assert.equal(ways.length, 2, 'linked to both of the north street\'s lines');
+    for (const path of ways) {
+      const legs = path.slice(0, -1);
+      assert.ok(legs.length >= 1);
+      for (const leg of legs) assert.equal(offWalk(f, leg.track), 0, 'every leg on the walk, round its cut corner');
+      // the legs join up, from the line's end to the next line's
+      touching(endpoint(legs[0].track, 0), endpoint(t, 0));
+      touching(endpoint(legs.at(-1).track, 1), endpoint(path.at(-1).track, path.at(-1).dir > 0 ? 0 : 1));
+    }
+  }
+  assert.ok(f.routes.stats.walkLinks > 0);
+  // the fixed lanes' link cut across the corner lot's lawn (its band): the walk's way is the one taken now
+  const bandEast = f.band.along(f.edges[0]).filter((t) => t.az > 0);
+  const bandLegs = f.band.links(bandEast[0], -1).flatMap((path) => path.slice(0, -1));
+  assert.ok(bandLegs.length && bandLegs.every((leg) => offWalk(f, leg.track) > 0));
+});
+
+test('a side the City maps without a walk: none where the street has one across it, the fixed lanes where neither side does', () => {
+  // the north-east island's walk runs along the north street only; the south-east one along both streets
+  const f = crossroads({ half: 3.5, lo: 8, hi: 9.5, lot: 14, walkSides: [[false, true], [true, true], [true, true], [true, true]] });
+  const east = f.routes.along(f.edges[0]);
+  assert.ok(east.every((t) => t.az < 0), 'only the south side, which has the walk');
+  assert.equal(east.length, 2);
+  assert.equal(f.routes.stats.oneSided, 1);
+  // a street the City maps no walk along at all (a laneway) keeps the fixed lanes both sides
+  const g = crossroads({ half: 3.5, lo: 8, hi: 9.5, lot: 14, walkSides: [[false, true], [true, true], [true, true], [false, true]] });
+  const lane = g.routes.along(g.edges[0]);
+  assert.equal(lane.length, 4);
+  assert.ok(lane.every((t) => t.walk === 2));
+  assert.equal(JSON.stringify(lane.map((t) => +lateral(t).toFixed(6)).sort((p, q) => p - q)), '[-6.3,-5.2,5.2,6.3]');
+  // an island without the City's sidewalks keeps the fixed lanes exactly
+  const h = crossroads({ half: 5, lo: 8, hi: 9.5, lot: 14, mapped: [false, true, true, false] });
+  const both = (r) => JSON.stringify(r.along(h.edges[0]).map((t) => [t.ax, t.az, t.len]));
+  assert.equal(both(h.routes), both(h.band));
+  assert.ok(h.routes.along(h.edges[0]).every((t) => t.walk === 0));
+});
+
+test('a downtown corner: curb-to-building walks keep the lines, crossings and links as they were, round the furniture on the walk', () => {
+  // King & Spadina style: the walk from the curb (5.25 m, the slab's edge) to the building face at 10.25 m, the
+  // buildings from 10.4 m; a signalized junction with a crosswalk over each street; a patio's railed strip on the east
+  // street's outer line
+  const patio = box(40, 7.9, 3, 0.7);
+  const f = crossroads({ half: 5, lo: 5.25, hi: 10.25, lot: 10.4, signal: true, furniture: [patio] });
+  // the lines where the fixed lanes ran (half width + 1.7 & 2.8 m), within the walk's 0.2 m sampling
+  for (const e of f.edges.slice(1)) {
+    const now = f.routes.along(e).map(lateral).sort((p, q) => p - q), was = f.band.along(e).map(lateral).sort((p, q) => p - q);
+    assert.equal(now.length, 4);
+    now.forEach((v, i) => assert.ok(Math.abs(v - was[i]) < 0.15, `${v} for ${was[i]}`));
+  }
+  // the crossings are the road network's, exactly as without the walks
+  const crossings = (r) => JSON.stringify(r.across(f.n).map((t) => [t.ax, t.az, t.len, t.side, t.line]));
+  assert.equal(f.routes.across(f.n).length, 8);
+  assert.equal(crossings(f.routes), crossings(f.band));
+  // the outer line goes round the patio on the walk, clear of it
+  const east = f.routes.along(f.edges[0]).filter((t) => t.az > 0);
+  assert.ok(east.some((t) => t.after), 'detoured');
+  const shape = patio((x, z) => ({ x, z }), 1, 0);
+  for (const t of east) {
+    assert.equal(offWalk(f, t), 0);
+    assertWalkable({ blockAt: f.blockAt, block: f.blocks[0], walkable: f.walkable }, [t], (x, z) => bodyClear(shape, x, z));
+  }
+  assert.ok(f.routes.stats.walkDetours >= 1);
+  // from the east street's inner line at the corner: on to the north street's lines and both crosswalks' ends there,
+  // on the walk (bar the last 1.2 m to a crossing's end)
+  const start = east.find((t) => !t.before && Math.abs(t.az - 6.7) < 0.2);
+  const ways = f.routes.links(start, -1);
+  const north = f.routes.along(f.edges[1]).filter((t) => t.ax > 0);
+  assert.ok(ways.some((p) => north.includes(p.at(-1).track)), 'round the corner');
+  assert.equal(ways.filter((p) => p.at(-1).track.node).length, 4, 'onto both crossings\' lines over each street');
+  for (const path of ways) {
+    for (const leg of path.slice(0, -1)) assert.ok(offWalk(f, leg.track, 1.2) < 1e-9);
+  }
+});

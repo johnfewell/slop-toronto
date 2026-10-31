@@ -1,0 +1,65 @@
+[
+ {
+  "name": "k1-kensington-ave-north",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { window.__census=(label)=>{const A=__CITY_APP,r=A.renderer,s=A.scene;const orig=r.renderObject;const acc=new Map();let on=false;const root=o=>{let p=o,last=o;while(p&&p!==s){last=p;p=p.parent}return last.name||last.type};r.renderObject=function(object,scene,camera,geometry,material,group){if(on){const g=geometry||object.geometry;const n=(g.index?g.index.count:(g.attributes.position?g.attributes.position.count:0));const inst=object.isInstancedMesh?object.count:(g.instanceCount&&g.instanceCount!==Infinity?g.instanceCount:1);const pass=camera.isOrthographicCamera?'shadow':'view';const top=root(object);const k=pass+' '+top;const e=acc.get(k)||[0,0];e[0]+=1;e[1]+=n*inst/3;acc.set(k,e);const t=acc.get(pass+' ALL')||[0,0];t[0]+=1;t[1]+=n*inst/3;acc.set(pass+' ALL',t);if(top==='CityBuildings'||top==='ShadowProxies'){const kk=pass+' '+top+'/'+(object.name||'?').replace(/_\\d+$/,'');const q=acc.get(kk)||[0,0];q[0]+=1;q[1]+=n*inst/3;acc.set(kk,q)}}return orig.apply(this,arguments)};let frames=0;requestAnimationFrame(()=>{on=true;requestAnimationFrame(function f(){if(++frames<10)return requestAnimationFrame(f);on=false;r.renderObject=orig;const keep=[...acc].filter(([k])=>/ALL|CityBuildings|ShadowProxies/.test(k)).map(([k,[d,t]])=>k+' draws '+(d/10).toFixed(1)+' tris '+Math.round(t/10));console.log('[massing-census] '+label+' massing='+(window.CITY.massingPilotStats?1:0)+' | '+keep.join(' | '))})})};const app = window.__CITY_APP; app.teleportTo(-1252, -1290, 0); app.cameraSystem.cinema = () => ({ pos: [-1252, 1.7, -1290], look: [-1256, 6, -1420], fov: 60 }); setTimeout(() => window.__census('k1-kensington-ave-north'), 4500); })()"
+ },
+ {
+  "name": "k2-augusta-north",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1361, -1480, 0); app.cameraSystem.cinema = () => ({ pos: [-1361, 1.7, -1480], look: [-1364, 7, -1600], fov: 60 }); setTimeout(() => window.__census('k2-augusta-north'), 4500); })()"
+ },
+ {
+  "name": "k3-baldwin-west",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1150, -1476, 0); app.cameraSystem.cinema = () => ({ pos: [-1150, 1.7, -1476], look: [-1300, 6, -1471], fov: 60 }); setTimeout(() => window.__census('k3-baldwin-west'), 4500); })()"
+ },
+ {
+  "name": "k4-spadina-west-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1093, -1525, 0); app.cameraSystem.cinema = () => ({ pos: [-1093, 1.7, -1525], look: [-1128, 8, -1450], fov: 60 }); setTimeout(() => window.__census('k4-spadina-west-side'), 4500); })()"
+ },
+ {
+  "name": "k5-bellevue-houses",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1471, -1390, 0); app.cameraSystem.cinema = () => ({ pos: [-1471, 1.7, -1390], look: [-1475, 5, -1530], fov: 60 }); setTimeout(() => window.__census('k5-bellevue-houses'), 4500); })()"
+ },
+ {
+  "name": "k6-aerial-oblique-se",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1030, -1120, 0); app.cameraSystem.cinema = () => ({ pos: [-1030, 140, -1120], look: [-1450, 0, -1520], fov: 55 }); setTimeout(() => window.__census('k6-aerial-oblique-se'), 4500); })()"
+ },
+ {
+  "name": "k7-aerial-overhead",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1430, -1460, 0); app.cameraSystem.cinema = () => ({ pos: [-1430, 330, -1460], look: [-1430, 0, -1520], fov: 60 }); setTimeout(() => window.__census('k7-aerial-overhead'), 4500); })()"
+ },
+ {
+  "name": "k8-aerial-low-augusta",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1300, -1380, 0); app.cameraSystem.cinema = () => ({ pos: [-1300, 45, -1380], look: [-1390, 5, -1520], fov: 60 }); setTimeout(() => window.__census('k8-aerial-low-augusta'), 4500); })()"
+ },
+ {
+  "name": "k9-aerial-market-core",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1215, -1250, 0); app.cameraSystem.cinema = () => ({ pos: [-1215, 110, -1250], look: [-1320, 0, -1420], fov: 60 }); setTimeout(() => window.__census('k9-aerial-market-core'), 4500); })()"
+ }
+]

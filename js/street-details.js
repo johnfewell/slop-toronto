@@ -8,12 +8,15 @@
 // - Streetlights: the City's mapped street light poles (js/mapped-poles.js), and where it mapped none, the tall
 //   double-arm poles down the medians of the dual carriageways, single-arm poles along the other roads (some with a
 //   solar panel on top); their light pooled around the camera at night. The signal heads go on the City's mapped
-//   signal poles near the corners that want them, else on a pole of their own
+//   signal poles near the corners that want them, else on a pole of their own. The older residential streets' lights
+//   hang on wooden hydro poles (their lines strung between them on the high tier), the Distillery's on lantern posts,
+//   and the City's mapped pedestrian lights are lantern posts, the waterfront's promenade posts or park lamps
+//   (js/mapped-poles.js pole models)
 // - Trees: neem, Indian almond & mango on the verges and in the wide medians, royal palms down the medians of the
 //   ceremonial roads, parkland & savanna trees, and the mango & neem trees in the compound yards
 
 const { THREE } = window.CITY;
-const { Fn, float, color, positionWorld, uniform, uniformArray, instancedBufferAttribute, int, mod, step, mix, smoothstep, uv, texture, abs, fract } = window.CITY.TSL;
+const { Fn, float, color, positionWorld, uniform, renderGroup, uniformArray, instancedBufferAttribute, int, mod, step, mix, smoothstep, uv, texture, abs, fract, attribute } = window.CITY.TSL;
 const { mergeGeometries } = window.CITY.Addons;
 const { GEO, BLOCKS, ROADS, SIGNAL_TIMING, SIGNALS, SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS, nearestRoads, blockAt, pointInPoly, cityUniforms, offsetPolygonInward } = window.CITY;
 const { createTreeField } = window.CITY;
@@ -247,7 +250,7 @@ function buildStreetDetails(scene) {
   // The City's mapped poles (js/mapped-poles.js; ?mappedpoles=0 leaves them out, the procedural layout alone, for A/B):
   // the signal poles are drawn here and carry the heads of the approaches whose corners they stand on, the lights in
   // section 2; the procedural poles only fill the gaps
-  const { LIGHT, LIGHT_SIGNAL, SIGNAL } = window.CITY.POLE_TYPES || {};
+  const { LIGHT, LIGHT_SIGNAL, SIGNAL, PEDESTRIAN } = window.CITY.POLE_TYPES || {};
   const useMapped = !!(window.CITY.POLES && window.CITY.mappedPoleSites) && new URLSearchParams(location.search).get('mappedpoles') !== '0';
   const mappedLayout = useMapped
     ? window.CITY.mappedPoleSites(window.CITY.POLES, { blockAt, nearestRoads, deckHeightAt: window.CITY.deckHeightAt, cutAt: window.CITY.cutAt, SW_Y })
@@ -256,15 +259,15 @@ function buildStreetDetails(scene) {
   const mappedIndex = window.CITY.poleIndex ? window.CITY.poleIndex(mapped) : { nearest: () => null };
   const poleStats = {
     mapped: useMapped, source: window.CITY.POLES?.source || null, counts: window.CITY.POLES?.counts || null,
-    placed: { light: 0, lightSignal: 0, signal: 0 }, rejected: mappedLayout.rejected, nudged: mappedLayout.nudged,
+    placed: { light: 0, lightSignal: 0, signal: 0, pedestrian: 0 }, looks: { wood: 0, lantern: 0, promenade: 0, park: 0, spans: 0 }, rejected: mappedLayout.rejected, nudged: mappedLayout.nudged,
     fallback: { median: 0, roadside: 0 }, signals: { approaches: 0, mapped: 0, procedural: 0 }
   };
   window.CITY.poleStats = poleStats;
   // (pedestrian-signals.js mounts its heads on a mapped signal pole near the spot it wants, as the approaches here do)
   window.CITY.mappedSignalPoleNear = (x, z, r, ok) => mappedIndex.nearest(x, z, r, [LIGHT_SIGNAL, SIGNAL], ok);
 
-  // Signal clock (seconds), set every frame by main.js
-  const signalClock = uniform(0);
+  // Signal clock (seconds), set every frame by main.js (one value for the scene: renderGroup, uploaded once per render)
+  const signalClock = uniform(0).setGroup(renderGroup);
 
   // Shared materials
   const poleMetalMat = new THREE.MeshStandardNodeMaterial({ color: 0x8e9396, roughness: 0.42, metalness: 0.75 }); // galvanised
@@ -470,7 +473,7 @@ function buildStreetDetails(scene) {
   const lampHeadGeo = new THREE.BoxGeometry(0.75, 0.16, 0.34);
   const lampLensGeo = new THREE.PlaneGeometry(0.62, 0.26).rotateX(Math.PI / 2).translate(0, -0.085, 0);
   const lampHeadMatrices = [], solarMatrices = [];
-  const lampSites = []; // { x, y, z, tx, tz }: spot light positions & targets for the night pools
+  const lampSites = []; // { x, y, z, tx, tz, k }: spot light positions & targets for the night pools (k: x the strength)
   const placeLuminaire = (px, pz, hx, hz, y, yaw) => {
     dummy.position.set(hx, y, hz);
     dummy.rotation.set(0, yaw, 0);
@@ -488,9 +491,50 @@ function buildStreetDetails(scene) {
   };
   // The City's mapped lights first: a single-arm 9 m pole (the light & signal poles' shafts are drawn above), the arm
   // out towards the nearest road; down a median 11 m with an arm over each roadway
+  // The pole models (mapped-poles.js): per model, its instances' matrices
+  const PM = window.CITY.poleModels;
+  const modelMatrices = { wood: [], woodTransformer: [], lantern: [], promenade: [], park: [] };
+  const placeModel = (kind, s, yaw) => {
+    dummy.position.set(s.x, s.y0, s.z);
+    dummy.rotation.set(0, yaw, 0);
+    dummy.scale.set(1, 1, 1);
+    dummy.updateMatrix();
+    modelMatrices[kind].push(dummy.matrix.clone());
+  };
+  // a lamp post (a mapped pedestrian light, or a Distillery street light): post-top, its pool straight down
+  const placeLampPost = (s, look) => {
+    const L = PM.PED_LAMPS[look];
+    addPole(s.x, s.z, L.r, s.y0, L.h);
+    addFootprint(s.x, s.z, 0.4, 0.4);
+    placeModel(look, s, ((s.id * 2654435761) % 6283) / 1000);
+    lampSites.push({ x: s.x, y: s.y0 + L.lampY - 0.1, z: s.z, tx: s.x + 0.01, tz: s.z, k: L.k });
+    poleStats.looks[look]++;
+  };
   for (const s of mapped) {
+    if (s.type === PEDESTRIAN) {
+      placeLampPost(s, PM.PED_LAMPS[s.look] ? s.look : 'lantern');
+      poleStats.placed.pedestrian++;
+      continue;
+    }
     if (s.type !== LIGHT && s.type !== LIGHT_SIGNAL) continue;
     const yaw = Math.atan2(-s.az, s.ax); // (the luminaire's long side along its arm)
+    if (s.type === LIGHT && s.look === 'lantern') {
+      placeLampPost(s, 'lantern');
+      poleStats.placed.light++;
+      continue;
+    }
+    if (s.type === LIGHT && s.look === 'wood' && !s.median) {
+      // a wooden hydro pole: the crossarm across the street (along the arm), the LED head on a bracket below the line
+      addPole(s.x, s.z, PM.WOOD.r, s.y0, PM.WOOD.h);
+      addFootprint(s.x, s.z, 0.45, 0.45);
+      placeModel(hashPos(s.x, 8.1, s.z) < PM.WOOD.transformerShare ? 'woodTransformer' : 'wood', s, yaw);
+      const reach = s.road ? Math.max(0.8, Math.min(1.8, s.toRoad - 0.5)) : 1.2;
+      placeArm(s.x, s.z, s.ax, s.az, reach + 0.1, s.y0 + PM.WOOD.lightY + 0.05);
+      placeLuminaire(s.x, s.z, s.x + s.ax * reach, s.z + s.az * reach, s.y0 + PM.WOOD.lightY, yaw);
+      poleStats.placed.light++;
+      poleStats.looks.wood++;
+      continue;
+    }
     if (s.type === LIGHT) {
       const h = s.median ? 11 : 9, r = s.median ? 0.12 : 0.1;
       addPole(s.x, s.z, r, s.y0, h);
@@ -585,7 +629,7 @@ function buildStreetDetails(scene) {
       if (useMapped) poleStats.fallback.roadside++;
     });
   }
-  console.info(`[streetDetails] mapped poles: ${JSON.stringify(poleStats.placed)}, rejected ${JSON.stringify(poleStats.rejected)}, ${poleStats.nudged} moved onto the curb; signal approaches ${JSON.stringify(poleStats.signals)}`);
+  console.info(`[streetDetails] mapped poles: ${JSON.stringify(poleStats.placed)}, looks ${JSON.stringify(poleStats.looks)}, rejected ${JSON.stringify(poleStats.rejected)}, ${poleStats.nudged} moved onto the curb; signal approaches ${JSON.stringify(poleStats.signals)}`);
   console.info(`[streetDetails] ${medianPoles} median & ${roadPoles} roadside procedural streetlights${useMapped ? ' (gap fill)' : ''}`);
 
   // =========================================================================
@@ -751,6 +795,48 @@ function buildStreetDetails(scene) {
   addMatrixArrayInstanced(lampLensGeo, lampLensGlow, lampHeadMatrices, false);
   addMatrixArrayInstanced(unitBox, solarMat, solarMatrices);
 
+  // The pole models (mapped-poles.js): one shared vertex-coloured material, the lamp glass (its `glow` attribute) lit at
+  // night like the streetlights' lenses; each model's sun shadow from a coarse stand-in (scene-culling.js)
+  if (PM) {
+    const modelMat = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.05 });
+    modelMat.emissiveNode = attribute('glow', 'float').mul(color(0xffe6bf).mul(2.2)).mul(smoothstep(0.4, 1.1, cityUniforms.uInteriorGlow));
+    const models = {
+      wood: () => PM.woodPoleGeometry(THREE, mergeGeometries),
+      woodTransformer: () => PM.woodPoleGeometry(THREE, mergeGeometries, { transformer: true }),
+      lantern: () => PM.pedLampGeometry(THREE, mergeGeometries, 'lantern'),
+      promenade: () => PM.pedLampGeometry(THREE, mergeGeometries, 'promenade'),
+      park: () => PM.pedLampGeometry(THREE, mergeGeometries, 'park')
+    };
+    for (const [kind, geometry] of Object.entries(models)) {
+      const inst = addMatrixArrayInstanced(geometry(), modelMat, modelMatrices[kind]);
+      if (!inst) continue;
+      inst.name = `PoleModel_${kind}`;
+      inst.userData.shadowStandIn = PM.shadowStandIn(THREE, mergeGeometries, kind === 'woodTransformer' ? 'wood' : kind);
+      // culled as far out as the steel poles (~1.5 km; the crossarm would keep them at any distance), the lamp posts at
+      // 900 m (4-6 m tall: a few pixels there); both still past the shadows' reach, so the stand-ins hold on every tier
+      inst.userData.cullDistance = kind.startsWith('wood') ? 1500 : 900;
+    }
+    // the lines between the wooden poles (the high tier: thin, many and only seen close up)
+    if (window.CITY.QUALITY.poleWires && window.CITY.woodSpans) {
+      const spans = window.CITY.woodSpans(mapped);
+      const wireMatrices = spans.map(({ a, b }) => {
+        const dx = b.x - a.x, dz = b.z - a.z;
+        dummy.position.set(a.x, a.y0, a.z);
+        dummy.rotation.set(0, Math.atan2(dx, dz), 0);
+        dummy.scale.set(1, 1, Math.hypot(dx, dz));
+        dummy.updateMatrix();
+        return dummy.matrix.clone();
+      });
+      const wireMat = new THREE.MeshStandardNodeMaterial({ color: 0x1c1d1f, roughness: 0.6, metalness: 0.2, side: THREE.DoubleSide });
+      const wires = addMatrixArrayInstanced(PM.wireSpanGeometry(THREE), wireMat, wireMatrices, false);
+      if (wires) {
+        wires.name = 'PoleWires';
+        Object.assign(wires.userData, { cullDistance: 180, cullCell: 120 });
+      }
+      poleStats.looks.spans = spans.length;
+    }
+  }
+
   // =========================================================================
   // 4. STREETLIGHT POOLS AT NIGHT: the nearest luminaires around the camera get a spot light each
   // =========================================================================
@@ -807,7 +893,7 @@ function buildStreetDetails(scene) {
         spot.position.set(s.x, s.y, s.z);
         spot.target.position.set(s.tx, 0.0, s.tz);
         spot.target.updateMatrixWorld();
-        spot.intensity = 92.0 * lampScale * smoothFade(s._eff, cutoff * 0.62, cutoff);
+        spot.intensity = 92.0 * lampScale * (s.k || 1) * smoothFade(s._eff, cutoff * 0.62, cutoff);
       }
     }
     for (let i = used; i < STREETLIGHT_SPOT_POOL; i++) {

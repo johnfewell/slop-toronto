@@ -194,7 +194,7 @@ class CityAudioSources {
       }
       const green = !v.edge.to.signal || SIGNALS.state(v.edge.to.sigJ, v.edge.sigP, elapsed) === 'green';
       const blocked = v.wait > 2 && v.speed < 0.5 && v.gap < 8 && v.leaderSpeed < 0.5 && green && !v.conn && !v.yielding;
-      this.motor(v, v.bus ? 'bus' : v.isSUV ? 'suv' : 'sedan', v.x, y, v.z,
+      this.motor(v, v.bus ? 'bus' : v.engine || 'sedan', v.x, y, v.z,
         v.speed, roadLoad(v.speed, v.acc, v.driver.a), v.yaw + v.yawOffset, !!v.isPolice, false, seedAt(seedOffset + i), blocked);
     }
   }
@@ -272,7 +272,7 @@ class CityAudioSources {
       const d2 = this.distanceSq(car.x, car.y + 0.7, car.z);
       if (!Number.isFinite(d2) || d2 > MOTOR_RANGE * MOTOR_RANGE) continue;
       this.snapshot.traffic += (1 - d2 / (MOTOR_RANGE * MOTOR_RANGE)) * (0.2 + 0.8 * unit(car.v / 12));
-      this.motor(car, car.kind === 'suv' ? 'suv' : 'sedan', car.x, car.y + 0.7, car.z,
+      this.motor(car, car.engine || 'sedan', car.x, car.y + 0.7, car.z,
         car.v, roadLoad(car.v, car.acc, 1.6), car.yaw, false, false, seedAt(2000 + i), car.v < 0.5);
     }
     this.snapshot.traffic = unit(this.snapshot.traffic / 16);

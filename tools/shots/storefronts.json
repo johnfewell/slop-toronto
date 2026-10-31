@@ -1,0 +1,128 @@
+[
+ {
+  "name": "queen-trinity-along-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2310.0, -758.2, 1.610); const cam = { pos: [-2306,1.65,-758.4], look: [-2250,2.6,-760.6], fov: 55 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "queen-trinity-across-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2262.0, -738.5, 3.142); const cam = { pos: [-2262,1.65,-742.5], look: [-2262,2.8,-761], fov: 60 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "queen-spadina-along-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1279.0, -739.5, 1.604); const cam = { pos: [-1275,1.65,-739.6], look: [-1215,2.7,-741.6], fov: 55 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "queen-spadina-close-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1180.0, -733.6, 3.142); const cam = { pos: [-1180,1.65,-737.6], look: [-1180,2.9,-742.1], fov: 60 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "queen-ossington-across-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2931.3, -752.1, -2.961); const cam = { pos: [-2932,1.65,-756], look: [-2935,2.7,-772.4], fov: 60 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "kensington-augusta-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1358.3, -1436.0, -0.053); const cam = { pos: [-1358.5,1.65,-1432], look: [-1361,2.4,-1385], fov: 58 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "kensington-ave-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1252.2, -1454.0, -0.070); const cam = { pos: [-1252.5,1.65,-1450], look: [-1256,2.4,-1400], fov: 58 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "king-west-along-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1489.0, -365.8, 1.616); const cam = { pos: [-1485,1.65,-366], look: [-1430,2.8,-368.5], fov: 55 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "king-west-across-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1452.0, -342.5, 3.142); const cam = { pos: [-1452,1.65,-346.5], look: [-1452,4,-368], fov: 62 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "queen-trinity-along-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2310.0, -758.2, 1.610); const cam = { pos: [-2306,1.65,-758.4], look: [-2250,2.6,-760.6], fov: 55 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "queen-trinity-across-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2262.0, -738.5, 3.142); const cam = { pos: [-2262,1.65,-742.5], look: [-2262,2.8,-761], fov: 60 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "queen-spadina-along-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1279.0, -739.5, 1.604); const cam = { pos: [-1275,1.65,-739.6], look: [-1215,2.7,-741.6], fov: 55 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "queen-spadina-close-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1180.0, -733.6, 3.142); const cam = { pos: [-1180,1.65,-737.6], look: [-1180,2.9,-742.1], fov: 60 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "queen-ossington-across-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2931.3, -752.1, -2.961); const cam = { pos: [-2932,1.65,-756], look: [-2935,2.7,-772.4], fov: 60 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "kensington-augusta-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1358.3, -1436.0, -0.053); const cam = { pos: [-1358.5,1.65,-1432], look: [-1361,2.4,-1385], fov: 58 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "kensington-ave-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1252.2, -1454.0, -0.070); const cam = { pos: [-1252.5,1.65,-1450], look: [-1256,2.4,-1400], fov: 58 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "king-west-along-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1489.0, -365.8, 1.616); const cam = { pos: [-1485,1.65,-366], look: [-1430,2.8,-368.5], fov: 55 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ },
+ {
+  "name": "king-west-across-twilight",
+  "mode": "person",
+  "time": "twilight",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1452.0, -342.5, 3.142); const cam = { pos: [-1452,1.65,-346.5], look: [-1452,4,-368], fov: 62 }; app.cameraSystem.cinema = () => cam; console.log('[storefronts-shot] ' + JSON.stringify({ stats: window.CITY.storefrontStats, buildings: window.CITY.storefrontBuildingStats })); })()"
+ }
+]

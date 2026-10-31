@@ -1,0 +1,64 @@
+[
+  {
+    "name": "art-stats",
+    "mode": "person",
+    "time": "midday",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};const s=C.publicArtStats;console.log('[ride-check] public art '+JSON.stringify({source:s.sourceCount,models:s.models.length,markers:s.markers,rejected:s.rejected}));if(s.models.length!==2||s.markers<150)throw new Error('public art layer missing');})()",
+    "wait": 500
+  },
+  {
+    "name": "art-search",
+    "js": "(() => {const i=document.getElementById('place-search');i.focus();i.value='sculpture';i.dispatchEvent(new Event('input'));const rows=[...document.querySelectorAll('#search-results .ac-item')].map(r=>r.textContent);console.log('[ride-check] art search '+JSON.stringify(rows));if(!rows.some(r=>r.includes('Public art')))throw new Error('art results missing');})()",
+    "wait": 800
+  },
+  {
+    "name": "art-cenotaph",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};document.getElementById('place-search').blur();const m=C.publicArtStats.models.find(m=>m.model==='cenotaph');look(m.x,m.z,17,0);})()",
+    "wait": 2500
+  },
+  {
+    "name": "art-cenotaph-card",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};const t=card('art:12:cenotaph-toronto');console.log('[ride-check] cenotaph card '+t);if(!t.includes('simplified massing')||!t.includes('Ferguson'))throw new Error('cenotaph card');})()",
+    "wait": 800
+  },
+  {
+    "name": "art-nps-markers",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};document.getElementById('pc-close')?.click();const s=C.publicArtSite(C.PUBLIC_ART.records.find(r=>r.title.includes('The Archer')).id);if(!s)throw new Error('no NPS marker');window.__m=s;look(s.x,s.z,4.5,Math.PI*0.75);})()",
+    "wait": 2500
+  },
+  {
+    "name": "art-nps-card",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};const r=C.PUBLIC_ART.records.find(r=>r.title.includes('The Archer'));const t=card(r.id);console.log('[ride-check] archer card '+t);if(!t.includes('stand-in marker')||!t.includes('Moore'))throw new Error('archer card');})()",
+    "wait": 800
+  },
+  {
+    "name": "art-distillery",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};document.getElementById('pc-close')?.click();const r=C.PUBLIC_ART.records.find(r=>r.title==='Still Dancing');const s=C.publicArtSite(r.id);if(!s)throw new Error('Still Dancing not marked');console.log('[ride-check] distillery marker '+JSON.stringify(s));look(s.x,s.z,4,Math.PI*0.5);})()",
+    "wait": 2500
+  },
+  {
+    "name": "art-fort-rouille",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};const m=C.publicArtStats.models.find(m=>m.model==='obelisk');look(m.x,m.z,13,Math.PI);})()",
+    "wait": 2500
+  },
+  {
+    "name": "art-waterfront-marker",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};const r=C.PUBLIC_ART.records.find(r=>r.title.startsWith(\"Jack's Got Your Back\"));const h=C.publicArtSite(r.id)||{x:-61,z:763};const s=C.publicArtStats.sites.slice().sort((p,q)=>Math.hypot(p.x-h.x,p.z-h.z)-Math.hypot(q.x-h.x,q.z-h.z))[0];console.log('[ride-check] waterfront marker '+JSON.stringify(s));look(s.x,s.z,4,Math.PI*0.25);})()",
+    "wait": 2500
+  },
+  {
+    "name": "heritage-search",
+    "js": "(async () => {const i=document.getElementById('place-search');i.focus();await window.CITY.Discovery.loadHeritage();i.value='10 st mary';i.dispatchEvent(new Event('input'));const rows=[...document.querySelectorAll('#search-results .ac-item')].map(r=>r.textContent);console.log('[ride-check] heritage search '+JSON.stringify(rows));if(!rows.some(r=>r.includes('Heritage')))throw new Error('heritage results missing');})()",
+    "wait": 1000
+  },
+  {
+    "name": "heritage-card",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};document.getElementById('place-search').blur();const t=card('heritage:10-st-mary-st');console.log('[ride-check] heritage card '+t);if(!t.includes('353-2015')||!t.includes('Not a legal status'))throw new Error('heritage card');const p=item('heritage:10-st-mary-st');a.tourGuide.teleportToPlace?.(p);})()",
+    "wait": 2500
+  },
+  {
+    "name": "heritage-card-exhibition",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP,N=C.Navigation;const look=(x,z,d,yaw)=>{const px=x+Math.sin(yaw)*d,pz=z+Math.cos(yaw)*d;a.teleportTo(px,pz,Math.atan2(x-px,z-pz));a.selectCamera('pov',true);};const item=(id)=>N.buildIndex().find(p=>p.discovery?.record.id===id);const card=(id)=>{const p=item(id);if(!p)throw new Error('no item '+id);a.tourGuide.showPlace(p,{fly:false});return document.getElementById('pc-city-info').textContent;};const t=card('heritage:2-strachan-ave');console.log('[ride-check] exhibition card entries '+(t.match(/Entry \\d+/g)||[]).length);if(!t.includes('more at this address'))throw new Error('grouped entries');})()",
+    "wait": 800
+  }
+]

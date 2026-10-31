@@ -894,6 +894,7 @@ function createStreetcars(scene, trafficSystem) {
   const group = new THREE.Group();
   group.name = 'Streetcars';
   const network = trafficSystem && trafficSystem.network;
+  const wayThrough = trafficSystem && trafficSystem.wayThrough;
   const tracks = buildTracks(network);
   const trackGroup = new THREE.Group();
   trackGroup.name = 'StreetcarTracks';
@@ -1043,7 +1044,30 @@ function createStreetcars(scene, trafficSystem) {
       if (side > HALF_W + halfW + 0.35) return;
       best = Math.min(best, ahead - half);
     };
-    for (const v of others) if (v.edge && Math.abs((v.y || 0) - y) < 2.5) test(v.x, v.z, v.half || 2.3, v.halfWidth || 0.9);
+    // (a body at x, z heading tx, tz: its extents along & across the track)
+    let half = 0, halfW = 0;
+    const testPose = (x, z, tx, tz) => {
+      const c = Math.abs(tx * fx + tz * fz);
+      const sn = Math.abs(tx * fz - tz * fx);
+      const dx = x - tmp.x;
+      const dz = z - tmp.z;
+      const ahead = dx * fx + dz * fz;
+      if (ahead < -1 || ahead > reach + half) return;
+      if (Math.abs(dz * fx - dx * fz) > HALF_W + half * sn + halfW * c + 0.35) return;
+      best = Math.min(best, ahead - half * c - halfW * sn);
+    };
+    for (const v of others) {
+      if (!v.edge || Math.abs((v.y || 0) - y) >= 2.5) continue;
+      test(v.x, v.z, v.half || 2.3, v.halfWidth || 0.9);
+      // (and as it stands, turned: across the track, a long bus reaches it from further to the side)
+      half = v.half || 2.3;
+      halfW = v.halfWidth || 0.9;
+      testPose(v.x, v.z, Math.sin(v.yaw || 0), Math.cos(v.yaw || 0));
+      // a vehicle already inside a junction (or too close to stop before it) has to clear it: stop short of the rest of
+      // its way through, not just of where it stands now, or the streetcar can pull up across that way, the vehicle hold
+      // for it, and it for the vehicle (st-wfq; traffic.js wayThrough)
+      if ((v.conn || v.commit) && wayThrough && Math.abs(v.x - tmp.x) < reach + 40 && Math.abs(v.z - tmp.z) < reach + 40) wayThrough(v, 1, testPose);
+    }
     // other routes' cars on the same tracks (504A & 504B along King...), module by module
     for (const o of cars) {
       if (o === car || o.track === t || !o.placed) continue;

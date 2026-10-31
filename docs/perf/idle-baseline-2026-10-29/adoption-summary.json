@@ -1,0 +1,1657 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-10-30T03:14:04.870Z",
+ "note": "nearest-rank percentiles from retained raw samples; frame interval includes vsync/limiter pacing; CPU is simulation+synchronous submission, not GPU time",
+ "pooled": [
+  {
+   "tier": "high",
+   "shot": "skyline-golden",
+   "runs": [
+    "idle-high-r1",
+    "idle-high-r2",
+    "idle-high-r3"
+   ],
+   "allValid": true,
+   "frameIntervalMs": {
+    "n": 1347,
+    "mean": 17.78,
+    "p50": 16.7,
+    "p95": 33.3,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 90,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 1347,
+    "mean": 6.36,
+    "p50": 6.3,
+    "p95": 7.2,
+    "p99": 7.9,
+    "max": 16,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "perRunP95": [
+    33.3,
+    33.3,
+    33.3
+   ],
+   "perRunP99": [
+    33.4,
+    33.4,
+    33.4
+   ],
+   "longTasks": 0,
+   "longAnimationFrames": 0
+  },
+  {
+   "tier": "high",
+   "shot": "street-golden",
+   "runs": [
+    "idle-high-r1",
+    "idle-high-r2",
+    "idle-high-r3"
+   ],
+   "allValid": true,
+   "frameIntervalMs": {
+    "n": 1116,
+    "mean": 21.43,
+    "p50": 16.7,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.5,
+    "over20ms": 319,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 1116,
+    "mean": 7.9,
+    "p50": 7.8,
+    "p95": 8.6,
+    "p99": 9.4,
+    "max": 16.3,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "perRunP95": [
+    33.4,
+    33.4,
+    33.4
+   ],
+   "perRunP99": [
+    33.4,
+    33.4,
+    33.4
+   ],
+   "longTasks": 0,
+   "longAnimationFrames": 0
+  },
+  {
+   "tier": "low",
+   "shot": "skyline-golden",
+   "runs": [
+    "idle-low-r1",
+    "idle-low-r2",
+    "idle-low-r3"
+   ],
+   "allValid": true,
+   "frameIntervalMs": {
+    "n": 717,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.5,
+    "over20ms": 717,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 717,
+    "mean": 6.74,
+    "p50": 6.8,
+    "p95": 8.5,
+    "p99": 9.3,
+    "max": 11.3,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "perRunP95": [
+    33.4,
+    33.4,
+    33.4
+   ],
+   "perRunP99": [
+    33.4,
+    33.4,
+    33.5
+   ],
+   "longTasks": 0,
+   "longAnimationFrames": 0
+  },
+  {
+   "tier": "low",
+   "shot": "street-golden",
+   "runs": [
+    "idle-low-r1",
+    "idle-low-r2",
+    "idle-low-r3"
+   ],
+   "allValid": true,
+   "frameIntervalMs": {
+    "n": 717,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.5,
+    "over20ms": 717,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 717,
+    "mean": 6.66,
+    "p50": 6.6,
+    "p95": 8.5,
+    "p99": 10.5,
+    "max": 15.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "perRunP95": [
+    33.4,
+    33.4,
+    33.4
+   ],
+   "perRunP99": [
+    33.4,
+    33.4,
+    33.4
+   ],
+   "longTasks": 0,
+   "longAnimationFrames": 0
+  }
+ ],
+ "runs": [
+  {
+   "run": "idle-high-warm",
+   "shot": "skyline-golden",
+   "capturedAt": "2026-10-30T02:50:01.542Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "high",
+   "viewport": [
+    1600,
+    900
+   ],
+   "aa": "msaa",
+   "mode": "cyclist",
+   "camera": "skyline",
+   "startupReadyMs": 32000,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 112
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 447,
+    "mean": 17.82,
+    "p50": 16.7,
+    "p95": 33.3,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 31,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 447,
+    "mean": 6.51,
+    "p50": 6.4,
+    "p95": 7.4,
+    "p99": 8.3,
+    "max": 12.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 447,
+    "mean": 0.89,
+    "p50": 0.9,
+    "p95": 1.1,
+    "p99": 1.4,
+    "max": 1.5,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 447,
+    "mean": 5.61,
+    "p50": 5.6,
+    "p95": 6.4,
+    "p99": 7.2,
+    "max": 10.8,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 8373,
+    "textures": 135,
+    "programs": 331,
+    "renderTargets": 24,
+    "attributesMiB": 142.93,
+    "storageMiB": 39.4,
+    "texturesMiB": 2002.07,
+    "totalMiB": 2196.64
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-high-warm",
+   "shot": "street-golden",
+   "capturedAt": "2026-10-30T02:50:15.882Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "high",
+   "viewport": [
+    1600,
+    900
+   ],
+   "aa": "msaa",
+   "mode": "person",
+   "camera": "pov",
+   "startupReadyMs": 32000,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 94
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 370,
+    "mean": 21.53,
+    "p50": 16.7,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 108,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 370,
+    "mean": 8.03,
+    "p50": 7.9,
+    "p95": 9,
+    "p99": 9.5,
+    "max": 10.2,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 370,
+    "mean": 1.29,
+    "p50": 1.3,
+    "p95": 1.5,
+    "p99": 1.7,
+    "max": 3.5,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 370,
+    "mean": 6.74,
+    "p50": 6.7,
+    "p95": 7.5,
+    "p99": 8,
+    "max": 8.9,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 8462,
+    "textures": 138,
+    "programs": 331,
+    "renderTargets": 24,
+    "attributesMiB": 152.29,
+    "storageMiB": 41.44,
+    "texturesMiB": 2022.07,
+    "totalMiB": 2228.39
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-low-warm",
+   "shot": "skyline-golden",
+   "capturedAt": "2026-10-30T02:51:21.880Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "low",
+   "viewport": [
+    412,
+    915
+   ],
+   "aa": "fxaa",
+   "mode": "cyclist",
+   "camera": "skyline",
+   "startupReadyMs": 11531,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 60
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 239,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.5,
+    "over20ms": 239,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 239,
+    "mean": 6.75,
+    "p50": 6.8,
+    "p95": 8.7,
+    "p99": 9.1,
+    "max": 9.4,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 239,
+    "mean": 1.42,
+    "p50": 1.4,
+    "p95": 2,
+    "p99": 3,
+    "max": 4.3,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 239,
+    "mean": 5.33,
+    "p50": 5.3,
+    "p95": 7.2,
+    "p99": 7.6,
+    "max": 7.9,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 5264,
+    "textures": 129,
+    "programs": 329,
+    "renderTargets": 23,
+    "attributesMiB": 129.6,
+    "storageMiB": 25.55,
+    "texturesMiB": 689.85,
+    "totalMiB": 855.56
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-low-warm",
+   "shot": "street-golden",
+   "capturedAt": "2026-10-30T02:51:35.991Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "low",
+   "viewport": [
+    412,
+    915
+   ],
+   "aa": "fxaa",
+   "mode": "person",
+   "camera": "pov",
+   "startupReadyMs": 11531,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 61
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 239,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.5,
+    "over20ms": 239,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 239,
+    "mean": 6.56,
+    "p50": 6.6,
+    "p95": 8.4,
+    "p99": 9.6,
+    "max": 10.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 239,
+    "mean": 1.72,
+    "p50": 1.8,
+    "p95": 2.2,
+    "p99": 3.3,
+    "max": 5.8,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 239,
+    "mean": 4.84,
+    "p50": 4.9,
+    "p95": 6.3,
+    "p99": 7.6,
+    "max": 7.9,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 5324,
+    "textures": 130,
+    "programs": 329,
+    "renderTargets": 23,
+    "attributesMiB": 135.24,
+    "storageMiB": 28.52,
+    "texturesMiB": 696.52,
+    "totalMiB": 871.12
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-high-r1",
+   "shot": "skyline-golden",
+   "capturedAt": "2026-10-30T02:52:20.341Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "high",
+   "viewport": [
+    1600,
+    900
+   ],
+   "aa": "msaa",
+   "mode": "cyclist",
+   "camera": "skyline",
+   "startupReadyMs": 11773,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 112
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 448,
+    "mean": 17.82,
+    "p50": 16.7,
+    "p95": 33.3,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 31,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 448,
+    "mean": 6.36,
+    "p50": 6.3,
+    "p95": 7,
+    "p99": 7.7,
+    "max": 9.4,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 448,
+    "mean": 0.88,
+    "p50": 0.9,
+    "p95": 1.1,
+    "p99": 1.3,
+    "max": 1.8,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 448,
+    "mean": 5.49,
+    "p50": 5.4,
+    "p95": 6.1,
+    "p99": 6.6,
+    "max": 8.3,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 8365,
+    "textures": 135,
+    "programs": 331,
+    "renderTargets": 24,
+    "attributesMiB": 142.91,
+    "storageMiB": 39.38,
+    "texturesMiB": 2002.07,
+    "totalMiB": 2196.6
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-high-r1",
+   "shot": "street-golden",
+   "capturedAt": "2026-10-30T02:52:34.669Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "high",
+   "viewport": [
+    1600,
+    900
+   ],
+   "aa": "msaa",
+   "mode": "person",
+   "camera": "pov",
+   "startupReadyMs": 11773,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 94
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 372,
+    "mean": 21.46,
+    "p50": 16.7,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 107,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 372,
+    "mean": 8.02,
+    "p50": 7.9,
+    "p95": 8.9,
+    "p99": 9.8,
+    "max": 16.3,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 372,
+    "mean": 1.27,
+    "p50": 1.2,
+    "p95": 1.5,
+    "p99": 2.1,
+    "max": 3.6,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 372,
+    "mean": 6.74,
+    "p50": 6.7,
+    "p95": 7.3,
+    "p99": 8.5,
+    "max": 13.5,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 8454,
+    "textures": 138,
+    "programs": 331,
+    "renderTargets": 24,
+    "attributesMiB": 152.27,
+    "storageMiB": 41.43,
+    "texturesMiB": 2022.07,
+    "totalMiB": 2228.35
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-low-r1",
+   "shot": "skyline-golden",
+   "capturedAt": "2026-10-30T02:53:19.051Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "low",
+   "viewport": [
+    412,
+    915
+   ],
+   "aa": "fxaa",
+   "mode": "cyclist",
+   "camera": "skyline",
+   "startupReadyMs": 11431,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 60
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 239,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 239,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 239,
+    "mean": 6.8,
+    "p50": 6.9,
+    "p95": 8.5,
+    "p99": 9.3,
+    "max": 10.4,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 239,
+    "mean": 1.38,
+    "p50": 1.4,
+    "p95": 1.8,
+    "p99": 2.5,
+    "max": 2.9,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 239,
+    "mean": 5.42,
+    "p50": 5.5,
+    "p95": 6.8,
+    "p99": 7.9,
+    "max": 8.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 5264,
+    "textures": 129,
+    "programs": 329,
+    "renderTargets": 23,
+    "attributesMiB": 129.6,
+    "storageMiB": 25.55,
+    "texturesMiB": 689.85,
+    "totalMiB": 855.56
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-low-r1",
+   "shot": "street-golden",
+   "capturedAt": "2026-10-30T02:53:33.153Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "low",
+   "viewport": [
+    412,
+    915
+   ],
+   "aa": "fxaa",
+   "mode": "person",
+   "camera": "pov",
+   "startupReadyMs": 11431,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 60
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 239,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 239,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 239,
+    "mean": 6.68,
+    "p50": 6.7,
+    "p95": 8.6,
+    "p99": 10.9,
+    "max": 12.3,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 239,
+    "mean": 1.78,
+    "p50": 1.9,
+    "p95": 2.1,
+    "p99": 3.4,
+    "max": 7,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 239,
+    "mean": 4.91,
+    "p50": 5,
+    "p95": 6.4,
+    "p99": 7.2,
+    "max": 7.7,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 5324,
+    "textures": 130,
+    "programs": 329,
+    "renderTargets": 23,
+    "attributesMiB": 135.24,
+    "storageMiB": 28.52,
+    "texturesMiB": 696.52,
+    "totalMiB": 871.12
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-high-r2",
+   "shot": "skyline-golden",
+   "capturedAt": "2026-10-30T02:54:17.896Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "high",
+   "viewport": [
+    1600,
+    900
+   ],
+   "aa": "msaa",
+   "mode": "cyclist",
+   "camera": "skyline",
+   "startupReadyMs": 12049,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 112
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 450,
+    "mean": 17.74,
+    "p50": 16.7,
+    "p95": 33.3,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 29,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 450,
+    "mean": 6.38,
+    "p50": 6.2,
+    "p95": 7.2,
+    "p99": 8.2,
+    "max": 16,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 450,
+    "mean": 0.88,
+    "p50": 0.9,
+    "p95": 1.1,
+    "p99": 1.5,
+    "max": 2.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 450,
+    "mean": 5.51,
+    "p50": 5.4,
+    "p95": 6.2,
+    "p99": 7.2,
+    "max": 14.7,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 8365,
+    "textures": 135,
+    "programs": 331,
+    "renderTargets": 24,
+    "attributesMiB": 142.91,
+    "storageMiB": 39.38,
+    "texturesMiB": 2002.07,
+    "totalMiB": 2196.6
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-high-r2",
+   "shot": "street-golden",
+   "capturedAt": "2026-10-30T02:54:32.211Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "high",
+   "viewport": [
+    1600,
+    900
+   ],
+   "aa": "msaa",
+   "mode": "person",
+   "camera": "pov",
+   "startupReadyMs": 12049,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 93
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 373,
+    "mean": 21.4,
+    "p50": 16.7,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.5,
+    "over20ms": 106,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 373,
+    "mean": 7.79,
+    "p50": 7.7,
+    "p95": 8.5,
+    "p99": 9.2,
+    "max": 10.5,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 373,
+    "mean": 1.22,
+    "p50": 1.2,
+    "p95": 1.5,
+    "p99": 1.8,
+    "max": 3,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 373,
+    "mean": 6.56,
+    "p50": 6.5,
+    "p95": 7.1,
+    "p99": 7.5,
+    "max": 7.9,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 8454,
+    "textures": 138,
+    "programs": 331,
+    "renderTargets": 24,
+    "attributesMiB": 152.27,
+    "storageMiB": 41.43,
+    "texturesMiB": 2022.07,
+    "totalMiB": 2228.35
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-low-r2",
+   "shot": "skyline-golden",
+   "capturedAt": "2026-10-30T02:55:16.796Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "low",
+   "viewport": [
+    412,
+    915
+   ],
+   "aa": "fxaa",
+   "mode": "cyclist",
+   "camera": "skyline",
+   "startupReadyMs": 11503,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 60
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 239,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 239,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 239,
+    "mean": 6.65,
+    "p50": 6.7,
+    "p95": 8.5,
+    "p99": 8.8,
+    "max": 9.4,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 239,
+    "mean": 1.41,
+    "p50": 1.4,
+    "p95": 2.1,
+    "p99": 2.6,
+    "max": 2.9,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 239,
+    "mean": 5.24,
+    "p50": 5.3,
+    "p95": 7.1,
+    "p99": 7.5,
+    "max": 8.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 5264,
+    "textures": 129,
+    "programs": 329,
+    "renderTargets": 23,
+    "attributesMiB": 129.6,
+    "storageMiB": 25.55,
+    "texturesMiB": 689.85,
+    "totalMiB": 855.56
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-low-r2",
+   "shot": "street-golden",
+   "capturedAt": "2026-10-30T02:55:30.906Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "low",
+   "viewport": [
+    412,
+    915
+   ],
+   "aa": "fxaa",
+   "mode": "person",
+   "camera": "pov",
+   "startupReadyMs": 11503,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 60
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 239,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.5,
+    "over20ms": 239,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 239,
+    "mean": 6.67,
+    "p50": 6.6,
+    "p95": 8.5,
+    "p99": 10.1,
+    "max": 15.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 239,
+    "mean": 1.8,
+    "p50": 1.8,
+    "p95": 2.3,
+    "p99": 3.3,
+    "max": 9.8,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 239,
+    "mean": 4.87,
+    "p50": 4.8,
+    "p95": 6.4,
+    "p99": 7.3,
+    "max": 8.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 5324,
+    "textures": 130,
+    "programs": 329,
+    "renderTargets": 23,
+    "attributesMiB": 135.24,
+    "storageMiB": 28.52,
+    "texturesMiB": 696.52,
+    "totalMiB": 871.12
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-high-r3",
+   "shot": "skyline-golden",
+   "capturedAt": "2026-10-30T02:56:15.855Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "high",
+   "viewport": [
+    1600,
+    900
+   ],
+   "aa": "msaa",
+   "mode": "cyclist",
+   "camera": "skyline",
+   "startupReadyMs": 12157,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 112
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 449,
+    "mean": 17.78,
+    "p50": 16.7,
+    "p95": 33.3,
+    "p99": 33.4,
+    "max": 33.4,
+    "over20ms": 30,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 449,
+    "mean": 6.35,
+    "p50": 6.2,
+    "p95": 7.3,
+    "p99": 7.8,
+    "max": 9.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 449,
+    "mean": 0.9,
+    "p50": 0.9,
+    "p95": 1.1,
+    "p99": 1.4,
+    "max": 1.9,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 449,
+    "mean": 5.45,
+    "p50": 5.4,
+    "p95": 6.2,
+    "p99": 6.7,
+    "max": 7.7,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 8365,
+    "textures": 135,
+    "programs": 331,
+    "renderTargets": 24,
+    "attributesMiB": 142.91,
+    "storageMiB": 39.38,
+    "texturesMiB": 2002.07,
+    "totalMiB": 2196.6
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-high-r3",
+   "shot": "street-golden",
+   "capturedAt": "2026-10-30T02:56:30.187Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "high",
+   "viewport": [
+    1600,
+    900
+   ],
+   "aa": "msaa",
+   "mode": "person",
+   "camera": "pov",
+   "startupReadyMs": 12157,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 94
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 371,
+    "mean": 21.43,
+    "p50": 16.7,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.5,
+    "over20ms": 106,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 371,
+    "mean": 7.91,
+    "p50": 7.8,
+    "p95": 8.6,
+    "p99": 9.3,
+    "max": 11,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 371,
+    "mean": 1.29,
+    "p50": 1.3,
+    "p95": 1.5,
+    "p99": 1.9,
+    "max": 2.3,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 371,
+    "mean": 6.62,
+    "p50": 6.6,
+    "p95": 7.1,
+    "p99": 8,
+    "max": 9.4,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 8454,
+    "textures": 138,
+    "programs": 331,
+    "renderTargets": 24,
+    "attributesMiB": 152.27,
+    "storageMiB": 41.43,
+    "texturesMiB": 2022.07,
+    "totalMiB": 2228.35
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-low-r3",
+   "shot": "skyline-golden",
+   "capturedAt": "2026-10-30T02:57:15.025Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "low",
+   "viewport": [
+    412,
+    915
+   ],
+   "aa": "fxaa",
+   "mode": "cyclist",
+   "camera": "skyline",
+   "startupReadyMs": 11751,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 60
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 239,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.5,
+    "max": 33.5,
+    "over20ms": 239,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 239,
+    "mean": 6.76,
+    "p50": 6.8,
+    "p95": 8.6,
+    "p99": 9.7,
+    "max": 11.3,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 239,
+    "mean": 1.45,
+    "p50": 1.4,
+    "p95": 2,
+    "p99": 2.8,
+    "max": 4.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 239,
+    "mean": 5.31,
+    "p50": 5.4,
+    "p95": 7.1,
+    "p99": 7.7,
+    "max": 8.4,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 5264,
+    "textures": 129,
+    "programs": 329,
+    "renderTargets": 23,
+    "attributesMiB": 129.6,
+    "storageMiB": 25.55,
+    "texturesMiB": 689.85,
+    "totalMiB": 855.56
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  },
+  {
+   "run": "idle-low-r3",
+   "shot": "street-golden",
+   "capturedAt": "2026-10-30T02:57:29.149Z",
+   "valid": true,
+   "measurementClass": "background-processes-unqualified",
+   "tier": "low",
+   "viewport": [
+    412,
+    915
+   ],
+   "aa": "fxaa",
+   "mode": "person",
+   "camera": "pov",
+   "startupReadyMs": 11751,
+   "excluded": {
+    "window-start": 1,
+    "warmup": 60
+   },
+   "mainSha256": "5179e451bab9",
+   "frameIntervalMs": {
+    "n": 239,
+    "mean": 33.33,
+    "p50": 33.3,
+    "p95": 33.4,
+    "p99": 33.4,
+    "max": 33.5,
+    "over20ms": 239,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "cpuSubmissionMs": {
+    "n": 239,
+    "mean": 6.61,
+    "p50": 6.6,
+    "p95": 8.6,
+    "p99": 10.5,
+    "max": 13.2,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "simulationCpuMs": {
+    "n": 239,
+    "mean": 1.79,
+    "p50": 1.9,
+    "p95": 2.3,
+    "p99": 2.7,
+    "max": 8.1,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "renderSubmissionCpuMs": {
+    "n": 239,
+    "mean": 4.82,
+    "p50": 4.8,
+    "p95": 6.5,
+    "p99": 7.5,
+    "max": 8.6,
+    "over20ms": 0,
+    "over40ms": 0,
+    "over50ms": 0
+   },
+   "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "longAnimationFrames": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+   },
+   "renderer": {
+    "geometries": 5324,
+    "textures": 130,
+    "programs": 329,
+    "renderTargets": 23,
+    "attributesMiB": 135.24,
+    "storageMiB": 28.52,
+    "texturesMiB": 696.52,
+    "totalMiB": 871.12
+   },
+   "owned": {
+    "live": 0,
+    "cpuBytes": 0,
+    "gpuBytes": 0,
+    "peakCpuBytes": 0,
+    "peakGpuBytes": 0
+   }
+  }
+ ]
+}

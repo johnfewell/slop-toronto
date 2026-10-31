@@ -6,7 +6,7 @@
 // wheel (or the handlebars, or your feet) and brings you there, stopping at red lights.
 
 const { THREE, Navigation, CITY_LANDMARKS, TELEPORT_LOCATIONS, getLocationLabel, districtAt, nearestRoads, blockAt, SIGNALS } = window.CITY;
-const { Fn, uniform, uv, attribute, float, color, mix, step, fract, abs, smoothstep } = window.CITY.TSL;
+const { Fn, uniform, renderGroup, uv, attribute, float, color, mix, step, fract, abs, smoothstep } = window.CITY.TSL;
 const { searchPlaces, findRoute, progressOnRoute, formatDistance, formatDuration, trueBearing, compassWord, CATEGORY_LABEL, locateReal } = Navigation;
 
 const $ = (id) => document.getElementById(id);
@@ -29,7 +29,7 @@ const KIND_ICON = { landmark: 'i-star', district: 'i-district', street: 'i-road'
 const CAT_ICON = {
   hotel: 'i-bed', bank: 'i-bank', food: 'i-food', worship: 'i-worship', fuel: 'i-fuel', health: 'i-health',
   education: 'i-school', market: 'i-bag', shop: 'i-bag', government: 'i-gov', office: 'i-office', leisure: 'i-tree',
-  transport: 'i-bus', place: 'i-pin'
+  transport: 'i-bus', place: 'i-pin', art: 'i-art', heritage: 'i-heritage'
 };
 const iconFor = (p) => (p.kind === 'place' ? CAT_ICON[p.cat] || 'i-pin' : KIND_ICON[p.kind] || 'i-pin');
 const MANEUVER_ICON = {
@@ -62,7 +62,10 @@ class Autocomplete {
     input.addEventListener('focus', () => {
       input.select();
       this.update();
+      // the Heritage Register joins the search the first time a search box is used (discovery.js)
+      window.CITY.Discovery?.loadHeritage().catch((e) => console.warn('[discovery]', e.message));
     });
+    window.CITY.Discovery?.onDiscoveryLoaded(() => { if (document.activeElement === input && input.value.trim()) this.update(); });
     input.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
@@ -192,8 +195,9 @@ function createRouteGraphics(scene, groundAt) {
   const group = new THREE.Group();
   group.name = 'TourRoute';
   scene.add(group);
-  const uAlong = uniform(0);
-  const uTime = uniform(0);
+  // (set every frame: renderGroup uniforms, uploaded once per render)
+  const uAlong = uniform(0).setGroup(renderGroup);
+  const uTime = uniform(0).setGroup(renderGroup);
 
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
   mat.polygonOffset = true;
@@ -477,7 +481,15 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
       $('pc-address').textContent = info.address;
       $('pc-distance').textContent = info.distance;
       const cityInfo=$('pc-city-info');
-      if(cityInfo) {
+      const found=p.discovery&&window.CITY.Discovery?.discoveryCard(p);
+      if(cityInfo&&found) {
+        // a public artwork or a heritage property (discovery.js): plain text facts, City links
+        cityInfo.replaceChildren();cityInfo.hidden=false;
+        if(found.address) $('pc-address').textContent=found.address;
+        for(const [label,value] of found.facts){const row=el('p');row.append(el('strong','',`${label}: `),document.createTextNode(value));cityInfo.append(row);}
+        for(const note of found.notes)cityInfo.append(el('p','pc-source',note));
+        for(const {href,label} of found.links){const link=el('a','pc-source',label);link.href=href;link.target='_blank';link.rel='noopener noreferrer';cityInfo.append(link,document.createTextNode(' '));}
+      } else if(cityInfo) {
         cityInfo.replaceChildren();cityInfo.hidden=!p.city;
         if(p.city) {
           const r=p.city;
@@ -940,9 +952,12 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     if (!ctx) return mapSystem.onTeleport && mapSystem.onTeleport(world.x, world.z);
     const label = getLocationLabel(world.x, world.z);
     // a named place right there?
-    const near = (window.CITY.GEO.pois || []).map(([x, z, name, cat]) => ({ x, z, name, cat, d: Math.hypot(x - world.x, z - world.z) }))
+    const near = (window.CITY.GEO.pois || []).map(([x, z, name, cat], i) => ({ i, x, z, name, cat, d: Math.hypot(x - world.x, z - world.z) }))
       .filter((p) => p.d < 14 / Math.max(0.05, mapSystem.viewZoom) + 8).sort((a, b) => a.d - b.d)[0];
-    ctxPoint = near ? { kind: 'place', name: near.name, cat: near.cat, x: near.x, z: near.z, sub: `${CATEGORY_LABEL[near.cat] || 'Place'} · ${districtAt(near.x, near.z)}` }
+    // a place with a source-keyed storefront sign says so, with its source (storefront-signs.js; plain text, never markup)
+    const sign = near && (window.CITY.storefrontSigns || []).find((s) => s.poi === near.i);
+    const signNote = sign ? ` · Storefront sign: “${sign.name}” (OpenStreetMap${sign.reviewed ? `, reviewed ${sign.reviewed}` : ''})` : '';
+    ctxPoint = near ? { kind: 'place', name: near.name, cat: near.cat, x: near.x, z: near.z, sub: `${CATEGORY_LABEL[near.cat] || 'Place'} · ${districtAt(near.x, near.z)}${signNote}` }
       : { kind: 'point', name: label, x: world.x, z: world.z, sub: label === districtAt(world.x, world.z) ? 'Neighbourhood of Toronto' : districtAt(world.x, world.z) };
     $('ctx-title').textContent = ctxPoint.name;
     $('ctx-sub').textContent = ctxPoint.sub;

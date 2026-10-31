@@ -1,10 +1,12 @@
-// tools/geo-pack.mjs — packs the GEO object into data/toronto-geodata.bin (format and reader: js/geodata-loader.js).
+// tools/geo-pack.mjs — packs the city's layers ({ GEO, POLES }: tools/geo-bin.mjs) into data/toronto-geodata.bin (format
+// and reader: js/geodata-loader.js).
 // Lossless: each column of numbers is stored as integers at the fewest decimals that reproduce every value exactly
 // (Math.round(v * 10^d) / 10^d === v, the reader's own division: decimetres for the 0.1 m coordinates); a column no
 // such count fits (the frame's projection constants) is stored as doubles.
 // Each column's integers take the transform that deflates smallest: differences within each array, its tuples split
-// field by field (x's, then z's...), or for a raster blob a 2-D prediction; then 1, 2 or 4 bytes, byte plane by plane.
-// Deterministic: the same GEO gives the same bytes (gzip level 9, no file name or time in its header).
+// field by field (x's, then z's...), or for a raster blob a 2-D prediction; then, two's complement or zigzag, 1, 2 or 4
+// bytes, byte plane by plane.
+// Deterministic: the same layers give the same bytes (gzip level 9, no file name or time in its header).
 import zlib from 'node:zlib';
 
 const isNumArr = (a) => Array.isArray(a) && a.length > 0 && a.every((x) => typeof x === 'number');
@@ -58,18 +60,28 @@ function packInts(ints, runs = [[0, ints.length]], rasterWidth = 0) {
     let lo = 0, hi = 0;
     for (const x of v) { if (x < lo) lo = x; if (x > hi) hi = x; }
     if (lo < -(2 ** 31) || hi >= 2 ** 31) continue; // (differences that leave int32)
-    const w = lo >= -128 && hi <= 127 ? 1 : lo >= -32768 && hi <= 32767 ? 2 : 4;
-    const n = v.length, bytes = Buffer.alloc(n * w);
-    for (let i = 0; i < n; i++) for (let b = 0; b < w; b++) bytes[b * n + i] = (v[i] >> (8 * b)) & 255;
-    const size = zlib.deflateRawSync(bytes, { level: 6 }).length;
-    if (!best || size < best.size) best = { n, w, ...t, bytes, size };
+    // two's complement, or zigzag (0, -1, 1, -2...: unsigned, so the high byte planes of small differences of either
+    // sign are zeros rather than a sign extension: wide-ranging differences such as scattered points' deflate smaller)
+    for (const zz of [0, 1]) {
+      if (zz && (lo < -(2 ** 30) || hi >= 2 ** 30)) continue;
+      const u = zz ? Math.max(2 * hi, -2 * lo - 1) : 0;
+      const w = zz ? (u < 256 ? 1 : u < 65536 ? 2 : 4) : lo >= -128 && hi <= 127 ? 1 : lo >= -32768 && hi <= 32767 ? 2 : 4;
+      const n = v.length, bytes = Buffer.alloc(n * w);
+      for (let i = 0; i < n; i++) {
+        const x = zz ? (v[i] << 1) ^ (v[i] >> 31) : v[i];
+        for (let b = 0; b < w; b++) bytes[b * n + i] = (x >> (8 * b)) & 255;
+      }
+      const size = zlib.deflateRawSync(bytes, { level: 6 }).length;
+      if (!best || size < best.size) best = { n, w, ...t, ...(zz ? { zz } : {}), bytes, size };
+    }
   }
   return best;
 }
 
 /**
- * GEO -> gzip'd container. `blobs`: { 'terrain.data': { type: 'i16', width: 868 }, ... }: base64 strings to store as
- * their values (type i16, u16 or u8; width: a raster's row length, for the 2-D prediction).
+ * An object (the city's layers, tools/geo-bin.mjs) -> gzip'd container. `blobs`: { 'GEO.terrain.data': { type: 'i16',
+ * width: 868 }, ... }: base64 strings to store as their values (type i16, u16 or u8; width: a raster's row length, for
+ * the 2-D prediction).
  * Returns { file, raw, columns, headerBytes }.
  */
 export function packGeo(GEO, blobs = {}) {

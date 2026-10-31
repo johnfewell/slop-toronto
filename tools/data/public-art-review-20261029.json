@@ -1,0 +1,28 @@
+{
+  "reviewedAt": "2026-10-29",
+  "note": "Hand decisions for the City Public Art records that the game models or links to a landmark. Every other record is decided by rule in tools/build-art-heritage.mjs. Keys are the build's durable record keys (SOURCE_ID:title slug).",
+  "modelled": [
+    {
+      "key": "12:cenotaph-toronto",
+      "model": "cenotaph",
+      "position": "osm:node/555437359",
+      "yaw": 0,
+      "why": "Plain stepped granite pylon in front of Old City Hall's clock tower, facing Queen Street at the head of Bay Street. The City's point (Queen and Bay) falls in the intersection; OpenStreetMap's node 555437359 stands on the plaza between the building and Queen Street.",
+      "copyright": "Designed by W. M. Ferguson (died 1956) with T. C. Pomphrey (died 1966), unveiled 1925: public domain in Canada (authors who died before 1972; life + 50).",
+      "form": "Simplified massing only: three granite steps, plinth, slightly tapered shaft with a cornice and capping block, and a raised wreath ring on the north and south faces. Inscriptions, battle honours and carved detail are not reproduced. Overall height ~9.5 m is inferred from period accounts that it was 'about the same size as the one in London' (Whitehall, 10.7 m); not surveyed."
+    },
+    {
+      "key": "3:fort-rouille-monument",
+      "model": "obelisk",
+      "position": "osm:node/1816990585",
+      "yaw": 0,
+      "why": "The obelisk at the site of Fort Rouillé, Exhibition Place, inside the fort's concrete ground outline. The City's point is 12 m from OpenStreetMap's node, which stands on the lawn.",
+      "copyright": "Obelisk by architects Langley and Burke (Henry Langley died 1907, Edmund Burke died 1919), unveiled 1887: public domain. The City record's 1878 is the date of the earlier inscribed boulder cairn.",
+      "form": "Plain granite obelisk on a stepped pedestal, ~7.5 m overall. Height estimated, not surveyed; plaques, cannon and mortar are not modelled."
+    }
+  ],
+  "landmarks": [
+    { "key": "14:princes-gates", "landmark": "princesGates", "why": "Already drawn as the Princes' Gates landmark (js/landmarks.js); the card links to it and no second model or marker is placed." }
+  ],
+  "markersOnly": "Every other outdoor record gets the neutral stand-in marker, not an imitation: most are modern, in copyright (life + 70 for authors who died in 1972 or later), and figurative or detailed enough that a procedural likeness would misrepresent them."
+}

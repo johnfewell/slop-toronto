@@ -1313,7 +1313,7 @@ function buildEntrances(group, colliders) {
     return null;
   };
   const sites = [];
-  const todo = S.entrances.filter(([x, z]) => inCity(x, z)).map(([x, z, st, colour, name, sign]) => ({ x, z, st, colour, name, sign: sign || 0 }));
+  const todo = S.entrances.filter(([x, z]) => inCity(x, z)).map(([x, z, st, colour, name, sign, osm]) => ({ x, z, st, colour, name, sign: sign || 0, osm: osm || null }));
   for (const s of stations) {
     if (!todo.some((e) => e.st === s[2] && Math.hypot(e.x - s[0], e.z - s[1]) < 400)) todo.push({ x: s[0], z: s[1], st: s[2], colour: s[3], name: '', fromStation: true });
   }
@@ -1366,6 +1366,7 @@ function buildEntrances(group, colliders) {
     site.name = name;
     site.colour = colour;
     site.sign = e.sign || 0; // (0 the insignia pylon, 1-2 the older lantern: tools/geo-subway.mjs LANTERNS)
+    site.osm = e.osm || null; site.entranceName = e.name || ''; // (its OpenStreetMap node: the walked stations' entrance, subway-ride.js)
     site.curbSide = { x: -R.nx, z: -R.nz };
     placed.push(site);
     if (site.kind === 'stair') stairs++;

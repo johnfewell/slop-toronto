@@ -46,7 +46,8 @@ Bead: `st-26p.9`. Source: [Topographic Mapping – Poles](https://open.toronto.c
 GeoPackage resource `5504d484-1bd6-4330-b43c-d562b74a175d` (updated 2026-02-20, SHA-256 pinned in
 `tools/fetch-poles.mjs`). The row preview and CSV sample failed during research. The 69 MB GeoPackage downloads
 normally. `node tools/fetch-poles.mjs` caches it in `~/.cache/slop-toronto/poles/`, verifies the hash and uses GDAL to
-cut it to the detail frame's bounding box. `node tools/build-poles.mjs` then writes `js/toronto-poles.js`.
+cut it to the detail frame's bounding box. `node tools/build-poles.mjs` then writes `js/toronto-poles.js` and repacks
+`data/toronto-geodata.bin` (`tools/pack-geodata.mjs`), which carries the same object to the site (see below).
 
 **Schema:** `_id`, `SUBTYPE_CODE`, `SUBTYPE_DESC`, `ELEVATION` (ground, m ASL), `DERIVED_HEIGHT`, `LAST_GEOMETRY_MAINT`,
 `LAST_ATTRIBUTE_MAINT` and `OBJECTID`, one point each. `DERIVED_HEIGHT` is `None` on every record in the frame, and every
@@ -54,10 +55,10 @@ maintenance date reads 2021-01-01. **Heights and headings are therefore inferred
 
 | Code | Type | In the detail frame | Rendered as |
 | --- | --- | ---: | --- |
-| 6006 | Street Light Pole | 26,375 | a 9 m galvanized single-arm light reaching toward the nearest road; 11 m with two arms on a median |
+| 6006 | Street Light Pole | 26,375 | a 9 m galvanized single-arm light reaching toward the nearest road; 11 m with two arms on a median; 5,505 on wooden hydro poles and 25 Distillery lantern posts (see *Looks*) |
 | 6005 | Street Light and Traffic Signal Pole | 1,566 | a 9 m pole with the same light; carries signal heads where a junction approach snaps to it |
 | 6008 | Traffic Signal Pole | 1,518 | a 6.2 m signal pole; carries the heads of the approaches and crosswalks that snap to it |
-| 6004 | Pedestrian Light Pole | 1,901 | **not rendered**: no pedestrian-lamp model |
+| 6004 | Pedestrian Light Pole | 1,901 | a lamp post: 789 heritage lanterns, 366 waterfront promenade posts, 746 park lamps (see *Looks*) |
 | 6003 | Miscellaneous Pole | 7,171 | **not rendered**: utility, trolley-wire and other poles without a model |
 | 6001 | Circular Hydro Tower | 3 | **not rendered** |
 
@@ -86,6 +87,54 @@ uses the existing instanced meshes, so it adds no draw calls before `scene-culli
 `?mappedpoles=0` turns the layer off for an A/B with the procedural layout. `CITY.poleStats` reports counts, rejections,
 fallback and signal snapping.
 
-The shipped layer is 438 KB raw, about 116 KB with Brotli. Tests: `node --test tests/mapped-poles.test.mjs`.
+**Looks** (beads `st-er2`, `st-m3t`; `tools/build-poles.mjs` `poleLooks`, written into the layer as `looks`, OBJECTID
+deltas per look). The source has no material or style field, and OSM's power poles and street lamps in the frame are
+too sparse to help (301 `power=pole` nodes, 56 tagged wood). So the looks are documented rules on positions, roads and
+the City's neighbourhoods:
+
+- **Wooden hydro poles (5,505 lights).** Toronto Hydro hangs the older residential streets' lights on the cedar poles of
+  the overhead line (it owns about 96,000 wooden poles), one pole every 25–35 m down one side of the street. Streets
+  with buried services have steel or concrete standards, usually on both sides. A light is wooden when its nearest
+  at-grade street (within 14 m) is local (residential, unclassified, living street, tertiary or service) and named.
+  The street's lights within 90 m (at least 3) must also stand ≥ 80% on its side. Lights in the rebuilt core and
+  waterfront neighbourhoods are excluded: Financial District, Yonge-Bay Corridor, Wellington Place,
+  Harbourfront-CityPlace, St Lawrence-East Bayfront-The Islands, Downtown Yonge East, Bay-Cloverhill, Fort
+  York-Liberty Village, Regent Park, University and Humber Bay Shores. Euclid (59 of 72), Manning, Montrose, Clinton
+  and Logan come out mostly wooden. Palmerston Boulevard's ornamental standards, Queens Quay, the Esplanade, Harbord
+  and the arterials come out with none. The City's 2025 aerials confirm the one-sided layout on Euclid, Manning and
+  Montrose and the two-sided layout on Palmerston. At 8 cm, a nadir view cannot show the pole's material. The
+  model is a 10.7 m weathered cedar pole with a 2.4 m crossarm and three insulators. About one in five has a pole-top
+  transformer. The LED head hangs at 7.9 m on a galvanized bracket. On the high tier, three wires run from each pole to
+  the next wooden pole ahead on the same side of the street, 12–48 m away (`woodSpans`, 4,323 spans). They are
+  culled at 180 m.
+- **Lantern posts:** a 4.55 m black heritage post with a fluted base and a four-sided lantern. It is used for the
+  pedestrian lights that are not on the waterfront or in a park (Old Town, St. James Town, Cabbagetown, Moss Park and
+  the Danforth). It is also used for the street lights in the Distillery District's lanes: Parliament to Cherry, south
+  of Mill Street's curb. Mill, Parliament, Cherry and Front stay steel.
+- **Promenade posts:** a 5.85 m slim charcoal post with a flat round LED head. It is used for pedestrian lights within
+  250 m of Queens Quay or in Harbourfront-CityPlace, Fort York-Liberty Village, Humber Bay Shores, Wellington Place and
+  Regent Park.
+- **Park lamps:** a 4.5 m dark green post with an acorn globe. It is used for pedestrian lights inside a park, pitch,
+  golf course or cemetery.
+
+1,872 of the 1,901 pedestrian lights are placed. The rest are off the curb islands or under a deck. Each model is one
+instanced geometry with vertex colours: 64 triangles for the wooden pole, 96 with a transformer, and 64–108 for the
+lamp posts. All models share one material. Its `glow` vertex attribute lights the lamp glass at night, as the
+streetlights' lenses are lit. Each model has a player collider and a street-furniture footprint, as the steel poles
+do. Each also has a coarse sun-shadow stand-in in `scene-culling.js`: 10 triangles for the wooden pole and its
+crossarm, and 16 for a post and its head. The wooden poles are culled at 1.5 km, like the steel ones, and the lamp
+posts at 900 m. Both are scaled by the tier's cull factor and stay beyond the shadows' reach on every tier. The lamp
+posts' night pools use the same bounded spotlight pool, aimed straight down. Their strength is 0.3–0.45 times a 9 m
+streetlight's because they are lower. `QUALITY.poleWires` turns the wires on for the high tier only; use
+`?q.poleWires=false` for an A/B. `CITY.poleStats.looks` counts what was drawn.
+
+The layer is 482 KB as a script, about 128 KB with Brotli (438 KB and 116 KB before the pedestrian lights and looks).
+Since `st-mf8` the site no longer loads that script: `window.CITY.POLES` arrives packed in `data/toronto-geodata.bin`
+beside `GEO` (`tools/geo-bin.mjs`; `js/geodata-loader.js` puts both on `window.CITY` before the classic scripts run),
+where it cost 95.6 KB of the gzip'd file before the pedestrian lights and looks. The script stays the node tools' and
+tests' copy; `tests/geodata-binary.test.mjs` checks the packed object equals it value for value and that the committed
+binary is the committed scripts packed. Tests: `node --test tests/mapped-poles.test.mjs tests/geodata-binary.test.mjs`.
 GPU captures: run `gpu2 <name> -- env CAPTURE_PORT=… node tools/check-poles.mjs <tag>` for desktop and low-tier phone
-captures, day and midnight, at Queen West, University Ave, Palmerston Blvd and Queens Quay.
+captures, day and midnight, at Queen West, University Ave, Palmerston Blvd and Queens Quay. For the looks, run
+`node tools/check-poles.mjs looks tools/shots/pole-looks.json`. It captures Euclid Avenue (with an aerial),
+Queens Quay at Spadina, the Distillery's Distillery Lane and Allan Gardens.

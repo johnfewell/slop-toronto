@@ -1,0 +1,62 @@
+[
+ {
+  "name": "sc-0-street-ref",
+  "time": "golden",
+  "wait": 3000,
+  "js": "(() => {const a=window.__CITY_APP; document.getElementById('locate-prompt').hidden=true; if(!a.rideFeatured('504')) throw new Error('No 504 ride'); a.rideSession.cancel(); if(a.streetcarRide.active||a.controllerManager.suspended) throw new Error('504 cancel failed'); console.log('[ride-check] street reference at 504 boarding '+JSON.stringify(a.controllerManager.getActiveEntity().position));})()"
+ },
+ {
+  "name": "sc-1-ride-seat",
+  "wait": 3000,
+  "js": "(() => {const a=window.__CITY_APP; if(!a.rideFeatured('504')) throw new Error('No 504 ride'); a.selectCamera('pov',true); if(!a.streetcarRide.active) throw new Error('Not riding'); console.log('[ride-check] boarded 504 '+a.streetcarRide.car.id);})()"
+ },
+ {
+  "name": "sc-2-ride-chase",
+  "camera": "chase",
+  "wait": 2000,
+  "js": "(() => {const a=window.__CITY_APP; if(!a.streetcarRide.active) throw new Error('Ride ended early'); if(a.cameraSystem.activePresetId!=='chase') throw new Error('No chase camera');})()"
+ },
+ {
+  "name": "sc-3-exit-street",
+  "wait": 3000,
+  "js": "(() => {const a=window.__CITY_APP; a.rideSession.cancel(); if(a.streetcarRide.active||a.controllerManager.suspended||a.cameraSystem.followOverride) throw new Error('504 exit failed'); console.log('[ride-check] exited 504 to street');})()"
+ },
+ {
+  "name": "sc-4-after-40-cycles",
+  "wait": 3000,
+  "record": true,
+  "js": "(async () => {const a=window.__CITY_APP;const f=()=>new Promise(r=>requestAnimationFrame(()=>r()));const snap=()=>{const r=a.resourceSnapshot();return {renderer:r.renderer,ownedLive:r.owned.live??r.owned.liveCount??null,owned:r.owned};};const wait=async(n)=>{for(let k=0;k<n;k++) await f();}; const batch=async()=>{for(let i=0;i<20;i++){ if(!a.rideFeatured('504')) throw new Error('Cycle '+i+' board failed'); a.selectCamera('pov',true); await wait(4); a.rideSession.cancel(); if(a.streetcarRide.active||a.controllerManager.suspended) throw new Error('Cycle '+i+' exit failed'); await wait(3);} await wait(10);}; const c0=snap(); await wait(150); const c1=snap(); await batch(); const b1=snap(); await batch(); const b2=snap(); console.log('[ride-check] streetcar 2x20 board/exit cycles '+JSON.stringify({controlGeoms:[c0.renderer.geometries,c1.renderer.geometries],geoms:[b1.renderer.geometries,b2.renderer.geometries]})); return {note:'control = 150 frames without boarding; then two batches of 20 board/exit cycles',controlBefore:c0,controlAfter:c1,after20:b1,after40:b2};})()"
+ },
+ {
+  "name": "sw-0-castle-frank-seat",
+  "wait": 3000,
+  "js": "(() => {const a=window.__CITY_APP; if(!a.rideFeatured('subway')) throw new Error('No subway ride'); a.selectCamera('pov',true); if(!a.subwayRide.active) throw new Error('Not on the train'); console.log('[ride-check] seated at Castle Frank '+a.subwayRide.car.id);})()"
+ },
+ {
+  "name": "sw-1-viaduct-seat",
+  "wait": 2000,
+  "js": "(async () => { const a=window.__CITY_APP,R=a.subwayRide,id=R.car.id; a.film.start(10); try { for(let i=0;i<140&&!R.canChase;i++) {await a.film.step(25); if(!R.active||R.car.id!==id) throw new Error('Train identity lost');} if(!R.canChase) throw new Error('Did not reach open viaduct'); a.selectCamera('pov',true); console.log('[ride-check] on viaduct '+JSON.stringify({id,s:R.car.s})); } finally {a.film.stop();} })()"
+ },
+ {
+  "name": "sw-2-viaduct-chase",
+  "camera": "chase",
+  "wait": 2000,
+  "js": "(() => {const a=window.__CITY_APP; if(!a.subwayRide.active) throw new Error('Ride ended early'); if(a.cameraSystem.activePresetId!=='chase') throw new Error('No exterior view');})()"
+ },
+ {
+  "name": "sw-3-broadview-platform",
+  "wait": 3000,
+  "js": "(async () => {const a=window.__CITY_APP,R=a.subwayRide,id=R.car.id; a.film.start(10); try { for(let i=0;i<180 && !(R.car.stopIndex===1&&R.car.doorState==='open');i++) await a.film.step(25); if(!R.active||R.car.id!==id||R.car.stopIndex!==1||R.car.doorState!=='open') throw new Error('No retained arrival'); } finally {a.film.stop();} document.getElementById('ride-status').click(); if(R.active||!R.inside||a.controllerManager.suspended||!a.controllerManager.interiorSpace) throw new Error('Platform alighting failed'); console.log('[ride-check] on '+R.station.name+' platform');})()"
+ },
+ {
+  "name": "sw-4-exit-street",
+  "wait": 3000,
+  "js": "(() => {const a=window.__CITY_APP,R=a.subwayRide; R.exit({cancel:true}); if(R.inside||R.active||a.rideSession.active||a.controllerManager.interiorSpace||a.controllerManager.suspended||a.cameraSystem.camera.layers.mask!==1) throw new Error('Street restoration failed'); console.log('[ride-check] exited to street '+JSON.stringify(a.controllerManager.getActiveEntity().position));})()"
+ },
+ {
+  "name": "sw-5-after-40-cycles",
+  "wait": 3000,
+  "record": true,
+  "js": "(async () => {const a=window.__CITY_APP,R=a.subwayRide;const f=()=>new Promise(r=>requestAnimationFrame(()=>r()));const snap=()=>{const r=a.resourceSnapshot();return {renderer:r.renderer,ownedLive:r.owned.live??r.owned.liveCount??null,owned:r.owned};};const wait=async(n)=>{for(let k=0;k<n;k++) await f();}; const batch=async()=>{for(let i=0;i<20;i++){ if(!a.rideFeatured('subway')) throw new Error('Cycle '+i+' board failed'); a.selectCamera('pov',true); await wait(4); R.exit({cancel:true}); if(R.inside||R.active||a.controllerManager.interiorSpace||a.controllerManager.suspended) throw new Error('Cycle '+i+' exit failed'); await wait(3);} await wait(10);}; const c0=snap(); await wait(150); const c1=snap(); await batch(); const b1=snap(); await batch(); const b2=snap(); console.log('[ride-check] subway 2x20 board/exit cycles '+JSON.stringify({controlGeoms:[c0.renderer.geometries,c1.renderer.geometries],geoms:[b1.renderer.geometries,b2.renderer.geometries]})); return {note:'control = 150 frames without boarding; then two batches of 20 board/exit cycles',controlBefore:c0,controlAfter:c1,after20:b1,after40:b2};})()"
+ }
+]

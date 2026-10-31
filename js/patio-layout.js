@@ -14,6 +14,10 @@
 //   the game's traffic lanes, streetcar tracks and bikeways, set back from intersections, laneways, crossings and
 //   transit stops as the City requires (direction-aware), and from hydrants and street furniture.
 // - Private property patios are never placed (they are on private land the game does not model).
+//
+// The page does not run this at startup: tools/build-patios.mjs keeps its result, computed in the browser with the
+// city's own inputs, in js/toronto-patios.js, and js/cafeto-patios.js loads this script only to recompute (?patios=layout
+// or check, or when the inputs it was built from have changed). tests/cafeto.test.mjs replays it in node.
 
 const NORM = [[/\bstreet\b/g, 'st'], [/\bavenue\b/g, 'ave'], [/\broad\b/g, 'rd'], [/\bwest\b/g, 'w'], [/\beast\b/g, 'e'],
   [/\bboulevard\b/g, 'blvd'], [/\bcrescent\b/g, 'cres'], [/\bdrive\b/g, 'dr'], [/\bplace\b/g, 'pl'], [/\bsquare\b/g, 'sq'],
@@ -316,14 +320,6 @@ function patioSites(records, deps) {
 // the most specific failure a record reached decides its reason (a later check passed the earlier ones)
 const ORDER = ['curb', 'sidewalk', 'narrow', 'lane', 'streetcar', 'bikeway', 'corner', 'junction', 'crossing', 'stop', 'obstruction', 'overlap'];
 
-// The CaféTO season against the scene's fixed date. The 2026 guidelines require curb-lane platforms installed by
-// June 1 and removed between October 1 and 15; the dataset lists the current season's permits. Patios are shown from
-// June 1 to September 30 (sidewalk cafés too: the records carry no dates of their own).
-function patioSeason(date = { month: 8, day: 22 }) {
-  const md = date.month * 100 + date.day;
-  return md >= 601 && md <= 930;
-}
-
 // What stands near a curb: [kind, half size (m), curb lane platform clearance from its edge (m, CaféTO's utility &
 // infrastructure clearances; 0: not on the curb's side)]. A sidewalk café keeps 0.6 m from the edge of each.
 const FURNITURE = {
@@ -425,6 +421,6 @@ function patioDeps(CITY, { furniture = [], blocked = null, bikeShareAt = null } 
   return { nearestRoads, blockAt, buildingAt, onSidewalk, obstacles, stops, crossings, junctions, railDist, bikewayAt, bikeShareAt };
 }
 
-Object.assign(window.CITY, { patioSites, patioDeps, patioSeason, PATIO_RULES: RULES, PATIO_FURNITURE: FURNITURE,
+Object.assign(window.CITY, { patioSites, patioDeps, PATIO_RULES: RULES, PATIO_FURNITURE: FURNITURE,
   patioStreetKey: streetKey, patioOuterLane: outerLane });
 })();

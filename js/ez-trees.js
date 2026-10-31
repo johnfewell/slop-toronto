@@ -62,9 +62,11 @@ function bakedGeometry(mesh) {
 // Across a band the share t runs 0 -> 1 with the distance; the coarser level keeps the pixels whose hash is under t, the
 // finer one the rest. The distance is from `viewer` (set from the view camera before every render): in the shadow
 // passes TSL's cameraPosition is the light's.
+// (renderGroup: one value per render, uploaded once rather than per tree mesh; set in scene.onBeforeRender, before any
+// object of the render draws)
 const viewer = (() => {
-  const { uniform } = window.CITY.TSL;
-  return uniform(new THREE.Vector3());
+  const { uniform, renderGroup } = window.CITY.TSL;
+  return uniform(new THREE.Vector3()).setGroup(renderGroup);
 })();
 const lodKeep = (() => {
   const { attribute, screenCoordinate, fract, dot, vec2, float, clamp, distance } = window.CITY.TSL;

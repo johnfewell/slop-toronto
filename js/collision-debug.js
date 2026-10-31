@@ -42,6 +42,7 @@ function createCollisionDebug({ scene, controllerManager: cm }) {
   const kindOf = (c) => {
     if (c.curb) return 'curb';
     if (c.prop) return 'pole';
+    if (c.massing) return 'building'; // (?massing=1's polygon buildings)
     if (c.polygon) return 'landmark';
     const hx = c.obb ? c.obb.hx : (c.maxX - c.minX) / 2, hz = c.obb ? c.obb.hz : (c.maxZ - c.minZ) / 2;
     if (Math.max(hx, hz) < 0.6) return 'pole';

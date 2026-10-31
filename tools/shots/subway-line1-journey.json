@@ -1,0 +1,74 @@
+[
+  {
+    "name": "l1-queen-seat",
+    "wait": 1000,
+    "js": "window.__l1={ st(id){return window.__CITY_APP.subwayRide.pairs.flatMap(p=>p.stations).find(s=>s.id===id);}, pt(c,u,v){return {x:c.cx+Math.cos(c.yaw)*u+Math.sin(c.yaw)*v,z:c.cz-Math.sin(c.yaw)*u+Math.cos(c.yaw)*v};}, clampIn(c,p){const dx=p.x-c.cx,dz=p.z-c.cz,cs=Math.cos(c.yaw),sn=Math.sin(c.yaw);let u=dx*cs-dz*sn,v=dx*sn+dz*cs;u=Math.max(-c.hx+.25,Math.min(c.hx-.25,u));v=Math.max(-c.hz+.25,Math.min(c.hz-.25,v));return this.pt(c,u,v);}, cells(id,dirFrom,dirTo){const L=this.st(id).walk.layout.cells,k=(x,d)=>L.find(c=>c.kind===x&&(d===undefined||c.dir===d));const cor=L.filter(c=>c.kind==='corridor').reverse(); const up=d=>[k('platform',d),k('stair',d),k('mezzanine'),...cor,k('landing'),k('entrance')]; if(dirTo===undefined) return up(dirFrom); if(dirFrom===undefined) return up(dirTo).reverse(); return [k('platform',dirFrom),k('stair',dirFrom),k('mezzanine'),k('stair',dirTo),k('platform',dirTo)];}, route(cells,end){const out=[];for(let i=0;i+1<cells.length;i++){const A=cells[i],B=cells[i+1];out.push(this.clampIn(A,this.clampIn(B,{x:A.cx,z:A.cz})));}if(end)out.push(end);return out;}, async walk(points,max=1500){const a=window.__CITY_APP,C=a.controllerManager,p=C.getActiveEntity();let n=0,lo=Infinity,hi=-Infinity; for(const q of points){for(;;){const d=Math.hypot(q.x-p.position.x,q.z-p.position.z);if(d<.45)break;if(++n>max){C.keys.forward=0;throw new Error('walk stuck at '+JSON.stringify(p.position)+' toward '+JSON.stringify(q));} p.heading=Math.atan2(q.x-p.position.x,q.z-p.position.z);C.keys.forward=d>1.5?1:.3;await a.film.step(1); const S=C.interiorSpace;if(!S)throw new Error('left the station');const f=S.floorAt(p.position.x,p.position.z,p.position.y);if(Math.abs(p.position.y-f)>.02)throw new Error('off the floor '+p.position.y+' vs '+f);lo=Math.min(lo,p.position.y);hi=Math.max(hi,p.position.y);}} C.keys.forward=0;await a.film.step(2);return {frames:n,lo,hi};}, async approach(id){const a=window.__CITY_APP,R=a.subwayRide,C=a.controllerManager,e=this.st(id).entrances[0],t=e.opening,n={x:-t.tz,z:t.tx}; for(const [b,c] of [[0,0],[-1,0],[-1.5,0],[0,1],[0,-1],[-1,1],[-1,-1],[-2,0]]){C.teleportActiveTo(e.prompt.x+t.tx*b+n.x*c,e.prompt.z+t.tz*b+n.z*c,Math.atan2(t.tx,t.tz));await a.film.step(2);if(R.hasEntranceCandidate)break;} const p=C.getActiveEntity().position;console.log('[ride-check] approach '+id+' '+JSON.stringify({at:p,prompt:e.prompt,anchor:this.st(id).anchor,candidate:R.hasEntranceCandidate,promptShown:!document.getElementById('ride-prompt').hidden,text:document.getElementById('ride-prompt-text').textContent,mode:C.activeMode})); if(!R.hasEntranceCandidate)throw new Error('No entrance candidate at the stairway');}, async until(test,steps=360,frames=25){const a=window.__CITY_APP;for(let i=0;i<steps&&!test();i++)await a.film.step(frames);return test();} }; (()=>{const R=window.__CITY_APP.subwayRide;if(!R.active||R.car.track.origin.id!=='queen')throw new Error('No Line 1 ride from Queen');document.getElementById('locate-prompt').hidden=true;const p=window.__CITY_APP.cameraSystem.camera.position;if(p.y>-7)throw new Error('Seat not underground: '+p.y);console.log('[ride-check] seated at Queen southbound '+R.car.id+' eye y '+p.y.toFixed(2)+' layers '+window.__CITY_APP.cameraSystem.camera.layers.mask);})()"
+  },
+  {
+    "name": "l1-tunnel",
+    "wait": 500,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide,id=R.car.id;a.film.start(10);try{if(!await __l1.until(()=>R.car.speed>7&&R.car.k===1,80,5))throw new Error('Did not get going');if(R.canChase)throw new Error('Exterior view offered underground');if(a.cameraSystem.camera.layers.mask!==4)throw new Error('Outdoor layers on in the tunnel');console.log('[ride-check] in the tunnel '+JSON.stringify({id:R.car.id,s:R.car.s,speed:R.car.speed,y:R.car.sections[0].y}));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-king-arrival",
+    "wait": 500,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide,id=R.car.id;a.film.start(10);try{if(!await __l1.until(()=>R.car.stopIndex===1&&R.car.doorState==='open',180))throw new Error('No arrival');if(!R.active||R.car.id!==id)throw new Error('Train identity lost');if(!a.scene.getObjectByName('SubwayPlatform_king')?.visible)throw new Error('King platform hidden');console.log('[ride-check] arrived at King on '+id);}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-king-platform",
+    "wait": 800,
+    "js": "(()=>{const a=window.__CITY_APP,R=a.subwayRide;document.getElementById('ride-status').click();const C=a.controllerManager,p=C.getActiveEntity().position;if(R.active||!R.inside||!R.onPlatform||C.suspended||!C.interiorSpace)throw new Error('Alighting failed');if(Math.abs(p.y+9.5)>.01)throw new Error('Wrong platform level '+p.y);C.getActiveEntity().heading+=Math.PI/2;console.log('[ride-check] on the King southbound platform '+JSON.stringify(p));})()"
+  },
+  {
+    "name": "l1-king-stairs",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP;a.film.start(10);try{const cells=__l1.cells('king',0);const w=await __l1.walk(__l1.route(cells.slice(0,2)).concat([__l1.pt(cells[1],0,0)]));const y=a.controllerManager.getActiveEntity().position.y;if(!(y>-8&&y<-6))throw new Error('Not half way up the stairs: '+y);console.log('[ride-check] climbing the platform stairs '+JSON.stringify(w));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-king-mezzanine",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP;a.film.start(10);try{const cells=__l1.cells('king',0);const m=cells[2];const w=await __l1.walk(__l1.route(cells.slice(1,3)).concat([__l1.pt(m,0,0)]));const P=a.controllerManager.getActiveEntity();if(Math.abs(P.position.y+4.5)>.01)throw new Error('Not on the mezzanine '+P.position.y);if(a.subwayRide.onPlatform)throw new Error('Still on a platform');P.heading=m.yaw+Math.PI;console.log('[ride-check] on the mezzanine '+JSON.stringify(w)+' status '+document.getElementById('ride-status').textContent);}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-king-street-stairs",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{const cells=__l1.cells('king',0).slice(2);const top=__l1.st('king').walk.layout.top;const w=await __l1.walk(__l1.route(cells,{x:top.x,z:top.z}));R.update(.05);await a.film.step(1);const P=a.controllerManager.getActiveEntity();P.heading=top.up;await a.film.step(1);if(document.getElementById('ride-prompt').hidden||!/Exit to the street/.test(document.getElementById('ride-prompt-text').textContent))throw new Error('No street exit at the top');console.log('[ride-check] walked from the platform to the street stairs '+JSON.stringify(w)+' at '+JSON.stringify(P.position));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-king-street",
+    "wait": 1000,
+    "js": "(()=>{const a=window.__CITY_APP,R=a.subwayRide;if(!R.action())throw new Error('Exit refused');const C=a.controllerManager,p=C.getActiveEntity().position;if(R.inside||C.interiorSpace||C.suspended||a.cameraSystem.camera.layers.mask!==1)throw new Error('Street restoration failed');if(Math.abs(p.y-C.getGroundHeight(p.x,p.z,C.activeMode))>.1)throw new Error('Unsafe street exit');const e=__l1.st('king').entrances[0];if(Math.hypot(p.x-e.x,p.z-e.z)>25)throw new Error('Not at the entrance');console.log('[ride-check] out on the street at King '+JSON.stringify(p));})()"
+  },
+  {
+    "name": "l1-king-enter",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide,C=a.controllerManager;a.film.start(10);try{await __l1.approach('king');if(document.getElementById('ride-prompt').hidden||!/Enter King station/.test(document.getElementById('ride-prompt-text').textContent))throw new Error('No entrance prompt at the stairway');if(!R.action()||!R.inside)throw new Error('Entry failed');await a.film.step(2);const top=__l1.st('king').walk.layout.top,p=C.getActiveEntity().position;if(Math.hypot(p.x-top.x,p.z-top.z)>.6||Math.abs(p.y-top.y)>.05)throw new Error('Not at the top of the stairs');console.log('[ride-check] entered King from its street stairway at '+JSON.stringify(p));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-king-northbound-platform",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{const st=__l1.st('king'),cells=__l1.cells('king',undefined,1);const w=await __l1.walk(__l1.route(cells,st.walk.platforms[1].landing));if(!R.onPlatform)throw new Error('Not on a platform');if(document.getElementById('ride-route').textContent.indexOf('Northbound')<0)throw new Error('Not the northbound platform: '+document.getElementById('ride-route').textContent);console.log('[ride-check] walked down to the northbound platform '+JSON.stringify(w));}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-king-boarding",
+    "wait": 800,
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide;a.film.start(10);try{if(!await __l1.until(()=>!document.getElementById('ride-status').disabled,320))throw new Error('No northbound train');document.getElementById('ride-status').click();if(!R.active||R.car.track.origin.id!=='king')throw new Error('Could not board northbound');console.log('[ride-check] boarded '+R.car.id+' at King');}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-queen-arrival",
+    "wait": 500,
+    "time": "midnight",
+    "js": "(async()=>{const a=window.__CITY_APP,R=a.subwayRide,id=R.car.id;a.film.start(10);try{if(!await __l1.until(()=>R.car.stopIndex===1&&R.car.doorState==='open',180))throw new Error('No arrival');if(R.car.id!==id||!a.scene.getObjectByName('SubwayPlatform_queen')?.visible)throw new Error('Arrival platform hidden');console.log('[ride-check] arrived at Queen on '+id);}finally{a.film.stop();}})()"
+  },
+  {
+    "name": "l1-queen-street",
+    "wait": 1000,
+    "js": "(()=>{const a=window.__CITY_APP,R=a.subwayRide;document.getElementById('ride-status').click();if(R.active||!R.onPlatform)throw new Error('Alighting failed');document.getElementById('ride-cancel').click();const C=a.controllerManager,p=C.getActiveEntity().position;if(R.inside||a.rideSession.active||C.interiorSpace||C.suspended||a.cameraSystem.followOverride||a.cameraSystem.camera.layers.mask!==1)throw new Error('Street restoration failed');if(Math.abs(p.y-C.getGroundHeight(p.x,p.z,C.activeMode))>.1)throw new Error('Unsafe street exit');console.log('[ride-check] round trip exited to Queen street '+JSON.stringify(p));})()"
+  },
+  {
+    "name": "l1-mode-cleanup",
+    "mode": "car",
+    "wait": 1000,
+    "js": "(()=>{const a=window.__CITY_APP;if(!a.rideFeatured('1'))throw new Error('Restart failed');a.selectMode('car');if(a.subwayRide.inside||a.rideSession.active||a.controllerManager.suspended||a.controllerManager.interiorSpace||a.cameraSystem.camera.layers.mask!==1)throw new Error('Mode cleanup failed');console.log('[ride-check] Line 1 mode cleanup passes');})()"
+  }
+]

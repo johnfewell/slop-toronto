@@ -7,9 +7,186 @@
 // umbrella. Every part is one InstancedMesh (eight draw calls for every patio in the city) that scene-culling.js chunks
 // and hides with distance; each patio adds one oriented player collider, like a bench. Shown in the CaféTO season only
 // (patioSeason against the scene's fixed date); ?patios=0 leaves them out.
+//
+// The layout is prebuilt (st-cmf): js/toronto-patios.js (tools/build-patios.mjs) holds the sites js/patio-layout.js
+// placed in the browser with this city's own inputs, so startup only instances them and adds their colliders. The
+// inputs that exist only once the city is built (the solid colliders, the laid-out furniture, the Bike Share
+// footprints, the City sidewalk pieces near the cafés) are fingerprinted here and checked against the ones the layout
+// was built from: if they differ, the layout is recomputed (js/patio-layout.js loaded then) and a warning names the
+// rebuild. ?patios=layout recomputes and exposes CITY.patioLayoutDump (the generator's input); ?patios=check also
+// recomputes and compares the result with the prebuilt one (CITY.patioStats.check). docs/cafeto-patios.md.
 
 const { THREE, CITY_BOUNDS } = window.CITY;
 const SW = CITY_BOUNDS.sidewalkHeight;
+
+// The CaféTO season against the scene's fixed date. The 2026 guidelines require curb-lane platforms installed by
+// June 1 and removed between October 1 and 15; the dataset lists the current season's permits. Patios are shown from
+// June 1 to September 30 (sidewalk cafés too: the records carry no dates of their own).
+function patioSeason(date = { month: 8, day: 22 }) {
+  const md = date.month * 100 + date.day;
+  return md >= 601 && md <= 930;
+}
+
+// A prebuilt site's fields (js/toronto-patios.js `sites` rows, in this order), merged over its CaféTO record as the
+// layout makes them: everything the patio's instances, collider, walkers' detour and lane audit read
+const SITE_FIELDS = ['id', 'kind', 'cx', 'cz', 'tx', 'tz', 'nx', 'nz', 'length', 'depth', 'entrance', 'outerLine', 'flank'];
+const siteRow = (s) => SITE_FIELDS.map((k) => (k === 'flank' ? (s.flank ? 1 : 0) : k === 'outerLine' ? s.outerLine ?? null : s[k]));
+function builtSites(PATIOS, records) {
+  const byId = new Map(records.map((r) => [r.id, r]));
+  return PATIOS.sites.map((row) => {
+    const o = Object.fromEntries(SITE_FIELDS.map((k, i) => [k, row[i]]));
+    const rec = byId.get(o.id);
+    if (!rec) throw new Error(`patios: prebuilt site ${o.id} has no CaféTO record`);
+    const site = { ...rec, ...o };
+    if (o.outerLine === null && o.kind !== 'sidewalk') delete site.outerLine;
+    if (o.flank) site.flank = true; else delete site.flank;
+    return site;
+  });
+}
+
+// The solid static colliders a café keeps off (landmarks & anything else the GEO buildings don't cover): blocked(x, z)
+// over their boxes in a 32 m grid, a 5 cm probe circle against each. `hits` collects the colliders that answered, the
+// generator's record of what the layout actually met (tools/build-patios.mjs; tests/cafeto.test.mjs replays them).
+function patioBlocked(staticColliders, W, hits = null) {
+  const G = 32, grid = new Map();
+  for (const c of staticColliders) {
+    if (!(c.maxY > SW + 1.5) || c.maxX - c.minX > 400 || c.maxZ - c.minZ > 400) continue;
+    for (let i = Math.floor(c.minX / G); i <= Math.floor(c.maxX / G); i++) {
+      for (let j = Math.floor(c.minZ / G); j <= Math.floor(c.maxZ / G); j++) {
+        const k = i * 100003 + j;
+        (grid.get(k) || grid.set(k, []).get(k)).push(c);
+      }
+    }
+  }
+  const probe = W?.circleShape(0, 0, 0.05);
+  return (x, z) => {
+    for (const c of grid.get(Math.floor(x / G) * 100003 + Math.floor(z / G)) || []) {
+      if (x < c.minX || x > c.maxX || z < c.minZ || z > c.maxZ) continue;
+      if (!W) { hits?.add(c); return true; }
+      W.circleShape(x, z, 0.05, probe);
+      if (W.contact(probe, c)) { hits?.add(c); return true; }
+    }
+    return false;
+  };
+}
+
+// What of a collider the layout can see (blocked above): its box and its outline
+const COLLIDER_FIELDS = ['minX', 'maxX', 'minZ', 'maxZ', 'maxY', 'obb', 'circle', 'polygon'];
+const pickCollider = (c) => Object.fromEntries(COLLIDER_FIELDS.filter((k) => c[k] !== undefined).map((k) => [k, c[k]]));
+
+// The runtime inputs of the layout near the CaféTO records (80 m cells round each address, wider than any probe of
+// patio-layout.js reaches): the solid colliders blocked() keeps (the filter above), the laid-out furniture, the Bike
+// Share footprints and the City sidewalk pieces (city-grid.js) of the islands there. `fingerprint` is order-free: per
+// input, the count and the sums of two 32-bit hashes of every item's numbers (to 0.1 mm) and kind.
+function hasher() {
+  let h1 = 0, h2 = 0, a = 0, b = 0, n = 0;
+  return {
+    begin() { h1 = 0x9e3779b1; h2 = 0x85ebca6b; },
+    num(v) {
+      const k = Math.round(v * 1e4) | 0; // (coordinates within ±214 km)
+      h1 = Math.imul(h1 ^ k, 0x5bd1e995); h1 ^= h1 >>> 15;
+      h2 = Math.imul(h2 + k, 0xc2b2ae35); h2 ^= h2 >>> 13;
+    },
+    str(t) { for (let i = 0; i < t.length; i++) this.num(t.charCodeAt(i) / 1e4); this.num(-1e-4); },
+    end() { a = (a + (h1 >>> 0)) >>> 0; b = (b + (h2 >>> 0)) >>> 0; n++; },
+    value: () => `${n}:${a.toString(16).padStart(8, '0')}${b.toString(16).padStart(8, '0')}`
+  };
+}
+function patioInputs(CITY, records, staticColliders, furniture) {
+  // (the cells as a bitmap over the records' extent, one test per cell)
+  const C = 80;
+  let i0 = Infinity, i1 = -Infinity, j0 = Infinity, j1 = -Infinity;
+  for (const r of records) {
+    const i = Math.floor(r.x / C), j = Math.floor(r.z / C);
+    if (i - 1 < i0) i0 = i - 1; if (i + 1 > i1) i1 = i + 1; if (j - 1 < j0) j0 = j - 1; if (j + 1 > j1) j1 = j + 1;
+  }
+  const W = i1 - i0 + 1, cells = new Uint8Array(Math.max(0, W * (j1 - j0 + 1)));
+  for (const r of records) {
+    const i = Math.floor(r.x / C), j = Math.floor(r.z / C);
+    for (let a = i - 1; a <= i + 1; a++) for (let b = j - 1; b <= j + 1; b++) cells[(b - j0) * W + a - i0] = 1;
+  }
+  const near = (x0, x1, z0, z1) => {
+    const a0 = Math.max(i0, Math.floor(x0 / C)), a1 = Math.min(i1, Math.floor(x1 / C));
+    const b0 = Math.max(j0, Math.floor(z0 / C)), b1 = Math.min(j1, Math.floor(z1 / C));
+    for (let b = b0; b <= b1; b++) for (let a = a0; a <= a1; a++) if (cells[(b - j0) * W + a - i0]) return true;
+    return false;
+  };
+  const h = { colliders: hasher(), furniture: hasher(), bikeShare: hasher(), sidewalks: hasher() };
+  const colliders = [];
+  for (const c of staticColliders) {
+    if (!(c.maxY > SW + 1.5) || c.maxX - c.minX > 400 || c.maxZ - c.minZ > 400 || !near(c.minX, c.maxX, c.minZ, c.maxZ)) continue;
+    colliders.push(c);
+    const k = h.colliders;
+    k.begin(); k.num(c.minX); k.num(c.maxX); k.num(c.minZ); k.num(c.maxZ);
+    if (c.obb) { k.num(1); k.num(c.obb.cx); k.num(c.obb.cz); k.num(c.obb.hx); k.num(c.obb.hz); k.num(c.obb.cs); k.num(c.obb.sn); }
+    if (c.circle) { k.num(2); k.num(c.circle.x); k.num(c.circle.z); k.num(c.circle.r); }
+    if (c.polygon) { k.num(3); for (const p of c.polygon) { k.num(p.x); k.num(p.z); } }
+    k.end();
+  }
+  const nearFurniture = furniture.filter((f) => near(f.x, f.x, f.z, f.z));
+  for (const f of nearFurniture) { const k = h.furniture; k.begin(); k.str(f.kind); k.num(f.x); k.num(f.z); k.end(); }
+  for (const f of CITY.bikeShareFootprints?.() || []) {
+    const r = Math.hypot(f.hx, f.hz) + 1;
+    if (!near(f.cx - r, f.cx + r, f.cz - r, f.cz + r)) continue;
+    const k = h.bikeShare;
+    k.begin(); k.num(f.cx); k.num(f.cz); k.num(f.hx); k.num(f.hz); k.num(f.cs); k.num(f.sn); k.end();
+  }
+  for (const [id, list] of CITY.sidewalkPieceMap || []) {
+    for (const piece of list) {
+      for (const ring of [piece.outer, ...piece.holes]) {
+        let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+        for (const p of ring) { if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x; if (p.z < z0) z0 = p.z; if (p.z > z1) z1 = p.z; }
+        if (!near(x0, x1, z0, z1)) continue;
+        const k = h.sidewalks;
+        k.begin(); k.str(String(id)); for (const p of ring) { k.num(p.x); k.num(p.z); } k.end();
+      }
+    }
+  }
+  const fingerprint = Object.fromEntries(Object.entries(h).map(([name, k]) => [name, k.value()]));
+  return { colliders, furniture: nearFurniture, fingerprint };
+}
+// (the same hash over plain lists of numbers & strings: tests/cafeto.test.mjs)
+function fingerprintOf(list) {
+  const k = hasher();
+  for (const item of list) { k.begin(); for (const v of item) (typeof v === 'string' ? k.str(v) : k.num(v)); k.end(); }
+  return k.value();
+}
+
+// js/patio-layout.js, loaded on demand (the build fingerprints its URL like the page's scripts)
+let layoutScript = null;
+function loadLayoutScript() {
+  if (window.CITY.patioSites) return Promise.resolve();
+  layoutScript ||= new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = './js/patio-layout.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('patios: js/patio-layout.js did not load'));
+    document.head.appendChild(s);
+  });
+  return layoutScript;
+}
+
+// The layout the runtime algorithm makes now, with the city's own inputs (as before st-cmf)
+async function runtimeLayout(CITY, records, staticColliders, furniture, bikeShareAt) {
+  await loadLayoutScript();
+  const hits = new Set();
+  const blocked = patioBlocked(staticColliders, CITY.WorldCollision, hits);
+  const layout = CITY.patioSites(records, CITY.patioDeps(CITY, { furniture, blocked, bikeShareAt }));
+  return { ...layout, sites: layout.sites.map(({ rect, ...s }) => s), hits };
+}
+
+// Two layouts' placements (the fields the patios are built from), rejections and blockers alike: [] or what differs
+function compareLayouts(built, runtime) {
+  const diff = [];
+  const a = built.sites.map((s) => JSON.stringify(siteRow(s))), b = runtime.sites.map((s) => JSON.stringify(siteRow(s)));
+  if (a.length !== b.length) diff.push(`sites ${a.length} vs ${b.length}`);
+  for (let i = 0; i < Math.max(a.length, b.length) && diff.length < 8; i++) if (a[i] !== b[i]) diff.push(`site ${i}: ${a[i]} vs ${b[i]}`);
+  for (const k of ['rejected', 'blockers']) {
+    const x = JSON.stringify(Object.entries(built[k] || {}).sort()), y = JSON.stringify(Object.entries(runtime[k] || {}).sort());
+    if (x !== y) diff.push(`${k} ${x} vs ${y}`);
+  }
+  return diff;
+}
 
 function hash(a, b) {
   const s = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
@@ -56,44 +233,55 @@ function tableSpots(from, to, door) {
 const CHAIR_COLOURS = [0x1d1d1d, 0x2f5d3a, 0x8c2f2a, 0xb08a5a, 0x3b4f6b, 0xd9d4c7];
 const CANOPY_COLOURS = [0xf1ebdc, 0x9e2b25, 0x2f5d3a, 0x22344f, 0x1f1f1f, 0xd8b04a];
 
-function buildPatios(scene, staticColliders = [], { furniture = [], bikeShareAt = null } = {}) {
+async function buildPatios(scene, staticColliders = [], { furniture = [], bikeShareAt = null } = {}) {
   const CITY = window.CITY;
   const records = CITY.CAFETO?.records || [];
   const date = CITY.SCENE_DATE || { month: 8, day: 22 }; // (lighting.js: the scene's fixed day, 22 August)
-  const stats = { source: CITY.CAFETO?.source || null, counts: CITY.CAFETO?.counts || null, season: CITY.patioSeason?.(date) ?? false,
+  const stats = { source: CITY.CAFETO?.source || null, counts: CITY.CAFETO?.counts || null, season: patioSeason(date),
     accepted: 0, placed: { sidewalk: 0, curb: 0 }, rejected: {}, sites: [], instances: {} };
   CITY.patioStats = stats;
-  const off = new URLSearchParams(location.search).get('patios') === '0';
-  if (!records.length || !CITY.patioSites || off || !stats.season) {
+  const mode = new URLSearchParams(location.search).get('patios'); // '0' off, 'layout' or 'check' recompute
+  const off = mode === '0';
+  if (!records.length || off || !stats.season) {
     console.info(`[patios] none: ${off ? '?patios=0' : !stats.season ? `out of the CaféTO season on ${date.month}/${date.day}` : 'no data'}`);
     return { group: null, colliders: [], pedestrianObstacles: [] };
   }
   const t0 = performance.now();
-  // landmarks & anything else solid the GEO buildings don't cover: the static colliders' boxes in a 32 m grid
-  const W = CITY.WorldCollision, G = 32, grid = new Map();
-  for (const c of staticColliders) {
-    if (!(c.maxY > SW + 1.5) || c.maxX - c.minX > 400 || c.maxZ - c.minZ > 400) continue;
-    for (let i = Math.floor(c.minX / G); i <= Math.floor(c.maxX / G); i++) {
-      for (let j = Math.floor(c.minZ / G); j <= Math.floor(c.maxZ / G); j++) {
-        const k = i * 100003 + j;
-        (grid.get(k) || grid.set(k, []).get(k)).push(c);
-      }
+  // the prebuilt layout, if the city's runtime inputs are still the ones it was built from
+  const inputs = patioInputs(CITY, records, staticColliders, furniture);
+  const PATIOS = CITY.PATIOS;
+  const stale = PATIOS ? Object.keys(inputs.fingerprint).filter((k) => PATIOS.fingerprint?.[k] !== inputs.fingerprint[k]) : ['no js/toronto-patios.js'];
+  stats.fingerprint = { ok: !stale.length, stale, ms: Math.round((performance.now() - t0) * 10) / 10 };
+  let layout;
+  if (mode === 'layout' || mode === 'check' || stale.length) {
+    if (stale.length && mode !== 'layout') {
+      console.warn(`[patios] the prebuilt layout (js/toronto-patios.js) was built from other ${stale.join(', ')}: laid out at startup instead. ` +
+        'Rebuild it: tools/build-patios.mjs (docs/cafeto-patios.md)');
     }
+    const runtime = await runtimeLayout(CITY, records, staticColliders, furniture, bikeShareAt);
+    if (mode === 'layout') {
+      // the generator's input (tools/shots/patio-layout.json, tools/build-patios.mjs): what the algorithm placed and the
+      // runtime inputs it met, near the records
+      CITY.patioLayoutDump = { fingerprint: inputs.fingerprint, fields: SITE_FIELDS, sites: runtime.sites.map(siteRow),
+        rejected: runtime.rejected, blockers: runtime.blockers, reasons: runtime.reasons,
+        replay: { furniture: inputs.furniture, colliders: [...runtime.hits].map(pickCollider) } };
+    }
+    if (mode === 'check' && PATIOS) {
+      const diff = compareLayouts({ sites: builtSites(PATIOS, records), rejected: PATIOS.rejected, blockers: PATIOS.blockers }, runtime);
+      stats.check = { identical: !diff.length, sites: runtime.sites.length, diff };
+      (diff.length ? console.error : console.info)(`[patios] check: the prebuilt layout is ${diff.length ? 'NOT ' : ''}the runtime algorithm's ` +
+        `(${runtime.sites.length} sites)${diff.length ? ': ' + diff.join('; ') : ''}`);
+    }
+    layout = mode === 'check' && PATIOS && !stale.length
+      ? { sites: builtSites(PATIOS, records), rejected: PATIOS.rejected, blockers: PATIOS.blockers, reasons: runtime.reasons }
+      : runtime;
+    stats.layout = mode === 'check' && PATIOS && !stale.length ? 'prebuilt (checked)' : 'runtime';
+  } else {
+    layout = { sites: builtSites(PATIOS, records), rejected: PATIOS.rejected, blockers: PATIOS.blockers };
+    stats.layout = 'prebuilt';
   }
-  const probe = W?.circleShape(0, 0, 0.05);
-  const blocked = (x, z) => {
-    for (const c of grid.get(Math.floor(x / G) * 100003 + Math.floor(z / G)) || []) {
-      if (x < c.minX || x > c.maxX || z < c.minZ || z > c.maxZ) continue;
-      if (!W) return true;
-      W.circleShape(x, z, 0.05, probe);
-      if (W.contact(probe, c)) return true;
-    }
-    return false;
-  };
-  const deps = CITY.patioDeps(CITY, { furniture, blocked, bikeShareAt });
-  const layout = CITY.patioSites(records, deps);
-  Object.assign(stats, { accepted: layout.sites.length, rejected: layout.rejected, blockers: layout.blockers, reasons: layout.reasons,
-    sites: layout.sites.map(({ rect, ...s }) => s) });
+  Object.assign(stats, { accepted: layout.sites.length, rejected: layout.rejected, blockers: layout.blockers, sites: layout.sites });
+  if (layout.reasons) stats.reasons = layout.reasons;
 
   // the instances, in each patio's frame: u along the frontage, v out from the road (toward the building), y up
   const P = { deck: [], barrier: [], planting: [], post: [], rail: [], table: [], chair: [], umbrella: [] };
@@ -214,7 +402,8 @@ function buildPatios(scene, staticColliders = [], { furniture = [], bikeShareAt 
   scene.add(group);
   stats.ms = Math.round(performance.now() - t0);
   console.info(`[patios] CaféTO: ${stats.placed.sidewalk} sidewalk cafés, ${stats.placed.curb} curb lane cafés placed of ` +
-    `${records.length} (${CITY.CAFETO.counts.private} private patios not placed); rejected ${JSON.stringify(layout.rejected)}; ${stats.ms} ms`);
+    `${records.length} (${CITY.CAFETO.counts.private} private patios not placed); rejected ${JSON.stringify(layout.rejected)}; ` +
+    `${stats.layout} layout, ${stats.ms} ms`);
   return { group, colliders, pedestrianObstacles };
 }
 
@@ -255,5 +444,6 @@ function auditPatioLanes(network) {
   return conflicts;
 }
 
-Object.assign(window.CITY, { buildPatios, auditPatioLanes, patioTableSpots: tableSpots });
+Object.assign(window.CITY, { buildPatios, auditPatioLanes, patioTableSpots: tableSpots, patioSeason, patioBlocked, patioInputs,
+  patioFingerprint: fingerprintOf, builtPatioSites: builtSites, patioSiteRow: siteRow, PATIO_SITE_FIELDS: SITE_FIELDS });
 })();

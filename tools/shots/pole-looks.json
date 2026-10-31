@@ -1,0 +1,13 @@
+[
+  {"name": "stats", "mode": "person", "time": "midday", "x": -2050.0, "z": -1895.0, "heading": 3.1416, "js": "(() => {const C=window.CITY,s=C.poleStats||null;const r=s&&{placed:s.placed,looks:s.looks,rejected:s.rejected,tier:C.QUALITY.tier,wires:C.QUALITY.poleWires};console.log('[ride-check] pole looks '+JSON.stringify(r));return r;})()", "record": true, "wait": 2500},
+  {"name": "euclid-day", "mode": "person", "time": "midday", "x": -2050, "z": -1895, "heading": 3.1416, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-2047.5, 1.7, -1932],look:[-2043, 6.5, -2010],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 3500},
+  {"name": "euclid-night", "time": "midnight", "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-2047.5, 1.7, -1932],look:[-2043, 6.5, -2010],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 4500},
+  {"name": "euclid-pole-day", "mode": "person", "time": "midday", "x": -2050, "z": -1960, "heading": 3.1416, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-2049.5, 1.8, -1974],look:[-2043.3, 9.2, -1990],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 3500},
+  {"name": "euclid-pole-night", "time": "midnight", "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-2049.5, 1.8, -1974],look:[-2043.3, 9.2, -1990],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 4500},
+  {"name": "queens-quay-day", "mode": "person", "time": "midday", "x": -1300, "z": 574, "heading": 1.5708, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-1287, 1.7, 573],look:[-1262, 3.2, 565],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 3500},
+  {"name": "queens-quay-night", "time": "midnight", "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-1287, 1.7, 573],look:[-1262, 3.2, 565],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 4500},
+  {"name": "distillery-day", "mode": "person", "time": "midday", "x": 1590, "z": -14, "heading": 1.235, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1597, 1.7, -16],look:[1660, 2.6, 8],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 3500},
+  {"name": "distillery-night", "time": "midnight", "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1597, 1.7, -16],look:[1660, 2.6, 8],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 4500},
+  {"name": "allan-gardens-day", "mode": "person", "time": "midday", "x": 915, "z": -1625, "heading": 2.635, "js": "(()=>{const a=window.__CITY_APP;const c={pos:[902, 1.7, -1621],look:[930, 2.6, -1655],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 3500},
+  {"name": "allan-gardens-night", "time": "midnight", "js": "(()=>{const a=window.__CITY_APP;const c={pos:[902, 1.7, -1621],look:[930, 2.6, -1655],fov:55};a.cameraSystem.cinema=()=>c;})()", "wait": 4500}
+]

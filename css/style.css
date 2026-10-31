@@ -1856,6 +1856,8 @@ body.touch-enabled .pop-item { min-height: 44px; }
 .cat-office { background: #4a5260; }
 .cat-leisure { background: #127d74; }
 .cat-transport { background: #a07800; }
+.cat-art { background: #9a4a2e; }
+.cat-heritage { background: #6b5a3e; }
 
 .ac-text {
   flex: 1;

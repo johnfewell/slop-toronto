@@ -1,7 +1,7 @@
 (function () {
 // Scene-linear color grading and lens bloom, composed in the existing final render pass.
 const { THREE } = window.CITY;
-const { Fn, uniform, float, vec2, vec3, vec4, dot, mix, min, max, pow, smoothstep, length, screenUV, screenSize } = window.CITY.TSL;
+const { Fn, uniform, renderGroup, float, vec2, vec3, vec4, dot, mix, min, max, pow, smoothstep, length, screenUV, screenSize } = window.CITY.TSL;
 const { bloom } = window.CITY.PostFX;
 
 // Exposure and white balance belong to the camera, independently of the physical lighting presets.
@@ -20,10 +20,11 @@ function createPostProcessing(renderer, sceneColor, reflections, options = {}) {
   // RenderPipeline performs ACES and the output color-space conversion exactly once, after this graph.
   renderer.toneMappingExposure = 1.0;
 
-  const exposure = uniform(1.0);
-  const contrast = uniform(1.0);
-  const saturation = uniform(1.0);
-  const balance = uniform(new THREE.Vector3(1, 1, 1));
+  // (the time of day's grade, rewritten by applyPreset: renderGroup uniforms, uploaded once per render)
+  const exposure = uniform(1.0).setGroup(renderGroup);
+  const contrast = uniform(1.0).setGroup(renderGroup);
+  const saturation = uniform(1.0).setGroup(renderGroup);
+  const balance = uniform(new THREE.Vector3(1, 1, 1)).setGroup(renderGroup);
   const exposed = max(reflections ? sceneColor.rgb.add(reflections.rgb) : sceneColor.rgb, vec3(0)).mul(exposure).mul(balance);
 
   // Limit only bloom's peak radiance, scaling RGB together to retain neon and lamp colors.

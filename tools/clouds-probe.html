@@ -1,13 +1,14 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><title>Clouds probe</title>
 <!-- tools/clouds-probe.html: the cloud library's basic example on this page's import map and js/clouds.js, nothing of the city -->
-<!-- ?three=e27: the city's own three (the dev commit explore.html pins) instead of vendor/three's patched 0.186.1 -->
+<!-- ?three=city (or the older ?three=e27): the city's own three (the dev commit explore.html pins) instead of vendor/three's patched 0.186.1 -->
 <script>
 {
-  const E27 = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/';
-  const city = new URLSearchParams(location.search).get('three') === 'e27';
+  const PIN = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@b3396270682287470d161658ac01084d25e8dba6/';
+  const mode = new URLSearchParams(location.search).get('three');
+  const city = mode === 'city' || mode === 'e27';
   const map = city
-    ? { three: E27 + 'build/three.webgpu.js', 'three/webgpu': E27 + 'build/three.webgpu.js', 'three/tsl': E27 + 'build/three.tsl.js', 'three/addons/': E27 + 'examples/jsm/' }
+    ? { three: PIN + 'build/three.webgpu.js', 'three/webgpu': PIN + 'build/three.webgpu.js', 'three/tsl': PIN + 'build/three.tsl.js', 'three/addons/': PIN + 'examples/jsm/' }
     : { three: '../vendor/three/three.webgpu.js', 'three/webgpu': '../vendor/three/three.webgpu.js', 'three/tsl': '../vendor/three/three.tsl.js', 'three/addons/': 'https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/' };
   const el = document.createElement('script');
   el.type = 'importmap';

@@ -1,0 +1,5399 @@
+{
+ "schema": 1,
+ "corridor": {
+  "id": "queen-west-ossington-spadina",
+  "street": "Queen Street West",
+  "x0": -2975,
+  "x1": -1095,
+  "maxPoiDistance": 35
+ },
+ "rules": {
+  "checkDateHigh": "2025-01-01",
+  "checkDateMedium": "2024-01-01",
+  "maxFaceToStreet": 26,
+  "facing": 0.75,
+  "minSpan": 2.4,
+  "halfSpan": 5.5,
+  "minHeight": 3.6
+ },
+ "proposedAt": "2026-10-29",
+ "sources": {
+  "osm": {
+   "dataset": "OpenStreetMap",
+   "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+   "licence": "Open Database License 1.0",
+   "attribution": "© OpenStreetMap contributors",
+   "url": "https://www.openstreetmap.org/copyright"
+  },
+  "cafeto": {
+   "dataset": "CaféTO Locations",
+   "publisher": "City of Toronto",
+   "page": "https://open.toronto.ca/dataset/cafeto-curb-lane-parklet-cafe-locations/",
+   "packageId": "3b605a2e-f3bf-4b2b-b972-c0829b2788f5",
+   "resourceId": "aa839e97-df7f-4c65-8aba-d336bb3c8f06",
+   "resourceName": "Cafe TO Locations - 4326.geojson",
+   "resourceUrl": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/3b605a2e-f3bf-4b2b-b972-c0829b2788f5/resource/aa839e97-df7f-4c65-8aba-d336bb3c8f06/download/cafe-to-locations-4326.geojson",
+   "resourceModified": "2026-09-29T18:55:44.411284",
+   "packageRefreshed": "2026-09-29 18:55:47.697539",
+   "refreshRate": "Monthly",
+   "ckanLicence": "notspecified",
+   "licence": "Open Government Licence – Toronto (stated on the dataset page; the CKAN licence field is \"notspecified\")",
+   "fetchedAt": "2026-10-29T13:51:37.658Z",
+   "sha256": "9a5da68a6b87aac08e8b7d8e39e757dffd76b0f0748dec65ebe19c224ca2ded0",
+   "scope": "current CaféTO permits: business address points with intervention type, not patio footprints or dates",
+   "use": "corroboration only (operator name + municipal address); no permit data is drawn"
+  }
+ },
+ "records": [
+  {
+   "id": "osm:node/1193713289",
+   "face": "to-3dmassing-2025:136615:n",
+   "name": "Urban Outfitters",
+   "sourceName": "Urban Outfitters",
+   "category": "shop=clothes",
+   "address": "481 Queen Street West",
+   "span": [
+    9.29,
+    20.29
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/13051056412",
+   "face": "to-3dmassing-2025:140812:s",
+   "name": "Queen Vape Shop",
+   "sourceName": "Queen Vape Shop",
+   "category": "shop=e-cigarette",
+   "address": "486 Queen Street West",
+   "span": [
+    84.04,
+    86.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/13098959201",
+   "face": "to-3dmassing-2025:107813:s",
+   "name": "The Roasted Nut",
+   "sourceName": "The Roasted Nut",
+   "category": "amenity=cafe",
+   "address": "768 Queen Street West",
+   "span": [
+    0.3,
+    7.89
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    },
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R57-5214653",
+     "operator": "THE ROASTED NUT",
+     "address": "768 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/14232779101",
+   "face": "to-3dmassing-2025:136616:n",
+   "name": "Sumaq Iraqi charcoal grill",
+   "sourceName": "Sumaq Iraqi charcoal grill",
+   "category": "amenity=restaurant",
+   "address": "469 Queen Street West",
+   "span": [
+    11.92,
+    21.09
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-09-29"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/1518404746",
+   "face": "to-3dmassing-2025:136552:n",
+   "name": "Affordable Textiles",
+   "sourceName": "Affordable Textiles",
+   "category": "shop=fabric",
+   "address": "529-531 Queen Street West",
+   "span": [
+    44.9,
+    55.9
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-29"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/1518408467",
+   "face": "to-3dmassing-2025:136543:n",
+   "name": "Trek",
+   "sourceName": "Trek",
+   "category": "shop=bicycle",
+   "address": "625 Queen Street West",
+   "span": [
+    6.34,
+    13.1
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/249295975",
+   "face": "to-3dmassing-2025:140797:s",
+   "name": "Drom Taberna",
+   "sourceName": "Drom Taberna",
+   "category": "amenity=restaurant",
+   "address": "458 Queen Street West",
+   "span": [
+    0.3,
+    8.07
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-29"
+    },
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5527790",
+     "operator": "DROM TABERNA",
+     "address": "458 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/249296393",
+   "face": "to-3dmassing-2025:140824:s",
+   "name": "Shoppers Drug Mart",
+   "sourceName": "Shoppers Drug Mart",
+   "category": "amenity=pharmacy",
+   "address": "524 Queen Street West",
+   "span": [
+    35.98,
+    44.2
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/2503325982",
+   "face": "to-3dmassing-2025:140791:s",
+   "name": "Banh Mi Boys",
+   "sourceName": "Banh Mi Boys",
+   "category": "amenity=restaurant",
+   "address": "392 Queen Street West",
+   "span": [
+    8.58,
+    13.99
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/2702032886",
+   "face": "to-3dmassing-2025:103933:s",
+   "name": "Nadège Patisserie",
+   "sourceName": "Nadège Patisserie",
+   "category": "shop=confectionery",
+   "address": "780 Queen Street West",
+   "span": [
+    0.3,
+    6.5
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-02-14"
+    },
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R57-5634121",
+     "operator": "NADEGE PATISSERIE",
+     "address": "780 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/3196400073",
+   "face": "to-3dmassing-2025:140247:s",
+   "name": "My Roti Place",
+   "sourceName": "My Roti Place",
+   "category": "amenity=fast_food",
+   "address": "406 Queen Street West",
+   "span": [
+    0.3,
+    4.93
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/343273653",
+   "face": "to-3dmassing-2025:136551:n",
+   "name": "Value Buds",
+   "sourceName": "Value Buds",
+   "category": "shop=cannabis",
+   "address": "535 Queen Street West",
+   "span": [
+    0.3,
+    10.3
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-29"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/343275399",
+   "face": "to-3dmassing-2025:101351:n",
+   "name": "Köz Bingöl",
+   "sourceName": "Köz Bingöl",
+   "category": "amenity=restaurant",
+   "address": "655 Queen Street West",
+   "span": [
+    0.3,
+    6.81
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/3696218198",
+   "face": "to-3dmassing-2025:140792:s",
+   "name": "Popeyes",
+   "sourceName": "Popeyes",
+   "category": "amenity=fast_food",
+   "address": "400 Queen Street West",
+   "span": [
+    0.3,
+    6.2
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/3696218733",
+   "face": "to-3dmassing-2025:140801:s",
+   "name": "Downtown Fabrics",
+   "sourceName": "Downtown Fabrics",
+   "category": "shop=fabric",
+   "address": "436 Queen Street West",
+   "span": [
+    69.68,
+    75.53
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/3696218771",
+   "face": "to-3dmassing-2025:140801:s",
+   "name": "Queen Textiles",
+   "sourceName": "Queen Textiles",
+   "category": "shop=fabric",
+   "address": "444 Queen Street West",
+   "span": [
+    40.92,
+    51.92
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/3790946157",
+   "face": "to-3dmassing-2025:140808:s",
+   "name": "BarChef",
+   "sourceName": "BarChef",
+   "category": "amenity=restaurant",
+   "address": "472 Queen Street West",
+   "span": [
+    6.82,
+    12.1
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/4487349355",
+   "face": "to-3dmassing-2025:136591:n",
+   "name": "BMO",
+   "sourceName": "BMO",
+   "category": "amenity=bank",
+   "address": "591 Queen Street West",
+   "span": [
+    23.45,
+    34.45
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/4553273806",
+   "face": "to-3dmassing-2025:107800:s",
+   "name": "Sanko Trading Co.",
+   "sourceName": "Sanko Trading Co.",
+   "category": "shop=houseware",
+   "address": "730 Queen Street West",
+   "span": [
+    0.3,
+    6.48
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/4554883381",
+   "face": "to-3dmassing-2025:107813:s",
+   "name": "Anne Sportun",
+   "sourceName": "Anne Sportun",
+   "category": "shop=jewelry",
+   "address": "742 Queen Street West",
+   "span": [
+    56.53,
+    60.44
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-02-14"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/4559346276",
+   "face": "to-3dmassing-2025:100713:n",
+   "name": "Subway",
+   "sourceName": "Subway",
+   "category": "amenity=fast_food",
+   "address": "841 Queen Street West",
+   "span": [
+    6.65,
+    17.65
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/4559352907",
+   "face": "to-3dmassing-2025:107813:s",
+   "name": "Pizzaiolo",
+   "sourceName": "Pizzaiolo",
+   "category": "amenity=fast_food",
+   "address": "756 Queen Street West",
+   "span": [
+    24.25,
+    28.84
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/4595660196",
+   "face": "to-3dmassing-2025:101262:n",
+   "name": "White Squirrel Coffee Shop",
+   "sourceName": "White Squirrel Coffee Shop",
+   "category": "amenity=cafe",
+   "address": "907 Queen Street West",
+   "span": [
+    0.3,
+    5.44
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/4600965873",
+   "face": "to-3dmassing-2025:107712:s",
+   "name": "Oyster Boy",
+   "sourceName": "Oyster Boy",
+   "category": "amenity=restaurant",
+   "address": "872 Queen Street West",
+   "span": [
+    50.62,
+    54.81
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-02-14"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/4600975095",
+   "face": "to-3dmassing-2025:107712:s",
+   "name": "Le Swan",
+   "sourceName": "Le Swan",
+   "category": "amenity=restaurant",
+   "address": "892 Queen Street West",
+   "span": [
+    1.8,
+    9.49
+   ],
+   "evidence": [
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5568543",
+     "operator": "LE SWAN",
+     "address": "892 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/4636338081",
+   "face": "to-3dmassing-2025:107859:s",
+   "name": "Alpha's Shawarma",
+   "sourceName": "Alpha's Shawarma",
+   "category": "amenity=restaurant",
+   "address": "598 Queen Street West",
+   "span": [
+    21.87,
+    27.5
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5120625026",
+   "face": "to-3dmassing-2025:140812:s",
+   "name": "Comma",
+   "sourceName": "Comma",
+   "category": "amenity=restaurant",
+   "address": "490 Queen Street West",
+   "span": [
+    70.51,
+    75.2
+   ],
+   "evidence": [
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5549024",
+     "operator": "COMMA",
+     "address": "490 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5120631022",
+   "face": "to-3dmassing-2025:140812:s",
+   "name": "La Palette",
+   "sourceName": "La Palette",
+   "category": "amenity=restaurant",
+   "address": "492 Queen Street West",
+   "span": [
+    64.96,
+    70.11
+   ],
+   "evidence": [
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5519502",
+     "operator": "LA PALETTE",
+     "address": "492 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5120659722",
+   "face": "to-3dmassing-2025:140807:s",
+   "name": "Saku",
+   "sourceName": "Saku",
+   "category": "amenity=restaurant",
+   "address": "478 Queen Street West",
+   "span": [
+    6.3,
+    11.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5120661921",
+   "face": "to-3dmassing-2025:140808:s",
+   "name": "Uncle Terry’s",
+   "sourceName": "Uncle Terry’s",
+   "category": "shop=variety_store",
+   "address": "472 Queen Street West",
+   "span": [
+    0.3,
+    6.42
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5255134746",
+   "face": "to-3dmassing-2025:107625:s",
+   "name": "Frankie's Diner",
+   "sourceName": "Frankie's Diner",
+   "category": "amenity=restaurant",
+   "address": "994 Queen Street West",
+   "span": [
+    13.53,
+    19.13
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/527025706",
+   "face": "to-3dmassing-2025:107849:s",
+   "name": "Infinity Mart",
+   "sourceName": "Infinity Mart",
+   "category": "shop=convenience",
+   "address": "652 Queen Street West",
+   "span": [
+    75.04,
+    81.2
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5271002228",
+   "face": "to-3dmassing-2025:104641:s",
+   "name": "Hanji Gifts",
+   "sourceName": "Hanji Gifts",
+   "category": "shop=gift",
+   "address": "940 Queen Street West",
+   "span": [
+    10.56,
+    18.52
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-07-18"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/527229212",
+   "face": "to-3dmassing-2025:101351:n",
+   "name": "Tim Hortons",
+   "sourceName": "Tim Hortons",
+   "category": "amenity=cafe",
+   "address": "659 Queen Street West",
+   "span": [
+    15.02,
+    24.3
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5281244856",
+   "face": "to-3dmassing-2025:107642:s",
+   "name": "Sekai Nail and Beauty Bar",
+   "sourceName": "Sekai Nail and Beauty Bar",
+   "category": "shop=beauty",
+   "address": "968 Queen Street West",
+   "span": [
+    0.3,
+    6.85
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-02-14"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5281246832",
+   "face": "to-3dmassing-2025:104641:s",
+   "name": "Ceniza",
+   "sourceName": "Ceniza",
+   "category": "amenity=restaurant",
+   "address": "942 Queen Street West",
+   "span": [
+    5.34,
+    10.16
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-07-18"
+    },
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5553131",
+     "operator": "CENIZA",
+     "address": "942 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5300205241",
+   "face": "to-3dmassing-2025:107852:s",
+   "name": "Urban Barn",
+   "sourceName": "Urban Barn",
+   "category": "shop=interior_decoration",
+   "address": "610 Queen Street West",
+   "span": [
+    3.52,
+    14.52
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5372865985",
+   "face": "to-3dmassing-2025:101351:n",
+   "name": "International Food Garden",
+   "sourceName": "International Food Garden",
+   "category": "amenity=restaurant",
+   "address": "657 Queen Street West",
+   "span": [
+    7.21,
+    14.62
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5407726543",
+   "face": "to-3dmassing-2025:140803:s",
+   "name": "The Beadery",
+   "sourceName": "The Beadery",
+   "category": "shop=jewelry",
+   "address": "516 Queen Street West",
+   "span": [
+    3.88,
+    12.18
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5438905742",
+   "face": "to-3dmassing-2025:136552:n",
+   "name": "The Grand",
+   "sourceName": "The Grand",
+   "category": "amenity=restaurant",
+   "address": "507 Queen Street West",
+   "span": [
+    0.3,
+    6.7
+   ],
+   "evidence": [
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5524353",
+     "operator": "THE GRAND INDIAN DINING",
+     "address": "507 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5459831221",
+   "face": "to-3dmassing-2025:140791:s",
+   "name": "Stacked",
+   "sourceName": "Stacked",
+   "category": "amenity=restaurant",
+   "address": "394 Queen Street West",
+   "span": [
+    0.3,
+    8.18
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5462444824",
+   "face": "to-3dmassing-2025:140799:s",
+   "name": "Bagels on Fire",
+   "sourceName": "Bagels on Fire",
+   "category": "amenity=fast_food",
+   "address": "426 Queen Street West",
+   "span": [
+    8.34,
+    16.45
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5462455521",
+   "face": "to-3dmassing-2025:140799:s",
+   "name": "Pokito",
+   "sourceName": "Pokito",
+   "category": "amenity=restaurant",
+   "address": "420 Queen Street West",
+   "span": [
+    27.8,
+    33.45
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5462505028",
+   "face": "to-3dmassing-2025:140797:s",
+   "name": "Raku",
+   "sourceName": "Raku",
+   "category": "amenity=restaurant",
+   "address": "456 Queen Street West",
+   "span": [
+    11.8,
+    15.2
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-29"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5462637222",
+   "face": "to-3dmassing-2025:136608:n",
+   "name": "Mama Loves You Vintage",
+   "sourceName": "Mama Loves You Vintage",
+   "category": "shop=clothes",
+   "address": "541 Queen Street West",
+   "span": [
+    0.3,
+    4.08
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5483678480",
+   "face": "to-3dmassing-2025:140799:s",
+   "name": "Camouflage",
+   "sourceName": "Camouflage",
+   "category": "shop=military_surplus",
+   "address": "418 Queen Street West",
+   "span": [
+    33.85,
+    38.75
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5508356522",
+   "face": "to-3dmassing-2025:107798:s",
+   "name": "Psyche",
+   "sourceName": "Psyche",
+   "category": "shop=clothes",
+   "address": "708 Queen Street West",
+   "span": [
+    0.3,
+    6.1
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5508376721",
+   "face": "to-3dmassing-2025:107796:s",
+   "name": "Toy Terminal",
+   "sourceName": "Toy Terminal",
+   "category": "shop=toys",
+   "address": "710 Queen Street West",
+   "span": [
+    3.13,
+    12.3
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5508901522",
+   "face": "to-3dmassing-2025:140791:s",
+   "name": "Gong Cha",
+   "sourceName": "Gong Cha",
+   "category": "amenity=cafe",
+   "address": "390 Queen Street West",
+   "span": [
+    14.39,
+    18.6
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5508919121",
+   "face": "to-3dmassing-2025:140791:s",
+   "name": "Gyuki",
+   "sourceName": "Gyuki",
+   "category": "amenity=restaurant",
+   "address": "388 Queen Street West",
+   "span": [
+    19,
+    22.1
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5711987721",
+   "face": "to-3dmassing-2025:136609:n",
+   "name": "Fresh Picked Fresh Produce & Flowers",
+   "sourceName": "Fresh Picked Fresh Produce & Flowers",
+   "category": "shop=greengrocer",
+   "address": "545 Queen Street West",
+   "span": [
+    0.3,
+    9.1
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5739150521",
+   "face": "to-3dmassing-2025:140800:s",
+   "name": "Domino's",
+   "sourceName": "Domino's",
+   "category": "amenity=fast_food",
+   "address": "410 Queen Street West",
+   "span": [
+    0.3,
+    9.98
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5750547495",
+   "face": "to-3dmassing-2025:101293:n",
+   "name": "The Dog's Bollocks",
+   "sourceName": "The Dog's Bollocks",
+   "category": "amenity=pub",
+   "address": "751 Queen Street West",
+   "span": [
+    0.3,
+    8.27
+   ],
+   "evidence": [
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5511671",
+     "operator": "DOG'S BOLLOCKS PUB",
+     "address": "751 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5782985753",
+   "face": "to-3dmassing-2025:101262:n",
+   "name": "Agora",
+   "sourceName": "Agora",
+   "category": "amenity=restaurant",
+   "address": "921 Queen Street West",
+   "span": [
+    23.84,
+    27.59
+   ],
+   "evidence": [
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5525282",
+     "operator": "THE AGORA",
+     "address": "921 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5837364275",
+   "face": "to-3dmassing-2025:107786:s",
+   "name": "Yellow Drop",
+   "sourceName": "Yellow Drop",
+   "category": "shop=interior_decoration",
+   "address": "618 Queen Street West",
+   "span": [
+    88.35,
+    96.14
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5837375559",
+   "face": "to-3dmassing-2025:107786:s",
+   "name": "A&W",
+   "sourceName": "A&W",
+   "category": "amenity=fast_food",
+   "address": "650.5 Queen Street West",
+   "span": [
+    0.3,
+    6.04
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5837375560",
+   "face": "to-3dmassing-2025:107786:s",
+   "name": "Giant",
+   "sourceName": "Giant",
+   "category": "shop=bicycle",
+   "address": "650 Queen Street West",
+   "span": [
+    6.44,
+    14.2
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-10-18"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5837388919",
+   "face": "to-3dmassing-2025:107846:s",
+   "name": "Warby Parker",
+   "sourceName": "Warby Parker",
+   "category": "shop=optician",
+   "address": "684 Queen Street West",
+   "span": [
+    0.3,
+    6.6
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/5837446363",
+   "face": "to-3dmassing-2025:107813:s",
+   "name": "Bailey Nelson",
+   "sourceName": "Bailey Nelson",
+   "category": "shop=optician",
+   "address": "732 Queen Street West",
+   "span": [
+    74.84,
+    82.2
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6201102916",
+   "face": "to-3dmassing-2025:107712:s",
+   "name": "Suzi Roher",
+   "sourceName": "Suzi Roher",
+   "category": "shop=clothes",
+   "address": "870 Queen Street West",
+   "span": [
+    55.21,
+    60.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6201102917",
+   "face": "to-3dmassing-2025:107712:s",
+   "name": "Mother",
+   "sourceName": "Mother",
+   "category": "amenity=bar",
+   "address": "874 Queen Street West",
+   "span": [
+    46.21,
+    50.22
+   ],
+   "evidence": [
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5516906",
+     "operator": "MOTHER",
+     "address": "874 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6201102924",
+   "face": "to-3dmassing-2025:107712:s",
+   "name": "Tusk",
+   "sourceName": "Tusk",
+   "category": "shop=clothes",
+   "address": "888 Queen Street West",
+   "span": [
+    15.05,
+    18.91
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6201102933",
+   "face": "to-3dmassing-2025:107657:s",
+   "name": "Chadon Beni",
+   "sourceName": "Chadon Beni",
+   "category": "amenity=restaurant",
+   "address": "936 Queen Street West",
+   "span": [
+    0.3,
+    4.36
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    },
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R57-5580073",
+     "operator": "CHADON BENI",
+     "address": "936 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6201102934",
+   "face": "to-3dmassing-2025:107657:s",
+   "name": "Ron's Cigar Store",
+   "sourceName": "Ron's Cigar Store",
+   "category": "shop=tobacco",
+   "address": "934 Queen Street West",
+   "span": [
+    4.76,
+    8.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6201102935",
+   "face": "to-3dmassing-2025:107625:s",
+   "name": "18 Waits",
+   "sourceName": "18 Waits",
+   "category": "shop=clothes",
+   "address": "990 Queen Street West",
+   "span": [
+    25.68,
+    34.23
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-02-14"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6201102938",
+   "face": "to-3dmassing-2025:107625:s",
+   "name": "Show Gallery",
+   "sourceName": "Show Gallery",
+   "category": "shop=art",
+   "address": "978 Queen Street West",
+   "span": [
+    58.53,
+    63.48
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-07-18"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6201102946",
+   "face": "to-3dmassing-2025:107625:s",
+   "name": "Jal Jood",
+   "sourceName": "Jal Jood",
+   "category": "amenity=fast_food",
+   "address": "998 Queen Street West",
+   "span": [
+    0.3,
+    6.78
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6304072399",
+   "face": "to-3dmassing-2025:101262:n",
+   "name": "Matty's Patty's Burger Club",
+   "sourceName": "Matty's Patty's Burger Club",
+   "category": "amenity=fast_food",
+   "address": "923 Queen Street West",
+   "span": [
+    27.99,
+    31.59
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    },
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5508861",
+     "operator": "MATTY'S PATTY'S",
+     "address": "923 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6304072410",
+   "face": "to-3dmassing-2025:101263:n",
+   "name": "Type Books",
+   "sourceName": "Type Books",
+   "category": "shop=books",
+   "address": "883 Queen Street West",
+   "span": [
+    14.73,
+    19.98
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2024-12-27"
+    }
+   ],
+   "confidence": "medium",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218174",
+   "face": "to-3dmassing-2025:100791:n",
+   "name": "The Ten Spot",
+   "sourceName": "The Ten Spot",
+   "category": "shop=beauty",
+   "address": "749 Queen Street West",
+   "span": [
+    7.31,
+    13.2
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218179",
+   "face": "to-3dmassing-2025:100705:n",
+   "name": "Jimmy's Coffee",
+   "sourceName": "Jimmy's Coffee",
+   "category": "amenity=cafe",
+   "address": "735 Queen Street West",
+   "span": [
+    4.44,
+    9.2
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218785",
+   "face": "to-3dmassing-2025:101347:n",
+   "name": "Bloomer's",
+   "sourceName": "Bloomer's",
+   "category": "amenity=cafe",
+   "address": "715 Queen Street West",
+   "span": [
+    0.3,
+    5.5
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-11-12"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218790",
+   "face": "to-3dmassing-2025:101349:n",
+   "name": "Tibet Arts",
+   "sourceName": "Tibet Arts",
+   "category": "shop=interior_decoration",
+   "address": "703 Queen Street West",
+   "span": [
+    0.3,
+    3.09
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-08-24"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218798",
+   "face": "to-3dmassing-2025:101338:n",
+   "name": "The Kettle Modern Indian Canadian Food",
+   "sourceName": "The Kettle Modern Indian Canadian Food",
+   "category": "amenity=restaurant",
+   "address": "685 Queen Street West",
+   "span": [
+    0.3,
+    5.48
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-02-14"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218803",
+   "face": "to-3dmassing-2025:101342:n",
+   "name": "Fuzz Wax Bar",
+   "sourceName": "Fuzz Wax Bar",
+   "category": "shop=beauty",
+   "address": "663 Queen Street West",
+   "span": [
+    0.3,
+    5.51
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218804",
+   "face": "to-3dmassing-2025:107862:s",
+   "name": "Naija Jollof",
+   "sourceName": "Naija Jollof",
+   "category": "amenity=restaurant",
+   "address": "592 Queen Street West",
+   "span": [
+    60.44,
+    65.9
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-07-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218805",
+   "face": "to-3dmassing-2025:107862:s",
+   "name": "Super Queen's Market",
+   "sourceName": "Super Queen's Market",
+   "category": "shop=convenience",
+   "address": "596 Queen Street West",
+   "span": [
+    50.84,
+    60.04
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218807",
+   "face": "to-3dmassing-2025:136582:n",
+   "name": "Abraham's Mirrors Plus",
+   "sourceName": "Abraham's Mirrors Plus",
+   "category": "shop=interior_decoration",
+   "address": "635 Queen Street West",
+   "span": [
+    6.98,
+    13.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218820",
+   "face": "to-3dmassing-2025:107859:s",
+   "name": "Home Craft Decor",
+   "sourceName": "Home Craft Decor",
+   "category": "shop=furniture",
+   "address": "600 Queen Street West",
+   "span": [
+    14.2,
+    21.47
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218821",
+   "face": "to-3dmassing-2025:107858:s",
+   "name": "Fresh 1 Market",
+   "sourceName": "Fresh 1 Market",
+   "category": "shop=greengrocer",
+   "address": "614 Queen Street West",
+   "span": [
+    0.3,
+    7.5
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218824",
+   "face": "to-3dmassing-2025:107786:s",
+   "name": "Zakkushi",
+   "sourceName": "Zakkushi",
+   "category": "amenity=restaurant",
+   "address": "620 Queen Street West",
+   "span": [
+    83.85,
+    87.95
+   ],
+   "evidence": [
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5534449",
+     "operator": "ZAKKUSHI ON QUEEN",
+     "address": "620 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218837",
+   "face": "to-3dmassing-2025:107849:s",
+   "name": "World of Posters",
+   "sourceName": "World of Posters",
+   "category": "shop=art",
+   "address": "664 Queen Street West",
+   "span": [
+    45.56,
+    51.77
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218851",
+   "face": "to-3dmassing-2025:107803:s",
+   "name": "Queen Dental",
+   "sourceName": "Queen Dental",
+   "category": "amenity=dentist",
+   "address": "718 Queen Street West",
+   "span": [
+    13.36,
+    18.61
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218854",
+   "face": "to-3dmassing-2025:107800:s",
+   "name": "Doc's Leathers",
+   "sourceName": "Doc's Leathers",
+   "category": "shop=leather",
+   "address": "726 Queen Street West",
+   "span": [
+    12.48,
+    18.1
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6358218855",
+   "face": "to-3dmassing-2025:107800:s",
+   "name": "Cafe23",
+   "sourceName": "Cafe23",
+   "category": "amenity=internet_cafe",
+   "address": "728 Queen Street West",
+   "span": [
+    6.88,
+    12.08
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-01-17"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6369142350",
+   "face": "to-3dmassing-2025:140828:s",
+   "name": "Queens Fruit Market & Plants",
+   "sourceName": "Queens Fruit Market & Plants",
+   "category": "shop=greengrocer",
+   "address": "564 Queen Street West",
+   "span": [
+    41.44,
+    50.19
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-10-18"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419678817",
+   "face": "to-3dmassing-2025:136468:n",
+   "name": "Burrito Boyz",
+   "sourceName": "Burrito Boyz",
+   "category": "amenity=fast_food",
+   "address": "489 Queen Street West",
+   "span": [
+    0.3,
+    4.81
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419730372",
+   "face": "to-3dmassing-2025:136578:n",
+   "name": "Saffron Spice Kitchen",
+   "sourceName": "Saffron Spice Kitchen",
+   "category": "amenity=fast_food",
+   "address": "459 Queen Street West",
+   "span": [
+    0.3,
+    4.66
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-06-28"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419730377",
+   "face": "to-3dmassing-2025:136617:n",
+   "name": "Leo's Textiles",
+   "sourceName": "Leo's Textiles",
+   "category": "shop=fabric",
+   "address": "473 Queen Street West",
+   "span": [
+    0.84,
+    11.84
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419730379",
+   "face": "to-3dmassing-2025:136615:n",
+   "name": "Vero Italian Sandwich Co.",
+   "sourceName": "Vero Italian Sandwich Co.",
+   "category": "amenity=fast_food",
+   "address": "477 Queen Street West",
+   "span": [
+    0.3,
+    8.73
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419859626",
+   "face": "to-3dmassing-2025:136608:n",
+   "name": "Hi Beads",
+   "sourceName": "Hi Beads",
+   "category": "shop=sewing",
+   "address": "543 Queen Street West",
+   "span": [
+    4.48,
+    8.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419900830",
+   "face": "to-3dmassing-2025:140247:s",
+   "name": "Allwyn's",
+   "sourceName": "Allwyn's",
+   "category": "amenity=fast_food",
+   "address": "404 Queen Street West",
+   "span": [
+    5.33,
+    9.74
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419900831",
+   "face": "to-3dmassing-2025:140247:s",
+   "name": "Kinton Ramen",
+   "sourceName": "Kinton Ramen",
+   "category": "amenity=restaurant",
+   "address": "402 Queen Street West",
+   "span": [
+    10.14,
+    14.9
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419914088",
+   "face": "to-3dmassing-2025:140799:s",
+   "name": "Nails Queen",
+   "sourceName": "Nails Queen",
+   "category": "shop=beauty",
+   "address": "422 Queen Street West",
+   "span": [
+    22.4,
+    27.4
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419914089",
+   "face": "to-3dmassing-2025:140799:s",
+   "name": "Shelby's",
+   "sourceName": "Shelby's",
+   "category": "amenity=fast_food",
+   "address": "416 Queen Street West",
+   "span": [
+    39.15,
+    42.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419914091",
+   "face": "to-3dmassing-2025:140798:s",
+   "name": "to-ne Sushi",
+   "sourceName": "to-ne Sushi",
+   "category": "amenity=restaurant",
+   "address": "414 Queen Street West",
+   "span": [
+    0.3,
+    5.3
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419914092",
+   "face": "to-3dmassing-2025:140799:s",
+   "name": "Yukimi",
+   "sourceName": "Yukimi",
+   "category": "amenity=restaurant",
+   "address": "412 Queen Street West",
+   "span": [
+    50.3,
+    54.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419928812",
+   "face": "to-3dmassing-2025:140801:s",
+   "name": "L&M Trading Company",
+   "sourceName": "L&M Trading Company",
+   "category": "shop=gift",
+   "address": "434 Queen Street West",
+   "span": [
+    75.93,
+    84.63
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419955862",
+   "face": "to-3dmassing-2025:140813:s",
+   "name": "Wendy's",
+   "sourceName": "Wendy's",
+   "category": "amenity=fast_food",
+   "address": "482-484 Queen Street West",
+   "span": [
+    0.3,
+    6.21
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    },
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R57-5557131",
+     "operator": "WENDYS",
+     "address": "484 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6419955863",
+   "face": "to-3dmassing-2025:140813:s",
+   "name": "The Well Bar Restaurant",
+   "sourceName": "The Well Bar Restaurant",
+   "category": "amenity=restaurant",
+   "address": "482 Queen Street West",
+   "span": [
+    6.61,
+    15.41
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6483221075",
+   "face": "to-3dmassing-2025:136543:n",
+   "name": "Optical Thirty 8",
+   "sourceName": "Optical Thirty 8",
+   "category": "shop=optician",
+   "address": "623 Queen Street West",
+   "span": [
+    0.3,
+    5.94
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-08-24"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/6483221079",
+   "face": "to-3dmassing-2025:136587:n",
+   "name": "Old Times Antiques",
+   "sourceName": "Old Times Antiques",
+   "category": "shop=antiques",
+   "address": "607B Queen Street West",
+   "span": [
+    4.02,
+    6.67
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-02-14"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/728032357",
+   "face": "to-3dmassing-2025:140822:s",
+   "name": "Bangkok Queen Thai Street Food",
+   "sourceName": "Bangkok Queen Thai Street Food",
+   "category": "amenity=fast_food",
+   "address": "578 Queen Street West",
+   "span": [
+    3.39,
+    10.64
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/803212907",
+   "face": "to-3dmassing-2025:101262:n",
+   "name": "Queen West Animal Hospital",
+   "sourceName": "Queen West Animal Hospital",
+   "category": "amenity=veterinary",
+   "address": "931 Queen Street West",
+   "span": [
+    46.8,
+    53.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/803223221",
+   "face": "to-3dmassing-2025:100741:n",
+   "name": "Smoque N' Bones",
+   "sourceName": "Smoque N' Bones",
+   "category": "amenity=restaurant",
+   "address": "869 Queen Street West",
+   "span": [
+    21.34,
+    24.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2026-03-21"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/9027140217",
+   "face": "to-3dmassing-2025:136607:n",
+   "name": "Rosie’s Burger",
+   "sourceName": "Rosie’s Burger",
+   "category": "amenity=restaurant",
+   "address": "573 Queen Street West",
+   "span": [
+    0.3,
+    6.7
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    },
+    {
+     "source": "cafeto",
+     "kind": "permit",
+     "licence": "R58-5619813",
+     "operator": "ROSIE'S BURGERS - QUEEN",
+     "address": "573 QUEEN ST W"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  },
+  {
+   "id": "osm:node/9736043272",
+   "face": "to-3dmassing-2025:136614:n",
+   "name": "Circle K",
+   "sourceName": "Circle K",
+   "category": "shop=convenience",
+   "address": "485 Queen Street West",
+   "span": [
+    0.3,
+    8.5
+   ],
+   "evidence": [
+    {
+     "source": "osm",
+     "kind": "check_date",
+     "date": "2025-12-06"
+    }
+   ],
+   "confidence": "high",
+   "source": {
+    "dataset": "OpenStreetMap",
+    "extract": "Geofabrik ontario-latest.osm.pbf of 2026-10-23 (the geodata’s extract)",
+    "licence": "ODbL-1.0"
+   },
+   "rights": "Name from OpenStreetMap (ODbL 1.0, © OpenStreetMap contributors), drawn as plain lettering; no logo or trade dress.",
+   "enabled": true,
+   "review": {
+    "status": "rules",
+    "by": "tools/build-storefront-signs.mjs",
+    "date": "2026-10-29",
+    "note": "Automated evidence rules only; awaiting a person’s review of the contact sheet before release."
+   }
+  }
+ ],
+ "rejected": [
+  {
+   "id": "osm:node/10587100605",
+   "name": "Tibet Kitchen",
+   "address": "757 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/10834085050",
+   "name": "Wow Vape & Smoke Shop",
+   "address": "",
+   "category": "shop=tobacco",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/10834103828",
+   "name": "Value Village Boutique",
+   "address": "",
+   "category": "shop=second_hand",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/10834111629",
+   "name": "Men-i-cure",
+   "address": "",
+   "category": "shop=hairdresser",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/10920735206",
+   "name": "Three Monks and a Duck",
+   "address": "",
+   "category": "amenity=bar",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/10935671450",
+   "name": "Chez Paul",
+   "address": "833 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/11038013830",
+   "name": "Il Vegano",
+   "address": "502 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/1193713921",
+   "name": "Java House",
+   "address": "537 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "CaféTO permit at the address names another operator",
+   "conflict": [
+    "JAVA CAFE"
+   ]
+  },
+  {
+   "id": "osm:node/1193714298",
+   "name": "Brothers Convenience",
+   "address": "486 Queen Street West",
+   "category": "shop=convenience",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/1193715617",
+   "name": "Pavillon",
+   "address": "",
+   "category": "shop=furniture",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/12050205901",
+   "name": "Image Makeover Hair Salon",
+   "address": "426 Queen Street West",
+   "category": "shop=hairdresser",
+   "reason": "level 1"
+  },
+  {
+   "id": "osm:node/12406036029",
+   "name": "Area Rug Shop",
+   "address": "593 Queen Street West",
+   "category": "shop=carpet",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/12996582458",
+   "name": "416 Snack Bar",
+   "address": "",
+   "category": "amenity=restaurant",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/13241421526",
+   "name": "Convenience Canada",
+   "address": "",
+   "category": "shop=convenience",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/13241431973",
+   "name": "Vape Spot",
+   "address": "",
+   "category": "shop=e-cigarette",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/13666936734",
+   "name": "Sharpen",
+   "address": "950 Queen Street West",
+   "category": "shop=sewing",
+   "reason": "not inside a mapped building"
+  },
+  {
+   "id": "osm:node/13666975529",
+   "name": "G-Express",
+   "address": "",
+   "category": "amenity=restaurant",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/13718811228",
+   "name": "The Légère Studio",
+   "address": "489 Queen Street West",
+   "category": "shop=musical_instrument",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/13878929126",
+   "name": "Renso Pho-Potle",
+   "address": "506 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/14057041601",
+   "name": "Prime Seafood Palace",
+   "address": "944 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/14057070403",
+   "name": "Maguire",
+   "address": "760 Queen Street West",
+   "category": "shop=shoes",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/14100163801",
+   "name": "Underprice Convenience Store",
+   "address": "166A Spadina Avenue",
+   "category": "shop=convenience",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/14181361019",
+   "name": "Sumaq Iraqi Charcoal Grill - Downtown",
+   "address": "",
+   "category": "amenity=restaurant",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/14232875608",
+   "name": "Under Price Convenience Store",
+   "address": "",
+   "category": "shop=convenience",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/1518406892",
+   "name": "Loblaws",
+   "address": "585 Queen Street West",
+   "category": "shop=supermarket",
+   "reason": "level 1"
+  },
+  {
+   "id": "osm:node/2848608602",
+   "name": "CB2",
+   "address": "",
+   "category": "shop=furniture",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/2848619201",
+   "name": "Noce Restaurant & Bar",
+   "address": "875 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "CaféTO permit at the address names another operator",
+   "conflict": [
+    "LITTLE ESE"
+   ]
+  },
+  {
+   "id": "osm:node/3009594422",
+   "name": "Chibap",
+   "address": "463 Queen Street West",
+   "category": "amenity=fast_food",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/3009596928",
+   "name": "Yes Electric Tattoo",
+   "address": "499 Queen Street West",
+   "category": "shop=tattoo",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/343275015",
+   "name": "Cosmos Records",
+   "address": "607A Queen Street West",
+   "category": "shop=music",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/3696218731",
+   "name": "Chu Shing Textiles",
+   "address": "440 Queen Street West",
+   "category": "shop=fabric",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/3696218864",
+   "name": "Fabric by Designers",
+   "address": "452 Queen Street West",
+   "category": "shop=sewing",
+   "reason": "level 1"
+  },
+  {
+   "id": "osm:node/4036638096",
+   "name": "Cameron House",
+   "address": "14 Cameron Street",
+   "category": "amenity=pub",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/4487349356",
+   "name": "LCBO",
+   "address": "",
+   "category": "shop=alcohol",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/4547293689",
+   "name": "Kenzo Ramen",
+   "address": "671 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4551579923",
+   "name": "Australian Boot Company",
+   "address": "698 Queen Street West",
+   "category": "shop=shoes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4551581161",
+   "name": "L'Occitane",
+   "address": "692 Queen Street West",
+   "category": "shop=cosmetics",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4554860285",
+   "name": "Coal Miner's Daughter",
+   "address": "744 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4554885131",
+   "name": "Spectacle",
+   "address": "752 Queen Street West",
+   "category": "shop=optician",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4559351881",
+   "name": "FloorPlay Socks",
+   "address": "762 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/4562863066",
+   "name": "Timmie Doggie Outfitters",
+   "address": "867 Queen Street West",
+   "category": "shop=pet",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4562876825",
+   "name": "Done Right Inn",
+   "address": "861 Queen Street West",
+   "category": "amenity=pub",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4569866291",
+   "name": "Helmutt's Pet Supply",
+   "address": "865 Queen Street West",
+   "category": "shop=pet",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4569869566",
+   "name": "H Bar",
+   "address": "859 Queen Street West",
+   "category": "amenity=bar",
+   "reason": "CaféTO permit at the address names another operator",
+   "conflict": [
+    "HUGS & SARCASM",
+    "HUGS & SARCASM"
+   ]
+  },
+  {
+   "id": "osm:node/4569872167",
+   "name": "Zumel & Co.",
+   "address": "863 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4595604775",
+   "name": "Park & Province",
+   "address": "927 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4599097650",
+   "name": "The Paper Place",
+   "address": "887 Queen Street West",
+   "category": "shop=stationery",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4599104014",
+   "name": "The Spice Trader",
+   "address": "877 Queen Street West",
+   "category": "shop=deli",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4599105026",
+   "name": "Fortnight",
+   "address": "913 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4636332137",
+   "name": "The Paddock Traven",
+   "address": "178 Bathurst Street",
+   "category": "amenity=bar",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/4919963780",
+   "name": "BYOB Cocktail Emporium",
+   "address": "972 Queen Street West",
+   "category": "shop=cocktail",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4919964154",
+   "name": "Nugateau",
+   "address": "717 Queen Street West",
+   "category": "shop=pastry",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/4957603022",
+   "name": "Nana's green curry",
+   "address": "",
+   "category": "amenity=restaurant",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/5020783822",
+   "name": "Dufflet Pastries",
+   "address": "787 Queen Street West",
+   "category": "shop=pastry",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5051702221",
+   "name": "Harlem Underground",
+   "address": "745 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "CaféTO permit at the address names another operator",
+   "conflict": [
+    "AGAVE AZUL"
+   ]
+  },
+  {
+   "id": "osm:node/5094697307",
+   "name": "Early Bird",
+   "address": "613 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120616222",
+   "name": "I Love Sushi",
+   "address": "494 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120625021",
+   "name": "Get Fresh Company",
+   "address": "498 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120625022",
+   "name": "Tequila Bookworm",
+   "address": "512 Queen Street West",
+   "category": "amenity=bar",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/5120625023",
+   "name": "Organic Nail Bar",
+   "address": "496 Queen Street West",
+   "category": "shop=beauty",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120625024",
+   "name": "Roti Mahal",
+   "address": "554 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120634721",
+   "name": "Pat's Homestyle Jamaican Restaurant",
+   "address": "558 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120656223",
+   "name": "Wool House",
+   "address": "454 Queen Street West",
+   "category": "shop=tailor",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120659721",
+   "name": "Natural Foods",
+   "address": "506 Queen Street West",
+   "category": "shop=supermarket",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120660321",
+   "name": "Roma Rush",
+   "address": "504 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120660322",
+   "name": "Joe Fresh",
+   "address": "589 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120666421",
+   "name": "DeMen Bistro",
+   "address": "500 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120678022",
+   "name": "Cannaverse",
+   "address": "438 Queen Street West",
+   "category": "shop=cannabis",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120678321",
+   "name": "Winners",
+   "address": "",
+   "category": "shop=department_store",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/5120679521",
+   "name": "Vape29",
+   "address": "452 Queen Street West",
+   "category": "shop=tobacco",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120684321",
+   "name": "Off the Wall",
+   "address": "450 Queen Street West",
+   "category": "shop=art",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5120695722",
+   "name": "Comfort Nails",
+   "address": "561 Queen Street West",
+   "category": "shop=beauty",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/527025686",
+   "name": "817 Sports Bar & Grill",
+   "address": "817 Queen Street West",
+   "category": "amenity=pub",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/527025712",
+   "name": "Pizzaiolo",
+   "address": "624 Queen Street West",
+   "category": "amenity=fast_food",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5294931924",
+   "name": "Bovine Sex Club",
+   "address": "542 Queen Street West",
+   "category": "amenity=bar",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5294936559",
+   "name": "Osteria Du",
+   "address": "536 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/5300198816",
+   "name": "Shanti Baba",
+   "address": "546 Queen Street West",
+   "category": "shop=gift",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5314426142",
+   "name": "Jacob & Sebastian",
+   "address": "622 Queen Street West",
+   "category": "shop=cosmetics",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5314429033",
+   "name": "Cafe Nuna",
+   "address": "626 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5380694564",
+   "name": "Banu",
+   "address": "777 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "CaféTO permit at the address names another operator",
+   "conflict": [
+    "SHAMEFUL TIKI ROOM"
+   ]
+  },
+  {
+   "id": "osm:node/5438908213",
+   "name": "World Sew Centre",
+   "address": "511 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5459132774",
+   "name": "Bling Bling On Queen",
+   "address": "448 Queen Street West",
+   "category": "shop=jewelry",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5462637237",
+   "name": "Mokuba",
+   "address": "575 Queen Street West",
+   "category": "shop=fabric",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5462654721",
+   "name": "Lisa Marie",
+   "address": "638 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5462654723",
+   "name": "La Hacienda Restaurant",
+   "address": "640 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5462705221",
+   "name": "BRIKA",
+   "address": "642 Queen Street West",
+   "category": "shop=furniture",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5508319722",
+   "name": "Cumbrae's",
+   "address": "714 Queen Street West",
+   "category": "shop=butcher",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5508527922",
+   "name": "Mini Mioche",
+   "address": "795 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5508798422",
+   "name": "Deciem",
+   "address": "881 Queen Street West",
+   "category": "shop=cosmetics",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5508835322",
+   "name": "Kotn",
+   "address": "754 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5508880821",
+   "name": "Lipstick & Dynamite",
+   "address": "992 Queen Street West",
+   "category": "amenity=bar",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5508939023",
+   "name": "Hayley Elsaesser Fashion",
+   "address": "695 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5508975721",
+   "name": "Fashionably Yours Designer Consignment",
+   "address": "709 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5575081846",
+   "name": "Morba",
+   "address": "665-667 Queen Street West",
+   "category": "shop=furniture",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5711958522",
+   "name": "Chatime",
+   "address": "461 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5712020721",
+   "name": "mim",
+   "address": "493 Queen Street West",
+   "category": "shop=furniture",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5712163922",
+   "name": "Outer Layer",
+   "address": "577 Queen Street West",
+   "category": "shop=gift",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5712207522",
+   "name": "GNC",
+   "address": "601 Queen Street West",
+   "category": "shop=nutrition_supplements",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5745878321",
+   "name": "iHalo Krunch",
+   "address": "831 Queen Street West",
+   "category": "amenity=ice_cream",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5837364274",
+   "name": "Queen West Barbers",
+   "address": "",
+   "category": "shop=hairdresser",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/5837364276",
+   "name": "Frank and Oak",
+   "address": "634 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5837375557",
+   "name": "Yummi Candles",
+   "address": "654 Queen Street West",
+   "category": "shop=candles",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5837375558",
+   "name": "Harlots",
+   "address": "660 Queen Street West",
+   "category": "shop=hairdresser",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5837388917",
+   "name": "Soufi's",
+   "address": "676 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5837388918",
+   "name": "Kolkid",
+   "address": "674 Queen Street West",
+   "category": "shop=toys",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5837388920",
+   "name": "Virgin Plus",
+   "address": "680 Queen Street West",
+   "category": "shop=mobile_phone",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/5837446366",
+   "name": "Ben Sherman",
+   "address": "734 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102912",
+   "name": "Cooney for Hair",
+   "address": "",
+   "category": "shop=hairdresser",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6201102913",
+   "name": "Platinum Health & Wellness",
+   "address": "",
+   "category": "amenity=doctors",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6201102914",
+   "name": "Atomic",
+   "address": "",
+   "category": "shop=furniture",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6201102915",
+   "name": "Fawn",
+   "address": "",
+   "category": "shop=clothes",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6201102918",
+   "name": "Le Labo",
+   "address": "876 Queen Street West",
+   "category": "shop=perfumery",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102919",
+   "name": "Locks & Mane",
+   "address": "878 Queen Street West",
+   "category": "shop=beauty",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102920",
+   "name": "Aesop",
+   "address": "880 Queen Street West",
+   "category": "shop=cosmetics",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102921",
+   "name": "Stuart Jackson Gallery",
+   "address": "882 Queen Street West",
+   "category": "shop=antiques",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102922",
+   "name": "Consign Toronto",
+   "address": "884 Queen Street West",
+   "category": "shop=second_hand",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102923",
+   "name": "Gaspard",
+   "address": "886 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102925",
+   "name": "Trinity Flower Cannabis",
+   "address": "890 Queen Street West",
+   "category": "shop=cannabis",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102927",
+   "name": "Mercat del Carmen",
+   "address": "920 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102928",
+   "name": "Carmen",
+   "address": "922 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102929",
+   "name": "Jules Bistro",
+   "address": "924 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102930",
+   "name": "Philistine",
+   "address": "928 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102932",
+   "name": "AMA",
+   "address": "930 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102939",
+   "name": "Paul Petro",
+   "address": "980 Queen Street West",
+   "category": "shop=art",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102942",
+   "name": "The Citizen Room",
+   "address": "982 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102945",
+   "name": "Montgomery's",
+   "address": "996 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102949",
+   "name": "Hong Phat",
+   "address": "974 Queen Street West",
+   "category": "shop=convenience",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102954",
+   "name": "Foreign Rider Co",
+   "address": "964 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6201102955",
+   "name": "Rainbow Collective",
+   "address": "962 Queen Street West",
+   "category": "shop=craft",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6258659224",
+   "name": "Logan & Finley",
+   "address": "670 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072400",
+   "name": "The Siista'r",
+   "address": "919 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072402",
+   "name": "The Library Coffee",
+   "address": "917 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072405",
+   "name": "Art. 27",
+   "address": "899 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "gap in the plan at the place"
+  },
+  {
+   "id": "osm:node/6304072406",
+   "name": "Layover",
+   "address": "903 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "wall set back from the street"
+  },
+  {
+   "id": "osm:node/6304072409",
+   "name": "Hooky's Fish n Chips",
+   "address": "893 Queen Street West",
+   "category": "amenity=fast_food",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072419",
+   "name": "Meg",
+   "address": "",
+   "category": "shop=clothes",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6304072422",
+   "name": "Studio Kim",
+   "address": "851 Queen Street West",
+   "category": "shop=tailor",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072424",
+   "name": "Sugar & Scruff",
+   "address": "847 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072426",
+   "name": "Show Nails Salon",
+   "address": "",
+   "category": "shop=beauty",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6304072427",
+   "name": "Banh Mi T.O.",
+   "address": "",
+   "category": "amenity=fast_food",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6304072434",
+   "name": "Rock 'N Karma",
+   "address": "789 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072435",
+   "name": "Shop Andrew",
+   "address": "793 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072436",
+   "name": "Victor Gallery",
+   "address": "799 Queen Street West",
+   "category": "shop=art",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072438",
+   "name": "Blitz Facial Bar",
+   "address": "803 Queen Street West",
+   "category": "shop=beauty",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072439",
+   "name": "Visual Eyes",
+   "address": "805 Queen Street West",
+   "category": "shop=optician",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6304072440",
+   "name": "Squirly's",
+   "address": "",
+   "category": "amenity=restaurant",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6304072442",
+   "name": "Medulla & Co.",
+   "address": "",
+   "category": "shop=hairdresser",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6304072443",
+   "name": "Thai Elephant",
+   "address": "",
+   "category": "amenity=restaurant",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6304072444",
+   "name": "Consonant",
+   "address": "",
+   "category": "shop=cosmetics",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6304072445",
+   "name": "Anti-Hero 13",
+   "address": "",
+   "category": "shop=clothes",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6304072447",
+   "name": "VDL",
+   "address": "",
+   "category": "shop=cosmetics",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6304072448",
+   "name": "Dlish Cupcakes",
+   "address": "",
+   "category": "amenity=cafe",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6336677660",
+   "name": "Ramen x Remix",
+   "address": "424 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218164",
+   "name": "Hair by Banks",
+   "address": "",
+   "category": "shop=hairdresser",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6358218165",
+   "name": "Milagro",
+   "address": "",
+   "category": "amenity=restaurant",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6358218166",
+   "name": "Deluxe Collab Collections",
+   "address": "781 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218167",
+   "name": "Kit and Ace",
+   "address": "779 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218168",
+   "name": "Heel Boy",
+   "address": "773 Queen Street West",
+   "category": "shop=shoes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218170",
+   "name": "Wong's Fruit Market",
+   "address": "757 Queen Street West",
+   "category": "shop=greengrocer",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218171",
+   "name": "Zane",
+   "address": "",
+   "category": "shop=clothes",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6358218175",
+   "name": "Karahi Boys",
+   "address": "",
+   "category": "amenity=restaurant",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6358218176",
+   "name": "The Raq",
+   "address": "",
+   "category": "amenity=bar",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6358218180",
+   "name": "Frank and Oak",
+   "address": "735 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218182",
+   "name": "Chippewar Nation",
+   "address": "721 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "level -1"
+  },
+  {
+   "id": "osm:node/6358218183",
+   "name": "W Salon",
+   "address": "721 Queen Street West",
+   "category": "shop=hairdresser",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218786",
+   "name": "Queen Street Laundry",
+   "address": "713 Queen Street West",
+   "category": "shop=laundry",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218787",
+   "name": "Tryst",
+   "address": "711 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218788",
+   "name": "BLVD Interiors",
+   "address": "707 Queen Street West",
+   "category": "shop=interior_decoration",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218789",
+   "name": "Odds and Ends",
+   "address": "703A Queen Street West",
+   "category": "shop=second_hand",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218791",
+   "name": "Fuzz Wax Bar",
+   "address": "701 Queen Street West",
+   "category": "shop=beauty",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218792",
+   "name": "Jolie Maison",
+   "address": "699 Queen Street West",
+   "category": "shop=interior_decoration",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218793",
+   "name": "Good Hearts",
+   "address": "697 Queen Street West",
+   "category": "shop=hairdresser",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218795",
+   "name": "Queen Street Dental Clinic",
+   "address": "691 Queen Street West",
+   "category": "amenity=dentist",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218796",
+   "name": "Cash Money",
+   "address": "",
+   "category": "shop=money_lender",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6358218797",
+   "name": "RusTeak",
+   "address": "685 Queen Street West",
+   "category": "shop=interior_decoration",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218799",
+   "name": "Aiyana Nail Spa",
+   "address": "673 Queen Street West",
+   "category": "shop=beauty",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218800",
+   "name": "i'm mochi!",
+   "address": "677 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218801",
+   "name": "Abby's Convenience and Wireless Club",
+   "address": "675 Queen Street West",
+   "category": "shop=convenience",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218806",
+   "name": "Strange Love",
+   "address": "627 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218808",
+   "name": "Abstract Arts Tattoos",
+   "address": "627 Queen Street West",
+   "category": "shop=tattoo",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218809",
+   "name": "Nikolau Restaurant Equipment",
+   "address": "629 Queen Street West",
+   "category": "shop=houseware",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218810",
+   "name": "High Street",
+   "address": "633 Queen Street West",
+   "category": "shop=headshop",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218812",
+   "name": "Rosie the Rebel",
+   "address": "604 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218813",
+   "name": "U3 Consignment",
+   "address": "604 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218814",
+   "name": "Pretty Hardware",
+   "address": "604 Queen Street West",
+   "category": "shop=interior_decoration",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218815",
+   "name": "Belle Époque",
+   "address": "604 Queen Street West",
+   "category": "shop=interior_decoration",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218816",
+   "name": "Châtelet",
+   "address": "604 Queen Street West",
+   "category": "shop=interior_decoration",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218817",
+   "name": "Naked Bodyz Fashion",
+   "address": "606 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218822",
+   "name": "On Third Thought",
+   "address": "6 Markham Street",
+   "category": "amenity=ice_cream",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6358218827",
+   "name": "Neat",
+   "address": "628 Queen Street West",
+   "category": "shop=interior_decoration",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218829",
+   "name": "Swaby",
+   "address": "632 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218830",
+   "name": "Lazy Goose",
+   "address": "636 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218831",
+   "name": "Corina & H.",
+   "address": "648 Queen Street West",
+   "category": "shop=hairdresser",
+   "reason": "level 1"
+  },
+  {
+   "id": "osm:node/6358218833",
+   "name": "Ramen Misoya",
+   "address": "646 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/6358218835",
+   "name": "Shyboy & Tex Repair",
+   "address": "658 Queen Street West",
+   "category": "shop=musical_instrument",
+   "reason": "level 1"
+  },
+  {
+   "id": "osm:node/6358218839",
+   "name": "Tokyo Smoke",
+   "address": "668 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218840",
+   "name": "Lip Lab by Bite",
+   "address": "678 Queen Street West",
+   "category": "shop=beauty",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218841",
+   "name": "Sydney's",
+   "address": "682 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218844",
+   "name": "Lisa Drader-Murphy",
+   "address": "690 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218845",
+   "name": "Filson",
+   "address": "694 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218847",
+   "name": "The Latet Scoop",
+   "address": "700 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218848",
+   "name": "Call and Response",
+   "address": "702 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218849",
+   "name": "Dutil",
+   "address": "704 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218850",
+   "name": "Sud Forno",
+   "address": "716 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218852",
+   "name": "Terroni",
+   "address": "720 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218853",
+   "name": "Body Blue",
+   "address": "724 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218858",
+   "name": "Crown Floria Studio",
+   "address": "740 Queen Street West",
+   "category": "shop=florist",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218859",
+   "name": "Greenhouse Juice Co.",
+   "address": "740 Queen Street West",
+   "category": "amenity=fast_food",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218860",
+   "name": "Canis",
+   "address": "746 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6358218861",
+   "name": "Cutler and Gross",
+   "address": "768 Queen Street West",
+   "category": "shop=optician",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/6358218862",
+   "name": "Sukoi Desserts",
+   "address": "760 Queen Street West",
+   "category": "amenity=fast_food",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/6358218863",
+   "name": "Loftea",
+   "address": "760 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/6358218864",
+   "name": "Golden Hanger Cleaners",
+   "address": "",
+   "category": "shop=dry_cleaning",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6369142349",
+   "name": "Wine Rack",
+   "address": "560 Queen Street West",
+   "category": "shop=wine",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6369142351",
+   "name": "Burger Factory",
+   "address": "576 Queen Street West",
+   "category": "amenity=fast_food",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419678809",
+   "name": "Arton Beads",
+   "address": "527 Queen Street West",
+   "category": "shop=bead",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419678815",
+   "name": "Backdoor",
+   "address": "491 Queen Street West",
+   "category": "shop=shoes",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/6419730374",
+   "name": "Pizza Karachi",
+   "address": "465 Queen Street West",
+   "category": "amenity=fast_food",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419859630",
+   "name": "On Your Face Optical",
+   "address": "555 Queen Street West",
+   "category": "shop=optician",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419859631",
+   "name": "Freshly Baked Tees",
+   "address": "557 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419859632",
+   "name": "The Dot",
+   "address": "559 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419859633",
+   "name": "PC Shop Computers",
+   "address": "561 Queen Street West",
+   "category": "shop=electronics",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419859637",
+   "name": "Bar Altura",
+   "address": "571 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419859638",
+   "name": "Brosche Bridal",
+   "address": "575 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419859639",
+   "name": "Third Floor Tailors",
+   "address": "577 Queen Street West",
+   "category": "shop=tailor",
+   "reason": "level 2"
+  },
+  {
+   "id": "osm:node/6419859640",
+   "name": "The Cabinet Salon",
+   "address": "577 Queen Street West",
+   "category": "shop=hairdresser",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419955859",
+   "name": "West Camera",
+   "address": "514 Queen Street West",
+   "category": "shop=photo",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419955860",
+   "name": "Cauldron Ice Cream",
+   "address": "502 Queen Street West",
+   "category": "amenity=ice_cream",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419955861",
+   "name": "Digitime Custom Tees",
+   "address": "514 Queen Street West",
+   "category": "shop=clothes",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/6419992932",
+   "name": "Herbie's Herbs",
+   "address": "556 Queen Street West",
+   "category": "shop=health_food",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419992933",
+   "name": "Cori",
+   "address": "552 Queen Street West",
+   "category": "shop=cannabis",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419992934",
+   "name": "Victory Cleaners",
+   "address": "544 Queen Street West",
+   "category": "shop=dry_cleaning",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6419992935",
+   "name": "The Dime Roadhouse",
+   "address": "538 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/6436510942",
+   "name": "La Diperie",
+   "address": "925 Queen Street West",
+   "category": "amenity=ice_cream",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6483208744",
+   "name": "Asim Barber Shop",
+   "address": "",
+   "category": "shop=hairdresser",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/6483221077",
+   "name": "Osmow's",
+   "address": "611 Queen Street West",
+   "category": "amenity=fast_food",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6483221078",
+   "name": "Ramen Isshin",
+   "address": "609 Queen Street West",
+   "category": "amenity=fast_food",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/6483221080",
+   "name": "CTE Vapes",
+   "address": "607 Queen Street West",
+   "category": "shop=vape",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/7797437785",
+   "name": "M!lk",
+   "address": "535 Queen Street West",
+   "category": "amenity=ice_cream",
+   "reason": "house number out of order with a neighbour"
+  },
+  {
+   "id": "osm:node/793801991",
+   "name": "Amazing Nails",
+   "address": "",
+   "category": "shop=beauty",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/8911556690",
+   "name": "Mofer Coffee",
+   "address": "",
+   "category": "shop=coffee",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:node/9214305738",
+   "name": "Botanic Coffee and Caphe",
+   "address": "662 Queen Street West",
+   "category": "amenity=cafe",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/9214309878",
+   "name": "Gas Station",
+   "address": "488 Queen Street West",
+   "category": "shop=cannabis",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:node/9239277215",
+   "name": "Civilian",
+   "address": "734 Queen Street West",
+   "category": "shop=cannabis",
+   "reason": "no survey date or permit"
+  },
+  {
+   "id": "osm:way/122204949",
+   "name": "McDonald's",
+   "address": "160 Spadina Avenue",
+   "category": "amenity=fast_food",
+   "reason": "address on another street"
+  },
+  {
+   "id": "osm:way/536134194",
+   "name": "Fresh",
+   "address": "894 Queen Street West",
+   "category": "amenity=restaurant",
+   "reason": "gap in the plan at the place"
+  },
+  {
+   "id": "osm:way/804644406",
+   "name": "John Fluevog Shoes",
+   "address": "686 Queen Street West",
+   "category": "shop=shoes",
+   "reason": "building too low for a fascia"
+  }
+ ]
+}

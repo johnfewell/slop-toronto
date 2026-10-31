@@ -19,14 +19,15 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   const scripts = [];
   const window = {};
   const THREE = {};
-  // the city database: fetched at once, decoded by js/geodata-loader.js (stubbed), in CITY before any app script runs
-  const GEO = {};
+  // the city database & the mapped poles: fetched at once, decoded by js/geodata-loader.js (stubbed), in CITY before any
+  // app script runs
+  const GEO = {}, POLES = {};
   const fetched = [];
   const response = { ok: true };
   const fetch = (url) => { fetched.push(url); return Promise.resolve(response); };
   const __import = async (url) => {
     assert.equal(url, './js/geodata-loader.js'); // (source URL; the production build fingerprints it)
-    return { loadGeo: async (request) => { assert.equal(await request, response); return GEO; } };
+    return { loadGeo: async (request) => { assert.equal(await request, response); return { GEO, POLES }; } };
   };
   // every name the module imports (THREE & TSL apart), as a stub
   const imported = [...moduleScript[1].matchAll(/^\s*import (?:\{([^}]+)\}|\* as (\w+)) from/gm)]
@@ -45,6 +46,7 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
         } else {
           assert.equal(window.CITY.THREE, THREE, 'Three.js is available before app script execution');
           assert.equal(window.CITY.GEO, GEO, 'the city database is loaded before app script execution');
+          assert.equal(window.CITY.POLES, POLES, 'so are the mapped poles packed with it');
           assert.equal(element.async, false, 'the browser must preserve dependency order');
           scripts.push(element.src);
         }
@@ -69,6 +71,7 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   assert.deepEqual(scripts, links);
   assert.match(scripts[0], /\/quality\.js$/); // source URLs; the production build fingerprints them
   assert.ok(!scripts.some((src) => src.includes('/toronto-geodata.js')), 'the site loads data/toronto-geodata.bin instead');
+  assert.ok(!scripts.some((src) => src.includes('/toronto-poles.js')), 'the poles come packed in data/toronto-geodata.bin');
   assert.match(scripts.at(-1), /\/main\.js$/);
   for (const name of ['photo-mode', 'multiplayer']) assert.ok(scripts.includes(`./js/${name}.js`), `${name} loads before app startup`);
   assert.ok(scripts.indexOf('./js/mp-protocol.js') < scripts.indexOf('./js/multiplayer.js'));

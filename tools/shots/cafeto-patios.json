@@ -4,7 +4,8 @@
   "mode": "person",
   "time": "midday",
   "wait": 500,
-  "js": "(() => { const C = window.CITY, s = C.patioStats; const out = { season: s.season, placed: s.placed, accepted: s.accepted, rejected: s.rejected, blockers: s.blockers, instances: s.instances, laneConflicts: s.laneConflicts && s.laneConflicts.length, ms: s.ms, q: location.search }; console.log('[ride-check] patios ' + JSON.stringify(out)); if (!/patios=0/.test(location.search)) { if (!s.season || s.placed.curb < 80 || s.placed.sidewalk < 40) throw new Error('CafeTO patios missing'); if (s.laneConflicts && s.laneConflicts.length) throw new Error('Curb lane platform in a traffic lane: ' + JSON.stringify(s.laneConflicts.slice(0, 5))); } })()"
+  "js": "(() => { const C = window.CITY, s = C.patioStats; const q = new URLSearchParams(location.search).get('patios'); const out = { season: s.season, layout: s.layout, fingerprint: s.fingerprint, check: s.check, placed: s.placed, accepted: s.accepted, rejected: s.rejected, blockers: s.blockers, instances: s.instances, laneConflicts: s.laneConflicts && s.laneConflicts.length, ms: s.ms, q: location.search }; console.log('[ride-check] patios ' + JSON.stringify(out)); if (q !== '0') { if (!s.season || s.placed.curb < 80 || s.placed.sidewalk < 40) throw new Error('CafeTO patios missing'); if (s.laneConflicts && s.laneConflicts.length) throw new Error('Curb lane platform in a traffic lane: ' + JSON.stringify(s.laneConflicts.slice(0, 5))); if (!s.fingerprint || !s.fingerprint.ok) throw new Error('The prebuilt patio layout is stale (rebuild: tools/build-patios.mjs): ' + JSON.stringify(s.fingerprint)); if (q === 'check' && !(s.check && s.check.identical)) throw new Error('The prebuilt patio layout is not the runtime algorithm\\'s: ' + JSON.stringify(s.check)); if (!q && s.layout !== 'prebuilt') throw new Error('Patios laid out at startup: ' + s.layout); } return out; })()",
+  "record": true
  },
  {
   "name": "ossington-146-curb-aerial",

@@ -40,11 +40,14 @@
         './js/toronto-benches.js',
         './js/toronto-city-facilities.js',
         './js/toronto-wayfinding.js',
+        './js/toronto-public-art.js',
         './js/toronto-cafeto.js',
-        './js/toronto-poles.js',
+        './js/toronto-storefronts.js',
+        './js/toronto-patios.js',
         './js/toronto-tennis.js',
         './js/toronto-rinks.js',
         './js/toronto-subway.js',
+        './js/toronto-subway-topology.js',
         './js/toronto-traffic-data.js',
         './js/toronto-transit.js',
         './js/transit.js',
@@ -70,18 +73,19 @@
         './js/toronto-landmarks.js',
         './js/landmarks.js',
         './js/signage.js',
+        './js/storefront-signs.js',
         './js/mapped-poles.js',
         './js/street-details.js',
         './js/street-props.js',
         './js/parking-meter-layout.js',
         './js/bench-layout.js',
-        './js/patio-layout.js',
         './js/cafeto-patios.js',
         './js/wayfinding.js',
         './js/tennis.js',
         './js/sports-terrain.js',
         './js/rinks.js',
         './js/park-signs.js',
+        './js/public-art.js',
         './js/bike-share-stations.js',
         './js/bike-share.js',
         './js/yonge-dundas.js',
@@ -106,6 +110,7 @@
         './js/subway-service.js',
         './js/subway-ride.js',
         './js/city-map.js',
+        './js/discovery.js',
         './js/navigation.js',
         './js/tour-guide.js',
         './js/cinema.js',
@@ -131,10 +136,11 @@
         './js/main.js'
       ];
     })();
-    // The city database (window.CITY.GEO): data/toronto-geodata.bin (tools/build-geodata.mjs, which sets its version to
-    // the file's hash), fetched and decoded by js/geodata-loader.js while three.js loads
+    // The city database (window.CITY.GEO) and the mapped poles (window.CITY.POLES): data/toronto-geodata.bin
+    // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by
+    // js/geodata-loader.js while three.js loads
     const cityGeo = (() => {
-      const bin = fetch('./data/toronto-geodata.bin?v=1c2763c1c4b8');
+      const bin = fetch('./data/toronto-geodata.bin?v=b90a31de521d');
       return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
     for (const src of cityAppScripts) {
@@ -150,14 +156,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&amp;family=Overpass:wght@600;700&amp;display=swap" />
   <link rel="stylesheet" href="./css/style.css" />
-  <!-- three.js dev branch pinned to commit e27dfa95ae (2026-10-23) via jsDelivr: mrdoob's engine needs dev (it crawls at 1 fps on the 0.186.1 release) -->
+  <!-- three.js dev branch pinned to commit b339627068 (2026-10-28, upstream Slop New York c36373c) via jsDelivr: mrdoob's engine needs dev (it crawls at 1 fps on the 0.186.1 release) -->
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/build/three.webgpu.js",
-        "three/webgpu": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/build/three.webgpu.js",
-        "three/tsl": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/build/three.tsl.js",
-        "three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b/examples/jsm/"
+        "three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@b3396270682287470d161658ac01084d25e8dba6/build/three.webgpu.js",
+        "three/webgpu": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@b3396270682287470d161658ac01084d25e8dba6/build/three.webgpu.js",
+        "three/tsl": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@b3396270682287470d161658ac01084d25e8dba6/build/three.tsl.js",
+        "three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@b3396270682287470d161658ac01084d25e8dba6/examples/jsm/"
       }
     }
   </script>
@@ -178,6 +184,8 @@
       <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M5.5 18.5 7 17M17 7l1.5-1.5"/></symbol>
       <symbol id="i-twilight" viewBox="0 0 24 24"><path d="M3 15.5h18M7.5 19h9M8 15.5a4 4 0 0 1 8 0M17.5 4v3.2M15.9 5.6h3.2M7 7.4v1.8M6.1 8.3h1.8"/></symbol>
       <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.6A7.8 7.8 0 0 1 9.4 4.5a7.8 7.8 0 1 0 10.1 10.1z"/></symbol>
+      <symbol id="i-art" viewBox="0 0 24 24"><path d="M8.5 20.5h7M10 20.5v-3.2h4v3.2M12 17.3V14"/><path d="M12 14c-3.4 0-5.2-2.6-4.4-5.4.9-3 4.4-4.8 6.9-3.1 2.2 1.5 2.4 4.6.5 6.6"/><circle cx="12.4" cy="9.4" r="1.3"/></symbol>
+      <symbol id="i-heritage" viewBox="0 0 24 24"><path d="M3.5 9.2 12 4l8.5 5.2zM5 20.5h14M4 9.2h16M6.5 9.5v8.5M10 9.5v8.5M14 9.5v8.5M17.5 9.5v8.5M4.5 18h15"/></symbol>
       <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21.2s-6.6-5.7-6.6-11.2a6.6 6.6 0 0 1 13.2 0c0 5.5-6.6 11.2-6.6 11.2z"/><circle cx="12" cy="10" r="2.4"/></symbol>
       <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4.5 3.5 6.6v13l5.5-2.1 6 2.1 5.5-2.1v-13L15 6.6 9 4.5zM9 4.5v13M15 6.6v13"/></symbol>
       <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
@@ -466,6 +474,7 @@
     <div class="pop-title">Featured ride</div>
     <button id="tp-ride504" class="pop-item tp-btn ride-btn" data-ride="504" type="button"><span class="pop-name">Ride the 504 along King</span><span class="pop-sub">Board a King streetcar · sit back &amp; watch the city</span></button>
     <button class="pop-item tp-btn ride-btn" data-ride="subway" type="button"><span class="pop-name">Ride the subway across the Don Valley</span><span class="pop-sub">Castle Frank ↔ Broadview · Line 2</span></button>
+    <button class="pop-item tp-btn ride-btn" data-ride="1" type="button"><span class="pop-name">Ride the subway under Yonge</span><span class="pop-sub">Queen ↔ King · Line 1 · walk down from the street</span></button>
     <div class="pop-title">Go to a sight</div>
     <button id="tp-humberArch" class="pop-item tp-btn" data-teleport="humberArch" type="button"><span class="pop-name">Humber Bay Arch Bridge</span><span class="pop-sub">Martin Goodman Trail · Humber Bay</span></button>
     <button id="tp-cnTower" class="pop-item tp-btn" data-teleport="cnTower" type="button"><span class="pop-name">CN Tower</span><span class="pop-sub">Bremner Blvd · Entertainment District</span></button>
@@ -781,7 +790,7 @@
       ])
       : null;
 
-    window.CITY.GEO = await cityGeo;
+    Object.assign(window.CITY, await cityGeo); // { GEO, POLES }
 
     for (const src of cityAppScripts) {
       const s = document.createElement('script');

@@ -1,0 +1,17 @@
+[
+  { "name": "pin-sky-golden", "camera": "skyline", "time": "golden", "wait": 8000 },
+  { "name": "pin-cn-golden", "camera": "islands", "wait": 5000 },
+  { "name": "pin-cn-midday", "time": "midday", "wait": 5000 },
+  { "name": "pin-sky-midday", "camera": "skyline", "wait": 5000 },
+  { "name": "pin-cn-twilight", "camera": "islands", "time": "twilight", "wait": 5000 },
+  { "name": "pin-cn-midnight", "time": "midnight", "wait": 5000 },
+  { "name": "pin-sky-midnight", "camera": "skyline", "wait": 5000 },
+  { "name": "pin-cn-golden-again", "camera": "islands", "time": "golden", "wait": 5000 },
+  { "name": "pin-cn-fog-forced", "wait": 3000, "js": "(() => { const L = window.__CITY_APP.lightingSystem; L.uFogDensity.value = 0.0009; return { fogDensity: L.uFogDensity.value }; })()", "record": true },
+  { "name": "pin-cn-fog-cleared", "wait": 3000, "js": "(() => { const L = window.__CITY_APP.lightingSystem; L.applyPreset(L.activePresetId, true); return { fogDensity: L.uFogDensity.value }; })()", "record": true },
+  { "name": "pin-water-sugarbeach", "camera": "sugarBeach", "wait": 5000 },
+  { "name": "pin-water-trail-midday", "camera": "trail", "time": "midday", "wait": 5000 },
+  { "name": "pin-ride-walking-passenger", "time": "golden", "mode": "person", "wait": 2500, "js": "if (!window.__CITY_APP.rideFeatured('504')) throw new Error('Walking passenger boarding failed');" },
+  { "name": "pin-ride-chase-twilight", "camera": "chase", "time": "twilight", "wait": 3000 },
+  { "name": "pin-ride-flight-cleanup", "mode": "helicopter", "wait": 1500, "js": "if (window.__CITY_APP.controllerManager.suspended || window.__CITY_APP.streetcarRide.active) throw new Error('Flight cancellation failed');" }
+]

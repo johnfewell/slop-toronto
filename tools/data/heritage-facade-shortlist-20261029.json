@@ -1,0 +1,971 @@
+{
+ "geodata": "21a1b02ac818c105",
+ "rule": "tools/build-art-heritage.mjs facadeShortlist",
+ "places": [
+  {
+   "place": "heritage:106-king-st-e",
+   "address": "106 King St E",
+   "building": "to-3dmassing-2025:360952",
+   "face": "to-3dmassing-2025:360952:s",
+   "street": "King Street East",
+   "score": 9,
+   "status": "Part IV, Part V",
+   "byLaws": [
+    "588-77",
+    "1097-01",
+    "1253-2022",
+    "1253-2022"
+   ],
+   "built": "1853",
+   "name": "Cathedral Church of St. James",
+   "width": 24,
+   "height": 70.8
+  },
+  {
+   "place": "heritage:110-edward-st",
+   "address": "110 Edward St",
+   "building": "to-3dmassing-2025:141933",
+   "face": "to-3dmassing-2025:141933:s",
+   "street": "Edward Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "7-78"
+   ],
+   "built": "1848",
+   "name": "YWCA Laughlin Centre",
+   "width": 37.6,
+   "height": 46.9
+  },
+  {
+   "place": "heritage:126-john-st",
+   "address": "126 John St",
+   "building": "to-3dmassing-2025:136977",
+   "face": "to-3dmassing-2025:136977:e",
+   "street": "John Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "667-97"
+   ],
+   "built": "1886",
+   "name": "RioCan Hall",
+   "width": 92.4,
+   "height": 34.2
+  },
+  {
+   "place": "heritage:150-king-st-e",
+   "address": "150 King St E",
+   "building": "to-3dmassing-2025:361279",
+   "face": "to-3dmassing-2025:361279:s",
+   "street": "King Street East",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "793-85"
+   ],
+   "built": "1833",
+   "name": "Daniel Brooke Building",
+   "width": 20.6,
+   "height": 20.8
+  },
+  {
+   "place": "heritage:162-bloor-st-w",
+   "address": "162 Bloor St W",
+   "building": "to-3dmassing-2025:356519",
+   "face": "to-3dmassing-2025:356519:s",
+   "street": "Bloor Street West",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "714-80"
+   ],
+   "built": "1878-1879",
+   "name": "Church of the Redeemer",
+   "width": 25,
+   "height": 17.5
+  },
+  {
+   "place": "heritage:176-yonge-st",
+   "address": "176 Yonge St",
+   "building": "to-3dmassing-2025:354822",
+   "face": "to-3dmassing-2025:354822:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "118-76"
+   ],
+   "built": "1894",
+   "name": "Hudson's Bay/Saks Fifth Avenue",
+   "width": 49.5,
+   "height": 34.7
+  },
+  {
+   "place": "heritage:186-cowan-ave",
+   "address": "186 Cowan Ave",
+   "building": "to-3dmassing-2025:346529",
+   "face": "to-3dmassing-2025:346529:e",
+   "street": "Cowan Avenue",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "521-91"
+   ],
+   "built": "1897",
+   "name": "St. John's Cathedral (Polish Catholic)",
+   "width": 50,
+   "height": 28.9
+  },
+  {
+   "place": "heritage:19-trinity-sq",
+   "address": "19 Trinity Sq",
+   "building": "to-3dmassing-2025:141972",
+   "face": "to-3dmassing-2025:141972:s",
+   "street": "James Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "13-77"
+   ],
+   "built": "1846-1847",
+   "name": "Church of the Holy Trinity",
+   "width": 41.5,
+   "height": 30.7
+  },
+  {
+   "place": "heritage:2-berkeley-st",
+   "address": "2 Berkeley St",
+   "building": "to-3dmassing-2025:361434",
+   "face": "to-3dmassing-2025:361434:e",
+   "street": "Berkeley Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "665-80"
+   ],
+   "built": "1871",
+   "name": "Berkeley Castle",
+   "width": 30,
+   "height": 27
+  },
+  {
+   "place": "heritage:20-richmond-st-e",
+   "address": "20 Richmond St E",
+   "building": "to-3dmassing-2025:362232",
+   "face": "to-3dmassing-2025:362232:s",
+   "street": "Richmond Street East",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "533-75"
+   ],
+   "built": "1890-1892",
+   "name": "Confederation Life Building",
+   "width": 78.5,
+   "height": 34.9
+  },
+  {
+   "place": "heritage:20-strachan-ave",
+   "address": "20 Strachan Ave",
+   "building": "to-3dmassing-2025:101418",
+   "face": "to-3dmassing-2025:101418:e",
+   "street": "Strachan Avenue",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "378-96"
+   ],
+   "built": "1877",
+   "name": "ZEN Condos",
+   "width": 61.4,
+   "height": 16.8
+  },
+  {
+   "place": "heritage:227-bloor-st-e",
+   "address": "227 Bloor St E",
+   "building": "to-3dmassing-2025:169754",
+   "face": "to-3dmassing-2025:169754:n",
+   "street": "Bloor Street East",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "68-89",
+    "68-89"
+   ],
+   "built": "1860",
+   "name": "St. Paul's Anglican Church",
+   "width": 39,
+   "height": 30.1
+  },
+  {
+   "place": "heritage:250-dunn-ave",
+   "address": "250 Dunn Ave",
+   "building": "to-3dmassing-2025:346734",
+   "face": "to-3dmassing-2025:346734:e",
+   "street": "Dunn Avenue",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "195-91"
+   ],
+   "built": "1886-1888",
+   "name": "Bonar-Parkdale Presbyterian Church",
+   "width": 9.5,
+   "height": 19.1
+  },
+  {
+   "place": "heritage:252-adelaide-st-e",
+   "address": "252 Adelaide St E",
+   "building": "to-3dmassing-2025:360963",
+   "face": "to-3dmassing-2025:360963:s",
+   "street": "Adelaide Street East",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "504-75"
+   ],
+   "built": "1825-1827",
+   "name": "Bank of Upper Canada Building",
+   "width": 57.5,
+   "height": 20.2
+  },
+  {
+   "place": "heritage:259-richmond-st-w",
+   "address": "259 Richmond St W",
+   "building": "to-3dmassing-2025:136977",
+   "face": "to-3dmassing-2025:136977:n",
+   "street": "Richmond Street West",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "667-97"
+   ],
+   "built": "1886",
+   "name": "RioCan Hall",
+   "width": 91.4,
+   "height": 34.2
+  },
+  {
+   "place": "heritage:3-yorkville-ave",
+   "address": "3 Yorkville Ave",
+   "building": "to-3dmassing-2025:359449",
+   "face": "to-3dmassing-2025:359449:n",
+   "street": "Yorkville Avenue",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1405-2017 (Part IV) / 235-2016 (Part V)"
+   ],
+   "built": "1887",
+   "name": "1 Yorkville",
+   "width": 24,
+   "height": 180.5
+  },
+  {
+   "place": "heritage:40-king-st-w",
+   "address": "40 King St W",
+   "building": "to-3dmassing-2025:354761",
+   "face": "to-3dmassing-2025:354761:s",
+   "street": "King Street West",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1035-2007"
+   ],
+   "built": "1898",
+   "name": "Scotia Plaza",
+   "width": 30,
+   "height": 276.6
+  },
+  {
+   "place": "heritage:427-bloor-st-w",
+   "address": "427 Bloor St W",
+   "building": "to-3dmassing-2025:138445",
+   "face": "to-3dmassing-2025:138445:n",
+   "street": "Bloor Street West",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "166-80"
+   ],
+   "built": "1889",
+   "name": "Trinity-St. Paul's United Church",
+   "width": 52.4,
+   "height": 33.7
+  },
+  {
+   "place": "heritage:452-college-st",
+   "address": "452 College St",
+   "building": "to-3dmassing-2025:106626",
+   "face": "to-3dmassing-2025:106626:s",
+   "street": "College Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "376-86"
+   ],
+   "built": "1884-1885",
+   "name": "College Street United Church",
+   "width": 34,
+   "height": 31
+  },
+  {
+   "place": "heritage:51-parliament-st",
+   "address": "51 Parliament St",
+   "building": "to-3dmassing-2025:361191",
+   "face": "to-3dmassing-2025:361191:w",
+   "street": "Parliament Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "9-78"
+   ],
+   "built": "1898",
+   "name": "Toronto Police - 51 Division",
+   "width": 35.5,
+   "height": 18.3
+  },
+  {
+   "place": "heritage:520-sherbourne-st",
+   "address": "520 Sherbourne St",
+   "building": "to-3dmassing-2025:170461",
+   "face": "to-3dmassing-2025:170461:e",
+   "street": "Sherbourne Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "184-78"
+   ],
+   "built": "1884",
+   "name": "Our Lady of Lourdes Roman Catholic Church",
+   "width": 42,
+   "height": 28.4
+  },
+  {
+   "place": "heritage:601-yonge-st",
+   "address": "601 Yonge St",
+   "building": "to-3dmassing-2025:170359",
+   "face": "to-3dmassing-2025:170359:w",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "532-82; 281-2014"
+   ],
+   "built": "1888",
+   "name": "Masonic Building",
+   "width": 32.2,
+   "height": 19.4
+  },
+  {
+   "place": "heritage:67-college-st",
+   "address": "67 College St",
+   "building": "to-3dmassing-2025:142036",
+   "face": "to-3dmassing-2025:142036:n",
+   "street": "College Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "507-75"
+   ],
+   "built": "1890",
+   "name": "Canadian Blood Services",
+   "width": 38.2,
+   "height": 26.1
+  },
+  {
+   "place": "heritage:70-mill-st",
+   "address": "70 Mill St",
+   "building": "to-3dmassing-2025:361436",
+   "face": "to-3dmassing-2025:361436:s",
+   "street": "Mill Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "154-76"
+   ],
+   "built": "1890",
+   "name": "Lindenwood",
+   "width": 41.6,
+   "height": 33.4
+  },
+  {
+   "place": "heritage:75-simcoe-st",
+   "address": "75 Simcoe St",
+   "building": "to-3dmassing-2025:354632",
+   "face": "to-3dmassing-2025:354632:w",
+   "street": "Simcoe Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "496-81"
+   ],
+   "built": "1875",
+   "name": "St. Andrew's Church",
+   "width": 32.8,
+   "height": 11.3
+  },
+  {
+   "place": "heritage:826-yonge-st",
+   "address": "826 Yonge St",
+   "building": "to-3dmassing-2025:360373",
+   "face": "to-3dmassing-2025:360373:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1064-2017"
+   ],
+   "built": "1870 (circa)",
+   "name": "Eight Cumberland",
+   "width": 30.5,
+   "height": 11.1
+  },
+  {
+   "place": "heritage:83-king-st-e",
+   "address": "83 King St E",
+   "building": "to-3dmassing-2025:361349",
+   "face": "to-3dmassing-2025:361349:n",
+   "street": "King Street East",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "215-2016"
+   ],
+   "built": "1843",
+   "name": "The Marine and Sportsmen Building",
+   "width": 15.8,
+   "height": 13.9
+  },
+  {
+   "place": "heritage:830-yonge-st",
+   "address": "830 Yonge St",
+   "building": "to-3dmassing-2025:360373",
+   "face": "to-3dmassing-2025:360373:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1064-2017"
+   ],
+   "built": "1870 (circa)",
+   "name": "Eight Cumberland",
+   "width": 30.5,
+   "height": 11.1
+  },
+  {
+   "place": "heritage:832-yonge-st",
+   "address": "832 Yonge St",
+   "building": "to-3dmassing-2025:360373",
+   "face": "to-3dmassing-2025:360373:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1064-2017"
+   ],
+   "built": "1875",
+   "name": "Eight Cumberland",
+   "width": 30.5,
+   "height": 11.1
+  },
+  {
+   "place": "heritage:834-yonge-st",
+   "address": "834 Yonge St",
+   "building": "to-3dmassing-2025:360373",
+   "face": "to-3dmassing-2025:360373:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1064-2017"
+   ],
+   "built": "1875",
+   "name": "Eight Cumberland",
+   "width": 30.5,
+   "height": 11.1
+  },
+  {
+   "place": "heritage:836-yonge-st",
+   "address": "836 Yonge St",
+   "building": "to-3dmassing-2025:359448",
+   "face": "to-3dmassing-2025:359448:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1405-2017"
+   ],
+   "built": "1874",
+   "name": "1 Yorkville",
+   "width": 49,
+   "height": 12.3
+  },
+  {
+   "place": "heritage:838-yonge-st",
+   "address": "838 Yonge St",
+   "building": "to-3dmassing-2025:359448",
+   "face": "to-3dmassing-2025:359448:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1405-2017"
+   ],
+   "built": "1870 (circa)",
+   "name": "1 Yorkville",
+   "width": 49,
+   "height": 12.3
+  },
+  {
+   "place": "heritage:842-yonge-st",
+   "address": "842 Yonge St",
+   "building": "to-3dmassing-2025:359448",
+   "face": "to-3dmassing-2025:359448:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1405-2017"
+   ],
+   "built": "1870 (circa)",
+   "name": "1 Yorkville",
+   "width": 49,
+   "height": 12.3
+  },
+  {
+   "place": "heritage:844-yonge-st",
+   "address": "844 Yonge St",
+   "building": "to-3dmassing-2025:359448",
+   "face": "to-3dmassing-2025:359448:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1405-2017"
+   ],
+   "built": "1870 (circa)",
+   "name": "1 Yorkville",
+   "width": 49,
+   "height": 12.3
+  },
+  {
+   "place": "heritage:846-yonge-st",
+   "address": "846 Yonge St",
+   "building": "to-3dmassing-2025:359448",
+   "face": "to-3dmassing-2025:359448:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1405-2017"
+   ],
+   "built": "1892",
+   "name": "1 Yorkville",
+   "width": 49,
+   "height": 12.3
+  },
+  {
+   "place": "heritage:848-yonge-st",
+   "address": "848 Yonge St",
+   "building": "to-3dmassing-2025:359448",
+   "face": "to-3dmassing-2025:359448:e",
+   "street": "Yonge Street",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "1405-2017"
+   ],
+   "built": "1892",
+   "name": "1 Yorkville",
+   "width": 49,
+   "height": 12.3
+  },
+  {
+   "place": "heritage:85-king-st-e",
+   "address": "85 King St E",
+   "building": "to-3dmassing-2025:361349",
+   "face": "to-3dmassing-2025:361349:n",
+   "street": "King Street East",
+   "score": 9,
+   "status": "Part IV",
+   "byLaws": [
+    "215-2016"
+   ],
+   "built": "1842",
+   "name": "The Marine and Sportsmen Building",
+   "width": 15.8,
+   "height": 13.9
+  },
+  {
+   "place": "heritage:1-elmsley-pl",
+   "address": "1 Elmsley Pl",
+   "building": "to-3dmassing-2025:137730",
+   "face": "to-3dmassing-2025:137730:s",
+   "street": "St. Joseph Street",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "468-91; partial repeal by-law #1236-2012"
+   ],
+   "built": "1896",
+   "name": "Founders House",
+   "width": 10,
+   "height": 15.4
+  },
+  {
+   "place": "heritage:1-king-st-w",
+   "address": "1 King St W",
+   "building": "to-3dmassing-2025:354672",
+   "face": "to-3dmassing-2025:354672:n",
+   "street": "King Street West",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "278-90"
+   ],
+   "built": "1913-1914",
+   "name": "1 King West",
+   "width": 32,
+   "height": 54.3
+  },
+  {
+   "place": "heritage:10-adelaide-st-e",
+   "address": "10 Adelaide St E",
+   "building": "to-3dmassing-2025:360984",
+   "face": "to-3dmassing-2025:360984:s",
+   "street": "Adelaide Street East",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "82-76"
+   ],
+   "built": "1908",
+   "name": "Ontario Heritage Centre",
+   "width": 15,
+   "height": 55.8
+  },
+  {
+   "place": "heritage:10-trinity-sq",
+   "address": "10 Trinity Sq",
+   "building": "to-3dmassing-2025:142468",
+   "face": "to-3dmassing-2025:142468:w",
+   "street": "James Street",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "154-77"
+   ],
+   "built": "1861",
+   "name": "CF Toronto Eaton Centre",
+   "width": 69.5,
+   "height": 23.4
+  },
+  {
+   "place": "heritage:10-widmer-st",
+   "address": "10 Widmer St",
+   "building": "to-3dmassing-2025:137374",
+   "face": "to-3dmassing-2025:137374:e",
+   "street": "Widmer Street",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "8-2019"
+   ],
+   "built": "1876",
+   "name": "Theatre District Residence",
+   "width": 40.4,
+   "height": 36.8
+  },
+  {
+   "place": "heritage:100-adelaide-st-w",
+   "address": "100 Adelaide St W",
+   "building": "to-3dmassing-2025:354395",
+   "face": "to-3dmassing-2025:354395:s",
+   "street": "Adelaide Street West",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "514-75"
+   ],
+   "built": "1928",
+   "name": "EY Tower",
+   "width": 35.2,
+   "height": 188
+  },
+  {
+   "place": "heritage:100-bloor-st-w",
+   "address": "100 Bloor St W",
+   "building": "to-3dmassing-2025:359507",
+   "face": "to-3dmassing-2025:359507:s",
+   "street": "Bloor Street West",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "785-87"
+   ],
+   "built": "1946",
+   "name": "No. 10 Bellair",
+   "width": 43.4,
+   "height": 23
+  },
+  {
+   "place": "heritage:1001-queen-st-w",
+   "address": "1001 Queen St W",
+   "building": "to-3dmassing-2025:101518",
+   "face": "to-3dmassing-2025:101518:n",
+   "street": "Queen Street West",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "085-97"
+   ],
+   "built": "1851",
+   "name": "McCain Complex Care & Recovery Building",
+   "width": 68,
+   "height": 24.1
+  },
+  {
+   "place": "heritage:1006-bloor-st-w",
+   "address": "1006 Bloor St W",
+   "building": "to-3dmassing-2025:114913",
+   "face": "to-3dmassing-2025:114913:s",
+   "street": "Bloor Street West",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "996-2012"
+   ],
+   "built": "1937 (circa)",
+   "name": "Paradise Cinema",
+   "width": 10.6,
+   "height": 10.1
+  },
+  {
+   "place": "heritage:101-college-st",
+   "address": "101 College St",
+   "building": "to-3dmassing-2025:141807",
+   "face": "to-3dmassing-2025:141807:n",
+   "street": "College Street",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "1363-2007"
+   ],
+   "built": "1919",
+   "name": "MaRS Discovery District",
+   "width": 138,
+   "height": 26.1
+  },
+  {
+   "place": "heritage:102-queen-st-e",
+   "address": "102 Queen St E",
+   "building": "to-3dmassing-2025:173795",
+   "face": "to-3dmassing-2025:173795:s",
+   "street": "Queen Street East",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "1138-2020"
+   ],
+   "built": "1886-1887",
+   "name": "",
+   "width": 35,
+   "height": 72
+  },
+  {
+   "place": "heritage:103-king-st-e",
+   "address": "103 King St E",
+   "building": "to-3dmassing-2025:361347",
+   "face": "to-3dmassing-2025:361347:n",
+   "street": "King Street East",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "282-81"
+   ],
+   "built": "1842",
+   "name": "",
+   "width": 23.5,
+   "height": 15.9
+  },
+  {
+   "place": "heritage:104-yonge-st",
+   "address": "104 Yonge St",
+   "building": "to-3dmassing-2025:354446",
+   "face": "to-3dmassing-2025:354446:e",
+   "street": "Yonge Street",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "76-2008"
+   ],
+   "built": "1886",
+   "name": "",
+   "width": 15.5,
+   "height": 19.4
+  },
+  {
+   "place": "heritage:105-maitland-st",
+   "address": "105 Maitland St",
+   "building": "to-3dmassing-2025:171368",
+   "face": "to-3dmassing-2025:171368:n",
+   "street": "Maitland Street",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "688-01"
+   ],
+   "built": "1872",
+   "name": "Maison Staines House",
+   "width": 14.2,
+   "height": 5
+  },
+  {
+   "place": "heritage:107-king-st-e",
+   "address": "107 King St E",
+   "building": "to-3dmassing-2025:361347",
+   "face": "to-3dmassing-2025:361347:n",
+   "street": "King Street East",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "282-81",
+    "282-81"
+   ],
+   "built": "1842",
+   "name": "",
+   "width": 23.5,
+   "height": 15.9
+  },
+  {
+   "place": "heritage:107-wellington-st-w",
+   "address": "107 Wellington St W",
+   "building": "to-3dmassing-2025:354531",
+   "face": "to-3dmassing-2025:354531:n",
+   "street": "Wellington Street West",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "506-75 539-84 414-90"
+   ],
+   "built": "1888",
+   "name": "Toronto Club",
+   "width": 31.4,
+   "height": 22.9
+  },
+  {
+   "place": "heritage:11-spadina-rd",
+   "address": "11 Spadina Rd",
+   "building": "to-3dmassing-2025:359900",
+   "face": "to-3dmassing-2025:359900:w",
+   "street": "Spadina Road",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "212-2009"
+   ],
+   "built": "1890",
+   "name": "Global Guest House",
+   "width": 12.5,
+   "height": 14.2
+  },
+  {
+   "place": "heritage:11-st-joseph-st",
+   "address": "11 St Joseph St",
+   "building": "to-3dmassing-2025:137701",
+   "face": "to-3dmassing-2025:137701:n",
+   "street": "St. Joseph Street",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "177-97"
+   ],
+   "built": "1895",
+   "name": "",
+   "width": 50,
+   "height": 236.3
+  },
+  {
+   "place": "heritage:110-lombard-st",
+   "address": "110 Lombard St",
+   "building": "to-3dmassing-2025:360997",
+   "face": "to-3dmassing-2025:360997:s",
+   "street": "Lombard Street",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "546-86"
+   ],
+   "built": "1886",
+   "name": "",
+   "width": 17.4,
+   "height": 23.7
+  },
+  {
+   "place": "heritage:111-richmond-st-w",
+   "address": "111 Richmond St W",
+   "building": "to-3dmassing-2025:354381",
+   "face": "to-3dmassing-2025:354381:n",
+   "street": "Richmond Street West",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "659-00"
+   ],
+   "built": "1954",
+   "name": "Richmond Adelaide Centre",
+   "width": 43,
+   "height": 44
+  },
+  {
+   "place": "heritage:118-peter-st",
+   "address": "118 Peter St",
+   "building": "to-3dmassing-2025:137509",
+   "face": "to-3dmassing-2025:137509:e",
+   "street": "Peter Street",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "492-2018"
+   ],
+   "built": "1885",
+   "name": "",
+   "width": 7,
+   "height": 41.9
+  },
+  {
+   "place": "heritage:125-king-st-e",
+   "address": "125 King St E",
+   "building": "to-3dmassing-2025:361045",
+   "face": "to-3dmassing-2025:361045:n",
+   "street": "King Street East",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "281-81"
+   ],
+   "built": "1842 (circa)",
+   "name": "",
+   "width": 84,
+   "height": 34.7
+  },
+  {
+   "place": "heritage:130-bloor-st-w",
+   "address": "130 Bloor St W",
+   "building": "to-3dmassing-2025:359520",
+   "face": "to-3dmassing-2025:359520:s",
+   "street": "Bloor Street West",
+   "score": 8,
+   "status": "Part IV",
+   "byLaws": [
+    "1033-2007"
+   ],
+   "built": "1960",
+   "name": "155 Cumberland",
+   "width": 28,
+   "height": 84
+  }
+ ]
+}

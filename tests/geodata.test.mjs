@@ -33,6 +33,8 @@ test('geodata builds with default paths in a checkout containing spaces and non-
     }
     // the default input folder is tools/data/ next to the build scripts
     fs.symlinkSync(path.resolve(GEO_DATA), path.join(dir, 'tools/data'), 'dir');
+    // the mapped poles (tools/build-poles.mjs, from their own download) are packed into the binary as they are committed
+    fs.copyFileSync(path.join(root, 'js/toronto-poles.js'), path.join(dir, 'js/toronto-poles.js'));
     const env = { ...process.env };
     delete env.GEO_DATA;
     const result = spawnSync(process.execPath, ['--max-old-space-size=8192', path.join(dir, 'tools/build-geodata.mjs')], {
@@ -48,7 +50,8 @@ test('geodata builds with default paths in a checkout containing spaces and non-
     assert.ok(GEO.blocks.length > 0);
     assert.ok(GEO.buildings.length > 0);
     assert.ok(GEO.points.cnTower);
-    // reproducible: the same inputs give the same bytes (the site's binary, the tools' script and its ID sidecar)
+    // reproducible: the same inputs give the same bytes (the site's binary with the poles packed in, the tools' script and
+    // its ID sidecar, keyed to that script's hash)
     for (const rel of ['js/toronto-geodata.js', 'data/toronto-geodata.bin', 'js/toronto-geodata-ids.js']) {
       assert.ok(fs.readFileSync(path.join(dir, rel)).equals(fs.readFileSync(path.join(root, rel))), `${rel} differs from the rebuild`);
     }

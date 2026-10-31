@@ -26,13 +26,21 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   pedestrian avoidance/dives, player lamps, audio refinements, procedural tree LODs and filtered fire escapes (MIT,
   same upstream attribution above). Adapted for Toronto's decks, crossings, quality tiers and existing driving model.
   See [the integration record](docs/upstream-sync.md) for source commits and scope.
+- **Generated storefronts and entrances** (`js/tsl-materials.js` `createStorefront`, `createBuildingEntrance`,
+  `boxCoverage`): adapted from mrdoob's Slop New York `8d88e41`, `26bb9fe`, `09d27e0` and `dbaf5f9` (MIT, same upstream
+  attribution above), for Toronto's box facades, storeys and data-driven selection, with a blank fascia in place of
+  upstream's invented shop names. See [the integration record](docs/upstream-sync.md).
+- **Modern car bodies, delivery vans, pickups and minivans** (`js/actor-models.js`): mrdoob's vehicle modernisation
+  and car wheel material from Slop New York (`52f84db`, `9cabaeb`, 2026-10-28/29; MIT, above), with Toronto's police
+  livery, Ontario-style plates and generic courier and utility van liveries.
 - **City audio** (`js/audio-*.js`): mrdoob's synthesized spatial audio from Slop New York (MIT, above), with the
   player car's tyre squeal and engine revs from aalghooneh's slop-toronto fork (MIT, © Slop Toronto contributors).
   https://github.com/aalghooneh/slop-toronto. Every sound is synthesized in code; no recordings.
 - **Physically based lake water** (`?water=pbr`, `js/pbr-water.js`): mrdoob's "Physically Based Estuary Water" from
   Slop New York (MIT, above), as also carried by Slop San Francisco by @unable0_ (MIT), refitted to Toronto's
   waterfront. https://github.com/unable12/slop-sanfrancisco
-- **three.js**, WebGPURenderer and TSL, loaded from jsDelivr at a pinned dev-branch commit. MIT.
+- **three.js**, WebGPURenderer and TSL, loaded from jsDelivr at a pinned dev-branch commit (r187 dev, `b3396270`, the
+  import map in `explore.html`). MIT.
   https://threejs.org/
 - **Stylized water** (`js/stylized-water.js`, built from `vendor/stylized-water`): John Fewell's three.js port of
   Uber Stylized Water. MIT, © MatrixRex / norio. See `vendor/stylized-water/LICENSE`.
@@ -82,7 +90,8 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   (https://open.toronto.ca/dataset/topographic-mapping-poles/): resource "Poles - 4326.gpkg"
   (`5504d484-1bd6-4330-b43c-d562b74a175d`, updated 2026-02-20, SHA-256 `1b4722aa…57b8ec`; the CKAN package's licence
   field is empty, as for some other City packages; the portal's terms are the OGL – Toronto). The street light, light & signal and traffic signal poles
-  inside the detail frame are `js/toronto-poles.js` (`tools/fetch-poles.mjs`, `tools/build-poles.mjs`); street-details.js
+  inside the detail frame are `js/toronto-poles.js` (`tools/fetch-poles.mjs`, `tools/build-poles.mjs`; the site gets the
+  same data packed into `data/toronto-geodata.bin`); street-details.js
   stands the city's poles and signal heads on them. Contains information licensed under the Open Government Licence –
   Toronto.
 - **TTC timetable**: "Merged GTFS – TTC Routes and Schedules" (the Toronto Transit Commission's GTFS, all modes) from
@@ -91,6 +100,11 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   `tools/build-transit.mjs`, fetched by `tools/fetch-gtfs.mjs`) keeps only the routes' stopping patterns through the
   city, their stops and trips per hour on a weekday; the streetcars, buses and Line 2 trains run at those headways.
   Contains information licensed under the Open Government Licence – Toronto.
+- **TTC subway station facts** (`tools/subway-station-facts.mjs`, into `js/toronto-subway-topology.js`): each ridden
+  station's number of levels, platform type and accessibility from the TTC's own station pages
+  (https://www.ttc.ca/subway-stations), and the 1954 Yonge subway's construction from Transit Toronto
+  (https://transittoronto.ca/subway/5102.shtml). Facts only, no text or images copied; the stations' depths are
+  stated assumptions, not published figures ([docs/subway-topology.md](docs/subway-topology.md)).
 - **TTC live vehicle positions**: "TTC BusTime Real-Time Next Vehicle Arrival (NVAS)", the Toronto Transit Commission's
   GTFS-Realtime vehicle positions (https://bustime.ttc.ca/gtfsrt/vehicles) from City of Toronto Open Data, under the
   Open Government Licence – Toronto (https://open.toronto.ca/dataset/ttc-bustime-real-time-next-vehicle-arrival-nvas/).
@@ -184,3 +198,9 @@ CaféTO patios: City of Toronto Open Data, [CaféTO Locations](https://open.toro
 Cast-Iron Plaza Bench by [Polyfork](https://polyfork.dev/asset/cast-iron-plaza-bench-b4096d), selected by John. Core bench extracted and meshopt compressed, used under the [Polyfork licence](https://polyfork.dev/licensing). Included inside the game; the standalone model is not distributed in this repository.
 
 TO360 model: John's supplied Meshy Roncesvalles/Dundas sign, rebuilt with clean geometry and a front print projected from John's June 25, 2026 photograph. Information pillar: original game geometry based on the City of Toronto's dimensioned InfoToGo drawings. Wayfinding locations: City Open Data. Local sign maps use the existing OpenStreetMap-derived city geography. Google Street View was used for local reference only; no Google imagery ships in these props. See [wayfinding provenance and validation](docs/wayfinding.md).
+
+Storefront signs: shop and restaurant names from OpenStreetMap (© OpenStreetMap contributors, Open Database License 1.0), from the Geofabrik Ontario extract of October 23, 2026 that the geodata is built from; the derived sign manifest `tools/data/storefront-signs.json` is likewise ODbL. Current tenancy evidence is each place's OpenStreetMap `check_date` and, for restaurants and cafés, a matching City of Toronto CaféTO permit (Open Government Licence – Toronto, the 2026-10-29 snapshot above), used for corroboration only. Signs are plain lettering in system fonts on original procedural boards: no logos, brand typefaces or trade dress are reproduced, and names are the businesses' own. See [storefronts](docs/storefronts.md) and the [review sheet](docs/storefront-signs-review.md).
+
+Public art: City of Toronto Open Data, [Public Art](https://open.toronto.ca/dataset/public-art/), resource "Public Art - 4326.geojson" (refreshed 2026-05-13), a dated 2026-10-29 snapshot under the Open Government Licence – Toronto (https://open.toronto.ca/open-data-license/). Titles, artists, years, types, media, addresses, programs and descriptions are the City's; the linked artwork photographs are not included or fetched. Artwork positions are refined with OpenStreetMap places (© OpenStreetMap contributors, ODbL) where they name the same work. The Old City Hall Cenotaph (W. M. Ferguson and T. C. Pomphrey, 1925) and the Fort Rouillé obelisk (Langley & Burke, 1887) are simplified procedural massing of public-domain works; every other work is shown only by an original stand-in marker. See [public art and the Heritage Register](docs/public-art-heritage.md).
+
+Heritage properties: City of Toronto Open Data, [Heritage Register](https://open.toronto.ca/dataset/heritage-register/), Shapefile "Heritage Register Data" (HRAPQ32026, 2026-09-01), a dated 2026-10-29 snapshot under the Open Government Licence – Toronto. City Planning cautions that the dataset is not intended for legal purposes without reference to Council decision documents and City by-laws; cards say so. No facade photographs are included. Resource IDs, dates and SHA-256 hashes are kept in `tools/data/public-art-20261029.json` and `tools/data/heritage-register-20261029.json`.

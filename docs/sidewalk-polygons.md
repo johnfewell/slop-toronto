@@ -78,9 +78,11 @@ The former fixed-width assumption is still used, unchanged, by:
   cuts' half widths (`tools/geo-roads.mjs`), all baked into `js/toronto-geodata.js`,
 - the subway entrances' stair placement (`js/subway.js`), the rectangular sidewalk cover that traffic and pedestrians
   query (`blockSidewalks`/`roadSidewalks`, lot rects grown 4.4 m), the rail spans' sidewalk clearance
-  (`js/city-config.js`), and the pedestrians' walking lines, 1.7 and 2.8 m beyond each road's half width
-  (`js/pedestrian-routes.js`). On residential streets with a boulevard, walkers can therefore be on the grass beside the
-  mapped walk. Moving the walking lines onto the polygons is a follow-up (it touches the crossings and corner links).
+  (`js/city-config.js`), and the pedestrians' walking lines where an island has no City sidewalk (see
+  [Pedestrians on the walks](#pedestrians-on-the-walks-st-2t9)).
+- CaféTO's placement rule that keeps "the walkers' inner line" clear (`js/patio-layout.js` `walkerLines`) still means
+  the fixed lanes. The walkers' lines on a mapped walk can now cross a café; every café is one of their obstacles, so
+  the line goes round it on the walk where it can.
 
 ## Merging with other work
 
@@ -121,6 +123,87 @@ The former fixed-width assumption is still used, unchanged, by:
   - Hydrants, bike rings, signs, poles and trees stand on the island top as before; nothing floats or sinks (no height
     changed). The Polyfork bench model 404s in both arms (the locally prepared, unshipped `plaza-bench.glb` was absent
     from the synced worktree), so benches were not visible in these captures; their placement code is unchanged.
+
+## Pedestrians on the walks (st-2t9)
+
+The walkers' lines used to run 1.7 and 2.8 m beyond each road's half width in the road graph. On Toronto's side streets
+that half width is often narrower than the curbs (a one-way street's 1.95 or 3.7 m against curbs 4–6 m out). So the
+lines fell in the road and were dropped, or landed on the front lawns or the grass boulevard beside the City's walk.
+`js/pedestrian-routes.js` now takes them from the polygons (`walks`, `sidewalkWalkIndex` in `js/sidewalk-polygons.js`:
+an even-odd point test over each island's pieces and holes, bucketed in 1 m rows and built per island on first use):
+
+- **Where the lines go.** Every 3 m along an edge (16 cross-sections at most), the search looks out from the centre line,
+  past the roadway and any median, onto the first curb island. Along it, it finds the walk nearest the curb, bridging
+  gaps under 0.6 m. The side's island is the one most cross-sections reach. Its two lines go a third and two thirds of
+  the way across the walk's median extent: at most 1.45 m from the walk's curb side and 1.1 m apart. On a wide downtown
+  walk that matches the old lanes, measured from the real curb.
+- **Ends and bends.** A line stops short of its ends where it would leave the walk at a corner or leave its island, by
+  up to a quarter of its length. A straight line that still has more than 2 m off the walk follows it instead. That uses
+  the detours' search held to the walk (rows 4 m apart, steps up to 1.2 m across).
+- **Furniture.** A blocked line first looks for a detour on the walk. If there is none, it detours within the island's
+  band as before, else runs through the furniture or is dropped as before. A line that leaves its island right across
+  the detours' reach (a laneway's mouth) is dropped without a search.
+- **Corners.** A corner link takes a way on the walk first: straight, or meeting the two lines' extensions. The last
+  1.2 m to a crossing's end may leave the walk. Then it takes the island's band as before, so no corner loses a link.
+- **Fallbacks.**
+  - On a mapped island, a side with no walk gets no lines where the City maps one across the street (one-sided
+    sidewalks).
+  - Where neither side has a walk (laneways, park drives), the side keeps the fixed lanes.
+  - An island the City doesn't map keeps the fixed lanes exactly.
+  - `?pedwalks=0` restores the old behaviour everywhere. In node, it gives the same lines, crossings, landings and corner
+    links as `main`'s code on every edge.
+- **Not changed.** Crossings, midblock crossings and WALK reactions stay the road network's. Dodges also still use the
+  island and its curb rectangles.
+
+The midblock crossings' landing search now uses a 32 m grid of edges instead of measuring every edge for every
+crossing end. It gives the same landings, in the same order. It saves more start-up time than the walks cost (below).
+
+### Verification (2026-10-29)
+
+- **Whole network, in node.** `createPedestrianRoutes` ran on every edge of the committed geodata, with the curb
+  rectangles and the building colliders as the walkers' obstacles. The browser's furniture was not included.
+
+  | | Lines | km | On the City's walk | On grass | Off the walk, paved | Unmapped island |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | Fixed lanes (`?pedwalks=0`, = `main`) | 14,051 | 699 | 37.7% | 21.6% | 36.9% | 3.8% |
+  | This change | 27,370 | 1,493 | 90.3% | 3.4% | 4.6% | 1.6% |
+
+  - Of the 27,370 lines, 25,063 follow a mapped walk: 97.4% on it, 0.9% on grass. Another 1,726 lines are the fixed
+    lanes on islands mapped without a walk on either side: 46% grass. The remaining 581 lines are on unmapped islands.
+  - By edge side: 14,763 sides are on the walk, 823 are left out (one-sided streets), 1,430 have no walk either side
+    and 1,678 are on unmapped islands. 1,081 lines follow a bending walk and 337 detour round furniture on the walk.
+  - Line count roughly doubles. The old lanes were mostly in the roadway and were dropped; Huron Street had none.
+  - Corner links: 98.4% of line ends now link to another track, up from 95.5%. 86.1% of link length is on the walk, up
+    from 46.5%.
+  - Unchanged: 2,284 crossings, 164 midblock crossings and no crossing without a landing.
+- **Start-up, in node.** Building the routes went from 1.1 s on `main` to 0.35 s with `?pedwalks=0` (the landing grid)
+  and 0.74 s with the walks.
+- **Tests.**
+  - `tests/pedestrian-routes.test.cjs` adds a Euclid-style residential street (3 m grass boulevard, 1.5 m walk, road
+    graph narrower than the curbs) and its corner, where the walk sweeps round the lawn.
+  - It also adds one-sided and unwalked streets and unmapped islands. The last case gives the same lines as without the
+    walks.
+  - It adds a King & Spadina-style downtown corner: curb-to-building walks keep the old lines, the crossings are
+    identical, the links stay on the walk and a patio is detoured round on it.
+  - `tests/sidewalks.test.mjs` checks the point test against a plain even-odd test at about 95,000 points.
+  - Mutation checks fail the new tests when walk links, one-sided sides, walk detours or end trimming are removed.
+- **gpu2 (Mac mini).** The runs shared the mini lock, so these are functional evidence only. Shot list:
+  `tools/shots/ped-sidewalks.json`, Winchester Street (Cabbagetown, 2.3–2.5 m grass boulevard) and King & Spadina.
+  Each site was captured at the high tier (1600 x 900) and on a phone (412 x 915, low tier), after and before
+  (`?pedwalks=0`). Files: `ride-anywhere-geo/review/gpu2/slop-toronto-poles/st2t9-{after,before}-{high,phone}-*`.
+  - Walkers on Winchester walk on the concrete between the boulevard and the lawns.
+  - At King & Spadina they keep to the walks and queue at the crossings as before.
+  - Load-time route stats (high tier): 1,282 lines with the walks against 561 with the fixed lanes. Crossings were
+    2,200 built and 84 blocked in both runs. With the walks, 145 midblock crossings were built (6 without a landing),
+    against 141 (10).
+  - Walker census, 16 samples over 8 s within 90 m: no walker on grass in either run at either site. The census
+    counted walkers at these two sites only.
+    - The only off-walk samples are one walker at Winchester, stepping aside on a 0.5 m mapped walk on Metcalfe Street.
+      It is the same in both runs.
+    - With the fixed lanes, King & Spadina had 8–10 samples on an unmapped island; with the walks it had none at the
+      high tier.
+  - Start-up phase `traffic`, high tier: 665 ms with the fixed lanes, 823 ms with the walks. On the phone: 632 ms and
+    837 ms. Ready at 11.9 s and 12.6 s (high) and 11.6 s and 12.1 s (phone). These timings are contended.
 
 ## Toronto's poured sidewalks
 

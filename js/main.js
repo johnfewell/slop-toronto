@@ -116,10 +116,25 @@ async function initApp() {
   markInit('terrain');
   const { colliders: landmarkColliders } = buildLandmarks(scene);
   markInit('landmarks');
+  // ?massing=1: the Kensington Market pilot's buildings from the City's 3D Massing polygons instead of their boxes
+  // (docs/massing-buildings.md; js/toronto-massing-pilot.js is fetched only then, so normal play never loads it)
+  if (new URLSearchParams(location.search).get('massing') === '1') {
+    await new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = './js/toronto-massing-pilot.js';
+      s.onload = s.onerror = resolve;
+      document.head.appendChild(s);
+    });
+    markInit('massingData');
+  }
   const cityBlocks = buildCityBlocks(scene);
   markInit('blocks');
   const signage = buildSignage(scene);
   const uploadedTextures = [...signage.textures]; // (the phone tiers drop their CPU copies once on screen, see below)
+  // Source-keyed storefront signs over their shops' fascias (storefront-signs.js; js/toronto-storefronts.js)
+  const storefrontSigns = window.CITY.buildStorefrontSigns ? window.CITY.buildStorefrontSigns(scene, { facadeOf: cityBlocks.facadeOf })
+    : { texture: null, gpuBytes: 0, cpuBytes: 0 };
+  if (storefrontSigns.texture) uploadedTextures.push(storefrontSigns.texture);
   markInit('signage');
   const allColliders = [...landmarkColliders, ...cityBlocks.colliders, ...boroughs.colliders, ...(cityGrid.colliders || [])];
 
@@ -163,11 +178,16 @@ async function initApp() {
   // Bike Share Toronto's stations, docks, pay stations & (live) bikes (bike-share.js)
   const bikeShare = window.CITY.buildBikeShare ? await window.CITY.buildBikeShare(scene) : null;
   if (bikeShare) allColliders.push(...bikeShare.colliders);
+  // the City's public art: two simplified public-domain monuments and a stand-in marker at each outdoor work, clear of
+  // everything solid above (public-art.js); the cafés below keep clear of them in turn
+  const publicArt = window.CITY.buildPublicArt?.(scene, [...allColliders, ...propColliders]);
+  if (publicArt) allColliders.push(...publicArt.colliders);
   // the City's CaféTO sidewalk & curb lane cafés, placed by rule clear of everything above (cafeto-patios.js)
   const patioFurniture = [['bench', 'benchStats'], ['parkingMeter', 'parkingMeterStats'], ['wayfinding', 'wayfindingStats'], ['infoPillar', 'infoPillarStats']]
     .flatMap(([kind, key]) => (window.CITY[key]?.sites || []).map((s) => ({ x: s.x, z: s.z, kind })));
+  // (prebuilt: js/toronto-patios.js; async only when it has to lay them out again, see cafeto-patios.js)
   const patios = window.CITY.buildPatios
-    ? window.CITY.buildPatios(scene, allColliders, { furniture: patioFurniture, bikeShareAt: window.CITY.bikeShareAt })
+    ? await window.CITY.buildPatios(scene, allColliders, { furniture: patioFurniture, bikeShareAt: window.CITY.bikeShareAt })
     : { colliders: [], pedestrianObstacles: [] };
   allColliders.push(...patios.colliders);
   // Yonge & Dundas: the screens round Sankofa Square (yonge-dundas.js)
@@ -185,8 +205,13 @@ async function initApp() {
     // routes.js detours, after mrdoob's 2bcd413): what the filter above leaves out, the street props, benches, shelters,
     // Bike Share, every café and the turned buildings among it, at ground level (not a deck's or a soffit's); the poles
     // are in streetDetails.footprints already. ?peddetours=0: the lines an obstacle crosses dropped, as before
-    obstacles: allColliders.filter((c) => (c.obb || c.circle) && c.kind !== 'pole' && !(c.minY > 2)),
-    detours: new URLSearchParams(location.search).get('peddetours') !== '0'
+    // (?massing=1: the pilot's polygon buildings too, in place of the turned boxes they replace)
+    obstacles: allColliders.filter((c) => (c.obb || c.circle || c.massing) && c.kind !== 'pole' && !(c.minY > 2)),
+    detours: new URLSearchParams(location.search).get('peddetours') !== '0',
+    // the City's sidewalks the walking lines follow where an island has them (st-2t9, sidewalk-polygons.js): the
+    // pieces city-grid.js laid, tested by point. ?pedwalks=0: the fixed lanes everywhere, as before, for A/B
+    walks: new URLSearchParams(location.search).get('pedwalks') !== '0' && window.CITY.sidewalkWalkIndex
+      ? window.CITY.sidewalkWalkIndex(window.CITY.sidewalkPieceMap) : null
   });
   window.CITY.auditPatioLanes?.(trafficSystem.network);
   markInit('traffic');
@@ -548,6 +573,11 @@ async function initApp() {
     if (route === 'subway' || route === '2') {
       if (!['person', 'cyclist'].includes(controllerManager.activeMode)) selectMode('person');
       return subwayRide.featured();
+    }
+    // Line 1 under Yonge, Queen to King (#ride=1; #ride=king starts the other way)
+    if (route === '1' || route === 'subway-1' || route === 'queen' || route === 'king') {
+      if (!['person', 'cyclist'].includes(controllerManager.activeMode)) selectMode('person');
+      return subwayRide.featured(route === 'king' ? 'king' : 'queen');
     }
     if (controllerManager.activeMode !== 'person' && controllerManager.activeMode !== 'cyclist') selectMode('cyclist');
     touchControls.reset();
@@ -1177,6 +1207,10 @@ async function initApp() {
       userAgent: navigator.userAgent
     }) }) : null;
   window.__CITY_APP.resources = ownedResources;
+  // the storefront signs' atlas, against its per-tier ceiling (adoption spec ID-4; storefront-signs.js)
+  const storefrontLease = storefrontSigns.texture ? ownedResources.track({ owner: 'storefront-signs', kind: 'texture',
+    label: 'sign lettering atlas (RGBA8 + mips)', resource: storefrontSigns.texture,
+    cpuBytes: storefrontSigns.cpuBytes, gpuBytes: storefrontSigns.gpuBytes }) : null;
   window.__CITY_APP.measurements = measurements;
   window.__CITY_APP.frameTimes = (options) => measurements?.read(options) || null;
   window.__CITY_APP.resourceSnapshot = () => ({
@@ -1334,11 +1368,12 @@ async function initApp() {
         // for what the first frames uploaded
         if (QUALITY.lean) {
           const LEAN_ROOTS = new Set(['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns',
-            'CityLandmarks', 'Terrain', 'CitySignage', 'RoadMarkings', 'Trees', 'RailCorridor', 'Streetcars', 'Subway', 'ShadowProxy', 'ShadowProxies']);
+            'CityLandmarks', 'Terrain', 'CitySignage', 'StorefrontSigns', 'RoadMarkings', 'Trees', 'RailCorridor', 'Streetcars', 'Subway', 'ShadowProxy', 'ShadowProxies']);
           const release = () => {
             // the static city's groups (only their vertex data: the trains & streetcars move by their matrices)
             const roots = scene.children.filter((o) => LEAN_ROOTS.has(o.name));
             const mb = window.CITY.releaseCpuCopies(renderer, roots, uploadedTextures);
+            if (storefrontLease && !storefrontSigns.texture.image.data) storefrontLease.update({ cpuBytes: 0 }); // (its copy went)
             const heap = performance.memory ? `, JS heap ${Math.round(performance.memory.usedJSHeapSize / 1048576)} MB` : '';
             console.info(`[mem] released ${mb} MB of CPU copies${heap}`);
           };

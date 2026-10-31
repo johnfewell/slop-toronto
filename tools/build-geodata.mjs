@@ -1,10 +1,13 @@
-// tools/build-geodata.mjs — writes the city database: data/toronto-geodata.bin, which the site loads (js/geodata-loader.js;
-// lossless, tools/geo-pack.mjs), and js/toronto-geodata.js, the same object as a script, for the node tools and tests.
-// Sets the file's hash as its version in explore.html (it is cached for good). See geo-base.mjs for the frame and sources.
+// tools/build-geodata.mjs — writes the city database: js/toronto-geodata.js (GEO as a script, for the node tools and
+// tests) and data/toronto-geodata.bin, which the site loads (js/geodata-loader.js; lossless, tools/geo-pack.mjs): this
+// GEO packed with the mapped poles of js/toronto-poles.js (tools/geo-bin.mjs). Sets the file's hash as its version in
+// explore.html (it is cached for good). See geo-base.mjs for the frame and sources.
 // It also writes js/toronto-geodata-ids.js, the durable source IDs of the geodata's rows (docs/geodata-ids.md).
 // usage: node --max-old-space-size=8192 tools/build-geodata.mjs [--out out.js] [--bin out.bin] [--ids out-ids.js]
+//          [--poles poles.js]
 //   With no flags it writes the committed files and sets the hash in explore.html. --out alone puts the binary and
 //   the ID sidecar beside it (out.bin, out-ids.js) and leaves explore.html alone. A lone positional path means --out.
+//   --poles names the poles script to pack (default: js/toronto-poles.js beside this checkout's tools/).
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,7 +26,7 @@ import { streetTrees, TREE_MODELS } from './geo-trees.mjs';
 import { parkSigns } from './geo-parksigns.mjs';
 import { rails, tramStops, railLifts, railFills } from './geo-rails.mjs';
 import { cycling } from './geo-cycling.mjs';
-import { packGeo } from './geo-pack.mjs';
+import { packCity, readLayer, setPageHash } from './geo-bin.mjs';
 
 const inRing = (x, z, r) => {
   let inside = false;
@@ -36,10 +39,11 @@ const inRing = (x, z, r) => {
 const waterAt = isWater;
 const ARGS = (() => {
   const { values, positionals } = parseArgs({
-    options: { out: { type: 'string' }, bin: { type: 'string' }, ids: { type: 'string' } }, allowPositionals: true
+    options: { out: { type: 'string' }, bin: { type: 'string' }, ids: { type: 'string' }, poles: { type: 'string' } },
+    allowPositionals: true
   });
   if (positionals.length > 1 || (positionals.length && values.out)) {
-    throw new Error('usage: build-geodata.mjs [--out out.js] [--bin out.bin] [--ids out-ids.js]');
+    throw new Error('usage: build-geodata.mjs [--out out.js] [--bin out.bin] [--ids out-ids.js] [--poles poles.js]');
   }
   return { ...values, out: values.out ?? positionals[0] };
 })();
@@ -48,6 +52,8 @@ const OUT = ARGS.out || fileURLToPath(new URL('../js/toronto-geodata.js', import
 const BIN = ARGS.bin || (ARGS.out ? OUT.replace(/\.js$/, '') + '.bin' : fileURLToPath(new URL('../data/toronto-geodata.bin', import.meta.url)));
 // the identity sidecar beside it (tools/geo-ids.mjs): toronto-geodata.js -> toronto-geodata-ids.js
 const IDS_OUT = ARGS.ids || OUT.replace(/\.js$/, '-ids.js');
+// the mapped poles packed beside GEO (tools/build-poles.mjs's script, not rebuilt here)
+const POLES_IN = ARGS.poles || fileURLToPath(new URL('../js/toronto-poles.js', import.meta.url));
 const q = (v) => Math.round(v * 10) / 10;
 const flat = (pts) => pts.flatMap(([x, z]) => [q(x), q(z)]);
 
@@ -309,19 +315,16 @@ fs.writeFileSync(OUT, `${header}(function () {\nwindow.CITY = window.CITY || {};
 log(`wrote ${OUT} (${(fs.statSync(OUT).size / 1024).toFixed(0)} KB)`);
 for (const [k, v] of Object.entries(GEO)) log(`  ${k}: ${(JSON.stringify(v).length / 1024).toFixed(0)} KB`);
 
-// The site's copy: the same object, packed (base64 rasters as their raw Int16 / Uint16 values)
-const packed = packGeo(GEO, { 'terrain.data': { type: 'i16', width: terrain.n }, 'waterMask.runs': { type: 'u16' } });
+// The site's copy: the same object, packed (base64 rasters as their raw Int16 / Uint16 values) with the mapped poles
+const packed = packCity({ GEO, POLES: readLayer(POLES_IN, 'POLES') });
 fs.mkdirSync(path.dirname(BIN), { recursive: true });
 fs.writeFileSync(BIN, packed.file);
-const hash = crypto.createHash('sha256').update(packed.file).digest('hex').slice(0, 12);
-log(`wrote ${BIN} (${(packed.file.length / 1024).toFixed(0)} KB gzip, ${(packed.raw.length / 1024).toFixed(0)} KB inflated, hash ${hash})`);
+const hash = packed.hash;
+log(`wrote ${BIN} (${(packed.file.length / 1024).toFixed(0)} KB gzip, ${(packed.raw.length / 1024).toFixed(0)} KB inflated, hash ${hash}; GEO + the poles of ${POLES_IN})`);
 // its version in the page: the hash, so a rebuild is fetched fresh and an unchanged file stays cached
 const PAGE = fileURLToPath(new URL('../explore.html', import.meta.url));
 if (!ARGS.out && fs.existsSync(PAGE)) {
-  const html = fs.readFileSync(PAGE, 'utf8');
-  const next = html.replace(/(\.\/data\/toronto-geodata\.bin\?v=)[0-9a-f]*/, `$1${hash}`);
-  if (next === html && !html.includes(hash)) throw new Error('explore.html: no ./data/toronto-geodata.bin?v= to set');
-  if (next !== html) fs.writeFileSync(PAGE, next);
+  setPageHash(PAGE, hash);
   log(`explore.html loads data/toronto-geodata.bin?v=${hash}`);
 }
 

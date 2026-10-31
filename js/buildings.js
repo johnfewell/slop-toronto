@@ -12,7 +12,62 @@ const { THREE } = window.CITY;
 const { mergeGeometries } = window.CITY.Addons;
 const { Fn, float, color, uv, attribute, fract, smoothstep, mix, abs } = window.CITY.TSL;
 const { GEO, CITY_BOUNDS, nearestRoads } = window.CITY;
-const { createRenderedFacadeMaterial, createCurtainWallMaterial, createFacadeBoxes, WALL_KINDS } = window.CITY;
+const { createRenderedFacadeMaterial, createCurtainWallMaterial, createFacadeBoxes, createFootprintFacades, WALL_KINDS } = window.CITY;
+
+// ---- ?massing=1 (docs/massing-buildings.md, st-2nl): the pilot area's buildings stand on their City 3D Massing
+// polygons (js/toronto-massing-pilot.js, which main.js loads only then) instead of their L/T/U boxes. A record is used
+// only if its row still has the centre it was built against; anything else keeps its boxes.
+function massingPilot() {
+  const P = window.CITY.MASSING_PILOT;
+  if (!P || P.schema !== 1 || !Array.isArray(P.records)) return null;
+  const rows = new Map();
+  let rejected = 0;
+  for (const [row, id, cx, cz, base, rings, party, hidden] of P.records) {
+    const b = GEO.buildings[row];
+    const pts = (rings || []).map((flat) => {
+      const out = [];
+      for (let i = 0; i + 1 < flat.length; i += 2) out.push([flat[i], flat[i + 1]]);
+      return out;
+    });
+    if (!b || b[0] !== cx || b[1] !== cz || !pts.length || pts[0].length < 3 || !pts.flat(2).every(Number.isFinite)) { rejected++; continue; }
+    const covered = new Map();
+    for (let i = 0; i + 1 < (party || []).length; i += 2) covered.set(party[i], party[i + 1]);
+    rows.set(row, { id, base: base || 0, rings: pts, covered, hidden: new Set(hidden || []) });
+  }
+  return { rows, rejected, area: P.area };
+}
+
+// Each outer edge's treatment: an edge another part's wall stands on (the build's `hidden`) has no wall (-1); walls
+// against a neighbour's mass are windowless party walls (lotLine, the build's sampled `covered`), so are slivers under
+// 2 m; edges looking onto a street within 15 m of its kerb are street fronts:
+// the best (longest, a main street's counting double) takes the building's front kind (its storefront or entrance), and
+// on a shop every other street edge of 3 m or more is a shop front too (corner stores wrap round). The rest are rear.
+// Returns { kinds, edges: [{ ax, az, bx, bz, nx, nz, len, kind, street }] }
+function footprintEdges(outer, covered, hidden, frontKind, shopFront) {
+  const n = outer.length;
+  const edges = [];
+  let best = -1, bestScore = 0;
+  for (let i = 0; i < n; i++) {
+    const [ax, az] = outer[i], [bx, bz] = outer[(i + 1) % n];
+    const dx = bx - ax, dz = bz - az, len = Math.hypot(dx, dz) || 1e-9;
+    const e = { ax, az, bx, bz, nx: dz / len, nz: -dx / len, len, kind: WALL_KINDS.rear, street: false };
+    edges.push(e);
+    if (hidden.has(i)) { e.kind = -1; continue; }
+    if (covered.has(i) || len < 2) { e.kind = WALL_KINDS.lotLine; continue; }
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    const road = nearestRoads(mx, mz, 40)[0];
+    if (!road) continue;
+    const tx = road.px - mx, tz = road.pz - mz, d = Math.hypot(tx, tz);
+    if (d > 0.5 && (tx * e.nx + tz * e.nz) / d > 0.7 && d - (road.road.w || 0) / 2 < 15) {
+      e.street = true;
+      const score = len * ((road.road.w || 0) >= 9 ? 2 : 1);
+      if (score > bestScore) { bestScore = score; best = i; }
+    }
+  }
+  for (const e of edges) if (shopFront && e.street && e.len >= 3) e.kind = WALL_KINDS.shop;
+  if (best >= 0) edges[best].kind = frontKind;
+  return { kinds: edges.map((e) => e.kind), edges };
+}
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -243,6 +298,50 @@ function createRoofMaterial(ribbed) {
   return mat;
 }
 
+// --- Toronto layer: which ground floors are storefronts (bead st-sz0, after mrdoob's 09d27e0 "Limit storefronts to
+// selected buildings", adapted: NYC's survey has no use data and picks retail at random; Toronto selects from data).
+// A storefront front goes on a building that holds a mapped shop, restaurant, bank, market or clinic (GEO.pois), or that
+// fronts a retail strip: two or more of those on the same street within 30 m of its front wall (a main street's row,
+// where not every shop is mapped), for low & mid-rise buildings whose front is on the street. Every other street front
+// is a residential/office front: windows down to the ground and one entrance (tsl-materials.js createBuildingEntrance).
+// Source-keyed signs (js/toronto-storefronts.js) always make their wall a storefront.
+const RETAIL_CATEGORIES = new Set(['shop', 'food', 'bank', 'market', 'health']);
+function storefrontSelection(pois = GEO.pois || []) {
+  const own = new Set();
+  const grid = new Map(); // 50 m cells of retail places, with the street each is on
+  for (const [x, z, , cat, b] of pois) {
+    if (!RETAIL_CATEGORIES.has(cat)) continue;
+    if (b >= 0) own.add(b);
+    const road = nearestRoads(x, z, 40)[0];
+    const k = Math.floor(x / 50) * 100003 + Math.floor(z / 50);
+    (grid.get(k) || grid.set(k, []).get(k)).push({ x, z, road: road ? road.road.name : null });
+  }
+  // retail places on `street` within `r` m of (x, z)
+  const count = (x, z, street, r) => {
+    let n = 0;
+    for (let i = Math.floor((x - r) / 50); i <= Math.floor((x + r) / 50); i++) {
+      for (let j = Math.floor((z - r) / 50); j <= Math.floor((z + r) / 50); j++) {
+        for (const p of grid.get(i * 100003 + j) || []) if (p.road === street && (p.x - x) ** 2 + (p.z - z) ** 2 <= r * r) n++;
+      }
+    }
+    return n;
+  };
+  return { own, onStrip: (x, z, street) => count(x, z, street, 30) >= 2 };
+}
+// The source-keyed signs by building row: the walls (createFacadeBoxes order: -u, +u, -v, +v) that carry one. A record
+// whose row no longer holds the building it was compiled for is ignored (js/storefront-signs.js skips it too)
+function signedWalls(data = window.CITY.STOREFRONTS) {
+  const walls = new Map();
+  for (const s of data?.signs || []) {
+    const b = GEO.buildings[s.b];
+    if (!b || Math.abs(b[0] - s.bc[0]) > 0.05 || Math.abs(b[1] - s.bc[1]) > 0.05) continue;
+    (walls.get(s.b) || walls.set(s.b, new Set()).get(s.b)).add(s.wall);
+  }
+  return walls;
+}
+const FLOOR_HEIGHTS = [3.4, 3.6, 3.8, 3.8, 3.8]; // the facade materials' storeys (buildCityBlocks `materials`)
+// --- end Toronto layer ---
+
 function buildCityBlocks(scene) {
   const group = new THREE.Group();
   group.name = 'CityBuildings';
@@ -252,23 +351,33 @@ function buildCityBlocks(scene) {
 
   // Facade materials: [0] rendered houses & low blocks, [1] rendered offices & commercial (wider windows),
   // [2..4] curtain walls: blue-green, bronze, silver-blue
-  const materials = [
-    createRenderedFacadeMaterial({ windowWidth: 3.1, floorHeight: 3.4, windowRatioX: 0.44, windowRatioY: 0.48, seed: 13.0 }),
-    createRenderedFacadeMaterial({ windowWidth: 2.4, floorHeight: 3.6, windowRatioX: 0.6, windowRatioY: 0.56, litProbability: 0.5, warmth: 0.6, seed: 29.0, cornerPier: 0.5 }),
+  const facadeStyles = [
+    [createRenderedFacadeMaterial, { windowWidth: 3.1, floorHeight: 3.4, windowRatioX: 0.44, windowRatioY: 0.48, seed: 13.0 }],
+    [createRenderedFacadeMaterial, { windowWidth: 2.4, floorHeight: 3.6, windowRatioX: 0.6, windowRatioY: 0.56, litProbability: 0.5, warmth: 0.6, seed: 29.0, cornerPier: 0.5 }],
     // (Toronto layer: the Commons palette's glass, its hue & chroma kept at the darkness the glass shader expects, as
     // aalghooneh/slop-toronto does: blue-grey condo glass with pale slab edges, the Financial District's dark teal-grey,
     // newer grey-green condo glass with white spandrels)
-    createCurtainWallMaterial({ glassTint: 0x2a3744, frameTint: 0x9a9ea0, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.55, reflectivity: 0.92, seed: 41.0, boxLocal: true }),
-    createCurtainWallMaterial({ glassTint: 0x1e2326, frameTint: 0x3a3e40, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.6, reflectivity: 0.9, seed: 57.0, boxLocal: true }),
-    createCurtainWallMaterial({ glassTint: 0x3d4245, frameTint: 0xb4b8ba, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.5, reflectivity: 0.94, seed: 73.0, boxLocal: true })
+    [createCurtainWallMaterial, { glassTint: 0x2a3744, frameTint: 0x9a9ea0, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.55, reflectivity: 0.92, seed: 41.0, boxLocal: true }],
+    [createCurtainWallMaterial, { glassTint: 0x1e2326, frameTint: 0x3a3e40, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.6, reflectivity: 0.9, seed: 57.0, boxLocal: true }],
+    [createCurtainWallMaterial, { glassTint: 0x3d4245, frameTint: 0xb4b8ba, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.5, reflectivity: 0.94, seed: 73.0, boxLocal: true }]
   ];
+  const materials = facadeStyles.map(([create, opts]) => create(opts));
   const buckets = materials.map(() => []);
+  // ?massing=1: the pilot's polygon buildings, by facade style (their own footprintLocal materials, made only then)
+  const massing = massingPilot();
+  const footBuckets = materials.map(() => []);
+  const massingStats = massing && { buildings: 0, rejected: massing.rejected, courtyards: 0, partyWalls: 0, onPodium: 0, boxesReplaced: 0, ms: 0 };
   const roofTiles = { pos: [], nor: [], uv: [], col: [] };
   const roofSheets = { pos: [], nor: [], uv: [], col: [] };
 
-  const stats = { buildings: 0, boxes: 0, hip: 0, sheet: 0, glass: 0 };
-  for (const b of GEO.buildings) {
+  const stats = { buildings: 0, boxes: 0, hip: 0, sheet: 0, glass: 0, storefronts: 0, strip: 0, signed: 0 };
+  const retail = storefrontSelection();
+  const signWalls = signedWalls();
+  const facades = new Map(); // building row -> { mat, floorHeight, front } for the signed buildings
+  for (let bi = 0; bi < GEO.buildings.length; bi++) {
+    const b = GEO.buildings[bi];
     const [cx, cz, ang, parts, h, kind, roof, cseed, , name] = b;
+    const foot = massing ? massing.rows.get(bi) : null;
     const rnd = mulberry32((cseed * 7919) ^ Math.round(cx * 13 + cz * 7));
     const cs = Math.cos(ang), sn = Math.sin(ang);
     // which wall looks onto the street: the nearest road, seen in the building's frame
@@ -280,28 +389,72 @@ function buildCityBlocks(scene) {
       const lv = toRoadX * sn + toRoadZ * cs;
       front = Math.abs(lu) > Math.abs(lv) ? (lu < 0 ? 0 : 1) : (lv < 0 ? 2 : 3);
     }
+    // (a signed building fronts the street its sign is on: its rear, for the fire escapes, is the other side)
+    const signed = signWalls.get(bi);
+    if (signed && !signed.has(front)) front = [...signed][0];
     // material & paint
     let mat = 0;
     if (kind === 3) mat = 2 + Math.floor(rnd() * 3);
     else if (kind === 2) mat = rnd() < 0.35 ? 2 + Math.floor(rnd() * 3) : 1;
-    const shopFront = kind === 2 || (kind === 1 && rnd() < 0.25);
+    // (Toronto layer: storefronts on selected buildings only, storefrontSelection above. The draw that used to pick
+    // a quarter of the low-rise as shops is still made, so every building keeps its colours)
+    if (kind === 1) rnd();
+    let shopFront = !!signed || (retail.own.has(bi) && kind !== 4 && kind !== 5 && kind !== 6); // (not sheds, works or churches)
+    if (!shopFront && kind <= 2 && near.length) {
+      // the front wall's middle, and whether it is on the street (not set back behind a yard or forecourt)
+      const [pu0, pu1, pv0, pv1] = [0, 1, 2, 3].map((k) => (k % 2 ? Math.max : Math.min)(...parts.map((p) => p[k])));
+      const fu = front === 0 ? pu0 : front === 1 ? pu1 : (pu0 + pu1) / 2, fv = front === 2 ? pv0 : front === 3 ? pv1 : (pv0 + pv1) / 2;
+      const fx = cx + fu * cs + fv * sn, fz = cz - fu * sn + fv * cs;
+      const street = nearestRoads(fx, fz, 22).find((r) => r.road.name === near[0].road.name);
+      if (street && retail.onStrip(fx, fz, street.road.name)) { shopFront = true; stats.strip++; }
+    }
+    if (shopFront) stats.storefronts++;
     const faces = [WALL_KINDS.rear, WALL_KINDS.rear, WALL_KINDS.rear, WALL_KINDS.rear];
     faces[front] = shopFront ? WALL_KINDS.shop : WALL_KINDS.entry;
+    if (signed) { for (const w of signed) faces[w] = WALL_KINDS.shop; stats.signed++; }
     // (Toronto layer: brick or render by kind, colours from the Commons palette)
     const brick = mat < 2 && rnd() < (BRICK_SHARE[kind] || 0);
     const paintHex = kind === 4 ? weighted(RAW_BLOCK, rnd()) : kind === 5 ? 0x9b9890 : brick ? weighted(TORONTO_MASONRY, rnd())
       : kind === 6 ? weighted(TORONTO_STONE, rnd()) : weighted(TORONTO_RENDER, rnd());
     const paint = [...linear(paintHex), (kind === 5 ? 0.95 : rnd()) + (brick ? 2 : 0)];
+    if (signed) facades.set(bi, { mat, floorHeight: FLOOR_HEIGHTS[mat], front });
     const tone = rnd();
     let topY = 0;
+    // ?massing=1: the polygon instead of the boxes; the pitched & sheet roofs stay on the boxes' rectangles over it (a
+    // flat cap under them closes whatever the rectangles leave open), its collider is the polygon itself
+    let edges = null;
+    if (foot) {
+      const tf = performance.now();
+      const fr = footprintEdges(foot.rings[0], foot.covered, foot.hidden, faces[front], shopFront);
+      edges = fr.edges;
+      const pitched = (roof === 1 && kind !== 3) || roof === 2;
+      footBuckets[mat].push({
+        cx, cz, rings: foot.rings, base: Math.min(foot.base, h - 0.5), h, kinds: fr.kinds,
+        // (overlapping records of one height: their roofs a little apart, not flickering)
+        capY: (pitched ? h - 0.05 : h) - (bi % 5) * 0.012, tone, seed: footBuckets[mat].length * 29, paint
+      });
+      const outer = foot.rings[0];
+      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+      for (const [x, z] of outer) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+      // (`massing`: the walkers' lines step round it like the turned boxes it replaces, main.js)
+      colliders.push({ minX: x0, maxX: x1, minZ: z0, maxZ: z1, maxY: h, polygon: outer.map(([x, z]) => ({ x, z })), massing: foot.id });
+      massingStats.buildings++;
+      massingStats.courtyards += foot.rings.length - 1;
+      massingStats.partyWalls += foot.covered.size;
+      if (foot.base > 0) massingStats.onPodium++;
+      massingStats.boxesReplaced += parts.filter(([u0, u1, v0, v1]) => u1 - u0 >= 1 && v1 - v0 >= 1).length;
+      massingStats.ms += performance.now() - tf;
+    }
     for (const [u0, u1, v0, v1] of parts) {
       const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
       const w = u1 - u0, d = v1 - v0;
       if (w < 1 || d < 1) continue;
       const x = cx + uc * cs + vc * sn;
       const z = cz - uc * sn + vc * cs;
-      buckets[mat].push({ x, y: h / 2, z, w, h, d, ry: ang, faces, tone, paint });
-      stats.boxes++;
+      if (!foot) {
+        buckets[mat].push({ x, y: h / 2, z, w, h, d, ry: ang, faces, tone, paint });
+        stats.boxes++;
+      }
       topY = h;
       if (roof === 1 && kind !== 3) {
         pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, h, (24 + rnd() * 8) * Math.PI / 180, 0.6, linear(weighted(ROOF_PAINT, rnd())));
@@ -310,6 +463,7 @@ function buildCityBlocks(scene) {
         pushShedRoof(roofSheets, cx, cz, ang, u0, u1, v0, v1, h, linear(weighted(SHEET_PAINT, rnd())));
         stats.sheet++;
       }
+      if (foot) continue;
       // player collider: the part's turned rectangle
       const hx = w / 2, hz = d / 2;
       const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
@@ -331,8 +485,20 @@ function buildCityBlocks(scene) {
       const nf = Math.round(h / storey);
       const back = front === 3 ? 2 : front === 2 ? 3 : front === 0 ? 1 : 0;
       const lenOf = (f) => (f < 2 ? v1 - v0 : u1 - u0); // (walls of the main part, parts[0])
-      const wall = lenOf(back) >= 4.6 ? back : undefined; // (side walls are often party walls in a row)
-      if (nf >= 3 && nf <= 8 && wall !== undefined) {
+      const wall = lenOf(back) >= 4.6 && !signed?.has(back) ? back : undefined; // (side walls are often party walls in a row)
+      // ?massing=1: on the polygon's longest rear wall (not a street front nor a party wall), its +z out of the wall
+      const rear = edges && edges.filter((e) => e.kind === WALL_KINDS.rear && !e.street && e.len >= 4.6).sort((p, q) => q.len - p.len)[0];
+      if (edges && nf >= 3 && nf <= 8 && rear) {
+        const landings = Math.min(nf - 1, 7);
+        const count = rear.len >= 15 ? 2 : 1;
+        for (let k = 0; k < count; k++) {
+          const t = (k + 0.5) / count;
+          detail.fireEscapes.push({
+            x: rear.ax + (rear.bx - rear.ax) * t + rear.nx * 0.55, y: storey + 0.1, z: rear.az + (rear.bz - rear.az) * t + rear.nz * 0.55,
+            h: (landings - 1) * storey + 1, storey, landings, ry: Math.atan2(rear.nx, rear.nz), facing: 0
+          });
+        }
+      } else if (!edges && nf >= 3 && nf <= 8 && wall !== undefined) {
         const landings = Math.min(nf - 1, 7);
         const count = lenOf(wall) >= 15 ? 2 : 1;
         for (let k = 0; k < count; k++) {
@@ -354,7 +520,16 @@ function buildCityBlocks(scene) {
       // an air conditioner on a side wall (not the street front), at the upper floors: in Toronto a few, not Abuja's
       // split units on every wall
       const n = rnd() < 0.2 ? 1 : 0;
-      for (let k = 0; k < n; k++) {
+      const sides = edges && edges.filter((e) => e.kind === WALL_KINDS.rear && e.len >= 3);
+      for (let k = 0; k < n && sides; k++) { // (?massing=1: on one of the polygon's rear walls)
+        const e = sides[Math.floor(rnd() * sides.length)];
+        if (!e) break;
+        const floors = Math.max(1, Math.round((topY - 0.6) / 3.4));
+        const y = Math.min(topY - 1.0, 0.6 + Math.floor(rnd() * floors) * 3.4 + 1.6);
+        const t = 0.15 + rnd() * 0.7;
+        detail.acs.push({ x: e.ax + (e.bx - e.ax) * t + e.nx * 0.2, y, z: e.az + (e.bz - e.az) * t + e.nz * 0.2, ry: Math.atan2(e.nx, e.nz) });
+      }
+      for (let k = 0; k < n && !sides; k++) {
         const side = [0, 1, 2, 3].filter((f) => f !== front)[Math.floor(rnd() * 3)];
         const floors = Math.max(1, Math.round((topY - 0.6) / 3.4));
         const y = Math.min(topY - 1.0, 0.6 + Math.floor(rnd() * floors) * 3.4 + 1.6);
@@ -363,7 +538,7 @@ function buildCityBlocks(scene) {
         if (side < 2) { lu = side === 0 ? u0 - 0.2 : u1 + 0.2; lv = v0 + (v1 - v0) * t; rot = side === 0 ? -Math.PI / 2 : Math.PI / 2; }
         else { lu = u0 + (u1 - u0) * t; lv = side === 2 ? v0 - 0.2 : v1 + 0.2; rot = side === 2 ? Math.PI : 0; }
         const [ax, az] = local(lu, lv);
-        detail.acs.push({ x: ax, y, z: az, ry: ang + rot });
+        if (!signed?.has(side)) detail.acs.push({ x: ax, y, z: az, ry: ang + rot }); // (never on a signed shopfront)
       }
       if (rnd() < 0.05) { // the odd satellite dish
         const [dx, dz] = local(u0 + (u1 - u0) * (0.1 + rnd() * 0.8), v0 + (v1 - v0) * (0.1 + rnd() * 0.8));
@@ -376,6 +551,24 @@ function buildCityBlocks(scene) {
     }
   }
 
+  // ?massing=1: the pilot's polygons, merged per facade style and 1 km cell, in footprintLocal copies of the materials
+  if (massing) {
+    const tm = performance.now();
+    let triangles = 0, meshes = 0, walls = 0;
+    footBuckets.forEach((items, i) => {
+      if (!items.length) return;
+      const [create, opts] = facadeStyles[i];
+      const built = createFootprintFacades(create({ ...opts, footprintLocal: true }), items);
+      for (const m of built.meshes) { m.name = `MassingBuildings_${i}`; group.add(m); }
+      triangles += built.triangles; meshes += built.meshes.length; walls += built.walls;
+    });
+    Object.assign(massingStats, { triangles, meshes, walls, boxTriangles: massingStats.boxesReplaced * 12, area: massing.area && massing.area.name });
+    massingStats.ms = Math.round((massingStats.ms + performance.now() - tm) * 10) / 10;
+    window.CITY.massingPilotStats = massingStats;
+    console.info(`[buildings] massing pilot (${massingStats.area}): ${massingStats.buildings} buildings from their polygons (${massingStats.rejected} records rejected), ` +
+      `${massingStats.courtyards} courtyards, ${massingStats.partyWalls} party walls, ${massingStats.onPodium} on a podium; ${triangles} triangles in ${meshes} meshes ` +
+      `(the ${massingStats.boxesReplaced} boxes they replace: ${massingStats.boxTriangles} triangles, instanced); ${massingStats.ms} ms`);
+  }
   buckets.forEach((items, i) => {
     if (!items.length) return;
     const inst = createFacadeBoxes(materials[i], items);
@@ -398,7 +591,7 @@ function buildCityBlocks(scene) {
     group.add(m);
   }
   if (window.CITY.DEBUG_ROADS !== false) {
-    console.info(`[buildings] ${stats.buildings} buildings, ${stats.boxes} boxes, ${stats.hip} hipped & ${stats.sheet} sheet roofs, ${stats.glass} in curtain wall`);
+    console.info(`[buildings] ${stats.buildings} buildings, ${stats.boxes} boxes, ${stats.hip} hipped & ${stats.sheet} sheet roofs, ${stats.glass} in curtain wall; ${stats.storefronts} storefronts (${stats.strip} on retail strips, ${stats.signed} signed)`);
   }
 
   // ===================================================================================================================
@@ -534,8 +727,9 @@ function buildCityBlocks(scene) {
   update(0, 0, true);
 
   scene.add(group);
-  return { group, colliders, quadtree, allBlocks, update, getActiveBlockCount: () => activeCount };
+  window.CITY.storefrontBuildingStats = { storefronts: stats.storefronts, strip: stats.strip, signed: stats.signed };
+  return { group, colliders, quadtree, allBlocks, update, getActiveBlockCount: () => activeCount, facadeOf: (row) => facades.get(row) || null };
 }
 
-Object.assign(window.CITY, { CityQuadtree, buildCityBlocks });
+Object.assign(window.CITY, { CityQuadtree, buildCityBlocks, storefrontSelection, signedWalls });
 })();

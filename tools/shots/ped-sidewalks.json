@@ -1,0 +1,76 @@
+[
+ {
+  "name": "stats-start",
+  "mode": "person",
+  "time": "midday",
+  "wait": 500,
+  "js": "(() => {\n  const T = window.__CITY_APP.trafficSystem, s = T.pedRoutes.stats;\n  const keys = ['lines', 'walkSides', 'oneSided', 'unwalkedSides', 'bandSides', 'straight', 'followed', 'detoured', 'walkDetours', 'lineBlocked', 'gapBlocked', 'throughFurniture',\n    'walkLinks', 'bandLinks', 'built', 'blocked', 'offIsland', 'midBuilt', 'midNoLanding', 'obstacles'];\n  const out = Object.fromEntries(keys.map((k) => [k, s[k]]));\n  for (const k of ['walkMs', 'followMs', 'detourMs']) out[k] = +(s[k] || 0).toFixed(1);\n  console.log('[ride-check] ped-sidewalks start ' + JSON.stringify({ q: location.search, ...out, peds: T.peds.filter((p) => p.placed).length }));\n})()"
+ },
+ {
+  "name": "winchester-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": 1640,
+  "z": -1922,
+  "heading": 1.571,
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [1622,13,-1913.7], look: [1646,0,-1921], fov: 50 }); })()"
+ },
+ {
+  "name": "winchester-census",
+  "wait": 200,
+  "js": "(async () => {\n  const C = window.CITY, T = window.__CITY_APP.trafficSystem;\n  const walks = C.sidewalkWalkIndex(C.sidewalkPieceMap);\n  if (!C.__built) {\n    C.__built = new Map();\n    for (const bl of C.GEO.buildings) {\n      const b = C.blockAt(bl[0], bl[1]);\n      if (!b) continue;\n      let area = 0;\n      for (const [u0, u1, v0, v1] of bl[3]) area += (u1 - u0) * (v1 - v0);\n      const s = C.__built.get(b) || { n: 0, area: 0, top: 0 };\n      s.n++; s.area += area; s.top = Math.max(s.top, bl[4]);\n      C.__built.set(b, s);\n    }\n  }\n  const paved = (b) => (b.cx > -1150 && b.cx < 1500 && b.cz > -2750 && b.cz < 650) || (() => { const s = C.__built.get(b); return !!s && (s.top >= 20 || (s.top >= 14 && s.area / s.n >= 1500)); })();\n  const grass = (b) => b.park > 0.6 || (!paved(b) && !(b.wild > 0.5));\n  const count = { walk: 0, grass: 0, paved: 0, unmapped: 0, crossing: 0, road: 0 }, lines = { walk: 0, unwalked: 0, band: 0 }, off = [];\n  for (let k = 0; k < 16; k++) {\n    for (const p of T.peds) {\n      if (!p.placed || Math.hypot(p.x - 1640, p.z - -1922) > 90) continue;\n      if (p.node || p.mid) { count.crossing++; continue; }\n      if (p.route && p.route.edge) lines[['band', 'walk', 'unwalked'][p.route.walk || 0]]++;\n      const b = C.blockAt(p.x, p.z);\n      const on = b && walks ? walks.inside(b.id, p.x, p.z) : null;\n      const key = !b ? 'road' : on === null ? 'unmapped' : on ? 'walk' : grass(b) ? 'grass' : 'paved';\n      count[key]++;\n      if ((key === 'grass' || key === 'paved') && off.length < 12) off.push([+p.x.toFixed(1), +p.z.toFixed(1), key, p.route ? p.route.walk || 0 : null]);\n    }\n    await new Promise((res) => setTimeout(res, 500));\n  }\n  console.log('[ride-check] census winchester ' + JSON.stringify({ q: location.search, samples: 16, radius: 90, count, lines, off }));\n})()"
+ },
+ {
+  "name": "winchester-top",
+  "wait": 1500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [1640,28,-1909], look: [1640,0,-1917], fov: 50 }); })()"
+ },
+ {
+  "name": "winchester-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": 1640,
+  "z": -1922,
+  "heading": 1.571,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "king-spadina-aerial",
+  "mode": "person",
+  "time": "midday",
+  "x": -1109,
+  "z": -350,
+  "heading": 0,
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-1085,12,-322], look: [-1110,0,-350], fov: 50 }); })()"
+ },
+ {
+  "name": "king-spadina-census",
+  "wait": 200,
+  "js": "(async () => {\n  const C = window.CITY, T = window.__CITY_APP.trafficSystem;\n  const walks = C.sidewalkWalkIndex(C.sidewalkPieceMap);\n  if (!C.__built) {\n    C.__built = new Map();\n    for (const bl of C.GEO.buildings) {\n      const b = C.blockAt(bl[0], bl[1]);\n      if (!b) continue;\n      let area = 0;\n      for (const [u0, u1, v0, v1] of bl[3]) area += (u1 - u0) * (v1 - v0);\n      const s = C.__built.get(b) || { n: 0, area: 0, top: 0 };\n      s.n++; s.area += area; s.top = Math.max(s.top, bl[4]);\n      C.__built.set(b, s);\n    }\n  }\n  const paved = (b) => (b.cx > -1150 && b.cx < 1500 && b.cz > -2750 && b.cz < 650) || (() => { const s = C.__built.get(b); return !!s && (s.top >= 20 || (s.top >= 14 && s.area / s.n >= 1500)); })();\n  const grass = (b) => b.park > 0.6 || (!paved(b) && !(b.wild > 0.5));\n  const count = { walk: 0, grass: 0, paved: 0, unmapped: 0, crossing: 0, road: 0 }, lines = { walk: 0, unwalked: 0, band: 0 }, off = [];\n  for (let k = 0; k < 16; k++) {\n    for (const p of T.peds) {\n      if (!p.placed || Math.hypot(p.x - -1109, p.z - -350) > 90) continue;\n      if (p.node || p.mid) { count.crossing++; continue; }\n      if (p.route && p.route.edge) lines[['band', 'walk', 'unwalked'][p.route.walk || 0]]++;\n      const b = C.blockAt(p.x, p.z);\n      const on = b && walks ? walks.inside(b.id, p.x, p.z) : null;\n      const key = !b ? 'road' : on === null ? 'unmapped' : on ? 'walk' : grass(b) ? 'grass' : 'paved';\n      count[key]++;\n      if ((key === 'grass' || key === 'paved') && off.length < 12) off.push([+p.x.toFixed(1), +p.z.toFixed(1), key, p.route ? p.route.walk || 0 : null]);\n    }\n    await new Promise((res) => setTimeout(res, 500));\n  }\n  console.log('[ride-check] census king-spadina ' + JSON.stringify({ q: location.search, samples: 16, radius: 90, count, lines, off }));\n})()"
+ },
+ {
+  "name": "king-spadina-top",
+  "wait": 1500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-1104,26,-331], look: [-1108,0,-350], fov: 50 }); })()"
+ },
+ {
+  "name": "king-spadina-pov",
+  "mode": "person",
+  "camera": "pov",
+  "time": "midday",
+  "x": -1109,
+  "z": -350,
+  "heading": 0,
+  "wait": 3500,
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = null; })()"
+ },
+ {
+  "name": "stats-end",
+  "wait": 100,
+  "js": "(() => {\n  const T = window.__CITY_APP.trafficSystem, s = T.pedRoutes.stats;\n  const keys = ['lines', 'walkSides', 'oneSided', 'unwalkedSides', 'bandSides', 'straight', 'followed', 'detoured', 'walkDetours', 'lineBlocked', 'gapBlocked', 'throughFurniture',\n    'walkLinks', 'bandLinks', 'built', 'blocked', 'offIsland', 'midBuilt', 'midNoLanding', 'obstacles'];\n  const out = Object.fromEntries(keys.map((k) => [k, s[k]]));\n  for (const k of ['walkMs', 'followMs', 'detourMs']) out[k] = +(s[k] || 0).toFixed(1);\n  console.log('[ride-check] ped-sidewalks end ' + JSON.stringify({ q: location.search, ...out, peds: T.peds.filter((p) => p.placed).length }));\n})()"
+ }
+]

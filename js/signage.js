@@ -27,9 +27,12 @@ const SIGN_STYLE = {
   place: ['#2b3138', '#ffffff']
 };
 
-// One board per building: a named place inside it (the first commercial one) or the building's own name
+// One board per building: a named place inside it (the first commercial one) or the building's own name. Buildings
+// with source-keyed storefront signs (storefront-signs.js) carry those instead: never a second board naming one tenant
 function signList() {
   const byBuilding = new Map();
+  const signed = new Set((window.CITY.STOREFRONTS?.signs || []).map((s) => s.b));
+  for (const b of signed) byBuilding.set(b, null);
   for (const [, , name, cat, bi] of GEO.pois || []) {
     if (bi < 0 || byBuilding.has(bi)) continue;
     byBuilding.set(bi, { name, cat });
@@ -37,7 +40,7 @@ function signList() {
   GEO.buildings.forEach((b, i) => {
     if (b[9] && !byBuilding.has(i)) byBuilding.set(i, { name: b[9], cat: b[5] === 6 ? 'worship' : b[5] === 7 ? 'education' : 'place' });
   });
-  return [...byBuilding].map(([bi, s]) => ({ bi, ...s }));
+  return [...byBuilding].filter(([, s]) => s).map(([bi, s]) => ({ bi, ...s }));
 }
 
 function buildSignage(scene) {

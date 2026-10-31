@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { cafeto, addressStreet } from '../tools/build-cafeto.mjs';
 import { loadPatioWorld } from '../tools/cafeto-world.mjs';
+import { loadReplayWorld, replayPatios } from '../tools/patio-replay.mjs';
+import { buildPatios, sourceHashes, PATIOS_JS, PATIO_INPUTS } from '../tools/build-patios.mjs';
 
 const read = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const geo = { window: { CITY: {} } };
@@ -13,7 +15,10 @@ const snapshotFile = fs.readdirSync(new URL('../tools/data', import.meta.url)).f
 const snapshot = JSON.parse(read(`tools/data/${snapshotFile}`));
 const layout = { window: { CITY: {} }, console };
 vm.runInNewContext(read('js/patio-layout.js'), layout);
-const { patioSites, patioSeason, PATIO_RULES } = layout.window.CITY;
+const { patioSites, PATIO_RULES } = layout.window.CITY;
+const runtime = { window: { CITY: { THREE: {}, CITY_BOUNDS: { sidewalkHeight: 0.22 } } }, console };
+vm.runInNewContext(read('js/cafeto-patios.js'), runtime);
+const { patioSeason, patioFingerprint, patioInputs, builtPatioSites, patioSiteRow, PATIO_SITE_FIELDS } = runtime.window.CITY;
 
 test('the CaféTO snapshot keeps its provenance and every intervention type, clipped to the detailed city', () => {
   assert.match(snapshot.source.page, /open\.toronto\.ca\/dataset\/cafeto-curb-lane-parklet-cafe-locations/);
@@ -166,11 +171,85 @@ test('on the real city: every placed patio keeps its footprint rules and clears 
   for (const a of ['146 OSSINGTON AVE', '188 OSSINGTON AVE', '72 OSSINGTON AVE', '225 OSSINGTON AVE']) assert.equal(byAddress(a)?.kind, 'curb', a);
 });
 
-test('explore.html loads the layer, then the rules before the builder', () => {
+test('explore.html loads the layer and its prebuilt layout before the builder, not the rules', () => {
   const html = read('explore.html');
   const i = (f) => html.indexOf(`'./js/${f}'`);
-  assert.ok(i('toronto-cafeto.js') > 0 && i('patio-layout.js') > i('toronto-cafeto.js') && i('cafeto-patios.js') > i('patio-layout.js'));
-  assert.ok(i('patio-layout.js') > i('city-config.js') && i('cafeto-patios.js') < i('road-network.js'));
+  assert.ok(i('toronto-cafeto.js') > 0 && i('toronto-patios.js') > i('toronto-cafeto.js') && i('cafeto-patios.js') > i('toronto-patios.js'));
+  assert.ok(i('cafeto-patios.js') > i('city-config.js') && i('cafeto-patios.js') < i('road-network.js'));
+  // the rules load only to lay the patios out again (?patios=layout|check, or stale inputs): the builder names them
+  assert.equal(i('patio-layout.js'), -1, 'js/patio-layout.js does not run at startup');
+  assert.match(read('js/cafeto-patios.js'), /'\.\/js\/patio-layout\.js'/, 'the build ships it, fingerprinted, for the builder to load');
+});
+
+// The prebuilt layout (st-cmf): js/toronto-patios.js holds what js/patio-layout.js placed in the browser, and
+// tools/data/patio-inputs.json the runtime inputs it met there that node cannot rebuild (docs/cafeto-patios.md)
+const PATIOS = (() => { const c = { window: {} }; vm.runInNewContext(read(PATIOS_JS), c); return c.window.CITY.PATIOS; })();
+const recorded = JSON.parse(read(PATIO_INPUTS));
+
+test('the prebuilt patio layout is the runtime algorithm\'s: node replays js/patio-layout.js on the committed data to the same sites, counts and reasons', () => {
+  const world = loadReplayWorld();
+  const replay = replayPatios(world, recorded);
+  const sorted = (o) => JSON.stringify(Object.entries(o).sort());
+  assert.equal(JSON.stringify(PATIOS.fields), JSON.stringify(PATIO_SITE_FIELDS));
+  assert.equal(replay.sites.length, PATIOS.sites.length);
+  for (let i = 0; i < replay.sites.length; i++) assert.equal(JSON.stringify(replay.sites[i]), JSON.stringify(PATIOS.sites[i]), `site ${i} (${PATIOS.sites[i][0]})`);
+  assert.equal(sorted(replay.rejected), sorted(PATIOS.rejected));
+  assert.equal(sorted(replay.blockers), sorted(PATIOS.blockers));
+  assert.equal(sorted(replay.reasons), sorted(recorded.reasons));
+  assert.equal(Object.values(PATIOS.rejected).reduce((a, b) => a + b, 0) + PATIOS.sites.length, world.records.length);
+  // and the generator, given the same record, writes the very files committed (deterministic)
+  const dump = { fingerprint: PATIOS.fingerprint, fields: PATIOS.fields, sites: PATIOS.sites, rejected: PATIOS.rejected,
+    blockers: PATIOS.blockers, reasons: recorded.reasons, replay: { furniture: recorded.furniture, colliders: recorded.colliders } };
+  const built = buildPatios(dump, { world });
+  assert.equal(built.js, read(PATIOS_JS));
+  assert.equal(built.inputs, read(PATIO_INPUTS));
+});
+
+test('the prebuilt patio layout was built from the committed sidewalks, poles, geodata and furniture', () => {
+  // a data script the layout reads (directly, or through the colliders & furniture it met) changed: rebuild the layout
+  const now = sourceHashes();
+  const stale = Object.keys(now).filter((rel) => recorded.sources[rel] !== now[rel]);
+  assert.deepEqual(stale, [], `rebuild js/toronto-patios.js (tools/build-patios.mjs): ${stale.join(', ')} changed`);
+});
+
+test('the page builds the prebuilt sites over their CaféTO records, the fields it reads intact', () => {
+  const records = vm.runInNewContext(`${read('js/toronto-cafeto.js')}; window.CITY.CAFETO.records`, { window: {} });
+  const sites = builtPatioSites(PATIOS, records);
+  assert.equal(sites.length, PATIOS.sites.length);
+  sites.forEach((s, i) => assert.equal(JSON.stringify(patioSiteRow(s)), JSON.stringify(PATIOS.sites[i])));
+  for (const s of sites) {
+    const rec = records.find((r) => r.id === s.id);
+    assert.equal(s.address, rec.address);
+    assert.ok(s.kind === 'curb' || s.kind === 'sidewalk');
+    assert.ok([s.cx, s.cz, s.tx, s.tz, s.nx, s.nz, s.length, s.depth, s.entrance].every(Number.isFinite));
+    assert.ok(Math.abs(Math.hypot(s.tx, s.tz) - 1) < 1e-9 && Math.abs(s.tx * s.nx + s.tz * s.nz) < 1e-9);
+  }
+  // the aerial-checked Ossington platforms (docs/cafeto-patios.md) and the capture fixtures' cafés
+  for (const a of ['146 OSSINGTON AVE', '188 OSSINGTON AVE', '72 OSSINGTON AVE', '225 OSSINGTON AVE', '874 QUEEN ST W', '611 COLLEGE ST']) {
+    assert.equal(sites.find((s) => s.address === a)?.kind, 'curb', a);
+  }
+  for (const a of ['660 COLLEGE ST', '309 KING ST W', '494 DANFORTH AVE']) assert.equal(sites.find((s) => s.address === a)?.kind, 'sidewalk', a);
+  assert.throws(() => builtPatioSites({ sites: [['no-such-licence', ...PATIOS.sites[0].slice(1)]] }, records), /no CaféTO record/);
+});
+
+test('the runtime inputs fingerprint is order-free and sees a 0.1 mm move, near the cafés only', () => {
+  const a = [[1, 2, 'pole'], [3, 4.5]], b = [[3, 4.5], [1, 2, 'pole']];
+  assert.equal(patioFingerprint(a), patioFingerprint(b));
+  assert.notEqual(patioFingerprint(a), patioFingerprint([[1, 2.0001, 'pole'], [3, 4.5]]));
+  assert.notEqual(patioFingerprint(a), patioFingerprint([[1, 2, 'post'], [3, 4.5]]));
+  assert.match(patioFingerprint(a), /^2:[0-9a-f]{16}$/);
+  const records = [{ x: 0, z: 0 }];
+  const box = (x, z, extra = {}) => ({ minX: x - 0.2, maxX: x + 0.2, minZ: z - 0.2, maxZ: z + 0.2, maxY: 9, ...extra });
+  const CITY = { sidewalkPieceMap: new Map([[1, [{ outer: [{ x: 1, z: 1 }, { x: 2, z: 1 }, { x: 2, z: 2 }], holes: [] }]]]) };
+  const base = patioInputs(CITY, records, [box(10, 10), box(500, 500), box(12, 0, { maxY: 0.5 })], [{ x: 5, z: 5, kind: 'bench' }, { x: 900, z: 0, kind: 'bench' }]);
+  assert.equal(base.colliders.length, 1, 'far colliders and low ones (kerbs) are not inputs');
+  assert.equal(base.furniture.length, 1);
+  assert.match(base.fingerprint.sidewalks, /^1:/);
+  const moved = patioInputs(CITY, records, [box(10, 10.001), box(500, 500)], [{ x: 5, z: 5, kind: 'bench' }]);
+  assert.notEqual(moved.fingerprint.colliders, base.fingerprint.colliders);
+  assert.equal(moved.fingerprint.furniture, base.fingerprint.furniture);
+  const far = patioInputs(CITY, records, [box(10, 10), box(600, 500)], [{ x: 5, z: 5, kind: 'bench' }, { x: 990, z: 0, kind: 'bench' }]);
+  assert.deepEqual(far.fingerprint, base.fingerprint, 'what changes far from every café leaves the layout valid');
 });
 
 test('every café gets its tables, clear of the door', () => {

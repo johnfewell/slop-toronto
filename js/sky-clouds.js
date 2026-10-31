@@ -136,11 +136,12 @@ async function setupClouds(renderer) {
   let frame = 0;
   let camera = null, lightingSystem = null;
   // ?atmosphere=1 state, made in attach()
-  const nightGlow = TSL.uniform(0);
+  // (the glow per time of day, the camera per frame: renderGroup uniforms, uploaded once per render)
+  const nightGlow = TSL.uniform(0).setGroup(TSL.renderGroup);
   let starsNode = null;
   let skyGlow = null;
-  const camProjInv = TSL.uniform(new THREE.Matrix4());
-  const camWorld = TSL.uniform(new THREE.Matrix4());
+  const camProjInv = TSL.uniform(new THREE.Matrix4()).setGroup(TSL.renderGroup);
+  const camWorld = TSL.uniform(new THREE.Matrix4()).setGroup(TSL.renderGroup);
   return {
     atmosphereEnabled: ATMOSPHERE,
     attach(cam, lighting) {

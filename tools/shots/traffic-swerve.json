@@ -1,0 +1,108 @@
+[
+ {
+  "name": "boot",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => {\n  // st-hde capture helper: a car set down behind the player, the film loop stepped frame by frame, and the closest the\n  // car comes to the player, the streetcars, the people on foot and the other traffic logged at each phase\n  const app = window.__CITY_APP, T = app.trafficSystem, N = T.network;\n  const movers = {};\n  const setObstacles = T.setObstacles;\n  T.setObstacles = (list, src = 'streetcars') => { movers[src] = list || []; return setObstacles(list, src); };\n  const box = (x, z, yaw, halfL, halfW) => ({ x, z, tx: Math.sin(yaw), tz: Math.cos(yaw), halfL, halfW });\n  const sep = (a, b) => {\n    const dx = b.x - a.x, dz = b.z - a.z;\n    const along = Math.abs(b.tx * a.tx + b.tz * a.tz), across = Math.abs(b.tx * a.tz - b.tz * a.tx);\n    return Math.max(\n      Math.abs(dx * a.tx + dz * a.tz) - a.halfL - b.halfL * along - b.halfW * across,\n      Math.abs(dx * a.tz - dz * a.tx) - a.halfW - b.halfL * across - b.halfW * along,\n      Math.abs(dx * b.tx + dz * b.tz) - b.halfL - a.halfL * along - a.halfW * across,\n      Math.abs(dx * b.tz - dz * b.tx) - b.halfW - a.halfL * across - a.halfW * along);\n  };\n  const DIMS = { person: [0.32, 0.32], cyclist: [0.85, 0.35], car: [2.18, 0.86] };\n  const S = window.__swerve = { car: null, edge: null, lane: 0, frames: 0 };\n  const playerBox = () => {\n    const mode = app.controllerManager.activeMode, p = app.controllerManager.getActiveEntity(), [L, W] = DIMS[mode] || DIMS.person;\n    return box(p.position.x, p.position.z, p.heading || 0, L, W);\n  };\n  S.track = () => {\n    const c = S.car;\n    if (!c || !c.edge) return;\n    const b = box(c.x, c.z, c.yaw + c.yawOffset, c.half, c.halfWidth), m = S.min;\n    m.player = Math.min(m.player, sep(b, playerBox()));\n    for (const list of Object.values(movers)) for (const o of list) {\n      if (Math.abs(o.x - c.x) < 40 && Math.abs(o.z - c.z) < 40) m.streetcars = Math.min(m.streetcars, sep(b, box(o.x, o.z, o.yaw, o.halfL, o.halfW)));\n    }\n    for (const p of T.peds) if (p.placed && Math.abs(p.x - c.x) < 12 && Math.abs(p.z - c.z) < 12) m.peds = Math.min(m.peds, sep(b, box(p.x, p.z, 0, 0.3, 0.3)));\n    for (const o of [...T.cars, ...T.buses]) {\n      if (o !== c && o.edge && Math.abs(o.x - c.x) < 15 && Math.abs(o.z - c.z) < 15 && Math.abs((o.y || 0) - (c.y || 0)) < 2.5) {\n        m.others = Math.min(m.others, sep(b, box(o.x, o.z, o.yaw + o.yawOffset, o.half, o.halfWidth)));\n      }\n    }\n    m.dlMin = Math.min(m.dlMin, c.dl);\n    m.dlMax = Math.max(m.dlMax, c.dl);\n    if (c.dodge) m.dodges[c.dodge] = (m.dodges[c.dodge] || 0) + 1;\n    m.steerMax = Math.max(m.steerMax, Math.abs(c.steer));\n  };\n  S.step = async (n = 1) => {\n    for (let i = 0; i < n; i++) { await app.film.step(1); S.frames++; S.track(); }\n  };\n  S.until = async (cond, max = 900) => {\n    let n = 0;\n    while (n < max && !cond(S.car)) { await S.step(1); n++; }\n    return n;\n  };\n  // across the road at the player: where the roadway is clear (isRoadClear), right of the centre line\n  const roadway = (e, s) => {\n    let lo = null, hi = null;\n    for (let o = -12; o <= 12; o += 0.25) {\n      const x = e.sx + e.dx * s + e.rx * o, z = e.sz + e.dz * s + e.rz * o;\n      if (N.isRoadClear(x, z, 0.05)) { if (lo === null) lo = o; hi = o; }\n    }\n    return [lo, hi];\n  };\n  S.log = (phase) => {\n    const c = S.car, e = S.edge;\n    const r = (v) => (Number.isFinite(v) ? Math.round(v * 100) / 100 : v);\n    console.log('[ride-check] swerve ' + JSON.stringify({ phase, frames: S.frames, t: r(S.frames / 30),\n      car: c && { speed: r(c.speed), dl: r(c.dl), evade: r(c.evade), dodge: c.dodge, panic: c.panicUntil > 0, steerDeg: r(c.steer * 180 / Math.PI),\n        noseDeg: r(c.nose * 180 / Math.PI), blink: c.blink, pAhead: r(c.pAhead), pRight: r(c.pRight), onEdge: c.edge === e, lane: c.lane },\n      min: Object.fromEntries(Object.entries(S.min).map(([k, v]) => [k, typeof v === 'number' ? r(v) : v])),\n      streetcarsNear: Object.values(movers).flat().filter((o) => c && Math.hypot(o.x - c.x, o.z - c.z) < 60).length }));\n  };\n  // A street near (X, Z): 'side', one lane each way and no tracks; 'king', two lanes or more with a streetcar's\n  // tracks. The player (already in its mode) stands in the first lane (curb: the last) lead m ahead of where the car is\n  // set down, at speed (default: its pace).\n  // (walk: the player starts that far right of the lane's centre, on the curb, and walks across at that input)\n  S.setup = async ({ name, kind, X, Z, lat, lon, lead = 45, speed = null, curb = false, skip = 0, walk = null }) => {\n    app.controllerManager.setGamepadInput('forward', 0);\n    if (lat !== undefined) ({ x: X, z: Z } = window.CITY.worldFromLatLon(lat, lon));\n    if (!app.film.active) app.film.start(30);\n    if (!S.hudHidden) { document.getElementById('btn-toggle-hud')?.click?.(); S.hudHidden = true; }\n    const ok = (e) => e.len > lead + (kind === 'king' ? 45 : 80) && !((e.h0 || 0) > 0.5 || (e.h1 || 0) > 0.5) && !e.busOnly &&\n      (kind === 'king' ? e.tram && Math.abs(e.dx) > 0.9 : !e.tram && e.lanes.length === 1 && e.opposite && e.opposite.lanes.length === 1 && e.axis !== 'ave');\n    // (King: the street's centre line at that spot, as tools/shots/streetcars.json finds it)\n    if (kind === 'king') {\n      const n = (window.CITY.nearestRoads(X, Z, 120) || []).find((r) => /^King Street/.test(r.road && r.road.name));\n      if (n) { X = n.px; Z = n.pz; }\n    }\n    const mid = (e) => Math.hypot(e.sx + e.dx * e.len / 2 - X, e.sz + e.dz * e.len / 2 - Z);\n    // (on King, two lanes or more first: a curb lane beside the track)\n    const key = (e) => mid(e) + (kind === 'king' && e.lanes.length < 2 ? 300 : 0);\n    const list = N.edges.filter(ok).sort((a, b) => key(a) - key(b));\n    if (kind === 'king') console.log('[ride-check] swerve-king-near ' + JSON.stringify(N.edges.filter((e) => e.tram && mid(e) < 160)\n      .map((e) => ({ m: Math.round(mid(e)), len: Math.round(e.len), lanes: e.lanes, dx: +e.dx.toFixed(2) }))));\n    const e = list[skip] || list[0];\n    if (!e) throw new Error('no ' + kind + ' street near ' + Math.round(X) + ', ' + Math.round(Z));\n    const lane = curb ? e.lanes.length - 1 : 0;\n    const s0 = 18, ps = s0 + lead;\n    const at = (s, l) => [e.sx + e.dx * s + e.rx * e.lanes[l], e.sz + e.dz * s + e.rz * e.lanes[l]];\n    let [px, pz] = at(ps, lane);\n    if (walk) { px += e.rx * walk.offset; pz += e.rz * walk.offset; }\n    app.teleportTo(px, pz, walk ? Math.atan2(-e.rx, -e.rz) : Math.atan2(e.dx, e.dz));\n    await S.step(2);\n    // a car from the far side of the pool (or not on the streets) set down behind\n    const p = app.controllerManager.getActiveEntity().position;\n    const c = T.cars.filter((v) => !v.isPolice && (!v.edge || Math.hypot(v.x - p.x, v.z - p.z) > 250))[0];\n    T.placeVehicle(c, e, lane, s0);\n    c.speed = speed ?? c.v0 * 0.9;\n    Object.assign(S, { car: c, edge: e, lane, frames: 0,\n      min: { player: Infinity, streetcars: Infinity, peds: Infinity, others: Infinity, dlMin: 0, dlMax: 0, dodges: {}, steerMax: 0 } });\n    // the camera behind and above the car, a little to its left, looking on past it\n    app.cameraSystem.cinema = () => {\n      const lx = e.dz, lz = -e.dx;\n      return { pos: [c.x - e.dx * 11 + lx * 3, (c.y || 0) + 3.6, c.z - e.dz * 11 + lz * 3],\n        look: [c.x + e.dx * 14, (c.y || 0) + 0.6, c.z + e.dz * 14], fov: 58 };\n    };\n    if (walk) app.controllerManager.setGamepadInput('forward', walk.input);\n    await S.step(1);\n    const [lo, hi] = roadway(e, ps);\n    const road = (window.CITY.nearestRoads?.(px, pz, 30) || [])[0];\n    console.log('[ride-check] swerve-setup ' + JSON.stringify({ name, kind, street: road && road.road && road.road.name, edge: { x: Math.round(e.sx + e.dx * ps), z: Math.round(e.sz + e.dz * ps),\n      dir: [+e.dx.toFixed(3), +e.dz.toFixed(3)], lanes: e.lanes, half: e.half, len: Math.round(e.len), tram: !!e.tram, opposite: !!e.opposite,\n      divided: !!e.divided, clearAcross: [lo, hi] }, lane, player: { x: +p.x.toFixed(2), z: +p.z.toFixed(2), mode: app.controllerManager.activeMode },\n      car: { kind: c.bodyType, v0: +c.v0.toFixed(1), speed: +c.speed.toFixed(1) }, candidates: list.length }));\n  };\n  console.log('[ride-check] swerve helper ready');\n})()"
+ },
+ {
+  "name": "side-0-setup",
+  "wait": 600,
+  "mode": "person",
+  "js": "(async () => { await window.__swerve.setup({ name: 'side', kind: 'side', X: -2047, Z: -2307, lead: 42 }); window.__swerve.log('setup'); })()"
+ },
+ {
+  "name": "side-1-approach",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.pAhead < 24 || c.dodge, 600); S.log('approach'); })()"
+ },
+ {
+  "name": "side-2-out",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => (c.dodge && Math.abs(c.dl) > 1.1) || c.pAhead < 2, 1500); S.log('out'); })()"
+ },
+ {
+  "name": "side-3-alongside",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.pAhead < 0.3, 900); S.log('alongside'); })()"
+ },
+ {
+  "name": "side-4-past",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.pAhead < -10 || (!c.dodge && Math.abs(c.dl) < 0.3 && c.pAhead < -4), 900); S.log('past'); })()"
+ },
+ {
+  "name": "king-0-setup",
+  "wait": 600,
+  "mode": "cyclist",
+  "js": "(async () => { await window.__swerve.setup({ name: 'king', kind: 'king', X: -1000, Z: -350, lead: 40, curb: true }); window.__swerve.log('setup'); })()"
+ },
+ {
+  "name": "king-1-approach",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.pAhead < 24 || c.dodge, 600); S.log('approach'); })()"
+ },
+ {
+  "name": "king-2-out",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => (c.dodge && Math.abs(c.dl) > 1.1) || c.pAhead < 2, 1500); S.log('out'); })()"
+ },
+ {
+  "name": "king-3-alongside",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.pAhead < 0.3, 900); S.log('alongside'); })()"
+ },
+ {
+  "name": "king-4-past",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.pAhead < -10 || (!c.dodge && Math.abs(c.dl) < 0.3 && c.pAhead < -4), 900); S.log('past'); })()"
+ },
+ {
+  "name": "cross-0-setup",
+  "wait": 600,
+  "mode": "person",
+  "js": "(async () => { await window.__swerve.setup({ name: 'cross', kind: 'side', X: -2047, Z: -2307, lead: 30, speed: 11, skip: 1, walk: { offset: 5, input: 0.45 } }); window.__swerve.log('setup'); })()"
+ },
+ {
+  "name": "cross-1-react",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.panicUntil > 0, 150); S.log('react'); })()"
+ },
+ {
+  "name": "cross-2-swerve",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => Math.abs(c.dl) > 1 || c.speed < 0.2 || c.pAhead < -3, 90); S.log('swerve'); })()"
+ },
+ {
+  "name": "cross-3-after",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.pAhead < -6 || c.speed < 0.2, 200); S.log('after'); window.__CITY_APP.controllerManager.setGamepadInput('forward', 0); })()"
+ },
+ {
+  "name": "kingcross-0-setup",
+  "wait": 600,
+  "mode": "person",
+  "js": "(async () => { await window.__swerve.setup({ name: 'kingcross', kind: 'king', X: -1000, Z: -350, lead: 30, speed: 11, curb: true, skip: 1, walk: { offset: 3.6, input: 0.45 } }); window.__swerve.log('setup'); })()"
+ },
+ {
+  "name": "kingcross-1-react",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.panicUntil > 0, 150); S.log('react'); })()"
+ },
+ {
+  "name": "kingcross-2-swerve",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => Math.abs(c.dl) > 1 || c.speed < 0.2 || c.pAhead < -3, 90); S.log('swerve'); })()"
+ },
+ {
+  "name": "kingcross-3-after",
+  "wait": 400,
+  "js": "(async () => { const S = window.__swerve; await S.until((c) => c.pAhead < -6 || c.speed < 0.2, 200); S.log('after'); window.__CITY_APP.controllerManager.setGamepadInput('forward', 0); })()"
+ },
+ {
+  "name": "end",
+  "wait": 1500,
+  "js": "(() => { window.__CITY_APP.film.stop(); })()"
+ }
+]

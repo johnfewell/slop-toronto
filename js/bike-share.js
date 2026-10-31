@@ -417,5 +417,12 @@ async function buildBikeShare(scene) {
   return { group, colliders, update, stats, count: stations.length };
 }
 
-Object.assign(window.CITY, { buildBikeShare, bikeShareAt });
+// The stations' footprints that bikeShareAt keeps things out of ({ cx, cz, hx, hz, cs, sn }; cafeto-patios.js
+// fingerprints those near the CaféTO patios, the inputs of their prebuilt layout)
+function bikeShareFootprints() {
+  layouts();
+  return FOOT || [];
+}
+
+Object.assign(window.CITY, { buildBikeShare, bikeShareAt, bikeShareFootprints });
 })();

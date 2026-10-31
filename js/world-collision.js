@@ -76,6 +76,9 @@ function colliderShape(c) {
     const o = c.obb || { cx: (c.minX + c.maxX) / 2, cz: (c.minZ + c.maxZ) / 2, hx: (c.maxX - c.minX) / 2, hz: (c.maxZ - c.minZ) / 2, cs: 1, sn: 0 };
     points = [[-o.hx, -o.hz], [o.hx, -o.hz], [o.hx, o.hz], [-o.hx, o.hz]].map(([u, v]) => ({ x: o.cx + u * o.cs + v * o.sn, z: o.cz - u * o.sn + v * o.cs }));
   }
+  // (a corner that isn't a number is left out, and an outline with no edge left is not solid: contact() returns null,
+  // never an infinite or NaN push; the degenerate rings of mrdoob's 28c0af7, tests/massing-pilot.test.mjs)
+  if (!points.every((p) => Number.isFinite(p.x) && Number.isFinite(p.z))) points = points.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.z));
   const n = points.length;
   let area = 0;
   for (let i = 0; i < n; i++) { const a = points[i], b = points[(i + 1) % n]; area += a.x * b.z - b.x * a.z; }
@@ -209,6 +212,7 @@ function contact(a, c) {
   if (a.maxX < c.minX || a.minX > c.maxX || a.maxZ < c.minZ || a.minZ > c.maxZ) return null;
   if (c.circle && a.radius !== undefined) return circleCircle(a, c.circle);
   const b = colliderShape(c);
+  if (!b.edges.length) return null;
   const hit = a.radius !== undefined ? circleContact(a, b) : b.convex ? convexContact(a, b) : concaveContact(a, b);
   if (hit && hit.x === undefined) {
     // the touching point: the car's deepest corner(s), carried onto the outline

@@ -15,7 +15,7 @@ its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
   the open cuts in the west end (Runnymede to High Park, Keele past Vincent Yard). 27 stations have their stairways on
   the street and the TTC insignia pylon at 86 entrances, each with the station's name, lines and accessibility.
 - **Ride a streetcar:** choose **Ride the 504 along King** in Sights, or walk/cycle to an open streetcar at a stop and press **E**. Use **V** for seat/chase views, and **E** to request a stop or get off with the doors open. Touch and gamepad controls work too.
-- **Ride the subway:** choose **Ride the subway across the Don Valley** in Sights, or enter at Castle Frank or Broadview. Board, cross the viaduct, get off at the other station and return to the street. Change platforms for the return journey. The first route has procedural station and train interiors.
+- **Ride the subway:** choose **Ride the subway across the Don Valley** in Sights, or enter at Castle Frank or Broadview. Board, cross the viaduct, get off at the other station and return to the street. Change platforms for the return journey. The first route has procedural station and train interiors. Or **Ride the subway under Yonge**: Line 1 from Queen to King, walking down from the street stairs to the platforms and back up ([the topology and depths](docs/subway-topology.md)).
 - **Streetcars and GO trains:** TTC streetcars on the real streetcar network (no buses on streetcar routes), and GO
   trains on real bridges and embankments over the streets, from OpenStreetMap. Union Station has an open train shed
   over its platforms, and Strachan Avenue dips under the tracks in a cutting.
@@ -25,6 +25,10 @@ its fork Abuja Tour. Needs a WebGPU browser (recent Chrome or Edge).
   them, and both maps show them.
 - **Street furniture from the City's data:** the City of Toronto's park name signs at 240 parks, each with its own
   name and address, plus hydrants, bike rings, transit shelters, litter bins and post boxes where the City says they stand.
+- **Public art and heritage:** search the City's public art inventory (title, artist, year, where to find it) and
+  its Heritage Register (status, by-law, dates), with a stand-in marker at each outdoor work and two simplified
+  public-domain monuments, the Old City Hall Cenotaph and the Fort Rouillé obelisk
+  ([how they were chosen](docs/public-art-heritage.md)).
 - **CaféTO patios:** the summer's curb lane platforms and sidewalk cafés on Ossington, Queen West, College, Dundas West,
   King West, the Danforth and more, placed from the City's CaféTO permits by its own clearance rules
   ([how they are placed](docs/cafeto-patios.md)).
@@ -101,24 +105,30 @@ that editing CSS reloads the real city and preserves the player (`GPU2_LOCK_WAIT
 The project code is open source under the [MIT License](LICENSE). Data, models and third-party code keep their own
 licences: see [CREDITS.md](CREDITS.md). In short: City of Toronto Open Data (Open Government Licence – Toronto),
 © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL; the built city database
-`data/toronto-geodata.bin` / `js/toronto-geodata.js` is ODbL too), AWS Terrain Tiles (SRTM). The ROM model is not under the MIT License.
+`data/toronto-geodata.bin` / `js/toronto-geodata.js` is ODbL too; the binary also carries the City's mapped poles,
+OGL – Toronto), AWS Terrain Tiles (SRTM). The ROM model is not under the MIT License.
 
 ## Rebuild the city data
 
 `node tools/build-geodata.mjs` rebuilds the city database from the raw downloads (`tools/fetch-*.mjs`: OSM via
 the Geofabrik Ontario extract and GDAL, the City of Toronto Open Data sets, AWS terrain tiles), with `GEO_DATA`
 pointing at the downloaded folder (`~/.cache/slop-toronto/osm-ids`, see [docs/geodata-ids.md](docs/geodata-ids.md#raw-data-cache)).
-It writes `data/toronto-geodata.bin`, which the site loads (a lossless packed binary, 2.2 MB, read by
-`js/geodata-loader.js` into the same `window.CITY.GEO`; it sets the file's hash in `explore.html`),
+It writes `data/toronto-geodata.bin`, which the site loads (a lossless packed binary, 2.1 MB, read by
+`js/geodata-loader.js` into the same `window.CITY.GEO`, with the mapped poles of `js/toronto-poles.js` packed beside it
+as `window.CITY.POLES`; it sets the file's hash in `explore.html`. `node tools/pack-geodata.mjs` repacks it from the two
+committed scripts without the raw downloads, and `tools/build-poles.mjs` does so after writing the poles),
 `js/toronto-geodata.js`, the same object as a script for the node tools and tests, and `js/toronto-geodata-ids.js`, the
 durable source IDs of its places and buildings ([docs/geodata-ids.md](docs/geodata-ids.md);
 `tools/check-geodata-ids.mjs` proves they survive shuffled inputs). `--out <file.js>` writes elsewhere, with the binary
-and the IDs beside it and `explore.html` untouched; `--bin` and `--ids` name those two separately. A rebuild from the
+and the IDs beside it and `explore.html` untouched; `--bin` and `--ids` name those two separately, `--poles` the poles
+script to pack. A rebuild from the
 same inputs is byte-identical (`npm run test:geodata`); `tests/geodata-binary.test.mjs` checks the binary and the
-script agree on every value.
+scripts agree on every value, and that the committed binary is the committed scripts packed.
 The City's physical sidewalks are their own file too: `node tools/fetch-sidewalks.mjs` caches the City's polygons in
 `~/.cache/slop-toronto/raw/sidewalks`, then `node tools/build-sidewalks.mjs` clips them to the curb islands and writes
 `js/toronto-sidewalks.js` (GDAL's `ogr2ogr` with SpatiaLite; rebuild it whenever the geodata's islands change, see
 [sidewalk polygons](docs/sidewalk-polygons.md)).
 The subway (lines, stations, street entrances) is its own file: `node tools/build-subway.mjs` writes
-`js/toronto-subway.js` (`tools/fetch-osm.mjs` with `ONLY=rails` and `ONLY=subway` fetch its inputs).
+`js/toronto-subway.js` (`tools/fetch-osm.mjs` with `ONLY=rails` and `ONLY=subway` fetch its inputs). Then `node tools/build-subway-topology.mjs` writes
+`js/toronto-subway-topology.js`, the stations, platforms, track segments and rides, from the committed files
+([docs/subway-topology.md](docs/subway-topology.md)).

@@ -331,3 +331,240 @@ behind a new quality knob.
   held its 30 fps cap at levels 0 and 2 at `?scale=2`. These runs were contended (production transcription was
   running on the mini) and vsync-quantized, so they are functional evidence, not a performance budget; GPU timestamp
   queries (`?gputime=1`) gave unusable per-pass times on the mini and were not used.
+
+# Delivery vans, pickups and minivans — 2026-10-29
+
+Bead `st-2m8` (from the st-wt0.19 borrow assessment, group N19). Ported from mrdoob/slop-newyork (MIT)
+[`52f84db`](https://github.com/mrdoob/slop-newyork/commit/52f84db) ("Modernize vehicles and add delivery vans,
+pickups and minivans") and [`9cabaeb`](https://github.com/mrdoob/slop-newyork/commit/9cabaeb) (dedicated car wheel
+material). Upstream's ES-module split of the vehicles (`a540327`, `ae502df`) is not taken: Toronto keeps the classic
+loader and `window.CITY`, and `9cabaeb`'s wheel material lands in `actor-models.js` instead of upstream's `cars.js`.
+
+| Upstream | Taken | Toronto adaptation |
+| --- | --- | --- |
+| `52f84db` car geometry | The whole car section of `actor-models.js`: raked noses and tails closed by tip caps (body-coloured fascias instead of bumper strips), the modernised sedan, SUV and taxi tables, the pickup (tonneau cover), the high-roof delivery van (cargo box, barn doors, curb-side sliding door, step bumper), the minivan, `carTipZ` | Toronto's taxi stays a white sedan with its roof sign and no door badges. The bus and helicopter changes in the same commit (New York's bus liveries, destination atlas and fairing) are not taken; the TTC bus is unchanged. |
+| `52f84db` car material | Per-part `If` branches, per-axis footprint filtering, style codes in `carState.w` (livery, metallic, chrome or blackout trim, wheel style), wheel styles, sliding-door and barn-door seams | Livery 1 is Toronto's police livery (dark blue band, red pinstripe, door lettering on white), so the older police flag (`carState.w = 1`) and multiplayer's plain remote cars (`0`) keep their meaning. New York's Boro-taxi, TLC and medallion liveries are removed. New liveries 2, 3 and 5 are compiled into the van's material only: courier vans in teal or orange (a slanted colour field over the back of the cargo box, a side band, an unreadable wordmark and a plain square mark, the lower barn doors in the same colour) and utility vans (a hi-vis yellow band with an orange pinstripe, red and yellow chevrons across the lower barn doors). The colours are made up; there are no company names or logos. |
+| Plates | Front and rear plates painted from one atlas | Ontario-style: `drawOntarioPlate` draws white plates with ONTARIO, the number with a generic crown-like mark between letters and digits, and YOURS TO DISCOVER; passenger plates in blue, commercial plates in black (all vans and about half the pickups). The player's car uses the same drawing, mounted on the raked bumpers. |
+| `9cabaeb` wheel material | `createCarWheelMaterial` and the shared alloy and tyre evaluation | The near cars' spinning wheels read each car's wheel style (`wheelStyle`), and the player's car uses it too, instead of a whole car material. |
+| `52f84db` traffic | `CAR_KINDS` (spacing, path half width and axle, collision length and mass, engine voice), a 20-car fleet cycle, one instanced near/far pair per kind, contact shadows sized to the kind | Of every 20 cars: 4 taxis, 5 sedans, 6 SUVs, 2 delivery vans, 2 minivans and a pickup. Toronto keeps one police cruiser in a hundred, always a sedan (the light bar and livery fit its roof and sides). Palettes are Toronto's (white taxis, the earlier sedan and SUV colours plus a two-tone each); 4 vans in 10 carry a courier livery and 2 in 10 a utility livery. The unused shore-highway traffic knows the new kinds too. `audio-sources.js` picks the engine voice from the kind. |
+
+Multiplayer: remote players' cars still build `BODY_SPECS.sedan` and write `carState.w = 0`, which stays plain
+paint, so the protocol is unchanged.
+
+## Validation
+
+- `npm test`: 373 tests, 372 pass, 1 opt-in skip (after merging main). New `tests/vehicle-bodies.test.mjs` (14):
+  the fleet mix on all three tiers (every new kind at least 4 cars on the phone tier, police sedans only), each kind's
+  geometry bounds against its spacing, collider, axle and plate mounts, identical attributes for both LODs,
+  triangle budgets, the style-code compatibility and the plate drawing.
+- Triangles per car body (node, `buildCarGeometry` without wheels / far proxy): sedan 2,316 / 488 (was 2,872 / 494),
+  SUV 2,372 / 488 (was 3,004 / 494), taxi 2,444 / 500, minivan 2,354 / 488, pickup 2,388 / 488, van 2,221 / 469;
+  the spinning wheel 279 (was 320). Draw calls: one instanced near and far mesh per kind, so up to 12 body draws
+  (was 6) plus the same number of shadow-pass draws when every kind is on screen at both distances; empty meshes
+  are hidden. In the captures the car bodies cost 3–11 draws (as many shadow draws) and 3k–34k triangles per pass,
+  depending on how many cars were in view, on both tiers (each shot's `[vehicles]` console line has the figures).
+- Captures on the Mac mini (Metal WebGPU, `tools/shots/vehicle-types.json`): the busiest stretch near Yonge &
+  Dundas (midday and twilight) and King West (golden hour) from street level, the curb and parking lane at the
+  Roncesvalles parking machine, and close views of a courier van, a utility van from behind, a pickup, a minivan
+  and a sedan's rear plate. Desktop high at 1600×900 (tag `desk`) and low at a 412×915 touch viewport (tag
+  `phone`), under `review/gpu2/slop-toronto-r3-desk/` in the shared geo repository. No page exceptions or shader
+  errors; the only console errors are the static server's expected `/live/vehicles` 404s. The first run showed
+  passenger and commercial plates swapped (the flipped canvas texture) and faded utility chevrons; both were fixed
+  before the final run. The mini was shared, so these are functional and visual evidence, not performance numbers.
+
+# Front-wheel steering and dodging the player — 2026-10-29
+
+Bead `st-hde` (from the st-wt0.19 assessment, group N20). Ported from mrdoob/slop-newyork (MIT)
+[`17c0973`](https://github.com/mrdoob/slop-newyork/commit/17c0973) ("Steer street traffic through the front wheels and
+dodge the player") into `js/traffic.js`, by hand: the whole-commit trial conflicts in three hunks of `traffic.js`, and
+Toronto's traffic has streetcars, decks, the King junction fix (#27) and pedestrian detours that New York's lacks.
+
+| Upstream | Taken | Toronto adaptation |
+| --- | --- | --- |
+| Front-wheel steering (`steer`, `previewPoint`): Stanley steering for the bend a moment ahead (through the junction the way the car will cross it), its heading and its offset; wheels turned no faster than a person turns them, no further than comfortable (in a panic, than the tyres grip); the heading follows the wheels and the car drifts across its path | Yes, with the driver constants (`bMax`, `grip`, `lock`, `steerRate`) | `locate` keeps Toronto's axle-to-axle placement on the path, with the deck's height and grade; the body is now centred `dl` off its path. The approach angle is capped at Toronto's old lane-change pace (0.3 m/s at a crawl up to 1.7 m/s across; buses slower) and at 25–30° at a crawl, so a car pulling away mid lane change no longer swings on past its lane (uncapped, upstream's law overshot by up to 2.1 m in a test accelerating from 5 m/s). A stopped driver still edges over at up to 0.3 m/s, as before, so a queue on a streetcar's lane can clear into the next (#27); not into the player beside it. Knock spin now turns the heading and decays (`yawVel`) instead of springing back through `yawOffset`, as upstream. |
+| `react` / `threatTime`: a driver notices the player about to hit it within 1.8 s, reacts after 0.6–1.0 s, then commits for at least 1.2 s: hard braking for its front half, flooring it for its rear half, a swerve if there is room | Yes (`AVOID_NOTICE`, `AVOID_HOLD`, `alarm`, `panicUntil`, `panicAcc`) | Not on another level (deck or ramp above or below). Upstream's swerve was 1.2 or 2.2 m wherever the road was clear (`isRoadClear`). Here the swerve is the least that clears the player, found by running the steering law forward against the player (`clearShift`, `playerClear`), and the whole way out and back must be clear (`wayRound`): over no curb, island or median; on a deck or ramp only its own lanes; across the centre line only of an undivided street; and no other vehicle (bar its followers), no streetcar or train (wider margin, 1.5 s longer: they can't steer round), and no one on foot there or coming, all the while it could be anywhere from where it is to where it steers. Otherwise it brakes. No swerve inside a junction. A panic swerve settles at its offset before steering back. |
+| No turn signal for a panic swerve | Yes | Lane changes and the calm pass below still signal. |
+| — | New | `passPlayer`: a driver coming up behind the player standing, walking, cycling slowly or stopped in a car in its lane steers round them, as far over as it needs to leave 0.9 m, on the left unless the player is on the left of the lane, only if the whole pass is clear (`wayRound`) and done before the end of the street. It looks again every quarter second and pulls back in if the way closes before it is alongside. A driver who can't get round stops 8 m back (`PLAYER_S0`) from a person or a bicycle, room to pull round later. |
+
+Also: `changeLanes` holds off while a driver dodges; `tests/vehicle-physics.test.cjs` gets upstream's `steer` stub and
+`nose` field; `placeVehicle` is exported for the capture below. Nothing of 17c0973 was left out.
+
+## Validation
+
+- `npm test`: 383 tests, 382 pass, 1 opt-in skip (main had 366). New: `tests/traffic-swerve.test.cjs`, 17 cases on the
+  production code (relateToPlayer, react and the rest of the dodge section, steer, locate, the streetcar section's
+  obstacleGap) with a stand-in for accelerate's other terms. They cover:
+  - upstream's timing: noticed 1.8 s out, acted on after the reaction time;
+  - which way it swerves, and the least swerve that clears the player (within its lane for a player at its edge);
+  - braking only between close curbs; no swerve over a median or off a deck's lanes;
+  - the steering limits: wheel rate, tyre grip; a standing car doesn't turn but still edges over;
+  - on a side street: steering round a standing person over the centre line, waiting while an oncoming car goes by,
+    never round the player into someone on foot;
+  - on a King-like street: keeping off the track while a streetcar comes up behind a slow cyclist, then passing; a
+    swerve onto the track only when no streetcar is beside it, braking instead when one is;
+  - on a deck; and 160 seeded random cases (people walking, cycling and driving towards, along and across the car's
+    lane, streetcars on either track, oncoming cars, people on foot in the next lane) in which no swerve or pass ever
+    puts the car into a streetcar or a pedestrian. 3,000 more seeded cases offline found none either.
+  The random case caught a real fault during the work: a return to the lane through someone standing in the oncoming
+  lane, after a panic look ahead too short to cover the way back (now AVOID_HOLD + 2 s).
+- Lane-change overshoot of the steering law, in the same harness: at most 0.21 m, from standing, 3, 5, 8 or 12 m/s, and
+  pulling away to 12 m/s from 0.5–5 m/s; panic swerves 0.08–0.32 m past their offset.
+- Captures on the Mac mini (`tools/shots/traffic-swerve.json`, film-mode frame stepping so the frames are
+  deterministic, seed 6711, midday, `transit=timetable`): high tier at 1600×900 and the low tier on a 412×915 touch
+  viewport. Each scene places a car behind the player on the road network and logs, at every phase, the car's speed,
+  offset, wheel angle and dodge state, and the closest it came to the player, streetcars, people on foot and other
+  traffic. Outputs are under the geo repository's `review/gpu2/slop-toronto-rinks/`:
+  - Palmerston Boulevard, a person standing in the lane (`swerve3-{high,phone}--side-*`): planned 34 m back, out over
+    the centre line at 6 m/s with the wheels turned and the left signal on, past and back in its lane. Closest 0.92 m
+    (high) / 1.16 m (phone), no other traffic within 15 m.
+  - Palmerston Boulevard, the person stepping off the curb into the lane (`swerve4-{high,phone}--cross-*`): noticed and
+    reacted 1.7 s in, swerved 1 m right, behind them, braking to 3.5 m/s; closest 1.6 m.
+  - King Street West west of Spadina, a cyclist stopped in the lane (`swerve6-{high,phone}--king-*`): round them over
+    the streetcar track with no streetcar within 60 m, closest 0.91 m / 1.2 m.
+  - No page errors. The only console warning is the known audio-synthesis worker warning.
+  - Contended mini, so these are functional and visual evidence only.
+- Known gap: no capture of a panic swerve on King, nor of a streetcar on King holding a car back.
+  - The scripted King crossing (`swerve6-*--kingcross-*`) put the person across before the car came up, so the car
+    never reacted.
+  - Placing scenes on King took four runs. A latitude/longitude lookup (`worldFromLatLon(43.6455, -79.395)`) landed on
+    Adelaide and Richmond, which also carry track.
+  - King's segments near Spadina are 47–94 m long, under the 120 m the scene wanted, and have one lane each way with
+    the track in it.
+  - Doing this properly needs a hand-picked segment ID. The node tests cover the streetcar cases instead.
+
+# Surveyed-building technique on the City's 3D Massing (pilot) — 2026-10-29
+
+Epic `st-2nl`, pilot `st-2nl.1`; plan and evidence in [massing-buildings.md](massing-buildings.md). The technique of
+mrdoob/slop-newyork's (MIT) surveyed buildings is reimplemented on Toronto's own data. No upstream commit is
+cherry-picked: its `building-*.js` ES modules don't fit the classic-script tree.
+
+| Upstream | Taken | Toronto adaptation |
+| --- | --- | --- |
+| `1daa665`, `062c4a9` polygon footprints in a compressed binary, per-1 km-cell merged walls | the cell merge and the `footprintLocal` facade frame (`facadeWall`, `box`) | The polygons are the City's 3D Massing 2025 records, already the source of `GEO.buildings`. A pilot sidecar (`js/toronto-massing-pilot.js`, Kensington Market) is keyed to rows and durable IDs, loaded only with `?massing=1`. `tsl-materials.js createFootprintFacades` merges one mesh per facade style per 1 km cell. The rendered (paint) and curtain-wall materials take `footprintLocal`. |
+| `819a0ad` party walls and ghost signs | party walls (windowless lot-line walls) | Sampled at build time (0.35 m outside each edge). Ghost signs are not taken yet (`st-2nl.6`). |
+| `0073425` surveyed detail placement | fire escapes and AC units on polygon edges | On the longest rear edge (not a street front or a party wall). |
+| `211860c` reuse surveyed centres when batching | yes | Cells keyed by the row centre. |
+| `c4ab18f` surveyed cells cast through the shadow stand-ins | yes | `userData.shadowStandIn = true` on each cell mesh. Toronto's `scene-culling.js` already supports it. |
+| `28c0af7` NaN and through-wall contacts in polygon collision | its fixtures | Toronto's `world-collision.js` is an independent SAT. The sliver fixture found that an outline with no edges gave an infinite push, so `colliderShape` now drops NaN corners and `contact()` ignores an edgeless outline. |
+
+# three.js pin b3396270 — 2026-10-29
+
+Bead `st-ary`. The browser three.js dev build moves from
+[`e27dfa95`](https://github.com/mrdoob/three.js/tree/e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b) (23 October) to
+[`b3396270`](https://github.com/mrdoob/three.js/tree/b3396270682287470d161658ac01084d25e8dba6) (28 October), as Slop
+New York did in [`c36373c`](https://github.com/mrdoob/slop-newyork/commit/c36373c). That is 51 three.js commits, still
+`REVISION = '187dev'`. John approved it on 29 October; the adoption spec's preserve-the-pin rule carries the amendment
+(§2 of that internal planning document, not published here). Upstream's intermediate steps (`a3c478a`, `1a1cfd8`,
+`c9c1900`) are superseded.
+
+## Where the pin lives
+
+- `explore.html`'s import map (`three`, `three/webgpu`, `three/tsl`, `three/addons/`): the runtime.
+- `tools/prop-preview.html`, `tools/props-preview.html` and `tools/clouds-probe.html` (`?three=city`; `?three=e27`
+  still works) use the same commit. `vendor/clouds/release.json` records the renderer alpha.6 runs on.
+- Unchanged: `package.json`'s `three` 0.186.1 and `vendor/three/` stay the npm build that tests and tools use (the
+  pin is not on npm). `tools/build-clouds.mjs` keeps three external and bundles only `EXRLoader` from npm, which none
+  of the 51 commits touch, so `js/clouds.js` regenerates byte-identical.
+- `tests/threejs-pin.test.cjs` checks that every one of these uses the one commit.
+
+## The paired uniform fix (three.js #35221)
+
+#35221 reverts #34996's `fogNode`/`environmentNode` tracking in `NodeMaterialObserver`. At the new pin a material with
+no node properties of its own (GLTF props and landmarks, plain `MeshStandardNodeMaterial`s) gets a SHARED refresh each
+frame, which uploads the render and frame uniform groups but not the default object group. Upstream's own fog examples
+moved their uniforms to `renderGroup` in the same change. Toronto now does the same for every scene-wide uniform that
+is rewritten at run time:
+
+| File | Uniforms | Rewritten |
+| --- | --- | --- |
+| `js/lighting.js` | `uFogDensity`, `uFogHeight` (read through `scene.fogNode`) | per time of day; `sky-clouds.js` scales the density |
+| `js/lighting.js` | `uSkyExposure`, `uNightFactor`, `uNightSkyColor` (sky dome, baked into the environment) | per time of day |
+| `js/tsl-materials.js` | all of `cityUniforms` (sun colour, intensity and direction, sky colours, interior glow, road wetness, canyon bounce, water knobs) | per time of day, `?waterTune` |
+| `js/ez-trees.js` | `viewer` (LOD hand-over distance) | every render, in `scene.onBeforeRender` |
+| `js/street-details.js` | `signalClock` (also read by `pedestrian-signals.js`) | every frame |
+| `js/tour-guide.js` | `uAlong`, `uTime` (route ribbon) | every frame |
+| `js/sky-clouds.js` | `nightGlow`, `camProjInv`, `camWorld` | per time of day, every frame |
+| `js/post-processing.js` | `exposure`, `contrast`, `saturation`, `balance` (grade) | per time of day |
+
+`tests/threejs-pin.test.cjs` checks each of them and that the fog node reads no other uniform of its own.
+
+Checked and left in the object group:
+
+- Per-object or per-material state: `actor-models.js` `stateUniform` (one fixed-colour car material), `subway-ride.js`
+  `opened` (one per train).
+- `uniformArray`s uploaded every frame (`street-details.js` `signalShifts`, `pedestrian-signals.js` `shifts` and
+  `active`): read only by materials with node properties, which still get a full refresh.
+- Generated or vendored modules: `js/stylized-water.js` (`time`, `sunDirection`, `radiance`; built from
+  `vendor/stylized-water`, a node material) and `js/clouds.js`/takram (the libraries' own passes).
+- Debug-only knobs (`pbr-water.js` under `?water=pbr&waterTune`) and per-material constants (facade seeds, tints).
+
+**What the captures showed.** A negative control (the new pin without the `renderGroup` change) did not reproduce
+stale fog. Two reasons were confirmed. First, every time-of-day preset also changes `scene.environmentIntensity`, and
+`NodeMaterialObserver.equals()` turns that into a full refresh. Second, even a fog-only change (the density set by hand,
+no preset change) reached the GLTF CN Tower in the control. So in Toronto's current scene those materials still get a
+full refresh; the likely path is their lighting context, but this was not traced. The `renderGroup` uniforms are
+therefore the correct form, not a visible fix. They keep the fog right if that path changes, and upload once per render
+rather than once per object.
+
+## Other changes in the 51 commits, for Toronto
+
+- #35232 (alpha-tested shadow casters no longer re-key every frame) and #35203 (the shadow pass skips scene matrix
+  walks): no visible change. Toronto's alpha-tested casters already use nodes, and `main.js` manages
+  `matrixWorldAutoUpdate`. No Toronto code moves objects during the shadow pass.
+- #35238 and #35243 (SSR): Toronto uses blur mode with `binaryRefine`, so only the refined-hit validation applies,
+  on the desktop tier. `mirrorBias` only affects stochastic SSR.
+- #35233: `resetRendererState()` also saves and resets `autoClear*`, `opaque` and `transparent`. The cloud passes call
+  it; clouds and the atmosphere render as before on both tiers.
+- #35245 removes `Node.before()`, #35251 moves the swizzle cache off `node._cache`, and #35230 renames
+  `getProjectionDepth()`. Nothing in Toronto, `js/clouds.js` or `js/stylized-water.js` uses them.
+- #35204/#35226/#35222/#35193: render-target initialisation, bind-group cache keys, WebGL-fallback shared uniform
+  blocks, and GLTF KTX2 images. These are latent fixes; Toronto loads no KTX2.
+
+## Verification (2026-10-29/30)
+
+- `npm test`: 362 tests, 361 pass, 1 opt-in skip. `npm run build` passes and `js/clouds.js` is byte-identical.
+- Mac mini (Metal WebGPU, `gpu2`), with `tools/shots/threejs-pin.json` (sky, the CN Tower from Centre Island through
+  live switches golden → midday → twilight → midnight → golden, a forced fog-only change, water, a 504 streetcar ride).
+  It ran at desktop high (1600×900) and phone low (412×915 touch) for main `5c74d5f` (before) and this branch (after).
+  The pin without the fog change was also run on desktop. The photo-mode runner and `tools/check-open-data.mjs` ran
+  for both builds. Same-machine frames match by eye and by sampled region means, apart from the cloud noise. Photo
+  JPEGs (skyline night, market midday and the rest) match. Open-data shots pass on both tiers for both builds.
+- Console, before and after alike: 9 × `THREE.TempNode: This module has been deprecated. Extend Node instead.` (from
+  the cloud and atmosphere bundle's `TempNode` subclasses, already on main at `e27dfa95`). There is also one
+  `[audio] synthesis worker` destructuring warning, and in the open-data runs, 404s for `/live/vehicles` because the
+  static capture server has no Worker. No page errors and no WebGPU validation or shader errors.
+- One run failed on a transient jsDelivr 403 for `CSMFrustum.js`, so clouds did not load in that run. It was rerun.
+  The rerun's twilight ride frame is lit differently only because its streetcar had reached the next stop.
+- `?webgl=1` (the WebGL2 fallback) renders a black scene before and after alike: the cloud library throws "the WebGL2
+  backend of WebGPURenderer is not yet verified" while building the pipeline. That is a pre-existing problem, and it
+  does not test the `renderGroup` change on WebGL2 (where #35222 fixes shared uniform blocks).
+  Captures from the shared mini are functional evidence, not performance numbers.
+
+# Generated storefronts and entrances — 2026-10-29
+
+Bead `st-sz0` (fallback layer under the source-keyed signs of `st-wt0.15`; see [storefronts](storefronts.md)). Ported
+by hand from mrdoob/slop-newyork (MIT) into `js/tsl-materials.js` and `js/buildings.js`. None of these commits was
+cherry-picked.
+
+| Upstream | Taken | Toronto adaptation |
+| --- | --- | --- |
+| [`59be218`](https://github.com/mrdoob/slop-newyork/commit/59be218) storefronts on surveyed ground floors | The idea only | Its one change switches on `footprintLocal`, which only NYC's surveyed-building commit `1daa665` defines; applied here it cherry-picks cleanly, passes the old tests and then throws when the shader is built. Toronto has no surveyed footprint walls: every building wall is a `createFacadeBoxes` box, whose existing bottom-storey rule is unchanged. |
+| [`8d88e41`](https://github.com/mrdoob/slop-newyork/commit/8d88e41) storefront glazing, interiors and signs | `createStorefront`: one shop per ~7.5 m of a shop wall's ground floor, door to one side, display window, transom, parallax interior (shelves, stock, counter, ceiling lamps, back light), lit/unlit shops, glass fresnel, plus `boxCoverage` | Box-local only (`wallS`/`wallW`). Heights follow Toronto's 3.4–3.8 m storeys (fascia 12 cm under the floor above, 55 cm deep, display and transom below it) rather than NYC's fixed 2.96–3.56 m sign band. **The generated fascia is blank**: upstream's eight invented labels (`CORNER MARKET`, `PIZZA`...) are not drawn; real names come only from source-keyed records. Replaces Toronto's older 2D shop glass in the rendered and curtain-wall materials. The parallax interior is behind a new quality knob (`storefronts`: 2 on high/medium, 1 = a flat lit interior on the phone tier). |
+| [`09d27e0`](https://github.com/mrdoob/slop-newyork/commit/09d27e0) limit storefronts to selected buildings | Selection | NYC picks 35% of surveyed buildings at random. Toronto selects from data (`storefrontSelection`): buildings holding a mapped shop/restaurant/bank/market/clinic (`GEO.pois`), low and mid-rise buildings fronting a retail strip (two or more such places on the same street within 30 m of the front wall), and walls carrying a source-keyed sign. Every other street front keeps Toronto's residential/office front (windows to the ground and one entrance), which was already "solid" in upstream's sense: no shop glazing. Before this port every mid-rise and a quarter of the low-rise had shopfronts. |
+| [`633ecd0`](https://github.com/mrdoob/slop-newyork/commit/633ecd0) increase storefront coverage | No | A probability tweak for NYC's random selection; Toronto's is data-driven. |
+| [`26bb9fe`](https://github.com/mrdoob/slop-newyork/commit/26bb9fe) procedural building entrances | `createBuildingEntrance`: trimmed recess, panelled leaf glazed above the lock rail, handle, single or double doors, glass fresnel, a faint warm glow | Placed in the entrance bay Toronto's facade already picks per residential front (`facadeCell`'s `door`) instead of every 28 m, replacing the flat steel door of the rendered facade; double doors on walls ≥ 18 m (≥ 12 m for curtain walls, `modern`). Towers' entry walls gain an entrance for the first time. |
+| [`dbaf5f9`](https://github.com/mrdoob/slop-newyork/commit/dbaf5f9) keep entrances off storefronts | Yes | Holds by construction: the entrance mask is the `door` bay, which only exists on `entry` walls. |
+| [`cfce077`](https://github.com/mrdoob/slop-newyork/commit/cfce077) stable awning signs | N/A | Toronto's `buildings.js` has no awnings. |
+
+`createPreWarBuildingMaterial` was not changed: nothing in Toronto uses it.
+
+## Validation
+
+- `tests/storefronts.test.mjs` builds the rendered, curtain-wall and sign materials to WGSL with the vendored three.js
+  (a `WGSLNodeBuilder` with a stub device: generation, not a GPU compile) at both storefront detail levels, and checks
+  that no survey-only identifier is used, that the generated fascia draws no text and that entrances only use the
+  entry walls' door bay. The full suite: 369 tests, 368 pass, 1 opt-in skip.
+- Fragment WGSL sizes (rendered facade / curtain wall): main 46.1 / 34.7 KB, now 66.5 / 60.8 KB on high and 56.6 /
+  50.9 KB on the phone tier. The storefront and entrance work sits in `If` branches that only run on shop ground floors
+  and entrance bays.
+- gpu2 captures: see [storefronts](storefronts.md#verification).

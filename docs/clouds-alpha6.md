@@ -14,7 +14,12 @@ fingerprinting and assembling the site, so a package change cannot silently reta
 ## Renderer boundary
 
 The public library declares Three.js `>=0.184.0 <0.187.0` and qualifies stock 0.185.1/0.186.1 with fork release 7.
-This city retains its existing pinned r187 renderer, commit `e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b`.
+This city retains its pinned r187 renderer. Alpha.6 was qualified here at commit
+`e27dfa95ae7f453b5d7a9a36ffdb563f7c9b529b`; on 29 October 2026 the pin moved to
+`b3396270682287470d161658ac01084d25e8dba6` (`st-ary`, still r187 dev) and the clouds and atmosphere were re-checked on
+both tiers. That update makes `RendererUtils.resetRendererState()`, which the cloud passes call, also save and reset
+`autoClear*`, `opaque` and `transparent` (three.js #35233). It leaves the bundled `EXRLoader` unchanged, so
+`js/clouds.js` regenerates byte-identical.
 An attempted switch to stock 0.186.1 stalled at shader precompilation and did not reach ready within 240 seconds.
 It was not shipped. No library guard was removed or dependency source patched to keep r187.
 

@@ -2,12 +2,17 @@
 // tools/fetch-osm.mjs ONLY=rails), its stations & their street entrances (osm_subway.json, ONLY=subway). Kept apart from
 // tools/geo-rails.mjs (the streetcars & the heavy rail), which leaves the subway out. js/subway.js builds on it: Line 2
 // on the Prince Edward Viaduct's lower deck over the Don, the entrances on the sidewalks.
-//   ways: [name, flags (1 bridge, 2 tunnel, 4 covered, 8 viaduct), layer, service, [x, z, ...]]  (every subway way
-//         reaching within MARGIN of the detailed city, tunnels too: the trains run on into them; simplified to 0.3 m)
-//   stations: [x, z, name, line colour, accessible (1: wheelchair=yes, its pylons get the accessibility symbol)]
-//   entrances: [x, z, station name, line colour, entrance name, sign]  (street level only: none mapped below ground or
-//              indoors, the PATH's & the malls' doors; sign: 0 the insignia pylon, 1 the older square lantern on its
-//              pole's top, 2 the lantern hung from an arm off its pole, from LANTERNS below)
+//   ways: [name, flags (1 bridge, 2 tunnel, 4 covered, 8 viaduct), layer, service, [x, z, ...], OSM way id]  (every
+//         subway way reaching within MARGIN of the detailed city, tunnels too: the trains run on into them; simplified
+//         to 0.3 m, which keeps both ends exactly: ways sharing an OSM node share its end point, the track connectivity
+//         tools/subway-topology.mjs reads. GDAL gives no OSM node ids: tools/fetch-osm.mjs numbers them by coordinate,
+//         in fetch order, so they are not kept)
+//   stations: [x, z, name, line colour, accessible (1: wheelchair=yes, its pylons get the accessibility symbol),
+//             OSM node id]
+//   entrances: [x, z, station name, line colour, entrance name, sign, OSM node id]  (street level only: none mapped
+//              below ground or indoors, the PATH's & the malls' doors; sign: 0 the insignia pylon, 1 the older square
+//              lantern on its pole's top, 2 the lantern hung from an arm off its pole, from LANTERNS below)
+//   (the source ids come last, so the older readers' positional fields are unchanged)
 import { toWorld, rdp, load, log } from './geo-base.mjs';
 
 // the detailed city (as tools/geo-roads.mjs DETAIL; not imported: that module builds the whole road network)
@@ -37,7 +42,7 @@ for (const e of rails) {
   const P = e.geometry.map((g) => toWorld(g.lon, g.lat));
   if (!P.some(([x, z]) => near(x, z, MARGIN))) continue;
   const flags = (on(t.bridge) ? 1 : 0) | (on(t.tunnel) ? 2 : 0) | (on(t.covered) ? 4 : 0) | (t.bridge === 'viaduct' ? 8 : 0);
-  ways.push([t.name || '', flags, Math.round(parseFloat(t.layer) || 0), t.service || '', rdp(P, 0.3).flatMap(([x, z]) => [q(x), q(z)])]);
+  ways.push([t.name || '', flags, Math.round(parseFloat(t.layer) || 0), t.service || '', rdp(P, 0.3).flatMap(([x, z]) => [q(x), q(z)]), e.id]);
 }
 
 // A line's colour from a way name ("Line 2 Bloor-Danforth") or a station's / entrance's own tag
@@ -62,7 +67,7 @@ for (const e of nodes) {
   if (t.railway !== 'station') continue;
   const [x, z] = toWorld(e.lon, e.lat);
   if (!near(x, z, 200)) continue;
-  stations.push([q(x), q(z), cleanName(t.name), colourOf(t, x, z), t.wheelchair === 'yes' ? 1 : 0]);
+  stations.push([q(x), q(z), cleanName(t.name), colourOf(t, x, z), t.wheelchair === 'yes' ? 1 : 0, e.id]);
 }
 
 // Below the street (level -1, the PATH's & the malls' doors) or indoors: not a street entrance
@@ -106,7 +111,7 @@ for (const e of nodes) {
     const d = Math.hypot(s[0] - x, s[1] - z);
     if (d < sd) { sd = d; st = s; }
   }
-  entrances.push([q(x), q(z), st ? st[2] : '', st ? st[3] : colourOf(t, x, z), t.name || '', LANTERNS[e.id] ? LANTERNS[e.id][0] : 0]);
+  entrances.push([q(x), q(z), st ? st[2] : '', st ? st[3] : colourOf(t, x, z), t.name || '', LANTERNS[e.id] ? LANTERNS[e.id][0] : 0, e.id]);
 }
 
 const km = Math.round(ways.filter((w) => !(w[1] & 2)).reduce((t, w) => {

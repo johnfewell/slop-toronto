@@ -1,0 +1,4 @@
+[
+ {"name": "kc1-walker-kensington-ave", "mode": "person", "x": -1259.5, "z": -1330, "heading": 0, "time": "midday", "wait": 7000},
+ {"name": "kc2-walker-augusta-corner", "mode": "person", "x": -1357.5, "z": -1478, "heading": 2.4, "time": "midday", "wait": 7000}
+]

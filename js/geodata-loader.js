@@ -1,27 +1,36 @@
-// js/geodata-loader.js — reads data/toronto-geodata.bin (written by tools/build-geodata.mjs, encoder tools/geo-pack.mjs)
-// back into the very object js/toronto-geodata.js holds: window.CITY.GEO, the same keys, arrays and numbers (lossless:
-// every number is stored as an integer count of its own decimals, e.g. decimetres for the 0.1 m coordinates, and
-// divided back here, which gives the same double as parsing the JS file's decimal text).
-// The page (explore.html) fetches the file while three.js loads and sets window.CITY.GEO before the classic scripts
-// run, so no consumer changes. tests/geodata-binary.test.mjs compares it against js/toronto-geodata.js key by key.
+// js/geodata-loader.js — reads data/toronto-geodata.bin (written by tools/build-geodata.mjs and tools/pack-geodata.mjs,
+// encoder tools/geo-pack.mjs, layers tools/geo-bin.mjs) back into the very objects the generated scripts hold: { GEO,
+// POLES }, window.CITY.GEO (js/toronto-geodata.js) and window.CITY.POLES (js/toronto-poles.js), the same keys, arrays
+// and numbers (lossless: every number is stored as an integer count of its own decimals, e.g. decimetres for the 0.1 m
+// coordinates, and divided back here, which gives the same double as parsing the JS file's decimal text).
+// The page (explore.html) fetches the file while three.js loads and puts its layers on window.CITY before the classic
+// scripts run, so no consumer changes. tests/geodata-binary.test.mjs compares them against the scripts key by key.
 //
 // File: gzip (the site's hosts compress JS but not application/octet-stream, so it ships compressed) of the container
 //   bytes 0-3 'TGB1', 4-7 uint32 LE header length N (a multiple of 8), 8..8+N UTF-8 JSON header, then the payload
-//   (8-aligned sections). Header: { skeleton, columns }. The skeleton is GEO with every number replaced by a marker:
-//   0 a number, 1 an array of numbers, 2 a base64 string (raw bytes in the payload). Each marker's value comes next
-//   from the column of its path (object keys; array positions as '*', or the index inside short mixed tuples), so
+//   (8-aligned sections). Header: { skeleton, columns }. The skeleton is the layers with every number replaced by a
+//   marker: 0 a number, 1 an array of numbers, 2 a base64 string (raw bytes in the payload). Each marker's value comes
+//   next from the column of its path (object keys; array positions as '*', or the index inside short mixed tuples), so
 //   like numbers sit together and compress well. Columns hold integers (`d` decimals; 1, 2 or 4 bytes stored byte
-//   plane by byte plane, after the transform `natural` undoes) or, where no integer count fits (`d` -1), doubles.
-//   Values are read in the skeleton's order.
+//   plane by byte plane, two's complement or, `zz`, zigzag, after the transform `natural` undoes) or, where no integer
+//   count fits (`d` -1), doubles. Values are read in the skeleton's order.
 
 const MAGIC = 0x31424754; // 'TGB1' little-endian
 
-/** Integers of a stored column, in stored order: undo the byte planes and the width */
+/** Integers of a stored column, in stored order: undo the byte planes, the width and the zigzag */
 function readInts(u8, base, c) {
   const { n, w, off } = c;
   if (w === 8) return new Float64Array(u8.slice(base + off, base + off + n * 8).buffer); // doubles, as they are
   const out = new Int32Array(n);
   const p = u8.subarray(base + off, base + off + n * w);
+  if (c.zz) {
+    // unsigned 0, 1, 2, 3... -> 0, -1, 1, -2...
+    for (let i = 0; i < n; i++) {
+      const u = w === 1 ? p[i] : w === 2 ? p[i] | (p[n + i] << 8) : p[i] | (p[n + i] << 8) | (p[2 * n + i] << 16) | (p[3 * n + i] << 24);
+      out[i] = (u >>> 1) ^ -(u & 1);
+    }
+    return out;
+  }
   if (w === 1) for (let i = 0; i < n; i++) out[i] = (p[i] << 24) >> 24;
   else if (w === 2) for (let i = 0; i < n; i++) out[i] = ((p[i] | (p[n + i] << 8)) << 16) >> 16;
   else for (let i = 0; i < n; i++) out[i] = p[i] | (p[n + i] << 8) | (p[2 * n + i] << 16) | (p[3 * n + i] << 24);
@@ -104,7 +113,7 @@ function column(u8, base, c) {
   };
 }
 
-/** The container (uncompressed) -> the GEO object */
+/** The container (uncompressed) -> its layers ({ GEO, POLES }) */
 export function decodeGeo(buffer) {
   const u8 = new Uint8Array(buffer);
   const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
@@ -142,7 +151,7 @@ export function decodeGeo(buffer) {
   return build(head.skeleton, root);
 }
 
-/** The file as fetched (gzip, or already inflated by a server that sent it with a Content-Encoding) -> GEO */
+/** The file as fetched (gzip, or already inflated by a server that sent it with a Content-Encoding) -> { GEO, POLES } */
 export async function unpackGeo(buffer) {
   const u8 = new Uint8Array(buffer);
   if (u8[0] !== 0x1f || u8[1] !== 0x8b) return decodeGeo(u8);
@@ -151,7 +160,8 @@ export async function unpackGeo(buffer) {
 }
 
 /**
- * The fetch (a URL, or a fetch already under way: the page starts it before this module has loaded) -> GEO.
+ * The fetch (a URL, or a fetch already under way: the page starts it before this module has loaded) -> the layers,
+ * { GEO, POLES }, for window.CITY.
  * Leaves a 'geodata-decode' performance measure (inflate + decode, main thread).
  */
 export async function loadGeo(request) {
@@ -159,7 +169,7 @@ export async function loadGeo(request) {
   if (!res.ok) throw new Error(`geodata: ${res.url}: HTTP ${res.status}`);
   const buffer = await res.arrayBuffer();
   const t = performance.now();
-  const GEO = await unpackGeo(buffer);
+  const layers = await unpackGeo(buffer);
   performance.measure('geodata-decode', { start: t, end: performance.now(), detail: { bytes: buffer.byteLength } });
-  return GEO;
+  return layers;
 }

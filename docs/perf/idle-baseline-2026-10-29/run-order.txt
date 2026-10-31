@@ -1,0 +1,30 @@
+run idle-high-warm start 2026-10-30T02:49:01Z
+run idle-high-warm end 2026-10-30T02:50:23Z rc=0
+run idle-low-warm start 2026-10-30T02:50:44Z
+run idle-low-warm end 2026-10-30T02:51:43Z rc=0
+run idle-high-r1 start 2026-10-30T02:51:43Z
+run idle-high-r1 end 2026-10-30T02:52:42Z rc=0
+run idle-low-r1 start 2026-10-30T02:52:42Z
+run idle-low-r1 end 2026-10-30T02:53:40Z rc=0
+run idle-high-r2 start 2026-10-30T02:53:40Z
+run idle-high-r2 end 2026-10-30T02:54:39Z rc=0
+run idle-low-r2 start 2026-10-30T02:54:39Z
+run idle-low-r2 end 2026-10-30T02:55:38Z rc=0
+run idle-high-r3 start 2026-10-30T02:55:38Z
+run idle-high-r3 end 2026-10-30T02:56:37Z rc=0
+run idle-low-r3 start 2026-10-30T02:56:37Z
+run idle-low-r3 end 2026-10-30T02:57:36Z rc=0
+run transit-high-r1 start 2026-10-30T02:57:43Z
+run transit-high-r1 end 2026-10-30T03:00:44Z rc=0
+run transit-low-run1 start 2026-10-30T03:01:26Z
+run transit-low-run1 end 2026-10-30T03:04:32Z rc=0
+run transit-high-run1 start 2026-10-30T03:04:32Z
+run transit-high-run1 end 2026-10-30T03:07:44Z rc=0
+run transit-low-run2 start 2026-10-30T03:07:44Z
+run transit-low-run2 end 2026-10-30T03:10:51Z rc=0
+run transit-high-run2 start 2026-10-30T03:10:51Z
+run transit-high-run2 end 2026-10-30T03:14:04Z rc=0
+run transit-low-run3 start 2026-10-30T03:14:04Z
+run transit-low-run3 end 2026-10-30T03:17:10Z rc=0
+run transit-high-run3 start 2026-10-30T03:17:10Z
+run transit-high-run3 end 2026-10-30T03:20:23Z rc=0

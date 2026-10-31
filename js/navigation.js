@@ -47,7 +47,8 @@ const words = (s) => normalize(s).split(' ').filter(Boolean).map((w) => ABBREV[w
 const CATEGORY_LABEL = {
   hotel: 'Hotel', bank: 'Bank', food: 'Restaurant & café', worship: 'Place of worship', fuel: 'Filling station',
   health: 'Hospital & health', education: 'School & university', market: 'Market & mall', shop: 'Shop',
-  government: 'Government', office: 'Office', leisure: 'Leisure & sights', transport: 'Transport', place: 'Place', washroom:'Washroom',water:'Drinking water',rink:'Outdoor ice rink',tennis:'Tennis courts'
+  government: 'Government', office: 'Office', leisure: 'Leisure & sights', transport: 'Transport', place: 'Place', washroom:'Washroom',water:'Drinking water',rink:'Outdoor ice rink',tennis:'Tennis courts',
+  art: 'Public art', heritage: 'Heritage property'
 };
 // what people type when they want a kind of place
 const CATEGORY_WORDS = {
@@ -65,7 +66,9 @@ const CATEGORY_WORDS = {
   leisure: ['park', 'garden', 'museum', 'gallery', 'sight', 'sights', 'attraction', 'leisure', 'stadium', 'cinema'],
   transport: ['bus', 'park', 'motor', 'terminal', 'transport'],
   washroom:['washroom','washrooms','toilet','toilets','restroom','restrooms'],
-  water:['water','fountain','fountains','bottle','refill'],rink:['rink','rinks','skating','skate'],tennis:['tennis']
+  water:['water','fountain','fountains','bottle','refill'],rink:['rink','rinks','skating','skate'],tennis:['tennis'],
+  art: ['art', 'artwork', 'artworks', 'sculpture', 'sculptures', 'statue', 'statues', 'monument', 'monuments', 'memorial', 'mural', 'murals'],
+  heritage: ['heritage', 'designated', 'historic']
 };
 
 let INDEX = null;
@@ -76,11 +79,12 @@ function buildIndex() {
   const add = (it) => {
     const key = normalize(it.name);
     const prev = seen.get(key);
-    if (!it.city && prev && prev.some((p) => Math.hypot(p.x - it.x, p.z - it.z) < 150)) return;
+    if (!it.city && !it.discovery && prev && prev.some((p) => Math.hypot(p.x - it.x, p.z - it.z) < 150)) return;
     (prev || seen.set(key, []).get(key)).push(it);
     it.id = `${it.kind}:${items.length}`;
     it.words = words(it.name);
     it.searchWords = words(it.keywords || '');
+    if (it.aliases) it.aliasWords = it.aliases.map(words);
     it.norm = it.words.join(' ');
     items.push(it);
   };
@@ -95,9 +99,14 @@ function buildIndex() {
     const cat=['washroom','water','rink','tennis'].includes(record.kind)?record.kind:'leisure';
     add({kind:'place',cat,name:record.name,x:record.x,z:record.z,sub:`${record.type} · ${districtAt(record.x,record.z)}`,city:record,keywords:`${record.amenities} ${record.accessibility}`});
   }
-  for (const [x, z, name, cat] of GEO.pois || []) {
-    add({ kind: 'place', cat, name, x, z, sub: `${CATEGORY_LABEL[cat] || 'Place'} · ${districtAt(x, z)}` });
-  }
+  // the City's public art and (once loaded) heritage register (discovery.js); an OpenStreetMap place that names the
+  // same artwork gives way to the City's record
+  const D = window.CITY.Discovery;
+  for (const item of D ? D.discoveryPlaces() : []) add(item);
+  const merged = D ? D.mergedPoiRows() : new Set();
+  (GEO.pois || []).forEach(([x, z, name, cat], row) => {
+    if (!merged.has(row)) add({ kind: 'place', cat, name, x, z, sub: `${CATEGORY_LABEL[cat] || 'Place'} · ${districtAt(x, z)}` });
+  });
   for (const b of GEO.buildings) {
     if (b[9]) add({ kind: 'place', cat: b[5] === 6 ? 'worship' : b[5] === 7 ? 'education' : 'place', name: b[9], x: b[0], z: b[1], sub: `Building · ${districtAt(b[0], b[1])}` });
   }
@@ -152,30 +161,35 @@ function searchPlaces(query, { near = null, limit = 8 } = {}) {
   if (!q.length) return [];
   const last = q[q.length - 1];
   const results = [];
-  for (const it of index) {
+  // how well the query matches one name (its words & normalized form): a score, or -1 when a query word is missing
+  const nameScore = (it, iws, norm) => {
     let score = 0;
-    let ok = true;
-    for (let k = 0; k < q.length && ok; k++) {
+    for (let k = 0; k < q.length; k++) {
       const w = q[k];
       const isLast = k === q.length - 1;
       let best = 0;
-      for (let i = 0; i < it.words.length; i++) {
-        const iw = it.words[i];
+      for (let i = 0; i < iws.length; i++) {
+        const iw = iws[i];
         if (iw === w) best = Math.max(best, 10 + (i === k ? 3 : 0));
         else if (isLast && iw.startsWith(w)) best = Math.max(best, 6 + Math.min(4, w.length));
         else if (w.length >= 4 && oneEdit(w, iw)) best = Math.max(best, 4);
         else if (w.length >= 4 && isLast && iw.length > w.length && oneEdit(w, iw.slice(0, w.length))) best = Math.max(best, 3);
       }
-      if (!best && w.length >= 3 && it.norm.includes(w)) best = 2;
+      if (!best && w.length >= 3 && norm.includes(w)) best = 2;
       if (!best && it.searchWords.some((iw)=>iw===w||(isLast&&iw.startsWith(w)))) best = 5;
-      if (!best) ok = false;
+      if (!best) return -1;
       score += best;
     }
-    if (!ok) continue;
-    if (it.norm.startsWith(q.join(' '))) score += 5;
-    if (it.norm === q.join(' ')) score += 12;
+    if (norm.startsWith(q.join(' '))) score += 5;
+    if (norm === q.join(' ')) score += 12;
+    return score - Math.max(0, iws.length - q.length) * 1.5;
+  };
+  for (const it of index) {
+    // (an artwork also answers to the short name OpenStreetMap knows it by: "The Archer", discovery.js)
+    let score = nameScore(it, it.words, it.norm);
+    for (const a of it.aliasWords || []) score = Math.max(score, nameScore(it, a, a.join(' ')));
+    if (score < 0) continue;
     score += KIND_WEIGHT[it.kind] * 0.35 + (it.rank || 0) * 1.2;
-    score -= Math.max(0, it.words.length - q.length) * 1.5;
     let distance = null;
     if (near) {
       distance = Math.hypot(it.x - near.x, it.z - near.z);
@@ -566,6 +580,7 @@ function locateReal(lat, lon) {
 }
 
 Object.assign(window.CITY, {
-  Navigation: { locateReal, inFCT, searchPlaces, findRoute, progressOnRoute, snapToGraph, trueBearing, compassWord, formatDistance, formatDuration, CATEGORY_LABEL, buildIndex }
+  Navigation: { locateReal, inFCT, searchPlaces, findRoute, progressOnRoute, snapToGraph, trueBearing, compassWord, formatDistance, formatDuration, CATEGORY_LABEL, buildIndex,
+    resetIndex: () => { INDEX = null; } }
 });
 })();

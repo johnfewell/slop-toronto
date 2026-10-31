@@ -53,14 +53,19 @@ Mac mini Metal WebGPU captures exercise desktop and low-quality touch views. The
 three successive King stops, station text, retained service identity, stop intent, safe alighting, ground-state
 persistence, night lighting, mode changes and teleport cleanup. The page hide is its own shot on the night ride, after the
 journey: `pagehide` saves the safe boarding position (not the seat) and ends the ride through the shared
-cancellation, returning the rider to that position (st-4sy). The journey can stall in west King traffic: a left- or
-right-turning car or bus stopped inside a junction and the streetcar wait for each other (King & Atlantic, and
-once behind a queue near Dufferin). On 2026-10-29 that stalled 3 of 4 desktop runs and 0 of 2 low-tier runs (st-wfq),
-so retry a stalled run before treating it as a riding failure. Touch checks use actual Playwright taps on the cancel
+cancellation, returning the rider to that position (st-4sy). The journey used to stall in west King traffic, where a
+car or bus turning inside a junction and the streetcar waited for each other (st-wfq). At King & Atlantic, King's lanes
+end 22 m short of the junction's centre, so a 504 waiting at its red stands inside the junction, across the left turn
+from Atlantic. Now traffic.js tests a turning vehicle's body moved along its curve against the streetcar modules
+(`sweepGap`), not the line it faces. Nobody goes in while a streetcar stands in that way. A vehicle held for a
+streetcar stops short of the track ahead of it and claims none of its way. A streetcar keeps clear of the rest of the
+way of a vehicle already inside (`wayThrough`, used by `blockedAhead`). `tests/streetcar-junction-deadlock.test.cjs`
+plays the cases out on the junction as built. On the Mac mini on 2026-10-29, main passed 1 of 4 desktop and 2 of 4
+low-tier journeys; with the fix, 8 of 8 desktop and 8 of 8 low-tier. Touch checks use actual Playwright taps on the cancel
 and boarding buttons and assert that the ride panel fits below search.
 
 ```sh
-node --test tests/transit-riding.test.mjs tests/transit-gamepad.test.cjs tests/transit-traffic.test.cjs tests/shader-precompile.test.cjs tests/controllers.test.cjs tests/boot.test.cjs
+node --test tests/transit-riding.test.mjs tests/transit-gamepad.test.cjs tests/transit-traffic.test.cjs tests/streetcar-junction-deadlock.test.cjs tests/shader-precompile.test.cjs tests/controllers.test.cjs tests/boot.test.cjs
 GPU2_LOCK_WAIT=60 gpu2 slop-toronto-riding -- env CAPTURE_QUERY='?quality=high&autoscale=0&transit=timetable#ride=504' CAPTURE_PROGRESS=1 node tools/capture.mjs tools/shots/streetcar-riding-journey.json
 GPU2_LOCK_WAIT=60 gpu2 slop-toronto-riding -- env CAPTURE_QUERY='?quality=low&autoscale=0&transit=timetable&film#ride=504' CAPTURE_VIEWPORT=412x915 CAPTURE_MOBILE=1 CAPTURE_TAG=touch CAPTURE_PROGRESS=1 node tools/capture.mjs tools/shots/streetcar-riding-phone.json
 ```

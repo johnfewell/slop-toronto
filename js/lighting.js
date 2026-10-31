@@ -6,7 +6,7 @@
 
 const { THREE } = window.CITY;
 const {
-  Fn, float, vec3, vec4, uniform, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select
+  Fn, float, vec3, vec4, uniform, renderGroup, mix, fog, pmremTexture, positionWorld, cameraPosition, length, normalize, max, exp, abs, select
 } = window.CITY.TSL;
 const { SkyMesh } = window.CITY.Addons;
 const { SunLight } = window.CITY.Addons;
@@ -233,9 +233,11 @@ class LightingSystem {
     this.sky.cloudElevation.value = 0.52;
 
     // Calibrate SkyMesh raw radiance (EE=1000 * 0.04) into standard exposure=1.0 HDR range
-    this.uSkyExposure = uniform(0.148);
-    this.uNightFactor = uniform(0.0);
-    this.uNightSkyColor = uniform(new THREE.Color(0x0b1528));
+    // (scene-wide values each time of day rewrites: renderGroup uniforms, updated once per render rather than per object;
+    // see the fog uniforms below)
+    this.uSkyExposure = uniform(0.148).setGroup(renderGroup);
+    this.uNightFactor = uniform(0.0).setGroup(renderGroup);
+    this.uNightSkyColor = uniform(new THREE.Color(0x0b1528)).setGroup(renderGroup);
     const rawSkyNode = this.sky.material.colorNode;
     this.sky.material.colorNode = Fn(() => {
       const raw = rawSkyNode;
@@ -290,8 +292,12 @@ class LightingSystem {
     // Sky-matched aerial perspective (replaces the flat FogExp2 colour): distant surfaces fade into the baked sky
     // radiance just above the horizon in their view direction (sun glow included), through an exponential haze layer
     // so helicopter / observatory views stay clearer than the horizon.
-    this.uFogDensity = uniform(TIME_PRESETS.golden.fogDensity);
-    this.uFogHeight = uniform(900.0);
+    // renderGroup, not the default objectGroup: since three.js #35221 a material with no node properties of its own (the
+    // GLTF props & landmarks, plain MeshStandardNodeMaterials) gets only a SHARED refresh each frame, which uploads the
+    // render & frame groups but not an object-group uniform. Left in objectGroup, the fog those materials read through
+    // scene.fogNode kept the density of the time of day they were first drawn in when the preset changed
+    this.uFogDensity = uniform(TIME_PRESETS.golden.fogDensity).setGroup(renderGroup);
+    this.uFogHeight = uniform(900.0).setGroup(renderGroup);
     if (this.envRenderTarget) this.scene.fogNode = this.createAerialFogNode();
   }
 

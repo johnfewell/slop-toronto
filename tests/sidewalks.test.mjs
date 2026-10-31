@@ -83,6 +83,33 @@ test('other islands, or no data, keep the fixed band', () => {
   assert.equal(CITY.sidewalkPieces({ polys: null }, GEO.blocks), null);
 });
 
+test('the walkers\' point test agrees with a plain even-odd test over each island\'s pieces and holes', () => {
+  // (sidewalkWalkIndex, js/pedestrian-routes.js's walk test: 40 points over each island's bounds, 1 in 5 of them within
+  // half a metre of one of its vertices, where the rows' edges matter most)
+  const pieces = CITY.sidewalkPieces(SIDEWALKS, GEO.blocks);
+  const index = CITY.sidewalkWalkIndex(pieces);
+  let seed = 9, n = 0, on = 0, holes = 0;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (const [bid, list] of pieces) {
+    const xs = list.flatMap((p) => p.outer.map((q) => q.x)), zs = list.flatMap((p) => p.outer.map((q) => q.z));
+    const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+    for (let k = 0; k < 40; k++) {
+      let x = x0 + rnd() * (x1 - x0), z = z0 + rnd() * (z1 - z0);
+      if (k % 5 === 0) { const r = list[0].outer[Math.floor(rnd() * list[0].outer.length)]; x = r.x + rnd() - 0.5; z = r.z + rnd() - 0.5; }
+      const inHole = list.some((p) => inside(p.outer, x, z) && p.holes.some((h) => inside(h, x, z)));
+      const want = list.some((p) => inside(p.outer, x, z) && !p.holes.some((h) => inside(h, x, z)));
+      assert.equal(index.inside(bid, x, z), want, `island ${bid} at ${x}, ${z}`);
+      n++; if (want) on++; if (inHole) holes++;
+    }
+  }
+  assert.ok(n > 90000 && on > 10000 && holes > 0, `${n} points, ${on} on a walk, ${holes} in a hole`);
+  // an island without pieces is nothing mapped, not off the walk
+  const bare = GEO.blocks.findIndex((b, i) => !pieces.has(i));
+  assert.equal(index.inside(bare, GEO.blocks[bare][0][0], GEO.blocks[bare][0][1]), null);
+  assert.equal(index.has(bare), false);
+  assert.equal(CITY.sidewalkWalkIndex(null), null);
+});
+
 test('rings survive the decimetre delta encoding', () => {
   const ring = [[10.04, -3.26], [12.5, -3.26], [12.5, 0.01], [10, 0]];
   const back = JSON.parse(JSON.stringify(CITY.decodeSidewalkRing(CITY.encodeSidewalkRing(ring))));

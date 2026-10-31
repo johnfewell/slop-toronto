@@ -2,7 +2,8 @@
 
 Design specification · 2026-10-26 · Follows [streetcar riding](streetcar-riding-spec.md)
 
-A playable two-station slice is implemented. See [controls, implementation and remaining limits](subway-riding.md).
+A playable two-station slice is implemented, and a second one (Line 1, Queen ↔ King, walked from the street) built
+from the [stable topology contract](subway-topology.md). See [controls, implementation and remaining limits](subway-riding.md).
 The assessment and estimates below describe the original design baseline. Measured underground elevations,
 faithful T1/station art, streamed interiors and performance/resource budgets remain future work; the current slice
 does not claim every acceptance gate in this fuller specification.

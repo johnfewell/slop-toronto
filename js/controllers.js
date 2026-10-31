@@ -21,7 +21,10 @@ const {
   buildCarGeometry,
   buildCarSidePatch,
   buildSteerableWheelGeo,
+  carTipZ,
+  createCarWheelMaterial,
   createLoftedCarMaterial,
+  drawOntarioPlate,
   buildHelicopterBodyGeometry,
   buildHelicopterMainRotorGeometry,
   buildHelicopterTailRotorGeometry,
@@ -160,29 +163,17 @@ const SLIM = { person: 0.3, cyclist: 0.3, cyclistAlong: [-0.55, 0, 0.55] };
 const CURB_CROSS = 0.42;
 // --- end world contact
 
-// Ontario number plate: white, blue lettering, "ONTARIO" along the top and the province's "YOURS TO DISCOVER" along the
-// bottom
+// Ontario number plate: white, blue lettering, "ONTARIO" along the top, a small crown-like mark in the number and the
+// province's "YOURS TO DISCOVER" along the bottom (actor-models.js drawOntarioPlate, as on the traffic's plates)
 function createOntarioPlateTexture() {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 128;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#f6f7f4';
-  ctx.fillRect(0, 0, 256, 128);
-  ctx.strokeStyle = '#1d3f8f';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(3, 3, 250, 122);
-  ctx.fillStyle = '#1d3f8f';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = '800 17px Inter, Arial, sans-serif';
-  ctx.fillText('ONTARIO', 128, 22);
-  ctx.font = '900 46px JetBrains Mono, monospace';
-  ctx.fillText('CNTW 553', 128, 68);
-  ctx.font = '700 12px Inter, Arial, sans-serif';
-  ctx.fillText('YOURS TO DISCOVER', 128, 110);
+  drawOntarioPlate(c.getContext('2d'), 0, 0, 256, 128, ['CNTW', '553'], { border: true });
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
+  // The plates are mostly seen at grazing angles from the chase camera
+  tex.anisotropy = 16;
   return tex;
 }
 
@@ -390,7 +381,7 @@ class ThirdPersonControllerManager {
   findTeleportPosition(x, z, heading, altitude, exact = false) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
     if (this.interiorSpace && this.activeMode === 'person') {
-      const point = this.interiorSpace.constrain({ x, z }, 0.5);
+      const point = this.interiorSpace.constrain({ x, z, y: altitude }, 0.5);
       return exact && Math.hypot(point.x - x, point.z - z) > 0.01 ? null : point;
     }
     const heli = this.activeMode === 'helicopter';
@@ -561,15 +552,15 @@ class ThirdPersonControllerManager {
     carBodyMesh.receiveShadow = true;
     chassisPivot.add(carBodyMesh);
 
-    // 2. Ontario number plates on the bumpers
+    // 2. Ontario number plates on the raked bumpers, tilted to follow the fascias (mrdoob's 52f84db)
     const plateMat = new THREE.MeshStandardNodeMaterial({ map: createOntarioPlateTexture(), roughness: 0.28 });
-    const rearPlate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.15, 0.02), plateMat);
-    rearPlate.position.set(0, spec.plates[1], spec.zRear - 0.006);
-    chassisPivot.add(rearPlate);
-
-    const frontPlate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.15, 0.02), plateMat);
-    frontPlate.position.set(0, spec.plates[0], spec.zFront + 0.006);
-    chassisPivot.add(frontPlate);
+    for (const front of [true, false]) {
+      const y = spec.plates[front ? 0 : 1];
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.15, 0.008), plateMat);
+      plate.position.set(0, y, carTipZ(spec, y, front) + (front ? 0.003 : -0.003));
+      plate.rotation.x = Math.atan((carTipZ(spec, y + 0.075, front) - carTipZ(spec, y - 0.075, front)) / 0.15);
+      chassisPivot.add(plate);
+    }
 
     // 3b. Brake lights, CHMSL & turn signals are lit by the taxi material from its carState uniform (see updateCar)
     const carState = taxiLoftMat.userData.carState;
@@ -577,6 +568,7 @@ class ThirdPersonControllerManager {
     // 4. Steerable & Spinning 3D LatheGeometry Tyres + Recessed 5-Spoke Alloy Wheels
     const leftWheelGeo = buildSteerableWheelGeo(spec, -1);
     const rightWheelGeo = buildSteerableWheelGeo(spec, 1);
+    const wheelMat = createCarWheelMaterial({ wheelRadius: spec.wheelRadius });
 
     const wheels = [];
     const wheelCoords = [
@@ -588,7 +580,7 @@ class ThirdPersonControllerManager {
     for (const wc of wheelCoords) {
       const steerPivot = new THREE.Group();
       steerPivot.position.set(wc.side * spec.wheelX, spec.wheelRadius, wc.z);
-      const tire = new THREE.Mesh(wc.side < 0 ? leftWheelGeo : rightWheelGeo, taxiLoftMat);
+      const tire = new THREE.Mesh(wc.side < 0 ? leftWheelGeo : rightWheelGeo, wheelMat);
       tire.castShadow = true;
       tire.receiveShadow = true;
       steerPivot.add(tire);
@@ -904,7 +896,8 @@ class ThirdPersonControllerManager {
   // deck or ramp where whoever is at height y can step or drive onto it (y unknown: at street level)
   getGroundHeight(x, z, mode = 'person', y = null) {
     // (the bicycle too: up on the curb islands it rides the parks' trails & paths on their surface, not 22 cm under it)
-    if (this.interiorSpace && mode === 'person') return this.interiorSpace.floor;
+    // (an interior with stairs has its floor by place: js/subway-service.js createStationWalk)
+    if (this.interiorSpace && mode === 'person') return this.interiorSpace.floorAt ? this.interiorSpace.floorAt(x, z, y) : this.interiorSpace.floor;
     let ground = (mode === 'person' || mode === 'cyclist') && this.isPointOnSidewalk(x, z) ? CITY_BOUNDS.sidewalkHeight : 0.0;
     // down in a road cut (city-config.js cutAt: Strachan Ave under the railway), else up on the hills
     const cut = window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0;
@@ -1002,7 +995,8 @@ class ThirdPersonControllerManager {
       ent.position.x += Math.sin(ent.heading) * ent.speed * dt;
       ent.position.z += Math.cos(ent.heading) * ent.speed * dt;
       const at = this.interiorSpace.constrain(ent.position, 0.5);
-      ent.position.x = at.x; ent.position.z = at.z; ent.position.y = this.interiorSpace.floor;
+      ent.position.x = at.x; ent.position.z = at.z;
+      ent.position.y = this.interiorSpace.floorAt ? this.interiorSpace.floorAt(at.x, at.z, ent.position.y) : this.interiorSpace.floor;
       return;
     }
     const car = mode === 'car', pos = ent.position, radius = BODY_RADIUS[mode] || 0.48;
