@@ -20,3 +20,6 @@ tools/prop-src/
 .wrangler/
 # br doctor per-run artifacts
 .doctor/
+# local agent and design-tool state
+.claude/
+.impeccable/

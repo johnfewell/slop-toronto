@@ -4,6 +4,10 @@
 //        FILM_STILLS=1 node tools/render-film.mjs                 stills only: each shot's start, middle and end
 //        FILM_STILLS="0:0,2:4.5" node tools/render-film.mjs       stills at shot:seconds
 // FILM_SHOTS=<file.json> replaces the film's shots (trying out moves); FILM_SIZE=1280x720, FILM_FPS=60, FILM_CRF=18;
+// the file may also be { prelude, shots }: `prelude` (JS) runs once when the city is ready, and a shot's `setup` (JS, may
+// await; `shot`, `app` and `C` in scope) runs before its warm-up, after the cut: it can place vehicles or the player,
+// or set `shot.camera = (t) => ({ pos, look, fov })` to follow one (js/film.js show). FILM_STILLS_PLAY=1 renders
+// each shot's stills by playing it from 0 without capturing the frames between, so moving things are where they'd be.
 // FILM_QUERY is added to the page's query (default &cloudSpeed=1: the sky keeps the opener's clouds to the end).
 // The page's requestAnimationFrame, performance.now and Date.now run on real time while the city loads, then on a
 // manual clock: every frame advances it exactly 1 / fps, runs the queued frame callbacks (the app's loop, three's node
@@ -32,7 +36,9 @@ const [W, H] = (process.env.FILM_SIZE || '1920x1080').split('x').map(Number);
 const FPS = Number(process.env.FILM_FPS || 60);
 const WARMUP = Number(process.env.FILM_WARMUP || 90);
 const STILLS = process.env.FILM_STILLS;
-const shotsOverride = process.env.FILM_SHOTS ? JSON.parse(fs.readFileSync(process.env.FILM_SHOTS, 'utf8')) : null;
+const shotsFile = process.env.FILM_SHOTS ? JSON.parse(fs.readFileSync(process.env.FILM_SHOTS, 'utf8')) : null;
+const shotsOverride = shotsFile && !Array.isArray(shotsFile) ? shotsFile.shots : shotsFile;
+const prelude = shotsFile && !Array.isArray(shotsFile) ? shotsFile.prelude || null : null;
 fs.mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch({
@@ -99,11 +105,26 @@ try {
 log.push(`[film] ready after ${Date.now() - t0} ms`);
 // the street-level start view's trees & traffic, then the clock goes manual
 await page.waitForTimeout(3000);
-const shots = await page.evaluate((override) => {
+const shots = await page.evaluate(async ([override, prelude]) => {
   if (override) window.CITY.Film.SHOTS.splice(0, Infinity, ...override);
+  if (prelude) await new Function('app', 'C', `return (async () => { ${prelude} })()`)(window.__CITY_APP, window.CITY);
   window.__filmClock.start();
   return window.CITY.Film.SHOTS.map((s) => ({ name: s.name, duration: s.duration }));
-}, shotsOverride);
+}, [shotsOverride, prelude]);
+// A shot's setup, after the cut to it (its time of day) and before its warm-up
+async function setup(i) {
+  const r = await page.evaluate(async (i) => {
+    const shot = window.CITY.Film.SHOTS[i];
+    window.CITY.Film.show(i, 0);
+    if (!shot.setup) return null;
+    try {
+      return await new Function('shot', 'app', 'C', `return (async () => { ${shot.setup} })()`)(shot, window.__CITY_APP, window.CITY);
+    } catch (e) {
+      return { error: String(e && e.stack || e) };
+    }
+  }, i);
+  if (r !== null && r !== undefined) log.push(`[film] setup ${i} ${shots[i].name}: ${JSON.stringify(r)}`);
+}
 
 const cdp = await page.context().newCDPSession(page);
 // One frame: put the camera at (shot, t), advance the clock one frame, render, wait for the GPU, capture
@@ -123,11 +144,34 @@ if (STILLS) {
   const list = STILLS === '1'
     ? shots.flatMap((s, i) => [0, s.duration / 2, s.duration - 1 / FPS].map((t) => [i, t]))
     : STILLS.split(',').map((p) => p.split(':').map(Number));
-  for (const [i, t] of list) {
-    for (let k = 0; k < WARMUP; k++) await frame(i, t, false);
-    const name = `still-${i}-${shots[i].name}-${t.toFixed(1)}s.png`;
-    fs.writeFileSync(path.join(OUT, name), await frame(i, t));
-    log.push(`[film] ${name}`);
+  if (process.env.FILM_STILLS_PLAY) {
+    // each shot played from its start, captured only at the stills' times
+    for (const i of [...new Set(list.map(([i]) => i))]) {
+      const times = list.filter(([j]) => j === i).map(([, t]) => t).sort((a, b) => a - b);
+      await setup(i);
+      for (let k = 0; k < WARMUP; k++) await frame(i, 0, false);
+      const last = Math.round(times[times.length - 1] * FPS);
+      for (let f = 0; f <= last; f++) {
+        const want = times.filter((t) => Math.round(t * FPS) === f);
+        const buf = await frame(i, f / FPS, want.length > 0);
+        for (const t of want) {
+          const name = `still-${i}-${shots[i].name}-${t.toFixed(1)}s.png`;
+          fs.writeFileSync(path.join(OUT, name), buf);
+          log.push(`[film] ${name}`);
+        }
+      }
+      flush();
+    }
+  } else {
+    let prev = -1;
+    for (const [i, t] of list) {
+      if (i !== prev) await setup(i);
+      prev = i;
+      for (let k = 0; k < WARMUP; k++) await frame(i, t, false);
+      const name = `still-${i}-${shots[i].name}-${t.toFixed(1)}s.png`;
+      fs.writeFileSync(path.join(OUT, name), await frame(i, t));
+      log.push(`[film] ${name}`);
+    }
   }
 } else {
   // the frames go straight into ffmpeg: no frame folder
@@ -140,6 +184,7 @@ if (STILLS) {
   const r0 = Date.now();
   let n = 0;
   for (let i = 0; i < shots.length; i++) {
+    await setup(i);
     for (let k = 0; k < WARMUP; k++) await frame(i, 0, false);
     const frames = Math.round(shots[i].duration * FPS);
     for (let f = 0; f < frames; f++) {

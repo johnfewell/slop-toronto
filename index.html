@@ -24,234 +24,280 @@
   <meta name="twitter:image" content="https://sloptoronto.ca/assets/og-toronto.jpg" />
   <meta name="twitter:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <!-- /social -->
-  <meta name="theme-color" content="#07111d" />
+  <meta name="theme-color" content="#e9e6dc" />
   <link rel="icon" href="./assets/logo-mark.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon-180.png" />
   <link rel="manifest" href="./assets/manifest.webmanifest" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&amp;display=swap" />
+  <!-- Archivo, self-hosted (SIL OFL 1.1, assets/fonts/OFL-Archivo.txt): the page makes no font requests to third parties -->
+  <link rel="preload" as="font" type="font/woff2" href="./assets/fonts/archivo-latin-var.woff2" crossorigin />
   <link rel="preload" as="image" href="./assets/site/hero.webp" />
   <link rel="stylesheet" href="./css/landing.css" />
   <!-- Umami analytics (self-hosted, no cookies), counting visits only on the production hosts (data-domains).
        Session replay is deliberately left out (counter only). -->
   <script defer src="https://umami.cloud6711.workers.dev/script.js" data-website-id="75a0f1a3-3bb4-4dd9-adde-eade0b719665" data-domains="sloptoronto.ca,www.sloptoronto.ca"></script>
+  <script defer src="./js/landing.js"></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
     <defs>
-      <symbol id="l-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m20 20-4.6-4.6"/></symbol>
-      <symbol id="l-gps" viewBox="0 0 24 24"><path d="M20.5 3.5 3.8 10.6l7.1 2.5 2.5 7.1z"/></symbol>
       <symbol id="l-arrow" viewBox="0 0 24 24"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></symbol>
-      <symbol id="l-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="6" r="2.4"/><path d="M8.4 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.6"/></symbol>
-      <symbol id="l-steer" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2"/><path d="M3.8 10.4 9.9 11.3M14.1 11.3l6.1-.9M12 14.2v6.2"/></symbol>
-      <symbol id="l-pin" viewBox="0 0 24 24"><path d="M12 21.2s-6.6-5.7-6.6-11.2a6.6 6.6 0 0 1 13.2 0c0 5.5-6.6 11.2-6.6 11.2z"/><circle cx="12" cy="10" r="2.4"/></symbol>
-      <symbol id="l-walk" viewBox="0 0 24 24"><circle cx="13" cy="4.4" r="2"/><path d="M12.3 8.2 10.8 13.8M10.8 13.8 9.2 17.2 7.2 20.5M10.8 13.8l2.4 3 1.6 3.8M12.3 8.6 9.6 10.2l-.8 2.6M12.3 8.6l2.1 2.4 2.4.8"/></symbol>
-      <symbol id="l-car" viewBox="0 0 24 24"><path d="m5.2 10.5 1.4-4.1A2.2 2.2 0 0 1 8.7 4.8h6.6a2.2 2.2 0 0 1 2.1 1.6l1.4 4.1"/><rect x="3" y="10.5" width="18" height="6.5" rx="2"/><path d="M6 17v2.6M18 17v2.6M6.6 13.8h1.6M15.8 13.8h1.6"/></symbol>
-      <symbol id="l-bike" viewBox="0 0 24 24"><circle cx="5.5" cy="16.5" r="3.6"/><circle cx="18.5" cy="16.5" r="3.6"/><path d="M5.5 16.5 9.3 9.6h6.3M11.6 16.5 9.3 9.6M11.6 16.5l4-6.9M5.5 16.5h6.1M15.6 9.6l2.9 6.9M15.6 9.6 14.8 7h2.4"/></symbol>
-      <symbol id="l-heli" viewBox="0 0 24 24"><path d="M3.5 4h15M11 4v3.2"/><path d="M6 12.2a5 5 0 0 1 5-5h1.6a4.4 4.4 0 0 1 4.4 4.4V15H8.8A2.8 2.8 0 0 1 6 12.2z"/><path d="M17 11h4.2M7 19h10.5M9.5 15v4M15 15v4"/></symbol>
-      <symbol id="l-signal" viewBox="0 0 24 24"><rect x="8" y="2.5" width="8" height="15" rx="2"/><circle cx="12" cy="6.3" r="1.5"/><circle cx="12" cy="10" r="1.5"/><circle cx="12" cy="13.7" r="1.5"/><path d="M12 17.5v4"/></symbol>
-      <symbol id="l-building" viewBox="0 0 24 24"><path d="M5 20.5V4.5h9v16M14 9.5h5v11M3 20.5h18M8 8h3M8 11.5h3M8 15h3"/></symbol>
-      <symbol id="l-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M5.5 18.5 7 17M17 7l1.5-1.5"/></symbol>
+      <symbol id="l-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></symbol>
+      <symbol id="l-pause" viewBox="0 0 24 24"><path d="M7 4.5v15M17 4.5v15"/></symbol>
     </defs>
   </svg>
+  <a class="skip" href="#where-q">Skip to the place search</a>
 
-  <header class="topbar">
-    <a class="logo" href="./index.html" aria-label="Slop Toronto home">
-      <img class="logo-mark" src="./assets/logo-mark.svg" alt="" width="40" height="40" />
-      <span class="logo-text">Slop<span> Toronto</span></span>
-    </a>
-    <nav class="toplinks" aria-label="Sections">
-      <a href="#sights">Sights</a>
-      <a href="#how">How it works</a>
-      <a href="#real">What's real</a>
-      <a href="#credits">Credits</a>
-    </nav>
-    <a class="btn btn-explore btn-small" href="./explore.html">Explore <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
+  <!-- Masthead: the issue line is computed live in America/Toronto by js/landing.js (ISO week, date, time, light); the
+       weather ear is the latest Pearson observation from Environment and Climate Change Canada, hidden if it can't be had -->
+  <header class="mast">
+    <p class="mast-issue">
+      <span class="ln" data-issue>Free · Every week</span>
+      <span class="ln"><span class="nb" data-date>Toronto</span> <span class="nb" data-light>on Lake Ontario</span></span>
+    </p>
+    <a class="mast-name" href="./index.html" aria-label="Slop Toronto, home"><span class="mast-box">Slop</span> Toronto</a>
+    <div class="mast-right">
+      <p class="mast-weather" data-weather><span class="ln">Outside, at Pearson</span><span class="ln" data-weather-text>&nbsp;</span></p>
+    </div>
   </header>
 
+  <nav class="strip" aria-label="Sections">
+    <ul>
+      <li><a href="#listings">Sights</a></li>
+      <li><a href="#ride"><b>Ride</b> the 504</a></li>
+      <li><a href="#ride">The subway</a></li>
+      <li><a href="#numbers">By the numbers</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#real">What's real</a></li>
+      <li><a href="#credits">Credits</a></li>
+    </ul>
+    <a class="strip-go" href="./explore.html">Open the city <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
+  </nav>
+
   <main>
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero-bg" aria-hidden="true"></div>
-      <div class="hero-inner">
-        <p class="eyebrow"><span class="dot" aria-hidden="true"></span> Toronto, on Lake Ontario</p>
-        <h1>Toronto,<br />by the lake.</h1>
-        <p class="lede">Downtown Toronto and the waterfront in 3D, in your browser. Cycle the lake from the Humber Bay Arch Bridge to Sugar Beach, or walk, drive and fly past the CN Tower and through the downtown streets.</p>
-        <form class="hero-search" action="./explore.html" id="hero-search" role="search">
-          <svg class="i" aria-hidden="true"><use href="#l-search"/></svg>
-          <input id="hero-q" type="text" name="q" placeholder="Where to? CN Tower, Queens Quay, a café…" aria-label="Search a place in Toronto" autocomplete="off" />
-          <button class="btn btn-explore" type="submit">Explore <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></button>
-        </form>
-        <div class="chips" aria-label="Popular places">
-          <a class="chip" href="./explore.html#mode=cycle">Ride the waterfront</a>
-          <a class="chip" href="./explore.html#place=CN%20Tower">CN Tower</a>
-          <a class="chip" href="./explore.html#place=Distillery%20District">Distillery District</a>
-          <a class="chip" href="./explore.html#place=Harbourfront%20Centre">Harbourfront</a>
-          <a class="chip" href="./explore.html#to=Union%20Station">Directions to Union Station</a>
+    <!-- The front page: cover + listings rail -->
+    <div class="front">
+      <section class="cover" aria-labelledby="coverline" data-cover>
+        <div class="cover-media" aria-hidden="true">
+          <div class="frame frame-rest" data-frame="rest">
+            <img class="still" src="./assets/site/hero.webp" alt="" width="1600" height="900" fetchpriority="high" />
+          </div>
+          <div class="frame frame-peek" data-frame="peek"></div>
+        </div>
+        <p class="sticker" data-sticker>Screenshot from the app</p>
+        <button class="cover-pause" type="button" data-pause hidden aria-pressed="false">
+          <svg class="i" aria-hidden="true"><use href="#l-pause"/></svg><span>Pause footage</span>
+        </button>
+        <div class="coverstory">
+          <h1 id="coverline">Toronto,<br />to scale.</h1>
+          <p class="cover-dek">Downtown and the waterfront in 3D, in your browser. Walk, cycle, drive, fly, or ride the TTC.</p>
+          <form class="where" action="./explore.html" id="hero-search" role="search">
+            <label for="where-q">Where to?</label>
+            <input id="where-q" type="search" name="q" placeholder="CN Tower, Queens Quay, a café…" autocomplete="off" enterkeyhint="go" />
+            <button type="submit">Go <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></button>
+          </form>
+          <p class="cover-caption" data-caption>On the cover: the skyline and the CN Tower from over the harbour at golden hour, in the app.</p>
+        </div>
+      </section>
+
+      <aside class="rail" id="listings" aria-labelledby="listings-h">
+        <h2 id="listings-h" class="bar">Listings, west to east</h2>
+        <p class="rail-key">Distances in km, in a straight line from the Humber Bay Arch Bridge.</p>
+        <!-- Distances: great-circle from the ride's start by the Humber Bay Arch Bridge (43.6316, -79.4668, js/city-config.js)
+             to each landmark's centre in data/toronto-geodata.bin (GEO.landmarks), ordered by longitude. -->
+        <ol class="listings">
+          <li class="listing" data-clip="waterfront-ride" data-clip-name="a cyclist on the Martin Goodman Trail's red asphalt, east of the Humber Bay start" data-still="./assets/site/ride.webp" data-name="the waterfront ride, on the Martin Goodman Trail">
+            <img src="./assets/site/clips/waterfront-ride.webp" alt="" width="960" height="540" />
+            <div class="listing-text">
+              <a class="listing-link" href="./explore.html#mode=cycle">Ride the waterfront</a>
+              <span><span class="km">0.0</span> The Martin Goodman Trail</span>
+            </div>
+            <button class="peek" type="button" aria-label="Preview the waterfront ride"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg></button>
+          </li>
+          <li class="listing" data-clip="cinesphere" data-clip-name="the Cinesphere at Ontario Place" data-still="./assets/site/cinesphere.webp" data-name="the Cinesphere at Ontario Place">
+            <img src="./assets/site/clips/cinesphere.webp" alt="" width="960" height="540" />
+            <div class="listing-text">
+              <a class="listing-link" href="./explore.html#place=Cinesphere">Cinesphere</a>
+              <span><span class="km">3.9</span> Ontario Place, on the lake</span>
+            </div>
+            <button class="peek" type="button" aria-label="Preview the Cinesphere"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg></button>
+          </li>
+          <li class="listing" data-clip="rogers-centre" data-clip-name="Rogers Centre, its dome closed, from outside" data-still="./assets/site/rogers-centre.webp" data-name="Rogers Centre, at the foot of the CN Tower">
+            <img src="./assets/site/clips/rogers-centre.webp" alt="" width="960" height="540" />
+            <div class="listing-text">
+              <a class="listing-link" href="./explore.html#place=Rogers%20Centre">Rogers Centre</a>
+              <span><span class="km">6.3</span> Blue Jays Way</span>
+            </div>
+            <button class="peek" type="button" aria-label="Preview Rogers Centre"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg></button>
+          </li>
+          <li class="listing" data-clip="cn-tower" data-clip-name="the CN Tower over the Entertainment District" data-still="./assets/site/cn-tower.webp" data-name="the CN Tower over the Entertainment District">
+            <img src="./assets/site/clips/cn-tower.webp" alt="" width="960" height="540" />
+            <div class="listing-text">
+              <a class="listing-link" href="./explore.html#place=CN%20Tower">CN Tower</a>
+              <span><span class="km">6.5</span> 553 m, Entertainment District</span>
+            </div>
+            <button class="peek" type="button" aria-label="Preview the CN Tower"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg></button>
+          </li>
+          <li class="listing" data-clip="harbourfront" data-clip-name="Harbourfront Centre on Queens Quay" data-still="./assets/site/harbourfront.webp" data-name="Harbourfront Centre on Queens Quay">
+            <img src="./assets/site/clips/harbourfront.webp" alt="" width="960" height="540" />
+            <div class="listing-text">
+              <a class="listing-link" href="./explore.html#place=Harbourfront%20Centre">Harbourfront Centre</a>
+              <span><span class="km">6.8</span> Queens Quay W, on the lake</span>
+            </div>
+            <button class="peek" type="button" aria-label="Preview Harbourfront Centre"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg></button>
+          </li>
+          <li class="listing" data-clip="union-station" data-clip-name="a GO train in Union Station's train shed" data-still="./assets/site/union-station.webp" data-name="Union Station on Front Street">
+            <img src="./assets/site/clips/union-station.webp" alt="" width="960" height="540" />
+            <div class="listing-text">
+              <a class="listing-link" href="./explore.html#place=Union%20Station">Union Station</a>
+              <span><span class="km">7.1</span> Front St · Financial District</span>
+            </div>
+            <button class="peek" type="button" aria-label="Preview Union Station"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg></button>
+          </li>
+          <li class="listing" data-clip="st-lawrence" data-clip-name="St. Lawrence Market on Front Street East" data-still="./assets/site/st-lawrence.webp" data-name="St. Lawrence Market on Front Street East">
+            <img src="./assets/site/clips/st-lawrence.webp" alt="" width="960" height="540" />
+            <div class="listing-text">
+              <a class="listing-link" href="./explore.html#place=St.%20Lawrence%20Market">St. Lawrence Market</a>
+              <span><span class="km">7.9</span> Front St E · Old Town</span>
+            </div>
+            <button class="peek" type="button" aria-label="Preview St. Lawrence Market"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg></button>
+          </li>
+          <li class="listing" data-clip="distillery" data-clip-name="the Distillery District" data-still="./assets/site/distillery.webp" data-name="the Distillery District">
+            <img src="./assets/site/clips/distillery.webp" alt="" width="960" height="540" />
+            <div class="listing-text">
+              <a class="listing-link" href="./explore.html#place=Distillery%20District">Distillery District</a>
+              <span><span class="km">8.9</span> Mill St · Corktown</span>
+            </div>
+            <button class="peek" type="button" aria-label="Preview the Distillery District"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg></button>
+          </li>
+        </ol>
+        <div class="corrections">
+          <p><b>Corrections:</b> the sky, the water and the façades are art, not data. Needs WebGPU: a recent Chrome or Edge.</p>
+          <p class="webgpu-note" data-webgpu-note hidden>This browser doesn't seem to support WebGPU yet. Try the latest Chrome or Edge.</p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Ride the TTC -->
+    <section class="section ride" id="ride" aria-labelledby="ride-h">
+      <h2 id="ride-h" class="bar">Ride the TTC</h2>
+      <div class="ride-grid">
+        <article class="ride-story" data-clip="streetcar-504" data-name="a 504 King streetcar">
+          <div class="ride-media frame">
+            <div class="ride-type" aria-hidden="true"><span>504</span> King</div>
+            <button class="peek" type="button" aria-label="Preview the 504 King streetcar ride"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg><span>Preview</span></button>
+          </div>
+          <p class="ride-caption" data-ride-caption data-clip-caption="In the clip: a 504A King car at King and John, in the app." hidden></p>
+          <h3><a href="./explore.html#ride=504">The 504 along King</a></h3>
+          <p>A passenger seat on a King streetcar. It follows its normal tracks, the traffic signals and its stopping pattern. Or walk to a stop and board any car that pulls in.</p>
+          <a class="more" href="./explore.html#ride=504">Ride the 504 <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
+        </article>
+        <article class="ride-story" data-clip="subway-viaduct" data-still="./assets/site/subway-viaduct.webp" data-name="a subway train on the Bloor Viaduct">
+          <div class="ride-media frame">
+            <img class="still" src="./assets/site/subway-viaduct.webp" alt="" width="960" height="540" loading="lazy" />
+            <button class="peek" type="button" aria-label="Preview the subway ride across the Don Valley"><svg class="i" aria-hidden="true"><use href="#l-play"/></svg><span>Preview</span></button>
+          </div>
+          <p class="ride-caption" data-ride-caption data-clip-caption="In the clip: a Line 2 train on the Bloor Viaduct's lower deck, at midday, in the app.">In the picture: a Line 2 train on the Bloor Viaduct over the Don Valley, in the app.</p>
+          <h3><a href="./explore.html#ride=subway">The subway across the Don Valley</a></h3>
+          <p>An eastbound train from Castle Frank: through the tunnel, over the Bloor Viaduct, and into Broadview. Both directions run.</p>
+          <a class="more" href="./explore.html#ride=subway">Ride the subway <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
+        </article>
+        <div class="getting-around">
+          <h3>Getting around</h3>
+          <ul>
+            <li><a href="./explore.html#mode=cycle"><b>Cycle</b> the Martin Goodman Trail along the lake, from the arch bridge to Sugar Beach</a></li>
+            <li><a href="./explore.html#mode=walk"><b>Walk</b> among the crowds on the sidewalks, across the crosswalks</a></li>
+            <li><a href="./explore.html#mode=drive"><b>Drive</b> in the traffic on the downtown grid, and up onto the Gardiner</a></li>
+            <li><a href="./explore.html#mode=fly"><b>Fly</b> over the harbour and the islands to the top of the CN Tower</a></li>
+            <li><b>Four kinds of light:</b> golden hour, midday, sunset and night</li>
+          </ul>
         </div>
       </div>
-      <a class="scroll-cue" href="#stats" aria-label="Scroll to learn more"><span></span></a>
     </section>
 
-    <!-- Numbers -->
-    <section class="stats" id="stats" aria-label="The city in numbers">
-      <div class="stat reveal"><b>35,266</b><span>buildings, with the City's own heights</span></div>
-      <div class="stat reveal"><b>1,383</b><span>named streets to walk, cycle or drive</span></div>
-      <div class="stat reveal"><b>57,120</b><span>street trees where the City says they stand</span></div>
-      <div class="stat reveal"><b>~6 km</b><span>of lakeshore, Humber Bay to Sugar Beach</span></div>
-      <div class="stat reveal"><b>1&thinsp;:&thinsp;1</b><span>11.6 × 6.6 km of downtown, to scale</span></div>
+    <!-- Off the lake -->
+    <section class="section uptown" aria-labelledby="uptown-h">
+      <h2 id="uptown-h" class="bar">Off the lake</h2>
+      <p class="section-dek">Pick a sight and you arrive on the street in front of it, facing it. Everything around it is there too: the roads, the traffic, the people.</p>
+      <ul class="uptown-grid">
+        <li class="up up-lead">
+          <a href="./explore.html#place=Toronto%20City%20Hall">
+            <img src="./assets/site/city-hall.webp" alt="Toronto City Hall and Nathan Phillips Square, rendered in the app" width="960" height="540" loading="lazy" />
+            <b>Toronto City Hall</b><span>Nathan Phillips Square</span>
+          </a>
+        </li>
+        <li class="up">
+          <a href="./explore.html#place=Royal%20Ontario%20Museum">
+            <img src="./assets/site/rom.webp" alt="The Royal Ontario Museum on Bloor Street, rendered in the app" width="960" height="540" loading="lazy" />
+            <b>Royal Ontario Museum</b><span>Bloor St W · Yorkville</span>
+          </a>
+        </li>
+        <li class="up">
+          <a href="./explore.html#place=Ontario%20Legislative%20Building">
+            <img src="./assets/site/queens-park.webp" alt="Queen's Park and the Ontario Legislative Building, rendered in the app" width="960" height="540" loading="lazy" />
+            <b>Queen's Park</b><span>University Ave · the Legislature</span>
+          </a>
+        </li>
+      </ul>
     </section>
 
-    <!-- Sights -->
-    <section class="section" id="sights">
-      <div class="section-head reveal">
-        <p class="kicker">Start somewhere iconic</p>
-        <h2>The sights of the city</h2>
-        <p class="section-lede">Pick a sight and you arrive on the street in front of it, facing it. Everything around it is there too: the roads, the traffic, the people. Every picture here is the app itself.</p>
-      </div>
-      <div class="sights">
-        <a class="sight sight-wide reveal" href="./explore.html#place=CN%20Tower">
-          <img src="./assets/site/cn-tower.webp" alt="The CN Tower over the Entertainment District, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>CN Tower</b><span>553 m over the Entertainment District</span></div>
-        </a>
-        <a class="sight reveal" href="./explore.html#place=Rogers%20Centre">
-          <img src="./assets/site/rogers-centre.webp" alt="Rogers Centre at the foot of the CN Tower, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>Rogers Centre</b><span>Blue Jays Way</span></div>
-        </a>
-        <a class="sight reveal" href="./explore.html#place=Union%20Station">
-          <img src="./assets/site/union-station.webp" alt="Union Station on Front Street, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>Union Station</b><span>Front St · Financial District</span></div>
-        </a>
-        <a class="sight reveal" href="./explore.html#place=Toronto%20City%20Hall">
-          <img src="./assets/site/city-hall.webp" alt="Toronto City Hall and Nathan Phillips Square, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>Toronto City Hall</b><span>Nathan Phillips Square</span></div>
-        </a>
-        <a class="sight reveal" href="./explore.html#place=Royal%20Ontario%20Museum">
-          <img src="./assets/site/rom.webp" alt="The Royal Ontario Museum on Bloor Street, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>Royal Ontario Museum</b><span>Bloor St W · Yorkville</span></div>
-        </a>
-        <a class="sight reveal" href="./explore.html#place=St.%20Lawrence%20Market">
-          <img src="./assets/site/st-lawrence.webp" alt="St. Lawrence Market on Front Street East, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>St. Lawrence Market</b><span>Front St E · Old Town</span></div>
-        </a>
-        <a class="sight reveal" href="./explore.html#place=Distillery%20District">
-          <img src="./assets/site/distillery.webp" alt="The Distillery District, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>Distillery District</b><span>Mill St · Corktown</span></div>
-        </a>
-        <a class="sight reveal" href="./explore.html#place=Harbourfront%20Centre">
-          <img src="./assets/site/harbourfront.webp" alt="Harbourfront Centre on Queens Quay, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>Harbourfront Centre</b><span>Queens Quay W · on the lake</span></div>
-        </a>
-        <a class="sight sight-wide reveal" href="./explore.html#place=Cinesphere">
-          <img src="./assets/site/cinesphere.webp" alt="Ontario Place and the Cinesphere on the lake, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>Cinesphere</b><span>Ontario Place</span></div>
-        </a>
-        <a class="sight reveal" href="./explore.html#place=Ontario%20Legislative%20Building">
-          <img src="./assets/site/queens-park.webp" alt="Queen's Park and the Ontario Legislative Building, rendered in the app" loading="lazy" width="960" height="540" />
-          <div class="sight-text"><b>Queen's Park</b><span>University Ave · the Legislature</span></div>
-        </a>
-      </div>
+    <!-- By the numbers -->
+    <section class="section numbers" id="numbers" aria-labelledby="numbers-h">
+      <h2 id="numbers-h" class="bar">By the numbers</h2>
+      <table class="readings">
+        <caption>The city at 1:1, counted from the data it is built from.</caption>
+        <thead><tr><th scope="col">Reading</th><th scope="col">What</th><th scope="col">Source</th></tr></thead>
+        <tbody>
+          <tr><td class="num">35,266</td><th scope="row">buildings, with the City's own heights</th><td>City of Toronto 3D Massing</td></tr>
+          <tr><td class="num">1,383</td><th scope="row">named streets to walk, cycle or drive</th><td>OpenStreetMap</td></tr>
+          <tr><td class="num">57,120</td><th scope="row">street trees where the City says they stand</th><td>City of Toronto Street Tree Data</td></tr>
+          <tr><td class="num">1&thinsp;:&thinsp;1</td><th scope="row">11.6 × 6.6 km of downtown, to scale</th><td>City of Toronto · OpenStreetMap</td></tr>
+        </tbody>
+      </table>
+      <!-- not build data: the one live reading on the page, filled by js/landing.js, absent if it can't be had -->
+      <p class="outside" data-weather-row hidden>
+        <span class="outside-label">Outside right now</span>
+        <span class="outside-temp num" data-weather-temp></span>
+        <span class="outside-what" data-weather-what></span>
+        <span class="outside-src">Environment and Climate Change Canada</span>
+      </p>
     </section>
 
     <!-- How it works -->
-    <section class="section how" id="how">
-      <div class="section-head reveal">
-        <p class="kicker">A map you can step into</p>
-        <h2>Search. Route. Ride.</h2>
-      </div>
-      <div class="steps">
-        <article class="step reveal">
-          <span class="step-n">1</span>
-          <svg class="i step-i" aria-hidden="true"><use href="#l-search"/></svg>
-          <h3>Search like a map app</h3>
-          <p>Type a place, a street, a neighbourhood or just “café”. Suggestions appear as you type, nearest first, typos forgiven.</p>
-        </article>
-        <article class="step reveal">
-          <span class="step-n">2</span>
-          <svg class="i step-i" aria-hidden="true"><use href="#l-route"/></svg>
-          <h3>Plan any route</h3>
-          <p>From where you stand, or from anywhere, to anywhere. By car (one-way streets obeyed), on foot or by bicycle, with every turn spelled out.</p>
-        </article>
-        <article class="step reveal">
-          <span class="step-n">3</span>
-          <svg class="i step-i" aria-hidden="true"><use href="#l-steer"/></svg>
-          <h3>Go, or let the guide drive</h3>
-          <p>Follow the blue line on the road with live turn-by-turn guidance, or switch on Tour Drive and the guide takes you there, stopping at red lights.</p>
-        </article>
-      </div>
-      <div class="modes reveal">
-        <figure class="mode-shot"><img src="./assets/site/ride.webp" alt="A cyclist on the waterfront, rendered in the app" loading="lazy" width="960" height="540" /></figure>
-        <ul class="mode-list">
-          <li><svg class="i" aria-hidden="true"><use href="#l-bike"/></svg><div><b>Cycle</b><span>The Martin Goodman Trail along the lake, from the arch bridge to Sugar Beach</span></div></li>
-          <li><svg class="i" aria-hidden="true"><use href="#l-walk"/></svg><div><b>Walk</b><span>Among the crowds on the sidewalks, across the crosswalks</span></div></li>
-          <li><svg class="i" aria-hidden="true"><use href="#l-car"/></svg><div><b>Drive</b><span>In the traffic on the downtown grid, and up onto the Gardiner</span></div></li>
-          <li><svg class="i" aria-hidden="true"><use href="#l-heli"/></svg><div><b>Fly</b><span>Over the harbour and the islands to the top of the CN Tower</span></div></li>
-          <li><svg class="i" aria-hidden="true"><use href="#l-sun"/></svg><div><b>Four kinds of light</b><span>Golden hour, midday, sunset and night</span></div></li>
-        </ul>
+    <section class="section how" id="how" aria-labelledby="how-h">
+      <h2 id="how-h" class="bar">How it works: search, route, ride</h2>
+      <div class="columns">
+        <p><b class="runin">Search like a map app.</b> Type a place, a street, a neighbourhood or just “café”. Suggestions appear as you type, nearest first, typos forgiven.</p>
+        <p><b class="runin">Plan any route.</b> From where you stand, or from anywhere, to anywhere. By car (one-way streets obeyed), on foot or by bicycle, with every turn spelled out. <a href="./explore.html#to=Union%20Station">Try directions to Union Station</a>.</p>
+        <p><b class="runin">Go, or let the guide drive.</b> Follow the blue line on the road with live turn-by-turn guidance, or switch on Tour Drive and the guide takes you there, stopping at red lights.</p>
       </div>
     </section>
 
     <!-- What's real -->
-    <section class="section real" id="real">
-      <div class="section-head reveal">
-        <p class="kicker">Built from open data</p>
-        <h2>What's real, and what's made up</h2>
-      </div>
-      <div class="facts">
-        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-building"/></svg><h3>Buildings</h3><p>Every footprint and height from the City of Toronto's 3D Massing. The façades are the engine's own: no photographs.</p></div>
-        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-route"/></svg><h3>Streets</h3><p>OpenStreetMap's roads with their lanes and one-way streets, laid on the City's edge-of-roadway map, signals where they are mapped.</p></div>
-        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-pin"/></svg><h3>Trees &amp; street furniture</h3><p>Street trees, fire hydrants and bike rings where the City's open data puts them.</p></div>
-        <div class="fact reveal"><svg class="i" aria-hidden="true"><use href="#l-sun"/></svg><h3>Water &amp; light</h3><p>The lake, the harbour and the shoreline from OpenStreetMap; the terrain from SRTM. The sky and the water are art, not a forecast.</p></div>
+    <section class="section real" id="real" aria-labelledby="real-h">
+      <h2 id="real-h" class="bar">What's real, and what's made up</h2>
+      <div class="columns">
+        <p><b class="runin">Buildings.</b> Every footprint and height from the City of Toronto's 3D Massing. The façades are the engine's own: no photographs.</p>
+        <p><b class="runin">Streets.</b> OpenStreetMap's roads with their lanes and one-way streets, laid on the City's edge-of-roadway map, signals where they are mapped.</p>
+        <p><b class="runin">Trees &amp; street furniture.</b> Street trees, fire hydrants and bike rings where the City's open data puts them.</p>
+        <p><b class="runin">Water &amp; light.</b> The lake, the harbour and the shoreline from OpenStreetMap; the terrain from SRTM. The sky and the water are art, not a forecast.<span data-weather-aside hidden></span></p>
       </div>
     </section>
 
-    <!-- Call to action -->
-    <section class="cta">
-      <div class="cta-inner reveal">
-        <img class="cta-mark" src="./assets/logo-mark.svg" alt="" width="84" height="84" />
-        <h2>The lake is waiting.</h2>
-        <p>Slop Toronto runs in your browser and needs WebGPU: a recent Chrome or Edge on a laptop or desktop works best.</p>
-        <a class="btn btn-explore btn-big" href="./explore.html">Explore Toronto <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
-        <p id="webgpu-note" class="webgpu-note" hidden>Your browser doesn't seem to support WebGPU yet. Try the latest Chrome or Edge.</p>
-      </div>
+    <!-- Back page -->
+    <section class="backpage" aria-labelledby="back-h">
+      <h2 id="back-h">The city is waiting.</h2>
+      <p>Slop Toronto runs in your browser and needs WebGPU: a recent Chrome or Edge on a laptop or desktop works best.</p>
+      <a class="go-big" href="./explore.html">Explore Toronto <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
+      <p id="webgpu-note" class="webgpu-note" data-webgpu-note hidden>Your browser doesn't seem to support WebGPU yet. Try the latest Chrome or Edge.</p>
     </section>
   </main>
 
-  <footer class="footer" id="credits">
+  <footer class="colophon" id="credits">
+    <h2 class="colophon-name"><span class="mast-box">Slop</span> Toronto</h2>
     <p>Built with <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">three.js</a> (MIT) on the engine of <a href="https://github.com/mrdoob/slop-newyork" target="_blank" rel="noopener noreferrer">Slop New York</a> by mrdoob (MIT), by way of <a href="https://abujatour.site/" target="_blank" rel="noopener noreferrer">Abuja Tour</a> (MIT).</p>
-    <p>Data: <a href="https://open.toronto.ca/" target="_blank" rel="noopener noreferrer">City of Toronto Open Data</a> under the <a href="https://open.toronto.ca/open-data-license/" target="_blank" rel="noopener noreferrer">Open Government Licence – Toronto</a> (3D Massing, Edge of Roadway, Street Tree Data, Water Hydrants, Bicycle Parking, TTC Routes and Schedules, TTC BusTime live vehicle positions) · Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) · Terrain: AWS Terrain Tiles (SRTM).</p>
-    <p>Stylized water: port of Uber Stylized Water (MIT, © MatrixRex / norio) · Trees: <a href="https://github.com/dgreenheck/ez-tree" target="_blank" rel="noopener noreferrer">EZ-Tree</a> by Dan Greenheck (MIT) · Textures: <a href="https://polyhaven.com/" target="_blank" rel="noopener noreferrer">Poly Haven</a> (CC0) · Street props by John Fewell · <a href="./CREDITS.md">All credits</a></p>
-    <p class="footer-small">A fan project, not affiliated with the City of Toronto or the places shown. Storefront signs show shops' names, not their trademarked logos. Pictures on this page are screenshots of the app. Privacy-friendly page analytics via a self-hosted Umami instance; no cookies.</p>
+    <p>Data: <a href="https://open.toronto.ca/" target="_blank" rel="noopener noreferrer">City of Toronto Open Data</a> under the <a href="https://open.toronto.ca/open-data-license/" target="_blank" rel="noopener noreferrer">Open Government Licence – Toronto</a> (3D Massing, Edge of Roadway, Street Tree Data, Water Hydrants, Bicycle Parking, TTC Routes and Schedules, TTC BusTime live vehicle positions) · Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) · Terrain: AWS Terrain Tiles (SRTM) · Weather on this page: <a href="https://eccc-msc.github.io/open-data/licence/readme_en/" target="_blank" rel="noopener noreferrer">Environment and Climate Change Canada (Open Government Licence – Canada)</a>.</p>
+    <p>Stylized water: port of Uber Stylized Water (MIT, © MatrixRex / norio) · Trees: <a href="https://github.com/dgreenheck/ez-tree" target="_blank" rel="noopener noreferrer">EZ-Tree</a> by Dan Greenheck (MIT) · Textures: <a href="https://polyhaven.com/" target="_blank" rel="noopener noreferrer">Poly Haven</a> (CC0) · Street props by John Fewell · Type: Archivo (SIL Open Font License) · <a href="./CREDITS.md">All credits</a></p>
+    <p class="colophon-small">A fan project, not affiliated with the City of Toronto or the places shown. Storefront signs show shops' names, not their trademarked logos. Every picture and clip on this page is the app itself. Privacy-friendly page analytics via a self-hosted Umami instance; no cookies.</p>
   </footer>
-
-  <script>
-    // The hero search opens the city at the first place matching the query (explore.html#place=...)
-    document.getElementById('hero-search').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const q = document.getElementById('hero-q').value.trim();
-      location.href = q ? `./explore.html#place=${encodeURIComponent(q)}` : './explore.html';
-    });
-    // Sections ease in as they scroll into view
-    const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting) {
-          e.target.classList.add('in');
-          io.unobserve(e.target);
-        }
-      }
-    }, { threshold: 0.12 }) : null;
-    document.querySelectorAll('.reveal').forEach((el, i) => {
-      el.style.setProperty('--d', `${(i % 5) * 60}ms`);
-      if (io) io.observe(el);
-      else el.classList.add('in');
-    });
-    // The top bar darkens once the hero has scrolled away
-    const bar = document.querySelector('.topbar');
-    const onScroll = () => bar.classList.toggle('solid', window.scrollY > 40);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    if (!('gpu' in navigator)) document.getElementById('webgpu-note').hidden = false;
-  </script>
 </body>
 </html>

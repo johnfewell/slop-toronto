@@ -28,7 +28,9 @@ test('every checked-in capture fixture uses a valid time preset', () => {
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
   assert.ok(files.length > 50, 'positive control: the shot fixtures were found');
   for (const f of files) {
-    const shots = JSON.parse(fs.readFileSync(new URL(f, dir), 'utf8'));
+    const json = JSON.parse(fs.readFileSync(new URL(f, dir), 'utf8'));
+    // tools/render-film.mjs also takes { prelude, shots } (tools/shots/home-clips.json): check its shots
+    const shots = !Array.isArray(json) && json && Array.isArray(json.shots) ? json.shots : json;
     assert.doesNotThrow(() => validateShots(shots, f), f);
   }
 });

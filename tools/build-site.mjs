@@ -14,7 +14,8 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PAGES = ['index.html', 'explore.html'];
 const TEXT = ['LICENSE', 'CREDITS.md'];
 // git-ignored local leftovers that must never ship even when they sit in a local checkout
-const SKIP = [/^assets\/landing(\/|$)/, /^assets\/og-image\.jpg$/, /(^|\/)\.DS_Store$/];
+// and the provenance sidecars (<image>.webp.json: an image's recorded origin, written by impeccable embed-prompt) stay in the repo
+const SKIP = [/^assets\/landing(\/|$)/, /^assets\/og-image\.jpg$/, /(^|\/)\.DS_Store$/, /\.(?:webp|png|jpe?g)\.json$/];
 
 export function buildSite({ root = ROOT, out = path.join(root, 'dist') } = {}) {
   const OUT = path.resolve(out);

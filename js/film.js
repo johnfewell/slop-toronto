@@ -108,7 +108,8 @@ function show(i, t) {
     app.selectTime(shot.time);
     shown = i;
   }
-  app.cameraSystem.cinema = () => window.CITY.Cinema.evalShot(shot, t);
+  // (a shot's own camera(t), set by a tools/render-film.mjs setup: following a vehicle, say)
+  app.cameraSystem.cinema = () => (shot.camera ? shot.camera(t) : window.CITY.Cinema.evalShot(shot, t));
 }
 
 // Live: the film on the app's clock, looping

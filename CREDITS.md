@@ -186,6 +186,9 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   (MIT, © takram): the 9,096 stars of the Yale Bright Star Catalog version 5 (public domain) as directions, magnitudes and
   colours.
 - **Water textures** (`assets/water/`) come with Uber Stylized Water (MIT, © MatrixRex / norio).
+- **Archivo** typeface (`assets/fonts/archivo-latin-var.woff2`, the home page's type, self-hosted): Copyright 2020 The
+  Archivo Project Authors (https://github.com/Omnibus-Type/Archivo), licensed under the SIL Open Font License 1.1. The
+  variable Latin subset as served by Google Fonts (v25); the licence's full text is in `assets/fonts/OFL-Archivo.txt`.
 
 ## Not affiliated
 

@@ -1,0 +1,209 @@
+{
+ "prelude": "const H = (window.__HC = {});\n  H.wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));\n  // a slow drift: from pos, sliding `side` m across the view and `fwd` m along it, rising `up` m; look keeps its offset\n  H.drift = (shot, pos, look, fov, side = 0, fwd = 0, up = 0, lookShift = 1) => {\n    const dx = look[0] - pos[0], dz = look[2] - pos[2], l = Math.hypot(dx, dz) || 1;\n    const f = [dx / l, dz / l], r = [-f[1], f[0]];\n    const d = [r[0] * side + f[0] * fwd, up, r[1] * side + f[1] * fwd];\n    shot.ease = 'linear';\n    shot.path = [\n      { t: 0, pos, look, fov },\n      { t: shot.duration, pos: pos.map((v, i) => v + d[i]), look: look.map((v, i) => v + d[i] * lookShift), fov }\n    ];\n  };\n  // a smoothed follow camera: the target's position & forward yaw low-passed per frame\n  H.follower = (k = 0.06) => {\n    let s = null;\n    return (x, y, z, yaw) => {\n      if (!s) s = { x, y, z, yaw };\n      else {\n        s.x += (x - s.x) * 0.5; s.y += (y - s.y) * 0.5; s.z += (z - s.z) * 0.5;\n        s.yaw += H.wrap(yaw - s.yaw) * k;\n      }\n      return s;\n    };\n  };\n  H.clearInput = () => {\n    const cm = window.__CITY_APP.controllerManager;\n    cm.clearTouchInput();\n  };\n  const S = window.CITY.LANDMARK_SITES || {};\n  console.log('[hc] sites ' + JSON.stringify(Object.fromEntries(Object.entries(S).map(([k, v]) => [k, v && [Math.round(v.x), Math.round(v.z)]]))));\n  console.log('[hc] cn ' + JSON.stringify(window.CITY.GEO.points && window.CITY.GEO.points.cnTower) + ' humberArch ' + JSON.stringify(window.CITY.TELEPORT_LOCATIONS.humberArch));",
+ "shots": [
+  {
+   "name": "cover-golden",
+   "time": "golden",
+   "duration": 11.5,
+   "ease": "linear",
+   "path": [
+    {
+     "t": 0,
+     "pos": [
+      -2330,
+      9,
+      1030
+     ],
+     "look": [
+      -740,
+      195,
+      -232
+     ],
+     "fov": 32
+    },
+    {
+     "t": 11.5,
+     "pos": [
+      -2310,
+      10.5,
+      1048
+     ],
+     "look": [
+      -720,
+      196.5,
+      -214
+     ],
+     "fov": 32
+    }
+   ]
+  },
+  {
+   "name": "cover-midday",
+   "time": "midday",
+   "duration": 11.5,
+   "ease": "linear",
+   "path": [
+    {
+     "t": 0,
+     "pos": [
+      -2330,
+      9,
+      1030
+     ],
+     "look": [
+      -740,
+      195,
+      -232
+     ],
+     "fov": 32
+    },
+    {
+     "t": 11.5,
+     "pos": [
+      -2310,
+      10.5,
+      1048
+     ],
+     "look": [
+      -720,
+      196.5,
+      -214
+     ],
+     "fov": 32
+    }
+   ]
+  },
+  {
+   "name": "cover-sunset",
+   "time": "twilight",
+   "duration": 11.5,
+   "ease": "linear",
+   "path": [
+    {
+     "t": 0,
+     "pos": [
+      -2330,
+      9,
+      1030
+     ],
+     "look": [
+      -740,
+      195,
+      -232
+     ],
+     "fov": 32
+    },
+    {
+     "t": 11.5,
+     "pos": [
+      -2310,
+      10.5,
+      1048
+     ],
+     "look": [
+      -720,
+      196.5,
+      -214
+     ],
+     "fov": 32
+    }
+   ]
+  },
+  {
+   "name": "cover-night",
+   "time": "midnight",
+   "duration": 11.5,
+   "ease": "linear",
+   "path": [
+    {
+     "t": 0,
+     "pos": [
+      -2330,
+      9,
+      1030
+     ],
+     "look": [
+      -740,
+      195,
+      -232
+     ],
+     "fov": 32
+    },
+    {
+     "t": 11.5,
+     "pos": [
+      -2310,
+      10.5,
+      1048
+     ],
+     "look": [
+      -720,
+      196.5,
+      -214
+     ],
+     "fov": 32
+    }
+   ]
+  },
+  {
+   "name": "waterfront-ride",
+   "time": "golden",
+   "duration": 7,
+   "setup": "// the player's cyclist on the Martin Goodman Trail (its red asphalt) east of the Humber Bay Arch, steered along it\n    const H = window.__HC, cm = app.cameraSystem && app.controllerManager, T = C.TELEPORT_LOCATIONS.humberArch;\n    const trails = (C.GEO.cycling && C.GEO.cycling.trails) || [];\n    let best = null;\n    for (const [w, surface, level, flat] of trails) {\n      if (!surface) continue;\n      const P = [];\n      for (let i = 0; i < flat.length; i += 2) P.push({ x: flat[i], z: flat[i + 1] });\n      let len = 0;\n      for (let i = 1; i < P.length; i++) len += Math.hypot(P[i].x - P[i - 1].x, P[i].z - P[i - 1].z);\n      if (len < 140) continue;\n      for (let i = 0; i < P.length; i++) {\n        const d = Math.hypot(P[i].x - T.x, P[i].z - T.z);\n        if (d < 600 && (!best || d < best.d)) best = { d, P, i, w, len };\n      }\n    }\n    if (!best) throw new Error('no red trail near the Humber Bay start');\n    // ride the way that heads east (towards the CN Tower); keep >= 110 m of trail ahead\n    let P = best.P;\n    const east = P[P.length - 1].x > P[0].x;\n    if (!east) P = P.slice().reverse();\n    const cum = [0];\n    for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i].x - P[i - 1].x, P[i].z - P[i - 1].z));\n    let i0 = east ? best.i : P.length - 1 - best.i;\n    while (i0 > 0 && cum[cum.length - 1] - cum[i0] < 110) i0--;\n    const at = (s) => {\n      s = Math.max(0, Math.min(cum[cum.length - 1], s));\n      let k = 1;\n      while (k < cum.length - 1 && cum[k] < s) k++;\n      const u = (s - cum[k - 1]) / (cum[k] - cum[k - 1] || 1);\n      return { x: P[k - 1].x + (P[k].x - P[k - 1].x) * u, z: P[k - 1].z + (P[k].z - P[k - 1].z) * u };\n    };\n    const s0 = cum[i0] + 2, a = at(s0), b = at(s0 + 6);\n    app.selectMode('cyclist');\n    app.teleportTo(a.x, a.z, Math.atan2(b.x - a.x, b.z - a.z));\n    const ctl = app.controllerManager;\n    const e = ctl.getActiveEntity();\n    const follow = H.follower(0.05);\n    const nearestS = (x, z) => {\n      let bs = 0, bd = Infinity;\n      for (let k = 0; k < P.length; k++) {\n        const d = Math.hypot(P[k].x - x, P[k].z - z);\n        if (d < bd) { bd = d; bs = cum[k]; }\n      }\n      return bs;\n    };\n    shot.camera = () => {\n      const p = e.position;\n      // pure pursuit along the trail's centre line, 7 m ahead\n      const s = nearestS(p.x, p.z), q = at(s + 7);\n      const want = Math.atan2(q.x - p.x, q.z - p.z), err = H.wrap(want - e.heading);\n      ctl.setTouchInput('forward', 0.62);\n      ctl.setTouchInput('left', err > 0.01 ? Math.min(1, err * 2.5) : 0);\n      ctl.setTouchInput('right', err < -0.01 ? Math.min(1, -err * 2.5) : 0);\n      const f = follow(p.x, p.y, p.z, e.heading);\n      const fx = Math.sin(f.yaw), fz = Math.cos(f.yaw), rx = -fz, rz = fx;\n      return { pos: [f.x - fx * 6.5 + rx * 1.2, f.y + 2.4, f.z - fz * 6.5 + rz * 1.2], look: [f.x + fx * 8, f.y + 1.0, f.z + fz * 8], fov: 50 };\n    };\n    return { trailD: Math.round(best.d), trailLen: Math.round(best.len), start: [Math.round(a.x), Math.round(a.z)], ahead: Math.round(cum[cum.length - 1] - s0) };"
+  },
+  {
+   "name": "cinesphere",
+   "time": "golden",
+   "duration": 7,
+   "setup": "const s = C.LANDMARK_SITES.cinesphere || C.LANDMARK_SITES.ontarioPlace;\n    window.__HC.drift(shot, [s.x - 125, 26, s.z + 95], [s.x + 10, 9, s.z - 5], 46, 9, 3, 0);\n    return { site: [Math.round(s.x), Math.round(s.z)] };"
+  },
+  {
+   "name": "cn-tower",
+   "time": "golden",
+   "duration": 7,
+   "setup": "const s = C.LANDMARK_SITES.cnTower;\n    window.__HC.drift(shot, [s.x + 260, 70, s.z + 590], [s.x, 255, s.z], 48, 18, 0, 1);\n    return { site: [Math.round(s.x), Math.round(s.z)] };"
+  },
+  {
+   "name": "rogers-centre",
+   "time": "golden",
+   "duration": 7,
+   "setup": "// from the south-west, low: the dome's shell and the CN Tower beside it, not down into the bowl\n    const s = C.LANDMARK_SITES.rogersCentre;\n    window.__HC.drift(shot, [s.x - 330, 160, s.z - 420], [s.x + 60, 40, s.z + 40], 48, 16, 0, 0);\n    return { site: [Math.round(s.x), Math.round(s.z)] };"
+  },
+  {
+   "name": "union-station",
+   "time": "golden",
+   "duration": 7,
+   "setup": "// a GO train rolling slowly through Union's train shed, the camera alongside its locomotive on a platform\n    const H = window.__HC, rc = app.railCorridor;\n    const t = rc.trains.find((t) => t.route.union >= 0);\n    if (!t) throw new Error('no GO train through Union');\n    const r = t.route, trainLen = 21.4 + (t.cars.length - 1) * 26.9;\n    // its locomotive mid-shed at the clip's middle (3 s of warm-up first)\n    const v = 3.2, s0 = r.union - v * 6.5;\n    let clock = null;\n    t.wait = 0; t.dwell = 0; t.stopped = true; t.speed = v; t.s = s0;\n    const follow = H.follower(0.08);\n    shot.camera = (tt) => {\n      const now = performance.now() / 1000;\n      if (clock === null) clock = now;\n      t.s = s0 + v * (now - clock); t.speed = v; t.stopped = true; t.dwell = 0;\n      const c = t.cars[0];\n      const f = follow(c.x, c.y, c.z, c.yaw);\n      const fx = Math.sin(f.yaw), fz = Math.cos(f.yaw), rx = -fz, rz = fx;\n      return { pos: [f.x + fx * 17 + rx * 4.6, f.y + 3.0, f.z + fz * 17 + rz * 4.6], look: [f.x - fx * 20, f.y + 1.8, f.z - fz * 20], fov: 54 };\n    };\n    return { route: Math.round(r.len), union: Math.round(r.union), cars: t.cars.length };"
+  },
+  {
+   "name": "harbourfront",
+   "time": "golden",
+   "duration": 7,
+   "setup": "const s = C.LANDMARK_SITES.harbourfront;\n    window.__HC.drift(shot, [s.x - 170, 70, s.z + 230], [s.x - 80, 60, s.z - 60], 48, 14, 4, 0);\n    return { site: [Math.round(s.x), Math.round(s.z)] };"
+  },
+  {
+   "name": "streetcar-504",
+   "time": "golden",
+   "duration": 7,
+   "setup": "// a 504 King streetcar leaving a King St stop downtown, the camera tracking its front three-quarter\n    const H = window.__HC, sc = app.streetcars;\n    const tracks = sc.routes.filter((t) => t.pattern && String(t.pattern.route) === '504' && t.stopNames);\n    const p = {};\n    let pick = null;\n    for (const t of tracks) {\n      for (let i = 0; i < t.stops.length - 1; i++) {\n        if (!/^King St/.test(t.stopNames[i] || '')) continue;\n        sc.sample(t, t.stops[i], p);\n        if (p.x > -1000 && p.x < -150 && (!pick || Math.abs(p.x + 600) < Math.abs(pick.x + 600))) pick = { t, i, x: p.x, z: p.z, name: t.stopNames[i] };\n      }\n    }\n    if (!pick) throw new Error('no 504 King St stop downtown');\n    let car = null;\n    for (const ds of [6, 20, 40, 60, -30]) { car = sc.spawnAt(pick.t, pick.t.stops[pick.i] + ds); if (car) break; }\n    if (!car) throw new Error('could not spawn a 504');\n    const follow = H.follower(0.05);\n    const a = {}, b = {};\n    shot.camera = () => {\n      const n = car.sections.length, m = car.sections[Math.floor(n / 2)];\n      sc.sample(car.track, car.s - 12, a); sc.sample(car.track, car.s + 4, b);\n      const y = Number.isFinite(a.y) ? a.y : 0;\n      const f = follow(m.x, y, m.z, Math.atan2(b.x - a.x, b.z - a.z));\n      const fx = Math.sin(f.yaw), fz = Math.cos(f.yaw), rx = -fz, rz = fx;\n      // ahead of it and out over the other track (the left, in right-hand traffic), looking back at its front\n      return { pos: [f.x + fx * 22 - rx * 2.5, f.y + 4.2, f.z + fz * 22 - rz * 2.5], look: [f.x + fx * 2, f.y + 1.8, f.z + fz * 2], fov: 50 };\n    };\n    return { stop: pick.name, at: [Math.round(pick.x), Math.round(pick.z)], dir: pick.t.pattern.dir };"
+  },
+  {
+   "name": "st-lawrence",
+   "time": "golden",
+   "duration": 7,
+   "setup": "// the photo mode's St. Lawrence Market view: at eye height on the street, raised a little\n    const p = C.TELEPORT_LOCATIONS.stLawrence, s = C.LANDMARK_SITES.stLawrence;\n    const y = app.controllerManager.getGroundHeight(p.x, p.z, 'person') + 4;\n    window.__HC.drift(shot, [p.x, y, p.z], [s.x, y + 6, s.z], 54, 5, 3, 0);\n    return { from: [Math.round(p.x), Math.round(p.z)] };"
+  },
+  {
+   "name": "distillery",
+   "time": "golden",
+   "duration": 7,
+   "setup": "const s = C.LANDMARK_SITES.distillery;\n    window.__HC.drift(shot, [s.x + 120, 70, s.z - 120], [s.x - 30, 0, s.z + 10], 50, 10, 0, 0);\n    return { site: [Math.round(s.x), Math.round(s.z)] };"
+  },
+  {
+   "name": "subway-viaduct",
+   "time": "midday",
+   "duration": 7,
+   "setup": "// a Line 2 train crossing the Bloor Viaduct's lower deck, tracked from the Don Valley below, south of the bridge\n    const H = window.__HC, R = app.subwayRide, svc = R.service;\n    if (!svc) throw new Error('no viaduct service');\n    const train = svc.cars[0], tr = train.track;\n    const V = C.SUBWAY_VIADUCTS[0];\n    const v = 12, mid = (tr.open0 + tr.open1) / 2, s0 = mid + 70 - v * 3.5 - v * 3; // (3 s of warm-up first)\n    let clock = null;\n    const follow = H.follower(0.05);\n    const pin = (s) => { train.doorState = 'closed'; train.doorProgress = 0; train.k = 1; train.speed = v; train.s = s; svc.place(train); };\n    pin(s0);\n    shot.camera = () => {\n      const now = performance.now() / 1000;\n      if (clock === null) clock = now;\n      pin(s0 + v * (now - clock));\n      const m = train.sections[3];\n      const f = follow(m.x, m.y, m.z, m.yaw);\n      const fx = Math.sin(f.yaw), fz = Math.cos(f.yaw);\n      let nx = -fz, nz = fx;\n      if (nz < 0) { nx = -nx; nz = -nz; } // the south side\n      return { pos: [f.x + nx * 85 - fx * 12, V.railY - 5, f.z + nz * 85 - fz * 12], look: [f.x + fx * 6, f.y + 5, f.z + fz * 6], fov: 40 };\n    };\n    return { open: [Math.round(tr.open0), Math.round(tr.open1)], railY: V.railY, deck: V.deck };"
+  }
+ ]
+}
