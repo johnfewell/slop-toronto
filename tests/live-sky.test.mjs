@@ -155,9 +155,17 @@ test('startup mode: live by default; ?time= presets and automation override it; 
   assert.equal(L.resolveStartup({ search: '?liveClock=nonsense', webdriver: true }).preset, 'golden');
   const fixture = L.resolveStartup({ search: '?liveClock=2026-10-31T16:00:00Z&liveWeather=Fog', webdriver: true });
   assert.equal(fixture.mode, 'live'); assert.equal(fixture.fixedClock.toISOString(), '2026-10-31T16:00:00.000Z'); assert.equal(fixture.fixedCondition, 'Fog');
+  assert.equal(fixture.lateCondition, undefined, 'the condition comes with the first sky');
+  // ?liveReading=1 (bead st-eyy2): the condition is held back for the startup's reading handler, as Pearson's would be
+  const late = L.resolveStartup({ search: '?liveClock=2026-10-31T16:00:00Z&liveWeather=Fog&liveReading=1', webdriver: true });
+  assert.equal(late.mode, 'live'); assert.equal(late.fixedClock.toISOString(), '2026-10-31T16:00:00.000Z');
+  assert.equal(late.fixedCondition, null); assert.equal(late.lateCondition, 'Fog');
+  assert.equal(L.resolveStartup({ search: '?liveReading=1', webdriver: true }).preset, 'golden', 'no fixture clock: golden hour as before');
   // outside automation the fixture parameters are ignored: the real clock and the real reading
   const real = L.resolveStartup({ search: '?liveClock=2026-10-31T16:00:00Z&liveWeather=Fog', webdriver: false });
   assert.equal(real.mode, 'live'); assert.equal(real.fixedClock, null); assert.equal(real.fixedCondition, null);
+  assert.deepEqual(plain(L.resolveStartup({ search: '?liveClock=2026-10-31T16:00:00Z&liveWeather=Fog&liveReading=1', webdriver: false })),
+    { mode: 'live', capture: false, fixedClock: null, fixedCondition: null, reason: 'default' }, '?liveReading is capture-only too');
 });
 
 test('no checked-in shot list turns live on, so every existing capture stays deterministic', () => {

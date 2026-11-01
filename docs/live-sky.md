@@ -106,6 +106,20 @@ screen, and the time buttons scroll sideways inside it. On main, at 412 px, it a
   sky is frozen; it does not advance or fetch. `__CITY_APP.liveSky.state()` reports the mode, sun, weights, weather,
   clouds, fog and wetness. `tools/shots/live-sky.json` covers clear noon, overcast late afternoon, fog in the morning,
   rain, snow, dusk and night, each from the lake and from the street.
+- `?liveReading=1` with a fixture holds its condition back: the city opens live under the default sky, and the
+  condition goes through the startup's reading handler, already resolved, the way Pearson's reading does on a real
+  open. `node tools/check-live-sky-startup.mjs` (on the mini, after `npm run build`) runs it on desktop and on the
+  phone tier with `tools/shots/live-sky-startup.json`, and fails on any WebGPU error in the console or if the reading
+  never landed.
+
+**Startup order (bead `st-eyy2`).** The reading's fetch has usually finished by the time the city is built, so its
+handler runs at the startup's first await, which is inside the shader precompile (`precompileShaders()` in
+`js/main.js`). Re-applying the sky there re-baked the environment map in the middle of the precompile: the six cube
+faces were drawn under the scene pass's render target and MRT, which the precompile leaves on the renderer across its
+awaits, and the sky's shader was built in the middle of another material's build. That gave "struct OutputType {}"
+WGSL errors for two materials and six invalid command buffers, once per real open (fixtures never re-applied). Now a
+sky change that comes in during the precompile is kept and applied as the precompile ends, before the warm-up frame,
+so the first frame on screen already has the reading's weather. At any other time a change applies at once, as before.
 
 ## Cost
 

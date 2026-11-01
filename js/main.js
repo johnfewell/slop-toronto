@@ -43,7 +43,9 @@ async function initApp() {
   // it arrives while the city builds (never waited on: 4 s at most, and the sky starts without it)
   const LIVE = window.CITY.LIVE_SKY;
   const liveStart = LIVE.resolveStartup({ search: location.search, webdriver: navigator.webdriver === true });
-  const liveReading = liveStart.mode === 'live' && !liveStart.capture ? LIVE.fetchReading() : Promise.resolve(null);
+  // (a capture fixture's ?liveReading=1 condition comes the same way, already resolved, as a fetch that beat the build)
+  const liveReading = liveStart.mode !== 'live' ? Promise.resolve(null)
+    : liveStart.capture ? Promise.resolve(liveStart.lateCondition ?? null) : LIVE.fetchReading();
   const container = document.getElementById('canvas-container');
   const loadingOverlay = document.getElementById('loading-overlay');
   const loadingStatus = document.getElementById('loading-status');
@@ -641,8 +643,19 @@ async function initApp() {
     // the TTC's headways for that hour (transit.js; live: the preset nearest the light)
     if (window.CITY.TRANSIT) window.CITY.TRANSIT.setTime(lightingSystem.activePresetId);
   }
+  // No sky change may render while precompileShaders() runs (6b below). Each one re-bakes the environment map, six
+  // renders of the sky dome, and in there that would (a) draw the sky under the scene pass's target & MRT, which the
+  // precompile leaves on the renderer across its awaits, into the bake's one-attachment cube target: a fragment shader
+  // with an empty output struct ("struct OutputType {}") and six invalid command buffers, and (b) build the sky's shader
+  // in the middle of another material's build (three's node builds must not interleave: the MRT node they share kept
+  // the bake's empty member list, and that material's shader came out empty too). A change that comes in meanwhile is
+  // applied as the precompile ends, before the warm-up frame. That is where Pearson's reading lands on a real open: its
+  // fetch has usually finished while the city builds, and its handler runs at the startup's first await, inside the
+  // precompile (bead st-eyy2; tools/check-live-sky-startup.mjs reproduces it with a capture fixture)
+  const visualGate = { compiling: false, pending: null };
   // The same visual seam serves photo overrides now and continuous environment state later.
   function applyVisualTime(timeId) {
+    if (visualGate.compiling) { visualGate.pending = timeId; return; } // (the latest change wins)
     const apply = () => {
       if (timeId === 'live') {
         const w = liveWeather();
@@ -729,6 +742,14 @@ async function initApp() {
   setInterval(liveTick, 60 * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) liveTick(); });
   liveReading.then((r) => {
+    if (liveSky.start.capture) {
+      // (?liveReading=1: the fixture's condition lands here, as Pearson's reading does; an inject() since has the say)
+      if (r == null || liveSky.start.lateCondition !== r) return;
+      liveSky.start.fixedCondition = r;
+      liveSky.start.lateCondition = null;
+      if (liveSky.active && !rideSession.held) applyVisualTime('live');
+      return;
+    }
     liveSky.reading = r;
     liveSky.readingAt = Date.now();
     if (liveSky.active && !rideSession.held && !liveSky.start.fixedClock) applyVisualTime('live');
@@ -1208,6 +1229,7 @@ async function initApp() {
   //     warm on the mini, 1.2 s on the laptop). (Rendering straight away compiled ~500 pipelines one after another:
   //     ~25 s with a cold shader cache.)
   async function precompileShaders() {
+    visualGate.compiling = true; // (a sky change waits for the end, see visualGate)
     // An empty frame first: it sets up the post-processing chain, which configures the scene pass's render target
     // (MSAA samples, depth format), so the pipelines compiled below are the very ones the scene pass asks for
     scene.visible = false;
@@ -1266,6 +1288,11 @@ async function initApp() {
     renderer.setMRT(null);
     renderer.setRenderTarget(null);
     for (const o of culled) o.frustumCulled = true;
+    // the sky change that came in meanwhile, if any (the latest), now that nothing holds the renderer
+    visualGate.compiling = false;
+    const pending = visualGate.pending;
+    visualGate.pending = null;
+    if (pending) applyVisualTime(pending);
   }
 
   if (QUALITY.lean) tourGuide.warmGraphics(true); // (taken away again after the warm-up frame)
@@ -1691,6 +1718,7 @@ async function initApp() {
       if (!Number.isFinite(date.getTime())) throw new Error(`liveSky.inject: bad clock ${clock}`);
       liveSky.start.fixedClock = date;
       liveSky.start.fixedCondition = condition;
+      liveSky.start.lateCondition = null;
       selectTime('live');
       return this.state();
     }

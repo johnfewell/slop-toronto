@@ -1,0 +1,15 @@
+[
+ {
+  "name": "00-reading-landed",
+  "wait": 3000,
+  "record": true,
+  "js": "window.__CITY_APP.liveSky.state()"
+ },
+ {
+  "name": "01-reading-skyline",
+  "camera": "skyline",
+  "wait": 6000,
+  "record": true,
+  "js": "window.__CITY_APP.liveSky.state()"
+ }
+]

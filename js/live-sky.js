@@ -207,7 +207,9 @@ function weatherFor(reading, now = Date.now()) {
 // The mode the app opens in. ?time=<preset> picks that preset (a manual override, as the buttons are); ?time=live asks
 // for live. Under automation (navigator.webdriver: every capture & browser test) live never starts by itself, so shot
 // lists stay deterministic at golden hour; a capture opts in with a fixed fake clock, ?liveClock=<ISO instant>, and
-// optionally a fixed condition, ?liveWeather=<ECCC condition text>. Those two are ignored outside automation.
+// optionally a fixed condition, ?liveWeather=<ECCC condition text>. With ?liveReading=1 that condition does not come with
+// the first sky: it is handed to the startup's reading handler (lateCondition), so it lands where Pearson's reading lands
+// on a real open, in the middle of the startup (bead st-eyy2). All three are ignored outside automation.
 // ---------------------------------------------------------------------------------------------------------------------
 function resolveStartup({ search = '', webdriver = false } = {}) {
   const q = new URLSearchParams(search);
@@ -217,6 +219,9 @@ function resolveStartup({ search = '', webdriver = false } = {}) {
   if (capture) {
     const clock = q.has('liveClock') ? new Date(q.get('liveClock')) : null;
     if (!clock || !Number.isFinite(clock.getTime())) return { mode: 'preset', preset: 'golden', capture, reason: 'automation' };
+    if (q.get('liveReading') === '1') {
+      return { mode: 'live', capture, fixedClock: clock, fixedCondition: null, lateCondition: q.get('liveWeather'), reason: 'capture fixture' };
+    }
     return { mode: 'live', capture, fixedClock: clock, fixedCondition: q.get('liveWeather'), reason: 'capture fixture' };
   }
   return { mode: 'live', capture, fixedClock: null, fixedCondition: null, reason: time === 'live' ? '?time' : 'default' };
