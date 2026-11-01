@@ -64,6 +64,7 @@ const {
   texture,
   rotateUV,
   mrt,
+  select,
   If
 } = window.CITY.TSL;
 
@@ -81,7 +82,14 @@ const cityUniforms = {
   uWaterTilt: uniform(1.0).setGroup(renderGroup), // visible-facet tilt at grazing angles
   uInteriorGlow: uniform(0.78).setGroup(renderGroup),
   uRoadWetness: uniform(0.38).setGroup(renderGroup),
-  uCanyonBounce: uniform(0.52).setGroup(renderGroup)
+  uCanyonBounce: uniform(0.52).setGroup(renderGroup),
+  // Seasons (seasons.js; main.js sets them from Toronto's date while live, and to summer for a preset). Their 22 August
+  // values are exact identities in every shader below, the classic summer look; a date change is uniform writes only.
+  uLeaf: uniform(1.0).setGroup(renderGroup), // deciduous leaves on the trees: 1 full crowns .. 0 bare
+  uAutumn: uniform(0.0).setGroup(renderGroup), // autumn colour of the leaves still on: 0 green .. 1 every tree turned
+  uSpring: uniform(0.0).setGroup(renderGroup), // spring's fresh, yellower green (new leaves & grass)
+  uDormant: uniform(0.0).setGroup(renderGroup), // dormant grass: 0 summer lawns .. 1 winter's tan & olive
+  uSnow: uniform(0.0).setGroup(renderGroup) // snow lying on grass, open ground & roofs: 0 none .. 1 a full cover
 };
 
 // How much wear the asphalt & sidewalk shaders draw (quality.js `surfaceWear`): 2 everything, 1 the cheap part, 0 none
@@ -108,6 +116,53 @@ const noise2D = Fn(([p]) => {
   const d = hash2D(i.add(vec2(1.0, 1.0)));
   return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Seasons (cityUniforms uLeaf, uAutumn, uSpring, uDormant, uSnow): shared colour helpers. Each is a mix by a season
+// uniform, so at the summer values (leaf 1, the rest 0) it returns its input unchanged.
+// ---------------------------------------------------------------------------------------------------------------------
+const LUMA = vec3(0.2126, 0.7152, 0.0722);
+// Grass through the year: spring's fresh yellow-green, winter's dormant turf (tan & olive at the lawn's own brightness)
+function seasonalGrass(c) {
+  const lum = dot(c, LUMA);
+  const dormant = vec3(lum.mul(1.6), lum.mul(1.32), lum.mul(0.7));
+  const fresh = c.mul(vec3(1.05, 1.16, 0.76));
+  return mix(mix(c, dormant, cityUniforms.uDormant.mul(0.82)), fresh, cityUniforms.uSpring.mul(0.5));
+}
+// Lying snow over a surface colour: patchy while thin (it goes first where the noise is high), a full cover from
+// uSnow 1. `amount` scales it per surface (steep or sheltered ground less, 0 where none lies: a wall). Skipped outright
+// where none lies, so a snowless day costs nothing.
+const SNOW_WHITE = color(0xd3d8e0);
+const snowOver = Fn(([c, p, amount]) => {
+  const out = vec3(c).toVar();
+  const t = cityUniforms.uSnow.mul(amount).toVar();
+  If(t.greaterThan(0.001), () => {
+    const n = noise2D(p.mul(0.31)).mul(0.7).add(noise2D(p.mul(1.7).add(9.1)).mul(0.3));
+    const cover = smoothstep(n.mul(0.85), n.mul(0.85).add(0.15), t);
+    out.assign(mix(out, SNOW_WHITE.mul(n.mul(0.12).add(0.94)), cover));
+  });
+  return out;
+});
+// A deciduous leaf's colour through the year. c: its summer colour (linear); treeRnd: a per-tree random 0..1 (which
+// colour it turns, and when); leafRnd: a per-leaf random 0..1 (leaves of one crown turn one after another). Toronto's
+// street trees are mostly maples, honey locusts & lindens: most turn yellow, some orange, a few red, the oaks brown.
+const AUTUMN_YELLOW = color(0xd2a12a);
+const AUTUMN_ORANGE = color(0xcf6a1d);
+const AUTUMN_RED = color(0xa52a1a);
+const AUTUMN_BROWN = color(0x87582f);
+function autumnLeaf(c, treeRnd, leafRnd) {
+  const hue = mix(mix(AUTUMN_YELLOW, AUTUMN_ORANGE, step(0.48, treeRnd)), mix(AUTUMN_RED, AUTUMN_BROWN, step(0.86, treeRnd)), step(0.72, treeRnd));
+  // at the leaf's own brightness (a little brighter: autumn leaves glow), a little varied leaf to leaf
+  const lum = dot(c, LUMA);
+  const turned = hue.mul(lum.mul(1.35).div(max(dot(hue, LUMA), 0.001))).mul(leafRnd.mul(0.3).add(0.85));
+  // each tree turns at its own time: the first start with uAutumn, the last finish at 1
+  const tree = clamp(cityUniforms.uAutumn.mul(1.6).sub(fract(treeRnd.mul(7.31)).mul(0.6)), 0.0, 1.0);
+  const share = smoothstep(leafRnd.mul(0.6), leafRnd.mul(0.6).add(0.4), tree);
+  const spring = c.mul(vec3(1.08, 1.12, 0.62));
+  return mix(mix(c, spring, cityUniforms.uSpring.mul(0.55)), turned, share);
+}
+// Whether a leaf is still on the tree: `key` 0..1 per leaf (or patch of leaves); all on at uLeaf 1, none at 0
+const leafStays = (key) => key.lessThan(cityUniforms.uLeaf.mul(1.2).sub(0.1));
 
 /**
  * Mikkelsen's Surface-Gradient Hardware Derivative Bump Mapping (ported from CityGeneratorUtils.js)
@@ -822,7 +877,8 @@ function createCurtainWallMaterial(opts = {}) {
     // Brushed-aluminium coping capping every wall
     const withCap = mix(withBlank, mix(cFrame, color(0xc9ced3), 0.45), coping);
 
-    return over(mix(withCap, roofColor, isRoof), 'color');
+    // (lying snow on the flat roofs: skipped on the walls)
+    return over(mix(withCap, snowOver(roofColor, positionWorld.xz, isRoof.mul(0.9)), isRoof), 'color');
   })();
 
   mat.roughnessNode = Fn(() => {
@@ -1131,7 +1187,7 @@ function createPreWarBuildingMaterial(opts = {}) {
     const roofNoise = noise2D(positionWorld.xz.mul(0.35));
     const roofCol = mix(cTrim.mul(0.42), cTrim.mul(0.62), roofNoise);
 
-    const wallOrRoof = mix(masonryWeathered, roofCol, isRoof);
+    const wallOrRoof = mix(masonryWeathered, snowOver(roofCol, positionWorld.xz, isRoof.mul(0.9)), isRoof); // (lying snow on the roof)
     const withFrames = mix(wallOrRoof, frameCol, isWindowOpening.mul(sashMask));
     const withGlass = mix(withFrames, glassCol, isWindowGlass);
     const withAC = mix(withGlass, acColor, inACBox);
@@ -1377,7 +1433,7 @@ function createRenderedFacadeMaterial(opts = {}) {
     const inside = aptRoom.xyz.mul(0.55);
     const glass = mix(mix(inside, cGlass, 0.7), cityUniforms.uSkyHorizonColor, fresnel.mul(0.55).add(0.07));
     const frameCol = mix(color(0xb9bcbf), color(0x3a3530), step(0.5, fract(tone.mul(9.1)))); // silver or bronze aluminium
-    let c = mix(wall, roofCol, isRoof);
+    let c = mix(wall, snowOver(roofCol, wp.xz, isRoof.mul(0.9)), isRoof); // (lying snow on the roof)
     c = mix(c, glass, opening);
     c = mix(c, frameCol, opening.mul(frames));
     c = mix(c, color(0x2a2b2d), opening.mul(bars));
@@ -1781,8 +1837,17 @@ function createTreeMaterial(leafAtlas) {
     return p.add(sway).add(vec3(0.0, bob, 0.0)).add(normalLocal.mul(flutter));
   })();
 
+  // Seasons: a leaf falls when its key passes uLeaf. The key mixes leaf.g (a random per leaf in the atlas, but its mips
+  // blur toward 0.5 on a far crown) with a hash of 8-texel cells of the atlas (never filtered: a fine dither from afar),
+  // and a little per tree. A bare crown keeps a sparse haze of fine twigs where a third of its leaves were, grey-brown:
+  // from afar a leafless tree is not empty. At uLeaf 1 nothing falls.
+  const cell = floor(uv().mul(128.0));
+  const cellKey = fract(sin(dot(cell, vec2(12.9898, 78.233))).mul(43758.5453));
+  const fallen = leafStays(leaf.g.mul(0.4).add(cellKey.mul(0.4)).add(rnd.mul(0.2))).not().and(isLeaf.greaterThan(0.5));
+  const twigHaze = fract(cellKey.mul(7.13).add(rnd.mul(3.1))).lessThan(0.33);
+
   // Coverage: leaf cards from the atlas; bark is opaque from outside (its back faces are dropped)
-  const alpha = mix(float(frontFacing), leaf.a, isLeaf);
+  const alpha = mix(float(frontFacing), leaf.a, isLeaf).mul(fallen.and(twigHaze.not()).select(0.0, 1.0));
   mat.alphaTestNode = float(0.5);
   mat.maskShadowNode = alpha.greaterThan(0.5);
 
@@ -1794,7 +1859,9 @@ function createTreeMaterial(leafAtlas) {
     const warm = smoothstep(0.62, 1.0, leaf.g).mul(0.55);
     const cool = smoothstep(0.38, 0.0, leaf.g).mul(0.45);
     const leafCol = mix(mix(base, base.mul(vec3(1.25, 1.08, 0.5)), warm), base.mul(vec3(0.8, 0.92, 1.05)), cool);
-    const foliage = mix(leafCol, color(0x4a3b2c), leaf.b).mul(crownAO.mul(0.45).add(0.55));
+    // (the season: autumn colour, spring green; a fallen leaf's place shows the twigs' grey-brown)
+    const seasonCol = select(fallen, color(0x4f453d), autumnLeaf(leafCol, rnd, leaf.g));
+    const foliage = mix(seasonCol, color(0x4a3b2c), leaf.b).mul(crownAO.mul(0.45).add(0.55));
 
     // Bark (uv in metres): furrowed grey-brown ridges, or the London plane's olive bark flaking to cream & tan
     const bu = uv();
@@ -1817,7 +1884,7 @@ function createTreeMaterial(leafAtlas) {
   mat.aoNode = canyonSkyAONode().mul(crownAO.mul(0.75).add(0.25));
 
   // Light through the leaves: yellow-green, strongest out on the thin shell
-  mat.translucencyNode = aData.xyz.mul(vec3(1.0, 1.2, 0.45)).mul(leaf.r.mul(1.5)).mul(crownAO.mul(0.8).add(0.2)).mul(isLeaf);
+  mat.translucencyNode = aData.xyz.mul(vec3(1.0, 1.2, 0.45)).mul(leaf.r.mul(1.5)).mul(crownAO.mul(0.8).add(0.2)).mul(isLeaf).mul(fallen.select(0.0, 1.0));
 
   return mat;
 }
@@ -2991,7 +3058,8 @@ function createParkLawnMaterial(isMeadow = false) {
       cGrassMid,
       macroPatch.mul(0.45).add(midClover.mul(0.35)).add(mowStripe.mul(0.20))
     );
-    return mix(baseLawn, cGrassSun, microBlade.mul(0.38));
+    // (the season: spring's fresh green, winter's dormant turf, lying snow)
+    return snowOver(seasonalGrass(mix(baseLawn, cGrassSun, microBlade.mul(0.38))), wp, float(1.0));
   })();
 
   mat.normalNode = Fn(() => {
@@ -3151,8 +3219,9 @@ function createTerrainMaterial() {
     const laterite = mix(color(0x8a4f30), color(0xa86c44), noise2D(p.mul(0.09)));
     const bare = smoothstep(0.62, 0.8, fbm2(p.mul(0.023).add(9.4)));
     const shrubs = smoothstep(0.58, 0.74, fbm2(p.mul(0.045).add(27.3)));
-    let ground = mix(grass, laterite, bare.mul(0.7));
+    let ground = mix(seasonalGrass(grass), laterite, bare.mul(0.7));
     ground = mix(ground, color(0x334322), shrubs.mul(0.75));
+    ground = snowOver(ground, p, float(1.0)); // (lying snow on the gentle ground; the rock below sheds it)
     // Granite: grey-pink with dark lichen & water streaks down the slope, pale fresh exfoliation sheets
     const streaks = smoothstep(0.55, 0.8, noise2D(vec2(p.x.mul(0.35).add(p.y.mul(0.2)), wp.y.mul(0.02))));
     const sheets = smoothstep(0.6, 0.85, fbm2(p.mul(0.03).add(5.7)));
@@ -3161,7 +3230,7 @@ function createTerrainMaterial() {
     rock = mix(rock, color(0xb5aa9c), sheets.mul(0.35));
     // high ground: more rock between the grass even where it's not steep (the domes' shoulders)
     const high = smoothstep(120.0, 260.0, wp.y);
-    return mix(ground, rock, max(steep(), high.mul(0.6)));
+    return mix(ground, snowOver(rock, p, float(0.45)), max(steep(), high.mul(0.6)));
   })();
   mat.roughnessNode = mix(float(0.94), float(0.72), smoothstep(0.86, 0.62, normalWorldGeometry.y));
   mat.normalNode = Fn(() => {
@@ -3213,8 +3282,9 @@ function createPlotGroundMaterial() {
     const near = smoothstep(40.0, 8.0, length(positionWorld.sub(cameraPosition)));
     const bx = fract(p.x.mul(5.0).add(step(0.5, fract(p.y.mul(5.0))).mul(0.5)));
     const joint = max(smoothstep(0.06, 0.0, bx), smoothstep(0.12, 0.0, fract(p.y.mul(10.0)))).mul(near).mul(0.35);
-    const ground = mix(mulch, grass, g);
-    return mix(ground, paving.mul(float(1.0).sub(joint)), paved);
+    const ground = mix(mulch, seasonalGrass(grass), g);
+    // (lying snow: full on the lawns & beds, the shovelled walks & driveways keep little)
+    return snowOver(mix(ground, paving.mul(float(1.0).sub(joint)), paved), p, mix(float(1.0), float(0.25), paved));
   })();
   mat.normalNode = Fn(() => {
     const p = positionWorld.xz;
@@ -3250,5 +3320,5 @@ function createRenderedWallMaterial() {
   return mat;
 }
 
-Object.assign(window.CITY, { filteredPulse, cityUniforms, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, createFootprintFacades, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial });
+Object.assign(window.CITY, { filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, createFootprintFacades, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial });
 })();

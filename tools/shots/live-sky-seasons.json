@@ -1,0 +1,72 @@
+[
+ {
+  "name": "summer-preset-street",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.liveSky.state();const a=C.worldFromLatLon(43.64585,-79.41215),b=C.worldFromLatLon(43.64760,-79.41470);app.teleportTo(a.x,a.z,0);const pos=[a.x,1.8,a.z],look=[b.x,6,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:62});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ },
+ {
+  "name": "summer-preset-aerial",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.liveSky.state();const a=C.worldFromLatLon(43.64330,-79.40880),b=C.worldFromLatLon(43.64720,-79.41420);app.teleportTo(a.x,a.z,0);const pos=[a.x,95,a.z],look=[b.x,0,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:55});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ },
+ {
+  "name": "oct15-livedate-street",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.liveSky.inject('2026-10-15T17:20:00-04:00','Sunny');const a=C.worldFromLatLon(43.64585,-79.41215),b=C.worldFromLatLon(43.64760,-79.41470);app.teleportTo(a.x,a.z,0);const pos=[a.x,1.8,a.z],look=[b.x,6,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:62});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ },
+ {
+  "name": "oct15-livedate-aerial",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.liveSky.inject('2026-10-15T17:20:00-04:00','Sunny');const a=C.worldFromLatLon(43.64330,-79.40880),b=C.worldFromLatLon(43.64720,-79.41420);app.teleportTo(a.x,a.z,0);const pos=[a.x,95,a.z],look=[b.x,0,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:55});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ },
+ {
+  "name": "dec05-clear-street",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.seasons.inject('2026-12-05');app.liveSky.inject('2026-12-05T15:10:00-05:00','Sunny');const a=C.worldFromLatLon(43.64585,-79.41215),b=C.worldFromLatLon(43.64760,-79.41470);app.teleportTo(a.x,a.z,0);const pos=[a.x,1.8,a.z],look=[b.x,6,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:62});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ },
+ {
+  "name": "dec05-clear-aerial",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.seasons.inject('2026-12-05');app.liveSky.inject('2026-12-05T15:10:00-05:00','Sunny');const a=C.worldFromLatLon(43.64330,-79.40880),b=C.worldFromLatLon(43.64720,-79.41420);app.teleportTo(a.x,a.z,0);const pos=[a.x,95,a.z],look=[b.x,0,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:55});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ },
+ {
+  "name": "jan15-snowing-street",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.seasons.inject('2027-01-15');app.liveSky.inject('2027-01-15T15:40:00-05:00','Light Snow');const a=C.worldFromLatLon(43.64585,-79.41215),b=C.worldFromLatLon(43.64760,-79.41470);app.teleportTo(a.x,a.z,0);const pos=[a.x,1.8,a.z],look=[b.x,6,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:62});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ },
+ {
+  "name": "jan15-snowing-aerial",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.seasons.inject('2027-01-15');app.liveSky.inject('2027-01-15T15:40:00-05:00','Light Snow');const a=C.worldFromLatLon(43.64330,-79.40880),b=C.worldFromLatLon(43.64720,-79.41420);app.teleportTo(a.x,a.z,0);const pos=[a.x,95,a.z],look=[b.x,0,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:55});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ },
+ {
+  "name": "jan16-snow-on-ground-street",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.seasons.inject('2027-01-16',15);app.liveSky.inject('2027-01-16T15:40:00-05:00','Sunny');const a=C.worldFromLatLon(43.64585,-79.41215),b=C.worldFromLatLon(43.64760,-79.41470);app.teleportTo(a.x,a.z,0);const pos=[a.x,1.8,a.z],look=[b.x,6,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:62});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ },
+ {
+  "name": "jan16-snow-on-ground-aerial",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;app.seasons.inject('2027-01-16',15);app.liveSky.inject('2027-01-16T15:40:00-05:00','Sunny');const a=C.worldFromLatLon(43.64330,-79.40880),b=C.worldFromLatLon(43.64720,-79.41420);app.teleportTo(a.x,a.z,0);const pos=[a.x,95,a.z],look=[b.x,0,b.z];app.cameraSystem.cinema=()=>({pos,look,fov:55});return {sky:app.liveSky.state(),season:app.seasons.state()};})()"
+ }
+]

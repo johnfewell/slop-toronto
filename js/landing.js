@@ -17,10 +17,18 @@
   const canHover = matchMedia('(hover: hover) and (pointer: fine)');
 
   // ------------------------------------------------------------------------------------------- The place search
+  // The full placeholder runs past a phone's search box (cut off from 390 px down), so the phone layout (the one-column
+  // breakpoint, css/landing.css's max-width: 860px) shows the short one from data-placeholder-phone. Only the text
+  // changes: the box's size is set by the CSS, so nothing moves
+  const where = $('#where-q');
+  const placeholders = { wide: where.placeholder, phone: where.dataset.placeholderPhone || where.placeholder };
+  const fitPlaceholder = () => { where.placeholder = twoColumn.matches ? placeholders.wide : placeholders.phone; };
+  fitPlaceholder();
+  twoColumn.addEventListener('change', fitPlaceholder);
   const form = $('#hero-search');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const q = $('#where-q').value.trim();
+    const q = where.value.trim();
     location.href = q ? `./explore.html#place=${encodeURIComponent(q)}` : './explore.html';
   });
 

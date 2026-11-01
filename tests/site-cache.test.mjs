@@ -77,3 +77,21 @@ test('development ignores cache validators and notifies connected tabs when code
     assert.equal(await changed.text(), 'export const value = 3;');
   } finally { clearTimeout(timer); abort.abort(); }
 });
+
+// Cloudflare's static assets answer a file named with "@" (or any character a URL must escape) with a 307 to its
+// %-encoded spelling before the 200, an extra round trip per image; shipped names stay plain (logo-2x.webp, not @2x)
+test('shipped file names need no URL escaping, and every page image reference exists', () => {
+  const repo = path.resolve(import.meta.dirname, '..');
+  const walk = (rel) => fs.readdirSync(path.join(repo, rel), { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? walk(`${rel}/${e.name}`) : [`${rel}/${e.name}`]);
+  const shipped = ['assets', 'css', 'js'].filter((d) => fs.existsSync(path.join(repo, d))).flatMap(walk);
+  assert.ok(shipped.some((f) => f.startsWith('assets/brand/')));
+  assert.deepEqual(shipped.filter((f) => !/^[A-Za-z0-9._/-]+$/.test(f)), []);
+  for (const page of ['index.html', 'explore.html']) {
+    const html = fs.readFileSync(path.join(repo, page), 'utf8');
+    const refs = [...html.matchAll(/(?:src|srcset)="([^"]+)"/g)].flatMap((m) => m[1].split(','))
+      .map((s) => s.trim().split(/\s+/)[0]).filter((u) => u.startsWith('./assets/'));
+    assert.ok(refs.length > 0, page);
+    for (const ref of refs) assert.ok(fs.existsSync(path.join(repo, ref)), `${page}: ${ref}`);
+  }
+});

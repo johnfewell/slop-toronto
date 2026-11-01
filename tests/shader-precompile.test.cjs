@@ -59,7 +59,7 @@ test('a sky change that comes in during the shader precompile is applied after i
     subwayRide: null, loadingStatus: null, markInit() {}, setLoadingProgress() {}, console,
     visualGate: { compiling: false, pending: null }, shaderTimeHold: null, rideSession: { held: false }, lightingSystem,
     liveWeather: () => ({ look: { saturation: 1, exposure: 1 } }), liveNow: () => new Date(), liveSky: {},
-    colorGrade: { applyPreset() {} }, skyClouds: { setWeather() {} }, precipitation: { set() {} },
+    colorGrade: { applyPreset() {} }, skyClouds: { setWeather() {} }, precipitation: { set() {} }, applySeason() {},
     timeButtons: [], renderLiveButton() {}, liveBtn: null, document: { getElementById: () => null } });
   const { precompileShaders, applyVisualTime } = vm.runInContext(`${precompile}\n${applyVisual}\n({ precompileShaders, applyVisualTime })`, context);
   applyVisualTime('live'); // (the first sky, before the precompile: applied at once)

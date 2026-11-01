@@ -177,7 +177,12 @@ function createLandMaterial() {
   const roofCol = mix(srgb(0.43, 0.41, 0.39), roofVar, lotDetail);
   const yardBand = boxPulse(fract(gu), 0.3, 0.7, fwU);
   const treeNoise = valueNoise(wp.xz.mul(0.11)).toVar();
-  const cTree = mix(srgb(0.19, 0.26, 0.13), srgb(0.30, 0.37, 0.19), treeNoise);
+  // (the season, tsl-materials.js: autumn colour in the canopy, then bare grey-brown crowns over the ground; the grass's
+  // spring green & winter tan)
+  const { autumnLeaf, seasonalGrass, snowOver } = window.CITY;
+  const canopyRnd = valueNoise(wp.xz.mul(0.023).add(5.3));
+  const cTree = mix(autumnLeaf(mix(srgb(0.19, 0.26, 0.13), srgb(0.30, 0.37, 0.19), treeNoise), canopyRnd, treeNoise),
+    srgb(0.31, 0.28, 0.25), float(1.0).sub(cityUniforms.uLeaf).mul(0.75));
   const yardAmount = clamp(yardBand.mul(0.8).add(lu.b.mul(0.5)).mul(smoothstep(0.25, 0.65, treeNoise.add(lu.b.mul(0.3)))), 0.0, 1.0);
   const lotsCol = mix(roofCol, cTree, yardAmount);
   const cAsphalt = srgb(0.30, 0.30, 0.31);
@@ -189,14 +194,14 @@ function createLandMaterial() {
   const cIndustry = mix(srgb(0.50, 0.49, 0.47), mix(srgb(0.70, 0.69, 0.67), srgb(0.52, 0.42, 0.35), step(0.82, indCell)), step(0.45, indCell));
   // Parks, ravines & woods: lawn clearings among dense canopy
   const woods = smoothstep(0.35, 0.7, valueNoise(wp.xz.mul(0.045)).add(treeNoise.mul(0.35)));
-  const cPark = mix(srgb(0.36, 0.45, 0.2), cTree, woods);
+  const cPark = mix(seasonalGrass(srgb(0.36, 0.45, 0.2)), cTree, woods);
   const park = lu.r.toVar();
   let col = mix(urban, cIndustry, lu.g);
   col = mix(col, cPark, park);
   // (this city: the terrain's slopes, the ravine sides & the bluffs, wooded whatever the map says)
   const slope = smoothstep(0.86, 0.7, normalGeometry.y);
   col = mix(col, cPark, slope);
-  mat.colorNode = col;
+  mat.colorNode = snowOver(col, wp.xz, float(0.8)); // (lying snow, all over at this distance)
   mat.roughnessNode = mix(float(0.9), float(0.97), park);
   // Night: sodium street lights along the grid & the arterials (none in parks), faint lit windows
   const street = float(1.0).sub(inBlock).add(arterial.mul(0.6)).mul(float(1.0).sub(park)).mul(float(1.0).sub(lu.g.mul(0.5)));
@@ -253,7 +258,7 @@ function createBuildingMaterial() {
   const roofCol = mix(srgb(0.30, 0.30, 0.31), srgb(0.66, 0.66, 0.65), step(0.72, bHash));
   let col = mix(wallCol, cGlass, winMask);
   col = mix(col, vec3(0.09, 0.085, 0.08), storefront.mul(0.65));
-  col = mix(col, roofCol, isRoof);
+  col = mix(col, window.CITY.snowOver(roofCol, positionWorld.xz, isRoof.mul(0.85)), isRoof); // (lying snow on the roofs)
   mat.colorNode = col;
   mat.roughnessNode = mix(float(0.86), mix(float(0.14), float(0.06), glassy), winMask);
   mat.metalnessNode = winMask.mul(glassy).mul(0.6);

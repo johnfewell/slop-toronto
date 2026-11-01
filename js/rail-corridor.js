@@ -124,7 +124,8 @@ function createEmbankmentGrassMaterial() {
     const grain = fract(sin(dot(floor(p.xz.mul(3.3)), vec2(12.9898, 78.233))).mul(43758.5453));
     const turf = mix(color(0x26341a), color(0x3b4a22), wave.mul(0.7).add(grain.mul(0.3)));
     const dry = mix(turf, color(0x5b5734), smoothstep(0.62, 0.95, wave).mul(0.55));
-    return mix(color(0x1f2b16), dry, smoothstep(0.0, 1.6, p.y));
+    // (the season: spring green, winter's dormant turf, lying snow: tsl-materials.js)
+    return window.CITY.snowOver(window.CITY.seasonalGrass(mix(color(0x1f2b16), dry, smoothstep(0.0, 1.6, p.y))), p.xz, float(0.9));
   })();
   return mat;
 }

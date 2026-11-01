@@ -10,7 +10,7 @@
 
 const { THREE } = window.CITY;
 const { mergeGeometries } = window.CITY.Addons;
-const { Fn, float, color, uv, attribute, fract, smoothstep, mix, abs } = window.CITY.TSL;
+const { Fn, float, color, uv, attribute, fract, smoothstep, mix, abs, positionWorld, normalWorldGeometry } = window.CITY.TSL;
 const { GEO, CITY_BOUNDS, nearestRoads } = window.CITY;
 const { createRenderedFacadeMaterial, createCurtainWallMaterial, createFacadeBoxes, createFootprintFacades, WALL_KINDS } = window.CITY;
 
@@ -269,18 +269,22 @@ function pushShedRoof(A, cx, cz, ang, u0, u1, v0, v1, y, rgb) {
 
 // Roofing: stone-coated steel tiles (rows of shingle-shaped pressed tiles every ~0.37 m up the slope) or ribbed
 // long-span sheets, in the vertex colour
+// (Toronto: lying snow on the slopes in winter, tsl-materials.js snowOver: a 20-35 degree pitch holds it, the hips' steep
+// ends and the gable-less eaves less)
 function createRoofMaterial(ribbed) {
+  const { snowOver } = window.CITY;
   const mat = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: ribbed ? 0.5 : 0.62, metalness: ribbed ? 0.45 : 0.15 });
   mat.colorNode = Fn(() => {
     const c = attribute('color', 'vec3');
     const t = uv();
+    const holds = smoothstep(0.55, 0.85, normalWorldGeometry.y).mul(0.85);
     if (ribbed) {
       const rib = smoothstep(0.0, 0.25, abs(fract(t.x.mul(1.3)).sub(0.5)));
-      return c.mul(mix(float(0.82), float(1.0), rib));
+      return snowOver(c.mul(mix(float(0.82), float(1.0), rib)), positionWorld.xz, holds);
     }
     const row = fract(t.y.div(0.37));
     const shade = smoothstep(0.0, 0.85, row).mul(0.28).add(0.74);
-    return c.mul(shade);
+    return snowOver(c.mul(shade), positionWorld.xz, holds);
   })();
   return mat;
 }

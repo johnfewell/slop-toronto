@@ -665,10 +665,12 @@ async function initApp() {
         colorGrade.applyPreset(p.id, p.weights, w.look.saturation, 1 + ((w.look.exposure ?? 1) - 1) * (1 - p.weights.midnight));
         skyClouds?.setWeather(w.look);
         precipitation.set(w.look, Math.min(1, Math.max(0.15, p.hemiIntensity * 0.55)));
+        applySeason(true, w); // (the scenery on Toronto's date: leaves, grass, snow)
       } else {
         lightingSystem.applyPreset(timeId); colorGrade.applyPreset(lightingSystem.activePresetId);
         skyClouds?.setWeather(null);
         precipitation.set(null);
+        applySeason(false); // (a preset is the classic summer)
       }
     };
     if (shaderTimeHold) shaderTimeHold.render(apply, { hold: rideSession.held });
@@ -694,6 +696,39 @@ async function initApp() {
       return { key, look, reading: { condition: liveSky.start.fixedCondition }, stale: false };
     }
     return LIVE.weatherFor(liveSky.reading, Date.now());
+  }
+
+  // ---- Seasons -------------------------------------------------------------------------------------------------------
+  // While live the scenery follows Toronto's date (seasons.js, docs/live-sky.md "Seasons"): the broadleaf trees' leaves
+  // & colour, the grass, and snow lying on the ground when Pearson reports snow or ECCC's morning record has some (asked
+  // for every 3 hours from mid-October to April). A preset is the classic summer of 22 August. Only the season uniforms
+  // change (tsl-materials.js cityUniforms), and only when a value does: no material or shader is rebuilt. A capture
+  // fixture's ?liveDate= & ?liveSnow= (honoured where ?liveClock= is) hold the day and the record still.
+  const SEASONS = window.CITY.SEASONS;
+  const season = { ...SEASONS.resolveCapture({ search: location.search, webdriver: navigator.webdriver === true }), record: null, recordAt: 0, state: null };
+  const SEASON_UNIFORMS = { leaf: 'uLeaf', autumn: 'uAutumn', spring: 'uSpring', dormant: 'uDormant', snow: 'uSnow' };
+  function applySeason(live, weather = null) {
+    const now = liveNow();
+    const day = live ? (season.fixedDate || SEASONS.torontoDate(now)) : SEASONS.SUMMER_DATE;
+    const s = live ? SEASONS.seasonFor(day) : SEASONS.SUMMER;
+    let snow = 0;
+    if (live) {
+      const record = season.fixedSnowCm != null ? SEASONS.fixtureRecord(season.fixedSnowCm, now.getTime()) : season.record;
+      snow = SEASONS.snowCover({ weatherKey: weather?.key ?? null, temp: weather?.reading?.temp ?? null, record, now: now.getTime() });
+      if (!liveSky.start.capture && SEASONS.snowSeason(day) && Date.now() - season.recordAt > 3 * 3600 * 1000) refreshSnowRecord();
+    }
+    const values = { leaf: s.leaf, autumn: s.autumn, spring: s.spring, dormant: s.dormant, snow };
+    const cu = window.CITY.cityUniforms;
+    for (const [k, name] of Object.entries(SEASON_UNIFORMS)) if (cu[name].value !== values[k]) cu[name].value = values[k];
+    season.state = { live, month: day.month, day: day.day, phase: snow >= 0.5 ? 'snow' : s.phase, ...values };
+  }
+  function refreshSnowRecord() {
+    season.recordAt = Date.now();
+    SEASONS.fetchSnowRecord().then((r) => {
+      if (!r) return;
+      season.record = r;
+      if (liveSky.active) applySeason(true, liveSky.weather);
+    });
   }
   const liveBtn = document.getElementById('time-live');
   const liveLabel = liveBtn && liveBtn.querySelector('.seg-label');
@@ -1698,6 +1733,23 @@ async function initApp() {
     if (Number.isFinite(environment.cloudPhase) && skyClouds?.context) skyClouds.context.time = environment.cloudPhase;
     skyClouds?.resetHistory();
     return true;
+  };
+  // The scenery's season (seasons.js), and (automated captures & tests only, as liveSky.inject) a fixed day & snow record:
+  // seasons.inject('2026-12-20', 10) shows 20 December with 10 cm on the ground while live (null: the date of the clock,
+  // and no record). It doesn't turn live on: liveSky.inject (or ?liveClock=) does.
+  window.__CITY_APP.seasons = {
+    state() {
+      return { ...season.state, fixedDate: season.fixedDate, fixedSnowCm: season.fixedSnowCm, record: season.record };
+    },
+    inject(date = null, snowCm = null) {
+      if (!liveSky.start.capture) return false;
+      const day = date == null ? null : SEASONS.parseDay(date);
+      if (date != null && !day) throw new Error(`seasons.inject: bad date ${date}`);
+      season.fixedDate = day;
+      season.fixedSnowCm = Number.isFinite(snowCm) && snowCm >= 0 ? snowCm : null;
+      applySeason(liveSky.active, liveSky.weather);
+      return this.state();
+    }
   };
   // The live sky's state, and (automated captures & tests only: navigator.webdriver) a fixed fake clock & condition:
   // liveSky.inject('2026-10-31T12:00:00-04:00', 'Sunny') turns live on at that instant under that sky, frozen there.

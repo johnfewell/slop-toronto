@@ -84,17 +84,53 @@ const ALL_IN = -1e6, ALL_OUT = 1e9;
 // per-tree distances; only the cells straddling an edge evaluate their trees one by one
 const LOD_CELL = 200;
 
+// Seasons on a broadleaf model (docs/live-sky.md, Seasons; tsl-materials.js cityUniforms uLeaf, uAutumn, uSpring). Its
+// atlas has the leaf spray on the left (u < 0.8) and the bark on the right: on the spray, the leaves are the green texels
+// and the stalks & twigs the brown ones. Leaves turn (autumnLeaf) and fall (leafStays) by a per-leaf key, smooth noise
+// over the spray plus a per-tree share, so a crown thins leaf by leaf, one tree ahead of the next; the twigs stay, the
+// bare crown's fine tracery. Shadows lose the fallen leaves too. At the summer values this is the glTF material exactly.
+// Returns { color, keep } for the material's colour & mask nodes.
+function seasonNodes(map) {
+  const { texture, uv, vec2, vec4, max, mix, smoothstep, fract, sin, dot, attribute, materialColor } = window.CITY.TSL;
+  const { autumnLeaf, leafStays } = window.CITY;
+  const tex = texture(map, uv());
+  const spray = uv().x.lessThan(0.7995);
+  // relative greenness: leaves ~0.25-0.65, stalks & twigs under 0.1
+  const green = tex.g.sub(max(tex.r, tex.b)).div(max(tex.g, 0.001));
+  const leafness = smoothstep(0.12, 0.22, green).mul(spray.select(1.0, 0.0));
+  // per tree: a hash of where it stands (aLodOrigin, its middle); per leaf: noise over the spray
+  const origin = attribute('aLodOrigin', 'vec3');
+  const treeRnd = fract(sin(dot(origin.xz, vec2(12.9898, 78.233))).mul(43758.5453));
+  const p = uv().mul(vec2(26.0, 21.0)).add(treeRnd.mul(41.0));
+  const i = p.floor(), f = p.fract();
+  const h = (o) => fract(sin(dot(i.add(o), vec2(127.1, 311.7))).mul(43758.5453));
+  const s = f.mul(f).mul(f.mul(-2.0).add(3.0));
+  const leafRnd = mix(mix(h(vec2(0, 0)), h(vec2(1, 0)), s.x), mix(h(vec2(0, 1)), h(vec2(1, 1)), s.x), s.y);
+  const keep = leafness.lessThan(0.5).or(leafStays(leafRnd.mul(0.75).add(treeRnd.mul(0.25))));
+  const base = materialColor;
+  const color = vec4(mix(base.rgb, autumnLeaf(base.rgb, treeRnd, leafRnd), leafness), base.a); // (TSL's a.mix(b, t) is mix(b, t, a): the function form)
+  return { color, keep };
+}
+
 // The EZ-Tree glTF material as a node material wearing the dissolve; the cutout as nodes, as createTreeMaterial does
-// (an `alphaTest` on a shadow caster churns the shared shadow material's version)
-function fadeMaterial(src) {
+// (an `alphaTest` on a shadow caster churns the shared shadow material's version). Broadleaf models (`seasonal`) follow
+// the season; the pines stay green.
+function fadeMaterial(src, seasonal = false) {
   const { texture, uv, float } = window.CITY.TSL;
   const mat = new THREE.MeshStandardNodeMaterial({
     map: src.map, color: src.color, roughness: src.roughness ?? 0.9, metalness: src.metalness ?? 0, side: THREE.DoubleSide
   });
   mat.name = `${src.name || 'tree'}_lodfade`;
   mat.alphaTestNode = float(0.5);
-  const cutout = src.map ? texture(src.map, uv()).a.greaterThan(0.5) : null;
-  if (FADE) mat.maskNode = lodKeep;
+  let cutout = src.map ? texture(src.map, uv()).a.greaterThan(0.5) : null;
+  let mask = FADE ? lodKeep : null;
+  if (seasonal && src.map) {
+    const season = seasonNodes(src.map);
+    mat.colorNode = season.color;
+    mask = mask ? mask.and(season.keep) : season.keep;
+    cutout = cutout.and(season.keep);
+  }
+  if (mask) mat.maskNode = mask;
   if (cutout) mat.maskShadowNode = FADE ? cutout.and(lodKeep) : cutout;
   else if (FADE) mat.maskShadowNode = lodKeep;
   return mat;
@@ -123,7 +159,7 @@ async function buildEzTrees(scene, generated) {
         else if (!near) near = o;
       });
       mid = mid || near;
-      return { id, near: bakedGeometry(near), mid: bakedGeometry(mid), material: fadeMaterial(near.material) };
+      return { id, near: bakedGeometry(near), mid: bakedGeometry(mid), material: fadeMaterial(near.material, !id.includes('pine')) };
     }));
   } catch (e) {
     console.warn('[ezTrees] models did not load, mrdoob\'s trees stay:', e);
@@ -456,5 +492,5 @@ async function buildEzTrees(scene, generated) {
   return { group, update };
 }
 
-Object.assign(window.CITY, { buildEzTrees });
+Object.assign(window.CITY, { buildEzTrees, ezTreeMaterial: fadeMaterial }); // (the material: tests/seasons.test.mjs builds it)
 })();
