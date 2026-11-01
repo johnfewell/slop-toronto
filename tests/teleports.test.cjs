@@ -48,14 +48,28 @@ test('the CN Tower arrives on Bremner Boulevard facing the tower', () => {
   assert.ok(alignment > 0.999, 'face the tower rather than the neighbouring buildings');
 });
 
-test('the Humber Bay Arch Bridge arrival stands on the trail by the water, facing the CN Tower', () => {
+test('the Humber Bay Arch Bridge arrival stands on the trail by the water, riding along it towards the CN Tower', () => {
   const point = TELEPORT_LOCATIONS.humberArch;
   assert.equal(point.road, 'Martin Goodman Trail');
   for (const [dx, dz] of [[6, 0], [-6, 0], [0, 6], [0, -6]]) assert.ok(!waterAt(point.x + dx, point.z + dz), 'dry ground all round');
+  // on the trail's red asphalt (a paved trail's centre line, within its half width), not the park's lawn beside it
+  let on = null;
+  for (const [w, surface, , flat] of GEO.cycling.trails) {
+    if (!surface) continue;
+    for (let i = 2; i < flat.length; i += 2) {
+      const ax = flat[i - 2], az = flat[i - 1], dx = flat[i] - ax, dz = flat[i + 1] - az, L2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((point.x - ax) * dx + (point.z - az) * dz) / L2));
+      const d = Math.hypot(ax + dx * t - point.x, az + dz * t - point.z);
+      if (d < w / 2 && (!on || d < on.d)) on = { d, dx, dz };
+    }
+  }
+  assert.ok(on, 'on the red trail');
+  const along = Math.abs(on.dx * Math.sin(point.heading) + on.dz * Math.cos(point.heading)) / Math.hypot(on.dx, on.dz);
+  assert.ok(along > 0.99, 'facing along the trail');
   const [tx, tz] = GEO.points.cnTower;
   const distance = Math.hypot(tx - point.x, tz - point.z);
   const alignment = ((tx - point.x) * Math.sin(point.heading) + (tz - point.z) * Math.cos(point.heading)) / distance;
-  assert.ok(alignment > 0.999, 'the skyline ahead');
+  assert.ok(alignment > 0.9, 'the skyline ahead');
 });
 
 test('preset and map teleports share arrival resets', () => {

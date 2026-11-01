@@ -6,7 +6,8 @@
 // of the lake, so the downtown towers count from well back) goes into a cell of `cell` metres; each cell keeps the
 // bounds of its buildings, a skyline height (footprint-weighted 90th percentile) and how lit it reads at night (its
 // built-up share; the Islands' few clubhouses & the airport much dimmer). Humber Bay Shores' condo towers stand
-// beyond the detailed city, so they come from surroundings.js' cluster (lon, lat, radius, heights) instead.
+// beyond the detailed city, so they come from surroundings.js' cluster (lon, lat, radius, heights) instead. A cell whose
+// box is mostly water with only a few scattered buildings in it is left out: its faces would stand in the lake.
 const fs = require('node:fs');
 const path = require('node:path');
 const window = { CITY: {} };
@@ -109,6 +110,12 @@ for (const c of cells.values()) {
   const z0 = Math.max(c.z0, c.j * CELL), z1 = Math.min(c.z1, (c.j + 1) * CELL);
   if (x1 - x0 < 20 || z1 - z0 < 20) continue;
   const builtUp = c.area / ((x1 - x0) * (z1 - z0));
+  // a handful of pavilions scattered over lagoons (Ontario Place's East Island & marina: 6 buildings, 8% built up, half
+  // the box water) is no skyline: as a box it stood a lit wall out in the water, which the shader reflected as a pale
+  // trapezoid on the lake beside the camera (st-01vq.3)
+  let wetN = 0, cellsN = 0;
+  for (let x = x0; x <= x1; x += R / 2) for (let z = z0; z <= z1; z += R / 2) { const k = cellOf(x, z); if (k >= 0) { cellsN++; wetN += wet[k]; } }
+  if (cellsN && wetN / cellsN > 0.4 && builtUp < 0.1) continue;
   const island = c.island > c.area / 2;
   // lots span 0.3-1.3 x S in the shader: S from the cell's 90th-percentile height, so its tallest lots reach the towers
   const S = Math.max(12, pct(0.9) / 1.1);

@@ -299,6 +299,21 @@ that flyover 0.35 m over the ravine's fill, up to 9 m down, and left a 4.7 m ste
 Parliament Street met the box's edge. The section is now level with the street at y 0.4, like the Don's. The five
 approach decks outside the box are at the street (`decks.flattened`), and their road graph nodes are too.
 
+**The deck joint over the ravine (`st-qfx`).** OpenStreetMap splits Bloor Street at x 1714.1, z −2668.7, mid-span,
+where its 6-lane, 22 m way meets its 4-lane, 15 m continuation. city-grid.js drew each deck on its own, with square-cut
+ends. That left a 3.5 m step in both parapets and the wider deck's end open. Every flyover is now drawn as a run
+(`DECK_RUNS`, city-config.js `deckRuns`). A run joins decks of one name that carry straight on at a shared end no
+other deck meets. The joint is one mitred vertex, so the slab, its faces and both parapets go on unbroken. Where the
+width changes, the deck tapers over the narrower piece, from the joint. Here it narrows from 22 m to 15 m over 22.8 m
+(80% of that piece; the rule asks for 6 m per metre of change, capped at 40 m). The 6-lane carriageway keeps its full
+deck to the joint, and the player's deck grid follows the taper. The rule is city-wide, flag on or off: 120 runs join
+two or more decks, and 35 taper. A few narrow pieces under 10 m long taper steeply, under 45°. Each original deck keeps
+its piers' spacing. The markings on a deck had been painted 1.2 cm over its line while the deck's asphalt lies 3 cm
+over it, so the deck hid them; road-paint.js now lifts paint on a raised edge to the deck's top, and the centre line runs
+on across the joint (double yellow on the 6-lane piece, broken on the 4-lane one; the two outer lane lines end at the
+joint, where the lanes drop). Tests: `tests/don-valley.test.mjs` (st-qfx). Captures (`tools/shots/bloor-deck-seam.json`,
+desktop and phone, flag on): `ride-anywhere-geo/review/gpu2/slop-toronto-r3-phone/seam-before-*` and `seam-after-*`.
+
 ## 7. Risks and limits
 
 - **Dev pilot.** The surface has no IDs or connectivity. A deck is chosen by yHint and step alone, and an arrival

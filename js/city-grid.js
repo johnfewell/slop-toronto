@@ -1155,29 +1155,27 @@ function buildCityGrid(scene) {
     const top = makeAcc();
     const faces = makeAcc();
     const piers = [];
-    for (const d of DECKS) {
+    // (the deck runs, city-config.js: decks that carry straight on into the next are one run, a mitred vertex at the
+    // joint and the width tapering where it changes, st-qfx)
+    for (const d of window.CITY.DECK_RUNS) {
       const P = d.pts;
       if (P.length < 2) continue;
-      // left normal at each vertex (mitred)
-      const N = P.map((p, i) => {
-        const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)];
-        const L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
-        return [(b.z - a.z) / L, -(b.x - a.x) / L];
-      });
-      const hw = d.w / 2 + 0.6; // carriageway + the parapets' footing
+      // left normal (mitred) & half width (carriageway + the parapets' footing) at each vertex
+      const { n: N, hw: HW } = window.CITY.deckOutline(d);
       // (p.g: the ground under it, below the street level in the Don Valley pilot, else 0)
       const gOf = (p) => p.g || 0;
       const deep = (p) => p.h - gOf(p) > 4.6;
       const yTop = (p) => Math.max(gOf(p) + 0.03, p.h + 0.03);
       const yBot = (p) => (deep(p) ? p.h - 1.25 : gOf(p));
-      let s = 0;
+      let s = 0, sp = 0; // (sp: along the original deck, which keeps its piers' spacing)
       for (let i = 0; i + 1 < P.length; i++) {
         const a = P[i], b = P[i + 1];
         const L = Math.hypot(b.x - a.x, b.z - a.z);
+        if (d.brk[i]) sp = 0;
         if (L < 0.01) continue;
-        const [anx, anz] = N[i], [bnx, bnz] = N[i + 1];
-        const aL = [a.x + anx * hw, yTop(a), a.z + anz * hw], aR = [a.x - anx * hw, yTop(a), a.z - anz * hw];
-        const bL = [b.x + bnx * hw, yTop(b), b.z + bnz * hw], bR = [b.x - bnx * hw, yTop(b), b.z - bnz * hw];
+        const [anx, anz] = N[i], [bnx, bnz] = N[i + 1], ahw = HW[i], bhw = HW[i + 1];
+        const aL = [a.x + anx * ahw, yTop(a), a.z + anz * ahw], aR = [a.x - anx * ahw, yTop(a), a.z - anz * ahw];
+        const bL = [b.x + bnx * bhw, yTop(b), b.z + bnz * bhw], bR = [b.x - bnx * bhw, yTop(b), b.z - bnz * bhw];
         accQuad(top, aR, bR, bL, aL, [0, 1, 0], [[0, 0], [1, 0], [1, 1], [0, 1]]);
         // side faces & soffit
         const lo = (p, side) => [p[0], side, p[2]];
@@ -1188,12 +1186,12 @@ function buildCityGrid(scene) {
         if (deep(a) && deep(b)) accQuad(faces, lo(aL, yBot(a)), lo(bL, yBot(b)), lo(bR, yBot(b)), lo(aR, yBot(a)), [0, -1, 0], [[0, 1], [1, 1], [1, 0], [0, 0]]);
         // parapets (0.9 m concrete barriers) along both edges
         for (const sgn of [1, -1]) {
-          const ax = a.x + anx * (hw - 0.25) * sgn, az = a.z + anz * (hw - 0.25) * sgn;
-          const bx = b.x + bnx * (hw - 0.25) * sgn, bz = b.z + bnz * (hw - 0.25) * sgn;
+          const ax = a.x + anx * (ahw - 0.25) * sgn, az = a.z + anz * (ahw - 0.25) * sgn;
+          const bx = b.x + bnx * (bhw - 0.25) * sgn, bz = b.z + bnz * (bhw - 0.25) * sgn;
           if (a.h - gOf(a) > 0.4 || b.h - gOf(b) > 0.4) accWall(faces, ax, az, bx, bz, Math.min(yTop(a), yTop(b)), 0.9, 0.4);
         }
         // piers under the raised stretch, every ~24 m, moved along (or left out) where they'd stand in a road below
-        for (let t = Math.ceil(s / 24) * 24 - s; t < L; t += 24) {
+        for (let t = Math.ceil(sp / 24) * 24 - sp; t < L; t += 24) {
           for (const shift of [0, 4, -4, 8, -8]) {
             const tt = t + shift;
             if (tt < 0 || tt > L) continue;
@@ -1202,11 +1200,12 @@ function buildCityGrid(scene) {
             const x = a.x + ((b.x - a.x) * tt) / L, z = a.z + ((b.z - a.z) * tt) / L;
             if (onGroundRoad(x, z, 1.2) || onRail(x, z, 3.2)) continue;
             if (window.CITY.subwayKeepsClear && window.CITY.subwayKeepsClear(x, z)) continue; // (subway.js: its own piers)
-            piers.push({ x, z, h: h - 1.25, g: window.CITY.DON_VALLEY ? Math.min(g, window.CITY.DON_VALLEY.heightAt(x, z)) : 0, w: Math.min(d.w * 0.7, 9), ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
+            piers.push({ x, z, h: h - 1.25, g: window.CITY.DON_VALLEY ? Math.min(g, window.CITY.DON_VALLEY.heightAt(x, z)) : 0, w: Math.min(Math.min(d.ws[i], d.ws[i + 1]) * 0.7, 9), ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
             break;
           }
         }
         s += L;
+        sp += L;
       }
     }
     // The road bridges over the water at street level (city-config.js ROAD_BRIDGES): a slab across at the street's
@@ -1255,7 +1254,7 @@ function buildCityGrid(scene) {
       m.name = 'FlyoverStructure';
       group.add(m);
     }
-    if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] ${DECKS.length} flyover decks & ramps, ${piers.length} piers, ${(window.CITY.ROAD_BRIDGES || []).length} road bridges over the water`);
+    if (window.CITY.DEBUG_ROADS !== false) console.info(`[ground] ${DECKS.length} flyover decks & ramps (${window.CITY.DECK_RUNS.length} runs), ${piers.length} piers, ${(window.CITY.ROAD_BRIDGES || []).length} road bridges over the water`);
   }
 
   // ===================================================================================================================

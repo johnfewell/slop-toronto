@@ -33,7 +33,7 @@ const WATER_COLOURS = {
   ny: { name: "mrdoob's estuary (reference)", deep: '#162d2c', light: '#2e3f36' }
 };
 
-// 66 boxes, 500 m cells (tools/fit-water-skyline.cjs): [minX, minZ, maxX, maxZ, skyline height S (m), lit]
+// 65 boxes, 500 m cells (tools/fit-water-skyline.cjs): [minX, minZ, maxX, maxZ, skyline height S (m), lit]
 const SKYLINE = [
   [-8675, -372, -8504, -21, 190, 0.86],
   [-8675, 0, -8504, 474, 189, 0.93],
@@ -62,7 +62,6 @@ const SKYLINE = [
   [-2897, 0, -2544, 367, 29, 1],
   [-2500, -107, -2366, 0, 109, 0.73],
   [-2492, 0, -2000, 489, 96, 0.65],
-  [-2245, 583, -2009, 970, 14, 0.58],
   [-2000, 111, -1500, 500, 90, 0.99],
   [-2000, 500, -1500, 909, 84, 0.74],
   [-1953, 1040, -1565, 1179, 23, 0.25],

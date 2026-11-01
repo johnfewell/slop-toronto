@@ -422,9 +422,147 @@ const DECKS = GEO.decks.map(([name, w, rank, flat]) => {
   }
   return { name, w, rank, pts };
 });
+// Deck runs, what city-grid.js draws and the deck grid below reads: the decks joined end to end where one carries
+// straight on into the next. OpenStreetMap splits a way where its lanes change, and each piece drawn on its own left a
+// seam: on the Prince Edward Viaduct's Rosedale section (st-qfx) Bloor Street's 6-lane, 22 m deck meets its 4-lane, 15 m
+// continuation over the ravine, two square-cut ends with a 3.5 m step in both parapets and the wider deck's end open.
+// A joint joins two decks of one name and height that share an end no other deck meets, turning under 30°: the run has
+// one mitred vertex there, so the deck, its faces and parapets go on unbroken. Each vertex has its own width (`ws`).
+// Where the width changes, the deck tapers over the narrower stretch, from the joint, DECK_TAPER m per metre of change
+// (12-40 m, at most 80% of the stretch to the run's end or next change, 45% where it widens again there): the wider
+// piece's lanes (road-network.js) run to the joint on their full deck, and the narrower one's never have less (a
+// narrow stretch a few metres long tapers as steeply as it must: no step, but no gentle taper either). `brk[i]`: an original deck
+// starts at vertex i (city-grid.js keeps each deck's piers where they were). [{ name, w, rank, pts, ws, brk }]
+const DECK_TAPER = 6, DECK_JOIN_COS = Math.cos(Math.PI / 6);
+function deckRuns(decks) {
+  const key = (p) => `${p.x},${p.z}`;
+  const endAt = (d, e) => d.pts[e ? d.pts.length - 1 : 0];
+  const ends = new Map(); // end point -> [{ i, e }] (e: 0 the deck's start, 1 its end)
+  decks.forEach((d, i) => {
+    if (d.pts.length < 2) return;
+    for (const e of [0, 1]) {
+      const k = key(endAt(d, e));
+      (ends.get(k) || ends.set(k, []).get(k)).push({ i, e });
+    }
+  });
+  // (the unit direction from a deck's end into the deck)
+  const inward = (d, e) => {
+    const P = d.pts, a = endAt(d, e), b = P[e ? P.length - 2 : 1], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+    return [(b.x - a.x) / L, (b.z - a.z) / L];
+  };
+  const link = new Map(); // `${i},${e}` -> the other deck's end { i, e } that end carries straight on into
+  for (const list of ends.values()) {
+    if (list.length !== 2 || list[0].i === list[1].i) continue;
+    const [A, B] = list, da = decks[A.i], db = decks[B.i];
+    if (da.name !== db.name || Math.abs(endAt(da, A.e).h - endAt(db, B.e).h) > 0.05) continue;
+    const [ax, az] = inward(da, A.e), [bx, bz] = inward(db, B.e);
+    if (ax * bx + az * bz > -DECK_JOIN_COS) continue;
+    link.set(`${A.i},${A.e}`, B);
+    link.set(`${B.i},${B.e}`, A);
+  }
+  const used = new Set(), runs = [];
+  for (let i0 = 0; i0 < decks.length; i0++) {
+    if (used.has(i0) || decks[i0].pts.length < 2) continue;
+    // back to the chain's first deck (i, entered at its end e)
+    let i = i0, e = 0;
+    for (let guard = 0; guard < decks.length; guard++) {
+      const back = link.get(`${i},${e}`);
+      if (!back || back.i === i0) break;
+      i = back.i;
+      e = 1 - back.e;
+    }
+    const pts = [], brk = [], segW = [], pieces = [];
+    for (;;) {
+      used.add(i);
+      const d = decks[i], P = e ? [...d.pts].reverse() : d.pts;
+      pieces.push({ at: pts.length ? pts.length - 1 : 0, n: P.length - 1, w: d.w });
+      for (let k = pts.length ? 1 : 0; k < P.length; k++) {
+        pts.push(P[k]);
+        brk.push(false);
+      }
+      if (pieces.length > 1) brk[pieces[pieces.length - 1].at] = true;
+      for (let k = 0; k + 1 < P.length; k++) segW.push(d.w);
+      const next = link.get(`${i},${1 - e}`);
+      if (!next || used.has(next.i)) break;
+      i = next.i;
+      e = next.e;
+    }
+    const d0 = decks[i0];
+    if (pieces.length === 1) {
+      runs.push({ name: d0.name, w: d0.w, rank: d0.rank, pts, ws: pts.map(() => d0.w), brk });
+      continue;
+    }
+    // arc length at each vertex; the tapers: at each joint where the width changes, into the narrower piece
+    const S = [0];
+    for (let k = 1; k < pts.length; k++) S.push(S[k - 1] + Math.hypot(pts[k].x - pts[k - 1].x, pts[k].z - pts[k - 1].z));
+    const tapers = [];
+    for (let p = 1; p < pieces.length; p++) {
+      const A = pieces[p - 1], B = pieces[p];
+      if (A.w === B.w) continue;
+      tapers.push({ at: B.at, dir: A.w < B.w ? -1 : 1, narrow: A.w < B.w ? p - 1 : p, wide: Math.max(A.w, B.w), w: Math.min(A.w, B.w) });
+    }
+    if (!tapers.length) {
+      runs.push({ name: d0.name, w: Math.max(...segW), rank: d0.rank, pts, ws: pts.map((_, k) => Math.max(segW[k - 1] || 0, segW[k] || 0)), brk });
+      continue;
+    }
+    for (const t of tapers) {
+      // room: the narrower stretch (its pieces of that width) from the joint, to the run's end or the next width change
+      let p = t.narrow, len = 0;
+      for (; p >= 0 && p < pieces.length && pieces[p].w === t.w; p += t.dir) len += S[pieces[p].at + pieces[p].n] - S[pieces[p].at];
+      const shared = p >= 0 && p < pieces.length && pieces[p].w > t.w; // (it widens again there: a taper from each end)
+      t.len = Math.min(Math.max(DECK_TAPER * (t.wide - t.w), 12), 40, len * (shared ? 0.45 : 0.8));
+      t.s = S[t.at];
+      t.end = t.s + t.dir * t.len;
+    }
+    // a vertex where each taper ends (unless one stands within 0.5 m), its height & ground between its neighbours'
+    const out = [], outBrk = [], outS = [];
+    for (let k = 0; k < pts.length; k++) {
+      if (k > 0) {
+        const a = pts[k - 1], b = pts[k];
+        for (const t of tapers) {
+          if (!(t.end > S[k - 1] + 0.5 && t.end < S[k] - 0.5)) continue;
+          const f = (t.end - S[k - 1]) / (S[k] - S[k - 1]), x = a.x + (b.x - a.x) * f, z = a.z + (b.z - a.z) * f;
+          const q = { x, z, h: a.h + (b.h - a.h) * f };
+          if (DV && DV.inBox(x, z)) q.g = DV.heightAt(x, z);
+          out.push(q);
+          outBrk.push(false);
+          outS.push(t.end);
+        }
+      }
+      out.push(pts[k]);
+      outBrk.push(brk[k]);
+      outS.push(S[k]);
+    }
+    // each vertex's width: its piece's (a joint: the wider), or along a taper
+    const pieceW = (s) => { for (let p = pieces.length - 1; p > 0; p--) if (s > S[pieces[p].at] + 1e-6) return pieces[p].w; return pieces[0].w; };
+    const ws = outS.map((s, k) => {
+      let w = outBrk[k] ? Math.max(pieceW(s - 1e-3), pieceW(s + 1e-3)) : k === out.length - 1 ? pieceW(s - 1e-3) : pieceW(s);
+      for (const t of tapers) {
+        const along = (s - t.s) * t.dir;
+        if (along >= -1e-6 && along <= t.len + 0.5) w = t.wide + (t.w - t.wide) * Math.min(1, along / t.len);
+      }
+      return w;
+    });
+    runs.push({ name: d0.name, w: Math.max(...segW), rank: d0.rank, pts: out, ws, brk: outBrk });
+  }
+  return runs;
+}
+const DECK_RUNS = deckRuns(DECKS);
+/** A deck run's outline for city-grid.js: at each vertex its left normal (mitred: across its neighbours) and its half
+ * width (carriageway + the parapets' 0.6 m footing); its edges are p ± n·hw, one corner pair per vertex for both the
+ * segments that meet there. { n: [[nx, nz]], hw: [m] } */
+function deckOutline(run) {
+  const P = run.pts;
+  const n = P.map((p, i) => {
+    const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)];
+    const L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+    return [(b.z - a.z) / L, -(b.x - a.x) / L];
+  });
+  return { n, hw: run.ws.map((w) => w / 2 + 0.6) };
+}
 const DECK_CELL = 4;
-const DECK_GRID = new Map(); // cell -> [{ h, deck }] (a cell under two decks lists both)
-for (const d of DECKS) {
+const DECK_GRID = new Map(); // cell -> [{ h, deck }] (a cell under two decks lists both; deck: its run)
+for (const d of DECK_RUNS) {
   for (let i = 0; i + 1 < d.pts.length; i++) {
     const a = d.pts[i], b = d.pts[i + 1];
     const L = Math.hypot(b.x - a.x, b.z - a.z);
@@ -435,7 +573,8 @@ for (const d of DECKS) {
       const cx = a.x + (b.x - a.x) * t, cz = a.z + (b.z - a.z) * t, h = a.h + (b.h - a.h) * t;
       // (a deck under the street level in the Don Valley pilot: wherever it stands clear of its own ground)
       if (h < 0.3 && !(DV && DV.inBox(cx, cz) && h > DV.heightAt(cx, cz) + 0.25)) continue;
-      for (let o = -d.w / 2 + 0.5; o <= d.w / 2 - 0.5; o += DECK_CELL / 2) {
+      const w = d.ws[i] + (d.ws[i + 1] - d.ws[i]) * t;
+      for (let o = -w / 2 + 0.5; o <= w / 2 - 0.5; o += DECK_CELL / 2) {
         const x = cx - uz * o, z = cz + ux * o;
         const key = Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL);
         let list = DECK_GRID.get(key);
@@ -750,8 +889,36 @@ for (const [kind, , , flags, flat] of GEO.rails || []) {
     }
   }
 }
-/** Whether a tree may stand at (x, z): clear of the rail corridor & the subway's open cuts */
+// The outlines of the landmarks drawn from the City's 3D Massing (landmarks.js, js/toronto-landmarks.js): no tree
+// stands inside one (the Rogers Centre's bowl is a curb island's yard under its field, and grew yard trees and a
+// mislocated City street tree)
+let MODELLED_OUTLINES = null;
+function inModelledLandmark(x, z) {
+  if (!MODELLED_OUTLINES) {
+    const meshes = window.CITY.LANDMARK_MESHES;
+    if (!meshes) return false; // (not loaded yet: asked again later)
+    MODELLED_OUTLINES = Object.keys(meshes).map((id) => LANDMARK_SITES[id]).filter((s) => s && s.ring && s.ring.length >= 6).map((s) => {
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      for (let i = 0; i < s.ring.length; i += 2) {
+        minX = Math.min(minX, s.ring[i]); maxX = Math.max(maxX, s.ring[i]); minZ = Math.min(minZ, s.ring[i + 1]); maxZ = Math.max(maxZ, s.ring[i + 1]);
+      }
+      return { ring: s.ring, minX, maxX, minZ, maxZ };
+    });
+  }
+  for (const o of MODELLED_OUTLINES) {
+    if (x < o.minX || x > o.maxX || z < o.minZ || z > o.maxZ) continue;
+    let inside = false;
+    const r = o.ring;
+    for (let i = 0, j = r.length - 2; i < r.length; j = i, i += 2) {
+      if ((r[i + 1] > z) !== (r[j + 1] > z) && x < ((r[j] - r[i]) * (z - r[i + 1])) / (r[j + 1] - r[i + 1]) + r[i]) inside = !inside;
+    }
+    if (inside) return true;
+  }
+  return false;
+}
+/** Whether a tree may stand at (x, z): clear of the rail corridor & the subway's open cuts, and not in a landmark */
 function treeOffRail(x, z) {
+  if (inModelledLandmark(x, z)) return false;
   // (nor down in a road cut; on its grassed banks, yes, up from their foot: js/ez-trees.js sets them on the slope)
   if (roadCutAt(x, z) < 0 && !ROAD_CUTS.some((c) => { const p = c.bankSt && cutLocal(c, x, z); return p && p.bank && p.into > 2.5; })) return false;
   if (window.CITY.subwayCutAt && window.CITY.subwayCutAt(x, z, 2)) return false; // (nor in the subway's trenches, subway.js)
@@ -937,7 +1104,7 @@ for (const [key, id] of Object.entries(TELEPORT_TARGETS)) {
   if (p) TELEPORT_LOCATIONS[key] = p;
 }
 {
-  // The start: the Martin Goodman Trail just east of the Humber Bay Arch Bridge, facing the skyline
+  // The start: the Martin Goodman Trail just east of the Humber Bay Arch Bridge, riding towards the skyline
   let a = worldFromLatLon(43.6316, -79.4668);
   // the nearest dry ground to that point (the trail itself is not in the street network)
   search: for (let r = 0; r <= 400; r += 3) {
@@ -947,7 +1114,28 @@ for (const [key, id] of Object.entries(TELEPORT_TARGETS)) {
       if (isOnLand(x, z, 0) && !waterAt(x + 6, z) && !waterAt(x - 6, z) && !waterAt(x, z + 6) && !waterAt(x, z - 6)) { a = { x, z }; break search; }
     }
   }
-  TELEPORT_LOCATIONS.humberArch = { x: Math.round(a.x * 10) / 10, z: Math.round(a.z * 10) / 10, heading: Math.atan2(CN[0] - a.x, CN[1] - a.z), road: 'Martin Goodman Trail' };
+  // onto the trail itself (its red asphalt, GEO.cycling's paved trails: the dry ground beside it is the park's lawn),
+  // facing along it the way that runs towards the skyline: the nearest stretch (8 m or longer, within 80 m) that heads
+  // at the CN Tower, else the nearest at all
+  let heading = Math.atan2(CN[0] - a.x, CN[1] - a.z);
+  let best = null;
+  for (const [, surface, , flat] of (GEO.cycling && GEO.cycling.trails) || []) {
+    if (!surface) continue;
+    for (let i = 2; i < flat.length; i += 2) {
+      const ax = flat[i - 2], az = flat[i - 1], dx = flat[i] - ax, dz = flat[i + 1] - az, L = Math.hypot(dx, dz);
+      if (L < 1) continue;
+      const t = Math.max(0.2, Math.min(0.8, ((a.x - ax) * dx + (a.z - az) * dz) / (L * L)));
+      const x = ax + dx * t, z = az + dz * t, d = Math.hypot(x - a.x, z - a.z);
+      if (d > 80 || waterAt(x + 6, z) || waterAt(x - 6, z) || waterAt(x, z + 6) || waterAt(x, z - 6)) continue;
+      const toCN = Math.hypot(CN[0] - x, CN[1] - z), along = (dx * (CN[0] - x) + dz * (CN[1] - z)) / (L * toCN);
+      const score = d + (L >= 8 && Math.abs(along) >= 0.9 ? 0 : 1000);
+      if (best && score >= best.score) continue;
+      const s = along >= 0 ? 1 : -1;
+      best = { x, z, score, heading: Math.atan2(dx * s, dz * s) };
+    }
+  }
+  if (best) { a = best; heading = best.heading; }
+  TELEPORT_LOCATIONS.humberArch = { x: Math.round(a.x * 10) / 10, z: Math.round(a.z * 10) / 10, heading, road: 'Martin Goodman Trail' };
 }
 // Yonge Street just south of Dundas (the start until 2026-10-25), in the northbound lanes, Sankofa Square (Yonge-Dundas Square until
 // 2024) on the right and the intersection ahead (Yonge's centre line runs x 327.3 -> 325.8 from z -1002 to -1182)
@@ -1024,6 +1212,9 @@ Object.assign(window.CITY, {
   DISTRICTS,
   DISTRICT_BOUNDS,
   DECKS,
+  DECK_RUNS,
+  deckRuns,
+  deckOutline,
   ROAD_BRIDGES,
   bridgeAt,
   BUS_CONTRAFLOWS,

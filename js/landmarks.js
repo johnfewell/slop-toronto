@@ -377,6 +377,239 @@ function buildUnionSouthFace(group, pos, idx, stone, glass, baseY) {
   console.info(`[landmarks] Union's south wall x ${wx0} to ${wx1} & its Bay St end at x ${ex}: ${(S.length + G.length) / 9} triangles`);
 }
 
+// =====================================================================================================================
+// THE CINESPHERE (Ontario Place, 1971): the world's first permanent IMAX theatre, a triangulated geodesic dome of
+// aluminium struts & panels (Eberhard Zeidler) on a deck that stands on concrete columns in the West Island's lagoon.
+// The City's massing has it as a plain cylinder (0 to 18.4 m) joined to the pods' walkways; its triangles are dropped
+// (cinesphereKeep: the walkways stay) and it is built here: the dome a geodesic sphere (an icosahedron's faces
+// subdivided 6 to an edge, a vertex at the top) cut a little below its equator, each facet flat-shaded with its strut
+// lines drawn on it in the shader (one draw call, ~600 triangles), and the deck, the stair core under it and its ring
+// of columns down into the water in concrete (one more). Its height to the top is the mapped 25 m; the dome's span
+// fills the mapped outline (37 m).
+// =====================================================================================================================
+const CINESPHERE = {
+  R: 17.6, // the dome's radius
+  top: 25, // its top above the street level (the outline's mapped height)
+  deck: 4.2, // the deck the dome stands on, above the street level
+  deckR: 19.4,
+  columns: 12, columnR: 0.55, columnAt: 14.5,
+  core: 6.5 // the stair core under the deck
+};
+// The massing's triangles to keep: all but the Cinesphere's cylinder (every corner within 20.3 m of its centre, or
+// 23.5 m for a wall: the cylinder's seam with the walkways)
+function cinesphereKeep(pos, idx, s) {
+  const keep = [];
+  for (let t = 0; t < idx.length; t += 3) {
+    let far = 0, level = true;
+    for (let k = 0; k < 3; k++) {
+      const v = idx[t + k] * 3;
+      far = Math.max(far, Math.hypot(pos[v] - s.x, pos[v + 2] - s.z));
+      if (Math.abs(pos[v + 1] - pos[idx[t] * 3 + 1]) > 0.1) level = false;
+    }
+    if (far > (level ? 20.3 : 23.5)) keep.push(idx[t], idx[t + 1], idx[t + 2]);
+  }
+  return new Uint32Array(keep);
+}
+function buildCinesphere(group, s, baseY) {
+  const C = CINESPHERE;
+  const cy = C.top - C.R; // the sphere's centre, above the street level
+  // the geodesic sphere, turned so one of the icosahedron's vertices is at the top
+  let g = new THREE.IcosahedronGeometry(C.R, 5);
+  const t = (1 + Math.sqrt(5)) / 2;
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, t).normalize(), new THREE.Vector3(0, 1, 0)));
+  // the facets above the cut; the corners below it brought up onto the cut's circle (a level base ring)
+  const cut = C.deck - cy, baseR = Math.sqrt(C.R * C.R - cut * cut);
+  const src = g.attributes.position.array, out = [];
+  for (let i = 0; i < src.length; i += 9) {
+    if ((src[i + 1] + src[i + 4] + src[i + 7]) / 3 < cut - 0.5) continue;
+    for (let k = 0; k < 9; k += 3) {
+      let x = src[i + k], y = src[i + k + 1], z = src[i + k + 2];
+      if (y < cut) {
+        const f = baseR / (Math.hypot(x, z) || 1);
+        x *= f; z *= f; y = cut;
+      }
+      out.push(s.x + x, baseY + cy + y, s.z + z);
+    }
+  }
+  g.dispose();
+  g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3));
+  g.computeVertexNormals(); // (non-indexed: each facet flat)
+  // each corner's barycentric weight (the strut lines) and the facet's own slight shade (panels never quite match)
+  const n = out.length / 3, bary = new Float32Array(n * 3), shade = new Float32Array(n);
+  for (let v = 0; v < n; v += 3) {
+    const h = Math.sin(out[v * 3] * 12.9898 + out[v * 3 + 2] * 78.233 + out[v * 3 + 1] * 37.719) * 43758.5453;
+    const sh = 0.9 + 0.1 * (h - Math.floor(h));
+    for (let k = 0; k < 3; k++) { bary[(v + k) * 3 + k] = 1; shade[v + k] = sh; }
+  }
+  g.setAttribute('bary', new THREE.BufferAttribute(bary, 3));
+  g.setAttribute('shade', new THREE.BufferAttribute(shade, 1));
+  const { attribute, fwidth } = window.CITY.TSL;
+  const domeMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.38, metalness: 0.55 });
+  domeMat.name = 'CinesphereDome';
+  domeMat.colorNode = Fn(() => {
+    const b = attribute('bary', 'vec3');
+    const e = min(min(b.x, b.y), b.z);
+    const w = fwidth(e).mul(1.2);
+    const strut = smoothstep(float(0.045).add(w), float(0.045), e); // ~0.15 m struts (a facet is ~3 m tall)
+    const panel = color(0xe4e8ea).mul(attribute('shade', 'float'));
+    return mix(panel, color(0x7f888f), strut);
+  })();
+  const dome = new THREE.Mesh(g, domeMat);
+  dome.name = 'Cinesphere_dome';
+  // the deck, the stair core under it and its columns into the lagoon, in concrete
+  const parts = [];
+  const cyl = (r0, r1, y0, y1, x, z, seg) => {
+    const c = new THREE.CylinderGeometry(r0, r1, y1 - y0, seg);
+    c.translate(x, baseY + (y0 + y1) / 2, z);
+    parts.push(c.toNonIndexed());
+  };
+  const water = CITY_BOUNDS.waterLevel - baseY - 0.3;
+  cyl(C.deckR, C.deckR - 0.4, C.deck - 1.1, C.deck + 0.05, s.x, s.z, 48);
+  cyl(C.core, C.core, water, C.deck - 1.1, s.x, s.z, 24);
+  for (let i = 0; i < C.columns; i++) {
+    const a = (i / C.columns) * Math.PI * 2 + 0.2;
+    cyl(C.columnR, C.columnR, water, C.deck - 1.1, s.x + Math.cos(a) * C.columnAt, s.z + Math.sin(a) * C.columnAt, 10);
+  }
+  const base = new THREE.Mesh(mergeGeometries(parts), new THREE.MeshStandardNodeMaterial({ color: 0xc9c5bc, roughness: 0.85 }));
+  base.name = 'Cinesphere_base';
+  for (const m of [dome, base]) {
+    m.castShadow = true;
+    m.receiveShadow = true;
+    group.add(m);
+  }
+  console.info(`[landmarks] Cinesphere: geodesic dome ${out.length / 9} facets, base ${baseR.toFixed(1)} m, top ${C.top} m`);
+  return [dome, base];
+}
+
+// =====================================================================================================================
+// THE ROGERS CENTRE'S FIELD: the City's massing has the stadium's bowl, its floor 7.4 m below the street, where the
+// rail lands' surface (city-grid.js) covered it: a flat dark-grey floor that grew yard trees. The field is laid over
+// it at street level: green artificial turf mown in bands, the dirt infield (the skin round the grass diamond, since
+// 2016), the mound and the circle round home plate, the bases, chalked foul lines, and the warning track along the
+// wall. One flat mesh (a 120-triangle fan out to the floor's outline), its colours in the shader from the diamond's
+// frame: home plate at the south end, centre field towards Front St (the hotel). The stands are the massing's own,
+// their seats painted blue in its material (rogersCentreMaterial); city-config.js keeps trees out of the bowl.
+// =====================================================================================================================
+const ROGERS_FIELD = {
+  y: 0.3, // (world) over the street level's paving: the island's top is the sidewalk height, 0.22
+  home: 57, // home plate south of the floor's centre (m); centre field 122 m (400 ft) north of it
+  base: 27.43, // 90 ft between the bases
+  rubber: 18.44, // 60 ft 6 in from home plate to the pitcher's rubber
+  skin: 28.96, // the infield dirt's arc: 95 ft from the rubber
+  track: 4.6 // the warning track along the wall
+};
+function buildRogersField(group, pos, idx) {
+  const F = ROGERS_FIELD;
+  // the floor's outline: the massing's level faces under -5 m (the field & the apron round it), as the farthest any of
+  // them reaches from its middle every 3 degrees round; the field a fan out to that outline (the faces themselves, as
+  // modelled, leave gaps along the wall)
+  const edges = [];
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let t = 0; t < idx.length; t += 3) {
+    const a = idx[t] * 3, b = idx[t + 1] * 3, c = idx[t + 2] * 3;
+    const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
+    const vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+    const ny = uz * vx - ux * vz, L = Math.hypot(uy * vz - uz * vy, ny, ux * vy - uy * vx);
+    if (L < 1e-6 || Math.abs(ny) / L < 0.95 || (pos[a + 1] + pos[b + 1] + pos[c + 1]) / 3 > -5) continue;
+    for (const [p, q] of [[a, b], [b, c], [c, a]]) edges.push([pos[p], pos[p + 2], pos[q], pos[q + 2]]);
+    for (const v of [a, b, c]) { x0 = Math.min(x0, pos[v]); x1 = Math.max(x1, pos[v]); z0 = Math.min(z0, pos[v + 2]); z1 = Math.max(z1, pos[v + 2]); }
+  }
+  if (!edges.length || x1 - x0 < 60) return null;
+  const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, R = Math.min(x1 - x0, z1 - z0) / 2;
+  const N = 120, rim = new Float32Array(N);
+  for (let k = 0; k < N; k++) {
+    const A = ((k + 0.5) / N) * Math.PI * 2, dx = Math.cos(A), dz = Math.sin(A);
+    for (const [ax, az, bx, bz] of edges) {
+      // the ray from the middle against the edge: t along the ray, s along the edge
+      const ex = bx - ax, ez = bz - az, den = dx * ez - dz * ex;
+      if (Math.abs(den) < 1e-9) continue;
+      const wx = ax - cx, wz = az - cz;
+      const t = (wx * ez - wz * ex) / den, s = (wx * dz - wz * dx) / den;
+      if (t > 0 && s >= 0 && s <= 1) rim[k] = Math.max(rim[k], t);
+    }
+  }
+  // (the faces stop short of the wall in places: the field runs out to the farthest reach within 24 degrees, under the
+  // lowest rows of the stands, which stand over it)
+  const reach = Float32Array.from(rim);
+  for (let k = 0; k < N; k++) for (let j = -8; j <= 8; j++) rim[k] = Math.max(rim[k], reach[(k + j + N) % N]);
+  const tri = [], toWall = [];
+  const at = (k) => { const a = ((k % N) + 0.5) / N * Math.PI * 2, r = rim[k % N]; return [cx + Math.cos(a) * r, F.y, cz + Math.sin(a) * r]; };
+  for (let k = 0; k < N; k++) {
+    // (wound to face up), each corner's distance to the wall (0 at the rim; the fan's middle as far as the rim is)
+    tri.push(cx, F.y, cz, ...at(k + 1), ...at(k));
+    toWall.push((rim[k] + rim[(k + 1) % N]) / 2, 0, 0);
+  }
+  const hx = cx, hz = cz + F.home;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(tri, 3));
+  g.setAttribute('toWall', new THREE.Float32BufferAttribute(toWall, 1));
+  g.computeVertexNormals();
+  const { vec2, length, clamp, fwidth, attribute } = window.CITY.TSL;
+  const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.9 });
+  mat.name = 'RogersCentreField';
+  mat.colorNode = Fn(() => {
+    const p = positionWorld.xz;
+    // the diamond's frame: u across (towards first base, east), v from home plate towards centre field (north)
+    const u = p.x.sub(hx), v = float(hz).sub(p.y);
+    const d = length(vec2(u, v));
+    const aw = fwidth(d).mul(0.75).add(0.02); // (a line's soft edge: about a pixel)
+    const line = (dist, half) => smoothstep(half.add(aw), half, dist);
+    // fair territory: within 45 degrees of the line to second base
+    const fair = step(abs(u), v.add(0.3));
+    // the turf: mown-looking bands across the outfield, a little darker in the foul ground
+    const band = step(0.5, fract(v.div(7.5)));
+    const turf = mix(color(0x3d7a35), color(0x468a3c), band).mul(mix(float(0.88), float(1.0), fair));
+    // the infield dirt: the arc round the rubber over the grass diamond, the mound, the circle round home, the cut-outs
+    // at the bases, and the warning track round the wall
+    const rub = vec2(u, v.sub(F.rubber));
+    const toSecond = abs(u).add(abs(v.sub(F.base * Math.SQRT1_2)));
+    const grassDiamond = step(toSecond, float(F.base * Math.SQRT1_2 - 1.5)).mul(step(1.0, v));
+    const skin = step(length(rub), float(F.skin)).mul(step(abs(u).sub(2.0), v));
+    const mound = step(length(rub), float(2.74));
+    const plate = step(d, float(3.96));
+    const b1 = length(vec2(abs(u).sub(F.base * Math.SQRT1_2), v.sub(F.base * Math.SQRT1_2)));
+    const bases = step(b1, float(2.6));
+    const track = step(attribute('toWall', 'float'), float(F.track));
+    const dirt = max(max(skin.mul(grassDiamond.oneMinus()), max(mound, plate)), max(bases, track));
+    const clay = mix(color(0x9a6440), color(0xa8724c), mound);
+    // chalk: the foul lines out to the wall, the base paths' lines on the dirt, the bases and home plate
+    const foulLine = line(abs(abs(u).sub(v)).mul(Math.SQRT1_2), float(0.06)).mul(step(0.0, v)).mul(step(0.3, attribute('toWall', 'float')));
+    const bag = step(max(abs(abs(u).sub(F.base * Math.SQRT1_2)), abs(v.sub(F.base * Math.SQRT1_2))), float(0.25));
+    const second = step(max(abs(u), abs(v.sub(F.base * Math.SQRT2))), float(0.25));
+    const homePlate = step(max(abs(u), abs(v.sub(0.2))), float(0.22));
+    const chalk = clamp(foulLine.add(bag).add(second).add(homePlate), 0.0, 1.0);
+    return mix(mix(turf, clay, dirt), color(0xf2f0ea), chalk);
+  })();
+  const mesh = new THREE.Mesh(g, mat);
+  mesh.name = 'RogersCentre_field';
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  console.info(`[landmarks] Rogers Centre's field: ${tri.length / 9} triangles, ${Math.round(x1 - x0)} x ${Math.round(z1 - z0)} m`);
+  return { cx, cz, R };
+}
+
+// The stadium's white shell, its stands' seats blue: the massing's sloped faces round the field below the roof's ring
+// (36 m) and inside the outer wall, in rows (a darker line every 0.85 m up), split by aisles every ~9 m round the bowl
+function rogersCentreMaterial({ cx, cz, R }) {
+  const { vec2, length, atan, normalGeometry, clamp } = window.CITY.TSL;
+  const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.6, side: THREE.DoubleSide });
+  mat.name = 'RogersCentre';
+  mat.colorNode = Fn(() => {
+    const rel = vec2(positionWorld.x.sub(cx), positionWorld.z.sub(cz));
+    const r = length(rel), y = positionWorld.y;
+    const ny = abs(normalGeometry.y);
+    const sloped = step(0.15, ny).mul(step(ny, 0.97));
+    const inBowl = step(r, float(R + 22)).mul(step(y, 36.0)).mul(step(0.4, y));
+    const seats = sloped.mul(inBowl);
+    const row = smoothstep(0.75, 0.9, fract(y.div(0.85)));
+    const aisle = step(0.94, fract(atan(rel.y, rel.x).mul(r).div(9.0)));
+    const seat = mix(mix(color(0x1f4f8f), color(0x163a6a), row), color(0x9a9a96), aisle);
+    return mix(color(0xf1efe9), seat, clamp(seats, 0.0, 1.0));
+  })();
+  return mat;
+}
+
 function buildLandmarks(scene) {
   const group = new THREE.Group();
   group.name = 'CityLandmarks';
@@ -555,6 +788,7 @@ function buildLandmarks(scene) {
       g.setAttribute('position', new THREE.BufferAttribute(decode(m.positions, Float32Array), 3));
       let idx = decode(m.indices, Uint32Array);
       if (id === 'unionStation') idx = unionShedKeep(g.attributes.position.array, idx); // (the shed: built open below)
+      if (id === 'cinesphere' && S.cinesphere) idx = cinesphereKeep(g.attributes.position.array, idx, S.cinesphere); // (the dome: built below)
       g.setIndex(new THREE.BufferAttribute(idx, 1));
       g.computeVertexNormals(); // every face has its own vertices: flat-shaded facets
       const mesh = new THREE.Mesh(g, LOOKS[m.look] || LOOKS.limestone);
@@ -573,9 +807,14 @@ function buildLandmarks(scene) {
         const shedSteel = buildUnionTrainShed(group, colliders);
         buildUnionSouthFace(group, g.attributes.position.array, idx, mesh.material, shedSteel || glassDark, SW_Y);
       } else if (s && s.w) {
+        if (id === 'rogersCentre') {
+          const field = buildRogersField(group, g.attributes.position.array, idx);
+          if (field) mesh.material = rogersCentreMaterial(field);
+        }
         g.computeBoundingBox();
-        // (the Cinesphere's dome & the pods stand on columns: their roofs are overhead, not walls)
+        // (the pods stand on columns: their roofs are overhead, not walls)
         meshColliders(mesh, s, g.boundingBox.max.y + SW_Y, { roof: id !== 'cinesphere' });
+        if (id === 'cinesphere') meshColliders(buildCinesphere(group, s, SW_Y), s, CINESPHERE.top + SW_Y);
       }
       done.add(id);
     }

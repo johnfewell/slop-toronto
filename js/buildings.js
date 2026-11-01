@@ -330,7 +330,36 @@ function signedWalls(data = window.CITY.STOREFRONTS) {
   }
   return walls;
 }
-const FLOOR_HEIGHTS = [3.4, 3.6, 3.8, 3.8, 3.8]; // the facade materials' storeys (buildCityBlocks `materials`)
+const FLOOR_HEIGHTS = [3.4, 3.6, 3.8, 3.8, 3.8, 4.6]; // the facade materials' storeys (buildCityBlocks `materials`)
+
+// The Distillery District: the Gooderham & Worts distillery's Victorian industrial buildings (1859 to the 1920s, the
+// largest such collection in North America) on their lanes off Mill St. The City's massing gives them as plain blocks
+// like any other, so inside the district's outline (LANDMARK_SITES.distillery) the low ones (the heritage buildings: the
+// new condo towers over 30 m keep their glass) take the district's own look: red Victorian brick (a warmer, redder
+// range than the city's measured masonry), a facade of tall narrow windows in a close, regular rhythm under tall
+// industrial storeys, deep piers at the corners, and pitched slate roofs where the block is low enough to have had one.
+// One more facade material (one draw call); the roofs go into the hipped roofs' batch.
+const VICTORIAN = 5; // its facade style (buildCityBlocks `facadeStyles`)
+const DISTILLERY = {
+  maxH: 30,
+  pitchedUpTo: 19, // a pitched roof on blocks up to this height (the warehouses & the mill), flat parapets above
+  brick: [[0x8a4632, 4], [0x7a3b2a, 3], [0x9b5136, 2], [0x6d3426, 2]],
+  slate: [[0x3a3c40, 3], [0x45403c, 2], [0x2f3134, 1]]
+};
+const distilleryRing = (() => {
+  const s = window.CITY.LANDMARK_SITES && window.CITY.LANDMARK_SITES.distillery;
+  return s && s.ring && s.ring.length >= 6 ? s.ring : null;
+})();
+function inDistillery(x, z) {
+  const r = distilleryRing;
+  if (!r) return false;
+  let inside = false;
+  for (let i = 0, j = r.length - 2; i < r.length; j = i, i += 2) {
+    const xi = r[i], zi = r[i + 1], xj = r[j], zj = r[j + 1];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
 // --- end Toronto layer ---
 
 function buildCityBlocks(scene) {
@@ -350,7 +379,9 @@ function buildCityBlocks(scene) {
     // newer grey-green condo glass with white spandrels)
     [createCurtainWallMaterial, { glassTint: 0x2a3744, frameTint: 0x9a9ea0, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.55, reflectivity: 0.92, seed: 41.0, boxLocal: true }],
     [createCurtainWallMaterial, { glassTint: 0x1e2326, frameTint: 0x3a3e40, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.6, reflectivity: 0.9, seed: 57.0, boxLocal: true }],
-    [createCurtainWallMaterial, { glassTint: 0x3d4245, frameTint: 0xb4b8ba, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.5, reflectivity: 0.94, seed: 73.0, boxLocal: true }]
+    [createCurtainWallMaterial, { glassTint: 0x3d4245, frameTint: 0xb4b8ba, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.5, reflectivity: 0.94, seed: 73.0, boxLocal: true }],
+    // [5] the Distillery District's Victorian brick (VICTORIAN): tall narrow windows close together, tall storeys
+    [createRenderedFacadeMaterial, { windowWidth: 2.7, floorHeight: 4.6, windowRatioX: 0.36, windowRatioY: 0.64, litProbability: 0.38, warmth: 0.95, seed: 97.0, cornerPier: 1.0 }]
   ];
   const materials = facadeStyles.map(([create, opts]) => create(opts));
   const buckets = materials.map(() => []);
@@ -361,7 +392,7 @@ function buildCityBlocks(scene) {
   const roofTiles = { pos: [], nor: [], uv: [], col: [] };
   const roofSheets = { pos: [], nor: [], uv: [], col: [] };
 
-  const stats = { buildings: 0, boxes: 0, hip: 0, sheet: 0, glass: 0, storefronts: 0, strip: 0, signed: 0 };
+  const stats = { buildings: 0, boxes: 0, hip: 0, sheet: 0, glass: 0, storefronts: 0, strip: 0, signed: 0, victorian: 0 };
   const retail = storefrontSelection();
   const signWalls = signedWalls();
   const facades = new Map(); // building row -> { mat, floorHeight, front } for the signed buildings
@@ -404,9 +435,12 @@ function buildCityBlocks(scene) {
     faces[front] = shopFront ? WALL_KINDS.shop : WALL_KINDS.entry;
     if (signed) { for (const w of signed) faces[w] = WALL_KINDS.shop; stats.signed++; }
     // (Toronto layer: brick or render by kind, colours from the Commons palette)
-    const brick = mat < 2 && rnd() < (BRICK_SHARE[kind] || 0);
-    const paintHex = kind === 4 ? weighted(RAW_BLOCK, rnd()) : kind === 5 ? 0x9b9890 : brick ? weighted(TORONTO_MASONRY, rnd())
+    let brick = mat < 2 && rnd() < (BRICK_SHARE[kind] || 0);
+    let paintHex = kind === 4 ? weighted(RAW_BLOCK, rnd()) : kind === 5 ? 0x9b9890 : brick ? weighted(TORONTO_MASONRY, rnd())
       : kind === 6 ? weighted(TORONTO_STONE, rnd()) : weighted(TORONTO_RENDER, rnd());
+    // (the Distillery District's heritage blocks: its Victorian brick, whatever the draws above said)
+    const victorian = h <= DISTILLERY.maxH && inDistillery(cx, cz);
+    if (victorian) { mat = VICTORIAN; brick = true; paintHex = weighted(DISTILLERY.brick, rnd()); }
     const paint = [...linear(paintHex), (kind === 5 ? 0.95 : rnd()) + (brick ? 2 : 0)];
     if (signed) facades.set(bi, { mat, floorHeight: FLOOR_HEIGHTS[mat], front });
     const tone = rnd();
@@ -418,7 +452,7 @@ function buildCityBlocks(scene) {
       const tf = performance.now();
       const fr = footprintEdges(foot.rings[0], foot.covered, foot.hidden, foot.street, faces[front], shopFront, Math.min(foot.base, h - 0.5), h);
       edges = fr.edges;
-      const pitched = (roof === 1 && kind !== 3) || roof === 2;
+      const pitched = victorian ? h <= DISTILLERY.pitchedUpTo : (roof === 1 && kind !== 3) || roof === 2;
       footBuckets[mat].push({
         cx, cz, rings: foot.rings, base: Math.min(foot.base, h - 0.5), h, kinds: fr.kinds,
         // (overlapping records of one height: their roofs a little apart, not flickering)
@@ -447,7 +481,12 @@ function buildCityBlocks(scene) {
         stats.boxes++;
       }
       topY = h;
-      if (roof === 1 && kind !== 3) {
+      if (victorian) {
+        if (h <= DISTILLERY.pitchedUpTo) {
+          pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, h, (32 + rnd() * 6) * Math.PI / 180, 0.35, linear(weighted(DISTILLERY.slate, rnd())));
+          stats.hip++;
+        }
+      } else if (roof === 1 && kind !== 3) {
         pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, h, (24 + rnd() * 8) * Math.PI / 180, 0.6, linear(weighted(ROOF_PAINT, rnd())));
         stats.hip++;
       } else if (roof === 2) {
@@ -460,7 +499,8 @@ function buildCityBlocks(scene) {
       const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
       colliders.push({ minX: x - ex, maxX: x + ex, minZ: z - ez, maxZ: z + ez, maxY: h, obb: { cx: x, cz: z, hx, hz, cs, sn } });
     }
-    if (mat >= 2) stats.glass++;
+    if (mat >= 2 && mat !== VICTORIAN) stats.glass++;
+    if (victorian) stats.victorian++;
     stats.buildings++;
 
     // Close-up detail for the quadtree: overhead water tank (on flat roofs; on a stand in the yard beside a hipped
@@ -585,7 +625,7 @@ function buildCityBlocks(scene) {
     group.add(m);
   }
   if (window.CITY.DEBUG_ROADS !== false) {
-    console.info(`[buildings] ${stats.buildings} buildings, ${stats.boxes} boxes, ${stats.hip} hipped & ${stats.sheet} sheet roofs, ${stats.glass} in curtain wall; ${stats.storefronts} storefronts (${stats.strip} on retail strips, ${stats.signed} signed)`);
+    console.info(`[buildings] ${stats.buildings} buildings, ${stats.boxes} boxes, ${stats.hip} hipped & ${stats.sheet} sheet roofs, ${stats.glass} in curtain wall, ${stats.victorian} in the Distillery's brick; ${stats.storefronts} storefronts (${stats.strip} on retail strips, ${stats.signed} signed)`);
   }
 
   // ===================================================================================================================

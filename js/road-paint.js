@@ -16,6 +16,9 @@ const { THREE, CROSSWALK, createRoadPaintMaterial, edgeY } = window.CITY;
 const WHITE = new THREE.Color(0xe6e2d6);
 const YELLOW = new THREE.Color(0xe0b12e); // Ontario's centre lines: yellow between opposing traffic
 const HEIGHT = 0.012; // above the asphalt
+// (city-grid.js lays a flyover deck's asphalt 3 cm over its line, and an edge's height, edgeY, is the line: paint on a
+// raised edge rides that much higher, or the deck's top hides it, st-qfx)
+const DECK_LIFT = 0.03;
 const PAINT_CELL = 1200; // m (the paint's cells)
 const SURFACE_CELL = 2400; // m (the trails' surfaces: kept at any distance, cells for the view frustum alone)
 const PAINT_CULL = 1650 * window.CITY.QUALITY.cull; // m: the paint's cells go beyond this (x the tier's cull distances)
@@ -75,7 +78,8 @@ function buildRoadPaint(scene, network) {
   const strip = (...args) => stripMin(0.05, ...args);
 
   // Edges run between stop lines; s is measured from the start one and o to the right of the centre line
-  const at = (e, s, o) => { const x = e.sx + e.dx * s + e.rx * o, z = e.sz + e.dz * s + e.rz * o; return [x, edgeY(e, s, x, z), z]; };
+  const lift = (e) => (e.paintLift ??= (e.h0 || 0) > 0.05 || (e.h1 || 0) > 0.05 ? DECK_LIFT : 0);
+  const at = (e, s, o) => { const x = e.sx + e.dx * s + e.rx * o, z = e.sz + e.dz * s + e.rz * o; return [x, edgeY(e, s, x, z) + lift(e), z]; };
   // (lines along a road are gathered first: where a street bends they join the next piece's, see below)
   const along = (e, o, w, col, period = 1, duty = 1) => {
     const start = (e.sx - e.x0) * e.dx + (e.sz - e.z0) * e.dz;

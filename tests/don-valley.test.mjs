@@ -602,3 +602,76 @@ test('the river: level across, never falling going south, under its banks, and t
   // the build records the rule
   assert.ok(D.alterations.river.steepestRisePct < 8);
 });
+
+test('the Rosedale section\'s deck joint: one run, no gap or step, the 22 m deck tapering to 15 m (st-qfx)', () => {
+  const J = { x: 1714.1, z: -2668.7 }; // (where OpenStreetMap's 6-lane, 22 m way meets its 4-lane, 15 m continuation)
+  const at = (p) => Math.hypot(p.x - J.x, p.z - J.z) < 0.05;
+  for (const [mode, C] of [['pilot', ON], ['flat city', OFF]]) {
+    // the two decks that meet there, each drawn on its own before: square-cut ends 3.5 m apart at each edge
+    const pieces = C.DECKS.filter((d) => d.name === 'Bloor Street East' && (at(d.pts[0]) || at(d.pts.at(-1))));
+    assert.deepEqual(Array.from(pieces, (d) => d.w).sort((a, b) => a - b), [15, 22], `${mode}: the two pieces`);
+    const squareEnd = (d) => {
+      const e = at(d.pts[0]) ? 0 : d.pts.length - 1, a = d.pts[e], b = d.pts[e ? e - 1 : 1], L = Math.hypot(b.x - a.x, b.z - a.z);
+      const n = [(b.z - a.z) / L, -(b.x - a.x) / L], hw = d.w / 2 + 0.6;
+      return [[a.x + n[0] * hw, a.z + n[1] * hw], [a.x - n[0] * hw, a.z - n[1] * hw]].sort((p, q) => p[1] - q[1]);
+    };
+    const [E0, E1] = pieces.map(squareEnd);
+    assert.ok(Math.min(...[0, 1].map((k) => Math.hypot(E0[k][0] - E1[k][0], E0[k][1] - E1[k][1]))) > 3, `${mode}: the old step`);
+    // now one run through the joint: a single vertex both sides' segments share, its corners theirs (no gap or overlap)
+    const runs = C.DECK_RUNS.filter((r) => r.pts.some(at));
+    assert.equal(runs.length, 1, `${mode}: one run`);
+    const run = runs[0], j = run.pts.findIndex(at);
+    assert.ok(j > 0 && j < run.pts.length - 1 && run.brk[j], `${mode}: the joint is inside the run`);
+    assert.equal(run.pts.filter(at).length, 1, `${mode}: the joint once`);
+    const { n, hw } = C.deckOutline(run);
+    const edge = (i, sgn) => [run.pts[i].x + n[i][0] * hw[i] * sgn, run.pts[i].z + n[i][1] * hw[i] * sgn];
+    // the top's quads as city-grid.js lays them: segment i from vertex i's corners to vertex i + 1's
+    const quads = [];
+    for (let i = 0; i + 1 < run.pts.length; i++) quads.push({ a: [edge(i, 1), edge(i, -1)], b: [edge(i + 1, 1), edge(i + 1, -1)] });
+    for (let i = 1; i < quads.length; i++) {
+      for (const k of [0, 1]) assert.deepEqual(quads[i - 1].b[k], quads[i].a[k], `${mode}: segments ${i - 1} and ${i} meet edge to edge`);
+    }
+    // the width: 22 m to the joint, tapering down the narrower piece to 15 m, never a step (a lane-drop taper's slope)
+    assert.equal(run.ws[j], 22);
+    const side = run.ws[j - 1] === 22 ? 1 : -1, end = run.ws.findIndex((w, i) => (i - j) * side > 0 && w === 15);
+    assert.ok(end >= 0, `${mode}: down to 15 m`);
+    const along = (a, b) => Math.hypot(run.pts[b].x - run.pts[a].x, run.pts[b].z - run.pts[a].z);
+    assert.ok(along(j, end) >= 12 && along(j, end) <= 40, `${mode}: a ${along(j, end).toFixed(1)} m taper`);
+    for (let i = 1; i < run.pts.length; i++) {
+      const L = along(i - 1, i), dhw = Math.abs(hw[i] - hw[i - 1]);
+      assert.ok(dhw <= L * 0.16 + 1e-9, `${mode}: edge offset changes ${dhw.toFixed(2)} m over ${L.toFixed(1)} m at ${i}`);
+    }
+    // the parapets (0.25 m in from each edge) run on unbroken with the edges, and the deck stays level across the joint
+    assert.ok(Math.abs(run.pts[j - 1].h - run.pts[j].h) < 1e-9 || mode === 'flat city');
+    // the player's deck grid follows the taper: on the deck inside it, off it past the narrowing edge
+    const k = Math.round((j + end) / 2), p = run.pts[k], q = run.pts[end];
+    if (mode === 'pilot') {
+      const [ix, iz] = [p.x + n[k][0] * (hw[k] - 2.5), p.z + n[k][1] * (hw[k] - 2.5)];
+      assert.ok(Math.abs(C.deckHeightAt(ix, iz, p.h + 0.2, 0.6) - p.h) < 0.5, `${mode}: on the taper`);
+    }
+    assert.ok(C.deckHeightAt(q.x + n[end][0] * 11, q.z + n[end][1] * 11, q.h + 0.2, 0.6) < q.h - 0.3 || q.h < 0.3, `${mode}: off the deck past the 15 m edge`);
+  }
+  // city-wide: every run's joints are single vertices whose edges never step (a narrow stretch only a few metres long
+  // tapers steeply, under 45°; the rest at a lane-drop taper's slope), and every deck is drawn exactly once
+  const seen = new Map();
+  let gentle = 0, steep = 0;
+  for (const r of ON.DECK_RUNS) {
+    const { hw } = ON.deckOutline(r);
+    for (let i = 1; i < r.pts.length; i++) {
+      const L = Math.hypot(r.pts[i].x - r.pts[i - 1].x, r.pts[i].z - r.pts[i - 1].z), dhw = Math.abs(hw[i] - hw[i - 1]);
+      assert.ok(dhw <= L, `${r.name}: a step in its edge at ${r.pts[i].x}, ${r.pts[i].z}`);
+      if (dhw > 1e-9) dhw <= L * 0.16 + 1e-9 ? gentle++ : steep++;
+    }
+    for (const p of r.pts) seen.set(p, (seen.get(p) || 0) + 1);
+  }
+  // (a joint's two end points, one per deck, are one vertex: the other deck's end there is a joint of the same run)
+  const joints = new Set(ON.DECK_RUNS.flatMap((r) => r.pts.filter((_, i) => r.brk[i]).map((p) => `${p.x},${p.z}`)));
+  for (const d of ON.DECKS) {
+    if (d.pts.length < 2) continue;
+    d.pts.forEach((p, i) => {
+      if (seen.get(p) === 1) return;
+      assert.ok(!seen.has(p) && (i === 0 || i === d.pts.length - 1) && joints.has(`${p.x},${p.z}`), `${d.name}: each vertex in one run, once`);
+    });
+  }
+  assert.ok(gentle > 20 && steep <= 6, `${gentle} gentle tapers, ${steep} steep`);
+});
