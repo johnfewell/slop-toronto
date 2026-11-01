@@ -9,14 +9,16 @@
 //   builds them from, exact), the rejection and blocker counts, and the fingerprint of the runtime inputs, which the page
 //   checks at startup before trusting the sites
 // - tools/data/patio-inputs.json (not shipped): what node cannot rebuild (the colliders the layout met, the furniture near
-//   the cafés), every record's rejection reason, and the SHA-256 of the data scripts it was built from
+//   the cafés), every record's rejection reason, the SHA-256 of the data scripts it was built from, and the fingerprints
+//   of what node can rebuild of the colliders from the code as well (the flyover decks and the mapped poles near the
+//   cafés, tools/patio-replay.mjs patioDerivedInputs)
 // Before writing, it replays the layout in node (tools/patio-replay.mjs) and refuses a record the replay does not
 // reproduce exactly. tests/cafeto.test.mjs repeats both checks, so the prebuilt layout cannot drift from its inputs.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadReplayWorld, replayPatios } from './patio-replay.mjs';
+import { loadReplayWorld, replayPatios, patioDerivedInputs } from './patio-replay.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 export const PATIOS_JS = 'js/toronto-patios.js';
@@ -62,6 +64,7 @@ export function buildPatios(dump, { root = ROOT, world = loadReplayWorld(root) }
   const inputs = {
     note: 'tools/build-patios.mjs: what node replays js/patio-layout.js with (tests/cafeto.test.mjs). Not shipped.',
     sources: sourceHashes(root),
+    derived: patioDerivedInputs(world, root),
     reasons: sortKeys(dump.reasons),
     furniture: dump.replay.furniture.map(({ x, z, kind }) => ({ x, z, kind })),
     colliders: dump.replay.colliders

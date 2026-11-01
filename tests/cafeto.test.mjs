@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { cafeto, addressStreet } from '../tools/build-cafeto.mjs';
 import { loadPatioWorld } from '../tools/cafeto-world.mjs';
-import { loadReplayWorld, replayPatios } from '../tools/patio-replay.mjs';
+import { loadReplayWorld, replayPatios, patioDerivedInputs } from '../tools/patio-replay.mjs';
 import { buildPatios, sourceHashes, PATIOS_JS, PATIO_INPUTS } from '../tools/build-patios.mjs';
 
 const read = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
@@ -222,9 +222,11 @@ test('explore.html loads the layer and its prebuilt layout before the builder, n
 // tools/data/patio-inputs.json the runtime inputs it met there that node cannot rebuild (docs/cafeto-patios.md)
 const PATIOS = (() => { const c = { window: {} }; vm.runInNewContext(read(PATIOS_JS), c); return c.window.CITY.PATIOS; })();
 const recorded = JSON.parse(read(PATIO_INPUTS));
+let replayWorld = null;
+const sharedReplayWorld = () => (replayWorld ||= loadReplayWorld());
 
 test('the prebuilt patio layout is the runtime algorithm\'s: node replays js/patio-layout.js on the committed data to the same sites, counts and reasons', () => {
-  const world = loadReplayWorld();
+  const world = sharedReplayWorld();
   const replay = replayPatios(world, recorded);
   const sorted = (o) => JSON.stringify(Object.entries(o).sort());
   assert.equal(JSON.stringify(PATIOS.fields), JSON.stringify(PATIO_SITE_FIELDS));
@@ -247,6 +249,17 @@ test('the prebuilt patio layout was built from the committed sidewalks, poles, g
   const now = sourceHashes();
   const stale = Object.keys(now).filter((rel) => recorded.sources[rel] !== now[rel]);
   assert.deepEqual(stale, [], `rebuild js/toronto-patios.js (tools/build-patios.mjs): ${stale.join(', ')} changed`);
+});
+
+test('the prebuilt patio layout was built from the committed flyover decks and mapped poles near the cafés (code as well as data)', () => {
+  // A code change that moves a collider near a café changes the page's collider fingerprint, and the page then lays the
+  // patios out at startup (about 300 ms on the mini) with only a console warning. Node rebuilds two of those inputs from
+  // the code itself: city-config.js's deck surface and js/mapped-poles.js's poles (st-hue6: #63's deck tapers covered
+  // pole 130038 near a café, so the shipped fingerprint went stale while every data script stayed the same).
+  const now = patioDerivedInputs(sharedReplayWorld());
+  const stale = Object.keys(now).filter((k) => recorded.derived?.[k] !== now[k]);
+  assert.deepEqual(stale, [], `rebuild js/toronto-patios.js (tools/build-patios.mjs, docs/cafeto-patios.md): the ${stale.join(' and ')} ` +
+    `near the cafés changed (${stale.map((k) => `${recorded.derived?.[k]} -> ${now[k]}`).join(', ')})`);
 });
 
 test('the page builds the prebuilt sites over their CaféTO records, the fields it reads intact', () => {

@@ -202,7 +202,7 @@ The desktop and phone tiers record the same layout. The generator writes two fil
   touched (603 of them) and the laid-out furniture near the cafés (576). It also holds every
   record's rejection reason and the SHA-256 of the data scripts the layout depends on.
 
-**Staying in sync.** Three checks fail when an input drifts:
+**Staying in sync.** Four checks fail when an input drifts:
 
 1. `tests/cafeto.test.mjs` replays `js/patio-layout.js` in node (`tools/patio-replay.mjs`) on the committed data
    scripts, with the recorded colliders and furniture. It must reproduce every shipped site to the bit, every count and
@@ -211,7 +211,15 @@ The desktop and phone tiers record the same layout. The generator writes two fil
 2. The same suite compares the SHA-256 of the data scripts behind the runtime inputs with the recorded ones. These are
    the poles, geodata, sidewalks, benches, pay stations, wayfinding, Bike Share, transit, subway, traffic and landmarks
    data. A rebuilt `js/toronto-poles.js`, for example, fails `npm test` until the layout is rebuilt.
-3. At startup, `cafeto-patios.js` fingerprints the runtime inputs near the CaféTO addresses (80 m cells). These are the
+3. The same suite also rebuilds, from the code as well as the data, the two runtime inputs node can reproduce
+   (`tools/patio-replay.mjs` `patioDerivedInputs`). These are the flyover decks' surface (`city-config.js`
+   `deckHeightAt`, sampled every 4 m), which the piers, the mapped poles and the props keep out from under, and the
+   mapped poles where `js/mapped-poles.js` stands them. Both are fingerprinted in the browser's 80 m café cells and
+   compared with the record (`derived`). A code change that moves a deck or a pole near a café fails `npm test` until
+   the layout is rebuilt (`st-hue6`: PR #63's deck tapers covered pole 130038 on York Street, 64 m from 75 Bremner
+   Blvd, so the shipped collider fingerprint went stale with every data script unchanged). Buildings, landmarks and the
+   procedural props are still checked only at startup, below.
+4. At startup, `cafeto-patios.js` fingerprints the runtime inputs near the CaféTO addresses (80 m cells). These are the
    solid colliders the layout can see, the laid-out furniture, the Bike Share footprints and the sidewalk pieces. The
    fingerprint is an order-free hash of every number to 0.1 mm. If it differs from the shipped one, for example because
    a code change moved a pole or a collider, the page warns and lays the patios out at startup as before, so the city

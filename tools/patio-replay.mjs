@@ -30,3 +30,42 @@ export function replayPatios(world, inputs) {
   const out = CITY.patioSites(records, deps);
   return { sites: out.sites.map(CITY.patioSiteRow), rejected: out.rejected, blockers: out.blockers, reasons: out.reasons };
 }
+
+/**
+ * The part of the colliders the layout meets that node can rebuild from the committed code as well as the data, near the
+ * cafés (the browser's own 80 m cells, CITY.patioInputs): { decks, mappedPoles }, each `count:hash` like the page's
+ * fingerprint. `decks`: the flyover decks' (and raised tracks') surface, city-config.js deckHeightAt sampled every 4 m,
+ * which the piers, the mapped poles and the props keep out from under; `mappedPoles`: the City's poles where
+ * js/mapped-poles.js stands them (one under a deck is left out). A code change to either reaches the page's collider
+ * fingerprint, so the page would lay the patios out at startup (st-hue6: #63's deck tapers covered one pole near a café,
+ * and the page did that for a day): tools/build-patios.mjs records these and tests/cafeto.test.mjs recomputes them.
+ */
+export function patioDerivedInputs(world, root = ROOT) {
+  const { CITY, records } = world;
+  if (!CITY.mappedPoleSites) {
+    const context = vm.createContext({ window: { CITY }, console: { ...console, info() {}, warn() {} } });
+    for (const file of ['js/toronto-poles.js', 'js/mapped-poles.js']) {
+      vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
+    }
+  }
+  // (the café cells, as patioInputs keeps furniture: whatever stands in one, of the plain rows given)
+  const near = (rows) => CITY.patioInputs(CITY, records, [], rows).furniture;
+  const C = 80, S = 4, cells = new Map();
+  for (const r of records) {
+    const i = Math.floor(r.x / C), j = Math.floor(r.z / C);
+    for (let a = i - 1; a <= i + 1; a++) for (let b = j - 1; b <= j + 1; b++) cells.set(`${a},${b}`, [a, b]);
+  }
+  const deck = [];
+  for (const [i, j] of cells.values()) {
+    for (let x = i * C + S / 2; x < (i + 1) * C; x += S) {
+      for (let z = j * C + S / 2; z < (j + 1) * C; z += S) {
+        const h = CITY.deckHeightAt(x, z, 1e4, 1e4);
+        if (h) deck.push([x, z, h]);
+      }
+    }
+  }
+  const { sites } = CITY.mappedPoleSites(CITY.POLES, { blockAt: CITY.blockAt, nearestRoads: CITY.nearestRoads,
+    deckHeightAt: CITY.deckHeightAt, cutAt: CITY.cutAt, SW_Y: CITY.CITY_BOUNDS.sidewalkHeight });
+  const poles = near(sites.map((s) => ({ x: s.x, z: s.z, kind: `${s.id}`, s }))).map(({ s }) => [s.id, s.type, s.x, s.z, s.y0, s.ax, s.az]);
+  return { decks: CITY.patioFingerprint(deck), mappedPoles: CITY.patioFingerprint(poles) };
+}
