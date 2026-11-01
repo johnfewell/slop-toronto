@@ -628,6 +628,13 @@ body.film::after {
   opacity: 1;
 }
 
+/* Live (the live sky: Toronto's time & weather now, main.js): its dot glows red while live, and a hairline sets it
+   apart from the four fixed presets */
+.live-btn { margin-right: 3px; position: relative; }
+.live-btn::after { content: ''; position: absolute; right: -3px; top: 9px; bottom: 9px; width: 1px; background: var(--divider); }
+.live-btn.active { --live-dot: #e5322d; } /* (the dot inside the icon's <use> reads it) */
+.live-btn.active .seg-label { font-variant-numeric: tabular-nums; }
+
 .tool-btn {
   height: 36px;
   padding: 0 11px;
@@ -1669,6 +1676,13 @@ body.touch-enabled .toolbar { gap: 2px; padding: 4px; }
 body.touch-enabled .time-btn,
 body.touch-enabled .time-btn.active { height: 44px; min-width: 44px; padding: 0 8px; gap: 0; }
 body.touch-enabled .tool-btn { min-width: 44px; min-height: 44px; }
+/* A phone is narrower than Live, the four presets and the tools: the toolbar keeps to the screen and the time buttons
+   scroll sideways inside it (main.js keeps the chosen one in view) instead of running off the left edge */
+body.touch-enabled .toolbar { max-width: calc(100vw - 2 * var(--edge)); }
+body.touch-enabled .toolbar > * { flex: none; }
+body.touch-enabled .toolbar > .time-switch { flex: 0 1 auto; min-width: 92px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-snap-type: x proximity; }
+body.touch-enabled .time-switch::-webkit-scrollbar { display: none; }
+body.touch-enabled .time-switch > .time-btn { flex: none; scroll-snap-align: start; }
 body.touch-enabled .tool-label { display: none; }
 body.touch-enabled .hud-bottom-center { bottom: max(var(--edge), env(safe-area-inset-bottom)); }
 body.touch-enabled .mode-label { display: block; font-size: 10px; }

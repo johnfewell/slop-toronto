@@ -20,32 +20,8 @@ const { cityUniforms } = window.CITY;
 // ---------------------------------------------------------------------------------------------------------------------
 const FRAME = window.CITY.GEO.frame;
 const WAT_OFFSET_H = -4; // EDT
-function solarPosition(date) {
-  const rad = Math.PI / 180;
-  const jd = date.getTime() / 86400000 + 2440587.5;
-  const T = (jd - 2451545.0) / 36525;
-  const L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
-  const M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
-  const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
-  const C = Math.sin(M * rad) * (1.914602 - T * (0.004817 + 0.000014 * T)) + Math.sin(2 * M * rad) * (0.019993 - 0.000101 * T) + Math.sin(3 * M * rad) * 0.000289;
-  const trueLong = L0 + C;
-  const omega = 125.04 - 1934.136 * T;
-  const lambda = trueLong - 0.00569 - 0.00478 * Math.sin(omega * rad);
-  const eps0 = 23 + (26 + (21.448 - T * (46.815 + T * (0.00059 - T * 0.001813))) / 60) / 60;
-  const eps = eps0 + 0.00256 * Math.cos(omega * rad);
-  const decl = Math.asin(Math.sin(eps * rad) * Math.sin(lambda * rad));
-  const y = Math.tan((eps / 2) * rad) ** 2;
-  const eqTime = 4 / rad * (y * Math.sin(2 * L0 * rad) - 2 * e * Math.sin(M * rad) + 4 * e * y * Math.sin(M * rad) * Math.cos(2 * L0 * rad) -
-    0.5 * y * y * Math.sin(4 * L0 * rad) - 1.25 * e * e * Math.sin(2 * M * rad)); // minutes
-  const utcMin = date.getUTCHours() * 60 + date.getUTCMinutes() + date.getUTCSeconds() / 60;
-  const tst = (utcMin + eqTime + 4 * FRAME.lon) % 1440; // true solar time (min)
-  const ha = (tst / 4 < 0 ? tst / 4 + 180 : tst / 4 - 180) * rad;
-  const lat = FRAME.lat * rad;
-  const zen = Math.acos(Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.cos(ha));
-  let az = Math.acos(((Math.sin(lat) * Math.cos(zen)) - Math.sin(decl)) / (Math.cos(lat) * Math.sin(zen))) / rad;
-  az = ha > 0 ? (az + 180) % 360 : (540 - az) % 360; // clockwise from true north
-  return { elevation: 90 - zen / rad, azimuth: az };
-}
+// (the NOAA equations live in live-sky.js, which also lights the live sky with them)
+const solarPosition = (date) => window.CITY.LIVE_SKY.solarPosition(date, FRAME.lat, FRAME.lon);
 // World-frame unit vector toward a body at true azimuth `az` & elevation `el` (degrees)
 function worldDirection(az, el) {
   const rad = Math.PI / 180;
@@ -197,6 +173,70 @@ const TIME_PRESETS = {
   }
 };
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The live blend: every numeric & colour value of the four presets weighted by the sun's elevation (LIVE_SKY.
+// presetWeights), the real sun for the sky, and for the city's light the sun held a few degrees up (so the streets are
+// never lit from below the horizon) turning into the presets' moonlight as civil twilight ends. Then the weather: a
+// dimmer sun under cloud, more sky fill, the light & the sky dome greyed toward overcast, the fog & wetness floors.
+// ---------------------------------------------------------------------------------------------------------------------
+const lerpHex = (a, b, t) => {
+  const ch = (s) => Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+};
+const greyHex = (c, t) => {
+  if (!(t > 0)) return c;
+  const l = Math.round(0.2126 * ((c >> 16) & 255) + 0.7152 * ((c >> 8) & 255) + 0.0722 * (c & 255));
+  return lerpHex(c, (l << 16) | (l << 8) | l, t);
+};
+const COLOR_KEYS = ['sunColor', 'hemiSky', 'hemiGround', 'skyTop', 'skyHorizon', 'fogColor'];
+const NUMBER_KEYS = ['sunIntensity', 'hemiIntensity', 'fogDensity', 'interiorGlow', 'roadWetness', 'envIntensity', 'canyonBounce',
+  'turbidity', 'rayleigh', 'mieCoefficient', 'mieDirectionalG', 'cloudCoverage', 'cloudDensity', 'skyExposure', 'nightFactor'];
+function blendLivePreset(date, look) {
+  const L = window.CITY.LIVE_SKY;
+  const { elevation, azimuth } = L.solarPosition(date, L.TORONTO.lat, L.TORONTO.lon);
+  const weights = L.presetWeights(elevation);
+  const ids = L.PRESET_IDS.filter((id) => weights[id] > 0);
+  const p = { id: L.dominantPreset(weights), name: 'Live', live: true, weights, elevation, azimuth };
+  for (const k of NUMBER_KEYS) p[k] = ids.reduce((sum, id) => sum + TIME_PRESETS[id][k] * weights[id], 0);
+  for (const k of COLOR_KEYS) {
+    let c = TIME_PRESETS[ids[0]][k], w = weights[ids[0]];
+    for (const id of ids.slice(1)) { w += weights[id]; c = lerpHex(c, TIME_PRESETS[id][k], weights[id] / w); }
+    p[k] = c;
+  }
+  // The sky's sun (the physical sky & the clouds, sky-clouds.js) lingers a little above where it really is through dusk
+  // and dawn: the presets' sunset light has the sun 2 degrees up, and the sky, tuned to the city's daylight exposure, went
+  // black within minutes of the real sunset (a camera would open up). Up to 2.5 degrees, fading out by 9 down & 3 up
+  const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const skyLift = 2.5 * ss(-9, -3, elevation) * (1 - ss(0.5, 3, elevation));
+  const real = worldDirection(azimuth, elevation + skyLift);
+  const held = worldDirection(azimuth, Math.max(elevation, 3));
+  const toMoon = Math.min(1, Math.max(0, (-0.5 - elevation) / 8.5));
+  p.sunDir = held.lerp(MOON_DIR, toMoon * toMoon * (3 - 2 * toMoon)).normalize();
+  p.trueSunDir = real;
+  p.moonDir = MOON_DIR;
+  // the weather
+  p.look = look;
+  p.sunIntensity *= look.sun;
+  p.hemiIntensity *= look.hemi;
+  p.canyonBounce *= 0.6 + 0.4 * look.sun; // (the warm bounce off sunlit walls fades with the sun)
+  for (const k of ['sunColor', 'hemiSky', 'hemiGround', 'skyHorizon', 'fogColor']) p[k] = greyHex(p[k], look.grey);
+  p.skyTop = greyHex(p.skyTop, look.grey * 0.7);
+  p.turbidity += (12 - p.turbidity) * look.grey; // (the dome the city's light is baked from goes white-grey)
+  p.rayleigh *= 1 - 0.6 * look.grey;
+  // (and without the sun's halo: an overcast sky is evenly bright, and the halo baked into the light glared off glass)
+  p.mieCoefficient *= 1 - 0.7 * look.grey;
+  p.mieDirectionalG *= 1 - 0.5 * look.grey;
+  p.skyExposure *= 1 + 0.5 * look.grey * (1 - weights.midnight); // (a white overcast dome: brighter fill & fog colour)
+  p.weatherFog = look.fog;
+  // the light pollution glow over the night city (sky-clouds.js) keeps the night preset's colours through dusk
+  p.glowTop = TIME_PRESETS.midnight.skyTop;
+  p.glowHorizon = TIME_PRESETS.midnight.skyHorizon;
+  p.roadWetness = Math.max(p.roadWetness, look.wet);
+  p.cloudCoverage = look.coverage; // (the sky dome's painted clouds, where there are no volumetric ones)
+  p.cloudDensity = Math.max(p.cloudDensity, look.coverage * 0.9);
+  return p;
+}
+
 class LightingSystem {
   constructor(scene, renderer = null) {
     this.scene = scene;
@@ -335,9 +375,24 @@ class LightingSystem {
 
   applyPreset(presetId, force = false) {
     const p = TIME_PRESETS[presetId] || TIME_PRESETS.golden;
-    if (!force && this.activePresetId === p.id && this.envRenderTarget !== null) {
+    if (!force && !this.live && this.activePresetId === p.id && this.envRenderTarget !== null) {
       return;
     }
+    this.live = null;
+    this.applyValues(p);
+  }
+
+  // Live sky (live-sky.js, docs/live-sky.md): the sun where it stands over Toronto at `date`, the four presets blended
+  // by its elevation, and the weather's look on top. activePresetId is the preset with the largest share, for the parts
+  // of the city that key off it (audio, transit headways, photo mode); activePreset carries the blend & its weights.
+  applyLive(date, look = window.CITY.LIVE_SKY.lookFor(null)) {
+    const p = blendLivePreset(date, look);
+    this.live = { date, look, elevation: p.elevation, azimuth: p.azimuth };
+    this.applyValues(p);
+    return p;
+  }
+
+  applyValues(p) {
     this.activePresetId = p.id;
     this.activePreset = p;
 
@@ -351,8 +406,9 @@ class LightingSystem {
     this.hemiLight.intensity = p.hemiIntensity;
 
     this.scene.fog.color.setHex(p.fogColor);
-    this.scene.fog.density = p.fogDensity;
-    if (this.uFogDensity) this.uFogDensity.value = p.fogDensity;
+    // (a live foggy, misty or hazy reading lifts the density to its floor: weatherFog, 0 for the presets)
+    this.scene.fog.density = Math.max(p.fogDensity, p.weatherFog || 0);
+    if (this.uFogDensity) this.uFogDensity.value = this.scene.fog.density;
 
     // Update physical Preetham SkyMesh uniforms
     this.sky.turbidity.value = p.turbidity;
@@ -394,5 +450,5 @@ class LightingSystem {
 
 // (the hour of each time of day: traffic.js reads the City's volumes at it)
 const SUN_HOURS = { ...Object.fromEntries(Object.entries(SUN).map(([k, v]) => [k, v.h])), twilight: SUN.sunset.h, midnight: SUN.night.h };
-Object.assign(window.CITY, { LightingSystem, SUN_HOURS, SCENE_DATE });
+Object.assign(window.CITY, { LightingSystem, SUN_HOURS, SCENE_DATE, blendLivePreset });
 })();

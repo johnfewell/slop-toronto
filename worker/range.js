@@ -4,7 +4,9 @@
 // honour ranges. wrangler.jsonc sends these paths to the Worker first (run_worker_first); serveClip() asks the assets
 // binding for the file and cuts the range out of it. The clips are a few MB at most, so reading one whole is cheap.
 // One range per request (RFC 9110 lets a server ignore a multi-range request and send 200); an asset response that
-// is already partial (206 / 416) passes through untouched, in case the assets binding learns ranges itself.
+// is already partial (206 / 416) passes through untouched, in case the assets binding learns ranges itself. A HEAD
+// answers with the same status and headers as the GET would: the binding's HEAD has no Content-Length, so the size
+// comes from a GET of the file, and a size that cannot be learned means 200 without a range, never a 0-byte file.
 
 export const CLIPS = '/assets/site/clips/';
 export const isClip = (pathname) => pathname.startsWith(CLIPS);
@@ -35,6 +37,29 @@ function ifRangeHolds(request, res) {
   return v === res.headers.get('last-modified');
 }
 
+// A Content-Length header as a byte count, or null when it is missing or malformed (Number(null) and Number('')
+// are 0, which would make every range of a real file unsatisfiable)
+function declaredLength(res) {
+  const v = res.headers.get('content-length');
+  return v !== null && /^\s*\d+\s*$/.test(v) ? Number(v) : null;
+}
+
+// The size of the file behind a HEAD. The assets binding's HEAD answer carries no Content-Length (sloptoronto.ca and
+// wrangler dev, 2026-10-31), so when it is missing the file is fetched with a GET, without the range, and measured.
+async function headSize(request, env, headRes) {
+  const declared = declaredLength(headRes);
+  if (declared !== null) return declared;
+  const h = new Headers(request.headers);
+  h.delete('range');
+  h.delete('if-range');
+  const res = await env.ASSETS.fetch(new Request(request.url, { method: 'GET', headers: h }));
+  if (res.status !== 200 || res.headers.has('content-encoding')) {
+    await res.body?.cancel();
+    return null;
+  }
+  return (await res.arrayBuffer()).byteLength;
+}
+
 export async function serveClip(request, env) {
   const res = await env.ASSETS.fetch(request);
   if (res.status !== 200) return res; // 206/416 from the binding itself, 304, 404 ...
@@ -45,11 +70,10 @@ export async function serveClip(request, env) {
   if (!range || (method !== 'GET' && method !== 'HEAD') || headers.has('content-encoding') || !ifRangeHolds(request, res)) {
     return new Response(res.body, { status: 200, headers });
   }
-  // (a HEAD has no body to measure: its Content-Length gives the size)
-  const head = method === 'HEAD', declared = Number(res.headers.get('content-length'));
-  if (head && !(declared >= 0)) return new Response(null, { status: 200, headers });
+  const head = method === 'HEAD';
   const body = head ? null : new Uint8Array(await res.arrayBuffer());
-  const size = head ? declared : body.byteLength;
+  const size = head ? await headSize(request, env, res) : body.byteLength;
+  if (size === null) return new Response(null, { status: 200, headers }); // size unknown: no range, never "0 bytes"
   const r = parseRange(range, size);
   if (r === null) return new Response(body, { status: 200, headers });
   if (r === 'unsatisfiable') {

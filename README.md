@@ -37,8 +37,9 @@ volumetric clouds ([why](docs/clouds-alpha6.md#webgl2-backend)).
   it: along Euclid and Palmerston, Roncesvalles' paid curbs, but never in King's streetcar lanes. They are clear of
   hydrants, corners, crossings, stops, bike lanes and patios, solid to the player, and kept out of the traffic's way
   ([how they are placed](docs/parked-cars.md)).
-- **Sky and sound:** volumetric clouds with golden hour, sunset and night, and a city that sounds like one: traffic,
-  streetcars, the lake.
+- **Sky and sound:** Toronto's own sky: the app opens with the sun where it stands right now and the cloud, fog, rain
+  or snow Pearson reports ([live sky](docs/live-sky.md)), under volumetric clouds; golden hour, midday, sunset and night
+  stay a click away. And a city that sounds like one: traffic, streetcars, the lake.
 
 ![The Osgoode pylon at dusk, a park sign at Trinity Bellwoods, Strachan Avenue's underpass, Line 2 by Vincent Yard](docs/images/grid.jpg)
 
@@ -98,8 +99,10 @@ Cloudflare serves `dist/` as a Worker's static assets (`wrangler.jsonc`):
   publish the site. It serves sloptoronto.ca and www; the old workers.dev address redirects its pages there.
 - The static-asset server ignores `Range` (it sends the whole file as 200), and Safari / iOS won't play a `<video>`
   without byte ranges, so the landing clips (`/assets/site/clips/*`) go through the Worker first, which answers
-  ranges with 206 (`worker/range.js`). Check after a deploy:
-  `curl -sI -H 'Range: bytes=0-1023' https://sloptoronto.ca/assets/site/clips/cinesphere.mp4` should say 206.
+  ranges with 206 (`worker/range.js`). Check after a deploy that both a HEAD and a GET answer
+  `206` with `Content-Range: bytes 0-1023/811367` (the file's real size, never `*/0`):
+  `curl -sI -H 'Range: bytes=0-1023' https://sloptoronto.ca/assets/site/clips/cinesphere.mp4` and
+  `curl -s -D - -o /dev/null -H 'Range: bytes=0-1023' https://sloptoronto.ca/assets/site/clips/cinesphere.mp4`.
 - Deploy, from a clean checkout of `main`: `npm ci && npm run build && npx wrangler@4 deploy`. The multiplayer rooms
   are a separate Worker (`rooms/wrangler.jsonc`); deploy them only when `rooms/` changes.
 - `node tools/build-site.mjs` alone assembles the already-generated scripts without installing or rebuilding dependencies.

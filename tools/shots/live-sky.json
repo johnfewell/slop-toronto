@@ -1,0 +1,120 @@
+[
+ {
+  "name": "00-state-default",
+  "wait": 300,
+  "record": true,
+  "js": "window.__CITY_APP.liveSky.state()"
+ },
+ {
+  "name": "01-ui-live-noon",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T12:30:00-04:00\",\"Sunny\");const app=window.__CITY_APP,C=window.CITY;const a=C.worldFromLatLon(43.6476,-79.3871);let best=null,bd=1e9;for(const r of C.ROADS){if(!r.name)continue;for(let i=0;i+1<r.pts.length;i++){const p=r.pts[i],q=r.pts[i+1];const dx=q.x-p.x,dz=q.z-p.z,L2=dx*dx+dz*dz||1,L=Math.sqrt(L2);const t=Math.max(0,Math.min(1,((a.x-p.x)*dx+(a.z-p.z)*dz)/L2));const px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(a.x-px,a.z-pz);if(d<bd){bd=d;best={r,px,pz,ux:dx/L,uz:dz/L};}}}const h=best.r.w/2,nx=-best.uz,nz=best.ux;const pos=[best.px+nx*(h-1.5),1.6,best.pz+nz*(h-1.5)];const look=[best.px+best.ux*60,9,best.pz+best.uz*60];app.teleportTo(pos[0],pos[2],0);app.cameraSystem.cinema=()=>({pos,look,fov:62});return window.__CITY_APP.liveSky.state();})()"
+ },
+ {
+  "name": "clear-noon-skyline",
+  "camera": "skyline",
+  "wait": 10000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T12:30:00-04:00\",\"Sunny\");window.__CITY_APP.cameraSystem.cinema=null;return s;})()"
+ },
+ {
+  "name": "clear-noon-street",
+  "mode": "person",
+  "wait": 8000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T12:30:00-04:00\",\"Sunny\");const app=window.__CITY_APP,C=window.CITY;const a=C.worldFromLatLon(43.6476,-79.3871);let best=null,bd=1e9;for(const r of C.ROADS){if(!r.name)continue;for(let i=0;i+1<r.pts.length;i++){const p=r.pts[i],q=r.pts[i+1];const dx=q.x-p.x,dz=q.z-p.z,L2=dx*dx+dz*dz||1,L=Math.sqrt(L2);const t=Math.max(0,Math.min(1,((a.x-p.x)*dx+(a.z-p.z)*dz)/L2));const px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(a.x-px,a.z-pz);if(d<bd){bd=d;best={r,px,pz,ux:dx/L,uz:dz/L};}}}const h=best.r.w/2,nx=-best.uz,nz=best.ux;const pos=[best.px+nx*(h-1.5),1.6,best.pz+nz*(h-1.5)];const look=[best.px+best.ux*60,9,best.pz+best.uz*60];app.teleportTo(pos[0],pos[2],0);app.cameraSystem.cinema=()=>({pos,look,fov:62});return s;})()"
+ },
+ {
+  "name": "overcast-late-afternoon-skyline",
+  "camera": "skyline",
+  "wait": 10000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T16:30:00-04:00\",\"Cloudy\");window.__CITY_APP.cameraSystem.cinema=null;return s;})()"
+ },
+ {
+  "name": "overcast-late-afternoon-street",
+  "mode": "person",
+  "wait": 8000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T16:30:00-04:00\",\"Cloudy\");const app=window.__CITY_APP,C=window.CITY;const a=C.worldFromLatLon(43.6476,-79.3871);let best=null,bd=1e9;for(const r of C.ROADS){if(!r.name)continue;for(let i=0;i+1<r.pts.length;i++){const p=r.pts[i],q=r.pts[i+1];const dx=q.x-p.x,dz=q.z-p.z,L2=dx*dx+dz*dz||1,L=Math.sqrt(L2);const t=Math.max(0,Math.min(1,((a.x-p.x)*dx+(a.z-p.z)*dz)/L2));const px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(a.x-px,a.z-pz);if(d<bd){bd=d;best={r,px,pz,ux:dx/L,uz:dz/L};}}}const h=best.r.w/2,nx=-best.uz,nz=best.ux;const pos=[best.px+nx*(h-1.5),1.6,best.pz+nz*(h-1.5)];const look=[best.px+best.ux*60,9,best.pz+best.uz*60];app.teleportTo(pos[0],pos[2],0);app.cameraSystem.cinema=()=>({pos,look,fov:62});return s;})()"
+ },
+ {
+  "name": "fog-morning-skyline",
+  "camera": "skyline",
+  "wait": 10000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T09:00:00-04:00\",\"Fog\");window.__CITY_APP.cameraSystem.cinema=null;return s;})()"
+ },
+ {
+  "name": "fog-morning-street",
+  "mode": "person",
+  "wait": 8000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T09:00:00-04:00\",\"Fog\");const app=window.__CITY_APP,C=window.CITY;const a=C.worldFromLatLon(43.6476,-79.3871);let best=null,bd=1e9;for(const r of C.ROADS){if(!r.name)continue;for(let i=0;i+1<r.pts.length;i++){const p=r.pts[i],q=r.pts[i+1];const dx=q.x-p.x,dz=q.z-p.z,L2=dx*dx+dz*dz||1,L=Math.sqrt(L2);const t=Math.max(0,Math.min(1,((a.x-p.x)*dx+(a.z-p.z)*dz)/L2));const px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(a.x-px,a.z-pz);if(d<bd){bd=d;best={r,px,pz,ux:dx/L,uz:dz/L};}}}const h=best.r.w/2,nx=-best.uz,nz=best.ux;const pos=[best.px+nx*(h-1.5),1.6,best.pz+nz*(h-1.5)];const look=[best.px+best.ux*60,9,best.pz+best.uz*60];app.teleportTo(pos[0],pos[2],0);app.cameraSystem.cinema=()=>({pos,look,fov:62});return s;})()"
+ },
+ {
+  "name": "rain-afternoon-skyline",
+  "camera": "skyline",
+  "wait": 10000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T14:00:00-04:00\",\"Rain\");window.__CITY_APP.cameraSystem.cinema=null;return s;})()"
+ },
+ {
+  "name": "rain-afternoon-street",
+  "mode": "person",
+  "wait": 8000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T14:00:00-04:00\",\"Rain\");const app=window.__CITY_APP,C=window.CITY;const a=C.worldFromLatLon(43.6476,-79.3871);let best=null,bd=1e9;for(const r of C.ROADS){if(!r.name)continue;for(let i=0;i+1<r.pts.length;i++){const p=r.pts[i],q=r.pts[i+1];const dx=q.x-p.x,dz=q.z-p.z,L2=dx*dx+dz*dz||1,L=Math.sqrt(L2);const t=Math.max(0,Math.min(1,((a.x-p.x)*dx+(a.z-p.z)*dz)/L2));const px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(a.x-px,a.z-pz);if(d<bd){bd=d;best={r,px,pz,ux:dx/L,uz:dz/L};}}}const h=best.r.w/2,nx=-best.uz,nz=best.ux;const pos=[best.px+nx*(h-1.5),1.6,best.pz+nz*(h-1.5)];const look=[best.px+best.ux*60,9,best.pz+best.uz*60];app.teleportTo(pos[0],pos[2],0);app.cameraSystem.cinema=()=>({pos,look,fov:62});return s;})()"
+ },
+ {
+  "name": "snow-midday-skyline",
+  "camera": "skyline",
+  "wait": 10000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-12-15T12:30:00-05:00\",\"Light Snow\");window.__CITY_APP.cameraSystem.cinema=null;return s;})()"
+ },
+ {
+  "name": "snow-midday-street",
+  "mode": "person",
+  "wait": 8000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-12-15T12:30:00-05:00\",\"Light Snow\");const app=window.__CITY_APP,C=window.CITY;const a=C.worldFromLatLon(43.6476,-79.3871);let best=null,bd=1e9;for(const r of C.ROADS){if(!r.name)continue;for(let i=0;i+1<r.pts.length;i++){const p=r.pts[i],q=r.pts[i+1];const dx=q.x-p.x,dz=q.z-p.z,L2=dx*dx+dz*dz||1,L=Math.sqrt(L2);const t=Math.max(0,Math.min(1,((a.x-p.x)*dx+(a.z-p.z)*dz)/L2));const px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(a.x-px,a.z-pz);if(d<bd){bd=d;best={r,px,pz,ux:dx/L,uz:dz/L};}}}const h=best.r.w/2,nx=-best.uz,nz=best.ux;const pos=[best.px+nx*(h-1.5),1.6,best.pz+nz*(h-1.5)];const look=[best.px+best.ux*60,9,best.pz+best.uz*60];app.teleportTo(pos[0],pos[2],0);app.cameraSystem.cinema=()=>({pos,look,fov:62});return s;})()"
+ },
+ {
+  "name": "dusk-clear-skyline",
+  "camera": "skyline",
+  "wait": 10000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T18:10:00-04:00\",\"Mainly Clear\");window.__CITY_APP.cameraSystem.cinema=null;return s;})()"
+ },
+ {
+  "name": "dusk-clear-street",
+  "mode": "person",
+  "wait": 8000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T18:10:00-04:00\",\"Mainly Clear\");const app=window.__CITY_APP,C=window.CITY;const a=C.worldFromLatLon(43.6476,-79.3871);let best=null,bd=1e9;for(const r of C.ROADS){if(!r.name)continue;for(let i=0;i+1<r.pts.length;i++){const p=r.pts[i],q=r.pts[i+1];const dx=q.x-p.x,dz=q.z-p.z,L2=dx*dx+dz*dz||1,L=Math.sqrt(L2);const t=Math.max(0,Math.min(1,((a.x-p.x)*dx+(a.z-p.z)*dz)/L2));const px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(a.x-px,a.z-pz);if(d<bd){bd=d;best={r,px,pz,ux:dx/L,uz:dz/L};}}}const h=best.r.w/2,nx=-best.uz,nz=best.ux;const pos=[best.px+nx*(h-1.5),1.6,best.pz+nz*(h-1.5)];const look=[best.px+best.ux*60,9,best.pz+best.uz*60];app.teleportTo(pos[0],pos[2],0);app.cameraSystem.cinema=()=>({pos,look,fov:62});return s;})()"
+ },
+ {
+  "name": "night-clear-skyline",
+  "camera": "skyline",
+  "wait": 10000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T22:00:00-04:00\",\"Clear\");window.__CITY_APP.cameraSystem.cinema=null;return s;})()"
+ },
+ {
+  "name": "night-clear-street",
+  "mode": "person",
+  "wait": 8000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const s=window.__CITY_APP.liveSky.inject(\"2026-10-31T22:00:00-04:00\",\"Clear\");const app=window.__CITY_APP,C=window.CITY;const a=C.worldFromLatLon(43.6476,-79.3871);let best=null,bd=1e9;for(const r of C.ROADS){if(!r.name)continue;for(let i=0;i+1<r.pts.length;i++){const p=r.pts[i],q=r.pts[i+1];const dx=q.x-p.x,dz=q.z-p.z,L2=dx*dx+dz*dz||1,L=Math.sqrt(L2);const t=Math.max(0,Math.min(1,((a.x-p.x)*dx+(a.z-p.z)*dz)/L2));const px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(a.x-px,a.z-pz);if(d<bd){bd=d;best={r,px,pz,ux:dx/L,uz:dz/L};}}}const h=best.r.w/2,nx=-best.uz,nz=best.ux;const pos=[best.px+nx*(h-1.5),1.6,best.pz+nz*(h-1.5)];const look=[best.px+best.ux*60,9,best.pz+best.uz*60];app.teleportTo(pos[0],pos[2],0);app.cameraSystem.cinema=()=>({pos,look,fov:62});return s;})()"
+ },
+ {
+  "name": "zz-ui-preset-golden",
+  "mode": "person",
+  "wait": 2500,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;const a=C.worldFromLatLon(43.6476,-79.3871);let best=null,bd=1e9;for(const r of C.ROADS){if(!r.name)continue;for(let i=0;i+1<r.pts.length;i++){const p=r.pts[i],q=r.pts[i+1];const dx=q.x-p.x,dz=q.z-p.z,L2=dx*dx+dz*dz||1,L=Math.sqrt(L2);const t=Math.max(0,Math.min(1,((a.x-p.x)*dx+(a.z-p.z)*dz)/L2));const px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(a.x-px,a.z-pz);if(d<bd){bd=d;best={r,px,pz,ux:dx/L,uz:dz/L};}}}const h=best.r.w/2,nx=-best.uz,nz=best.ux;const pos=[best.px+nx*(h-1.5),1.6,best.pz+nz*(h-1.5)];const look=[best.px+best.ux*60,9,best.pz+best.uz*60];app.teleportTo(pos[0],pos[2],0);app.cameraSystem.cinema=()=>({pos,look,fov:62});document.getElementById('time-golden').click();return window.__CITY_APP.liveSky.state();})()"
+ }
+]

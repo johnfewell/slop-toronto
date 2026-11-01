@@ -10,16 +10,17 @@ const SIZE = 1000;
 const FILE = Uint8Array.from({ length: SIZE }, (_, i) => i % 251);
 const ETAG = '"abc123"';
 const seen = [];
-// like the binding: 200 with the whole file (no body for HEAD), its _headers, 404 off the list
+// like the binding: 200 with the whole file, its _headers, 404 off the list. A HEAD gets no body and, like the real
+// binding (sloptoronto.ca and wrangler dev, 2026-10-31), no Content-Length either.
+const assetHeaders = { 'content-type': 'video/mp4', etag: ETAG, 'cache-control': 'no-cache', 'x-content-type-options': 'nosniff' };
 const env = {
   ASSETS: {
     fetch(req) {
       seen.push(req);
       const { pathname } = new URL(req.url);
       if (!pathname.endsWith('/cinesphere.mp4')) return new Response(null, { status: 404 });
-      return new Response(req.method === 'HEAD' ? null : FILE, {
-        headers: { 'content-type': 'video/mp4', 'content-length': String(SIZE), etag: ETAG, 'cache-control': 'no-cache', 'x-content-type-options': 'nosniff' }
-      });
+      if (req.method === 'HEAD') return new Response(null, { headers: assetHeaders });
+      return new Response(FILE, { headers: { ...assetHeaders, 'content-length': String(SIZE) } });
     }
   }
 };
@@ -87,11 +88,61 @@ test('ignored ranges, a stale If-Range and multi-range requests get the whole fi
 });
 
 test('HEAD with a range gets the 206 headers and no body', async () => {
-  const res = await get(CLIP, { range: 'bytes=10-19' }, 'HEAD');
+  for (const [range, start, end] of [['bytes=10-19', 10, 19], ['bytes=0-1023', 0, SIZE - 1], ['bytes=-10', 990, 999], ['bytes=500-', 500, 999]]) {
+    const res = await get(CLIP, { range }, 'HEAD');
+    assert.equal(res.status, 206, range);
+    assert.equal(res.headers.get('content-range'), `bytes ${start}-${end}/${SIZE}`, range);
+    assert.equal(res.headers.get('content-length'), String(end - start + 1), range);
+    assert.equal(res.headers.get('accept-ranges'), 'bytes');
+    assert.equal(res.headers.get('content-type'), 'video/mp4');
+    assert.equal(res.body, null);
+  }
+});
+
+test('a HEAD without Content-Length is measured with a GET that carries no range (regression: 416 bytes */0)', async () => {
+  seen.length = 0;
+  const res = await get(CLIP, { range: 'bytes=0-1023', 'if-range': ETAG }, 'HEAD');
   assert.equal(res.status, 206);
-  assert.equal(res.headers.get('content-range'), `bytes 10-19/${SIZE}`);
-  assert.equal(res.headers.get('content-length'), '10');
+  assert.notEqual(res.headers.get('content-range'), 'bytes */0');
+  assert.deepEqual(seen.map((r) => r.method), ['HEAD', 'GET']);
+  assert.equal(seen[1].headers.get('range'), null);
+  assert.equal(seen[1].headers.get('if-range'), null);
+});
+
+test('a HEAD with an unsatisfiable range is 416 with the real size, never */0', async () => {
+  for (const range of ['bytes=1000-', 'bytes=5000-6000', 'bytes=-0']) {
+    const res = await get(CLIP, { range }, 'HEAD');
+    assert.equal(res.status, 416, range);
+    assert.equal(res.headers.get('content-range'), `bytes */${SIZE}`, range);
+  }
+});
+
+test('a plain HEAD is 200 with Accept-Ranges and costs no extra GET', async () => {
+  seen.length = 0;
+  const res = await get(CLIP, {}, 'HEAD');
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('accept-ranges'), 'bytes');
   assert.equal(res.body, null);
+  assert.deepEqual(seen.map((r) => r.method), ['HEAD']);
+});
+
+test('a HEAD that declares its Content-Length uses it without a GET', async () => {
+  const calls = [];
+  const declaring = { ASSETS: { fetch(req) { calls.push(req.method); return new Response(null, { headers: { ...assetHeaders, 'content-length': '5000' } }); } } };
+  const res = await worker.fetch(new Request(CLIP, { method: 'HEAD', headers: { range: 'bytes=4000-' } }), declaring, { waitUntil() {} });
+  assert.equal(res.status, 206);
+  assert.equal(res.headers.get('content-range'), 'bytes 4000-4999/5000');
+  assert.deepEqual(calls, ['HEAD']);
+});
+
+test('a HEAD whose size cannot be measured is 200 without a range, not 416', async () => {
+  for (const [label, getAnswer] of [['GET 500', () => new Response('oops', { status: 500 })], ['GET 404', () => new Response(null, { status: 404 })]]) {
+    const failing = { ASSETS: { fetch: (req) => (req.method === 'HEAD' ? new Response(null, { headers: { ...assetHeaders, 'content-length': '' } }) : getAnswer()) } };
+    const res = await worker.fetch(new Request(CLIP, { method: 'HEAD', headers: { range: 'bytes=0-9' } }), failing, { waitUntil() {} });
+    assert.equal(res.status, 200, label);
+    assert.equal(res.headers.get('accept-ranges'), 'bytes', label);
+    assert.equal(res.headers.get('content-range'), null, label);
+  }
 });
 
 test('missing clips and partial answers from the binding pass through untouched', async () => {

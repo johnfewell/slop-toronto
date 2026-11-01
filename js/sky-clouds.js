@@ -43,6 +43,8 @@ const ATMO_HAZE = numParam('atmoHaze', 20);
 const ATMO_CITY_FOG = { golden: numParam('atmoFog', 0), midday: numParam('atmoFog', 0), twilight: numParam('atmoFog', 0.35), midnight: numParam('atmoNightFog', 0.5) };
 // The city's night-sky gradient (its sky colours) under the physical night sky: light pollution over the city
 const ATMO_NIGHT_GLOW = { golden: 0, midday: 0, twilight: 0, midnight: 1 };
+// The presets' sky (and the live sky's when there is no reading): the library's fair-weather cumulus
+const DEFAULT_CLOUD_TYPE = 'fairWeatherCumulus';
 
 // Called right after renderer.init(), before anything renders or builds (the contexts must be on the renderer first);
 // attach() hands it the camera & the lighting once they exist. (load: the library module, a test's stand-in)
@@ -95,7 +97,7 @@ async function setupClouds(renderer, { load = () => import('./clouds.js') } = {}
     ctx.resolutionScale = Q.cloudScale;
     // Keep the physical atmosphere's accurate sun/sky lighting across quality tiers.
     ctx.clouds.accurateSunSkyLight = true;
-    Clouds.applyCloudTypePreset(ctx, 'fairWeatherCumulus');
+    Clouds.applyCloudTypePreset(ctx, DEFAULT_CLOUD_TYPE);
     // The sky lives: cells grow & dissipate on a swirling wind (the library's evolvingWeather), on a clock running
     // CLOUD_CLOCK times real time so a few minutes' ride sees it change (a cell's life: 600 s of cloud time). The whole
     // sky still drifts with the local weather's velocity. ?cloudSpeed=<n> sets the clock, 0 holds the sky still.
@@ -143,9 +145,12 @@ async function setupClouds(renderer, { load = () => import('./clouds.js') } = {}
 
   let frame = 0;
   let camera = null, lightingSystem = null;
+  const weatherState = { type: DEFAULT_CLOUD_TYPE, coverage: null };
   // ?atmosphere=1 state, made in attach()
   // (the glow per time of day, the camera per frame: renderGroup uniforms, uploaded once per render)
   const nightGlow = TSL.uniform(0).setGroup(TSL.renderGroup);
+  const glowTop = TSL.uniform(new THREE.Color()).setGroup(TSL.renderGroup);
+  const glowHorizon = TSL.uniform(new THREE.Color()).setGroup(TSL.renderGroup);
   let starsNode = null;
   let skyGlow = null;
   const camProjInv = TSL.uniform(new THREE.Matrix4()).setGroup(TSL.renderGroup);
@@ -167,15 +172,28 @@ async function setupClouds(renderer, { load = () => import('./clouds.js') } = {}
       const bake = lighting.bakeEnvironmentMap.bind(lighting);
       lighting.bakeEnvironmentMap = () => { bake(); lighting.scene.remove(sky); };
       lighting.scene.remove(sky);
-      const apply = lighting.applyPreset.bind(lighting);
-      lighting.applyPreset = (id, force) => {
-        apply(id, force);
+      const atmo = () => {
         const p = lighting.activePreset;
-        if (lighting.uFogDensity && p) lighting.uFogDensity.value = p.fogDensity * (ATMO_CITY_FOG[p.id] ?? 0);
-        nightGlow.value = (p && ATMO_NIGHT_GLOW[p.id]) || 0;
+        // (the live sky's blend, lighting.js applyLive: each preset's share by its weight; a preset is all one)
+        const w = (p && p.weights) || (p ? { [p.id]: 1 } : {});
+        const share = (table) => Object.keys(w).reduce((sum, id) => sum + (table[id] ?? 0) * w[id], 0);
+        // (a live foggy reading's fog floor is the city's own fog in full, over the physical haze)
+        if (lighting.uFogDensity && p) lighting.uFogDensity.value = Math.max(p.fogDensity * share(ATMO_CITY_FOG), p.weatherFog || 0);
+        nightGlow.value = share(ATMO_NIGHT_GLOW);
+        // (the glow's colours: the preset's sky; the live blend's night colours, not dusk's pink, lighting.js)
+        const top = p && p.glowTop !== undefined ? p.glowTop : cityUniforms.uSkyTopColor?.value;
+        const horizon = p && p.glowHorizon !== undefined ? p.glowHorizon : cityUniforms.uSkyHorizonColor?.value;
+        if (top !== undefined) glowTop.value.set(top);
+        if (horizon !== undefined) glowHorizon.value.set(horizon);
         // the catalogue is drawn under the sky whatever the sun's height: at night only, or it shows through the day
-        if (starsNode) starsNode.intensity.value = p && p.id === 'midnight' ? numParam('atmoStars', 1e7) : 0;
+        // (and hidden behind a live overcast)
+        const cover = p && p.look ? Math.min(1, Math.max(0, (p.look.coverage - 0.5) / 0.35)) : 0;
+        if (starsNode) starsNode.intensity.value = (w.midnight || 0) ** 2 * (1 - cover) * numParam('atmoStars', 1e7);
       };
+      for (const name of ['applyPreset', 'applyLive']) {
+        const apply = lighting[name] && lighting[name].bind(lighting);
+        if (apply) lighting[name] = (...args) => { const r = apply(...args); atmo(); return r; };
+      }
       lighting.applyPreset(lighting.activePresetId, true);
     },
     pass: cloudsPass,
@@ -197,7 +215,10 @@ async function setupClouds(renderer, { load = () => import('./clouds.js') } = {}
       skyNode.starsNode = new Atmosphere.StarsNode('./assets/atmosphere/stars.bin');
       // (takram's 1000 leaves them below the city's night exposure and glow: 1e7 gives a sparse, light-polluted sky)
       starsNode = skyNode.starsNode;
-      starsNode.intensity.value = lightingSystem && lightingSystem.activePresetId === 'midnight' ? numParam('atmoStars', 1e7) : 0;
+      const p = lightingSystem && lightingSystem.activePreset;
+      const w = (p && p.weights) || (p ? { [p.id]: 1 } : {});
+      const cover = p && p.look ? Math.min(1, Math.max(0, (p.look.coverage - 0.5) / 0.35)) : 0;
+      starsNode.intensity.value = (w.midnight || 0) ** 2 * (1 - cover) * numParam('atmoStars', 1e7);
       // The city's night-sky gradient (its preset sky colours) after dark, added over every far-plane pixel once the
       // clouds have composited (composite() below): the stars and the moon sit on the glow of a lit city, the cloud
       // bases take it too, as clouds over a city do, and the skyline keeps a horizon to stand against (under the sky
@@ -208,7 +229,7 @@ async function setupClouds(renderer, { load = () => import('./clouds.js') } = {}
         const dir = camWorld.mul(vec4(v.xyz.div(v.w), 0)).xyz.normalize();
         const h = max(dir.y, 0);
         const far = depthNode.r.lessThanEqual(0).select(1, 0); // (the reversed depth buffer clears to 0)
-        return mix(cityUniforms.uSkyHorizonColor, cityUniforms.uSkyTopColor, pow(h, 0.45)).mul(nightGlow).mul(far);
+        return mix(glowHorizon, glowTop, pow(h, 0.45)).mul(nightGlow).mul(far);
       })();
       skyGlow = glow;
       return node;
@@ -217,6 +238,21 @@ async function setupClouds(renderer, { load = () => import('./clouds.js') } = {}
       const c = cloudsPass ? cloudsPass.composite(colorNode) : colorNode;
       return skyGlow ? TSL.vec4(c.rgb.add(skyGlow), c.a) : c;
     },
+    // The live sky's weather (live-sky.js WEATHER_LOOKS): the cloud type & how much of the sky it covers. The looks use
+    // only the library's single-layer presets (fair-weather cumulus, a stratocumulus deck, an overcast sheet), which
+    // share one graph shape, so a change is uniform writes and a history reset, never a rebuilt march.
+    // { cloud: null } (or no look) puts back the presets' sky.
+    setWeather(look) {
+      const type = (look && look.cloud) || DEFAULT_CLOUD_TYPE;
+      const coverage = look && Number.isFinite(look.coverage) ? look.coverage : null;
+      if (!ctx || (type === weatherState.type && coverage === weatherState.coverage)) return false;
+      Clouds.applyCloudTypePreset(ctx, type); // (the type's own coverage, then the look's)
+      if (coverage !== null) ctx.coverage = coverage;
+      weatherState.type = type; weatherState.coverage = coverage;
+      ctx.resetHistory();
+      return true;
+    },
+    get weather() { return { ...weatherState, coverage: ctx ? ctx.coverage : null }; },
     resetHistory(sampleFrame = null) {
       if (Number.isSafeInteger(sampleFrame) && sampleFrame >= 0) frame = sampleFrame;
       ctx?.resetHistory();

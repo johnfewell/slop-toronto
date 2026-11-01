@@ -393,7 +393,7 @@
   // ------------------------------------------------------------------------------------------- The weather ear
   // The latest observation at Toronto Pearson from Environment and Climate Change Canada's MSC GeoMet (keyless, CORS,
   // Open Government Licence – Canada). Fetched once per load, kept 10 minutes per tab, never polled. Any failure, or a
-  // reading older than three hours, leaves every weather line hidden. The app's sky is art and never shows this.
+  // reading older than three hours, leaves every weather line hidden.
   const WEATHER = 'https://api.weather.gc.ca/collections/citypageweather-realtime/items?f=json&lang=en&identifier=on-143&limit=1';
   const WEATHER_KEY = 'slop-toronto:weather';
   async function reading() {
@@ -442,12 +442,16 @@
     if (row) {
       $('[data-weather-temp]', row).textContent = deg;
       $('[data-weather-what]', row).textContent =
-        `at Pearson as of ${at}${sky ? `, ${sky}` : ''}. Not part of the build, and not modelled: the app's sky does its own thing.`;
+        `at Pearson as of ${at}${sky ? `, ${sky}` : ''}. The city in the app is under the same sky.`;
       row.hidden = false;
     }
     const aside = $('[data-weather-aside]');
     if (aside) {
-      aside.textContent = ` Pearson says ${deg}${sky ? ` and ${sky}` : ''} right now; the app opens at golden hour regardless.`;
+      // (" Pearson says 8 °C and mostly cloudy right now: see it in the app.")
+      const link = document.createElement('a');
+      link.href = './explore.html';
+      link.textContent = 'see it in the app';
+      aside.replaceChildren(` Pearson says ${deg}${sky ? ` and ${sky}` : ''} right now: `, link, '.');
       aside.hidden = false;
     }
   });

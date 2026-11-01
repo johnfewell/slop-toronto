@@ -39,6 +39,11 @@ const { CityMapSystem } = window.CITY;
 const { setupSceneCulling, updateSceneCulling } = window.CITY;
 
 async function initApp() {
+  // Live sky (live-sky.js, docs/live-sky.md): the mode the city opens in, and Pearson's latest reading, asked for now so
+  // it arrives while the city builds (never waited on: 4 s at most, and the sky starts without it)
+  const LIVE = window.CITY.LIVE_SKY;
+  const liveStart = LIVE.resolveStartup({ search: location.search, webdriver: navigator.webdriver === true });
+  const liveReading = liveStart.mode === 'live' && !liveStart.capture ? LIVE.fetchReading() : Promise.resolve(null);
   const container = document.getElementById('canvas-container');
   const loadingOverlay = document.getElementById('loading-overlay');
   const loadingStatus = document.getElementById('loading-status');
@@ -432,6 +437,8 @@ async function initApp() {
     bloom: QUALITY.bloom
   });
   const { bloomPass } = colorGrade;
+  // the live sky's rain & snow (precipitation.js): nothing is built until a reading calls for it
+  const precipitation = window.CITY.createPrecipitation(scene, { quality: QUALITY });
   // FXAA instead of MSAA (the low tier): it smooths the tone-mapped sRGB image, so the pipeline's own output transform
   // moves ahead of it
   const renderPipeline = new THREE.RenderPipeline(
@@ -623,21 +630,109 @@ async function initApp() {
     selectCamera(CAMERA_PRESETS[(idx + step + n) % n].id, true);
   }
 
+  // timeId: a preset (golden, midday, twilight, midnight: a manual override) or 'live', Toronto's time & weather now
   function selectTime(timeId) {
+    liveSky.active = timeId === 'live';
     applyVisualTime(timeId);
     if (rideSession.held) return;
-    if (trafficSystem.setHour && window.CITY.SUN_HOURS[timeId] !== undefined) trafficSystem.setHour(window.CITY.SUN_HOURS[timeId]); // (the City's volumes at that hour)
-    if (window.CITY.TRANSIT) window.CITY.TRANSIT.setTime(timeId); // the TTC's headways for that hour (transit.js)
+    const hour = liveSky.active ? LIVE.torontoClock(liveNow()).hour : window.CITY.SUN_HOURS[timeId];
+    if (trafficSystem.setHour && hour !== undefined) trafficSystem.setHour(hour); // (the City's volumes at that hour)
+    liveSky.hour = liveSky.active ? hour : null;
+    // the TTC's headways for that hour (transit.js; live: the preset nearest the light)
+    if (window.CITY.TRANSIT) window.CITY.TRANSIT.setTime(lightingSystem.activePresetId);
   }
   // The same visual seam serves photo overrides now and continuous environment state later.
   function applyVisualTime(timeId) {
-    const apply = () => { lightingSystem.applyPreset(timeId); colorGrade.applyPreset(lightingSystem.activePresetId); };
+    const apply = () => {
+      if (timeId === 'live') {
+        const w = liveWeather();
+        liveSky.weather = w;
+        const p = lightingSystem.applyLive(liveNow(), w.look);
+        // (the grey day's exposure lift is a daytime camera's: none at night)
+        colorGrade.applyPreset(p.id, p.weights, w.look.saturation, 1 + ((w.look.exposure ?? 1) - 1) * (1 - p.weights.midnight));
+        skyClouds?.setWeather(w.look);
+        precipitation.set(w.look, Math.min(1, Math.max(0.15, p.hemiIntensity * 0.55)));
+      } else {
+        lightingSystem.applyPreset(timeId); colorGrade.applyPreset(lightingSystem.activePresetId);
+        skyClouds?.setWeather(null);
+        precipitation.set(null);
+      }
+    };
     if (shaderTimeHold) shaderTimeHold.render(apply, { hold: rideSession.held });
     else apply();
     timeButtons.forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-time') === timeId);
     });
+    renderLiveButton(timeId === 'live');
+    // (on a phone the time buttons scroll inside the toolbar: keep the chosen one in view)
+    const chosen = timeId === 'live' ? liveBtn : document.getElementById(`time-${timeId}`);
+    if (chosen && chosen.parentElement.scrollWidth > chosen.parentElement.clientWidth) chosen.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
   }
+
+  // ---- Live sky ------------------------------------------------------------------------------------------------------
+  // On by default (live-sky.js resolveStartup: ?time=<preset> and every automated capture open on a preset instead).
+  // The sun follows the real clock: re-placed every minute while live (and on reopen), the reading re-asked every 30
+  // minutes (ECCC observes hourly). A capture fixture (?liveClock=, ?liveWeather=, or liveSky.inject) holds both still.
+  const liveSky = { active: false, start: { ...liveStart }, reading: null, readingAt: 0, weather: LIVE.weatherFor(null), hour: null };
+  const liveNow = () => (liveSky.start.fixedClock ? new Date(liveSky.start.fixedClock.getTime()) : new Date());
+  function liveWeather() {
+    if (liveSky.start.fixedCondition != null) {
+      const { key, look } = LIVE.weatherFromCondition(liveSky.start.fixedCondition);
+      return { key, look, reading: { condition: liveSky.start.fixedCondition }, stale: false };
+    }
+    return LIVE.weatherFor(liveSky.reading, Date.now());
+  }
+  const liveBtn = document.getElementById('time-live');
+  const liveLabel = liveBtn && liveBtn.querySelector('.seg-label');
+  function liveSummary() {
+    const clock = LIVE.torontoClock(liveNow()).label;
+    const w = liveSky.weather;
+    const sky = w.reading && w.key ? w.reading.condition.toLowerCase() : '';
+    return { clock, sky };
+  }
+  function renderLiveButton(active) {
+    if (!liveBtn) return;
+    liveBtn.classList.toggle('active', active);
+    liveBtn.setAttribute('aria-pressed', String(active));
+    const { clock, sky } = liveSummary();
+    if (liveLabel) liveLabel.textContent = active ? `Live · ${clock}` : 'Live';
+    liveBtn.title = active
+      ? `Live: Toronto at ${clock}${sky ? `, ${sky} at Pearson (Environment and Climate Change Canada)` : ''}`
+      : 'Back to live: Toronto\'s time of day and weather right now';
+  }
+  const elToast = document.getElementById('toast');
+  let toastTimer = 0;
+  function toast(text, ms = 2800) {
+    if (!elToast) return;
+    elToast.textContent = text;
+    elToast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => elToast.classList.remove('show'), ms);
+  }
+  function liveTick() {
+    if (!liveSky.active || rideSession.held || window.__CITY_APP?.film?.active || document.hidden) return;
+    if (liveSky.start.fixedClock) return; // (a capture fixture holds still)
+    if (!liveSky.start.capture && Date.now() - liveSky.readingAt > 30 * 60 * 1000) refreshReading();
+    const before = lightingSystem.activePresetId;
+    applyVisualTime('live');
+    const hour = LIVE.torontoClock(liveNow()).hour;
+    if (trafficSystem.setHour && (liveSky.hour === null || Math.abs(hour - liveSky.hour) >= 0.25)) { trafficSystem.setHour(hour); liveSky.hour = hour; }
+    if (window.CITY.TRANSIT && lightingSystem.activePresetId !== before) window.CITY.TRANSIT.setTime(lightingSystem.activePresetId);
+  }
+  function refreshReading() {
+    liveSky.readingAt = Date.now();
+    LIVE.fetchReading().then((r) => {
+      if (r) liveSky.reading = r;
+      if (liveSky.active && !rideSession.held && !liveSky.start.fixedClock) applyVisualTime('live');
+    });
+  }
+  setInterval(liveTick, 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) liveTick(); });
+  liveReading.then((r) => {
+    liveSky.reading = r;
+    liveSky.readingAt = Date.now();
+    if (liveSky.active && !rideSession.held && !liveSky.start.fixedClock) applyVisualTime('live');
+  });
 
   // Popovers (native [popover]: light dismiss & Esc for free) open against the control that toggles them: data-anchor
   // names the element they sit above / below, data-align the one whose right edge they line up with
@@ -697,8 +792,16 @@ async function initApp() {
 
   timeButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
+      const wasLive = liveSky.active;
       selectTime(btn.getAttribute('data-time'));
+      if (wasLive) toast(`${btn.title}: a fixed sky. Live brings back Toronto's sky now`);
     });
+  });
+  if (liveBtn) liveBtn.addEventListener('click', () => {
+    if (liveSky.active) return;
+    selectTime('live');
+    const { clock, sky } = liveSummary();
+    toast(`Live: ${clock} in Toronto${sky ? `, ${sky}` : ''}`);
   });
 
   // A mouse click mustn't leave the focus on a HUD button, or Space (jump / ascend) and Enter would press it again
@@ -815,10 +918,10 @@ async function initApp() {
   }
   function openUiOverlay(id, options = {}) {
     if (!window.__CITY_APP?.ready || window.__CITY_APP.film?.active || document.hidden) return false;
-    const originalTime = lightingSystem.activePresetId;
+    const originalTime = liveSky.active ? 'live' : lightingSystem.activePresetId;
     const originalCloudPhase = skyClouds?.context?.time;
     const lease = rideSession.openOverlay(id, { ...options, onClose: (result) => {
-      if (options.hold && lightingSystem.activePresetId !== originalTime) applyVisualTime(originalTime);
+      if (options.hold && (originalTime === 'live' || lightingSystem.activePresetId !== originalTime)) applyVisualTime(originalTime);
       if (options.hold && Number.isFinite(originalCloudPhase) && skyClouds?.context) skyClouds.context.time = originalCloudPhase;
       options.onClose?.(result);
     } });
@@ -1001,7 +1104,9 @@ async function initApp() {
   selectMode(restoredPlayer ? controllerManager.activeMode : 'cyclist');
   if (!restoredPlayer && startAt) controllerManager.teleportActiveTo(startAt.x, startAt.z, startAt.heading);
   selectCamera('chase', true);
-  selectTime('golden');
+  // Live by default: Toronto's time & weather (?time=<preset> and automated captures open on a preset, live-sky.js)
+  selectTime(liveStart.mode === 'live' ? 'live' : liveStart.preset);
+  if (liveStart.mode === 'live') console.info(`[live-sky] ${liveStart.reason}: ${LIVE.torontoClock(liveNow()).label} in Toronto, sun ${lightingSystem.live.elevation.toFixed(1)}° up`);
   // the web fonts change the buttons' widths once they arrive
   if (document.fonts) document.fonts.ready.then(placeModeIndicator);
   markInit('ui');
@@ -1342,6 +1447,7 @@ async function initApp() {
     }
     lakeWater.update(elapsed);
     if (skyClouds) skyClouds.update(holding ? 0 : dt);
+    precipitation.update(subwayRide.inside || (rideSession.active && cameraSystem.activePresetId === 'pov'));
     if (!holding) {
       mapSystem.update(); tourGuide.update(dt, elapsed); renderCarCondition(); cityAudio.update(dt, elapsed);
     }
@@ -1565,6 +1671,29 @@ async function initApp() {
     if (Number.isFinite(environment.cloudPhase) && skyClouds?.context) skyClouds.context.time = environment.cloudPhase;
     skyClouds?.resetHistory();
     return true;
+  };
+  // The live sky's state, and (automated captures & tests only: navigator.webdriver) a fixed fake clock & condition:
+  // liveSky.inject('2026-10-31T12:00:00-04:00', 'Sunny') turns live on at that instant under that sky, frozen there.
+  // Outside automation inject() refuses, so a page script can't fake the real sky.
+  window.__CITY_APP.liveSky = {
+    state() {
+      const L = lightingSystem.live, w = liveSky.weather, p = lightingSystem.activePreset;
+      return { active: liveSky.active, mode: liveSky.start.mode, reason: liveSky.start.reason, capture: liveSky.start.capture,
+        clock: LIVE.torontoClock(liveNow()).label, fixedClock: liveSky.start.fixedClock ? liveSky.start.fixedClock.toISOString() : null,
+        elevation: L ? +L.elevation.toFixed(2) : null, azimuth: L ? +L.azimuth.toFixed(2) : null, presetId: lightingSystem.activePresetId,
+        weights: p && p.weights ? p.weights : null, weather: w.key, condition: w.reading ? w.reading.condition : null, stale: w.stale,
+        clouds: skyClouds ? skyClouds.weather : null, precipitation: precipitation.kind, fog: lightingSystem.scene.fog.density,
+        wetness: window.CITY.cityUniforms.uRoadWetness.value };
+    },
+    inject(clock, condition = null) {
+      if (!liveSky.start.capture) return false;
+      const date = new Date(clock);
+      if (!Number.isFinite(date.getTime())) throw new Error(`liveSky.inject: bad clock ${clock}`);
+      liveSky.start.fixedClock = date;
+      liveSky.start.fixedCondition = condition;
+      selectTime('live');
+      return this.state();
+    }
   };
   if (new URLSearchParams(location.search).get('photo') === '1') window.__CITY_APP.photoMode = window.CITY.createPhotoMode(window.__CITY_APP);
 }

@@ -60,11 +60,19 @@ function createPostProcessing(renderer, sceneColor, reflections, options = {}) {
     return vec4(color.mul(vignette), 1.0);
   })();
 
-  function applyPreset(id) {
-    const look = LOOKS[id] || LOOKS.golden;
-    exposure.value = look.exposure;
+  // A preset's look, or (the live sky, lighting.js applyLive) the presets' looks blended by `weights` with the weather's
+  // saturation & exposure on top
+  function applyPreset(id, weights = null, weatherSaturation = 1, weatherExposure = 1) {
+    let look = LOOKS[id] || LOOKS.golden;
+    if (weights) {
+      const ids = Object.keys(LOOKS).filter((k) => weights[k] > 0);
+      const mix = (f) => ids.reduce((sum, k) => sum + f(LOOKS[k]) * weights[k], 0);
+      look = { exposure: mix((l) => l.exposure), contrast: mix((l) => l.contrast), saturation: mix((l) => l.saturation),
+        balance: [0, 1, 2].map((i) => mix((l) => l.balance[i])), bloom: mix((l) => l.bloom), threshold: mix((l) => l.threshold) };
+    }
+    exposure.value = look.exposure * weatherExposure;
     contrast.value = look.contrast;
-    saturation.value = look.saturation;
+    saturation.value = look.saturation * weatherSaturation;
     balance.value.set(...look.balance);
     if (bloomPass) {
       bloomPass.strength.value = look.bloom;
