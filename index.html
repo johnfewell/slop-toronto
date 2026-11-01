@@ -25,7 +25,8 @@
   <meta name="twitter:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <!-- /social -->
   <meta name="theme-color" content="#e9e6dc" />
-  <link rel="icon" href="./assets/logo-mark.svg" type="image/svg+xml" />
+  <link rel="icon" href="./assets/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="./assets/favicon-16.png" type="image/png" sizes="16x16" />
   <link rel="apple-touch-icon" href="./assets/icon-180.png" />
   <link rel="manifest" href="./assets/manifest.webmanifest" />
   <!-- Archivo, self-hosted (SIL OFL 1.1, assets/fonts/OFL-Archivo.txt): the page makes no font requests to third parties -->
@@ -54,7 +55,10 @@
       <span class="ln" data-issue>Free · Every week</span>
       <span class="ln"><span class="nb" data-date>Toronto</span> <span class="nb" data-light>on Lake Ontario</span></span>
     </p>
-    <a class="mast-name" href="./index.html" aria-label="Slop Toronto, home"><span class="mast-box">Slop</span> Toronto</a>
+    <!-- the crest (John's brand logo) stands beside the name, its cut tower shaft on the masthead's heavy rule, from
+         1024 px up; narrower widths drop it rather than crowd the ears, and the <picture> keeps them from fetching it
+         (the fallback src is a blank pixel) -->
+    <a class="mast-name" href="./index.html" aria-label="Slop Toronto, home"><picture class="mast-crest"><source media="(min-width: 1024px)" srcset="./assets/brand/slop-toronto-logo-crest.webp 1x, ./assets/brand/slop-toronto-logo-crest@2x.webp 2x" /><img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" width="37" height="128" fetchpriority="high" loading="eager" /></picture><span class="mast-word"><span class="mast-box">Slop</span> Toronto</span></a>
     <div class="mast-right">
       <p class="mast-weather" data-weather><span class="ln">Outside, at Pearson</span><span class="ln" data-weather-text>&nbsp;</span></p>
     </div>
@@ -289,6 +293,7 @@
       <p>Slop Toronto runs in your browser and needs WebGPU: a recent Chrome or Edge on a laptop or desktop works best.</p>
       <a class="go-big" href="./explore.html">Explore Toronto <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a>
       <p id="webgpu-note" class="webgpu-note" data-webgpu-note hidden>Your browser doesn't seem to support WebGPU yet. Try the latest Chrome or Edge.</p>
+      <img class="back-seal" src="./assets/brand/slop-toronto-logo-seal.webp" srcset="./assets/brand/slop-toronto-logo-seal.webp 1x, ./assets/brand/slop-toronto-logo-seal@2x.webp 2x" alt="The Slop Toronto logo: a tipped yellow paint can marked ST pours green slime over the CN Tower" width="123" height="420" loading="lazy" decoding="async" />
     </section>
   </main>
 

@@ -7,8 +7,11 @@
 //   GPU2_LOCK_WAIT=60 gpu2 slop-toronto-home-clips -- env FILM_SHOTS=tools/shots/home-clips.json FILM_SIZE=1600x900 \
 //     FILM_FPS=30 node tools/render-film.mjs
 //   tools/encode-home-clips.sh <the rendered mp4> assets/site/clips 30 1.5 1600x900 <mp4 crf> <webm crf> cover-golden:11.5 ...
-// (the covers are 11.5 s shots: a 10 s loop plus a 1.5 s cross-fade; the listing shots are 7 s). The CRFs used for the
-// clips delivered on 2026-10-31 were not recorded with them.
+// (the covers are 11.5 s shots: a 10 s loop plus a 1.5 s cross-fade; the listing shots are 7 s). The MP4 CRFs of the
+// 2026-10-31 clips, read back from x264's settings in each file (strings <clip>.mp4 | grep -o 'crf=[0-9.]*'): covers
+// golden & midday 29, sunset 31, night 32; waterfront-ride 31, streetcar-504 30, the other listings 27. Their WebM CRFs
+// weren't recorded; cover-sunset & cover-night, re-rendered that night for the lit CN Tower (st-yir3), used 53 (START=0
+// cover-sunset:11.5 and START=11.5 cover-night:11.5 from a two-shot render), which matched the earlier files' sizes.
 import fs from 'node:fs';
 
 const fn = (f) => {

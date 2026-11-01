@@ -439,14 +439,29 @@ function buildLandmarks(scene) {
       [0, 0], [32, 0], [28, 20], [12, 300], [11, 330], [24, 338], [26, 346], [24, 352], [14, 360], [9, 368],
       [8, 440], [11, 444], [11, 452], [6, 456], [3, 470], [2, 520], [0.6, 553], [0, 553]
     ];
+    // At night (ramping in with the city's windows, the gate pbr-water.js's reflection of the tower uses): the shaft
+    // washed cool white by its LEDs from below, the main pod's and SkyPod's glass glowing warm & the red aviation
+    // beacons up the mast, in the reflection's colours & heights. Emissive only: no lights, no passes.
+    const { cityUniforms } = window.CITY;
+    const cnH = positionWorld.y.sub(SW_Y);
+    const cnNight = smoothstep(0.55, 1.35, cityUniforms.uInteriorGlow);
+    const CN_GLOW = {
+      wash: color(0xdde6ff).mul(mix(float(0.36), float(0.1), smoothstep(10.0, 330.0, cnH))).mul(cnNight),
+      glass: color(0xffd2a0).mul(mix(float(1.4), float(1.6), step(cnH, 400.0))).mul(cnNight), // SkyPod 1.4, main pod 1.6
+      beacon: color(0xff2a14).mul(mix(float(0.35), float(5.0), step(470.0, cnH))).mul(cnNight) // (below: the pod's red band)
+    };
     const towerMat = new THREE.MeshStandardNodeMaterial({ color: 0xd9d4ca, roughness: 0.78 });
+    // (the lathe's tip stands in for the beacons)
+    towerMat.emissiveNode = mix(CN_GLOW.wash, color(0xff2a14).mul(5.0).mul(cnNight), step(546.0, cnH));
+    const standGlass = glassDark.clone();
+    standGlass.emissiveNode = CN_GLOW.glass;
     const shaft = new THREE.Mesh(new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), 48), towerMat);
     shaft.position.set(s.x, SW_Y, s.z);
     shaft.castShadow = true;
     group.add(shaft);
     // the main pod's windows and the SkyPod's, dark glass bands
     const band = (r0, r1, y0, h) => {
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, h, 48, 1, true), glassDark);
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, h, 48, 1, true), standGlass);
       m.position.set(s.x, SW_Y + y0 + h / 2, s.z);
       group.add(m);
       return m;
@@ -460,10 +475,25 @@ function buildLandmarks(scene) {
         const tower = gltf.scene;
         tower.name = 'Landmark_cnTower';
         tower.position.set(s.x, SW_Y, s.z);
+        // its night lighting by material (tools/blender/export_cn_tower.py): 'Glass' is the main pod's (326-352 m) and
+        // SkyPod's (440-444 m) windows, 'Material.008' the red lamps (beacons on the mast above 470 m); the rest
+        // ('base', 'Base_dark', 'Striations', 'base_lightest') is the concrete & steel the LEDs wash
+        const nightOf = (name) => (name === 'Glass' ? CN_GLOW.glass : name.startsWith('Material.008') ? CN_GLOW.beacon : CN_GLOW.wash);
+        const lit = new Map();
         tower.traverse((o) => {
           if (o.isMesh) {
             o.castShadow = true;
             o.receiveShadow = true;
+            const m = o.material;
+            if (!lit.has(m)) {
+              const n = new THREE.MeshStandardNodeMaterial({
+                name: m.name, color: m.color, roughness: m.roughness, metalness: m.metalness, side: m.side
+              });
+              n.emissiveNode = nightOf(m.name || '');
+              lit.set(m, n);
+              m.dispose();
+            }
+            o.material = lit.get(m);
           }
         });
         for (const m of stand) group.remove(m);

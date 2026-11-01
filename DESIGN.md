@@ -256,13 +256,19 @@ Printed, blunt and confident: ink blocks with reversed caps, and a hover that in
 ### Sticker
 - Process Yellow, 15px/900 uppercase ink text, rotated -3deg, top-left of the cover. It states provenance ("Screenshot from the app" / "Footage from the app") and is the page's single yellow.
 
+### Logo
+- John's brand logo (`assets/brand/`, made by him with Google Gemini, the one picture on the page that is not the app) comes in two drawings, both flat colour with clean black outlines: the tall logo (a tipped yellow can marked ST pours green slime over the CN Tower, master `slop-toronto-logo.png`) and the square mark (the can and a short pour only, master `slop-toronto-mark.png`). Both masters are transparent and never ship; only their web sizes do.
+- The tall logo's tower shaft is cut flat at the bottom, so it never floats: it always stands on a heavy rule. As the masthead crest (1024px and wider) its cut end sits exactly on the masthead's bottom rule, the tower rising out of it, a little taller than the name with an empty box of the same width balancing it on the right so the name stays centred. Below 1024px it is dropped (it would push "Outside, at Pearson" onto a second line, and on phones the name already fills the width). On the back page it stands at the right of the slab, reaching down so its cut end lands exactly on the colophon's heavy top rule; on phones it stands centred under the button on that same rule.
+- The square mark is the site icon: favicons (32/16, transparent), the apple-touch and web app icons (180/192/512 on newsprint, the 512 maskable-safe) and the 36px brand button and map logo in the app.
+- Neither drawing is ever recoloured, redrawn or cropped, and their green stays inside the logo.
+
 ### Motion
 - One authored moment on load, behind `prefers-reduced-motion: no-preference`: the red masthead box inks in from the left (0.7s), the coverline presses up into view (0.9s), the sticker slaps on (0.5s, from -9deg and 1.25x). Otherwise motion is state only: 0.2s colour changes, a 0.6s fade from poster to footage, a 0.45s cross-fade when a listing takes over the cover. All on `cubic-bezier(0.16, 1, 0.3, 1)`. Clips are muted loops and never autoplay under reduced motion or Save-Data.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** use only pictures and clips captured from the app itself: in-app screenshots and muted in-app loops, captioned "in the app". Never outside renders, stock photography or generated imagery.
+- **Do** use only pictures and clips captured from the app itself: in-app screenshots and muted in-app loops, captioned "in the app". Never outside renders, stock photography or generated imagery. The one exception is the logo (see Logo), which is a brand mark, not a picture of the city.
 - **Do** set heads in Archivo 900 caps at 62-75% width and copy at normal width; get hierarchy from width and size.
 - **Do** divide with Black Ink rules on the 1/2/3/4/6px scale and contain with reversed ink bars or red boxes.
 - **Do** keep Spot Red to boxes and large type; switch to Deep Spot Red for anything smaller than bold 18.66px.

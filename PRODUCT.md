@@ -39,8 +39,8 @@ The city is built from the City of Toronto's own open data and OpenStreetMap at 
 
 ## Brand Commitments
 
-- Name: **Slop Toronto** (part of the Slop New York family). Logo mark: `assets/logo-mark.svg`.
-- **Every image on the page is the app itself.** Pictures are real in-app screenshots, never outside renders, stock photography or generated imagery.
+- Name: **Slop Toronto** (part of the Slop New York family). Logo: `assets/brand/slop-toronto-logo.png` (the tall logo, CN Tower included) and `assets/brand/slop-toronto-mark.png` (the square mark behind the favicons and app icons).
+- **Every image on the page is the app itself.** Pictures of the city are real in-app screenshots, never outside renders, stock photography or generated imagery. The logo (`assets/brand/`, John's own) is a brand mark, not a picture, and is the one exception.
 
 ## Evidence on Hand
 
