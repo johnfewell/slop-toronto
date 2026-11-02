@@ -1200,7 +1200,9 @@ function buildCityGrid(scene) {
             const x = a.x + ((b.x - a.x) * tt) / L, z = a.z + ((b.z - a.z) * tt) / L;
             if (onGroundRoad(x, z, 1.2) || onRail(x, z, 3.2)) continue;
             if (window.CITY.subwayKeepsClear && window.CITY.subwayKeepsClear(x, z)) continue; // (subway.js: its own piers)
-            piers.push({ x, z, h: h - 1.25, g: window.CITY.DON_VALLEY ? Math.min(g, window.CITY.DON_VALLEY.heightAt(x, z)) : 0, w: Math.min(Math.min(d.ws[i], d.ws[i + 1]) * 0.7, 9), ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
+            // (its foot on the ground where it stands: in a road cut, the cut's floor, cutAt; in the Don Valley pilot
+            // the valley's too, cutAt, or the ground under the deck if lower)
+            piers.push({ x, z, h: h - 1.25, g: Math.min(window.CITY.DON_VALLEY ? g : 0, cutAt(x, z)), w: Math.min(Math.min(d.ws[i], d.ws[i + 1]) * 0.7, 9), ux: (b.x - a.x) / L, uz: (b.z - a.z) / L });
             break;
           }
         }
@@ -1240,7 +1242,8 @@ function buildCityGrid(scene) {
     }
     const gt = accGeometry(top);
     if (gt) {
-      const m = new THREE.Mesh(gt, roadMat);
+      // (its own asphalt, not the street level's: the road cuts mask that, section 6)
+      const m = new THREE.Mesh(gt, streetMat === roadMat ? createRoadSurfaceMaterial() : roadMat);
       m.receiveShadow = true;
       m.castShadow = true;
       m.name = 'FlyoverDecks';
@@ -1266,7 +1269,11 @@ function buildCityGrid(scene) {
   //    follows the profile through the street graph (road-network.js, negative heights), the walkers by cutAt
   //    (traffic.js), the player by getGroundHeight.
   // ===================================================================================================================
+  //    (Not the flyovers: a deck, its parapets and piers stand over a cut, not in it. Masked, a deck crossing a cut had
+  //    a hole the cut's width with its markings floating over it: the Gardiner over Strachan Avenue, Bloor Street over
+  //    Rosedale Valley Road, where in the Don Valley pilot the cut's walls showed through at the deck's level, st-4qix.)
   group.traverse((o) => {
+    if (/^Flyover/.test(o.name)) return;
     for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) maskRoadCuts(m);
   });
   if (ROAD_CUTS.length) {
@@ -1278,6 +1285,9 @@ function buildCityGrid(scene) {
       accQuad(A, P[0], P[1], P[2], P[3], f, P.map((p) => [p[0], p[2] + p[1]]));
     };
     const PARAPET = 1.05, THICK = 0.3;
+    // (the Don Valley pilot's ground under a point of the cut, js/don-valley.js: 0 outside its box)
+    const DV = window.CITY.DON_VALLEY || null;
+    const wallGround = ([x, , z]) => (DV.inBox(x, z) ? DV.heightAt(x, z) : 0);
     const bankAcc = makeAcc();
     let nWalls = 0, nBank = 0;
     for (const c of ROAD_CUTS) {
@@ -1322,12 +1332,15 @@ function buildCityGrid(scene) {
           const bA = c.bankSt ? cutBankAt(c, a.t, sg) : null, bB = c.bankSt ? cutBankAt(c, b.t, sg) : null;
           const footA = bA ? bA.top : sw - 0.05, footB = bB ? bB.top : sw - 0.05;
           let capA = bA && bA.w >= 0.5 ? 0.12 : Math.min(PARAPET, -a.h * 2), capB = bB && bB.w >= 0.5 ? 0.12 : Math.min(PARAPET, -b.h * 2);
-          // (the Don Valley pilot: under a deck level with the street, Bloor Street's Rosedale section, the wall stops at
-          // the street under the deck: no parapet up through it)
-          if (window.CITY.DON_VALLEY) {
-            const under = (q) => { const [x, , z] = P(q, (c.half + THICK / 2) * sg, 0), d = window.CITY.deckHeightAt(x, z, 1, 1); return d > 0.3 && d < 2; };
-            if (under(a)) capA = 0;
-            if (under(b)) capB = 0;
+          // (the Don Valley pilot: main.js drapes the cut over the valley like the street level round it, so the wall
+          // stands on the valley's ground, gA and gB under its ends; under a deck less than 2 m over that ground the
+          // wall stops there: no parapet up through the deck. Bloor Street's Rosedale section stands 6 m over Rosedale
+          // Valley Road's cut, st-4qix.)
+          const gA = DV ? wallGround(P(a, (c.half + THICK / 2) * sg, 0)) : 0, gB = DV ? wallGround(P(b, (c.half + THICK / 2) * sg, 0)) : 0;
+          if (DV) {
+            const under = ([x, , z], g) => { const d = window.CITY.deckHeightAt(x, z, g + 1, 1); return d !== 0 && d - g > 0.3 && d - g < 2; };
+            if (under(P(a, (c.half + THICK / 2) * sg, 0), gA)) capA = 0;
+            if (under(P(b, (c.half + THICK / 2) * sg, 0), gB)) capB = 0;
           }
           const ta = (bA ? Math.max(bA.top, a.h + sw) : sw) + capA, tb = (bB ? Math.max(bB.top, b.h + sw) : sw) + capB;
           quad(wall, P(a, wa, a.h + sw), P(b, wb, b.h + sw), P(b, wb, tb), P(a, wa, ta), [-nx * sg, 0, -nz * sg]);
@@ -1344,7 +1357,7 @@ function buildCityGrid(scene) {
             const L = b.t - a.t, cx = (a.x + b.x) / 2 + nx * (c.half + THICK / 2) * sg, cz = (a.z + b.z) / 2 + nz * (c.half + THICK / 2) * sg;
             const hx = THICK / 2 + 0.05, hz = L / 2 + 0.05, cs = -nx, sn = nz; // (along the wall: (nz, -nx))
             const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
-            colliders.push({ minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, minY: Math.min(a.h, b.h) - 1, maxY: Math.min(ta, tb), obb: { cx, cz, hx, hz, cs, sn } });
+            colliders.push({ minX: cx - ex, maxX: cx + ex, minZ: cz - ez, maxZ: cz + ez, minY: Math.min(a.h + gA, b.h + gB) - 1, maxY: Math.min(ta + gA, tb + gB), obb: { cx, cz, hx, hz, cs, sn } });
             nWalls++;
           }
         }

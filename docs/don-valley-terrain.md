@@ -100,7 +100,8 @@ unrelated part.
 splitting each 10 m cell along its b–d diagonal exactly as `terrain.js` does (`terrainNearHeightAt`).
 
 - **Sampling.** `city-config.js` folds it into `cutAt`. The old road cuts stay available as `roadCutAt`, the
-  semantic test for trees, rail bridges, the subway's covered box and the cut geometry. Every `cutAt` reader follows
+  semantic test for trees, rail bridges, the subway's covered box and the cut geometry (built at the flat city's
+  depths, then draped like the street level round it). Every `cutAt` reader follows
   the valley: the walking floor (`getGroundHeight`), street props, mapped poles, street lights, trees, pedestrians'
   walking heights, Bike Share, tennis, rinks, wayfinding, public art and patios.
 - **Drawing.** `drape()` splits each static ground triangle in the box along the grid's column, row and diagonal
@@ -128,6 +129,7 @@ splitting each 10 m cell along its b–d diagonal exactly as `terrain.js` does (
 | Surface or consumer | How it follows the valley | Status |
 | --- | --- | --- |
 | Street level (roads are its asphalt), curb islands, kerbs, walks, City sidewalks, lawns, plots, park paths, streams, mapped walls (`CityGround`) | `drape()` after the world is built (`main.js`) | done, exact |
+| Rosedale Valley Road's cut (roadway, walks, kerbs, walls, banks; `RoadCut*`) | `drape()` with the rest of `CityGround` (only `DV.undraped`, the decks, the lake and the bike separators, are left out); its walls' colliders add `heightAt` (`city-grid.js`) | done (`st-4qix`): it had been left at the flat city's depths, its walls up to Bloor Street's Rosedale deck and its roadway 6 m over its traffic |
 | Heavy-rail track beds (Bala Subdivision, Rosedale Siding) | `drape()` of `RailTracks`; GO trains add `heightAt` to their route points (`rail-corridor.js`) | done; trains are interpolated every 4 m |
 | Road markings, bike paint, trail surfaces | `road-paint.js`: strips and ribbons on the valley's ground follow it in 2 m parts | done, approximate (cm) |
 | Traffic, buses | the street graph's node heights (`road-network.js`, `roadHeight`): ground nodes on the valley, Bloor's nodes on the deck. Between them, `edgeY` follows each edge's own surface: the valley under the lane's own point (`heightAt`) or a ramp's profile (`rampAt`), plus the ends' offsets from it (a road cut's depth). The turns through junctions follow it too (`curvePoint`); the viaduct's level deck keeps its straight line | done (`st-wt0.21.3`): lanes and turns within 0.05 m of the surface; a straight line between nodes was up to 2.5 m off |
@@ -313,6 +315,17 @@ over it, so the deck hid them; road-paint.js now lifts paint on a raised edge to
 on across the joint (double yellow on the 6-lane piece, broken on the 4-lane one; the two outer lane lines end at the
 joint, where the lanes drop). Tests: `tests/don-valley.test.mjs` (st-qfx). Captures (`tools/shots/bloor-deck-seam.json`,
 desktop and phone, flag on): `ride-anywhere-geo/review/gpu2/slop-toronto-r3-phone/seam-before-*` and `seam-after-*`.
+
+**Rosedale Valley Road under the deck (`st-4qix`).** 25 m west of the joint Rosedale Valley Road passes under the
+Rosedale section in its road cut. Two things showed it through the deck. city-grid.js masks the street level over a
+road cut (the cut is built in its place), and the mask reached the flyovers too: every deck over a cut had a hole the
+cut's width, its parapets broken and its markings floating over it. That is the flat city's too, at the Gardiner over
+Strachan Avenue and Bloor Street's 7.5 m flyover over Rosedale Valley Road; the decks, parapets and piers are no longer
+masked, and a pier standing in a cut stands on its floor. In the pilot the cut itself was also left out of the drape,
+at the flat city's depths: under the deck at 0.4 m its walls stood at the street level, in the hole, and its roadway
+lay 6 m over the cars and the markings in it. It is now draped with the street level round it, so it lies on `cutAt`,
+6 m and more under the deck, with its walls' colliders. Tests: `tests/don-valley.test.mjs` (st-4qix). Captures:
+`tools/shots/rosedale-deck-rvr.json`, flag on (desktop, phone) and off (desktop).
 
 ## 7. Risks and limits
 

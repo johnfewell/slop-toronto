@@ -264,9 +264,9 @@ async function initApp() {
   // north of the city, the river and the buildings' plinths. The decks and the viaduct carry their own heights.
   if (window.CITY.DON_VALLEY) {
     const DV = window.CITY.DON_VALLEY, t0 = performance.now();
-    // (the road markings follow the surface themselves: road-paint.js)
+    // (the road markings follow the surface themselves: road-paint.js; the decks and the lake stay: DV.undraped)
     const stats = [scene.getObjectByName('CityGround'), scene.getObjectByName('RailTracks')]
-      .map((root) => DV.drape(root, { except: /^(Flyover|LakeOntario|RoadCut|BikeSeparators)/ }));
+      .map((root) => DV.drape(root, { except: DV.undraped }));
     const patches = DV.buildPatches(scene);
     const sum = (k) => stats.reduce((t, s) => t + s[k], 0);
     console.info(`[don-valley] draped ${sum('meshes')} meshes (${sum('triangles')} triangles into ${sum('pieces')} pieces), ${patches.plinths} plinths, in ${Math.round(performance.now() - t0)} ms${stats.some((s) => s.skipped.length) ? `; skipped ${stats.flatMap((s) => s.skipped).join(', ')}` : ''}`);

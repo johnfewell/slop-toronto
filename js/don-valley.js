@@ -319,6 +319,12 @@ function verticalPieces(tri, emit) {
   }
   if (rest.length >= 3) emit(rest);
 }
+// What the ground's drape leaves as it is (main.js): the decks carry their own heights, the lake is at its level, and
+// the bikeways' separators follow the surface themselves (cycling.js). The road cuts are draped like the street level
+// round them: their floor is the valley plus the cut's depth, as cutAt samples it. Left at the flat city's heights,
+// Rosedale Valley Road's cut stood up to the street datum where the valley falls away under Bloor Street, its walls
+// at the Rosedale section's deck level and its roadway metres over the traffic in it (st-4qix).
+const UNDRAPED = /^(Flyover|LakeOntario|BikeSeparators)/;
 /** Drapes every static mesh under `root` (skipping names matching `except`) over the valley */
 function drape(root, { except = null } = {}) {
   const stats = { meshes: 0, triangles: 0, pieces: 0, skipped: [] };
@@ -455,6 +461,6 @@ function platformFloor(id) {
 
 C.DON_VALLEY = { data: D, box, step: S, heightAt, gradientAt, lowestAround, inBox, reliefUnder, deckHeight, roadHeight, onViaductLine, sectionAt,
   rampAt, rampProfile, isFlattened, flattenedAt, deckKey, hug: HUG,
-  drape, drapeMesh, buildPatches, riverLevelAt, platformFloor, deckTop: D.deckTop, railY: D.railY };
+  drape, drapeMesh, undraped: UNDRAPED, buildPatches, riverLevelAt, platformFloor, deckTop: D.deckTop, railY: D.railY };
 console.info(`[don-valley] pilot on: ${nx} x ${nz} at ${S} m over x ${box.x0}..${box.x1}, z ${box.z0}..${box.z1}; deepest ${D.diagnostics.deepestM} m`);
 })();

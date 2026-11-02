@@ -675,3 +675,84 @@ test('the Rosedale section\'s deck joint: one run, no gap or step, the 22 m deck
   }
   assert.ok(gentle > 20 && steep <= 6, `${gentle} gentle tapers, ${steep} steep`);
 });
+
+// --- decks over road cuts (st-4qix): city-grid.js built in node, its materials stand-ins (the mask is what is tested)
+function groundOf(pilot) {
+  const mat = () => new THREE.MeshStandardNodeMaterial();
+  const mats = Object.fromEntries(['createRoadSurfaceMaterial', 'createSidewalkMaterial', 'createCurbMaterial', 'createWaterMaterial', 'createParkLawnMaterial',
+    'createTerrainMaterial', 'createPlotGroundMaterial', 'createForecourtMaterial', 'createRenderedWallMaterial', 'createConcreteMaterial'].map((k) => [k, mat]));
+  const quiet = { info() {}, warn() {}, log() {}, error() {} };
+  const context = vm.createContext({ window: { CITY: { THREE, TSL, Addons: { mergeGeometries }, DEBUG_ROADS: false, QUALITY: { cull: 1 }, runSeed: () => 0.5, ...mats } },
+    console: quiet, atob, performance, URLSearchParams, location: { search: '' } });
+  for (const f of ['toronto-geodata', 'toronto-subway', 'toronto-subway-topology', ...(pilot ? ['don-valley-data', 'don-valley'] : []), 'city-config',
+    'toronto-sidewalks', 'sidewalk-polygons', 'sidewalk-sections', 'city-grid']) vm.runInContext(read(f), context);
+  const C = context.window.CITY, scene = new THREE.Scene();
+  // (the stand-in materials' geometries don't all merge: three's warnings, nothing of this test's)
+  const warn = console.warn, error = console.error;
+  console.warn = console.error = () => {};
+  try { var built = C.buildCityGrid(scene); } finally { console.warn = warn; console.error = error; }
+  return { C, built, ground: scene.getObjectByName('CityGround') };
+}
+test('decks over road cuts: no hole in the flyovers over a cut, their piers on its floor, and in the pilot the cut on the valley under Bloor\'s Rosedale deck (st-4qix)', () => {
+  const N = { x: 1692.6, z: -2659 }; // (Rosedale Valley Road's node under Bloor Street, 25 m west of the Rosedale section's joint)
+  const u = [0.9, -0.436], s = [0.436, 0.9]; // (along and across Bloor Street there)
+  const v = new THREE.Vector3();
+  // (the vertices a mesh draws: after the drape a mesh keeps only its untouched triangles in its index)
+  const each = (mesh, fn) => {
+    const A = mesh.geometry.attributes.position, I = mesh.geometry.index;
+    for (const i of I ? new Set(I.array) : A.array.keys().take(A.count)) fn(v.fromBufferAttribute(A, i).applyMatrix4(mesh.matrixWorld));
+  };
+  for (const [mode, pilot] of [['flat city', false], ['pilot', true]]) {
+    const { C, built, ground } = groundOf(pilot);
+    // the flyovers that cross a cut: the Gardiner over Strachan Avenue, Bloor Street over Rosedale Valley Road
+    const over = new Set();
+    for (const c of C.ROAD_CUTS) for (const d of C.DECK_RUNS) for (const p of d.pts) for (let i = 1; i < d.pts.length; i++) {
+      const a = d.pts[i - 1], b = d.pts[i], L = Math.hypot(b.x - a.x, b.z - a.z);
+      for (let t = 0; t <= L; t += 1) if (C.cutLocal(c, a.x + ((b.x - a.x) * t) / L, a.z + ((b.z - a.z) * t) / L)) over.add(`${d.name} over ${c.name}`);
+    }
+    assert.deepEqual([...over].sort(), ['Bloor Street East over Rosedale Valley Road', 'Gardiner Expressway over Strachan Avenue'], `${mode}: decks over cuts`);
+    // the street level is masked over the cuts; the decks, parapets and piers over them are not (the deck had a hole the
+    // cut's width, its markings floating over it and, in the pilot, the cut's walls showing through at its level)
+    const masked = (name) => ground.getObjectByName(name).material.userData.roadCutMask === true;
+    assert.ok(masked('StreetLevel'), `${mode}: the street level masked over the cuts`);
+    for (const name of ['FlyoverDecks', 'FlyoverStructure']) assert.ok(!masked(name), `${mode}: ${name} whole over the cuts`);
+    assert.notEqual(ground.getObjectByName('FlyoverDecks').material, ground.getObjectByName('StreetLevel').material);
+    // a pier standing in a cut (on its sidewalk, clear of the roadway) stands on the cut's floor, not in the air at the
+    // street level (masked, it wasn't seen)
+    let feet = 0;
+    each(ground.getObjectByName('FlyoverStructure'), (p) => {
+      if (p.y > (pilot ? D.deckTop - 3 : 0.5)) return; // (below the decks' soffits and the piers' crossheads: their columns)
+      for (const c of C.ROAD_CUTS) {
+        const q = C.cutLocal(c, p.x, p.z);
+        if (!q || q.bank) continue;
+        feet++;
+        assert.ok(Math.abs(p.y - C.cutAt(p.x, p.z)) < 0.3, `${mode}: a pier's foot at ${p.y.toFixed(2)} in ${c.name}'s cut, its floor ${C.cutAt(p.x, p.z).toFixed(2)}`);
+      }
+    });
+    assert.ok(feet > 0, `${mode}: piers in the cuts`);
+    if (!pilot) continue;
+    // the pilot: the cut is draped like the street level round it (main.js, DV.undraped): its roadway is where the
+    // traffic and the paint are (cutAt), and under Bloor's Rosedale deck (0.4 m) it lies metres down in the ravine. Left
+    // at the flat city's heights, its walls stood up to the deck's level there and its roadway 6 m over the cars.
+    const T = C.DON_VALLEY;
+    assert.ok(!T.undraped.test('RoadCutWalls') && T.undraped.test('FlyoverDecks'), 'the cut is draped, the decks are not');
+    T.drape(ground, { except: T.undraped });
+    let road = 0, worst = 0, under = 0, top = -Infinity;
+    ground.traverse((o) => {
+      if (!o.isMesh || !/^RoadCut/.test(o.name) || !o.visible) return;
+      each(o, (p) => {
+        if (o.name.startsWith('RoadCutRoadway')) { road++; worst = Math.max(worst, Math.abs(p.y - C.cutAt(p.x, p.z))); }
+        const dx = p.x - N.x, dz = p.z - N.z;
+        if (Math.abs(dx * u[0] + dz * u[1]) < 12 && Math.abs(dx * s[0] + dz * s[1]) < 10) { under++; top = Math.max(top, p.y); }
+      });
+    });
+    // (within the few cm the cut's own floor, built station by station along its curving axis, differs from cutLocal's)
+    assert.ok(road > 100 && worst < 0.1, `the cut's roadway within ${worst.toFixed(3)} m of cutAt (${road} vertices)`);
+    const deck = C.deckHeightAt(N.x, N.z, 0.4, 0.6);
+    assert.ok(Math.abs(deck - D.deckTop) < 1e-9, 'Bloor\'s Rosedale deck over the crossing');
+    assert.ok(under > 100 && top < deck - 2, `the cut under the deck tops out at ${top.toFixed(2)} m, the deck at ${deck}`);
+    // ...and its walls' colliders with it: none near the crossing reaches the deck
+    const walls = built.colliders.filter((c) => c.obb && Math.hypot(c.obb.cx - N.x, c.obb.cz - N.z) < 15);
+    assert.ok(walls.length && walls.every((c) => c.maxY < deck - 2), `${walls.length} wall colliders under the deck`);
+  }
+});

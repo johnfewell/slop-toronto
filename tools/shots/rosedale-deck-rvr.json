@@ -1,0 +1,80 @@
+[
+  {
+    "name": "rvr-stats",
+    "time": "midday",
+    "mode": "person",
+    "x": 1676,
+    "z": -2651,
+    "heading": 2,
+    "wait": 3000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const sc=window.__CITY_APP.scene||null;let walls=null;const root=sc||null;const out={pilot:!!C.DON_VALLEY,alongBloor:[]};for(let a=-30;a<=30;a+=4){const p=P(N,a,0);out.alongBloor.push([a,f(gr(p)),f(C.roadCutAt(p[0],p[1])),f(dk(p))]);}const S=window.__CITY_APP.scene;if(S){const hi={};const v=new C.THREE.Vector3();S.traverse((o)=>{if(!o.isMesh||!o.geometry||!o.geometry.attributes.position||!/^RoadCut|Paint|Marking|Crosswalk/i.test(o.name))return;const A=o.geometry.attributes.position;let m=-Infinity,n=0;for(let i=0;i<A.count;i++){v.fromBufferAttribute(A,i).applyMatrix4(o.matrixWorld);const dx=v.x-N[0],dz=v.z-N[1],along=dx*u[0]+dz*u[1],across=dx*s[0]+dz*s[1];if(Math.abs(along)<14&&Math.abs(across)<10){n++;if(v.y>m)m=v.y;}}if(n)hi[o.name]=(hi[o.name]||[]).concat([[n,f(m)]]);});out.underDeckVerts=hi;}return out;})()"
+  },
+  {
+    "name": "probe-low-along",
+    "time": "midday",
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const p=P(N,-28,3),l=P(N,15,3);return cam(p,dk(p)+1.7,l,dk(l)+0.3,60);})()"
+  },
+  {
+    "name": "probe-east-along",
+    "time": "midday",
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const p=P(N,26,-3),l=P(N,-15,-3);return cam(p,dk(p)+1.7,l,dk(l)+0.3,60);})()"
+  },
+  {
+    "name": "probe-west-down",
+    "time": "midday",
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const p=P(N,-7,5),l=P(N,3,0);return cam(p,dk(p)+14,l,0,60);})()"
+  },
+  {
+    "name": "seam-aerial",
+    "time": "midday",
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const p=P(J,0,20);return cam(p,45,J,0,50);})()"
+  },
+  {
+    "name": "crossing-aerial",
+    "time": "midday",
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const p=P(N,0,24);return cam(p,40,N,0,55);})()"
+  },
+  {
+    "name": "rvr-under-south",
+    "time": "midday",
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const p=R(-26),l=R(10);return cam(p,gr(p)+1.7,l,gr(l)+3,65);})()"
+  },
+  {
+    "name": "rvr-under-north",
+    "time": "midday",
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const p=R(26),l=R(-10);return cam(p,gr(p)+1.7,l,gr(l)+3,65);})()"
+  },
+  {
+    "name": "gardiner-strachan-aerial",
+    "time": "midday",
+    "mode": "person",
+    "x": -2545,
+    "z": 125,
+    "heading": 2,
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const G=[-2529.5,152],p=[G[0]-0.285*30,G[1]+0.959*30];return cam(p,55,G,6,55);})()"
+  },
+  {
+    "name": "gardiner-strachan-deck",
+    "time": "midday",
+    "wait": 5000,
+    "record": true,
+    "js": "(() => {const C=window.CITY,N=[1692.6,-2659],J=[1714.1,-2668.7],u=[0.9,-0.436],s=[0.436,0.9],r=[0.783,0.621],P=(o,a,b)=>[o[0]+u[0]*a+s[0]*b,o[1]+u[1]*a+s[1]*b],R=(a)=>[N[0]+r[0]*a,N[1]+r[1]*a],dk=(p)=>C.DON_VALLEY?C.deckHeightAt(p[0],p[1],0.4,0.6):C.deckHeightAt(p[0],p[1],9,2),gr=(p)=>C.cutAt(p[0],p[1]),f=(v)=>+v.toFixed(2),cam=(p,py,l,ly,fov)=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[p[0],py,p[1]],look:[l[0],ly,l[1]],fov});return {cam:[f(p[0]),f(py),f(p[1])],look:[f(l[0]),f(ly),f(l[1])]};};const g=[0.959,0.285],G=[-2529.5,159],p=[G[0]-g[0]*35,G[1]-g[1]*35],l=[G[0]+g[0]*20,G[1]+g[1]*20];return cam(p,C.deckHeightAt(p[0],p[1],20,2)+1.7,l,C.deckHeightAt(l[0],l[1],20,2)+0.3,60);})()"
+  }
+]
