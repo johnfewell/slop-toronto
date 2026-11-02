@@ -66,3 +66,43 @@ test('on WebGL2 with the atmosphere off too there is no sky module at all', asyn
   const { C } = harness('?atmosphere=0');
   assert.equal(await C.setupClouds(renderer('webgl'), { load }), null);
 });
+
+// st-xirf: the atmosphere's tables in half floats on WebGL2 left a band of red, green & violet speckles across the
+// towers at golden hour. three's WebGL2 backend never reports 'float32-filterable', so the library chose half floats
+// there; where the browser grants float32 filtering & float render targets the tables are float32, as on WebGPU.
+const webglRenderer = (granted) => ({ initialized: true, contextNode: null, backend: { isWebGLBackend: true,
+  hasFeature: (name) => name === 'timestamp-query',
+  extensions: { has: () => granted, get: () => (granted ? {} : null) } } });
+// the table type the library itself picks for a renderer (its LUT node sets its textures up first, then the node: the
+// stand-in builder has nothing for the node, only the tables are under test)
+async function tableType(r) {
+  const { C } = harness();
+  const sky = await C.setupClouds(r, { load });
+  const lut = sky.atmosphere.lutNode;
+  try { lut.setup({ renderer: r }); } catch { /* the stand-in builder */ }
+  assert.ok(lut.textures, 'the tables were set up');
+  return lut.textures.get('scattering').type;
+}
+
+test('on WebGL2 with float32 filtering the atmosphere tables are float32, as on WebGPU', async () => {
+  const r = webglRenderer(true);
+  assert.equal(await tableType(r), THREE.FloatType);
+  assert.equal(r.backend.hasFeature('float32-filterable'), true);
+  // the backend's other features are its own
+  assert.equal(r.backend.hasFeature('timestamp-query'), true);
+  assert.equal(r.backend.hasFeature('texture-compression-astc'), false);
+});
+
+test('on WebGL2 without float32 filtering the tables stay half-float', async () => {
+  const r = webglRenderer(false);
+  assert.equal(await tableType(r), THREE.HalfFloatType);
+  assert.equal(r.backend.hasFeature('float32-filterable'), false);
+});
+
+test('the WebGPU backend is left as it is', () => {
+  const { C } = harness();
+  const hasFeature = () => false;
+  const r = { backend: { isWebGPUBackend: true, hasFeature, extensions: { has: () => true, get: () => ({}) } } };
+  assert.equal(C.floatTablesOnWebGL(r), false);
+  assert.equal(r.backend.hasFeature, hasFeature);
+});

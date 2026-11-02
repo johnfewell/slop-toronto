@@ -73,6 +73,8 @@ async function setupClouds(renderer, { load = () => import('./clouds.js') } = {}
   if (withClouds && !cloudsBackend.ok) console.warn(`[clouds] volumetric clouds off: ${cloudsBackend.reason}`);
   const marchClouds = withClouds && cloudsBackend.ok;
   if (!marchClouds && !ATMOSPHERE) return null;
+  // (on WebGL2: the atmosphere's tables in float32, as on WebGPU; see floatTablesOnWebGL)
+  floatTablesOnWebGL(renderer);
 
   // The atmosphere lights the clouds in its own luminance units, which came out far darker than the city's sun & sky
   // (grey-brown clouds at noon): its luminance scale is raised to the city's exposure. ?cloudGain=<n> tries another
@@ -297,5 +299,24 @@ function cloudsSupported(Clouds, renderer) {
   }
 }
 
-Object.assign(window.CITY, { setupClouds, cloudsSupported });
+// The atmosphere's tables (transmittance, scattering, irradiance) are float32 only where the backend says float32
+// textures filter; three's WebGL2 backend has no name for that feature (it asks WebGPU's 'float32-filterable', which it
+// never reports), so the library fell back to half-float tables there. The aerial perspective subtracts the light
+// scattered beyond a surface from the light scattered along the whole view ray, and near the horizon of its table
+// lookups half floats can't hold that difference: a band of red, green & violet speckles across the towers' facades
+// at golden hour in the Financial District aerial, where WebGPU's float32 tables are clean (st-xirf). WebGL2 filters float32 textures and renders to them once three has enabled
+// OES_texture_float_linear & EXT_color_buffer_float (it asks for both on init), so where the browser grants both the
+// backend reports the feature and the tables match WebGPU's; without them it stays half-float, as before
+function floatTablesOnWebGL(renderer) {
+  const backend = renderer?.backend;
+  if (!backend?.isWebGLBackend || typeof backend.hasFeature !== 'function' || backend.hasFeature('float32-filterable')) return false;
+  const ext = backend.extensions;
+  if (!ext || !ext.has('OES_texture_float_linear') || !ext.has('EXT_color_buffer_float')) return false;
+  if (!ext.get('OES_texture_float_linear') || !ext.get('EXT_color_buffer_float')) return false;
+  const hasFeature = backend.hasFeature.bind(backend);
+  backend.hasFeature = (name) => name === 'float32-filterable' || hasFeature(name);
+  return true;
+}
+
+Object.assign(window.CITY, { setupClouds, cloudsSupported, floatTablesOnWebGL });
 })();
