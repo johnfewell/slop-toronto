@@ -1,0 +1,45 @@
+[
+ {
+  "name": "massing-stats",
+  "mode": "person",
+  "time": "midday",
+  "wait": 1000,
+  "record": true,
+  "js": "(() => { window.__census=(label)=>{const A=__CITY_APP,r=A.renderer,s=A.scene;const orig=r.renderObject;const acc=new Map();let on=false;const root=o=>{let p=o,last=o;while(p&&p!==s){last=p;p=p.parent}return last.name||last.type};r.renderObject=function(object,scene,camera,geometry,material,group){if(on){const g=geometry||object.geometry;const n=Math.min(g.index?g.index.count:(g.attributes.position?g.attributes.position.count:0),g.drawRange.count);const inst=object.isInstancedMesh?object.count:(g.instanceCount&&g.instanceCount!==Infinity?g.instanceCount:1);const pass=camera.isOrthographicCamera?'shadow':'view';const top=root(object);const k=pass+' '+top;const e=acc.get(k)||[0,0];e[0]+=1;e[1]+=n*inst/3;acc.set(k,e);const t=acc.get(pass+' ALL')||[0,0];t[0]+=1;t[1]+=n*inst/3;acc.set(pass+' ALL',t);if(top==='CityBuildings'||top==='ShadowProxies'){const kk=pass+' '+top+'/'+(object.name||'?').replace(/_\\d+$/,'');const q=acc.get(kk)||[0,0];q[0]+=1;q[1]+=n*inst/3;acc.set(kk,q)}}return orig.apply(this,arguments)};let frames=0;requestAnimationFrame(()=>{on=true;requestAnimationFrame(function f(){if(++frames<10)return requestAnimationFrame(f);on=false;r.renderObject=orig;const keep=[...acc].filter(([k])=>/ALL|CityBuildings|ShadowProxies/.test(k)).map(([k,[d,t]])=>k+' draws '+(d/10).toFixed(1)+' tris '+Math.round(t/10));console.log('[massing-census] '+label+' massing='+(window.CITY.massingStats?1:0)+' | '+keep.join(' | '))})})}; const S = window.CITY.massingStats || null; return { massing: S && { builtIn: S.builtIn, buildMs: S.buildMs, waitMs: S.waitMs, packMs: S.packMs, meshMs: S.meshMs, meshes: S.meshes, geometryMiB: S.geometryMiB, bytesPerVertex: S.bytesPerVertex, tiers: S.tiers, triangles: S.triangles, vertices: S.vertices }, quality: window.CITY.QUALITY && { tier: window.CITY.QUALITY.tier, massingLimits: window.CITY.QUALITY.massingLimits } }; })()"
+ },
+ {
+  "name": "c1-cabbagetown-spruce-west",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); setTimeout(() => window.__census('c1-cabbagetown-spruce-west'), 4500); })()"
+ },
+ {
+  "name": "d2-king-west-from-bay",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(120, -342, 0); app.cameraSystem.cinema = () => ({ pos: [120, 1.7, -342], look: [-200, 25, -345], fov: 60 }); setTimeout(() => window.__census('d2-king-west-from-bay'), 4500); })()"
+ },
+ {
+  "name": "k1-kensington-ave-north",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1252, -1290, 0); app.cameraSystem.cinema = () => ({ pos: [-1252, 1.7, -1290], look: [-1256, 6, -1420], fov: 60 }); setTimeout(() => window.__census('k1-kensington-ave-north'), 4500); })()"
+ },
+ {
+  "name": "d3-financial-district-aerial",
+  "mode": "person",
+  "time": "golden",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 260, -60], look: [100, 40, -380], fov: 55 }); setTimeout(() => window.__census('d3-financial-district-aerial'), 4500); })()"
+ },
+ {
+  "name": "a1-city-aerial-north-west",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(900, 1200, 0); app.cameraSystem.cinema = () => ({ pos: [900, 700, 1200], look: [-500, 0, -1200], fov: 60 }); setTimeout(() => window.__census('a1-city-aerial-north-west'), 4500); })()"
+ }
+]

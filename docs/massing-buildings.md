@@ -17,7 +17,8 @@ shadows through stand-ins. Toronto reimplements the technique on its own data an
 |---|---|
 | Pilot (st-2nl.1) | **Done.** Kensington Market's 647 buildings on their polygons behind `?massing=1` (PR #34). Superseded by the city-wide data below. |
 | City-wide data (st-2nl.2) | **Done, flag only.** `?massing=1` fetches `js/massing-data.js` and `data/toronto-massing.bin` (852 KiB, only then) and stands all 35,254 detailed-city buildings on their polygons. The default page loads neither and is unchanged. See [City-wide sidecar](#city-wide-sidecar-st-2nl2). |
-| Default on | Planned, in the child beads below: the vertex format, tiers and build cost (st-2nl.3) come first. |
+| Compact cells and tiers (st-2nl.3) | **Code done, flag only; perf acceptance pending the quiet-mini baseline.** 16-byte vertices, a building table, near/mid/far tiers per 500 m cell, the facade styles merged into two materials, built in a worker. See [Compact cells and tiers](#compact-cells-and-tiers-st-2nl3). |
+| Default on | Planned, in the child beads below: needs st-2nl.3's matched baseline first. |
 
 ## 1. Data
 
@@ -216,6 +217,9 @@ about 127 MiB at this format, 259 meshes; 0.34–0.39 s to build in the browser 
 - **JS build:** about 1.4 s on a fast laptop, which is too slow for the main thread on a phone.
 
 ### The plan
+
+St-2nl.3 has done 1 to 4 and the code for 5 ([Compact cells and tiers](#compact-cells-and-tiers-st-2nl3)); 5's
+matched baseline is pending a quiet mini.
 
 1. **Compact vertices.** Store per vertex:
    - the position relative to the cell (int16 decimetres, or float16)
@@ -486,11 +490,16 @@ stand-in materials) takes 1.7–1.9 s for the polygons in `buildCityBlocks`, the
 `?massing=1` on `explore.html` (any quality tier). Startup logs:
 
 - `[massing] data/toronto-massing.bin: <bytes> bytes, <records> records, decoded in … ms, rows in … ms`
-- `[buildings] massing: <n> buildings from their polygons (<rejected> of <records> records rejected), …; <triangles>
-  triangles, <vertices> vertices (~<MiB> MiB) in <meshes> meshes …; <ms> ms (<ms> ms merging)`
+- `[buildings] massing: <n> buildings from their polygons (<rejected> of <records> records rejected), …; near
+  <triangles> triangles, <vertices> vertices (<MiB> MiB); mid …; far … at 16 B a vertex, <MiB> MiB with the table, in
+  <meshes> meshes …; built in the worker in <ms> ms (<ms> ms after it was asked), <ms> ms packing and <ms> ms making
+  the meshes on the main thread` (st-2nl.3)
 
-`window.CITY.massingStats` has the same numbers, and the `[init]` line gains a `massingData` phase (the module, the
-fetch and the decode). A sidecar built for other rows logs a warning and the buildings stay on their boxes.
+`window.CITY.massingStats` has the same numbers (`builtIn`: `worker` or `main`; `cellTiers`: how many 500 m cells are
+in each tier now). The `[init]` line gains a `massingData` phase (the modules, the fetch and the decode) and a
+`massingCells` phase (the wait for the worker before the culling setup). A sidecar built for other rows logs a warning
+and the buildings stay on their boxes. `?massingTier=near|mid|far` holds every cell in one tier; `?massingWorker=0`
+builds the cells on the main thread.
 
 ### Rebuilding the data
 
@@ -524,6 +533,291 @@ IDs sidecar, and refuses a mismatched hash. Rebuild it whenever `js/toronto-geod
 
 `npm run test:geodata` also rebuilds the sidecar twice from the shapefile (in `PROPS_DATA/massing2025/`) and checks
 both runs are byte for byte the committed file. The geodata itself still rebuilds byte for byte.
+
+## Compact cells and tiers (st-2nl.3)
+
+`?massing=1` now builds its buildings as compact cell meshes in three distance tiers (`js/massing-cells.js`), in a
+module worker (`js/massing-worker.js`). Still behind the flag: the default page loads none of it.
+
+### Format
+
+One mesh per **facade material** per tier per 1 km block (was: per facade style per 1 km cell). Every vertex is 16
+bytes, two `snorm16 × 4` attributes (was 17 floats, 68 bytes):
+
+| Attribute | Holds |
+|---|---|
+| `position` | x and z in decimetres from the block's centre (exact: the rings are on the decimetre grid); y in 1 cm steps, read only by the CPU (shadow stand-ins, bounds); w = variant × 64 + level × 16 + kind × 2 + along |
+| `normal` | the wall's edge (dx, dz) in decimetres, (0, 0) on a roof cap; the building's row in the table (15 + 15 bits) |
+
+- **The mesh's matrix** scales the decimetres back to metres and moves the block into place, so three.js, the frustum
+  and `scene-culling.js`'s stand-ins all see ordinary positions.
+- **The building table**: one texture (2,048 texels a row, 1.1 MiB) with two texels per building: (height, seed +
+  tone, base, cap height) and its paint. The vertex shader (`tsl-materials.js footprintVertex`) reads it:
+  - the vertex's height comes from its level (base, top, cap or ground), so wall tops and the caps' 1.2 cm steps are
+    exact, and `fromTop` is the height minus y
+  - the normal (dz, 0, −dx) / length and the wall's width come from the edge. This is exact, where the planned
+    octahedral normal would have rounded both. Rounding matters here: the window offset
+    (`floor(seed + dot(normal, …))`) and the bay count (`floor(width / window + 0.5)`) jump on it. The edge costs 4
+    bytes, like a 16-bit octahedral normal, and a separate width attribute is no longer needed.
+  - a material hook decodes height and normal in the vertex stage (`useFootprintVertex`, as three's own instancing
+    does), not a `positionNode`, because the shadow stand-ins only take materials without one.
+- **Two materials instead of five.** The two rendered styles share one material and the three curtain-wall styles
+  another. Each vertex names its style (`variant`). Every per-style value is still that style's own uniform, picked
+  with `select` by a flat varying (`footprintStyled`), so the floats are exactly the ones each style's material had.
+  This is what keeps the draw count down: a block draws two meshes a tier, not five.
+  - The Distillery's Victorian style (`VICTORIAN`, #76) is the exception. Its `victorian` option picks the arched
+    windows, sills and limestone when the shader is built, so it can't vary per vertex. It gets a third footprint
+    material of its own (`FOOTPRINT_MATERIALS`), drawn only in the Distillery's blocks, which draw three meshes a tier.
+    `createRenderedFacadeMaterial` throws if a merged material mixes Victorian and plain styles.
+
+**Near tier = the pilot, vertex for vertex.** `tests/massing-cells.test.mjs` builds 1,159 Kensington and Financial
+District buildings both ways and compares every attribute the shaders read against main's 17-float format
+(`tools/massing-legacy-format.mjs`):
+
+- positions within 0.05 mm (float32 rounding of the old absolute positions)
+- heights equal
+- normals within 3e-8
+- wall widths within 4e-6 m
+- metres-below-top within 3e-5 m (float32 at 300 m)
+- along, kind, seed + tone and paint equal
+
+The wall triangles are identical. The roof caps come from earcut 3.2.4 (`js/earcut.js`, a module worker can't reach
+three's copy): the same area to 0.1 %. Three's copy and 3.2.4 both drop a zero-area triangle on six roofs with
+courtyards.
+
+### Tiers
+
+Each 500 m cell picks its tier from its distance to the camera (to its box, from the ground to its tallest
+building), with a 40 m hysteresis band at each limit (`nextTier`):
+
+| Tier | Within (high / medium / low quality) | Geometry |
+|---|---|---|
+| near | 600 / 450 / 300 m | the full outline: every wall but the hidden ones, the courtyards, the cap |
+| mid | 1,600 / 1,300 / 1,000 m | Douglas-Peucker at 1.25 m (to the segment, not its line). A wall replacing several takes the kind of most of their length. Walls that a neighbour as tall covers for their whole height are left out, and so are courtyards under 4 m². A simplification that crosses itself keeps the full rings (64 of 35,254). |
+| far | beyond | the building's boxes (its `GEO.buildings` parts, as the default city draws them), from the ground, on the same format and materials |
+
+- **Draw ranges, not more meshes.** Each mesh holds its block's four tier cells back to back in its index buffer.
+  `tierRuns` gives the ranges for the cells now in its tier: at most two. A second mesh shares the first one's
+  buffers for the second range. Only the tier cells that change move anything.
+- **Limits** come from `quality.js` `massingLimits` (× the quality net's distance scale). The phone tier draws full
+  outlines only within 300 m.
+- **Shadows.** Only the near meshes cast, all of them, through `scene-culling.js`'s stand-ins
+  (`userData.shadowStandIn`), so the shadows are those of the full outlines at every tier, as before. Mid and far
+  never cast.
+- **Startup.** Every near mesh is drawn whole until the first frame after the warm-up, so the stand-ins and the
+  pipeline warm-up take all of it. The tiers start from that frame (`updateMassingTiers` in the frame loop).
+- **`?massingTier=near|mid|far`** holds every cell in one tier (A/B captures).
+
+### Off the main thread: a worker, not prebuilt buffers
+
+The cells are built in a module worker. `buildings.js` falls back to the main thread when there are no workers, the
+worker fails, or with `?massingWorker=0`; `CITY.massingStats.builtIn` says which ran. Why not ship prebuilt cell
+buffers:
+
+- **Size.** All three tiers come to about 75 MiB of vertices and indices, against 852 KiB for the polygons they are
+  built from.
+- **Runtime inputs.** A wall's kind, a building's paint, seed and facade style come from `buildings.js`'s runtime
+  choices: storefront selection, nearest roads and its random stream. Prebuilt buffers would need a second copy of
+  that logic in a tool, and a rebuild whenever it changes.
+- **Precedent.** The codebase already builds off the main thread this way: the audio synthesis worker
+  (`audio-system.js`), with a main-thread fallback. `tools/build-site.mjs` fingerprints the worker
+  (`'./js/massing-worker.js'`) and its imports like any script.
+
+The main thread keeps the per-building choices (`buildCityBlocks`), packs them into typed arrays (`packInput`, about
+25–50 ms), and posts them. The worker builds every tier and transfers the buffers back. Creating the meshes takes
+about 2 ms. `main.js` waits for the worker only just before the culling setup, which needs the near meshes for the
+stand-ins. By then the rest of the city has been built, so the wait was 1 ms in the captures.
+
+### What it costs (deterministic, node)
+
+`node tools/report-massing-cells.mjs` uses buildings.js's own records, built both ways, and the frustum of every
+shot in `tools/shots/massing-citywide.json`. It runs desktop 1600×900 with the high limits, and phone 412×915 with
+the low limits:
+
+| | Vertices | Triangles | Bytes/vertex | Vertex MiB | Index MiB | Meshes |
+|---|---:|---:|---:|---:|---:|---:|
+| pilot format (17 floats, 1 km × 5 styles) | 1,957,846 | 1,109,110 | 68 | 127.0 | 7.0 | 259 |
+| near tier | 1,957,846 | 1,109,108 | 16 | 29.9 | 8.0 | 109 (+109 twins) |
+| mid tier | 1,127,395 | 620,102 | 16 | 17.2 | 3.5 | 109 (+109 twins) |
+| far tier | 878,460 | 439,230 | 16 | 13.4 | 2.5 | 109 (+109 twins) |
+
+- **Geometry memory.** All three tiers stay resident: 75.7 MiB with the table, against 134.0 MiB for the pilot's one
+  tier. The near tier alone is 37.9 MiB. The shadow stand-ins are unchanged: a float copy of the near triangles,
+  about 38 MiB, as before.
+- **Mid tier.** 251,938 of 399,144 outer corners kept. 34,923 covered party walls dropped.
+
+The building meshes the frustum draws, and their triangles. Before: the pilot's 1 km cells, drawn whole. After: the
+index runs of the cells' tiers.
+
+| Shot | Desktop draws | Desktop triangles | Phone draws | Phone triangles |
+|---|---|---|---|---|
+| k1-kensington-ave-north | 35 → 24 | 315,322 → 194,116 | 16 → 16 | 136,976 → 93,333 |
+| k2-augusta-north | 28 → 21 | 232,955 → 178,733 | 15 → 10 | 117,637 → 76,878 |
+| k3-baldwin-west | 120 → 65 | 676,924 → 347,691 | 90 → 57 | 576,723 → 262,628 |
+| k4-spadina-west-side | 82 → 49 | 312,818 → 212,530 | 37 → 27 | 161,261 → 97,601 |
+| k5-bellevue-houses | 37 → 26 | 320,674 → 209,716 | 15 → 16 | 150,837 → 96,063 |
+| k6-aerial-oblique-se | 96 → 54 | 686,034 → 343,408 | 35 → 34 | 298,483 → 158,420 |
+| k7-aerial-overhead | 30 → 16 | 249,911 → 163,264 | 10 → 6 | 89,326 → 64,924 |
+| k8-aerial-low-augusta | 58 → 29 | 475,487 → 255,998 | 17 → 15 | 171,673 → 110,741 |
+| k9-aerial-market-core | 62 → 36 | 505,733 → 287,323 | 16 → 20 | 140,286 → 120,280 |
+| d1-bay-north-at-king | 61 → 37 | 431,053 → 213,131 | 31 → 27 | 196,885 → 117,104 |
+| d2-king-west-from-bay | 146 → 81 | 758,532 → 326,234 | 108 → 58 | 505,761 → 234,823 |
+| d3-financial-district-aerial | 144 → 83 | 851,932 → 372,390 | 59 → 30 | 419,954 → 180,033 |
+| c1-cabbagetown-spruce-west | 181 → 85 | 958,937 → 438,638 | 134 → 74 | 846,840 → 371,197 |
+| c2-cabbagetown-winchester-west | 183 → 91 | 974,419 → 437,367 | 138 → 68 | 874,107 → 370,114 |
+| c3-cabbagetown-aerial | 93 → 56 | 689,267 → 313,120 | 21 → 20 | 130,461 → 86,737 |
+| a1-city-aerial-north-west | 182 → 85 | 975,893 → 391,556 | 70 → 28 | 467,337 → 190,965 |
+
+**JS build** (node on the M5 Pro laptop, median of 3, an indication only): the pilot's merge took 320–350 ms for one
+tier; `buildMassingCells` takes 330–350 ms for all three, and in the page it runs in the worker.
+
+### Tests
+
+`tests/massing-cells.test.mjs` (7 tests, about 4 s):
+
+- **Near tier = the pilot format**, vertex for vertex (above).
+- **Encode/decode city-wide**, all 3,963,701 vertices of the three tiers:
+  - every table row is its record's values
+  - near and mid vertices lie on a corner of their own rings, far ones within 7 cm of their box's corner (the
+    decimetre grid)
+  - a wall's edge is the difference of its two ends
+  - the CPU copy of y is within half a centimetre
+  - each tier cell's index range holds only its own buildings
+- **Determinism.** Two builds are byte for byte the same.
+- **nextTier.** 2,000 random walks of 200 steps: the plain tier outside the bands, no flip inside them, no flicker
+  standing on a limit.
+- **tierRuns.** Every assignment of tiers and empty cells (1,296 cases): every triangle drawn exactly once, at most
+  two ranges.
+- **The mid tier.** Within 1.25 m of every original corner, its corners the original's, covered walls dropped. The
+  far tier is four walls and a two-triangle cap per box.
+- **js/earcut.js** is the locked package's code.
+
+`tests/massing.test.mjs` runs `buildCityBlocks` with the main-thread fallback, checks every mesh's two snorm16
+attributes and painted table rows, the shadow stand-ins on the near meshes only, and the tiers following a camera.
+`tests/storefronts.test.mjs` builds the footprint materials to WGSL, the merged ones included, and checks that the
+vertex stage reads the table and sets the height and normal.
+
+### A/B captures (functional, shared mini)
+
+**Setup.** Main (`2b24480`, `dist-main/`) against this branch (`dist/`), both `?massing=1`, through gpu2
+(`slop-toronto-r3-ride`) on 2026-11-01. The 16 shots of `tools/shots/massing-citywide.json`, `CAPTURE_SEED=6711`, run
+on two tiers:
+
+- desktop: 1600×900, `?quality=high`
+- phone: 412×915 at DPR 2.625, touch, `?quality=low`
+
+A third arm holds every cell in the near tier (`&massingTier=near`). The mini was shared with other agents, so these
+are functional and visual evidence, not performance numbers.
+
+**Pixels that differ by more than 8 %** (ImageMagick `compare -fuzz 8%`), main against each arm:
+
+| Shot | Desktop: cells | Desktop: near held | Phone: cells | Phone: near held |
+|---|---:|---:|---:|---:|
+| a1-city-aerial-north-west | 0.350% | 0.022% | 0.198% | 0.001% |
+| c1-cabbagetown-spruce-west | 0.017% | 0.034% | 0.010% | 0.016% |
+| c2-cabbagetown-winchester-west | 0.005% | 0.027% | 0.025% | 0.016% |
+| c3-cabbagetown-aerial | 0.109% | 0.055% | 0.051% | 0.016% |
+| d1-bay-north-at-king | 1.413% | 0.691% | 0.276% | 0.249% |
+| d2-king-west-from-bay | 3.122% | 3.135% | 0.260% | 0.189% |
+| d3-financial-district-aerial | 0.178% | 0.157% | 0.088% | 0.087% |
+| k1-kensington-ave-north | 0.005% | 0.017% | 0.002% | 0.002% |
+| k2-augusta-north | 0.006% | 0.021% | 1.114% | 1.114% |
+| k3-baldwin-west | 0.008% | 0.075% | 0.864% | 0.847% |
+| k4-spadina-west-side | 1.778% | 1.804% | 1.519% | 4.311% |
+| k5-bellevue-houses | 2.678% | 2.695% | 1.824% | 1.826% |
+| k6-aerial-oblique-se | 0.045% | 0.051% | 0.015% | 0.002% |
+| k7-aerial-overhead | 0.107% | 0.122% | 0.027% | 0.014% |
+| k8-aerial-low-augusta | 0.032% | 0.042% | 0.011% | 0.005% |
+| k9-aerial-market-core | 0.047% | 0.038% | 0.013% | 0.002% |
+
+- **Street level.** The buildings are the same. Every difference over 0.1 % is traffic, parked cars or pedestrians,
+  which move between runs (look at the diff images): the streetcar on King, a van on Bellevue, walkers on Baldwin.
+- **Near tier everywhere** (the aerials with `massingTier=near`): within 0.02 % of main on the desktop's city aerial
+  and 0.001 % on the phone's. The format and the merged materials change nothing visible.
+- **The tiers.** With the tiers on, the city aerial differs from main by 0.35 % (desktop) and 0.2 % (phone): the far
+  cells' boxes and the mid cells' simplified outlines, seen from 700 m up. No holes or stray walls in the frames. The
+  shots are still frames: the hand-over between tiers while moving (a pop at 600 m and 1.6 km, no crossfade yet) is
+  not judged here.
+- **Errors.** None. The only warnings are the ones main has too: three's TempNode deprecation, the audio synthesis
+  worker's fallback, and the CaféTO layout laid out at startup under the flag.
+
+**WebGL2 backend** (`?webgl=1`, desktop, three shots, main and branch): the cells render the same, with no errors.
+On both, the Financial District aerial shows a speckled band across the facades at golden hour. Main has it with the
+flag off too, so it is not this change; it is filed as st-xirf.
+
+**Startup** (`[init]`, one run each, contended):
+
+| | `blocks` main → cells | `massingCells` (the wait for the worker) | `compile` main → cells |
+|---|---|---|---|
+| desktop | 569 → 326 ms | 1 ms | 2,129 → 1,950 ms (2 footprint pipelines, not 5) |
+| phone | 532 → 333 ms | 1 ms | 2,043 → 1,924 ms |
+
+The worker built all three tiers in 422 ms, while the main thread went on through `signage` to `controllers`.
+
+**Census** (Cabbagetown Spruce St, per frame; the phone renders every other frame, so its counts are halves):
+
+| | Building draws | Building triangles | Whole view draws |
+|---|---|---|---|
+| desktop | 181 → 87 | 958,937 → 438,315 | 636 → 540 |
+| phone | 67 → 38 | 423,420 → 185,775 | 175 → 145 |
+
+These are the node report's numbers for that shot (181 → 85, 958,937 → 438,638).
+
+**Frames** in `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-r3-ride/`:
+
+- `ab-{desk,phone}-{main,cells,near}-*.png`, with each run's `console.log`
+- the side-by-side and diff images in `massing3-ab-sheets/{desk,phone,desk-near,phone-near}/` (`<shot>-ab.png`: main
+  on the left; `<shot>-diff.png`: differing pixels in red), and the table above in `*-pixel-diff.tsv`
+
+### Matched idle baseline (pending)
+
+The perf acceptance (frame time, draws, triangles, geometry memory and load time, on both quality tiers) needs a
+quiet Mac mini. Captures on the shared mini are functional evidence only. `tools/massing-baseline.sh` runs it
+unattended, by the st-wt0.2.2 / st-oiw protocol ([adoption-measurements.md](adoption-measurements.md)).
+
+**Arms** (the same shots and settings for each):
+
+- **main**: `dist-main/`, built from `origin/main`, with `?massing=1`
+- **cells**: this branch's `dist/` with `?massing=1`
+- **boxes**: `dist/` without the flag
+
+**Each tier** (high 1600×900; low 412×915 touch at DPR 1):
+
+- a warm-up run of main and of cells
+- then three rounds, with the arms' order rotated each round
+- `?autoscale=0&transit=timetable&film&cloudSpeed=0`, `CAPTURE_SEED=6711`, 2 s warm-up + 8 s windows,
+  `CAPTURE_IDLE_CHECK=1`, the long-task init script
+
+**Shots** (`tools/shots/massing-baseline.json`): the stats record, Cabbagetown Spruce St, King St W, Kensington Ave,
+the Financial District aerial and the city aerial. Each logs its draw/triangle census before its window. Every run
+records read-only host observations before and after (`tools/massing-baseline-run.sh`). Nothing on the mini is
+stopped.
+
+Before starting, check that the mini is quiet:
+
+- no other gpu2 job
+- production transcription idle
+- no rclone, Docker Desktop or Logi Options+ busy
+- GPU utilization near 0
+
+Then, from this checkout on the laptop:
+
+```sh
+GPU2=gpu2 GPU2_NAME=slop-toronto-r3-ride GPU2_LOCK_WAIT=1800 tools/massing-baseline.sh --build
+```
+
+- **Time.** 22 runs of about three minutes each, so 70–80 minutes if nobody else queues on the mini.
+- **Checked.** One short round (`PREFIX=mbcheck REPS=1 WARM=0`, two shots) ran end to end on the shared mini on
+  2026-11-01. Its numbers are contended, so they are not a baseline:
+  `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-r3-ride/mbcheck-baseline-summary.md`.
+- **Output.** `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/<GPU2_NAME>/`: every run's files (tags
+  `mb-<arm>-<tier>-r<round>`), `mb-baseline-run-order.txt`, `mb-baseline-<arm>-<tier>.summary.json`
+  (`tools/metrics-summary.mjs`) and `mb-baseline-summary.{json,md}` (`tools/massing-baseline-summary.mjs`). The
+  summary gives, per arm, tier and shot: frame p50/p95, CPU, draws, triangles, attribute memory, and the startup
+  phases (ready, `blocks`,
+  `massingData`, `massingCells`, `culling`, `compile`, the worker's build).
+- **Partial runs.** `--build` rebuilds `dist/` and `dist-main/` first. Without it, both must exist. `REPS`, `SHOTS`,
+  `WARM=0` and `PREFIX` are for checking the script itself, not for the baseline.
 
 ## Pilot evidence
 

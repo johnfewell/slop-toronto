@@ -221,27 +221,53 @@ async function buildShaders(storefronts) {
   renderer.backend.device = { limits: { maxUniformBufferBindingSize: 65536, maxStorageBufferBindingSize: 1 << 27 }, features: new Set() };
   renderer.hasFeature = () => false; // (no adapter: the WGSL is generated, not compiled)
   const box = { x: 0, y: 5, z: 0, w: 12, h: 10, d: 8, faces: [C.WALL_KINDS.shop, C.WALL_KINDS.entry, 2, 3], paint: [0.5, 0.4, 0.3, 2.5] };
-  const out = {};
+  const out = {}, vertexOf = new Map();
   const build = (name, mesh) => {
     const b = new THREE.WGSLNodeBuilder(mesh, renderer);
     b.scene = new THREE.Scene();
     b.camera = new THREE.PerspectiveCamera();
     b.build();
     out[name] = b.fragmentShader;
+    vertexOf.set(name, b.vertexShader);
   };
   build('rendered', C.createFacadeBoxes(C.createRenderedFacadeMaterial({ windowWidth: 3.1, floorHeight: 3.4, seed: 13 }), [box]));
   build('rendered1', C.createFacadeBoxes(C.createRenderedFacadeMaterial({ windowWidth: 2.4, floorHeight: 3.6, seed: 29, cornerPier: 0.5 }), [box]));
   build('curtain', C.createFacadeBoxes(C.createCurtainWallMaterial({ windowWidth: 1.6, floorHeight: 3.8, seed: 41, boxLocal: true }), [box]));
-  // the ?massing=1 polygon walls (createFootprintFacades): a shop wall on the street and a rear wall
-  const foot = [{ cx: 0, cz: 0, rings: [[[0, 0], [12, 0], [12, 8], [0, 8]]], h: 10, kinds: [C.WALL_KINDS.shop, 2, 2, C.WALL_KINDS.entry], paint: [0.5, 0.4, 0.3, 2.5] }];
-  build('rendered-footprint', C.createFootprintFacades(C.createRenderedFacadeMaterial({ windowWidth: 3.1, floorHeight: 3.4, seed: 13, footprintLocal: true }), foot).meshes[0]);
-  build('curtain-footprint', C.createFootprintFacades(C.createCurtainWallMaterial({ windowWidth: 1.6, floorHeight: 3.8, seed: 41, footprintLocal: true }), foot).meshes[0]);
+  // the ?massing=1 polygon walls (js/massing-cells.js, as buildings.js makes their meshes): a shop wall on the street
+  // and a rear wall
+  const MC = await import('../js/massing-cells.js');
+  const foot = [{ cx: 0, cz: 0, rings: [[[0, 0], [12, 0], [12, 8], [0, 8]]], h: 10, kinds: [C.WALL_KINDS.shop, 2, 2, C.WALL_KINDS.entry], paint: [0.5, 0.4, 0.3, 2.5], boxes: [[6, 4, 12, 8, 0]] }];
+  const cells = MC.buildMassingCells(MC.packInput(foot));
+  C.setFootprintTable(cells.table, cells.tableWidth, cells.yUnit);
+  const footMesh = (material) => {
+    const T = cells.blocks[0].tiers[0], g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(T.position, 4, true));
+    g.setAttribute('normal', new THREE.BufferAttribute(T.normal, 4, true));
+    g.setIndex(new THREE.BufferAttribute(T.index, 1));
+    return new THREE.Mesh(g, material);
+  };
+  build('rendered-footprint', footMesh(C.createRenderedFacadeMaterial({ windowWidth: 3.1, floorHeight: 3.4, seed: 13, footprintLocal: true })));
+  build('curtain-footprint', footMesh(C.createCurtainWallMaterial({ windowWidth: 1.6, floorHeight: 3.8, seed: 41, footprintLocal: true })));
+  // (as buildings.js makes them: one material per facade kind, its styles picked per vertex)
+  build('rendered-footprint-styles', footMesh(C.createRenderedFacadeMaterial({ footprintLocal: true, styles: [
+    { windowWidth: 3.1, floorHeight: 3.4, windowRatioX: 0.44, windowRatioY: 0.48, seed: 13.0 },
+    { windowWidth: 2.4, floorHeight: 3.6, windowRatioX: 0.6, windowRatioY: 0.56, litProbability: 0.5, warmth: 0.6, seed: 29.0, cornerPier: 0.5 }] })));
+  // the Distillery's Victorian style (buildings.js VICTORIAN) has a footprint material of its own: its arched windows and
+  // limestone are picked at build time, so it can't share one with the plain rendered styles
+  build('victorian-footprint-styles', footMesh(C.createRenderedFacadeMaterial({ footprintLocal: true, styles: [
+    { windowWidth: 2.7, floorHeight: 4.6, windowRatioX: 0.36, windowRatioY: 0.64, litProbability: 0.38, warmth: 0.95, seed: 97.0, cornerPier: 1.0, victorian: true }] })));
+  assert.throws(() => C.createRenderedFacadeMaterial({ footprintLocal: true, styles: [{ seed: 13.0 }, { seed: 97.0, victorian: true }] }),
+    /mixes victorian and plain/, 'a merged rendered footprint material is all Victorian or all plain');
+  build('curtain-footprint-styles', footMesh(C.createCurtainWallMaterial({ footprintLocal: true, styles: [
+    { glassTint: 0x2a3744, frameTint: 0x9a9ea0, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.55, reflectivity: 0.92, seed: 41.0, boxLocal: true },
+    { glassTint: 0x1e2326, frameTint: 0x3a3e40, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.6, reflectivity: 0.9, seed: 57.0, boxLocal: true },
+    { glassTint: 0x3d4245, frameTint: 0xb4b8ba, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.5, reflectivity: 0.94, seed: 73.0, boxLocal: true }] })));
   // the sign boards: an instanced box with the per-instance attributes storefront-signs.js sets
   const g = new THREE.BoxGeometry(1, 1, 1);
   for (const [k, n] of [['signRect', 4], ['signChannel', 4], ['signBoard', 4], ['signInk', 4], ['signMeta', 2]]) g.setAttribute(k, new THREE.InstancedBufferAttribute(new Float32Array(n), n));
   const atlas = new THREE.DataTexture(new Uint8Array(16), 2, 2);
   build('signs', new THREE.InstancedMesh(g, C.createStorefrontSignMaterial(atlas), 1));
-  return { out, THREE, C };
+  return { out, THREE, C, footprintVertex: vertexOf.get('rendered-footprint') };
 }
 
 test('the storefront & entrance shaders build to WGSL on both detail levels', async () => {
@@ -254,8 +280,16 @@ test('the storefront & entrance shaders build to WGSL on both detail levels', as
   const entrance = src.slice(src.indexOf('function createBuildingEntrance('), src.indexOf('/**\n * Curtain-Wall'));
   assert.match(entrance, /door: doorBay/, 'entrances only in the entry walls’ door bay, never on storefronts (dbaf5f9)');
   for (const level of [2, 1]) {
-    const { out } = await buildShaders(level);
+    const { out, footprintVertex } = await buildShaders(level);
     for (const [name, wgsl] of Object.entries(out)) assert.ok(wgsl.length > (name === 'signs' ? 1500 : 10000) && /fn main/.test(wgsl), `${name} at detail ${level}: ${wgsl.length}`);
+    // (the footprint walls' vertex stage reads the building table and takes its height and normal from it, st-2nl.3)
+    assert.match(footprintVertex, /textureLoad\(/);
+    assert.match(footprintVertex, /positionLocal = vec3<f32>\( position\.x, \(/);
+    assert.match(footprintVertex, /normalLocal = nodeVar\d+;/);
+    // (each value its style's own uniform, picked by a flat style index: the floats are the styles' own)
+    const flat = out['curtain-footprint-styles'].match(/@interpolate\( flat, either \) (nodeVarying\d+) : f32/);
+    assert.ok(flat, 'a flat style index');
+    assert.ok(out['curtain-footprint-styles'].split(`( ${flat[1]} < 1.5 )`).length > 8, 'the merged styles pick their values per vertex');
   }
   const quality = read('js/quality.js');
   assert.match(quality, /storefronts: 2,\n/);

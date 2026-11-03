@@ -12,7 +12,7 @@ const { THREE } = window.CITY;
 const { mergeGeometries } = window.CITY.Addons;
 const { Fn, float, color, uv, attribute, fract, smoothstep, mix, abs, positionWorld, normalWorldGeometry } = window.CITY.TSL;
 const { GEO, CITY_BOUNDS, nearestRoads } = window.CITY;
-const { createRenderedFacadeMaterial, createCurtainWallMaterial, createFacadeBoxes, createFootprintFacades, WALL_KINDS } = window.CITY;
+const { createRenderedFacadeMaterial, createCurtainWallMaterial, createFacadeBoxes, WALL_KINDS } = window.CITY;
 
 // ---- ?massing=1 (docs/massing-buildings.md, st-2nl): every building stands on its City 3D Massing polygon
 // (data/toronto-massing.bin, which main.js loads through js/massing-data.js only then, onto window.CITY.MASSING) instead
@@ -54,6 +54,150 @@ function footprintEdges(outer, covered, hidden, street, frontKind, shopFront, ba
   for (const e of edges) if (shopFront && e.street && e.len >= 3) e.kind = WALL_KINDS.shop;
   if (best >= 0) edges[best].kind = frontKind;
   return { kinds: edges.map((e) => e.kind), edges };
+}
+
+// ---- ?massing=1 cell meshes (js/massing-cells.js; docs/massing-buildings.md, st-2nl.3) ----------------------------
+// Builds them in a module worker (js/massing-worker.js), so the main thread goes on with the rest of the city meanwhile;
+// without workers (or ?massingWorker=0, or if it fails) on the main thread instead. Resolves to { out, where, waitMs }.
+function buildMassingCellsOffThread(input) {
+  const MC = window.CITY.MassingCells;
+  const t0 = performance.now();
+  const onMain = (why) => {
+    if (why) console.warn(`[buildings] massing worker: ${why}; building the cells on the main thread`);
+    return { out: MC.buildMassingCells(input), where: 'main', waitMs: performance.now() - t0 };
+  };
+  const off = typeof location !== 'undefined' && new URLSearchParams(location.search).get('massingWorker') === '0';
+  if (typeof Worker === 'undefined' || off) return Promise.resolve().then(() => onMain(null));
+  return new Promise((resolve) => {
+    let worker;
+    try {
+      worker = new Worker('./js/massing-worker.js', { type: 'module' });
+    } catch (e) {
+      resolve(onMain(e.message));
+      return;
+    }
+    worker.onmessage = ({ data }) => {
+      worker.terminate();
+      resolve(data.error ? onMain(data.error) : { out: data.out, where: 'worker', waitMs: performance.now() - t0 });
+    };
+    worker.onerror = (event) => {
+      event.preventDefault();
+      worker.terminate();
+      resolve(onMain(event.message || 'failed to start'));
+    };
+    // (copied, not transferred: the main thread keeps the input for the fallback)
+    worker.postMessage({ input });
+  });
+}
+
+// The near & mid tiers' limits come from the quality tier (quality.js massingLimits, x the quality net's distance
+// scale), with a hysteresis band either side. ?massingTier=near|mid|far holds every cell in one tier (A/B captures)
+const MASSING_LIMITS = [600, 1600];
+const MASSING_BAND = 40;
+
+/**
+ * The built cells -> meshes in `group`: per block, style and tier one mesh (and a second one sharing its buffers, for
+ * when the tier's cells are not one run of its index buffer). Every near mesh starts drawn whole, so the shadow
+ * stand-ins (scene-culling.js, userData.shadowStandIn) and the warm-up take all of it; mid and far ones never cast
+ * (the near geometry's stand-ins cast for them). Returns { update(camera) }: each frame from the warm-up on, every 500 m
+ * cell picks its tier (nextTier: with hysteresis) and the meshes draw the index ranges of their cells in it.
+ */
+function addMassingCells(group, built, materials, stats) {
+  const t0 = performance.now();
+  const MC = window.CITY.MassingCells;
+  const { out } = built;
+  window.CITY.setFootprintTable(out.table, out.tableWidth, out.yUnit);
+  const XS = MC.SNORM * MC.XZ_UNIT, YS = MC.SNORM * out.yUnit;
+  const cells = out.cells.map((c) => ({ ...c, tier: -1 }));
+  const cellAt = new Map(cells.map((c, i) => [`${c.sx},${c.sz}`, i]));
+  const firstOf = new Map();
+  const entries = [];
+  let meshes = 0;
+  for (const b of out.blocks) {
+    // the block's tier cells in index order (TIER_ORDER), -1 where it has none
+    const subs = [0, 1, 2, 3].map((s) => {
+      const k = MC.TIER_ORDER.indexOf(s);
+      return cellAt.get(`${b.bx * 2 + (k & 1)},${b.bz * 2 + (k >> 1)}`) ?? -1;
+    });
+    b.tiers.forEach((T, t) => {
+      if (!T.index.length) return;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(T.position, 4, true));
+      geo.setAttribute('normal', new THREE.BufferAttribute(T.normal, 4, true));
+      geo.setIndex(new THREE.BufferAttribute(T.index, 1));
+      // (bounds in the mesh's own units: its matrix scales x & z by XS, y by YS, and a sphere's radius by XS)
+      const [cx, cy, cz, r] = T.sphere;
+      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3((cx - b.ox) / XS, cy / YS, (cz - b.oz) / XS), r / XS);
+      const twin = new THREE.BufferGeometry();
+      twin.setAttribute('position', geo.attributes.position);
+      twin.setAttribute('normal', geo.attributes.normal);
+      twin.setIndex(geo.index);
+      twin.boundingSphere = geo.boundingSphere;
+      const pair = [geo, twin].map((g, k) => {
+        const m = new THREE.Mesh(g, materials[b.style]);
+        m.name = `MassingBuildings_${b.style}`;
+        m.position.set(b.ox, 0, b.oz);
+        m.scale.set(XS, YS, XS);
+        m.updateMatrix();
+        m.receiveShadow = true;
+        // (the near meshes cast through scene-culling.js's position-only stand-ins, as upstream c4ab18f)
+        m.castShadow = t === 0 && k === 0;
+        if (m.castShadow) m.userData.shadowStandIn = true;
+        m.userData.massingTier = t;
+        m.visible = t === 0 && k === 0;
+        const key = materials[b.style];
+        if (firstOf.has(key)) m.userData.sharesPipelineWith = firstOf.get(key); else firstOf.set(key, m);
+        group.add(m);
+        meshes++;
+        return m;
+      });
+      entries.push({ subs, t, ranges: T.ranges, pair, drawn: null });
+    });
+  }
+  const tierStats = out.stats.tiers;
+  const bytes = tierStats.reduce((s, t) => s + t.bytes, 0) + out.table.byteLength;
+  Object.assign(stats, {
+    builtIn: built.where, buildMs: out.stats.ms, waitMs: Math.round(built.waitMs * 10) / 10, meshes,
+    triangles: tierStats[0].triangles, vertices: tierStats[0].vertices, walls: tierStats[0].walls,
+    tiers: tierStats.map((t) => ({ ...t, MiB: Math.round(t.bytes / 1048576 * 10) / 10 })),
+    geometryMiB: Math.round(bytes / 1048576 * 10) / 10, bytesPerVertex: MC.BYTES_PER_VERTEX,
+    boxTriangles: stats.boxesReplaced * 12, simplified: out.stats.simplified, midKept: out.stats.midKept, coveredDropped: out.stats.coveredDropped
+  });
+  stats.meshMs = Math.round((performance.now() - t0) * 10) / 10;
+  window.CITY.massingStats = stats;
+  console.info(`[buildings] massing: ${stats.buildings} buildings from their polygons (${stats.rejected} of ${stats.records} records rejected), ` +
+    `${stats.courtyards} courtyards, ${stats.partyWalls} party walls, ${stats.onPodium} on a podium; ` +
+    stats.tiers.map((t) => `${t.name} ${t.triangles} triangles, ${t.vertices} vertices (${t.MiB} MiB)`).join('; ') +
+    ` at ${MC.BYTES_PER_VERTEX} B a vertex, ${stats.geometryMiB} MiB with the table, in ${meshes} meshes (the ${stats.boxesReplaced} boxes they replace: ` +
+    `${stats.boxTriangles} triangles, instanced); built in the ${built.where === 'worker' ? 'worker' : 'main thread'} in ${stats.buildMs} ms ` +
+    `(${stats.waitMs} ms after it was asked), ${stats.packMs} ms packing and ${stats.meshMs} ms making the meshes on the main thread`);
+
+  const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : new URLSearchParams();
+  const hold = MC.TIERS.indexOf(params.get('massingTier'));
+  const Q = window.CITY.QUALITY || {};
+  const counts = [0, 0, 0];
+  stats.cellTiers = counts;
+  function update(camera) {
+    const p = camera.position || camera;
+    const limits = (Q.massingLimits || MASSING_LIMITS).map((d) => d * (Q.dist ?? 1));
+    let changed = false;
+    for (const c of cells) {
+      const t = hold >= 0 ? hold : MC.nextTier(c.tier, MC.cellDistance(c, p.x, p.y, p.z), limits, MASSING_BAND);
+      if (t !== c.tier) { c.tier = t; changed = true; }
+    }
+    if (!changed) return false;
+    counts.fill(0);
+    for (const c of cells) counts[c.tier]++;
+    for (const e of entries) {
+      const runs = MC.tierRuns(e.ranges, e.subs.map((i) => (i >= 0 ? cells[i].tier : -1)), e.t);
+      e.pair.forEach((m, k) => {
+        m.visible = k < runs.length;
+        if (m.visible) m.geometry.setDrawRange(runs[k][0], runs[k][1]);
+      });
+    }
+    return true;
+  }
+  return { update, cells };
 }
 
 function mulberry32(seed) {
@@ -408,6 +552,13 @@ const FLOOR_HEIGHTS = [3.4, 3.6, 3.8, 3.8, 3.8, 4.6]; // the facade materials' s
 // House, 20 m by the Stone Distillery) as boxes in this material's batch; the brick a quieter, weathered red-brown
 // (phase 1's read too saturated). Buildings are picked by their centres (a few metres' tolerance), not by row numbers.
 const VICTORIAN = 5; // its facade style (buildCityBlocks `facadeStyles`)
+// ?massing=1: the facade styles each footprint material draws (by facade kind: the rendered ones, the Distillery's
+// Victorian, then the curtain walls), and each style's [material, variant] there. The Victorian style has its own: its
+// `victorian` option picks the shader's arched windows and limestone at build time, so it can't share a material with
+// the plain rendered styles (the only blocks that draw it are the Distillery's)
+const FOOTPRINT_MATERIALS = [[0, 1], [VICTORIAN], [2, 3, 4]];
+const FOOTPRINT_STYLE = [];
+FOOTPRINT_MATERIALS.forEach((ids, m) => ids.forEach((id, v) => { FOOTPRINT_STYLE[id] = [m, v]; }));
 const DISTILLERY = {
   maxH: 30,
   pitchedUpTo: 19, // a pitched roof on blocks up to this height (the warehouses & the mill), flat parapets above
@@ -469,9 +620,11 @@ function buildCityBlocks(scene) {
   ];
   const materials = facadeStyles.map(([create, opts]) => create(opts));
   const buckets = materials.map(() => []);
-  // ?massing=1: the polygon buildings, by facade style (their own footprintLocal materials, made only then)
+  // ?massing=1: the polygon buildings (js/massing-cells.js builds their cell meshes, in their own footprintLocal
+  // materials, made only then)
   const massing = massingFootprints();
-  const footBuckets = materials.map(() => []);
+  const footRecords = [];
+  const footSeeds = materials.map(() => 0); // (each style's records numbered as before, for their seeds)
   const massingStats = massing && { buildings: 0, records: massing.records, rejected: massing.rejected, courtyards: 0, partyWalls: 0, onPodium: 0, boxesReplaced: 0, ms: 0 };
   const roofTiles = { pos: [], nor: [], uv: [], col: [] };
   const roofSheets = { pos: [], nor: [], uv: [], col: [] };
@@ -542,10 +695,19 @@ function buildCityBlocks(scene) {
       const fr = footprintEdges(foot.rings[0], foot.covered, foot.hidden, foot.street, faces[front], shopFront, Math.min(foot.base, h - 0.5), h);
       edges = fr.edges;
       const pitched = victorian ? h <= DISTILLERY.pitchedUpTo : (roof === 1 && kind !== 3) || roof === 2;
-      footBuckets[mat].push({
-        cx, cz, rings: foot.rings, base: Math.min(foot.base, h - 0.5), h, kinds: fr.kinds,
+      const boxes = [];
+      for (const [u0, u1, v0, v1] of parts) {
+        const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
+        if (u1 - u0 >= 1 && v1 - v0 >= 1) boxes.push([cx + uc * cs + vc * sn, cz - uc * sn + vc * cs, u1 - u0, v1 - v0, ang]);
+      }
+      const [style, variant] = FOOTPRINT_STYLE[mat];
+      footRecords.push({
+        // (its material: the rendered or the curtain-wall facades, which merge their styles; variant: its style there)
+        cx, cz, style, variant, rings: foot.rings, base: Math.min(foot.base, h - 0.5), h, kinds: fr.kinds,
+        cover: foot.rings[0].map((_, i) => (foot.covered.has(i) ? foot.covered.get(i) : NaN)),
         // (overlapping records of one height: their roofs a little apart, not flickering)
-        capY: (pitched ? h - 0.05 : h) - (bi % 5) * 0.012, tone, seed: footBuckets[mat].length * 29, paint
+        capY: (pitched ? h - 0.05 : h) - (bi % 5) * 0.012, tone, seed: footSeeds[mat]++ * 29, paint,
+        boxes, faces // (the far tier: the boxes this polygon replaces)
       });
       const outer = foot.rings[0];
       let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
@@ -678,26 +840,24 @@ function buildCityBlocks(scene) {
     }
   }
 
-  // ?massing=1: the polygons, merged per facade style and 1 km cell, in footprintLocal copies of the materials
+  // ?massing=1: the polygons, as compact cell meshes in three distance tiers (js/massing-cells.js), built in a worker;
+  // `massingReady` settles once their meshes are in the group (main.js waits for it before the culling setup)
+  let massingReady = null, massingTiers = null;
   if (massing) {
     const tm = performance.now();
-    let triangles = 0, meshes = 0, walls = 0, vertices = 0;
-    footBuckets.forEach((items, i) => {
-      if (!items.length) return;
-      const [create, opts] = facadeStyles[i];
-      const built = createFootprintFacades(create({ ...opts, footprintLocal: true }), items);
-      for (const m of built.meshes) { m.name = `MassingBuildings_${i}`; group.add(m); vertices += m.geometry.attributes.position.count; }
-      triangles += built.triangles; meshes += built.meshes.length; walls += built.walls;
+    // three footprint materials, each drawing all its styles (tsl-materials.js footprintStyled): a block is two draws a
+    // tier (three at the Distillery), not six
+    const footMaterials = FOOTPRINT_MATERIALS.map((ids) => ids.map((i) => facadeStyles[i])).map((list) => {
+      if (list.some(([create]) => create !== list[0][0])) throw new Error('massing: a footprint material mixes facade kinds');
+      return list[0][0]({ footprintLocal: true, styles: list.map(([, opts]) => opts) });
     });
-    // (the footprint vertex format: position, normal, facadeWall 3 floats each, box & paint 4)
-    Object.assign(massingStats, { triangles, meshes, walls, vertices, geometryMiB: Math.round(vertices * 17 * 4 / 1048576 * 10) / 10, boxTriangles: massingStats.boxesReplaced * 12 });
-    massingStats.meshMs = Math.round((performance.now() - tm) * 10) / 10;
+    const input = window.CITY.MassingCells.packInput(footRecords);
+    massingStats.packMs = Math.round((performance.now() - tm) * 10) / 10;
     massingStats.ms = Math.round((massingStats.ms + performance.now() - tm) * 10) / 10;
-    window.CITY.massingStats = massingStats;
-    console.info(`[buildings] massing: ${massingStats.buildings} buildings from their polygons (${massingStats.rejected} of ${massingStats.records} records rejected), ` +
-      `${massingStats.courtyards} courtyards, ${massingStats.partyWalls} party walls, ${massingStats.onPodium} on a podium; ${triangles} triangles, ${vertices} vertices ` +
-      `(~${massingStats.geometryMiB} MiB) in ${meshes} meshes (the ${massingStats.boxesReplaced} boxes they replace: ${massingStats.boxTriangles} triangles, instanced); ` +
-      `${massingStats.ms} ms (${massingStats.meshMs} ms merging)`);
+    massingReady = buildMassingCellsOffThread(input).then((built) => {
+      massingTiers = addMassingCells(group, built, footMaterials, massingStats);
+      return massingStats;
+    });
   }
   // The Distillery's brick chimneys (OSM man_made=chimney): a plinth, a shaft stepping in once, a corbelled band & a
   // cap, as blank-walled boxes in the Victorian brick's batch (its coping lines are the corbel courses). No draw of their own.
@@ -874,7 +1034,10 @@ function buildCityBlocks(scene) {
 
   scene.add(group);
   window.CITY.storefrontBuildingStats = { storefronts: stats.storefronts, strip: stats.strip, signed: stats.signed };
-  return { group, colliders, quadtree, allBlocks, update, getActiveBlockCount: () => activeCount, facadeOf: (row) => facades.get(row) || null };
+  return {
+    group, colliders, quadtree, allBlocks, update, getActiveBlockCount: () => activeCount, facadeOf: (row) => facades.get(row) || null,
+    massingReady, updateMassingTiers: (camera) => massingTiers && massingTiers.update(camera)
+  };
 }
 
 Object.assign(window.CITY, { CityQuadtree, buildCityBlocks, storefrontSelection, signedWalls });

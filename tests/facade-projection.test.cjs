@@ -47,6 +47,7 @@ const buildFrame = vm.runInNewContext(`(function (normalLocal, modelNormalMatrix
   };
 })`, {
   THREE: { InterpolationSamplingType: { FLAT: 'flat' }, InterpolationSamplingMode: { EITHER: 'either' } },
+  footprintLocal: false, // (the box and world walls: the ?massing=1 cell meshes decode their own frame, massing-cells tests)
   normalize: v => v.normalize(),
   varying: v => new Node(v),
   abs: unary(Math.abs), sign: unary(Math.sign),

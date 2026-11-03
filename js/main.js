@@ -132,7 +132,9 @@ async function initApp() {
   // js/massing-data.js and data/toronto-massing.bin are fetched only then, so normal play never loads them)
   if (new URLSearchParams(location.search).get('massing') === '1') {
     try {
-      const { loadMassing } = await import('./massing-data.js');
+      // (js/massing-cells.js: the compact cell meshes buildings.js has built off the main thread, st-2nl.3)
+      const [{ loadMassing }, cells] = await Promise.all([import('./massing-data.js'), import('./massing-cells.js')]);
+      window.CITY.MassingCells = cells;
       const M = await loadMassing(window.CITY.GEO);
       window.CITY.MASSING = M;
       console.info(`[massing] data/toronto-massing.bin: ${M.bytes} bytes, ${M.records} records, decoded in ${M.decodeMs.toFixed(1)} ms, ` +
@@ -343,6 +345,11 @@ async function initApp() {
   const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
+  // ?massing=1: the polygon cells, built in a worker since `blocks` (their near tier gives the shadow stand-ins)
+  if (cityBlocks.massingReady) {
+    await cityBlocks.massingReady;
+    markInit('massingCells');
+  }
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
   // The static city's ~9,000 objects never move: the per-frame matrix pass skips them (it was 2.6 ms of every frame).
   // Only its lights move (the street lights' spot pool follows the rider): the frame loop updates those itself
@@ -1516,6 +1523,7 @@ async function initApp() {
       mapSystem.update(); tourGuide.update(dt, elapsed); renderCarCondition(); cityAudio.update(dt, elapsed);
     }
     if (warmedUp) updateSceneCulling(cameraSystem.camera.position); // the warm-up frame draws every chunk
+    if (warmedUp) cityBlocks.updateMassingTiers(cameraSystem.camera); // (?massing=1: each 500 m cell's distance tier)
     if (parkedCars) parkedCars.update(cameraSystem.camera); // (the cells in view, re-picked when the camera moves)
     if (warmedUp && bikeShare) bikeShare.update(cameraSystem.camera.position); // the nearby stations' bikes
     if (warmedUp && wayfindingMaps) wayfindingMaps.update(cameraSystem.camera.position,dt);
@@ -1678,6 +1686,7 @@ async function initApp() {
         lightingSystem.update(cameraSystem.currentPos); lakeWater.update(elapsed);
         if (resetHistory) lightingSystem.sunLight.shadow.needsUpdate = true;
         updateSceneCulling(cameraSystem.camera.position);
+        cityBlocks.updateMassingTiers(cameraSystem.camera);
         if (!scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();
       }
       if (resetHistory) skyClouds?.resetHistory(sampleFrame);

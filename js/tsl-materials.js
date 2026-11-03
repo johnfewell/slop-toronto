@@ -451,6 +451,96 @@ const evaluateApartmentInterior = Fn(([uCoord, vCoord, winUV, cellId, winWNode, 
  */
 const WALL_KINDS = { shop: 0, entry: 1, rear: 2, lotLine: 3, blankStone: 4 };
 
+// ---- The ?massing=1 cell meshes' compact vertices (js/massing-cells.js, docs/massing-buildings.md st-2nl.3) ----------
+// `position` (snorm16 x 4): x, z in decimetres from the block's centre (the mesh's matrix scales them back to metres)
+// and w = variant * 64 + level * 16 + kind * 2 + along (variant: the facade style, footprintStyled); `normal` (snorm16 x 4): the wall's edge (dx, dz) in decimetres, (0, 0) on a
+// roof cap, and the building's index in the table (15 + 15 bits). The building table, two texels per building:
+// (height, seed + tone, base, cap height) and its paint. The vertex's height comes from the table by its level (base,
+// top, cap or the ground), so the walls' tops and the caps' 1.2 cm steps are exact; its outward normal (dz, 0, -dx) /
+// length and its wall's width (the edge's length; 1 on a cap, as before) from the edge.
+// (made only under ?massing=1: the default page has neither the texture nor the uniform)
+const FOOTPRINT_TABLE_WIDTH = 2048; // (js/massing-cells.js TABLE_WIDTH)
+let footprintTable = null, uFootprintYScale = null;
+function footprintShared() {
+  if (footprintTable) return;
+  footprintTable = new THREE.DataTexture(new Float32Array(FOOTPRINT_TABLE_WIDTH * 4), FOOTPRINT_TABLE_WIDTH, 1, THREE.RGBAFormat, THREE.FloatType);
+  footprintTable.magFilter = footprintTable.minFilter = THREE.NearestFilter;
+  footprintTable.generateMipmaps = false;
+  footprintTable.needsUpdate = true;
+  // the meshes' y scale: SNORM x the cells' y step (m), so a local y is metres / this
+  uFootprintYScale = uniform(32767 * 0.01).setGroup(renderGroup);
+}
+/** buildings.js, once the cells are built: their building table (Float32Array, `width` texels a row) and y step */
+function setFootprintTable(data, width, yUnit) {
+  if (width !== FOOTPRINT_TABLE_WIDTH) throw new Error(`footprint table: ${width} texels a row, not ${FOOTPRINT_TABLE_WIDTH}`);
+  footprintShared();
+  footprintTable.image = { data, width, height: data.length / 4 / width };
+  footprintTable.needsUpdate = true;
+  uFootprintYScale.value = 32767 * yUnit;
+}
+let _footprintVertex = null;
+/**
+ * The decoded footprint vertex: { localPosition, normal } for the vertex stage, { box, wall, paint, nWall } as varyings
+ * and its facade style `variant` as a flat one
+ */
+function footprintVertex() {
+  if (_footprintVertex) return _footprintVertex;
+  footprintShared();
+  const { round, ivec2, textureLoad } = window.CITY.TSL;
+  const p = attribute('position', 'vec4');
+  const e = attribute('normal', 'vec4');
+  const packed = round(p.w.mul(32767.0));
+  const variant = floor(packed.div(64.0).add(0.01));
+  const code = packed.sub(variant.mul(64.0));
+  const level = floor(code.div(16.0).add(0.01));
+  const rest = code.sub(level.mul(16.0));
+  const kind = floor(rest.div(2.0).add(0.01));
+  const along = rest.sub(kind.mul(2.0));
+  const dx = round(e.x.mul(32767.0)).mul(0.1), dz = round(e.y.mul(32767.0)).mul(0.1);
+  const len = length(vec2(dx, dz));
+  const isWall = step(0.0005, len);
+  const normal = mix(vec3(0.0, 1.0, 0.0), vec3(dz, 0.0, dx.negate()).div(max(len, 0.0005)), isWall);
+  const building = round(e.z.mul(32767.0)).add(round(e.w.mul(32767.0)).mul(32768.0));
+  const texel = building.mul(2.0);
+  const tx = mod(texel, FOOTPRINT_TABLE_WIDTH), ty = floor(texel.div(FOOTPRINT_TABLE_WIDTH));
+  const t0 = textureLoad(footprintTable, ivec2(tx, ty));
+  const t1 = textureLoad(footprintTable, ivec2(tx.add(1.0), ty));
+  // level 0 base, 1 top, 2 cap, 3 the ground
+  const y = mix(mix(t0.z, t0.x, step(0.5, level)), mix(t0.w, float(0.0), step(2.5, level)), step(1.5, level));
+  _footprintVertex = {
+    localPosition: vec3(p.x, y.div(uFootprintYScale), p.z),
+    normal,
+    box: varying(vec4(mix(float(1.0), len, isWall), t0.x, 0.0, t0.y)),
+    wall: varying(vec3(along, t0.x.sub(y), kind)),
+    paint: varying(t1),
+    nWall: varying(normal),
+    variant: varying(variant).setInterpolation(THREE.InterpolationSamplingType.FLAT, THREE.InterpolationSamplingMode.EITHER)
+  };
+  return _footprintVertex;
+}
+// A merged footprint material's per-style value: one uniform per style, the vertex's style picking it (select, so the
+// value is the very float the style's own material had as a uniform); a single style is just its uniform
+function footprintStyled(values, make = (v) => uniform(v)) {
+  const nodes = values.map(make);
+  if (nodes.length === 1) return nodes[0];
+  const { select } = window.CITY.TSL;
+  const variant = footprintVertex().variant;
+  let out = nodes[nodes.length - 1];
+  for (let i = nodes.length - 2; i >= 0; i--) out = select(variant.lessThan(i + 0.5), nodes[i], out);
+  return out;
+}
+// A footprint material takes its vertex's height and normal from footprintVertex (in its vertex stage, as three's own
+// instancing does), not from a positionNode: scene-culling.js's shadow stand-ins only take materials without one
+function useFootprintVertex(mat) {
+  const fv = footprintVertex();
+  const setupPosition = mat.setupPosition;
+  mat.setupPosition = function (builder) {
+    positionLocal.assign(fv.localPosition);
+    normalLocal.assign(fv.normal);
+    return setupPosition.call(this, builder);
+  };
+}
+
 /**
  * Facade cell coordinates shared by the curtain-wall & pre-war materials: wall UV (u runs along whichever horizontal
  * axis the wall faces, v is world height), window cell id/UV, bay width, pixel footprint in cells (`fw`, for
@@ -463,16 +553,17 @@ const WALL_KINDS = { shop: 0, entry: 1, rear: 2, lotLine: 3, blankStone: 4 };
  * `isGroundFloor` is 1 only on storefront ground floors, `door` marks the entrance bay of residential fronts, `back`
  * the plain common-brick rear & lot-line walls (tinted by the building's `tone`) and `blank` the windowless ones
  * (folded into `solid`); `wallS`, `wallW`, `wallH`, `fromTop` & `boxSeed` place things on the wall (painted signs).
- * With `footprintLocal` (and `boxLocal`) the mesh comes from createFootprintFacades instead: walls of any angle along a
- * polygon footprint (the City's 3D Massing, buildings.js ?massing=1) carry their own frame in `facadeWall` (0..1 along
- * the wall, metres below its top, WALL_KINDS) and `box` (wall width, building height, unused, seed + tone), as mrdoob's
- * footprintLocal in Slop New York (1daa665, 819a0ad).
+ * With `footprintLocal` (and `boxLocal`) the mesh is a ?massing=1 cell mesh instead (js/massing-cells.js, the City's 3D
+ * Massing): walls of any angle along a polygon footprint carry their own frame (0..1 along the wall, metres below its
+ * top, WALL_KINDS) and box (wall width, building height, unused, seed + tone), decoded by footprintVertex from the
+ * compact vertices and the building table, as mrdoob's footprintLocal in Slop New York (1daa665, 819a0ad).
  * Plain JS (not Fn) so it inlines into each node graph exactly like hand-written code.
  */
 function facadeCell(windowWidth, floorHeight, boxLocal, cornerPier = 0, footprintLocal = false) {
   // Box-local walls are told apart by the box's own normals (createFacadeBoxes instances may be turned about +y to
   // follow a non-grid street); world-space walls by the world normal
-  const nWall = boxLocal ? normalGeometry : facadeWorldNormal;
+  const foot = footprintLocal ? footprintVertex() : null;
+  const nWall = foot ? foot.nWall : boxLocal ? normalGeometry : facadeWorldNormal;
   const nW = abs(nWall);
   const isRoof = step(0.75, nW.y);
   const alongZ = boxLocal ? step(nW.z, nW.x) : facadeAlongZ;
@@ -493,9 +584,10 @@ function facadeCell(windowWidth, floorHeight, boxLocal, cornerPier = 0, footprin
   let boxSeed = float(0.0);
 
   if (boxLocal) {
-    const box = attribute('box', 'vec4'); // width, height, depth, seed (+ the building's tone in its fraction)
+    // width, height, depth, seed (+ the building's tone in its fraction)
+    const box = foot ? foot.box : attribute('box', 'vec4');
     // (footprint walls: 0..1 along the wall, metres below its top & its WALL_KINDS, per vertex)
-    const footWall = footprintLocal ? attribute('facadeWall', 'vec3') : null;
+    const footWall = foot ? foot.wall : null;
     const wallWidth = footprintLocal ? box.x : mix(box.x, box.z, alongZ);
     if (footprintLocal) {
       kind = footWall.z;
@@ -520,8 +612,8 @@ function facadeCell(windowWidth, floorHeight, boxLocal, cornerPier = 0, footprin
     wallS = mix(along, float(1.0).sub(along), flip).mul(wallWidth);
     wallH = box.y;
     fromTop = footprintLocal ? footWall.y : float(0.5).sub(positionGeometry.y).mul(box.y);
-    if (cornerPier > 0) {
-      const pier = min(float(cornerPier), wallWidth.mul(0.2));
+    if (cornerPier.isNode || cornerPier > 0) { // (a node: a merged footprint material's, footprintStyled, every style's > 0)
+      const pier = min(cornerPier.isNode ? cornerPier : float(cornerPier), wallWidth.mul(0.2));
       const inner = wallWidth.sub(pier.mul(2.0));
       bays = max(floor(inner.div(windowWidth).add(0.5)), 1.0);
       const s = along.mul(wallWidth); // metres from the wall's corner
@@ -575,8 +667,8 @@ function facadeCell(windowWidth, floorHeight, boxLocal, cornerPier = 0, footprin
 // Generated storefronts & entrances (bead st-sz0). Adapted from mrdoob/slop-newyork 8d88e41 "Add detailed storefront
 // glazing, interiors and signs", 26bb9fe "Add procedural building entrances" and dbaf5f9 "Keep building entrances off
 // storefronts" (MIT). Placed only from facadeCell's wall frame (wallS/wallW/fromTop), so the same code serves the
-// box-local walls (createFacadeBoxes) and the ?massing=1 polygon walls (`footprintLocal`, createFootprintFacades), whose
-// facadeCell fills that frame from `facadeWall`; upstream 59be218 read `footprintLocal` directly. Toronto's storeys are lower (3.4–3.8 m), so the shopfront is laid out from the
+// box-local walls (createFacadeBoxes) and the ?massing=1 polygon walls (`footprintLocal`, js/massing-cells.js), whose
+// frame facadeCell decodes (footprintVertex); upstream 59be218 read `footprintLocal` directly. Toronto's storeys are lower (3.4–3.8 m), so the shopfront is laid out from the
 // ground floor's height, and the fascia is left blank: no invented shop names. Real names come only from source-keyed
 // records (js/storefront-signs.js), whose boards stand over this fascia.
 // =====================================================================================================================
@@ -747,7 +839,9 @@ function createBuildingEntrance(facade, trim, modern = false) {
  * - Urban Canyon Global Illumination (`aoNode` + warm bounce)
  */
 function createCurtainWallMaterial(opts = {}) {
-  const {
+  // (?massing=1 merges the curtain-wall styles into one footprint material: `styles` lists them, each as these options,
+  // and each vertex picks its own, footprintStyled)
+  const P = (opts.footprintLocal && opts.styles ? opts.styles.map((o) => ({ ...opts, ...o })) : [opts]).map(({
     glassTint = 0x162c42,
     frameTint = 0x26323e,
     windowWidth = 2.8,
@@ -759,10 +853,14 @@ function createCurtainWallMaterial(opts = {}) {
     reflectivity = 0.92,
     seed = 1.0,
     boxLocal = false,
-    footprintLocal = false // (walls from createFootprintFacades)
-  } = opts;
-
-  const cacheKey = `${glassTint}_${frameTint}_${windowWidth}_${floorHeight}_${litProbability}_${warmth}_${reflectivity}_${seed}_${boxLocal}_${footprintLocal}`;
+    footprintLocal = false // (the ?massing=1 cell meshes, js/massing-cells.js)
+  }) => ({ glassTint, frameTint, windowWidth, floorHeight, mullionThickness, spandrelRatio, litProbability, warmth, reflectivity, seed, boxLocal, footprintLocal }));
+  const { mullionThickness, spandrelRatio, boxLocal, footprintLocal } = P[0];
+  if (P.some((p) => p.mullionThickness !== mullionThickness || p.spandrelRatio !== spandrelRatio || p.boxLocal !== boxLocal)) {
+    throw new Error('curtain wall: merged styles must share their mullions, spandrels and frame');
+  }
+  const cacheKey = P.map(({ glassTint, frameTint, windowWidth, floorHeight, litProbability, warmth, reflectivity, seed }) =>
+    `${glassTint}_${frameTint}_${windowWidth}_${floorHeight}_${litProbability}_${warmth}_${reflectivity}_${seed}_${boxLocal}_${footprintLocal}`).join('|');
   if (_curtainWallCache.has(cacheKey)) {
     return _curtainWallCache.get(cacheKey);
   }
@@ -773,17 +871,19 @@ function createCurtainWallMaterial(opts = {}) {
   });
 
   // The style's parameters are uniforms (not baked-in constants), so every curtain-wall style compiles to one shader
-  const cGlass = uniform(new THREE.Color(glassTint));
-  const cFrame = uniform(new THREE.Color(frameTint));
-  const uWindowWidth = uniform(windowWidth);
-  const uFloorHeight = uniform(floorHeight);
-  const uLitProbability = uniform(litProbability);
-  const uWarmth = uniform(warmth);
-  const uReflectivity = uniform(reflectivity);
-  const uSeed = uniform(seed);
+  const styled = (key, make) => footprintStyled(P.map((p) => p[key]), make);
+  const cGlass = styled('glassTint', (v) => uniform(new THREE.Color(v)));
+  const cFrame = styled('frameTint', (v) => uniform(new THREE.Color(v)));
+  const uWindowWidth = styled('windowWidth');
+  const uFloorHeight = styled('floorHeight');
+  const uLitProbability = styled('litProbability');
+  const uWarmth = styled('warmth');
+  const uReflectivity = styled('reflectivity');
+  const uSeed = styled('seed');
   const cCanyonBounce = color(0xe89c68);
 
   mat.aoNode = canyonSkyAONode();
+  if (footprintLocal) useFootprintVertex(mat);
 
   // The facade cell and the apartment behind each pane are built once and shared by every output below, so the
   // shader carries a single copy of them (and evaluates the interior mapping once per pixel)
@@ -1332,7 +1432,9 @@ function createPreWarBuildingMaterial(opts = {}) {
  */
 const _renderedCache = new Map();
 function createRenderedFacadeMaterial(opts = {}) {
-  const {
+  // (?massing=1 merges the rendered styles into one footprint material: `styles` lists them, each as these options, and
+  // each vertex picks its own, footprintStyled)
+  const P = (opts.footprintLocal && opts.styles ? opts.styles.map((o) => ({ ...opts, ...o })) : [opts]).map(({
     windowWidth = 3.1,
     floorHeight = 3.4,
     windowRatioX = 0.46,
@@ -1341,27 +1443,38 @@ function createRenderedFacadeMaterial(opts = {}) {
     warmth = 0.86,
     seed = 13.0,
     cornerPier = 0.7,
-    footprintLocal = false, // (walls from createFootprintFacades, per-vertex `paint`, instead of createFacadeBoxes)
+    footprintLocal = false, // (the ?massing=1 cell meshes, js/massing-cells.js: paint from the building table, instead of createFacadeBoxes)
     // the Distillery District's (buildings.js VICTORIAN): segmental-arched heads with a brick arch ring over stone sills
     // and sash bars; paint.w >= 4 is its limestone (ashlar courses, square windows, the round iron tie plates)
     victorian = false
-  } = opts;
-  const cacheKey = `${windowWidth}_${floorHeight}_${windowRatioX}_${windowRatioY}_${litProbability}_${warmth}_${seed}_${cornerPier}_${footprintLocal}_${victorian}`;
+  }) => ({ windowWidth, floorHeight, windowRatioX, windowRatioY, litProbability, warmth, seed, cornerPier, footprintLocal, victorian }));
+  const footprintLocal = P[0].footprintLocal;
+  // (victorian picks the shader's own masks, so it can't vary per vertex: a merged footprint material is all one or the
+  // other, and buildings.js FOOTPRINT_MATERIALS gives the Victorian style its own)
+  const victorian = P[0].victorian;
+  if (P.some((p) => p.victorian !== victorian)) throw new Error('rendered facade: a merged style mixes victorian and plain styles');
+  const cacheKey = P.map(({ windowWidth, floorHeight, windowRatioX, windowRatioY, litProbability, warmth, seed, cornerPier }) =>
+    `${windowWidth}_${floorHeight}_${windowRatioX}_${windowRatioY}_${litProbability}_${warmth}_${seed}_${cornerPier}_${footprintLocal}_${victorian}`).join('|');
   if (_renderedCache.has(cacheKey)) return _renderedCache.get(cacheKey);
 
   const mat = new THREE.MeshStandardNodeMaterial({ metalness: 0.0, roughness: 0.85 });
-  const uWindowWidth = uniform(windowWidth);
-  const uFloorHeight = uniform(floorHeight);
-  const uLitProbability = uniform(litProbability);
-  const uWarmth = uniform(warmth);
-  const uSeed = uniform(seed);
-  const halfWinX = (1.0 - windowRatioX) * 0.5;
-  const halfWinY = (1.0 - windowRatioY) * 0.5;
+  const styled = (key) => footprintStyled(P.map((p) => p[key]));
+  const uWindowWidth = styled('windowWidth');
+  const uFloorHeight = styled('floorHeight');
+  const uLitProbability = styled('litProbability');
+  const uWarmth = styled('warmth');
+  const uSeed = styled('seed');
+  const halfWin = (ratio) => (1.0 - ratio) * 0.5;
+  const halfWinX = P.length > 1 ? footprintStyled(P.map((p) => halfWin(p.windowRatioX))) : halfWin(P[0].windowRatioX);
+  const halfWinY = P.length > 1 ? footprintStyled(P.map((p) => halfWin(p.windowRatioY))) : halfWin(P[0].windowRatioY);
+  if (P.length > 1 && P.some((p) => !(p.cornerPier > 0))) throw new Error('rendered facade: a merged style without corner piers');
+  const cornerPier = P.length > 1 ? styled('cornerPier') : P[0].cornerPier;
 
   mat.aoNode = canyonSkyAONode();
+  if (footprintLocal) useFootprintVertex(mat);
   const facade = facadeCell(uWindowWidth, uFloorHeight, true, cornerPier, footprintLocal);
   const { isRoof, uCoord, vCoord, gridV, cellId, cellUV, fw, bayWidth, isGroundFloor, solid, door, tone, floor0, coping } = facade;
-  const paintAttr = attribute('paint', 'vec4');
+  const paintAttr = footprintLocal ? footprintVertex().paint : attribute('paint', 'vec4');
   const paint = paintAttr.xyz;
   // --- Toronto layer: paint.w >= 2 marks a brick building (its glass style in the fraction), the brick & stone colours
   // measured from Wikimedia Commons photos (buildings.js TORONTO_MASONRY, after aalghooneh/slop-toronto) ---
@@ -1371,8 +1484,8 @@ function createRenderedFacadeMaterial(opts = {}) {
   const brickOnly = victorian ? isBrick.mul(float(1.0).sub(isStone)) : isBrick;
   // --- end Toronto layer ---
   const open = float(1.0).sub(solid).mul(float(1.0).sub(door));
-  const effHalfX = float(halfWinX);
-  const effHalfY = float(halfWinY);
+  const effHalfX = halfWinX.isNode ? halfWinX : float(halfWinX);
+  const effHalfY = halfWinY.isNode ? halfWinY : float(halfWinY);
   const winUV = clamp(
     vec2(
       cellUV.x.sub(effHalfX).div(max(0.01, float(1.0).sub(effHalfX.mul(2.0)))),
@@ -1560,104 +1673,6 @@ function createFacadeBoxes(material, boxes) {
     if (paint && b.paint) paint.setXYZW(i, b.paint[0], b.paint[1], b.paint[2], b.paint[3]);
   });
   return mesh;
-}
-
-/**
- * Polygon footprints for the facade materials' `footprintLocal` mode (the City's 3D Massing, buildings.js ?massing=1;
- * after mrdoob's createBuildingFootprints in Slop New York, 1daa665/819a0ad): walls along every edge of each record's
- * outer ring and courtyards, and a flat roof cap, merged into one indexed mesh per `cell` m square (1 km, as upstream) of the records'
- * centres (a draw per cell in view instead of an instance per box). A record is
- * { cx, cz, rings: [outer, ...holes] as [[x, z], ...] (any winding), base, h, kinds?: WALL_KINDS per outer edge (rear
- * when omitted, -1 for no wall; courtyard walls are always rear), cap: false for no roof cap, capY?, tone?, seed?, paint?: [r, g, b, w] }.
- * Walls stand from `base` (a tower's podium roof) to `h`; each wall carries its own frame (`facadeWall`: 0..1 along it,
- * increasing along the world axis it mostly runs along, as the interior mapping's view ray expects; metres below its top;
- * its kind) and `box` (its width, the building's height, 0, the seed with the tone in its fraction).
- * Returns { meshes, triangles, walls }.
- */
-function createFootprintFacades(material, records, cell = 1000) {
-  const cells = new Map();
-  const withPaint = records.some((r) => r.paint);
-  let walls = 0;
-  const signedArea = (ring) => { let a = 0; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) a += ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1]; return a / 2; };
-  records.forEach((r, index) => {
-    const top = r.h, base = r.base || 0;
-    if (!(top > base) || !r.rings || !r.rings.length || r.rings[0].length < 3) return;
-    const key = Math.floor(r.cx / cell) + ',' + Math.floor(r.cz / cell);
-    let c = cells.get(key);
-    if (!c) cells.set(key, (c = { pos: [], nor: [], box: [], wall: [], paint: [], idx: [] }));
-    const seed = (Math.floor(r.seed ?? index * 29) % 1000) + 0.1 + 0.8 * (r.tone ?? 0.5);
-    const paint = r.paint || [0.6, 0.6, 0.6, 0.5];
-    const vert = (x, y, z, nx, ny, nz, w, h, along, fromTop, kind) => {
-      c.pos.push(x, y, z); c.nor.push(nx, ny, nz); c.box.push(w, h, 0, seed); c.wall.push(along, fromTop, kind);
-      if (withPaint) c.paint.push(paint[0], paint[1], paint[2], paint[3]);
-    };
-    // Outer ring counter-clockwise in (x, z) (signed area > 0), holes clockwise: the right-hand normal (dz, -dx) of
-    // every edge then points away from the building's mass, out of it or into its courtyard
-    const rings = r.rings.map((ring, i) => {
-      const pts = ring.filter((p, k) => { const q = ring[(k + ring.length - 1) % ring.length]; return p[0] !== q[0] || p[1] !== q[1]; });
-      if ((signedArea(pts) > 0) !== (i === 0)) pts.reverse();
-      return pts;
-    });
-    // (kinds are given for the outer ring as the record lists it; reversed above, an edge's index moves with it)
-    const outerFlipped = signedArea(r.rings[0]) <= 0;
-    rings.forEach((ring, ri) => {
-      const n = ring.length;
-      for (let i = 0; i < n; i++) {
-        const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % n];
-        const dx = bx - ax, dz = bz - az, w = Math.hypot(dx, dz);
-        if (!(w > 1e-3)) continue;
-        const nx = dz / w, nz = -dx / w;
-        const kind = ri ? WALL_KINDS.rear : (r.kinds ? r.kinds[outerFlipped ? (2 * n - 2 - i) % n : i] : WALL_KINDS.rear) ?? WALL_KINDS.rear;
-        if (kind < 0) continue; // (no wall: another part's wall stands there)
-        // 0..1 along the wall, rising along the positive world axis it mostly follows
-        const reverse = (Math.abs(dz) >= Math.abs(dx) ? dz : dx) < 0;
-        const o = c.pos.length / 3;
-        vert(ax, base, az, nx, 0, nz, w, top, reverse ? 1 : 0, top - base, kind);
-        vert(bx, base, bz, nx, 0, nz, w, top, reverse ? 0 : 1, top - base, kind);
-        vert(ax, top, az, nx, 0, nz, w, top, reverse ? 1 : 0, 0, kind);
-        vert(bx, top, bz, nx, 0, nz, w, top, reverse ? 0 : 1, 0, kind);
-        // counter-clockwise seen from outside: (a1 - a0) x (b0 - a0) = (top - base) (dz, 0, -dx), along the normal
-        c.idx.push(o, o + 2, o + 1, o + 2, o + 3, o + 1);
-        walls++;
-      }
-    });
-    if (r.cap === false) return;
-    const capY = r.capY ?? top;
-    const contour = rings[0].map(([x, z]) => new THREE.Vector2(x, z));
-    const holes = rings.slice(1).map((ring) => ring.map(([x, z]) => new THREE.Vector2(x, z)));
-    const tris = THREE.ShapeUtils.triangulateShape(contour, holes);
-    const pts = [contour, ...holes].flat();
-    const o = c.pos.length / 3;
-    for (const p of pts) vert(p.x, capY, p.y, 0, 1, 0, 1, top, 0, top - capY, WALL_KINDS.shop);
-    for (const [a, b, d] of tris) {
-      // facing up: (b - a) x (d - a) has a positive y
-      const cross = (pts[b].y - pts[a].y) * (pts[d].x - pts[a].x) - (pts[b].x - pts[a].x) * (pts[d].y - pts[a].y);
-      if (cross > 0) c.idx.push(o + a, o + b, o + d); else c.idx.push(o + a, o + d, o + b);
-    }
-  });
-  const meshes = [];
-  let triangles = 0, first = null;
-  for (const c of cells.values()) {
-    if (!c.idx.length) continue;
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(c.pos, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(c.nor, 3));
-    g.setAttribute('box', new THREE.Float32BufferAttribute(c.box, 4));
-    g.setAttribute('facadeWall', new THREE.Float32BufferAttribute(c.wall, 3));
-    if (withPaint) g.setAttribute('paint', new THREE.Float32BufferAttribute(c.paint, 4));
-    g.setIndex(c.pos.length / 3 > 65535 ? new THREE.Uint32BufferAttribute(c.idx, 1) : new THREE.Uint16BufferAttribute(c.idx, 1));
-    g.computeBoundingSphere();
-    const mesh = new THREE.Mesh(g, material);
-    mesh.name = 'MassingFootprints';
-    mesh.castShadow = mesh.receiveShadow = true;
-    // (each cell falls under scene-culling.js's size limits for the big casters: it opts in to the position-only shadow
-    // stand-ins, as mrdoob's c4ab18f does for New York's surveyed cells)
-    mesh.userData.shadowStandIn = true;
-    if (first) mesh.userData.sharesPipelineWith = first; else first = mesh;
-    meshes.push(mesh);
-    triangles += c.idx.length / 3;
-  }
-  return { meshes, triangles, walls };
 }
 
 const _carPaintCache = new Map();
@@ -3425,5 +3440,5 @@ function createRenderedWallMaterial() {
   return mat;
 }
 
-Object.assign(window.CITY, { filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, createFootprintFacades, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
+Object.assign(window.CITY, { filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, setFootprintTable, footprintVertex, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
 })();
