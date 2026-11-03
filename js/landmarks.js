@@ -483,6 +483,194 @@ function buildCinesphere(group, s, baseY) {
 }
 
 // =====================================================================================================================
+// ONTARIO PLACE'S PODS (Zeidler, 1971): five square three-level pavilions (88 ft, ~27 m a side) held over the West
+// Island's lagoon on a cluster of four pipe masts at each one's centre (32 m above the lake), cables from the masts'
+// tops to the roof's edge and struts under the floor; a white steel truss round the roof deck, the two floors below
+// in dark glass between white mullions. Glazed two-level bridges join them, run out to the shore, the islands and the
+// fire stairs; the Cinesphere's narrow ramps run down from its deck. Where each is: js/ontario-place-pods.js, from
+// the massing (whose pods and bridges had a floor and a roof but no walls). One draw call: the glass & truss walls'
+// mullions and diagonals drawn in the shader, the white steel & concrete in vertex colours.
+// =====================================================================================================================
+const OP_PODS = {
+  under: 6.0, // the pod's underside, above the street level (the lagoon ~0.9 m below it)
+  truss: 14.8, // the bottom of the truss band round the roof deck
+  deck: 17.2, // the roof deck (the massing's 18.4 m is the truss's top)
+  mast: 31.0, mastAt: 2.6, mastR: 0.5, // the masts' tops (32 m above the lake), their offset from the centre
+  bridge: [8.0, 14.0], // the bridges' floor & roof
+  ramp: 0.45 // the Cinesphere's ramps' depth
+};
+function buildOntarioPods(group, layout, baseY, deckY) {
+  const P = OP_PODS, water = CITY_BOUNDS.waterLevel - baseY - 0.4;
+  const S = { pos: [], col: [] }, G = { pos: [], panel: [] };
+  const WHITE = [0.93, 0.93, 0.91], CONCRETE = [0.79, 0.77, 0.73], DECK = [0.7, 0.69, 0.66], STAIR = [0.58, 0.57, 0.55];
+  const tri = (a, b, c, rgb) => { S.pos.push(...a, ...b, ...c); for (let k = 0; k < 3; k++) S.col.push(...rgb); };
+  const quadS = (a, b, c, d, rgb) => { tri(a, b, c, rgb); tri(a, c, d, rgb); };
+  // a glazed wall from a to b ([x, z]) between y0 & y1: its panel coordinates (u along it, v up it, the pattern)
+  const wallG = (a, b, y0, y1, kind, u0 = 0) => {
+    const L = Math.hypot(b[0] - a[0], b[1] - a[1]), h = y1 - y0;
+    const A = [a[0], baseY + y0, a[1]], B = [b[0], baseY + y0, b[1]], C = [b[0], baseY + y1, b[1]], D = [a[0], baseY + y1, a[1]];
+    G.pos.push(...A, ...B, ...C, ...A, ...C, ...D);
+    G.panel.push(u0, 0, kind, u0 + L, 0, kind, u0 + L, h, kind, u0, 0, kind, u0 + L, h, kind, u0, h, kind);
+  };
+  const wallS = (a, b, y0, y1, rgb) => quadS([a[0], baseY + y0, a[1]], [b[0], baseY + y0, b[1]], [b[0], baseY + y1, b[1]], [a[0], baseY + y1, a[1]], rgb);
+  // a flat convex polygon ([x, z]...) at y (or y(x, z))
+  const flat = (pts, y, rgb) => {
+    const Y = typeof y === 'function' ? y : () => y;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [a, b, c] = [pts[0], pts[i], pts[i + 1]];
+      tri([a[0], baseY + Y(a[0], a[1]), a[1]], [b[0], baseY + Y(b[0], b[1]), b[1]], [c[0], baseY + Y(c[0], c[1]), c[1]], rgb);
+    }
+  };
+  // a prism on a convex footprint, y0 to y1 (sides & top)
+  const prism = (pts, y0, y1, rgb, bottom = false) => {
+    for (let i = 0; i < pts.length; i++) wallS(pts[i], pts[(i + 1) % pts.length], y0, y1, rgb);
+    flat(pts, y1, rgb);
+    if (bottom) flat(pts, y0, rgb);
+  };
+  const ngon = (x, z, r, n, a0 = 0) => Array.from({ length: n }, (_, i) => [x + r * Math.cos(a0 + (i / n) * Math.PI * 2), z + r * Math.sin(a0 + (i / n) * Math.PI * 2)]);
+  // a straight tube (cable, strut) between two points, n sides
+  const tube = (p, q, r, n, rgb) => {
+    const d = new THREE.Vector3(q[0] - p[0], q[1] - p[1], q[2] - p[2]).normalize();
+    const e1 = new THREE.Vector3().crossVectors(d, Math.abs(d.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0)).normalize();
+    const e2 = new THREE.Vector3().crossVectors(d, e1);
+    const ring = (o) => Array.from({ length: n }, (_, i) => {
+      const a = (i / n) * Math.PI * 2, c = Math.cos(a) * r, s = Math.sin(a) * r;
+      return [o[0] + e1.x * c + e2.x * s, baseY + o[1] + e1.y * c + e2.y * s, o[2] + e1.z * c + e2.z * s];
+    });
+    const A = ring(p), B = ring(q);
+    for (let i = 0; i < n; i++) { const j = (i + 1) % n; quadS(A[i], A[j], B[j], B[i], rgb); }
+  };
+
+  // the pods
+  for (const pod of layout.pods) {
+    const cs = Math.cos(pod.ang), sn = Math.sin(pod.ang), h = pod.half;
+    const at = (u, v) => [pod.x + u * cs + v * sn, pod.z - u * sn + v * cs];
+    const sq = [at(h, h), at(h, -h), at(-h, -h), at(-h, h)];
+    for (let i = 0; i < 4; i++) {
+      const a = sq[i], b = sq[(i + 1) % 4];
+      wallG(a, b, P.under, P.truss, 0);
+      wallG(a, b, P.truss, layout.top, 1);
+    }
+    flat(sq, P.under, WHITE);
+    flat(sq, P.deck, DECK);
+    // the masts through its middle on their caisson, the cables from their tops to the roof's edge, the struts under it
+    prism(ngon(pod.x, pod.z, 4.4, 8, pod.ang), water - 0.5, water + 1.3, CONCRETE);
+    for (const [su, sv] of [[1, 1], [1, -1], [-1, -1], [-1, 1]]) {
+      const [mx, mz] = at(su * P.mastAt, sv * P.mastAt);
+      prism(ngon(mx, mz, P.mastR, 8), water, P.mast, WHITE);
+      const top = [mx, P.mast - 0.6, mz];
+      for (const [u, v] of [[su * h, sv * h], [su * h, 0], [0, sv * h]]) {
+        const [x, z] = at(u * 0.98, v * 0.98);
+        tube(top, [x, layout.top, z], 0.07, 4, WHITE);
+      }
+      const [ux, uz] = at(su * (h - 2), sv * (h - 2));
+      tube([mx, 2.2, mz], [ux, P.under, uz], 0.22, 6, WHITE);
+    }
+  }
+  // the bridges and the Cinesphere's ramps
+  const [bf, br] = P.bridge;
+  const strips = layout.strips;
+  const rampY = new Map(); // a ramp's height: its deck end at the Cinesphere's deck, its far end at the street
+  const { disc } = layout;
+  for (const s of strips) {
+    if (s.kind !== 'ramp') continue;
+    let far = 0;
+    for (const p of layout.pieces) if (p.part === s.id) for (const [x, z] of p.pts) far = Math.max(far, Math.hypot(x - disc.x, z - disc.z));
+    rampY.set(s.id, (x, z) => {
+      const t = Math.min(1, Math.max(0, (Math.hypot(x - disc.x, z - disc.z) - disc.r + 1) / Math.max(1, far - disc.r + 1)));
+      return deckY + (0.25 - deckY) * t;
+    });
+  }
+  for (const p of layout.pieces) {
+    const Y = rampY.get(p.part);
+    if (Y) {
+      flat(p.pts, Y, CONCRETE);
+      flat(p.pts, (x, z) => Y(x, z) - P.ramp, CONCRETE);
+    } else {
+      flat(p.pts, br, WHITE);
+      flat(p.pts, bf, WHITE);
+    }
+  }
+  for (const w of layout.walls) {
+    const Y = rampY.get(w.part);
+    if (Y) {
+      const ya = Y(...w.a), yb = Y(...w.b);
+      quadS([w.a[0], baseY + ya - P.ramp, w.a[1]], [w.b[0], baseY + yb - P.ramp, w.b[1]], [w.b[0], baseY + yb, w.b[1]], [w.a[0], baseY + ya, w.a[1]], CONCRETE);
+      // its glass balustrade (a sloped wall: its two ends at their own heights)
+      const L = Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1]);
+      const A = [w.a[0], baseY + ya, w.a[1]], B = [w.b[0], baseY + yb, w.b[1]], C = [w.b[0], baseY + yb + 1.1, w.b[1]], D = [w.a[0], baseY + ya + 1.1, w.a[1]];
+      G.pos.push(...A, ...B, ...C, ...A, ...C, ...D);
+      G.panel.push(0, 0, 3, L, 0, 3, L, 1.1, 3, 0, 0, 3, L, 1.1, 3, 0, 1.1, 3);
+    } else {
+      wallG(w.a, w.b, bf, br, 2);
+    }
+  }
+  // their stair towers at the free ends, and piers in pairs under them
+  const towers = [];
+  for (const s of strips) {
+    if (s.kind !== 'bridge') continue;
+    const w = Math.min(s.width, 6);
+    for (const e of s.ends) {
+      if (!e.free) continue;
+      const [dx, dz] = e.dir, nx = -dz, nz = dx, a = 4.0, b = w / 2 + 0.4;
+      const cx = e.x + dx * (a / 2 - 0.8), cz = e.z + dz * (a / 2 - 0.8);
+      const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => [cx + dx * i * a / 2 + nx * j * b, cz + dz * i * a / 2 + nz * j * b]);
+      prism(pts, water, br + 0.8, STAIR);
+      towers.push({ x: cx, z: cz, hw: a / 2, hd: b, ang: Math.atan2(-dz, dx) });
+    }
+    for (const [x, z] of s.piers) {
+      const nx = -s.axis[1], nz = s.axis[0], o = Math.max(0.5, w / 2 - 0.7);
+      for (const k of [-1, 1]) prism(ngon(x + nx * o * k, z + nz * o * k, 0.35, 8), water, bf, CONCRETE);
+    }
+  }
+
+  // one mesh: the walls' panel coordinates & pattern, the steel & concrete as pattern 4 in their vertex colours
+  const nG = G.pos.length / 3, nS = S.pos.length / 3;
+  const panelAttr = new Float32Array((nG + nS) * 3), colAttr = new Float32Array((nG + nS) * 3).fill(1);
+  panelAttr.set(G.panel);
+  for (let i = nG; i < nG + nS; i++) panelAttr[i * 3 + 2] = 4;
+  colAttr.set(S.col, nG * 3);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(G.pos.concat(S.pos), 3));
+  geo.setAttribute('panel', new THREE.BufferAttribute(panelAttr, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colAttr, 3));
+  geo.computeVertexNormals(); // (non-indexed: flat)
+  // the walls' patterns: 0 the pods' glazing (white mullions every 2.25 m, a floor band at each level), 1 the roof's
+  // truss (top & bottom chords, X diagonals, dark plant behind), 2 the bridges' glazing, 3 the ramps' glass balustrade
+  const { attribute, fwidth } = window.CITY.TSL;
+  const mat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide });
+  mat.name = 'OntarioPods';
+  const panel = attribute('panel', 'vec3');
+  const line = (x, period, hw) => {
+    const d = abs(fract(x.div(period).add(0.5)).sub(0.5)).mul(period);
+    const aa = fwidth(x).add(0.001);
+    return float(1).sub(smoothstep(float(hw), aa.add(hw), d));
+  };
+  const band = (kind, k) => step(k - 0.5, kind).mul(float(1).sub(step(k + 0.5, kind)));
+  const frame = Fn(() => {
+    const u = panel.x, v = panel.y, kind = panel.z;
+    const pod = max(line(u, 2.25, 0.07), max(line(v, 4.4, 0.32), float(1).sub(step(0.5, v))));
+    const chords = max(float(1).sub(step(0.38, v)), step(3.3, v));
+    const truss = max(chords, max(line(u.add(v), 3.6, 0.13), line(u.sub(v), 3.6, 0.13)));
+    const bridge = max(line(u, 1.8, 0.06), line(v, 3.0, 0.22));
+    const rail = max(step(1.0, v), line(u, 2.4, 0.04));
+    return band(kind, 0).mul(pod).add(band(kind, 1).mul(truss)).add(band(kind, 2).mul(bridge)).add(band(kind, 3).mul(rail));
+  })();
+  const plant = band(panel.z, 1); // (behind the truss: no glass)
+  const solid = step(3.5, panel.z);
+  mat.colorNode = mix(mix(mix(color(0x26313a), color(0x3b3f42), plant), color(0xeeeeea), frame), attribute('color', 'vec3'), solid);
+  mat.roughnessNode = mix(mix(mix(float(0.12), float(0.7), plant), float(0.55), frame), float(0.62), solid);
+  mat.metalnessNode = mix(mix(mix(float(0.75), float(0.2), plant), float(0.1), frame), float(0.08), solid);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = 'OntarioPods';
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  console.info(`[landmarks] Ontario Place: ${layout.pods.length} pods, ${strips.filter((s) => s.kind === 'bridge').length} bridges, ${rampY.size} ramps, ${towers.length} stair towers; ${nG / 3 + nS / 3} triangles in 1 draw`);
+  return { meshes: [mesh], towers };
+}
+
+// =====================================================================================================================
 // THE ROGERS CENTRE'S FIELD: the City's massing has the stadium's bowl, its floor 7.4 m below the street, where the
 // rail lands' surface (city-grid.js) covered it: a flat dark-grey floor that grew yard trees. The field is laid over
 // it at street level: green artificial turf mown in bands, the dirt infield (the skin round the grass diamond, since
@@ -788,7 +976,34 @@ function buildLandmarks(scene) {
       g.setAttribute('position', new THREE.BufferAttribute(decode(m.positions, Float32Array), 3));
       let idx = decode(m.indices, Uint32Array);
       if (id === 'unionStation') idx = unionShedKeep(g.attributes.position.array, idx); // (the shed: built open below)
-      if (id === 'cinesphere' && S.cinesphere) idx = cinesphereKeep(g.attributes.position.array, idx, S.cinesphere); // (the dome: built below)
+      if (id === 'cinesphere' && S.cinesphere) {
+        // the dome: built below; the pods and their bridges too (buildOntarioPods), when their layout is found
+        let pods = null;
+        try {
+          pods = window.CITY.ontarioPodLayout ? window.CITY.ontarioPodLayout(g.attributes.position.array, idx, S.cinesphere) : null;
+        } catch (e) {
+          console.warn('[landmarks] Ontario Place pods: no layout', e);
+        }
+        if (pods && pods.pods.length) {
+          const built = buildOntarioPods(group, pods, SW_Y, CINESPHERE.deck);
+          for (const pod of pods.pods) {
+            // the pods & their bridges are overhead (the lagoon under them); their mast clusters and stair towers stand
+            boxCollider(pod.x, pod.z, pod.half, pod.half, pod.ang, SW_Y + pods.top);
+            colliders[colliders.length - 1].minY = SW_Y + OP_PODS.under;
+            boxCollider(pod.x, pod.z, OP_PODS.mastAt + 0.8, OP_PODS.mastAt + 0.8, pod.ang, SW_Y + OP_PODS.mast);
+          }
+          for (const t of built.towers) boxCollider(t.x, t.z, t.hw, t.hd, t.ang, SW_Y + OP_PODS.bridge[1] + 0.8);
+          for (const st of pods.strips) {
+            if (st.kind !== 'bridge') continue;
+            boxCollider(st.centre[0], st.centre[1], st.length / 2, st.width / 2, Math.atan2(-st.axis[1], st.axis[0]), SW_Y + OP_PODS.bridge[1]);
+            colliders[colliders.length - 1].minY = SW_Y + OP_PODS.bridge[0];
+          }
+          meshColliders(buildCinesphere(group, S.cinesphere, SW_Y), S.cinesphere, CINESPHERE.top + SW_Y);
+          done.add(id);
+          continue;
+        }
+        idx = cinesphereKeep(g.attributes.position.array, idx, S.cinesphere);
+      }
       g.setIndex(new THREE.BufferAttribute(idx, 1));
       g.computeVertexNormals(); // every face has its own vertices: flat-shaded facets
       const mesh = new THREE.Mesh(g, LOOKS[m.look] || LOOKS.limestone);
