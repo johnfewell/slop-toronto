@@ -1,0 +1,92 @@
+[
+ {
+  "name": "t00-hud",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 2000
+ },
+ {
+  "name": "park-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6150,520,-700], look: [-6550,0,-1900], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6480,200,-1150], look: [-6800,0,-1750], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-east-bank-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6490,1.7,-1430], look: [-6760,0,-1560], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-north-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6845,1.7,-2250], look: [-6820,0,-1700], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "ravine-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6110,1.7,-1980], look: [-6060,0,-1450], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "duck-ponds-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-5880,160,-1050], look: [-6080,0,-1500], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "park-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6150,520,-700], look: [-6550,0,-1900], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6480,200,-1150], look: [-6800,0,-1750], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-east-bank-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6490,1.7,-1430], look: [-6760,0,-1560], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-north-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6845,1.7,-2250], look: [-6820,0,-1700], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "ravine-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6110,1.7,-1980], look: [-6060,0,-1450], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "duck-ponds-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-5880,160,-1050], look: [-6080,0,-1500], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-south-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6640,1.7,-1215], look: [-6760,0,-1600], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-south-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6640,1.7,-1215], look: [-6760,0,-1600], fov: 60 }); })()",
+  "wait": 5000
+ }
+]

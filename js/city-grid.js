@@ -19,7 +19,10 @@ const {
   ROAD_CUTS,
   cutLocal,
   cutBankAt,
-  cutAt
+  cutAt,
+  pondsOnIsland,
+  pondOnPolygon,
+  subtractConvexXZ
 } = window.CITY;
 const {
   createRoadSurfaceMaterial,
@@ -836,17 +839,59 @@ function buildCityGrid(scene) {
     }
     return true;
   });
+  // The ponds on an island (city-config.js pondsOnIsland: Grenadier Pond in High Park's lawn...) are cut out of its
+  // yard & small parks, so the water city-grid.js draws under them shows (st-ejsz). `cutByPonds`: convex pieces less
+  // the ponds' triangles; `yardGeometry`: a yard's flat top, a pond wholly inside it a hole, one across its edge cut away
+  const pondTris = new Map();
+  const trisOfPond = (pond) => {
+    if (!pondTris.has(pond)) pondTris.set(pond, trianglesXZ(pond.pts));
+    return pondTris.get(pond);
+  };
+  const cutByPonds = (pieces, ponds) => {
+    for (const pond of ponds) {
+      if (!pieces.length) break;
+      for (const t of trisOfPond(pond)) {
+        pieces = pieces.flatMap((p) => {
+          if (p.x0 === undefined) boxOf(p);
+          if (p.x1 < t.x0 || p.x0 > t.x1 || p.z1 < t.z0 || p.z0 > t.z1) return [p];
+          return subtractConvexXZ(p, t).map(boxOf);
+        });
+      }
+    }
+    return pieces;
+  };
+  let pondYards = 0;
+  const yardGeometry = (pts, y, ponds) => {
+    const holes = [], cross = [];
+    for (const { pond } of ponds) {
+      const on = pondOnPolygon(pts, pond);
+      if (on === 'inside') holes.push(pond);
+      else if (on === 'cross') cross.push(pond);
+    }
+    if (!holes.length && !cross.length) return flatShape(pts, y);
+    pondYards++;
+    if (!cross.length) {
+      const shape = createWorldXZShape(pts);
+      for (const h of holes) shape.holes.push(new THREE.Path(h.pts.map((p) => new THREE.Vector2(p.x, -p.z))));
+      const g = new THREE.ShapeGeometry(shape, 1);
+      g.rotateX(-Math.PI / 2);
+      g.translate(0, y, 0);
+      return g;
+    }
+    return flatPiecesGeometry(cutByPonds(trianglesXZ(pts), [...holes, ...cross]), y); // (null: all water)
+  };
   const parketteTrees = [];
   const BED_R = 1.3;
   let parketteCount = 0;
   // the lawn, path & bed geometry of an island's small parks (null: none), cut to its yard `prop`
-  const parkettesOf = (b, prop) => {
+  const parkettesOf = (b, prop, ponds = []) => {
     const parks = parksOn.get(b);
     if (!parks) return null;
     const propTris = trianglesXZ(prop);
     const lawn = [], paths = [], beds = [];
+    const wet = ponds.map((p) => p.pond);
     for (const a of parks) {
-      const pieces = intersectXZ(trianglesXZ(a.pts), propTris);
+      const pieces = cutByPonds(intersectXZ(trianglesXZ(a.pts), propTris), wet);
       if (!pieces.length) continue;
       let area = 0;
       for (const p of pieces) for (let i = 1; i + 1 < p.length; i++) area += ((p[i][0] - p[0][0]) * (p[i + 1][1] - p[0][1]) - (p[i][1] - p[0][1]) * (p[i + 1][0] - p[0][0])) / 2;
@@ -868,7 +913,7 @@ function buildCityGrid(scene) {
         for (const t of propTris) {
           if (quad.x1 < t.x0 || quad.x0 > t.x1 || quad.z1 < t.z0 || quad.z0 > t.z1) continue;
           const piece = clipConvex(quad, t);
-          if (piece) paths.push(piece);
+          if (piece) paths.push(...(wet.length ? cutByPonds([piece], wet) : [piece]));
         }
       }
       // trees: about one per 200 m² of lawn (at most 4), 7 m apart, 2.2 m in from the lawn's edge
@@ -959,12 +1004,19 @@ function buildCityGrid(scene) {
   };
   // --- end Toronto layer ---
   for (const b of BLOCKS) {
-    // kerb ring under the slab (the slab is inset 0.25 m, so the kerb's top & face show)
-    geos.curb.push(extrude(createWorldXZShape(b.poly), 0.0, 0.18));
+    const ponds = pondsOnIsland(b); // (st-ejsz: cut out of the kerb's top, the yard & the small parks)
     const inner = offsetPolygonInward(b.poly, 0.25);
+    // kerb ring under the slab (the slab is inset 0.25 m, so the kerb's top & face show). Its top runs over the whole
+    // island, so a pond on it is a hole in it; one across its edge leaves the kerb a ring, the slab's width
+    const kerb = createWorldXZShape(b.poly);
+    if (ponds.some((p) => p.on === 'cross') && inner) kerb.holes.push(new THREE.Path(inner.map((p) => new THREE.Vector2(p.x, -p.z))));
+    else for (const { pond } of ponds) kerb.holes.push(new THREE.Path(pond.pts.map((p) => new THREE.Vector2(p.x, -p.z))));
+    geos.curb.push(extrude(kerb, 0.0, 0.18));
     if (!inner) continue;
     if (b.median) {
-      geos[tramMedians.has(b) ? 'paved' : 'lawn'].push(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03));
+      const mat = tramMedians.has(b) ? 'paved' : 'lawn';
+      if (!ponds.length) geos[mat].push(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03));
+      else { const top = yardGeometry(inner, SW_TOP, ponds); if (top) geos[mat].push(top); }
       continue;
     }
     const prop = b.area > 400 ? offsetPolygonInward(b.poly, SW) : null;
@@ -977,10 +1029,11 @@ function buildCityGrid(scene) {
       walkIslands++;
       const sides = slabSides(inner, 0.03, SW_TOP);
       if (sides) geos.walk.push(framed(sides, runs, [], seeds, downtown));
-      geos[yard].push(flatShape(inner, SW_TOP));
+      const top = yardGeometry(inner, SW_TOP, ponds);
+      if (top) geos[yard].push(top);
       // (over the small parks' lawns, +0.004, under their paths & beds)
       geos.walk.push(framed(walkPieces(walks, SW_TOP + 0.006), runs, walks.flatMap((w) => [w.outer, ...w.holes]), seeds, downtown));
-      const pk = prop && (yard === 'paved' || yard === 'plot') ? parkettesOf(b, prop) : null;
+      const pk = prop && (yard === 'paved' || yard === 'plot') ? parkettesOf(b, prop, ponds) : null;
       if (pk) {
         geos.lawn.push(pk.lawn);
         if (pk.paths) geos.paved.push(pk.paths);
@@ -991,8 +1044,9 @@ function buildCityGrid(scene) {
       const ring = createWorldXZShape(inner);
       ring.holes.push(new THREE.Path(prop.map((p) => new THREE.Vector2(p.x, -p.z))));
       geos.walk.push(framed(extrude(ring, 0.03, SW_TOP - 0.03), runs, [inner, prop], seeds, downtown));
-      geos[yard].push(flatShape(prop, SW_TOP - 0.002));
-      const pk = yard === 'paved' || yard === 'plot' ? parkettesOf(b, prop) : null; // (Toronto layer: the small parks)
+      const top = yardGeometry(prop, SW_TOP - 0.002, ponds);
+      if (top) geos[yard].push(top);
+      const pk = yard === 'paved' || yard === 'plot' ? parkettesOf(b, prop, ponds) : null; // (Toronto layer: the small parks)
       if (pk) {
         geos.lawn.push(pk.lawn);
         if (pk.paths) geos.paved.push(pk.paths);
@@ -1045,7 +1099,7 @@ function buildCityGrid(scene) {
   // (the rail lands' gravel bed is also the small parks' mulch, so the beds add no material: Toronto layer)
   mergeInto(geos.rail, new THREE.MeshStandardNodeMaterial({ color: 0x5f5850, roughness: 0.97 }), false, 'RailLands'); // Toronto layer
   window.CITY.parketteTrees = parketteTrees; // (street-details.js plants them)
-  console.info(`[cityGrid] ${parketteCount} small parks laid in lawn, ${parketteTrees.length} trees in their beds`);
+  console.info(`[cityGrid] ${parketteCount} small parks laid in lawn, ${parketteTrees.length} trees in their beds; ponds cut out of ${pondYards} island yards`);
   console.info(cityWalks ? `[cityGrid] City sidewalks on ${walkIslands} islands (${walkTris} triangles, ${walkMs.toFixed(0)} ms), the fixed ${SW} m band on ${walkBands}; walk frames ${frameMs.toFixed(0)} ms` : `[cityGrid] no City sidewalks: the fixed ${SW} m band on every island; walk frames ${frameMs.toFixed(0)} ms`);
 
   // ===================================================================================================================
@@ -1059,6 +1113,7 @@ function buildCityGrid(scene) {
         const a = s.pts[i], b = s.pts[i + 1];
         if (!inside([a, b], 2)) continue;
         if (!blockAt((a.x + b.x) / 2, (a.z + b.z) / 2)) continue; // under a road: culvert
+        if (window.CITY.waterAt((a.x + b.x) / 2, (a.z + b.z) / 2)) continue; // (through a pond: its water is drawn, st-ejsz)
         const L = Math.hypot(b.x - a.x, b.z - a.z);
         if (L < 0.2) continue;
         const nx = (-(b.z - a.z) / L) * s.w * 0.5, nz = ((b.x - a.x) / L) * s.w * 0.5;

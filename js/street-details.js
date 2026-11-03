@@ -716,16 +716,22 @@ function buildStreetDetails(scene) {
       const park = b.park > 0.6;
       const spacing = park ? 18 : 40;
       const cap = park ? 700 : 450;
-      let n = 0;
-      for (let x = b.minX + spacing / 2; x < b.maxX && n < cap; x += spacing) {
-        for (let z = b.minZ + spacing / 2; z < b.maxZ && n < cap; z += spacing) {
+      // (Toronto: none in a pond, and the cap thins the trees evenly over the island: filled west to east, it left the
+      // east of the big parks bare, half of High Park's island east of Grenadier Pond among them, st-us0w)
+      const spots = [];
+      for (let x = b.minX + spacing / 2; x < b.maxX; x += spacing) {
+        for (let z = b.minZ + spacing / 2; z < b.maxZ; z += spacing) {
           const jx = x + (hashPos(x, 1, z) - 0.5) * spacing * 0.8, jz = z + (hashPos(z, 2, x) - 0.5) * spacing * 0.8;
           if (hashPos(jx, 9, jz) < (park ? 0.35 : 0.55)) continue;
-          if (!pointInPoly(b.poly, jx, jz) || !clearOfBuildings(jx, jz)) continue;
-          if (park && hashPos(jx, 6, jz) < 0.12) palms.push({ x: jx, z: jz, s: 0.8 + hashPos(jx, 5, jz) * 0.35, yaw: hashPos(jz, 1, jx) * 6.28 });
-          else treePositions.push({ x: jx, y: SW_Y, z: jz, scale: (park ? 0.75 : 0.55) + hashPos(jx, 3, jz) * 0.4, species: broadleaf(hashPos(jx, 7, jz)), tier: 0 });
-          n++;
+          if (!pointInPoly(b.poly, jx, jz) || !clearOfBuildings(jx, jz) || window.CITY.waterAt(jx, jz)) continue;
+          spots.push([jx, jz]);
         }
+      }
+      const keep = Math.min(1, cap / Math.max(1, spots.length));
+      for (const [jx, jz] of spots) {
+        if (keep < 1 && hashPos(jz, 11, jx) >= keep) continue;
+        if (park && hashPos(jx, 6, jz) < 0.12) palms.push({ x: jx, z: jz, s: 0.8 + hashPos(jx, 5, jz) * 0.35, yaw: hashPos(jz, 1, jx) * 6.28 });
+        else treePositions.push({ x: jx, y: SW_Y, z: jz, scale: (park ? 0.75 : 0.55) + hashPos(jx, 3, jz) * 0.4, species: broadleaf(hashPos(jx, 7, jz)), tier: 0 });
       }
       continue;
     }
@@ -745,7 +751,7 @@ function buildStreetDetails(scene) {
     for (let k = 0; k < want * 4 && n < want; k++) {
       const x = b.minX + hashPos(b.cx + k, 4.1, b.cz) * (b.maxX - b.minX);
       const z = b.minZ + hashPos(b.cz - k, 5.2, b.cx) * (b.maxZ - b.minZ);
-      if (!pointInPoly(yard, x, z) || !clearOfBuildings(x, z)) continue;
+      if (!pointInPoly(yard, x, z) || !clearOfBuildings(x, z) || window.CITY.waterAt(x, z)) continue; // (Toronto: nor in a pond)
       if (hashPos(x, 6.6, z) < 0.18) palms.push({ x, z, s: 0.55 + hashPos(x, 5, z) * 0.3, yaw: hashPos(z, 1, x) * 6.28 });
       else treePositions.push({ x, y: SW_Y, z, scale: 0.5 + hashPos(z, 3.7, x) * 0.35, species: hashPos(x, 2.2, z) < 0.5 ? 2 : 0, tier: 2 });
       n++;

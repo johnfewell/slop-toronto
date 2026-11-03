@@ -323,6 +323,77 @@ function blocksInRect(minX, maxX, minZ, maxZ) {
   return [...out];
 }
 // ---------------------------------------------------------------------------------------------------------------------
+// Ponds on the curb islands (st-ejsz, st-us0w). city-grid.js draws each pond wholly inside the city a little under the
+// street level (CITY_BOUNDS.waterLevel) inside its earth bank, but an island's yard (lawn, open land, plots, paving) lies
+// over the whole island at the curb's height: a pond whose island is a park was covered by its lawn. High Park is one
+// 68 ha island, so Grenadier Pond, Wendigo Pond, the Duck Ponds in the Spring Creek ravine & Howard and Ridout Ponds
+// all were lawn; so were 30-odd more across the city. The yards are cut round them: a pond wholly inside an island's yard is a
+// hole in it ('inside'); one across its edge ('cross': the slips at Harbourfront, ponds on the walk) is subtracted
+// from the yard piece by piece.
+// ---------------------------------------------------------------------------------------------------------------------
+const insideDetail = (p, m) => p.x > DETAIL.x0 + m && p.x < DETAIL.x1 - m && p.z > DETAIL.z0 + m && p.z < DETAIL.z1 - m;
+/** The water city-grid.js draws as ponds: every water body wholly inside the city (5 m in), not the lake */
+const POND_BODIES = WATER_BODIES.filter((w) => w.pts.length >= 3 && !WATER_EVERYWHERE.includes(w) && w.pts.every((p) => insideDetail(p, 5)));
+const segsCross = (a, b, c, d) => {
+  const o = (p, q, r) => (q.x - p.x) * (r.z - p.z) - (q.z - p.z) * (r.x - p.x);
+  const d1 = o(c, d, a), d2 = o(c, d, b), d3 = o(a, b, c), d4 = o(a, b, d);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+};
+/** How a pond lies on a polygon [{x, z}]: 'inside' (wholly, its outline clear of the polygon's), 'cross' or null (apart) */
+function pondOnPolygon(poly, pond) {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const p of poly) { if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x; if (p.z < z0) z0 = p.z; if (p.z > z1) z1 = p.z; }
+  if (pond.maxX < x0 || pond.minX > x1 || pond.maxZ < z0 || pond.minZ > z1) return null;
+  const P = pond.pts;
+  for (let i = 0; i < P.length; i++) {
+    const a = P[i], b = P[(i + 1) % P.length];
+    const ex0 = Math.min(a.x, b.x), ex1 = Math.max(a.x, b.x), ez0 = Math.min(a.z, b.z), ez1 = Math.max(a.z, b.z);
+    if (ex1 < x0 || ex0 > x1 || ez1 < z0 || ez0 > z1) continue;
+    for (let j = 0; j < poly.length; j++) {
+      const c = poly[j], d = poly[(j + 1) % poly.length];
+      if (Math.max(c.x, d.x) < ex0 || Math.min(c.x, d.x) > ex1 || Math.max(c.z, d.z) < ez0 || Math.min(c.z, d.z) > ez1) continue;
+      if (segsCross(a, b, c, d)) return 'cross';
+    }
+  }
+  // (no outline crosses the other: one holds the other whole, or they are apart)
+  if (pointInPoly(poly, P[0].x, P[0].z)) return 'inside';
+  return pointInPoly(P, poly[0].x, poly[0].z) ? 'cross' : null;
+}
+/** The ponds over a curb island's outline: [{ pond, on: 'inside' | 'cross' }] */
+function pondsOnIsland(b) {
+  const out = [];
+  for (const pond of POND_BODIES) {
+    if (pond.maxX < b.minX || pond.minX > b.maxX || pond.maxZ < b.minZ || pond.minZ > b.maxZ) continue;
+    const on = pondOnPolygon(b.poly, pond);
+    if (on) out.push({ pond, on });
+  }
+  return out;
+}
+/** A convex polygon [[x, z], ...] (positive winding) less a convex one: the convex pieces of `a` outside `b` */
+function subtractConvexXZ(a, b) {
+  const out = [];
+  let rest = a;
+  for (let e = 0; e < b.length && rest; e++) {
+    const [px, pz] = b[e], [qx, qz] = b[(e + 1) % b.length];
+    const side = (p) => (qx - px) * (p[1] - pz) - (qz - pz) * (p[0] - px);
+    const inner = [], outer = [];
+    for (let i = 0; i < rest.length; i++) {
+      const u = rest[i], v = rest[(i + 1) % rest.length], su = side(u), sv = side(v);
+      if (su >= 0) inner.push(u);
+      if (su <= 0) outer.push(u);
+      if ((su > 0 && sv < 0) || (su < 0 && sv > 0)) {
+        const t = su / (su - sv), m = [u[0] + (v[0] - u[0]) * t, u[1] + (v[1] - u[1]) * t];
+        inner.push(m);
+        outer.push(m);
+      }
+    }
+    const area = (q) => { let s = 0; for (let i = 0; i < q.length; i++) { const r = q[(i + 1) % q.length]; s += q[i][0] * r[1] - r[0] * q[i][1]; } return Math.abs(s) / 2; };
+    if (outer.length >= 3 && area(outer) > 1e-4) out.push(outer); // (the part outside this edge of b)
+    rest = inner.length >= 3 && area(inner) > 1e-4 ? inner : null;
+  }
+  return out; // (what is left in `rest` lies inside b)
+}
+// ---------------------------------------------------------------------------------------------------------------------
 // Districts: the waterfront's own names, else the smallest mapped neighbourhood around a place, else the riding, else the
 // nearest district point
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1356,6 +1427,10 @@ Object.assign(window.CITY, {
   waterAt,
   isOnLand,
   pointInPoly,
+  POND_BODIES,
+  pondOnPolygon,
+  pondsOnIsland,
+  subtractConvexXZ,
   nearestRoads,
   blockAt,
   blocksInRect,

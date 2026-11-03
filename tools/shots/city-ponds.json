@@ -1,0 +1,50 @@
+[
+ {
+  "name": "t00-hud",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 2000
+ },
+ {
+  "name": "slips-aerial",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-300,260,1050], look: [-100,0,600], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "devonian-aerial",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [514,90,-1171], look: [454,0,-1281], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "canoe-landing-aerial",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1262,110,537], look: [1202,0,427], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "peace-garden-aerial",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-3619,110,697], look: [-3679,0,587], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "west-edge-ponds-aerial",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7790,150,-990], look: [-7850,0,-1100], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "sanctuary-pond-aerial",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [2410,150,-1740], look: [2350,0,-1850], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "triangle-pond-aerial",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [2853,150,3510], look: [2793,0,3400], fov: 55 }); })()",
+  "wait": 5000
+ }
+]
