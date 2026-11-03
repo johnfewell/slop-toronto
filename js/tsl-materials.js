@@ -1341,9 +1341,12 @@ function createRenderedFacadeMaterial(opts = {}) {
     warmth = 0.86,
     seed = 13.0,
     cornerPier = 0.7,
-    footprintLocal = false // (walls from createFootprintFacades, per-vertex `paint`, instead of createFacadeBoxes)
+    footprintLocal = false, // (walls from createFootprintFacades, per-vertex `paint`, instead of createFacadeBoxes)
+    // the Distillery District's (buildings.js VICTORIAN): segmental-arched heads with a brick arch ring over stone sills
+    // and sash bars; paint.w >= 4 is its limestone (ashlar courses, square windows, the round iron tie plates)
+    victorian = false
   } = opts;
-  const cacheKey = `${windowWidth}_${floorHeight}_${windowRatioX}_${windowRatioY}_${litProbability}_${warmth}_${seed}_${cornerPier}_${footprintLocal}`;
+  const cacheKey = `${windowWidth}_${floorHeight}_${windowRatioX}_${windowRatioY}_${litProbability}_${warmth}_${seed}_${cornerPier}_${footprintLocal}_${victorian}`;
   if (_renderedCache.has(cacheKey)) return _renderedCache.get(cacheKey);
 
   const mat = new THREE.MeshStandardNodeMaterial({ metalness: 0.0, roughness: 0.85 });
@@ -1364,6 +1367,8 @@ function createRenderedFacadeMaterial(opts = {}) {
   // measured from Wikimedia Commons photos (buildings.js TORONTO_MASONRY, after aalghooneh/slop-toronto) ---
   const isBrick = step(1.5, paintAttr.w);
   const glassStyle = fract(paintAttr.w);
+  const isStone = victorian ? step(3.5, paintAttr.w) : null; // (the Distillery's limestone)
+  const brickOnly = victorian ? isBrick.mul(float(1.0).sub(isStone)) : isBrick;
   // --- end Toronto layer ---
   const open = float(1.0).sub(solid).mul(float(1.0).sub(door));
   const effHalfX = float(halfWinX);
@@ -1387,6 +1392,23 @@ function createRenderedFacadeMaterial(opts = {}) {
   const bandCol = mix(color(0xf0ece4), paint.mul(0.72), step(0.55, fract(tone.mul(5.3))));
   const hasBands = step(0.35, fract(tone.mul(3.1))).mul(float(1.0).sub(isBrick)); // (no slab bands on brick)
 
+  // (victorian) the window's own frame, unclamped (0..1 across the opening), and in it: the segmental arch head (the
+  // opening's top rises ~0.4 m from the jambs to the crown; square on the limestone), the brick arch ring above it, a
+  // little wider than the opening, and the stone sill under it. `ramp` widens the anti-aliasing (the normal's)
+  const victorianWindow = (ramp) => {
+    const wx = cellUV.x.sub(effHalfX).div(max(0.01, float(1.0).sub(effHalfX.mul(2.0))));
+    const wy = cellUV.y.sub(effHalfY).div(max(0.01, float(1.0).sub(effHalfY.mul(2.0))));
+    const ax = fwidth(wx).mul(ramp).max(0.0005), ay = fwidth(wy).mul(ramp).max(0.0005);
+    const arched = float(1.0).sub(isStone);
+    const across = clamp(wx, 0.0, 1.0).mul(2.0).sub(1.0);
+    const archY = float(1.0).sub(float(0.14).mul(arched).mul(float(1.0).sub(max(float(1.0).sub(across.mul(across)), 0.0).sqrt())));
+    const span = (t, a, b, aa) => smoothstep(float(a).sub(aa), float(a).add(aa), t).mul(smoothstep(float(b).add(aa), float(b).sub(aa), t));
+    const head = smoothstep(archY.add(ay), archY.sub(ay), wy);
+    const voussoir = span(wx, -0.13, 1.13, ax).mul(span(wy, archY, archY.add(0.1), ay)).mul(arched);
+    const sill = span(wx, -0.1, 1.1, ax).mul(span(wy, -0.06, 0.0, ay));
+    return { head, voussoir, sill };
+  };
+
   // Shared masks
   const masks = () => {
     const inX = filteredPulse(cellUV.x, effHalfX, float(1.0).sub(effHalfX), fw.x).mul(open);
@@ -1396,12 +1418,22 @@ function createRenderedFacadeMaterial(opts = {}) {
     const frames = clamp(max(lineAA(winUV.x.sub(0.5), 0.02), lineAA(winUV.y.sub(0.68), 0.02)), 0.0, 1.0);
     // burglary bars on the ground-floor windows of the residential walls
     const bars = lineAA(fract(winUV.x.mul(7.0)).sub(0.5), 0.07).mul(floor0).mul(float(1.0).sub(isGroundFloor)).mul(float(1.0).sub(isBrick));
+    if (victorian) {
+      const v = victorianWindow(1.0);
+      const sash = clamp(max(max(lineAA(winUV.x.sub(0.5), 0.022), lineAA(winUV.y.sub(0.5), 0.03)),
+        max(lineAA(winUV.y.sub(0.25), 0.014), lineAA(winUV.y.sub(0.75), 0.014))), 0.0, 1.0);
+      const wallOnly = float(1.0).sub(isRoof);
+      return {
+        opening: inX.mul(inY).mul(v.head).mul(wallOnly), band, frames: sash, bars,
+        voussoir: v.voussoir.mul(open).mul(wallOnly), sill: v.sill.mul(open).mul(wallOnly)
+      };
+    }
     const opening = inX.mul(inY).mul(float(1.0).sub(isRoof)).mul(float(1.0).sub(band));
     return { opening, band, frames, bars };
   };
 
   mat.colorNode = Fn(() => {
-    const { opening, band, frames, bars } = masks();
+    const { opening, band, frames, bars, voussoir, sill } = masks();
     const wp = positionWorld;
     // Paint: mottled, a little chalky; rain streaks under the sills; red laterite dust up the first metre
     const mottle = noise2D(vec2(uCoord.mul(0.6), vCoord.mul(0.6))).mul(0.08).add(0.96);
@@ -1416,12 +1448,30 @@ function createRenderedFacadeMaterial(opts = {}) {
     const rowC = vCoord.div(0.1);
     const row = floor(rowC);
     const colC = uCoord.div(0.26).add(mod(row, 2.0).mul(0.5));
-    const brickFade = float(1.0).sub(smoothstep(0.3, 0.7, max(fwidth(rowC), fwidth(colC)))).mul(isBrick);
+    const brickFade = float(1.0).sub(smoothstep(0.3, 0.7, max(fwidth(rowC), fwidth(colC)))).mul(brickOnly);
     const mortar = max(gridLine(colC.mul(0.26), 0.26, 0.012), gridLine(vCoord, 0.1, 0.012)).mul(brickFade).mul(float(1.0).sub(coping));
     const brickTone = hash2D(vec2(floor(colC), row).add(vec2(uSeed, 3.1))).sub(0.5).mul(0.18).mul(brickFade).add(1.0);
     wall = mix(wall, wall.mul(brickTone), isBrick);
     wall = mix(wall, paint.mul(0.5).add(color(0x9a958c).mul(0.5)), mortar.mul(0.65));
     wall = mix(wall, color(0x4a443d), dust.mul(0.6));
+    if (victorian) {
+      // the Stone Distillery's ashlar: 0.5 m courses of 1.1 m blocks, broken joints, each block a shade off, in thin
+      // joints of a lighter lime; and the round iron tie plates on the piers at each floor (above the ground floor)
+      const rowS = vCoord.div(0.5);
+      const colS = uCoord.div(1.1).add(mod(floor(rowS), 2.0).mul(0.5));
+      const stoneFade = float(1.0).sub(smoothstep(0.3, 0.7, max(fwidth(rowS), fwidth(colS)))).mul(isStone);
+      const joint = max(gridLine(colS.mul(1.1), 1.1, 0.01), gridLine(vCoord, 0.5, 0.01)).mul(stoneFade).mul(float(1.0).sub(coping));
+      const blockTone = hash2D(vec2(floor(colS), floor(rowS)).add(vec2(uSeed, 7.7))).sub(0.5).mul(0.12).mul(stoneFade).add(1.0);
+      wall = mix(wall, wall.mul(blockTone), isStone);
+      wall = mix(wall, paint.mul(1.08), joint.mul(0.55));
+      const toEdge = min(cellUV.x, float(1.0).sub(cellUV.x)).mul(bayWidth);
+      const plate = smoothstep(0.19, 0.15, length(vec2(toEdge, cellUV.y.mul(uFloorHeight).sub(0.32))))
+        .mul(isStone).mul(float(1.0).sub(floor0)).mul(float(1.0).sub(isRoof)).mul(float(1.0).sub(solid));
+      wall = mix(wall, color(0x26292b), plate);
+      // the arch ring (a rubbed brick a shade darker) & the sill (pale stone; the limestone's own, a little lighter)
+      wall = mix(wall, paint.mul(0.8), voussoir);
+      wall = mix(wall, mix(color(0xb4ac9c), paint.mul(1.12), isStone), sill);
+    }
     // --- end Toronto layer ---
     wall = mix(wall, bandCol, band);
     wall = mix(wall, paint.mul(0.9), coping);
@@ -1432,7 +1482,8 @@ function createRenderedFacadeMaterial(opts = {}) {
     const fresnel = pow(clamp(float(1.0).sub(abs(dot(viewDir, normalWorldGeometry))), 0.0, 1.0), 2.0);
     const inside = aptRoom.xyz.mul(0.55);
     const glass = mix(mix(inside, cGlass, 0.7), cityUniforms.uSkyHorizonColor, fresnel.mul(0.55).add(0.07));
-    const frameCol = mix(color(0xb9bcbf), color(0x3a3530), step(0.5, fract(tone.mul(9.1)))); // silver or bronze aluminium
+    const frameCol = victorian ? color(0x2f3a2d) // (the Distillery's painted sashes, dark green)
+      : mix(color(0xb9bcbf), color(0x3a3530), step(0.5, fract(tone.mul(9.1)))); // silver or bronze aluminium
     let c = mix(wall, snowOver(roofCol, wp.xz, isRoof.mul(0.9)), isRoof); // (lying snow on the roof)
     c = mix(c, glass, opening);
     c = mix(c, frameCol, opening.mul(frames));
@@ -1455,7 +1506,11 @@ function createRenderedFacadeMaterial(opts = {}) {
     const inX = filteredPulse(cellUV.x, effHalfX, float(1.0).sub(effHalfX), ramp.x).mul(open);
     const inY = filteredPulse(cellUV.y, effHalfY, float(1.0).sub(effHalfY), ramp.y);
     const band = filteredPulse(cellUV.y, 0.0, 0.075, ramp.y).mul(hasBands);
-    const relief = inX.mul(inY).mul(-0.07).add(band.mul(0.03));
+    let relief = inX.mul(inY).mul(-0.07).add(band.mul(0.03));
+    if (victorian) {
+      const v = victorianWindow(2.0);
+      relief = inX.mul(inY).mul(v.head).mul(-0.07).add(v.sill.mul(open).mul(0.04)).add(v.voussoir.mul(open).mul(0.015));
+    }
     return bumpNormal(mix(mix(relief, entrance.relief, entrance.mask), storefront.relief, storefront.mask).mul(fade));
   })();
 
@@ -3296,6 +3351,56 @@ function createPlotGroundMaterial() {
 }
 
 /**
+ * The Distillery District's lanes (city-grid.js lays it over the district's block, inside its sidewalks): worn clay
+ * paving bricks in a running bond, 0.22 x 0.11 m, each a shade of a muted red-brown or a grey, in dark sanded joints,
+ * slightly domed and uneven up close; the pattern fades to its average colour where a brick is under a few pixels.
+ */
+let _lanePavingMat = null;
+function createLanePavingMaterial() {
+  if (_lanePavingMat) return _lanePavingMat;
+  const mat = new THREE.MeshStandardNodeMaterial({ metalness: 0.0, roughness: 0.92 });
+  const pavers = () => {
+    const p = positionWorld.xz;
+    const rowC = p.y.div(0.11);
+    const row = floor(rowC);
+    const colC = p.x.div(0.22).add(mod(row, 2.0).mul(0.5));
+    const id = vec2(floor(colC), row);
+    const fade = float(1.0).sub(smoothstep(0.25, 0.6, max(fwidth(rowC), fwidth(colC))));
+    const cu = fract(colC), cv = fract(rowC);
+    // distance into the brick from its nearest joint, in brick widths (0 at the joint)
+    const edge = min(min(cu, float(1.0).sub(cu)).mul(2.0), min(cv, float(1.0).sub(cv)));
+    return { p, id, fade, edge };
+  };
+  mat.colorNode = Fn(() => {
+    const { p, id, fade, edge } = pavers();
+    const h = hash2D(id.add(vec2(3.7, 9.1)));
+    const h2 = hash2D(id.add(vec2(11.3, 1.9)));
+    const clay = mix(mix(color(0x5a4339), color(0x6a5043), h), color(0x735a4c), step(0.88, h2));
+    const brick = mix(clay, color(0x5a534d), step(0.96, h)); // (the odd grey replacement)
+    const avg = color(0x5f4a41);
+    // worn: paler where the feet go, darker (wet, oily) in patches
+    const wear = fbm2(p.mul(0.08).add(4.0));
+    let c = mix(avg, brick, fade).mul(mix(float(0.88), float(1.05), wear));
+    const joint = smoothstep(0.12, 0.0, edge).mul(fade);
+    c = mix(c, color(0x2c2722), joint.mul(0.8));
+    return snowOver(c, p, float(0.7));
+  })();
+  mat.roughnessNode = Fn(() => {
+    const { fade, edge } = pavers();
+    // (rough: a dull fired clay, so the shade's sky doesn't turn it blue)
+    return mix(float(0.9), float(0.97), smoothstep(0.12, 0.0, edge).mul(fade)).sub(noise2D(positionWorld.xz.mul(0.3)).mul(0.05));
+  })();
+  mat.normalNode = Fn(() => {
+    const { id, fade, edge } = pavers();
+    const near = smoothstep(45.0, 6.0, length(positionWorld.sub(cameraPosition)));
+    const dome = smoothstep(0.0, 0.35, edge).mul(0.006).add(hash2D(id.add(vec2(5.1, 2.3))).mul(0.003));
+    return bumpNormal(dome.mul(fade).mul(near));
+  })();
+  _lanePavingMat = mat;
+  return mat;
+}
+
+/**
  * Rendered & painted block walls (compound walls & gate piers): the paint colour per vertex (`color` attribute), a
  * coping shadow line at the top, rain streaks and the red laterite dust splashed up the bottom half-metre
  */
@@ -3320,5 +3425,5 @@ function createRenderedWallMaterial() {
   return mat;
 }
 
-Object.assign(window.CITY, { filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, createFootprintFacades, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial });
+Object.assign(window.CITY, { filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, createFootprintFacades, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
 })();

@@ -693,7 +693,11 @@ function buildCityGrid(scene) {
   const wildMat = createTerrainMaterial();
   const blockSidewalks = []; // { cx, cz, w, d, block, cover } axis-aligned cover of each island (street-details.js)
   const roadSidewalks = []; // rectangles inside the curbs that bound the roads (road-network.js)
-  const geos = { curb: [], walk: [], lawn: [], plot: [], wild: [], paved: [], rail: [] };
+  const geos = { curb: [], walk: [], lawn: [], plot: [], wild: [], paved: [], rail: [], lanes: [] };
+  // --- Toronto layer: the Distillery District's lanes (Trinity St, Gristmill, Tank House & Case Goods Lanes) are paving
+  // bricks & setts, not concrete: its whole block inside the sidewalks, in their own material (one draw; st-01vq.9) ---
+  const distillerySite = window.CITY.LANDMARK_SITES && window.CITY.LANDMARK_SITES.distillery;
+  const distilleryBlock = distillerySite && window.CITY.createLanePavingMaterial ? blockAt(distillerySite.x, distillerySite.z) : null;
   // Downtown is concrete to the building line: the core from Spadina to Parliament between the lake & Bloor, and
   // anywhere else a block holds towers or big buildings. Houses keep their front lawns.
   const blockBuilt = new Map(); // block -> { n, area, top }
@@ -1020,6 +1024,8 @@ function buildCityGrid(scene) {
       continue;
     }
     const prop = b.area > 400 ? offsetPolygonInward(b.poly, SW) : null;
+    // (over the yard, +0.003: under the City's walks, the small parks' lawns & beds)
+    if (b === distilleryBlock) geos.lanes.push(flatShape(prop || inner, SW_TOP + 0.003));
     const yard = isRailLand(b) ? 'rail' : b.park > 0.6 ? 'lawn' : b.wild > 0.5 ? 'wild' : isPaved(b) ? 'paved' : 'plot'; // (rail: Toronto layer)
     const walks = cityWalks && b.area > 400 ? cityWalks.get(b.id) : null; // (Toronto layer: the City's sidewalks)
     const runs = window.CITY.curbRuns(inner);
@@ -1095,6 +1101,7 @@ function buildCityGrid(scene) {
   mergeInto(geos.lawn, lawnMat, false, 'Lawns');
   mergeInto(geos.plot, plotMat, false, 'Yards');
   mergeInto(geos.paved, createForecourtMaterial(), false, 'Forecourts');
+  if (geos.lanes.length) mergeInto(geos.lanes, window.CITY.createLanePavingMaterial(), false, 'DistilleryLanes'); // Toronto layer
   mergeInto(geos.wild, wildMat, false, 'OpenLand');
   // (the rail lands' gravel bed is also the small parks' mulch, so the beds add no material: Toronto layer)
   mergeInto(geos.rail, new THREE.MeshStandardNodeMaterial({ color: 0x5f5850, roughness: 0.97 }), false, 'RailLands'); // Toronto layer

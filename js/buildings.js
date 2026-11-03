@@ -267,6 +267,69 @@ function pushShedRoof(A, cx, cz, ang, u0, u1, v0, v1, y, rgb) {
   }
 }
 
+// Monitor roof (the Distillery's long warehouses): a hipped roof with a raised monitor along its ridge, low glazed walls
+// (a clerestory: dark panes between painted mullions every ~1.6 m) under their own small hipped cap. Into the hipped
+// roofs' batch: no draw of its own. Returns the triangles pushed.
+function pushMonitorRoof(A, cx, cz, ang, u0, u1, v0, v1, y, pitch, eave, rgb, glassRgb, frameRgb) {
+  pushHipRoof(A, cx, cz, ang, u0, u1, v0, v1, y, pitch, eave, rgb);
+  let tris = 8;
+  const W = u1 - u0 + 2 * eave, D = v1 - v0 + 2 * eave;
+  const alongU = W >= D;
+  const half = (alongU ? D : W) / 2;
+  const ridgeLen = (alongU ? W : D) - 2 * half; // (the hips take a half span off each end)
+  const mw = Math.min(2.4, half * 0.22); // the monitor's half width
+  const len = ridgeLen - 3;
+  if (len < 6) return tris;
+  const rise = half * Math.tan(pitch);
+  const foot = y + rise - mw * Math.tan(pitch); // where the slope meets the monitor's walls
+  const top = y + rise + 1.3;
+  const cs = Math.cos(ang), sn = Math.sin(ang);
+  const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
+  // (s along the ridge, t across it) -> world
+  const P = (s, t, yy) => {
+    const u = alongU ? uc + s : uc + t, v = alongU ? vc + t : vc + s;
+    return [cx + u * cs + v * sn, yy, cz - u * sn + v * cs];
+  };
+  // (wound to face along n, the way out of the monitor)
+  const quad = (a, b, c, d, n, col) => {
+    const cr = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+    const cz2 = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const out = cr * n[0] + cz2 * n[2] >= 0 ? [a, b, c, a, c, d] : [a, c, b, a, d, c];
+    for (const p of out) {
+      A.pos.push(p[0], p[1], p[2]);
+      A.nor.push(n[0], n[1], n[2]);
+      A.uv.push(0, 0.3); // (a flat shade in the roof material's tile rows)
+      A.col.push(col[0], col[1], col[2]);
+    }
+    tris += 2;
+  };
+  // the long walls, as panes and mullions
+  const panes = Math.max(2, Math.round(len / 1.6));
+  const step = len / panes, mull = Math.min(0.28, step * 0.2);
+  for (const side of [-1, 1]) {
+    const t = side * mw;
+    const n = P(0, side, 0), o = P(0, 0, 0);
+    const nrm = [n[0] - o[0], 0, n[2] - o[2]];
+    for (let k = 0; k < panes; k++) {
+      const s0 = -len / 2 + k * step, s1 = s0 + step - mull, s2 = s0 + step;
+      const seg = (a, b, col) => quad(P(a, t, foot), P(a, t, top), P(b, t, top), P(b, t, foot), nrm, col);
+      seg(s0, s1, glassRgb);
+      seg(s1, s2, frameRgb);
+    }
+  }
+  // the end walls, in the frame colour
+  for (const end of [-1, 1]) {
+    const s = end * len / 2;
+    const n = P(end, 0, 0), o = P(0, 0, 0);
+    const nrm = [n[0] - o[0], 0, n[2] - o[2]];
+    quad(P(s, -mw, foot), P(s, -mw, top), P(s, mw, top), P(s, mw, foot), nrm, frameRgb);
+  }
+  // its cap: a low hipped roof over the monitor, in the main roof's slate
+  const [m0, m1, n0, n1] = alongU ? [uc - len / 2, uc + len / 2, vc - mw, vc + mw] : [uc - mw, uc + mw, vc - len / 2, vc + len / 2];
+  pushHipRoof(A, cx, cz, ang, m0, m1, n0, n1, top, 0.38, 0.3, rgb);
+  return tris + 8;
+}
+
 // Roofing: stone-coated steel tiles (rows of shingle-shaped pressed tiles every ~0.37 m up the slope) or ribbed
 // long-span sheets, in the vertex colour
 // (Toronto: lying snow on the slopes in winter, tsl-materials.js snowOver: a 20-35 degree pitch holds it, the hips' steep
@@ -339,13 +402,34 @@ const FLOOR_HEIGHTS = [3.4, 3.6, 3.8, 3.8, 3.8, 4.6]; // the facade materials' s
 // range than the city's measured masonry), a facade of tall narrow windows in a close, regular rhythm under tall
 // industrial storeys, deep piers at the corners, and pitched slate roofs where the block is low enough to have had one.
 // One more facade material (one draw call); the roofs go into the hipped roofs' batch.
+// Phase 2 (st-01vq.9): segmental-arched window heads over stone sills & sash bars (the material's `victorian` option);
+// the Stone Distillery in Kingston limestone with square windows and the round iron tie plates between them; monitor
+// roofs on the long low warehouses; the two brick chimneys OpenStreetMap maps (man_made=chimney: 35 m at the Boiler
+// House, 20 m by the Stone Distillery) as boxes in this material's batch; the brick a quieter, weathered red-brown
+// (phase 1's read too saturated). Buildings are picked by their centres (a few metres' tolerance), not by row numbers.
 const VICTORIAN = 5; // its facade style (buildCityBlocks `facadeStyles`)
 const DISTILLERY = {
   maxH: 30,
   pitchedUpTo: 19, // a pitched roof on blocks up to this height (the warehouses & the mill), flat parapets above
-  brick: [[0x8a4632, 4], [0x7a3b2a, 3], [0x9b5136, 2], [0x6d3426, 2]],
-  slate: [[0x3a3c40, 3], [0x45403c, 2], [0x2f3134, 1]]
+  maxRise: 5.5, // (the wide blocks' roofs pitched lower: the Stone Distillery is 30 m deep)
+  brick: [[0x7c5044, 4], [0x6e473c, 3], [0x87594a, 2], [0x5e4038, 2]],
+  slate: [[0x4b4e52, 3], [0x55504b, 2], [0x404346, 1]], // (a slate grey: phase 1's read black in low sun)
+  // the Stone Distillery (1859; warm grey limestone from Kingston, ON): the five-storey block and its one-storey
+  // fermenting wing to the west ("The Fermenting Cellar", building:material=stone in OSM)
+  stone: [[1741.5, -5.7], [1697.3, -18.2]],
+  limestone: [[0x878175, 3], [0x7d776d, 2], [0x918b80, 1]],
+  // the Boiler House's massing height is its chimney's (40.8 m: drawn as a glass tower); OSM gives it two storeys
+  height: [[1821.2, -82.0, 11.0]],
+  // a 13-storey block at Parliament & Mill that OSM gives as red brick (building:material=brick): the rendered office
+  // facade in the district's brick, not curtain wall
+  brickTowers: [[1634.9, -38.7]],
+  // OSM man_made=chimney (material=brick, colour=red), [x, z, height]
+  chimneys: [[1823.0, -81.7, 35], [1751.2, -15.3, 20]],
+  chimneyBrick: 0x6a4438,
+  // monitor roofs: the long, low warehouses (a part at least this long and this much longer than deep, up to maxH)
+  monitor: { maxH: 12.5, minLen: 30, minAspect: 1.6, glass: 0x22282a, frame: 0x34402f }
 };
+const nearAny = (list, x, z, tol = 3) => list.find(([px, pz]) => Math.abs(px - x) < tol && Math.abs(pz - z) < tol);
 const distilleryRing = (() => {
   const s = window.CITY.LANDMARK_SITES && window.CITY.LANDMARK_SITES.distillery;
   return s && s.ring && s.ring.length >= 6 ? s.ring : null;
@@ -381,7 +465,7 @@ function buildCityBlocks(scene) {
     [createCurtainWallMaterial, { glassTint: 0x1e2326, frameTint: 0x3a3e40, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.6, reflectivity: 0.9, seed: 57.0, boxLocal: true }],
     [createCurtainWallMaterial, { glassTint: 0x3d4245, frameTint: 0xb4b8ba, windowWidth: 1.6, floorHeight: 3.8, litProbability: 0.5, warmth: 0.5, reflectivity: 0.94, seed: 73.0, boxLocal: true }],
     // [5] the Distillery District's Victorian brick (VICTORIAN): tall narrow windows close together, tall storeys
-    [createRenderedFacadeMaterial, { windowWidth: 2.7, floorHeight: 4.6, windowRatioX: 0.36, windowRatioY: 0.64, litProbability: 0.38, warmth: 0.95, seed: 97.0, cornerPier: 1.0 }]
+    [createRenderedFacadeMaterial, { windowWidth: 2.7, floorHeight: 4.6, windowRatioX: 0.36, windowRatioY: 0.64, litProbability: 0.38, warmth: 0.95, seed: 97.0, cornerPier: 1.0, victorian: true }]
   ];
   const materials = facadeStyles.map(([create, opts]) => create(opts));
   const buckets = materials.map(() => []);
@@ -392,13 +476,15 @@ function buildCityBlocks(scene) {
   const roofTiles = { pos: [], nor: [], uv: [], col: [] };
   const roofSheets = { pos: [], nor: [], uv: [], col: [] };
 
-  const stats = { buildings: 0, boxes: 0, hip: 0, sheet: 0, glass: 0, storefronts: 0, strip: 0, signed: 0, victorian: 0 };
+  const stats = { buildings: 0, boxes: 0, hip: 0, sheet: 0, glass: 0, storefronts: 0, strip: 0, signed: 0, victorian: 0, stone: 0, monitor: 0, monitorTris: 0, chimneys: 0 };
   const retail = storefrontSelection();
   const signWalls = signedWalls();
   const facades = new Map(); // building row -> { mat, floorHeight, front } for the signed buildings
   for (let bi = 0; bi < GEO.buildings.length; bi++) {
     const b = GEO.buildings[bi];
-    const [cx, cz, ang, parts, h, kind, roof, cseed, , name] = b;
+    const [cx, cz, ang, parts, h0, kind, roof, cseed, , name] = b;
+    const fixH = nearAny(DISTILLERY.height, cx, cz, 2); // (Toronto layer: a massing height that is a chimney's)
+    const h = fixH && inDistillery(cx, cz) ? fixH[2] : h0;
     const foot = massing ? massing.rows.get(bi) : null;
     const rnd = mulberry32((cseed * 7919) ^ Math.round(cx * 13 + cz * 7));
     const cs = Math.cos(ang), sn = Math.sin(ang);
@@ -440,8 +526,11 @@ function buildCityBlocks(scene) {
       : kind === 6 ? weighted(TORONTO_STONE, rnd()) : weighted(TORONTO_RENDER, rnd());
     // (the Distillery District's heritage blocks: its Victorian brick, whatever the draws above said)
     const victorian = h <= DISTILLERY.maxH && inDistillery(cx, cz);
-    if (victorian) { mat = VICTORIAN; brick = true; paintHex = weighted(DISTILLERY.brick, rnd()); }
-    const paint = [...linear(paintHex), (kind === 5 ? 0.95 : rnd()) + (brick ? 2 : 0)];
+    const stone = victorian && !!nearAny(DISTILLERY.stone, cx, cz);
+    if (victorian) { mat = VICTORIAN; brick = true; paintHex = weighted(stone ? DISTILLERY.limestone : DISTILLERY.brick, rnd()); }
+    else if (nearAny(DISTILLERY.brickTowers, cx, cz) && inDistillery(cx, cz)) { mat = 1; brick = true; paintHex = weighted(DISTILLERY.brick, rnd()); }
+    // (paint.w: the glass style in the fraction, + 2 on brick, + 4 on the Distillery's limestone)
+    const paint = [...linear(paintHex), (kind === 5 ? 0.95 : rnd()) + (brick ? 2 : 0) + (stone ? 2 : 0)];
     if (signed) facades.set(bi, { mat, floorHeight: FLOOR_HEIGHTS[mat], front });
     const tone = rnd();
     let topY = 0;
@@ -483,7 +572,13 @@ function buildCityBlocks(scene) {
       topY = h;
       if (victorian) {
         if (h <= DISTILLERY.pitchedUpTo) {
-          pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, h, (32 + rnd() * 6) * Math.PI / 180, 0.35, linear(weighted(DISTILLERY.slate, rnd())));
+          const M = DISTILLERY.monitor;
+          const pitch = Math.min((32 + rnd() * 6) * Math.PI / 180, Math.atan(DISTILLERY.maxRise / (Math.min(w, d) / 2 + 0.35)));
+          const slate = linear(weighted(DISTILLERY.slate, rnd()));
+          if (!stone && h <= M.maxH && Math.max(w, d) >= M.minLen && Math.max(w, d) >= M.minAspect * Math.min(w, d)) {
+            stats.monitorTris += pushMonitorRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, h, pitch, 0.35, slate, linear(M.glass), linear(M.frame));
+            stats.monitor++;
+          } else pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, h, pitch, 0.35, slate);
           stats.hip++;
         }
       } else if (roof === 1 && kind !== 3) {
@@ -501,6 +596,7 @@ function buildCityBlocks(scene) {
     }
     if (mat >= 2 && mat !== VICTORIAN) stats.glass++;
     if (victorian) stats.victorian++;
+    if (stone) stats.stone++;
     stats.buildings++;
 
     // Close-up detail for the quadtree: overhead water tank (on flat roofs; on a stand in the yard beside a hipped
@@ -603,6 +699,22 @@ function buildCityBlocks(scene) {
       `(~${massingStats.geometryMiB} MiB) in ${meshes} meshes (the ${massingStats.boxesReplaced} boxes they replace: ${massingStats.boxTriangles} triangles, instanced); ` +
       `${massingStats.ms} ms (${massingStats.meshMs} ms merging)`);
   }
+  // The Distillery's brick chimneys (OSM man_made=chimney): a plinth, a shaft stepping in once, a corbelled band & a
+  // cap, as blank-walled boxes in the Victorian brick's batch (its coping lines are the corbel courses). No draw of their own.
+  if (distilleryRing) {
+    const blank = [WALL_KINDS.lotLine, WALL_KINDS.lotLine, WALL_KINDS.lotLine, WALL_KINDS.lotLine];
+    for (const [x, z, H] of DISTILLERY.chimneys) {
+      const s = Math.max(2.0, H * 0.075); // (slender: the shaft about 13 times as tall as it is wide)
+      const paint = [...linear(DISTILLERY.chimneyBrick), 2.5];
+      for (const [k, y0, y1] of [[1.3, 0, 0.16], [1.0, 0.16, 0.62], [0.88, 0.62, 0.9], [1.06, 0.9, 0.935], [0.94, 0.935, 1]]) {
+        buckets[VICTORIAN].push({ x, y: (y0 + y1) / 2 * H, z, w: s * k, h: (y1 - y0) * H, d: s * k, faces: blank, tone: 0.5, paint });
+      }
+      const r = s * 0.65;
+      colliders.push({ minX: x - r, maxX: x + r, minZ: z - r, maxZ: z + r, maxY: H, obb: { cx: x, cz: z, hx: r, hz: r, cs: 1, sn: 0 } });
+      stats.chimneys++;
+    }
+  }
+  window.CITY.distilleryStats = { victorian: stats.victorian, stone: stats.stone, monitor: stats.monitor, monitorTris: stats.monitorTris, chimneys: stats.chimneys };
   buckets.forEach((items, i) => {
     if (!items.length) return;
     const inst = createFacadeBoxes(materials[i], items);
@@ -625,7 +737,7 @@ function buildCityBlocks(scene) {
     group.add(m);
   }
   if (window.CITY.DEBUG_ROADS !== false) {
-    console.info(`[buildings] ${stats.buildings} buildings, ${stats.boxes} boxes, ${stats.hip} hipped & ${stats.sheet} sheet roofs, ${stats.glass} in curtain wall, ${stats.victorian} in the Distillery's brick; ${stats.storefronts} storefronts (${stats.strip} on retail strips, ${stats.signed} signed)`);
+    console.info(`[buildings] ${stats.buildings} buildings, ${stats.boxes} boxes, ${stats.hip} hipped & ${stats.sheet} sheet roofs, ${stats.glass} in curtain wall, ${stats.victorian} in the Distillery's brick (${stats.stone} limestone, ${stats.monitor} monitor roofs, ${stats.chimneys} chimneys); ${stats.storefronts} storefronts (${stats.strip} on retail strips, ${stats.signed} signed)`);
   }
 
   // ===================================================================================================================
