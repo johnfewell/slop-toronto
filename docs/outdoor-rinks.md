@@ -16,13 +16,13 @@ Dufferin Grove keeps the City's 2024 geometry: one long boarded hockey rink (`97
 
 ## Season
 
-The scene is lit on one calendar day, 22 August (`CITY.SCENE_DATE`, `js/lighting.js`). `rinkSeason()` applies the game's rule to that date. **Ice runs from 1 December to 15 March inclusive; every other day is off-season.** This is a game approximation of the usual winter season, not an operational claim. Real openings depend on weather and City schedules. So the default scene shows:
+The rinks stand on the day the city opened on (`CITY.SITE_DATE`, `js/seasons.js` `siteDay()`, bead `st-1m40`): Toronto's date when it opens live, as a real visit does; the presets' 22 August on a `?time=<preset>` open or in an automated capture; a capture fixture's `?liveDate=` (else `?liveClock=`) day. It is chosen once at load (see [docs/live-sky.md](live-sky.md#seasons)). `rinkSeason()` applies the game's rule to that date. **Ice runs from 1 December to 15 March inclusive; every other day is off-season.** This is a game approximation of the usual winter season, not an operational claim. Real openings depend on weather and City schedules. So an off-season day (and every preset) shows:
 
 - off-season concrete for the pads (boarded hockey pads keep faded centre-red and blue lines),
 - paved surfaces for the skate trails,
 - dark reflecting water at Nathan Phillips Square and TMU Square.
 
-`?rinks=ice` or `?rinks=off` previews either state without changing the scene date. The place cards never show an open or closed status. They say what the city draws, mention the dated scene, explain any aerial board override and add a reminder that rinks are seasonal and weather-dependent.
+In the ice season the pads, trails and both squares' pools are ice, with bright lines, and the lit rinks glow at night. `?rinks=ice` or `?rinks=off` previews either state without changing the date. The place cards never show an open or closed status. They say what the city draws, mention the dated scene, explain any aerial board override and add a reminder that rinks are seasonal and weather-dependent.
 
 ## Rendering, floors and collisions
 

@@ -1736,10 +1736,15 @@ async function initApp() {
   };
   // The scenery's season (seasons.js), and (automated captures & tests only, as liveSky.inject) a fixed day & snow record:
   // seasons.inject('2026-12-20', 10) shows 20 December with 10 cm on the ground while live (null: the date of the clock,
-  // and no record). It doesn't turn live on: liveSky.inject (or ?liveClock=) does.
+  // and no record). It doesn't turn live on: liveSky.inject (or ?liveClock=) does. The rinks and patios were built on the
+  // opening day (CITY.SITE_DATE): a capture moves them with ?liveClock= & ?liveDate= in the URL, not inject().
   window.__CITY_APP.seasons = {
     state() {
-      return { ...season.state, fixedDate: season.fixedDate, fixedSnowCm: season.fixedSnowCm, record: season.record };
+      // (sites: the day the load-built rinks, patios & bikeways stand on, seasons.js CITY.SITE_DATE; inject() can't move it)
+      const C = window.CITY, site = C.SITE_DATE;
+      return { ...season.state, fixedDate: season.fixedDate, fixedSnowCm: season.fixedSnowCm, record: season.record,
+        sites: site ? { month: site.month, day: site.day, source: site.source, rinks: C.rinkStats?.season ?? null,
+          patios: C.patioStats ? C.patioStats.season : null, bikeDetours: C.bikeDetourStats?.platforms ?? 0 } : null };
     },
     inject(date = null, snowCm = null) {
       if (!liveSky.start.capture) return false;

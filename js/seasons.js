@@ -218,11 +218,40 @@ function fixtureRecord(cm, now = Date.now()) {
   return { date: ymd, snowOnGround: cm, snowOnGroundDate: ymd, recentSnow: 0, maxTemp: -3 };
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The scenery built once at load (the rinks' ice, the CaféTO patios and the bikeways bent round them: geometry,
+// colliders and routes, not uniforms) follows the day the city opens on, chosen here before any of it is built. A city
+// that opens live stands on Toronto's date (a capture fixture's ?liveDate=, else its ?liveClock= day); one that opens on
+// a preset (?time=<preset>, and every automated capture without a fixture) on the classic 22 August. The day is not
+// revisited: a visit rarely crosses a season's edge, and a later preset or Live press only writes the sky's and the
+// trees' uniforms (docs/live-sky.md, "Seasons").
+// ---------------------------------------------------------------------------------------------------------------------
+function siteDay({ startup = null, capture = null, now = new Date() } = {}) {
+  if (!startup || startup.mode !== 'live') return { month: SUMMER_DATE.month, day: SUMMER_DATE.day, source: 'preset' };
+  if (capture?.fixedDate) return { month: capture.fixedDate.month, day: capture.fixedDate.day, source: 'liveDate' };
+  if (startup.fixedClock) {
+    const d = torontoDate(startup.fixedClock);
+    return { month: d.month, day: d.day, source: 'liveClock' };
+  }
+  const d = torontoDate(now);
+  return { month: d.month, day: d.day, source: 'live' };
+}
+
 const SEASONS = {
   TZ, SUMMER_DATE, SUMMER, CURVES, CLIMATE_URL, CLIMATE_CACHE_KEY, CLIMATE_CACHE_MS, CLIMATE_MAX_AGE_DAYS, FETCH_TIMEOUT_MS,
   dayOfYear, torontoDate, curveAt, seasonFor, snowSeason, parseClimate, snowCover, fetchSnowRecord, parseDay, resolveCapture,
-  fixtureRecord
+  fixtureRecord, siteDay
 };
-if (typeof window !== 'undefined' && window.CITY) window.CITY.SEASONS = SEASONS;
+if (typeof window !== 'undefined' && window.CITY) {
+  window.CITY.SEASONS = SEASONS;
+  // CITY.SITE_DATE: the day the load-built scenery stands on (siteDay), read by rinks.js, cafeto-patios.js and
+  // cycling.js. explore.html loads live-sky.js and this file before them; the same rules as main.js's opening mode.
+  const LIVE = window.CITY.LIVE_SKY;
+  if (LIVE && typeof location !== 'undefined') {
+    const webdriver = typeof navigator !== 'undefined' && navigator.webdriver === true;
+    window.CITY.SITE_DATE = Object.freeze(siteDay({ startup: LIVE.resolveStartup({ search: location.search, webdriver }),
+      capture: resolveCapture({ search: location.search, webdriver }) }));
+  }
+}
 if (typeof module !== 'undefined' && module.exports) module.exports = SEASONS;
 })();

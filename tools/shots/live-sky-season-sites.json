@@ -1,0 +1,46 @@
+[
+ {
+  "name": "state",
+  "mode": "person",
+  "wait": 500,
+  "record": true,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;const st=app.seasons.state(),R=C.rinkStats||{},P=C.patioStats||{};const out={siteDate:C.SITE_DATE,sites:st.sites,trees:{phase:st.phase,leaf:st.leaf},rinks:{season:R.season,forced:R.forced,nps:(R.sites||[]).filter(s=>s.assetId==='43599').map(s=>s.surface)},patios:{season:P.season,date:P.date,layout:P.layout||null,ms:P.ms??null,fingerprint:P.fingerprint||null,placed:P.placed},bikeDetours:C.bikeDetourStats,sky:{active:app.liveSky.state().active,clock:app.liveSky.state().clock}};console.log('[ride-check] season-sites '+JSON.stringify(out));return out;})()"
+ },
+ {
+  "name": "nps-rink",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(()=>{{const min=document.body.classList.contains('hud-minimized');if(!min)document.getElementById('btn-toggle-hud').click();}const app=window.__CITY_APP,C=window.CITY;const view=(side,along,dist,height,fov)=>{const r=C.RINKS.records.find(q=>q.assetId==='43599'),site=C.rinkStats.sites.find(q=>q.assetId==='43599'),rect=C.outlineRectangle(r.polygons[0].outer),px=-rect.az,pz=rect.ax,d=(rect.width/2+rect.length*.35+14)*dist,x=rect.x+px*d*side+rect.ax*rect.length*along,z=rect.z+pz*d*side+rect.az*rect.length*along;app.teleportTo(rect.x+px*(rect.width/2+6),rect.z+pz*(rect.width/2+6),0);const pos=[x,site.y+18*height+rect.length*.25*height,z],look=[rect.x,site.y,rect.z];app.cameraSystem.cinema=()=>({pos,look,fov});};view(1,.2,1,1,55);const st=app.seasons.state(),R=C.rinkStats||{},P=C.patioStats||{};const out={siteDate:C.SITE_DATE,sites:st.sites,trees:{phase:st.phase,leaf:st.leaf},rinks:{season:R.season,forced:R.forced,nps:(R.sites||[]).filter(s=>s.assetId==='43599').map(s=>s.surface)},patios:{season:P.season,date:P.date,layout:P.layout||null,ms:P.ms??null,fingerprint:P.fingerprint||null,placed:P.placed},bikeDetours:C.bikeDetourStats,sky:{active:app.liveSky.state().active,clock:app.liveSky.state().clock}};console.log('[ride-check] season-sites '+JSON.stringify(out));return out;})()"
+ },
+ {
+  "name": "nps-rink-low",
+  "mode": "person",
+  "wait": 5000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;const view=(side,along,dist,height,fov)=>{const r=C.RINKS.records.find(q=>q.assetId==='43599'),site=C.rinkStats.sites.find(q=>q.assetId==='43599'),rect=C.outlineRectangle(r.polygons[0].outer),px=-rect.az,pz=rect.ax,d=(rect.width/2+rect.length*.35+14)*dist,x=rect.x+px*d*side+rect.ax*rect.length*along,z=rect.z+pz*d*side+rect.az*rect.length*along;app.teleportTo(rect.x+px*(rect.width/2+6),rect.z+pz*(rect.width/2+6),0);const pos=[x,site.y+18*height+rect.length*.25*height,z],look=[rect.x,site.y,rect.z];app.cameraSystem.cinema=()=>({pos,look,fov});};view(1,-.15,.55,.4,60);})()"
+ },
+ {
+  "name": "ossington-146-aerial",
+  "mode": "person",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(-2977.6,-1163.5,0);app.cameraSystem.cinema=()=>({pos:[-2971.6,11,-1134.3],look:[-2984.6,0.5,-1143.3],fov:50});})()"
+ },
+ {
+  "name": "ossington-146-street",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=()=>({pos:[-2978.4,2.4,-1160.3],look:[-2984.6,0.7,-1141.3],fov:55});})()"
+ },
+ {
+  "name": "danforth-494-aerial",
+  "mode": "person",
+  "wait": 7000,
+  "js": "(()=>{const app=window.__CITY_APP;app.teleportTo(3480,-2772,0);app.cameraSystem.cinema=()=>({pos:[3485.22,30,-2770.04],look:[3485.22,0,-2771.04],fov:50});})()"
+ },
+ {
+  "name": "danforth-494-oblique",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(()=>{window.__CITY_APP.cameraSystem.cinema=()=>({pos:[3476.15,7,-2767.27],look:[3486.29,0.3,-2773.02],fov:50});})()"
+ }
+]

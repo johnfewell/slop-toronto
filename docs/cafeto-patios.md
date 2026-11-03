@@ -33,11 +33,15 @@ both licence fields and a SHA-256 of the download.
 
 ## Season and the scene date
 
-The game's day is fixed at 22 August (`js/lighting.js`; `CITY.SCENE_DATE` once the rinks work lands, read here when
-present). The 2026 guidelines require curb lane platforms to be installed by June 1 and removed between October 1 and 15,
-and the dataset lists the current season's permits. `patioSeason()` shows patios from June 1 to September 30. Sidewalk
-cafés follow the same window because their records carry no dates. 22 August is in season, so all are shown. Outside the
-window the layer builds nothing.
+The patios stand on the day the city opened on (`CITY.SITE_DATE`, `js/seasons.js` `siteDay()`, bead `st-1m40`):
+Toronto's date when it opens live, as a real visit does; the presets' 22 August on a `?time=<preset>` open or in an
+automated capture; a capture fixture's `?liveDate=` (else `?liveClock=`) day. It is chosen once at load, before
+`cycling.js` bends the bikeways (see [docs/live-sky.md](live-sky.md#seasons)). The 2026 guidelines require curb lane
+platforms to be installed by June 1 and removed between October 1 and 15, and the dataset lists the current season's
+permits. `patioSeason()` shows patios from June 1 to September 30. Sidewalk cafés follow the same window because their
+records carry no dates. 22 August is in season, so every preset and capture shows them all. Outside the window the
+layer builds nothing (it returns before the prebuilt layout's fingerprint check), the bikeways keep their mapped lines,
+and the parked cars keep their prebuilt places, so the platforms' curb lane stretches stand empty.
 
 ## Placement rules (`js/patio-layout.js`)
 

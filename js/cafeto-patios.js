@@ -6,7 +6,8 @@
 // strip against the building face, open at the door. Both carry bistro tables, chairs and, where there is room, an
 // umbrella. Every part is one InstancedMesh (eight draw calls for every patio in the city) that scene-culling.js chunks
 // and hides with distance; each patio adds one oriented player collider, like a bench. Shown in the CaféTO season only
-// (patioSeason against the scene's fixed date); ?patios=0 leaves them out.
+// (patioSeason against the day the city opened on: seasons.js CITY.SITE_DATE, Toronto's date when it opens live, else
+// the presets' 22 August); ?patios=0 leaves them out.
 //
 // The layout is prebuilt (st-cmf): js/toronto-patios.js (tools/build-patios.mjs) holds the sites js/patio-layout.js
 // placed in the browser with this city's own inputs, so startup only instances them and adds their colliders. The
@@ -19,7 +20,7 @@
 const { THREE, CITY_BOUNDS } = window.CITY;
 const SW = CITY_BOUNDS.sidewalkHeight;
 
-// The CaféTO season against the scene's fixed date. The 2026 guidelines require curb-lane platforms installed by
+// The CaféTO season on a day ({ month, day }). The 2026 guidelines require curb-lane platforms installed by
 // June 1 and removed between October 1 and 15; the dataset lists the current season's permits. Patios are shown from
 // June 1 to September 30 (sidewalk cafés too: the records carry no dates of their own).
 function patioSeason(date = { month: 8, day: 22 }) {
@@ -239,8 +240,11 @@ const CANOPY_COLOURS = [0xf1ebdc, 0x9e2b25, 0x2f5d3a, 0x22344f, 0x1f1f1f, 0xd8b0
 async function buildPatios(scene, staticColliders = [], { furniture = [], bikeShareAt = null } = {}) {
   const CITY = window.CITY;
   const records = CITY.CAFETO?.records || [];
-  const date = CITY.SCENE_DATE || { month: 8, day: 22 }; // (lighting.js: the scene's fixed day, 22 August)
+  // the day the city opened on (seasons.js siteDay: Toronto's date when live, else lighting.js's 22 August), chosen once:
+  // cycling.js bent the bikeways round these platforms on the same day
+  const date = CITY.SITE_DATE || CITY.SCENE_DATE || { month: 8, day: 22 };
   const stats = { source: CITY.CAFETO?.source || null, counts: CITY.CAFETO?.counts || null, season: patioSeason(date),
+    date: { month: date.month, day: date.day, source: date.source || 'scene' },
     accepted: 0, placed: { sidewalk: 0, curb: 0 }, rejected: {}, sites: [], instances: {} };
   CITY.patioStats = stats;
   const mode = new URLSearchParams(location.search).get('patios'); // '0' off, 'layout' or 'check' recompute

@@ -42,6 +42,12 @@ test('the season follows the scene date, with an explicit preview override',()=>
   assert.deepEqual({...C.sceneSeason('',{month:8,day:22})},{season:'off',forced:false});
   assert.deepEqual({...C.sceneSeason('?rinks=ice',{month:8,day:22})},{season:'ice',forced:true});
   assert.deepEqual({...C.sceneSeason('?rinks=bogus',{month:1,day:5})},{season:'ice',forced:false});
+  // the day the city opened on (seasons.js CITY.SITE_DATE, st-1m40): a January open shows ice, August concrete; ?rinks=
+  // still previews either
+  assert.deepEqual({...C.sceneSeason('',{month:1,day:15,source:'live'})},{season:'ice',forced:false});
+  assert.deepEqual({...C.sceneSeason('',{month:8,day:15,source:'liveDate'})},{season:'off',forced:false});
+  assert.deepEqual({...C.sceneSeason('?rinks=off',{month:1,day:15,source:'live'})},{season:'off',forced:true});
+  assert.match(read('js/rinks.js'),/const sceneDate=C\.SITE_DATE\|\|C\.SCENE_DATE\|\|\{month:8,day:22\};\s*const \{season,forced\}=sceneSeason\(location\.search,sceneDate\);/);
   assert.equal(C.surfaceKind(byAsset('43599'),'off'),'water','Nathan Phillips Square is a reflecting pool out of season');
   assert.equal(C.surfaceKind(byAsset('71803'),'off'),'path');assert.equal(C.surfaceKind(byAsset('43607'),'off'),'pad');
   assert.ok(C.RINKS.records.every((r)=>C.surfaceKind(r,'ice')==='ice'));

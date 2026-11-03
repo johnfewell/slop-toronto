@@ -276,3 +276,82 @@ test('the roofs and the far land take snow, by uniform; the summer values are id
   assert.doesNotMatch(seasonCode.replace(/\/\/.*$/gm, ''), /\.mix\(/);
   assert.match(tsl, /const leafStays = \(key\) => key\.lessThan\(cityUniforms\.uLeaf\.mul\(1\.2\)\.sub\(0\.1\)\);/);
 });
+
+// ---- the scenery built once at load (st-1m40): the rinks' ice, the CaféTO patios and the bikeways bent round them ------
+// seasons.js CITY.SITE_DATE, the day they stand on, from the same opening rules as the sky (live-sky.js resolveStartup)
+function loadSiteDate(search, webdriver, now = null) {
+  const window = { CITY: {} };
+  const RealDate = Date;
+  // (a fixed "now" for the real-path case: Toronto's date at that instant)
+  const FakeDate = now ? class extends RealDate { constructor(...a) { super(...(a.length ? a : [now])); } static now() { return new RealDate(now).getTime(); } } : RealDate;
+  const ctx = vm.createContext({ window, Intl, URLSearchParams, Date: FakeDate, AbortController, setTimeout, clearTimeout,
+    location: { search }, navigator: { webdriver } });
+  vm.runInContext(read('js/live-sky.js'), ctx);
+  vm.runInContext(read('js/seasons.js'), ctx);
+  return window.CITY.SITE_DATE ? plain(window.CITY.SITE_DATE) : null;
+}
+const rinkRule = (d) => (d.month === 12 || d.month <= 2 || (d.month === 3 && d.day <= 15) ? 'ice' : 'off');
+const patioRule = (d) => d.month * 100 + d.day >= 601 && d.month * 100 + d.day <= 930;
+
+test('the load-built scenery\'s day: Toronto\'s date when the city opens live, 22 August on a preset or in an automated capture', () => {
+  // a real open (no automation) is live on Toronto's date: 1 November there at 03:30 UTC is still 31 October
+  assert.deepEqual(loadSiteDate('', false, '2026-11-01T03:30:00Z'), { month: 10, day: 31, source: 'live' });
+  assert.deepEqual(loadSiteDate('', false, '2026-01-15T17:00:00Z'), { month: 1, day: 15, source: 'live' });
+  assert.deepEqual(loadSiteDate('?time=live', false, '2026-07-10T17:00:00Z'), { month: 7, day: 10, source: 'live' });
+  // a preset in the URL: the presets' 22 August, whatever the date
+  assert.deepEqual(loadSiteDate('?time=golden', false, '2026-01-15T17:00:00Z'), { month: 8, day: 22, source: 'preset' });
+  // the capture-only overrides are ignored outside automation
+  assert.deepEqual(loadSiteDate('?liveDate=2026-07-15&liveClock=2026-01-15T12:00:00-05:00', false, '2026-11-01T17:00:00Z'),
+    { month: 11, day: 1, source: 'live' });
+  // automation without a fixture opens on golden hour, so on 22 August: every existing shot list is unchanged, and a
+  // ?liveDate= alone (no ?liveClock=, so not live) doesn't move it either
+  assert.deepEqual(loadSiteDate('', true, '2026-01-15T17:00:00Z'), { month: 8, day: 22, source: 'preset' });
+  assert.deepEqual(loadSiteDate('?liveDate=2026-01-15', true), { month: 8, day: 22, source: 'preset' });
+  assert.deepEqual(loadSiteDate('?time=midday&liveClock=2026-01-15T12:00:00-05:00', true), { month: 8, day: 22, source: 'preset' });
+  // a capture fixture: its ?liveDate= day, else its ?liveClock= day in Toronto
+  assert.deepEqual(loadSiteDate('?liveClock=2026-08-22T12:00:00-04:00&liveDate=2026-01-15', true), { month: 1, day: 15, source: 'liveDate' });
+  assert.deepEqual(loadSiteDate('?liveClock=2026-08-22T12:00:00-04:00&liveDate=07-12', true), { month: 7, day: 12, source: 'liveDate' });
+  assert.deepEqual(loadSiteDate('?liveClock=2027-01-01T02:00:00Z', true), { month: 12, day: 31, source: 'liveClock' });
+  // a bad ?liveDate= falls back to the clock's day
+  assert.deepEqual(loadSiteDate('?liveClock=2026-12-05T12:00:00-05:00&liveDate=2026-13-40', true), { month: 12, day: 5, source: 'liveClock' });
+  // no live-sky.js (node tools loading seasons.js alone): no SITE_DATE, and the builders keep SCENE_DATE
+  const bare = { CITY: {} };
+  vm.runInNewContext(read('js/seasons.js'), { window: bare, Intl, URLSearchParams, Date, location: { search: '' }, navigator: {} });
+  assert.equal(bare.CITY.SITE_DATE, undefined);
+  // the pure rule, as main.js's applySeason picks the trees' day
+  assert.deepEqual(plain(S.siteDay()), { month: 8, day: 22, source: 'preset' });
+  assert.deepEqual(plain(S.siteDay({ startup: { mode: 'live', fixedClock: null }, now: new Date('2026-12-24T17:00:00Z') })), { month: 12, day: 24, source: 'live' });
+});
+
+test('the site day picks the rinks\' ice and the CaféTO season: a rink in January vs August, patios in July vs November', () => {
+  // the rules the builders apply (rinks.js rinkSeason: 1 December - 15 March; cafeto-patios.js patioSeason: 1 June -
+  // 30 September; cycling.js bends the bikeways on the same window), checked against their sources
+  const rinks = read('js/rinks.js'), patios = read('js/cafeto-patios.js'), cycling = read('js/cycling.js');
+  assert.match(rinks, /return m===12\|\|m===1\|\|m===2\|\|\(m===3&&d<=15\)\?'ice':'off';/);
+  assert.match(patios, /return md >= 601 && md <= 930;/);
+  assert.match(cycling, /if \(C\.PATIOS && !off && md >= 601 && md <= 930\)/);
+  const fixture = (date) => loadSiteDate(`?liveClock=2026-08-22T12:00:00-04:00&liveDate=${date}`, true);
+  assert.equal(rinkRule(fixture('2026-01-15')), 'ice');
+  assert.equal(rinkRule(fixture('2026-08-15')), 'off');
+  assert.equal(patioRule(fixture('2026-07-15')), true);
+  assert.equal(patioRule(fixture('2026-11-15')), false);
+  // the edges, on a real open
+  for (const [iso, rink, patio] of [['2026-11-30T17:00:00Z', 'off', false], ['2026-12-01T17:00:00Z', 'ice', false],
+    ['2027-03-15T17:00:00Z', 'ice', false], ['2027-03-16T17:00:00Z', 'off', false], ['2026-05-31T16:00:00Z', 'off', false],
+    ['2026-06-01T16:00:00Z', 'off', true], ['2026-09-30T16:00:00Z', 'off', true], ['2026-10-01T16:00:00Z', 'off', false]]) {
+    const d = loadSiteDate('', false, iso);
+    assert.equal(rinkRule(d), rink, `rinks on ${iso}`);
+    assert.equal(patioRule(d), patio, `patios on ${iso}`);
+  }
+  // the presets and automated captures: off-season rinks, the patios in season (as before)
+  const preset = loadSiteDate('', true);
+  assert.equal(rinkRule(preset), 'off');
+  assert.equal(patioRule(preset), true);
+  // all three builders read the one day, before falling back to the scene's
+  for (const src of [rinks, patios, cycling]) assert.match(src, /SITE_DATE\s*\|\|\s*C(ITY)?\.SCENE_DATE\s*\|\|\s*\{\s*month:\s*8,\s*day:\s*22\s*\}/);
+  // and explore.html loads live-sky.js & seasons.js before the first of them (cycling.js routes at load)
+  const html = read('explore.html'), pos = (f) => html.indexOf(`'./js/${f}'`);
+  for (const f of ['cycling.js', 'cafeto-patios.js', 'rinks.js', 'main.js']) {
+    assert.ok(pos(f) > 0 && pos('seasons.js') < pos(f) && pos('live-sky.js') < pos('seasons.js'), `seasons.js before ${f}`);
+  }
+});

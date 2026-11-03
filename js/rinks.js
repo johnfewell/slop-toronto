@@ -4,8 +4,9 @@
 // polygons with their curves and holes, never rectangles from inventory points or dimensions. Boards follow the 2025
 // aerial review, which overrides two High Park source flags (the source values stay on the place cards).
 //
-// Season: the scene is lit on one calendar day (lighting.js SCENE_DATE, 22 August), so the rinks show their
-// off-season state: concrete pads, paved trails and Nathan Phillips / TMU Square's reflecting pools. rinkSeason() is the
+// Season: the rinks stand on the day the city opened on (seasons.js CITY.SITE_DATE: Toronto's date when it opens live, a
+// capture fixture's ?liveDate= or ?liveClock= day, else the presets' 22 August), chosen once at load. Off-season they show
+// concrete pads, paved trails and Nathan Phillips / TMU Square's reflecting pools. rinkSeason() is the
 // game's approximation of the City's usual outdoor season (ice from 1 December to 15 March, weather permitting); it is
 // not an operational status. ?rinks=ice or ?rinks=off previews either state. Lit rinks (source Lighting: Yes) glow
 // under floodlight at night only in the ice season; no light pole positions are mapped, so none are drawn.
@@ -175,7 +176,8 @@ function buildRinks(scene,staticColliders=[]) {
   const {THREE,WorldCollision:W,TSL}=C;
   const records=C.RINKS?.records||[];
   if(!records.length)return null;
-  const {season,forced}=sceneSeason(location.search,C.SCENE_DATE||{month:8,day:22});
+  const sceneDate=C.SITE_DATE||C.SCENE_DATE||{month:8,day:22};
+  const {season,forced}=sceneSeason(location.search,sceneDate);
   const groundAt=(x,z)=>(C.blockAt(x,z)?C.CITY_BOUNDS.sidewalkHeight:0)+(C.cutAt?.(x,z)||0);
   // Area (m2) of a footprint under something solid between ankle and head height: buildings, landmarks, props
   const overlapArea=(record,y)=>{
@@ -275,7 +277,7 @@ function buildRinks(scene,staticColliders=[]) {
     // (phones drop small casters: the same rule as the kerbs, quality.js)
     boards.castShadow=C.QUALITY?.kerbShadows!==false;group.add(boards);
   }
-  C.rinkStats={season,forced,sceneDate:C.SCENE_DATE||null,sourceCount:records.length,placed:sites.length,rejected:layout.rejected,
+  C.rinkStats={season,forced,sceneDate:{month:sceneDate.month,day:sceneDate.day,source:sceneDate.source||'scene'},sourceCount:records.length,placed:sites.length,rejected:layout.rejected,
     sites:sites.map(({id,assetId,name,parentName,type,y,surface,boards:b,overlap})=>({id,assetId,name,parentName,type,y,surface,boards:b,overlap})),
     terrain,terrainPieces:pieces.length,surfaceTriangles:surf.position.length/9,boardTriangles:board.position.length/9,colliders:colliders.length,...stats,sourceAudit:C.RINKS.audit||[]};
   console.info('[rinks] '+JSON.stringify({season,forced,placed:sites.length,rejected:layout.rejected,triangles:C.rinkStats.surfaceTriangles+C.rinkStats.boardTriangles,colliders:colliders.length}));

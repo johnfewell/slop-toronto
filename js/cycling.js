@@ -653,14 +653,17 @@ const bikewayIntrusion = (x, z, hw = 0.95) => intrusionIn(reserveGrid, x, z, hw,
 // ... and as built, routed round the CaféTO platforms (parked cars keep out of these); `tracks`: cycle tracks only
 const routedBikewayIntrusion = (x, z, hw = 0.95, tracks = false) => intrusionIn(ROUTED_GRID, x, z, hw, tracks);
 
-// The bands bend round the prebuilt platforms now, if the page will build them (the CaféTO season against the scene's
-// day, cafeto-patios.js patioSeason; not ?patios=0). Node's tools call routeRoundPatios themselves once they have them.
+// The bands bend round the prebuilt platforms now, if the page will build them (the CaféTO season, cafeto-patios.js
+// patioSeason, against the day the load-built scenery stands on: seasons.js CITY.SITE_DATE, Toronto's date when the city
+// opens live, else 22 August; not ?patios=0). Out of season the platforms aren't built and the bands keep their mapped
+// lines. Node's tools call routeRoundPatios themselves once they have them.
 {
-  const C = window.CITY, d = C.SCENE_DATE || { month: 8, day: 22 }, md = d.month * 100 + d.day;
+  const C = window.CITY, d = C.SITE_DATE || C.SCENE_DATE || { month: 8, day: 22 }, md = d.month * 100 + d.day;
   const off = typeof location !== 'undefined' && new URLSearchParams(location.search).get('patios') === '0';
   if (C.PATIOS && !off && md >= 601 && md <= 930) {
     const t0 = Date.now(), st = routeRoundPatios(patioRows(C.PATIOS));
     detourStats.ms = Date.now() - t0;
+    detourStats.date = { month: d.month, day: d.day };
     if (st.platforms) console.info(`[cycling] bikeways routed round ${st.platforms} CaféTO platforms (${st.detours} detours, ${st.bands} pieces bent, ${st.narrowed} narrowed, ${detourStats.ms} ms)`);
   }
 }

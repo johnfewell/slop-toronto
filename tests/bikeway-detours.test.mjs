@@ -105,6 +105,32 @@ test('a squeezed site narrows the track beside it (never under 1.2 m), and platf
   assert.equal(C.routeRoundPatios([{ ...platform(0), cz: -6, nz: -1 }]).bands, 0);
 });
 
+test('at load the bands bend round the prebuilt platforms only on a day the patios are built (seasons.js CITY.SITE_DATE)', () => {
+  const p = platform(0);
+  const PATIOS = { fields: Object.keys(p).concat('id'), sites: [[...Object.values(p), 'x']] };
+  const load = (date, search = '') => {
+    const c = vm.createContext({ window: { CITY: { THREE, CITY_BOUNDS: { sidewalkHeight: 0.22 }, blockAt: () => null, PATIOS,
+      ...(date ? { SITE_DATE: date } : {}), SCENE_DATE: { month: 8, day: 22 },
+      GEO: { cycling: { kinds: ['lane', 'buffered', 'contraflow', 'track', 'track2', 'sharrow', 'trail', 'parkRoad', 'signed'], bands: [[TRACK, 0, line(-100, 100, 7)]], trails: [], map: [] } } } },
+    location: { search }, URLSearchParams, console: { ...console, info() {} } });
+    vm.runInContext(read('js/cycling.js'), c);
+    const C = c.window.CITY, b = C.CYCLING_BANDS[0];
+    return { bent: b.P !== b.mapped, platforms: C.bikeDetourStats.platforms, mapped: C.bikewayIntrusion(0, 6, 0.05) > 0, routed: C.routedBikewayIntrusion(0, 6, 0.05) > 0 };
+  };
+  // July (live): bent, the platform's place clear of the bikeway as built
+  assert.deepEqual(load({ month: 7, day: 15, source: 'liveDate' }), { bent: true, platforms: 1, mapped: true, routed: false });
+  // November (live): no platforms tonight, so the track keeps its mapped line, over the empty curb lane
+  assert.deepEqual(load({ month: 11, day: 15, source: 'live' }), { bent: false, platforms: 0, mapped: true, routed: true });
+  // the season's edges, as cafeto-patios.js patioSeason
+  assert.equal(load({ month: 6, day: 1 }).bent, true);
+  assert.equal(load({ month: 9, day: 30 }).bent, true);
+  assert.equal(load({ month: 5, day: 31 }).bent, false);
+  assert.equal(load({ month: 10, day: 1 }).bent, false);
+  // no SITE_DATE (node tools): the scene's 22 August, as before; ?patios=0 never bends
+  assert.equal(load(null).bent, true);
+  assert.equal(load({ month: 7, day: 15 }, '?patios=0').bent, false);
+});
+
 // The real city with the committed prebuilt layout (js/toronto-patios.js) and the parked cars' build
 let built = null;
 const city = () => (built ||= (() => {
@@ -186,6 +212,9 @@ test('on the real city: Danforth and Bloor park beyond the cycle track, and no c
     for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0], [0, -1], [0, 1]]) {
       const x = c[F.x] + tx * a * (hl - 0.05) + tz * b * (hw - 0.15), z = c[F.z] + tz * a * (hl - 0.05) - tx * b * (hw - 0.15);
       assert.equal(CITY.routedBikewayIntrusion(x, z, 0), 0, `a car at ${c[F.x]}, ${c[F.z]} in a bikeway`);
+      // and as mapped: out of the CaféTO season (seasons.js CITY.SITE_DATE) the bands keep their mapped lines, and the
+      // same prebuilt cars stand beside them
+      assert.equal(CITY.bikewayIntrusion(x, z, 0), 0, `a car at ${c[F.x]}, ${c[F.z]} in a bikeway as mapped (no patios)`);
     }
     checked++;
   }

@@ -61,6 +61,37 @@ test('the CaféTO season holds the scene date (22 August) and not the winter', (
   assert.equal(patioSeason({ month: 1, day: 15 }), false);
 });
 
+test('the page builds the patios on the day it opened on (seasons.js CITY.SITE_DATE): none in November, at no startup cost', async () => {
+  // out of season buildPatios returns before the fingerprint and any layout: no group, colliders or walkers' obstacles
+  const run = async (date, search = '') => {
+    const logs = [];
+    const ctx = { window: { CITY: { THREE: {}, CITY_BOUNDS: { sidewalkHeight: 0.22 }, CAFETO: { records: [{ id: 'x' }] },
+      PATIOS: { fingerprint: {} }, SITE_DATE: date, SCENE_DATE: { month: 8, day: 22 },
+      patioDeps() { throw new Error('the layout\'s inputs were read out of season'); } } },
+    location: { search }, URLSearchParams, performance, console: { ...console, info: (m) => logs.push(m), warn: (m) => logs.push(m) } };
+    vm.runInNewContext(read('js/cafeto-patios.js'), ctx);
+    const C = ctx.window.CITY;
+    let built, error = null;
+    try { built = await C.buildPatios({}, []); } catch (e) { error = e; }
+    return { built, error, stats: C.patioStats, logs };
+  };
+  const nov = await run({ month: 11, day: 1, source: 'live' });
+  assert.equal(nov.error, null);
+  assert.equal(nov.built.group, null);
+  assert.equal(nov.built.colliders.length + nov.built.pedestrianObstacles.length, 0);
+  assert.equal(nov.stats.season, false);
+  assert.deepEqual(JSON.parse(JSON.stringify(nov.stats.date)), { month: 11, day: 1, source: 'live' });
+  assert.equal(nov.stats.fingerprint, undefined, 'no fingerprint taken');
+  assert.match(nov.logs.join('\n'), /out of the CaféTO season on 11\/1/);
+  // in July the same page goes past the season gate to the prebuilt layout's fingerprint (this stub city has no real
+  // inputs to fingerprint; the real city's prebuilt run is the replay below)
+  const jul = await run({ month: 7, day: 15, source: 'liveDate' });
+  assert.equal(jul.stats.season, true);
+  assert.ok(!jul.logs.some((m) => /\[patios\] none/.test(m)), 'in season it builds');
+  // no SITE_DATE (node tools): the scene's 22 August
+  assert.equal((await run(undefined)).stats.season, true);
+});
+
 // A straight two-way street along +x (z = 0), 12 m curb to curb, sidewalks 5 m deep to the building faces, an
 // island running x = -80..80 between cross streets 16 m wide
 function street({ sidewalk = 5, width = 12, roadName = 'Test Street', extra = {} } = {}) {

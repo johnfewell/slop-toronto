@@ -198,9 +198,34 @@ winter and checks they are byte for byte the same. Per frame on a static day:
 
 The phone tier runs the same shaders. Like the sky's, the captures are functional, not performance numbers.
 
-**Not seasonal yet.** The rinks (`rinks.js`) and the CaféTO patios (with the bikeways bent round their platforms)
-still follow the fixed `SCENE_DATE`. They are built once at load as geometry, so following the date would mean
-rebuilding them, not writing uniforms. Conifers carry no snow, and neither do the branches.
+**The scenery built at load** (bead `st-1m40`). The rinks (`rinks.js`), the CaféTO patios (`cafeto-patios.js`) and
+the bikeways bent round the patios' platforms (`cycling.js`) are geometry, colliders and routes, not uniforms. They
+follow the day the city **opens** on, chosen once before any of them is built: `seasons.js` `siteDay()` sets
+`CITY.SITE_DATE` (`explore.html` loads `live-sky.js` and `seasons.js` before `cycling.js` for this).
+
+| The city opens | `CITY.SITE_DATE` | Rinks (ice 1 Dec - 15 Mar) | Patios and bent bikeways (1 Jun - 30 Sep) |
+| --- | --- | --- | --- |
+| live, a real visit | Toronto's date at load | ice in their season | built in their season |
+| on a preset (`?time=<preset>`) | 22 August | off-season | built |
+| automated, no fixture (every existing shot list) | 22 August | off-season | built |
+| automated, `?liveClock=` (and `?liveDate=`) | the `?liveDate=` day, else the `?liveClock=` day | by that day | by that day |
+
+The day is not revisited. A visit rarely crosses a season's edge (1 June, 1 October, 1 December, 16 March), and the
+patios can't be taken away mid-visit for nothing: their colliders, the walkers' detours round the sidewalk cafés and
+the bikeways' bends are all laid at startup. So a preset chosen later turns the trees back to summer but leaves the
+rinks and patios of the opening day, and `seasons.inject()` doesn't move them either; a capture sets the day in the
+URL (`?liveClock=…&liveDate=…`). `?rinks=ice|off` and `?patios=0` still override. `__CITY_APP.seasons.state().sites`
+reports the day, its source and what was built.
+
+**Cost.** Out of season the patios return before their fingerprint check (nothing built, nothing routed: the patio
+phase drops from about 20 ms to nothing). In season the page takes the same prebuilt layout as before
+(`js/toronto-patios.js`, st-hue6), whose inputs don't depend on the date. The rinks' season only picks their surface
+colours. Out of season the parked cars keep their prebuilt places, which leave the patios' curb lane stretch empty
+and stand clear of the bikeways as mapped as well as bent (`tests/bikeway-detours.test.mjs`).
+`tools/shots/live-sky-season-sites.json` captures Nathan Phillips Square's rink, 146 Ossington and 494 Danforth on
+each day given by the run's query.
+
+Conifers carry no snow, and neither do the branches.
 
 ## Cost
 
@@ -218,7 +243,6 @@ rebuilding them, not writing uniforms. Conifers carry no snow, and neither do th
 
 - Distant rain shafts under cells (`experimental.rainShafts`) and lightning flashes (`experimental.lightning`). Both
   rebuild the cloud graph, so they would need to be chosen at startup.
-- Wet facades. The seasonal scenery that is built at load (rinks, patios) following the real date: see
-  [Seasons](#seasons).
+- Wet facades.
 - Wind (ECCC reports it) driving the cloud drift and the rain's slant.
 - Precipitation under bridges and the Union Station train shed (it is only hidden in the subway and inside streetcars).
