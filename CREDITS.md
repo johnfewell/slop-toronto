@@ -136,8 +136,10 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   GeoHub image service `Elevation/Ontario_DTM_LidarDerived` by `tools/fetch-don-valley-dtm.mjs` (retrieved 2026-10-31;
   tile names and SHA-256s in the data file). The same project's surface model gave the viaduct's deck and the Rosedale
   Valley subway bridge's roof heights behind Castle Frank's and Broadview's derived platform depths
-  (`tools/subway-station-facts.mjs`). The raw tiles are not in this repository. Contains information licensed under the
-  Open Government Licence – Ontario.
+  (`tools/subway-station-facts.mjs`). The High Park terrain (on by default): `js/high-park-data.js` (by
+  `tools/build-high-park.mjs`) is built from 16 more tiles of the same Digital Terrain Model, fetched by
+  `tools/fetch-don-valley-dtm.mjs --region high-park` (retrieved 2026-11-02; tile names and SHA-256s in the data file).
+  The raw tiles are not in this repository. Contains information licensed under the Open Government Licence – Ontario.
 - **Wikimedia Commons photos** of Toronto's buildings: the facade base colours (`tools/data/commons_palette.json`) were
   measured from 384 freely licensed photos (CC0, public domain, CC BY, CC BY-SA). The photos are not in this
   repository; each is credited with its author, licence and link in

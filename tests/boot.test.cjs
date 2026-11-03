@@ -62,9 +62,10 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   assert.match(fetched[0], /^\.\/data\/toronto-geodata\.bin\?v=[0-9a-f]{12}$/);
   // every script the loader lists, once (the count follows the list: scripts are added often; the geodata loader is
   // imported, not listed)
-  // (the Don Valley pilot's two scripts load only with ?donvalley=1: see the next test)
-  assert.equal(links.length, preloadScript[1].match(/'\.\/js\/[\w-]+\.js'/g).filter((s) => !s.includes('geodata-loader') && !s.includes('/don-valley')).length);
-  assert.ok(!links.some((src) => src.includes('/don-valley')), 'the terrain pilot is not loaded without its flag');
+  // (High Park's terrain pilot loads by default; the Don Valley's data only with ?donvalley=1: see the next tests)
+  assert.equal(links.length, preloadScript[1].match(/'\.\/js\/[\w-]+\.js'/g).filter((s) => !s.includes('geodata-loader') && !s.includes('/don-valley-data')).length);
+  assert.ok(links.includes('./js/high-park-data.js') && links.includes('./js/don-valley.js'), 'High Park\'s terrain is on by default');
+  assert.ok(!links.includes('./js/don-valley-data.js'), 'the Don Valley pilot is not loaded without its flag');
   assert.ok(links.findIndex((src) => src.includes('/audio-system.js')) < links.findIndex((src) => src.includes('/main.js')));
   assert.equal(new Set(links).size, links.length, 'each script is preloaded once');
 
@@ -81,11 +82,21 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   assert.ok(scripts.indexOf('./js/mp-protocol.js') < scripts.indexOf('./js/multiplayer.js'));
 });
 
-test('?donvalley=1 loads the terrain pilot\'s data and module just before city-config.js', () => {
-  const list = (search) => vm.runInContext(`${preloadScript[1].match(/const cityAppScripts = (\(\(\) => \{[\s\S]*?\}\)\(\));/)[1]}`,
-    vm.createContext({ URLSearchParams, location: { search } }));
-  const on = [...list('?donvalley=1')], off = [...list('')]; // (out of the vm's realm)
-  assert.deepEqual(on.filter((s) => !s.includes('/don-valley')), off);
+const pilotList = (search) => [...vm.runInContext(`${preloadScript[1].match(/const cityAppScripts = (\(\(\) => \{[\s\S]*?\}\)\(\));/)[1]}`,
+  vm.createContext({ URLSearchParams, location: { search } }))]; // (out of the vm's realm)
+
+test('High Park\'s terrain loads by default, its data and the pilots\' runtime just before city-config.js; no flag turns it off', () => {
+  const def = pilotList('');
+  const at = def.indexOf('./js/city-config.js');
+  assert.deepEqual(def.slice(at - 2, at), ['./js/high-park-data.js', './js/don-valley.js']);
+  assert.ok(!def.includes('./js/don-valley-data.js'));
+  // (the old flag is gone: neither ?highpark=1 nor ?highpark=0 changes the list)
+  for (const q of ['?highpark=1', '?highpark=0']) assert.deepEqual(pilotList(q), def, q);
+});
+
+test('?donvalley=1 adds the Don Valley\'s data before High Park\'s, the one runtime after both', () => {
+  const on = pilotList('?donvalley=1'), def = pilotList('');
+  assert.deepEqual(on.filter((s) => s !== './js/don-valley-data.js'), def);
   const at = on.indexOf('./js/city-config.js');
-  assert.deepEqual(on.slice(at - 2, at), ['./js/don-valley-data.js', './js/don-valley.js']);
+  assert.deepEqual(on.slice(at - 3, at), ['./js/don-valley-data.js', './js/high-park-data.js', './js/don-valley.js']);
 });

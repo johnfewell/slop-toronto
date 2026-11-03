@@ -8,7 +8,7 @@
 //   body, LOCAL_LANE_CLEAR on a local street; a car too close is left out and counted) and against the CaféTO platforms
 //   the page built
 // - the traffic's swerves round the player test parkedAt (traffic.js wayRound), as they test the curbs
-// - with the Don Valley pilot (?donvalley=1) a car where the ground leaves the street level is left out: the stalls were
+// - on a terrain pilot's relief (High Park's; the Don Valley's with ?donvalley=1) a car where the ground leaves the street level is left out: the stalls were
 //   laid out on the flat city, and these stand at y 0
 // - the quality tier caps how many (a seeded share, the same on every visit) and sets the distances: the full model with
 //   its wheels within Q.parkedNear (casting shadows on the tiers that allow it), the ~250-triangle stand-in out to
@@ -203,7 +203,7 @@ function buildParkedCars(scene, network, { patioColliders = [] } = {}) {
     const hl = (spec.zFront - spec.zRear) / 2, hw = Math.max(...spec.halfWidth.map((p) => p[1])) + spec.archFlare;
     const zc = (spec.zFront + spec.zRear) / 2; // (the body's centre along it, from the model's origin)
     const cx = r[F.x] + tx * zc, cz = r[F.z] + tz * zc;
-    if (DV && DV.lowestAround(cx, cz, hl) < -0.05) { stats.valleyDropped = (stats.valleyDropped || 0) + 1; continue; }
+    if (DV && (DV.lowestAround(cx, cz, hl) < -0.05 || (DV.highestAround && DV.highestAround(cx, cz, hl) > 0.05))) { stats.valleyDropped = (stats.valleyDropped || 0) + 1; continue; }
     let clash = null;
     const seen = new Set();
     for (const [qx, qz] of [[cx, cz], [cx + tx * hl, cz + tz * hl], [cx - tx * hl, cz - tz * hl]]) {

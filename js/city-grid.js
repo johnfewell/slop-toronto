@@ -674,7 +674,17 @@ function buildCityGrid(scene) {
       // banks along the shore inside the city and round the islands
       for (const ring of [clipToCity(w.pts), ...w.holes.filter((h) => inside(h.pts, 0)).map((h) => h.pts)]) banks(ring);
     }
+    // (High Park's ponds stand at their own levels, js/don-valley.js pondLevel, and the pilot draws their low
+    // banks from its own ground; the drape leaves them level: PilotPond)
+    const PILOT = window.CITY.DON_VALLEY || null;
     for (const w of lakes) {
+      const level = PILOT && PILOT.pondLevel ? PILOT.pondLevel(w) : null;
+      if (level !== null) {
+        const m = createFlatPolygonMesh(w.pts, level, waterMat, true);
+        m.name = 'PilotPond';
+        group.add(m);
+        continue;
+      }
       group.add(createFlatPolygonMesh(w.pts, CITY_BOUNDS.waterLevel, waterMat, true));
       banks(w.pts);
     }

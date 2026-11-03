@@ -53,8 +53,11 @@
         './js/toronto-transit.js',
         './js/transit.js',
         './js/transit-live.js',
-        // ?donvalley=1: the Don Valley terrain pilot (docs/don-valley-terrain.md), before city-config.js reads it
-        ...(new URLSearchParams(location.search).get('donvalley') === '1' ? ['./js/don-valley-data.js', './js/don-valley.js'] : []),
+        // the terrain pilots (docs/high-park-terrain.md, docs/don-valley-terrain.md), their data and their one runtime,
+        // before city-config.js reads them: High Park always, the Don Valley with ?donvalley=1
+        ...(new URLSearchParams(location.search).get('donvalley') === '1' ? ['./js/don-valley-data.js'] : []),
+        './js/high-park-data.js',
+        './js/don-valley.js',
         './js/city-config.js',
         './js/toronto-signal-plan.js',
         './js/signal-plan.js',

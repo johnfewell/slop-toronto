@@ -41,7 +41,12 @@ const RESERVE = {
 };
 const CAR_CLEAR = 1.5; // a lane's centre keeps this far from a bikeway's edge: a bus's half width & a little
 
-const cutY = (x, z) => (window.CITY.cutAt ? Math.min(0, window.CITY.cutAt(x, z)) : 0);
+// (the ground's height off the street level: a road cut's floor, never over the street, except on High Park's relief,
+// which rises over it: js/don-valley.js clearsTerrainAt marks its box; everywhere else as before)
+const cutY = (x, z) => {
+  const c = window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0, P = window.CITY.DON_VALLEY;
+  return P && P.clearsTerrainAt && P.clearsTerrainAt(x, z) ? c : Math.min(0, c);
+};
 
 // A polyline [x, z, ...] as points with their tangent, the normal into the road (n), the mitre factor at the joints
 // (m), the distance along (s) and the street level (y)
@@ -64,8 +69,13 @@ function prepare(flat, nRight, y = null) {
   // (the Don Valley pilot, js/don-valley.js: the line follows the valley between its points, st-wt0.21.3. Where the
   // ground under a piece has relief, points every 2 m or less, and at(), the separators and the posts take the
   // surface's own height wherever they stand: yAt)
+  // (with ?donvalley=1 every line, as since that pilot; High Park's, always on, only a line reaching its box, so the
+  // bikeways round it are as they were)
   const DV = window.CITY.DON_VALLEY;
-  if (DV) {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const p of P) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); }
+  const reaches = (B) => x0 <= B.x1 && x1 >= B.x0 && z0 <= B.z1 && z1 >= B.z0;
+  if (DV && (DV.donValley || (DV.boxes || [DV.box]).some(reaches))) {
     // (a bikeway on a road: the road's surface, a deck level with the street where one is, as at the viaduct's ends; a
     // trail over the paving: the ground)
     const deckAt = window.CITY.deckHeightAt;

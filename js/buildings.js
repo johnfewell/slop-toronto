@@ -633,11 +633,16 @@ function buildCityBlocks(scene) {
   const retail = storefrontSelection();
   const signWalls = signedWalls();
   const facades = new Map(); // building row -> { mat, floorHeight, front } for the signed buildings
+  // (a building on High Park's relief stands on the highest ground under it, js/don-valley.js buildingBase; its plinth
+  // down to the lowest is the pilot's. Everywhere else every building stands at y 0)
+  const PILOT = window.CITY.DON_VALLEY || null;
+  const baseOf = PILOT && PILOT.buildingBase ? PILOT.buildingBase : () => 0;
   for (let bi = 0; bi < GEO.buildings.length; bi++) {
     const b = GEO.buildings[bi];
     const [cx, cz, ang, parts, h0, kind, roof, cseed, , name] = b;
     const fixH = nearAny(DISTILLERY.height, cx, cz, 2); // (Toronto layer: a massing height that is a chimney's)
     const h = fixH && inDistillery(cx, cz) ? fixH[2] : h0;
+    const y0 = baseOf(cx, cz);
     const foot = massing ? massing.rows.get(bi) : null;
     const rnd = mulberry32((cseed * 7919) ^ Math.round(cx * 13 + cz * 7));
     const cs = Math.cos(ang), sn = Math.sin(ang);
@@ -703,17 +708,17 @@ function buildCityBlocks(scene) {
       const [style, variant] = FOOTPRINT_STYLE[mat];
       footRecords.push({
         // (its material: the rendered or the curtain-wall facades, which merge their styles; variant: its style there)
-        cx, cz, style, variant, rings: foot.rings, base: Math.min(foot.base, h - 0.5), h, kinds: fr.kinds,
+        cx, cz, style, variant, rings: foot.rings, base: y0 + Math.min(foot.base, h - 0.5), h: y0 + h, kinds: fr.kinds,
         cover: foot.rings[0].map((_, i) => (foot.covered.has(i) ? foot.covered.get(i) : NaN)),
         // (overlapping records of one height: their roofs a little apart, not flickering)
-        capY: (pitched ? h - 0.05 : h) - (bi % 5) * 0.012, tone, seed: footSeeds[mat]++ * 29, paint,
+        capY: y0 + (pitched ? h - 0.05 : h) - (bi % 5) * 0.012, tone, seed: footSeeds[mat]++ * 29, paint,
         boxes, faces // (the far tier: the boxes this polygon replaces)
       });
       const outer = foot.rings[0];
       let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
       for (const [x, z] of outer) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
       // (`massing`: the walkers' lines step round it like the turned boxes it replaces, main.js)
-      colliders.push({ minX: x0, maxX: x1, minZ: z0, maxZ: z1, maxY: h, polygon: outer.map(([x, z]) => ({ x, z })), massing: foot.id });
+      colliders.push({ minX: x0, maxX: x1, minZ: z0, maxZ: z1, maxY: y0 + h, polygon: outer.map(([x, z]) => ({ x, z })), massing: foot.id });
       massingStats.buildings++;
       massingStats.courtyards += foot.rings.length - 1;
       massingStats.partyWalls += fr.edges.filter((e, i) => e.kind === WALL_KINDS.lotLine && foot.covered.has(i)).length;
@@ -728,7 +733,7 @@ function buildCityBlocks(scene) {
       const x = cx + uc * cs + vc * sn;
       const z = cz - uc * sn + vc * cs;
       if (!foot) {
-        buckets[mat].push({ x, y: h / 2, z, w, h, d, ry: ang, faces, tone, paint });
+        buckets[mat].push({ x, y: y0 + h / 2, z, w, h, d, ry: ang, faces, tone, paint });
         stats.boxes++;
       }
       topY = h;
@@ -738,23 +743,23 @@ function buildCityBlocks(scene) {
           const pitch = Math.min((32 + rnd() * 6) * Math.PI / 180, Math.atan(DISTILLERY.maxRise / (Math.min(w, d) / 2 + 0.35)));
           const slate = linear(weighted(DISTILLERY.slate, rnd()));
           if (!stone && h <= M.maxH && Math.max(w, d) >= M.minLen && Math.max(w, d) >= M.minAspect * Math.min(w, d)) {
-            stats.monitorTris += pushMonitorRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, h, pitch, 0.35, slate, linear(M.glass), linear(M.frame));
+            stats.monitorTris += pushMonitorRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + h, pitch, 0.35, slate, linear(M.glass), linear(M.frame));
             stats.monitor++;
-          } else pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, h, pitch, 0.35, slate);
+          } else pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + h, pitch, 0.35, slate);
           stats.hip++;
         }
       } else if (roof === 1 && kind !== 3) {
-        pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, h, (24 + rnd() * 8) * Math.PI / 180, 0.6, linear(weighted(ROOF_PAINT, rnd())));
+        pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + h, (24 + rnd() * 8) * Math.PI / 180, 0.6, linear(weighted(ROOF_PAINT, rnd())));
         stats.hip++;
       } else if (roof === 2) {
-        pushShedRoof(roofSheets, cx, cz, ang, u0, u1, v0, v1, h, linear(weighted(SHEET_PAINT, rnd())));
+        pushShedRoof(roofSheets, cx, cz, ang, u0, u1, v0, v1, y0 + h, linear(weighted(SHEET_PAINT, rnd())));
         stats.sheet++;
       }
       if (foot) continue;
       // player collider: the part's turned rectangle
       const hx = w / 2, hz = d / 2;
       const ex = Math.abs(cs) * hx + Math.abs(sn) * hz, ez = Math.abs(sn) * hx + Math.abs(cs) * hz;
-      colliders.push({ minX: x - ex, maxX: x + ex, minZ: z - ez, maxZ: z + ez, maxY: h, obb: { cx: x, cz: z, hx, hz, cs, sn } });
+      colliders.push({ minX: x - ex, maxX: x + ex, minZ: z - ez, maxZ: z + ez, maxY: y0 + h, obb: { cx: x, cz: z, hx, hz, cs, sn } });
     }
     if (mat >= 2 && mat !== VICTORIAN) stats.glass++;
     if (victorian) stats.victorian++;
@@ -783,7 +788,7 @@ function buildCityBlocks(scene) {
         for (let k = 0; k < count; k++) {
           const t = (k + 0.5) / count;
           detail.fireEscapes.push({
-            x: rear.ax + (rear.bx - rear.ax) * t + rear.nx * 0.55, y: storey + 0.1, z: rear.az + (rear.bz - rear.az) * t + rear.nz * 0.55,
+            x: rear.ax + (rear.bx - rear.ax) * t + rear.nx * 0.55, y: y0 + storey + 0.1, z: rear.az + (rear.bz - rear.az) * t + rear.nz * 0.55,
             h: (landings - 1) * storey + 1, storey, landings, ry: Math.atan2(rear.nx, rear.nz), facing: 0
           });
         }
@@ -796,7 +801,7 @@ function buildCityBlocks(scene) {
             ? local(wall === 0 ? u0 - 0.55 : u1 + 0.55, v0 + (v1 - v0) * t)
             : local(u0 + (u1 - u0) * t, wall === 2 ? v0 - 0.55 : v1 + 0.55);
           detail.fireEscapes.push({
-            x: fx, y: storey + 0.1, z: fz, h: (landings - 1) * storey + 1, storey, landings, ry: ang,
+            x: fx, y: y0 + storey + 0.1, z: fz, h: (landings - 1) * storey + 1, storey, landings, ry: ang,
             facing: [-Math.PI / 2, Math.PI / 2, Math.PI, 0][wall] // the module's +z faces out of the wall
           });
         }
@@ -816,7 +821,7 @@ function buildCityBlocks(scene) {
         const floors = Math.max(1, Math.round((topY - 0.6) / 3.4));
         const y = Math.min(topY - 1.0, 0.6 + Math.floor(rnd() * floors) * 3.4 + 1.6);
         const t = 0.15 + rnd() * 0.7;
-        detail.acs.push({ x: e.ax + (e.bx - e.ax) * t + e.nx * 0.2, y, z: e.az + (e.bz - e.az) * t + e.nz * 0.2, ry: Math.atan2(e.nx, e.nz) });
+        detail.acs.push({ x: e.ax + (e.bx - e.ax) * t + e.nx * 0.2, y: y0 + y, z: e.az + (e.bz - e.az) * t + e.nz * 0.2, ry: Math.atan2(e.nx, e.nz) });
       }
       for (let k = 0; k < n && !sides; k++) {
         const side = [0, 1, 2, 3].filter((f) => f !== front)[Math.floor(rnd() * 3)];
@@ -827,11 +832,11 @@ function buildCityBlocks(scene) {
         if (side < 2) { lu = side === 0 ? u0 - 0.2 : u1 + 0.2; lv = v0 + (v1 - v0) * t; rot = side === 0 ? -Math.PI / 2 : Math.PI / 2; }
         else { lu = u0 + (u1 - u0) * t; lv = side === 2 ? v0 - 0.2 : v1 + 0.2; rot = side === 2 ? Math.PI : 0; }
         const [ax, az] = local(lu, lv);
-        if (!signed?.has(side)) detail.acs.push({ x: ax, y, z: az, ry: ang + rot }); // (never on a signed shopfront)
+        if (!signed?.has(side)) detail.acs.push({ x: ax, y: y0 + y, z: az, ry: ang + rot }); // (never on a signed shopfront)
       }
       if (rnd() < 0.05) { // the odd satellite dish
         const [dx, dz] = local(u0 + (u1 - u0) * (0.1 + rnd() * 0.8), v0 + (v1 - v0) * (0.1 + rnd() * 0.8));
-        detail.dishes.push({ x: dx, y: topY + (roof === 1 ? 0.2 : 0), z: dz, ry: rnd() * Math.PI * 2 });
+        detail.dishes.push({ x: dx, y: y0 + topY + (roof === 1 ? 0.2 : 0), z: dz, ry: rnd() * Math.PI * 2 });
       }
     }
     if (detail.tanks.length || detail.acs.length || detail.dishes.length || detail.fireEscapes.length) {

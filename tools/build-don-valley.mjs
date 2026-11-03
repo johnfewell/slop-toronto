@@ -33,14 +33,8 @@
 // Usage: node tools/build-don-valley.mjs [--out js/don-valley-data.js]
 import fs from 'node:fs';
 import path from 'node:path';
-import vm from 'node:vm';
-import os from 'node:os';
-import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import { readTiffF32 } from './tiff-f32.mjs';
+import { ROOT, loadCity, openDtm, filt as filtGrid, b64, smooth, segDist } from './terrain-pilot-lib.mjs';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DTM = process.env.DON_VALLEY_DTM || path.join(os.homedir(), '.cache/slop-toronto/raw/ontario-dtm-gta2023');
 const outArg = process.argv.indexOf('--out');
 const OUT = outArg > 0 ? process.argv[outArg + 1] : path.join(ROOT, 'js/don-valley-data.js');
 
@@ -64,56 +58,10 @@ const RAVINE_GRADE = 0.05, RAVINE_REACH = [300, 450];
 // level across the roadway and RAMP_OUT metres beyond its edge; the output every RAMP_OUT_STEP metres
 const HUG = 0.35, RAMP_STEP = 2, RAMP_CLOSE = 30, RAMP_SMOOTH = 15, RAMP_OUT = 1.5, RAMP_OUT_STEP = 4;
 
-const ctx = vm.createContext({ window: { CITY: {} }, console: { info() {}, warn() {}, log() {} } });
-for (const f of ['js/toronto-geodata.js', 'js/toronto-subway.js', 'js/city-config.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx);
-const C = ctx.window.CITY;
+const C = loadCity();
 
-// --- the DTM: 1 km tiles, NAD83(CSRS) / UTM zone 17N, 0.5 m pixels, metres above CGVD2013
-const manifest = JSON.parse(fs.readFileSync(path.join(DTM, 'manifest.json'), 'utf8'));
-const tiles = new Map();
-for (const t of manifest.tiles) {
-  const buf = fs.readFileSync(path.join(DTM, t.file));
-  // (the build is deterministic only from the same tiles)
-  if (crypto.createHash('sha256').update(buf).digest('hex') !== t.sha256) throw new Error(`${t.file}: not the tile in manifest.json (refetch with --force)`);
-  const r = readTiffF32(buf);
-  tiles.set(`${r.origin[0]},${r.origin[1]}`, r);
-}
-// WGS84 lat/lon to UTM zone 17N (GRS80; NAD83(CSRS) and the OpenStreetMap frame differ by ~1.5 m here, under a pixel's
-// worth of the 10 m grid)
-function utm17(lat, lon) {
-  const a = 6378137, f = 1 / 298.257222101, k0 = 0.9996, e2 = f * (2 - f), ep2 = e2 / (1 - e2), lon0 = (-81 * Math.PI) / 180;
-  const p = (lat * Math.PI) / 180, l = (lon * Math.PI) / 180, sp = Math.sin(p), cp = Math.cos(p), tp = Math.tan(p);
-  const Nn = a / Math.sqrt(1 - e2 * sp * sp), T = tp * tp, Cc = ep2 * cp * cp, A = cp * (l - lon0);
-  const M = a * ((1 - e2 / 4 - (3 * e2 ** 2) / 64 - (5 * e2 ** 3) / 256) * p - ((3 * e2) / 8 + (3 * e2 ** 2) / 32 + (45 * e2 ** 3) / 1024) * Math.sin(2 * p)
-    + ((15 * e2 ** 2) / 256 + (45 * e2 ** 3) / 1024) * Math.sin(4 * p) - ((35 * e2 ** 3) / 3072) * Math.sin(6 * p));
-  const E = 500000 + k0 * Nn * (A + ((1 - T + Cc) * A ** 3) / 6 + ((5 - 18 * T + T * T + 72 * Cc - 58 * ep2) * A ** 5) / 120);
-  const N = k0 * (M + Nn * tp * ((A * A) / 2 + ((5 - T + 9 * Cc + 4 * Cc * Cc) * A ** 4) / 24 + ((61 - 58 * T + T * T + 600 * Cc - 330 * ep2) * A ** 6) / 720));
-  return [E, N];
-}
-function pixel(E, N) {
-  const tx = Math.floor(E / 1000) * 1000, ty = Math.floor(N / 1000) * 1000 + 1000, t = tiles.get(`${tx},${ty}`);
-  if (!t) throw new Error(`no DTM tile for UTM ${E.toFixed(0)} ${N.toFixed(0)} (node tools/fetch-don-valley-dtm.mjs)`);
-  const c = Math.min(t.width - 1, Math.floor((E - tx) / t.pixel[0])), r = Math.min(t.height - 1, Math.floor((ty - N) / t.pixel[1]));
-  return t.data[r * t.width + c];
-}
-// The world frame is a turned tangent plane: over the box, UTM is affine in (x, z) to a few millimetres. Its
-// derivatives, once, at the box's centre:
-const J = (() => {
-  const cx = (BOX.x0 + BOX.x1) / 2, cz = (BOX.z0 + BOX.z1) / 2, u = (x, z) => { const q = C.latLonFromWorld(x, z); return utm17(q.lat, q.lon); };
-  const o = u(cx, cz), ex = u(cx + 100, cz), ez = u(cx, cz + 100);
-  return { ex: [(ex[0] - o[0]) / 100, (ex[1] - o[1]) / 100], ez: [(ez[0] - o[0]) / 100, (ez[1] - o[1]) / 100] };
-})();
-/** The DTM's mean over the 10 m cell centred on (x, z): 1 m sub-samples, each the 0.5 m pixel under it */
-function demAt(x, z) {
-  const q = C.latLonFromWorld(x, z), [E0, N0] = utm17(q.lat, q.lon);
-  let t = 0, n = 0;
-  for (let i = -4.5; i <= 4.5; i++) for (let k = -4.5; k <= 4.5; k++) {
-    const v = pixel(E0 + J.ex[0] * i + J.ez[0] * k, N0 + J.ex[1] * i + J.ez[1] * k);
-    if (v > -100 && v < 1000) { t += v; n++; }
-  }
-  if (!n) throw new Error(`no DTM data at (${x}, ${z})`);
-  return t / n;
-}
+// --- the DTM: 1 km tiles, NAD83(CSRS) / UTM zone 17N, 0.5 m pixels, metres above CGVD2013 (tools/terrain-pilot-lib.mjs)
+const { manifest, demAt, fineAt } = openDtm(C, BOX, 'manifest.json');
 
 // --- the viaduct's centre line (js/subway.js VIADUCTS: the bridge=viaduct ways' mean)
 const viaduct = (() => {
@@ -122,10 +70,6 @@ const viaduct = (() => {
   const ax = pts.reduce((m, p) => (p.x < m.x ? p : m)), bx = pts.reduce((m, p) => (p.x > m.x ? p : m));
   return { a: ax, b: bx };
 })();
-const segDist = (x, z, a, b) => {
-  const ex = b.x - a.x, ez = b.z - a.z, t = Math.max(0, Math.min(1, ((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez || 1)));
-  return { d: Math.hypot(a.x + ex * t - x, a.z + ez * t - z), t };
-};
 
 // --- a working grid: the box grown by 600 m, so the datum's filters see the tableland round the valley
 const S = BOX.step, M = 600;
@@ -137,22 +81,7 @@ for (let r = 0; r < W.nz; r++) for (let c = 0; c < W.nx; c++) raw[r * W.nx + c] 
 // 1. bridge: none (bare earth)
 const ground = raw;
 // --- the street datum T: open (r 30 m) then close (r 400 m), smoothed twice over 150 m
-function filt(src, op, rad) {
-  const a = new Float32Array(N), b = new Float32Array(N);
-  const run = (from, to, horizontal) => {
-    const n1 = horizontal ? W.nz : W.nx, n2 = horizontal ? W.nx : W.nz;
-    for (let i = 0; i < n1; i++) for (let j = 0; j < n2; j++) {
-      let v = op === 'min' ? Infinity : op === 'max' ? -Infinity : 0, cnt = 0;
-      for (let o = -rad; o <= rad; o++) {
-        const jj = Math.min(n2 - 1, Math.max(0, j + o)), s = horizontal ? from[i * W.nx + jj] : from[jj * W.nx + i];
-        if (op === 'min') v = Math.min(v, s); else if (op === 'max') v = Math.max(v, s); else { v += s; cnt++; }
-      }
-      to[horizontal ? i * W.nx + j : j * W.nx + i] = op === 'avg' ? v / cnt : v;
-    }
-  };
-  run(src, a, true); run(a, b, false);
-  return b;
-}
+const filt = (src, op, rad) => filtGrid(src, W.nx, W.nz, op, rad);
 const opened = filt(filt(ground, 'min', 3), 'max', 3);
 let datum = filt(filt(opened, 'max', 40), 'min', 40);
 datum = filt(filt(datum, 'avg', 15), 'avg', 15);
@@ -161,7 +90,6 @@ datum = filt(filt(datum, 'avg', 15), 'avg', 15);
 const nx = Math.round((BOX.x1 - BOX.x0) / S) + 1, nz = Math.round((BOX.z1 - BOX.z0) / S) + 1;
 const at = (arr, c, r) => arr[(r + M / S) * W.nx + c + M / S];
 const RAW = new Float32Array(nx * nz), DATUM = new Float32Array(nx * nz), H = new Float32Array(nx * nz), H0 = new Float32Array(nx * nz);
-const smooth = (e0, e1, x) => { const t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
 for (let r = 0; r < nz; r++) for (let c = 0; c < nx; c++) {
   const k = r * nx + c;
   RAW[k] = at(raw, c, r); DATUM[k] = at(datum, c, r);
@@ -316,10 +244,6 @@ const taperW = (x, z) => smooth(BOX.x0, BOX.x0 + TAPER.west, x) * smooth(BOX.x1,
 // ravine west of Castle Frank) level with the street; the ramps down the valley's sides on vertical profiles from the
 // lidar along their OpenStreetMap alignment; the ground under a ramp cut down to it where the 10 m grid stands above
 // the real road; and the flat city's flyovers that only climbed onto the Rosedale section back at the street.
-const fineAt = (() => {
-  const c0 = { x: (BOX.x0 + BOX.x1) / 2, z: (BOX.z0 + BOX.z1) / 2 }, q = C.latLonFromWorld(c0.x, c0.z), U0 = utm17(q.lat, q.lon);
-  return (x, z) => pixel(U0[0] + J.ex[0] * (x - c0.x) + J.ez[0] * (z - c0.z), U0[1] + J.ex[1] * (x - c0.x) + J.ez[1] * (z - c0.z));
-})();
 const decks = buildDecks();
 function buildDecks() {
   // the UTM position of (x, z) (the world frame is affine to UTM over the box: J), and the 0.5 m DTM there
@@ -670,11 +594,6 @@ diagnostics.roads.sort((a, b) => b.maxGradePct - a.maxGradePct);
 }
 
 // --- write
-const b64 = (arr, scale) => {
-  const q = new Int16Array(arr.length);
-  for (let i = 0; i < arr.length; i++) q[i] = Math.max(-32768, Math.min(32767, Math.round(arr[i] * scale)));
-  return Buffer.from(q.buffer).toString('base64');
-};
 const out = {
   version: 1,
   source: { dataset: manifest.dataset, file: `${manifest.tiles.length} tiles (tools/fetch-don-valley-dtm.mjs; manifest.json)`, resolutionM: manifest.tiles[0].pixelM,

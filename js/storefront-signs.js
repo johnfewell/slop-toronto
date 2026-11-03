@@ -89,7 +89,9 @@ function buildStorefrontSigns(scene, { facadeOf = () => null } = {}) {
     const fh = facadeOf(s.b)?.floorHeight || 3.6;
     const top = fh - 0.12; // the fascia's top, under the first-floor sills
     if (s.h < top + 0.3) { skip('too low'); continue; }
-    signs.push({ ...s, y: top - BOARD_H / 2 });
+    // (a building on High Park's relief stands on its base, js/don-valley.js buildingBase)
+    const base = CITY.DON_VALLEY?.buildingBase ? CITY.DON_VALLEY.buildingBase(b[0], b[1]) : 0;
+    signs.push({ ...s, y: base + top - BOARD_H / 2 });
   }
   // the atlas at this tier's resolution, halved until it fits its ceiling
   let res = (QUALITY.signRes ?? 1) < 1 ? 0.5 : 1;

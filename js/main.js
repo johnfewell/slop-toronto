@@ -263,18 +263,20 @@ async function initApp() {
   // --- end Toronto layer ---
   buildRoadPaint(scene, trafficSystem.network);
   markInit('roadPaint');
-  // ?donvalley=1: the Don Valley terrain pilot (js/don-valley.js): the static ground (street level, curb islands,
-  // walks, lawns, streams, road markings, track beds) split along its grid and lowered onto the valley; its terrain
-  // north of the city, the river and the buildings' plinths. The decks and the viaduct carry their own heights.
+  // the terrain pilots (js/don-valley.js: High Park's, and the Don Valley's with ?donvalley=1): the static ground (street level, curb islands,
+  // walks, lawns, streams, road markings, track beds) split along each pilot's grid and moved onto its surface; the Don
+  // Valley's terrain north of the city and its river, High Park's pond banks, and the buildings' plinths. The decks, the
+  // viaduct and High Park's ponds carry their own heights.
   if (window.CITY.DON_VALLEY) {
     const DV = window.CITY.DON_VALLEY, t0 = performance.now();
     // (the road markings follow the surface themselves: road-paint.js; the decks and the lake stay: DV.undraped)
     const stats = [scene.getObjectByName('CityGround'), scene.getObjectByName('RailTracks')]
       .map((root) => DV.drape(root, { except: DV.undraped }));
     const patches = DV.buildPatches(scene);
-    const sum = (k) => stats.reduce((t, s) => t + s[k], 0);
-    console.info(`[don-valley] draped ${sum('meshes')} meshes (${sum('triangles')} triangles into ${sum('pieces')} pieces), ${patches.plinths} plinths, in ${Math.round(performance.now() - t0)} ms${stats.some((s) => s.skipped.length) ? `; skipped ${stats.flatMap((s) => s.skipped).join(', ')}` : ''}`);
+    const sum = (k) => stats.reduce((t, s) => t + (s[k] || 0), 0);
+    console.info(`[terrain-pilot] ${DV.regions.join(' + ')}: draped ${sum('meshes')} meshes (${sum('triangles')} triangles into ${sum('pieces')} pieces, ${sum('merged')} whole half cells, ${sum('hidden')} hidden under another layer, ${sum('undersides')} undersides left out: ${sum('outTriangles')} triangles, ${sum('outVertices')} vertices), ${patches.plinths} plinths, in ${Math.round(performance.now() - t0)} ms${stats.some((s) => s.skipped.length) ? `; skipped ${stats.flatMap((s) => s.skipped).join(', ')}` : ''}`);
     window.CITY.donValleyStats = { stats, plinths: patches.plinths, ms: performance.now() - t0 };
+    console.info(`[terrain-pilot] by mesh: ${stats.flatMap((s) => s.byMesh || []).sort((a, b) => b.ms - a.ms).slice(0, 12).map((m) => `${m.name}/${m.material} ${m.source}->${m.pieces} pieces, ${m.merged} whole, ${m.triangles} tris, ${m.ms} ms`).join('; ')}`);
     markInit('donValley');
   }
 

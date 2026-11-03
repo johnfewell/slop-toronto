@@ -213,11 +213,14 @@ test('drawn and sampled agree: a draped mesh lies on heightAt to well under 3 cm
   const check = (name, lift, faces) => {
     const o = root.getObjectByName(`${name}_DonValley`), P = o.geometry.attributes.position, N = o.geometry.attributes.normal;
     let worst = 0, n = 0;
-    for (let i = 0; i < P.count; i += 3) {
-      if (!faces(N.getY(i))) continue;
+    // (its triangles, through its index: each piece's vertices once)
+    const I = o.geometry.index, at = (j) => (I ? I.getX(j) : j), count = I ? I.count : P.count;
+    for (let j = 0; j < count; j += 3) {
+      const i0 = at(j), i1 = at(j + 1), i2 = at(j + 2);
+      if (!faces(N.getY(i0))) continue;
       let w0 = rand(), w1 = rand();
       if (w0 + w1 > 1) { w0 = 1 - w0; w1 = 1 - w1; }
-      const w2 = 1 - w0 - w1, f = (get) => get(i) * w0 + get(i + 1) * w1 + get(i + 2) * w2;
+      const w2 = 1 - w0 - w1, f = (get) => get(i0) * w0 + get(i1) * w1 + get(i2) * w2;
       const x = f((k) => P.getX(k)), y = f((k) => P.getY(k)), z = f((k) => P.getZ(k));
       worst = Math.max(worst, Math.abs(y - lift - DV.heightAt(x, z))); n++;
     }

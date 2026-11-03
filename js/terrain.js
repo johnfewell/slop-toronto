@@ -19,14 +19,16 @@ function buildTerrain(scene) {
   const tx1 = T.x0 + (T.n - 1) * T.step, tz1 = T.z0 + (T.n - 1) * T.step;
   const inDetail = (x, z) => x > CITY_BOUNDS.minX && x < CITY_BOUNDS.maxX && z > CITY_BOUNDS.minZ && z < CITY_BOUNDS.maxZ;
   const SUNK = -3.0;
-  const DVB = window.CITY.DON_VALLEY ? window.CITY.DON_VALLEY.box : null;
+  // the terrain pilots' boxes (js/don-valley.js builds the Don Valley's own terrain there, on its finer grid; in High
+  // Park's the city's ground is the terrain, and the 60 m SRTM grid's canopy mounds no longer poke through its lawn)
+  const PILOT = window.CITY.DON_VALLEY || null, DVB = PILOT ? (PILOT.boxes || [PILOT.box]) : null;
   const LAKE_BED = -25.0;
   const heightAt = (x, z) => {
     const h = terrainRawAt(x, z);
     // Lake Ontario & the other water: the build marks its cells -30 m. The bed lies 25 m down, so the stylized water
     // reads deep offshore; the 60 m grid shelves it from the shore (its shallow colour shows only near the banks)
     if (h < -1) return LAKE_BED;
-    if (inDetail(x, z)) return h > 0.05 ? h : SUNK;
+    if (inDetail(x, z)) return h > 0.05 && !(PILOT && PILOT.clearsTerrainAt && PILOT.clearsTerrainAt(x, z)) ? h : SUNK;
     return Math.max(0, h);
   };
 
@@ -51,10 +53,10 @@ function buildTerrain(scene) {
           const xa = x0 + c * step, za = z0 + r * step;
           if (skip(xa, za) && skip(xa + step, za) && skip(xa, za + step) && skip(xa + step, za + step)) continue;
         }
-        // the Don Valley pilot's box (js/don-valley.js builds its own terrain there, on its finer grid)
+        // the terrain pilots' boxes (above)
         if (DVB) {
           const xa = x0 + c * step, za = z0 + r * step;
-          if (xa >= DVB.x0 && xa + step <= DVB.x1 && za >= DVB.z0 && za + step <= DVB.z1) continue;
+          if (DVB.some((B) => xa >= B.x0 && xa + step <= B.x1 && za >= B.z0 && za + step <= B.z1)) continue;
         }
         // all corners sunk under the street level: nothing to see
         if (pos[a * 3 + 1] === SUNK && pos[b * 3 + 1] === SUNK && pos[d * 3 + 1] === SUNK && pos[e * 3 + 1] === SUNK) continue;

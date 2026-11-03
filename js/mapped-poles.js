@@ -416,7 +416,9 @@ function buildingIndex(GEO) {
 }
 
 // The matrix of a span's wires, wireSpanGeometry's unit span from pole a to pole b (`dummy`: a spare Object3D): turned to
-// b and stretched to it. On the Don Valley pilot's slopes (?donvalley=1) the poles' feet differ: sheared up or down to b's.
+// b and stretched to it. On a terrain pilot's slopes the poles' feet differ: sheared up or down to b's (with
+// ?donvalley=1 every span, as since that pilot; High Park's, always on, only a span with a pole in its box, so the city
+// round it is as it was).
 function wireSpanMatrix(dummy, a, b) {
   const dx = b.x - a.x, dz = b.z - a.z;
   dummy.position.set(a.x, a.y0, a.z);
@@ -424,7 +426,8 @@ function wireSpanMatrix(dummy, a, b) {
   dummy.scale.set(1, 1, Math.hypot(dx, dz));
   dummy.updateMatrix();
   const m = dummy.matrix.clone();
-  if (window.CITY.DON_VALLEY) m.elements[9] = b.y0 - a.y0;
+  const P = window.CITY.DON_VALLEY;
+  if (P && (P.donValley || P.inBox(a.x, a.z) || P.inBox(b.x, b.z))) m.elements[9] = b.y0 - a.y0;
   return m;
 }
 

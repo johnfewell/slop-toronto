@@ -1,0 +1,124 @@
+[
+ {
+  "name": "t00-setup",
+  "time": "golden",
+  "mode": "person",
+  "x": -6560,
+  "z": -1985,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000
+ },
+ {
+  "name": "park-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6150,520,-700], look: [-6550,0,-1900], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "park-aerial-low-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6230,190,-1000], look: [-6520,0,-1950], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-east-slope-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6680, g(-6680, -2080) + 1.7, -2080], L = [-6930, g(-6930, -1990) + 0, -1990]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "ravine-floor-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6070, g(-6070, -2400) + 1.7, -2400], L = [-6020, g(-6020, -2600) + 2, -2600]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-climb-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6309, g(-6309, -1238) + 1.7, -1238], L = [-6352, g(-6352, -1395) + 3, -1395]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "bloor-gate-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6268, g(-6268, -2836) + 2.2, -2836], L = [-6300, g(-6300, -2560) + 0, -2560]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "queensway-edge-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6470, g(-6470, -1202) + 1.7, -1202], L = [-6420, g(-6420, -1420) + 4, -1420]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "west-bank-from-pond-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6885,0.9,-1890], look: [-7000,7,-1900], fov: 62 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "park-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6150,520,-700], look: [-6550,0,-1900], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "park-aerial-low-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6230,190,-1000], look: [-6520,0,-1950], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pond-east-slope-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6680, g(-6680, -2080) + 1.7, -2080], L = [-6930, g(-6930, -1990) + 0, -1990]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "ravine-floor-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6070, g(-6070, -2400) + 1.7, -2400], L = [-6020, g(-6020, -2600) + 2, -2600]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-climb-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6309, g(-6309, -1238) + 1.7, -1238], L = [-6352, g(-6352, -1395) + 3, -1395]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "bloor-gate-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6268, g(-6268, -2836) + 2.2, -2836], L = [-6300, g(-6300, -2560) + 0, -2560]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "queensway-edge-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6470, g(-6470, -1202) + 1.7, -1202], L = [-6420, g(-6420, -1420) + 4, -1420]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "west-bank-from-pond-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6885,0.9,-1890], look: [-7000,7,-1900], fov: 62 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "player-slope-midday",
+  "time": "midday",
+  "mode": "person",
+  "x": -6690,
+  "z": -1900,
+  "heading": 4.4,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; })()",
+  "wait": 6000
+ },
+ {
+  "name": "check",
+  "record": true,
+  "wait": 1500,
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, P = C.DON_VALLEY, t = a.trafficSystem, cm = a.controllerManager;\n  const inPark = (o) => P && P.inBox(o.x, o.z) && Math.abs(P.heightAt(o.x, o.z)) > 0.5;\n  const surf = (x, z, y) => { const gg = C.cutAt(x, z), d = C.deckHeightAt(x, z, y + 1, 2.5); return d !== 0 && Math.abs(d - y) < Math.abs(gg - y) ? d : gg; };\n  const cars = (t.cars || []).filter((v) => Number.isFinite(v.x) && Number.isFinite(v.y) && inPark(v)).map((v) => ({ x: +v.x.toFixed(1), z: +v.z.toFixed(1), y: +v.y.toFixed(2), d: +Math.abs(v.y - surf(v.x, v.z, v.y)).toFixed(3) })).sort((p, q) => q.d - p.d);\n  const feet = (t.peds || []).filter((p) => p.rig && inPark(p)).flatMap((p) => p.rig.feet.map((f) => +Math.min(Math.abs(f.py - C.cutAt(f.px, f.pz)), Math.abs(f.py - C.cutAt(f.px, f.pz) - 0.22), Math.abs(f.py - C.cutAt(f.px, f.pz) - 0.012)).toFixed(3)));\n  const e = cm.getActiveEntity().position;\n  const ground = (x, z) => +cm.getGroundHeight(x, z, 'person', null).toFixed(2);\n  let tris = 0, meshes = 0;\n  a.scene.traverse((o) => { if (o.isMesh && /_HighPark$|^HighPark|^PilotPond/.test(o.name) && o.geometry) { meshes++; const gg = o.geometry; tris += (gg.index ? gg.index.count : gg.attributes.position.count) / 3; } });\n  const info = a.renderer.info;\n  return { pilot: P ? P.regions : null, player: { x: +e.x.toFixed(1), y: +e.y.toFixed(2), z: +e.z.toFixed(1), ground: ground(e.x, e.z) },\n    ground: { cafe: ground(-6600, -1993), pondSlope: ground(-6691, -1900), ravine: ground(-6040, -1938), bloorGate: ground(-6285, -2830), queenswayGate: ground(-6314, -1190) },\n    cars: cars.length, carWorst: cars.slice(0, 3), feet: feet.length, footWorst: feet.length ? Math.max(...feet) : null,\n    drape: C.donValleyStats ? { meshes: C.donValleyStats.stats.reduce((s, q) => s + q.meshes, 0), triangles: C.donValleyStats.stats.reduce((s, q) => s + q.triangles, 0), pieces: C.donValleyStats.stats.reduce((s, q) => s + q.pieces, 0), merged: C.donValleyStats.stats.reduce((s, q) => s + (q.merged || 0), 0), outTriangles: C.donValleyStats.stats.reduce((s, q) => s + (q.outTriangles || 0), 0), outVertices: C.donValleyStats.stats.reduce((s, q) => s + (q.outVertices || 0), 0), plinths: C.donValleyStats.plinths, ms: Math.round(C.donValleyStats.ms) } : null,\n    pilotMeshes: meshes, pilotTriangles: tris, renderTriangles: info.render && info.render.triangles, geometries: info.memory && info.memory.geometries,\n    heapMB: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null, readyMs: a.startupReadyMs || null,\n    terrainNearTris: (() => { const m = a.scene.getObjectByName('TerrainNear'); return m ? m.geometry.index.count / 3 : null; })() };\n})()"
+ }
+]

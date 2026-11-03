@@ -525,8 +525,11 @@ const TERRAIN = (() => {
   return { x0: T.x0, z0: T.z0, step: T.step, n: T.n, h, shoreHeld: held };
 })();
 /** Height of the land above street level at (x, z) (Aso Rock, the ridges; 0 wherever the city is built) */
-// Ground height above street level; water cells carry -30 m (tools/geo-terrain.mjs), so this never goes below 0
+// Ground height above street level; water cells carry -30 m (tools/geo-terrain.mjs), so this never goes below 0. In the
+// High Park terrain pilot's box (always on) the SRTM grid's canopy mounds are gone: the pilot's surface is the ground
 function terrainHeightAt(x, z) {
+  const P = window.CITY.DON_VALLEY;
+  if (P && P.clearsTerrainAt && P.clearsTerrainAt(x, z)) return 0;
   return Math.max(0, terrainRawAt(x, z));
 }
 function terrainRawAt(x, z) {
@@ -538,8 +541,8 @@ function terrainRawAt(x, z) {
   return ((h[k] * (1 - tc) + h[k + 1] * tc) * (1 - tr) + (h[k + n] * (1 - tc) + h[k + n + 1] * tc) * tr) * 0.1;
 }
 
-// The Don Valley terrain pilot (?donvalley=1: js/don-valley.js, loaded before this file only with the flag): the real
-// valley under the Prince Edward Viaduct. Null without the flag, and nothing below changes.
+// The terrain pilots' surface (js/don-valley.js, loaded before this file): High Park's, always, and the Don Valley's real
+// valley under the Prince Edward Viaduct with ?donvalley=1. Outside their boxes nothing below changes.
 const DV = window.CITY.DON_VALLEY || null;
 // Flyover decks & ramps: [{ name, w, rank, pts: [{x, z, h}] }] and a 4 m grid of deck surfaces for the player
 // (in the Don Valley pilot: Bloor Street's deck level with the streets over the valley, the ramps down its sides on
@@ -979,8 +982,9 @@ function roadCutAt(x, z) {
   }
   return 0;
 }
-/** The ground's drop below the street level at (x, z): a road cut's floor, and in the Don Valley pilot the valley's
- *  (js/don-valley.js heightAt; without the flag this is roadCutAt). Whatever stands on the ground adds it. */
+/** The ground's drop below the street level at (x, z): a road cut's floor, and in a terrain pilot its ground's (the Don
+ *  Valley's valley, at or under the street; High Park's relief, which may rise over it: js/don-valley.js heightAt;
+ *  without a flag this is roadCutAt). Whatever stands on the ground adds it. */
 function cutAt(x, z) {
   return DV ? roadCutAt(x, z) + DV.heightAt(x, z) : roadCutAt(x, z);
 }
@@ -1124,8 +1128,9 @@ function treeOffRail(x, z) {
 function deckHeightAt(x, z, y = 0, step = 0.6) {
   const list = DECK_GRID.get(Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL));
   if (!list) return 0;
-  // (in the Don Valley pilot a deck may lie under the street level: 0 still means none)
-  let best = DV ? -Infinity : 0;
+  // (in the Don Valley pilot a deck may lie under the street level: 0 still means none. High Park has no decks of its
+  // own: its pilot alone leaves this as the flat city's)
+  let best = DV && DV.donValley ? -Infinity : 0;
   for (const e of list) if (e.h <= y + step && e.h > best) best = e.h;
   return best === -Infinity ? 0 : best;
 }
@@ -1270,17 +1275,19 @@ function arrivalFor(x, z, reach) {
  *  street in front of it, off the curb islands, facing it: { x, z, heading, y }. y is the surface arrived on, or null
  *  for the street level. In the Don Valley pilot a street may be a deck (the viaduct over the valley, a ramp down its
  *  side) or the valley's floor under it, so the arrival says which, and the nearer one to the street level wins a
- *  near tie (st-wt0.21.1); without the flag this is the old arrival on a road at grade, and y is null. */
+ *  near tie (st-wt0.21.1), as in High Park's box; elsewhere this is the old arrival on a road at grade, and y is null. */
 function streetArrival(x, z) {
-  const near = nearestRoads(x, z, 400).filter((n) => n.road.cls !== 'motorway' && (!n.road.raised || (DV && DV.inBox(n.px, n.pz))));
+  const near = nearestRoads(x, z, 400).filter((n) => n.road.cls !== 'motorway' && (!n.road.raised || (DV && (DV.decksAt ? DV.decksAt(n.px, n.pz) : DV.inBox(n.px, n.pz)))));
   let spot = null, best = Infinity, y = null;
   for (const n of near) {
     if (blockAt(n.px, n.pz)) continue;
-    if (!DV) { spot = n; break; }
-    // (the road's own surface there: its deck, or the ground under the street level)
-    const h = n.road.raised && DV.inBox(n.px, n.pz) ? DV.roadHeight(n.px, n.pz, 1) : cutAt(n.px, n.pz);
+    // (the flat city's street: without the Don Valley pilot, any street outside High Park's box, arrived at as before)
+    const flat = !DV || (!DV.donValley && !DV.inBox(n.px, n.pz));
+    if (flat && !spot) { spot = n; break; }
+    // (the road's own surface there: its deck, or the ground under or over the street level)
+    const h = flat ? 0 : n.road.raised && (DV.decksAt ? DV.decksAt(n.px, n.pz) : DV.inBox(n.px, n.pz)) ? DV.roadHeight(n.px, n.pz, 1) : cutAt(n.px, n.pz);
     const score = n.dist + Math.min(25, Math.abs(h) * 0.5);
-    if (score < best) { best = score; spot = n; y = h; }
+    if (score < best) { best = score; spot = n; y = flat ? null : h; }
   }
   if (!spot) return { x, z, heading: undefined, y: null };
   return { x: spot.px, z: spot.pz, heading: Math.atan2(x - spot.px, z - spot.pz), y };

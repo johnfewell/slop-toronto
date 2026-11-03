@@ -149,3 +149,7 @@ The Don Valley terrain pilot (`explore.html?donvalley=1`: the real valley under 
 Broadview below the street) is its own file: `node tools/build-don-valley.mjs` writes `js/don-valley-data.js` from the
 Ontario GTA 2023 lidar DTM tiles (`node tools/fetch-don-valley-dtm.mjs` puts them in
 `~/.cache/slop-toronto/raw/ontario-dtm-gta2023`) and the committed geodata ([docs/don-valley-terrain.md](docs/don-valley-terrain.md)).
+The High Park terrain (on by default: the park's plateau, the slope down to Grenadier Pond, its ravines and each pond
+at its own level) shares that pilot's runtime: `node tools/build-high-park.mjs` writes `js/high-park-data.js` from the
+same lidar's High Park tiles (`node tools/fetch-don-valley-dtm.mjs --region high-park`)
+([docs/high-park-terrain.md](docs/high-park-terrain.md)). `?donvalley=1` adds the Don Valley beside it.

@@ -948,8 +948,9 @@ class ThirdPersonControllerManager {
     if (this.interiorSpace && mode === 'person') return this.interiorSpace.floorAt ? this.interiorSpace.floorAt(x, z, y) : this.interiorSpace.floor;
     let ground = (mode === 'person' || mode === 'cyclist') && this.isPointOnSidewalk(x, z) ? CITY_BOUNDS.sidewalkHeight : 0.0;
     // down in a road cut (city-config.js cutAt: Strachan Ave under the railway), else up on the hills
+    // (in High Park's box the pilot's ground is the ground, over the street level too on its relief)
     const cut = window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0;
-    if (cut < 0) ground += cut;
+    if (cut < 0 || (cut > 0 && window.CITY.DON_VALLEY && window.CITY.DON_VALLEY.clearsTerrainAt && window.CITY.DON_VALLEY.clearsTerrainAt(x, z))) ground += cut;
     else ground = Math.max(ground, terrainHeightAt(x, z));
     // Verified sports slabs replace the coarse hill locally. Keep the deck
     // lookup below: a bridge above a court is still a separate surface.

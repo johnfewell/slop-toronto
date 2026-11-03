@@ -184,8 +184,12 @@ async function buildEzTrees(scene, generated) {
 
   // Sites: the City's street trees, then the invented ones as the nearest EZ-Tree model
   const sites = [];
-  // (a tree on a road cut's grassed bank, city-config.js treeOffRail lets it stand there: down on the slope)
-  const cutDown = (x, z) => Math.min(0, window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0);
+  // (a tree on a road cut's grassed bank, city-config.js treeOffRail lets it stand there: down on the slope, never over the
+  // street level; on High Park's relief, which rises over it, on the ground: js/don-valley.js clearsTerrainAt marks its box)
+  const cutDown = (x, z) => {
+    const c = window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0, P = window.CITY.DON_VALLEY;
+    return P && P.clearsTerrainAt && P.clearsTerrainAt(x, z) ? c : Math.min(0, c);
+  };
   const ST = GEO.streetTrees || [];
   let offRail = 0;
   for (let i = 0; i < ST.length; i += 4) {
