@@ -1,5 +1,7 @@
 // The browser three.js pin (explore.html's import map) and the uniforms that pin's material refresh rules need.
-// Since three.js #35221 (in the b3396270 pin), a material with no node properties of its own (GLTF props & landmarks,
+// The pin is the stock r187 release (tag r187), the same build as npm three 0.187.0, which the tests, tools and the
+// cloud library (three-clouds-webgpu 0.1.0-alpha.7, peer >=0.187.0 <0.188.0) use: one three for page, tools and tests.
+// Since three.js #35221 (in r187), a material with no node properties of its own (GLTF props & landmarks,
 // plain MeshStandardNodeMaterials) gets only a SHARED refresh: the render & frame uniform groups upload, the default
 // object group does not. Scene-wide uniforms rewritten at run time must therefore sit in renderGroup, or those materials
 // keep the value they were first drawn with (the stale aerial fog after a time-of-day change).
@@ -9,7 +11,7 @@ const { join } = require('node:path');
 const test = require('node:test');
 
 const read = (file) => readFileSync(join(__dirname, '..', file), 'utf8');
-const PIN = 'b3396270682287470d161658ac01084d25e8dba6';
+const PIN = '7e89746a687bb88271253698fa108b1dd59825d0';
 const pins = (text) => [...text.matchAll(/mrdoob\/three\.js@([0-9a-f]{40})\//g)].map((m) => m[1]);
 
 test('explore.html, the preview tools and the cloud release record all use the one three.js pin', () => {
@@ -24,6 +26,35 @@ test('explore.html, the preview tools and the cloud release record all use the o
     assert.deepEqual([...new Set(found)], [PIN], file);
   }
   assert.match(JSON.parse(read('vendor/clouds/release.json')).renderer, new RegExp(`^three@${PIN} `));
+});
+
+test('npm, vendor/three and the cloud release are the r187 release the page pins, one copy each', () => {
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.devDependencies.three, '0.187.0');
+  const lock = JSON.parse(read('package-lock.json')).packages;
+  const copies = (name) => Object.entries(lock).filter(([key]) => key === `node_modules/${name}` || key.endsWith(`/node_modules/${name}`));
+  const expected = {
+    three: '0.187.0',
+    'three-clouds-webgpu': '0.1.0-alpha.7',
+    '@takram/three-atmosphere': '0.19.1+fork.8',
+    '@takram/three-geospatial': '0.9.1+fork.8'
+  };
+  for (const [name, version] of Object.entries(expected)) {
+    const found = copies(name);
+    assert.equal(found.length, 1, `${name}: ${found.map(([key]) => key).join(', ')}`);
+    assert.equal(found[0][1].version, version, name);
+  }
+  const release = JSON.parse(read('vendor/clouds/release.json'));
+  assert.equal(release.version, expected['three-clouds-webgpu']);
+  assert.equal(pkg.dependencies['three-clouds-webgpu'], `file:vendor/clouds/${release.tarball}`);
+  for (const name of ['@takram/three-atmosphere', '@takram/three-geospatial']) {
+    assert.equal(release.dependencies[name].version, expected[name], name);
+    assert.equal(pkg.dependencies[name], release.dependencies[name].url, name);
+    assert.equal(pkg.overrides[name], `$${name}`, name); // (the fork builds reach the clouds' own peer dependencies too)
+  }
+  // vendor/three is the stock build, unpatched
+  assert.match(read('vendor/three/three.core.js'), /const REVISION = '187';/);
+  assert.doesNotMatch(read('vendor/three/three.tsl.js') + read('vendor/three/three.webgpu.js'), /slop-toronto/);
 });
 
 test('the aerial fog read through scene.fogNode uses renderGroup uniforms', () => {

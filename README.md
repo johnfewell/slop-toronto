@@ -4,7 +4,7 @@ Downtown Toronto and the waterfront in 3D, in the browser: walk, cycle, drive or
 along the lake to Sugar Beach, past the CN Tower and through downtown. Built with [three.js](https://threejs.org/)
 WebGPURenderer and TSL on the engine of [Slop New York](https://github.com/mrdoob/slop-newyork) by mrdoob, by way of
 its fork Abuja Tour. Best in a WebGPU browser (recent Chrome or Edge); without WebGPU it runs on WebGL2, without the
-volumetric clouds ([why](docs/clouds-alpha6.md#webgl2-backend)).
+volumetric clouds ([why](docs/clouds-alpha7.md#webgl2-backend)).
 
 **Live: https://sloptoronto.ca/explore**
 
@@ -107,7 +107,7 @@ Cloudflare serves `dist/` as a Worker's static assets (`wrangler.jsonc`):
   are a separate Worker (`rooms/wrangler.jsonc`); deploy them only when `rooms/` changes.
 - `node tools/build-site.mjs` alone assembles the already-generated scripts without installing or rebuilding dependencies.
 
-Cloud library: [alpha.6 integration and verification](docs/clouds-alpha6.md).
+Cloud library and renderer: [alpha.7 on stock three.js r187, integration and verification](docs/clouds-alpha7.md).
 
 Cache regression checks: `node --test tests/site-cache.test.mjs tests/boot.test.cjs`. The GPU runner also verifies
 that editing CSS reloads the real city and preserves the player (`GPU2_LOCK_WAIT=60 gpu2 slop-toronto-subway -- node tools/check-dev-reload.mjs`).

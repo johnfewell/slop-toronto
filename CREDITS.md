@@ -39,14 +39,14 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 - **Physically based lake water** (`?water=pbr`, `js/pbr-water.js`): mrdoob's "Physically Based Estuary Water" from
   Slop New York (MIT, above), as also carried by Slop San Francisco by @unable0_ (MIT), refitted to Toronto's
   waterfront. https://github.com/unable12/slop-sanfrancisco
-- **three.js**, WebGPURenderer and TSL, loaded from jsDelivr at a pinned dev-branch commit (r187 dev, `b3396270`, the
-  import map in `explore.html`). MIT.
+- **three.js**, WebGPURenderer and TSL, loaded from jsDelivr at the r187 release (tag `r187`, commit `7e89746a`, the
+  import map in `explore.html`; npm `three` 0.187.0 for tests and tools). MIT.
   https://threejs.org/
 - **Stylized water** (`js/stylized-water.js`, built from `vendor/stylized-water`): John Fewell's three.js port of
   Uber Stylized Water. MIT, © MatrixRex / norio. See `vendor/stylized-water/LICENSE`.
-- **three-clouds-webgpu** (`js/clouds.js`, built from `vendor/clouds/three-clouds-webgpu-0.1.0-alpha.6.tgz`): John
+- **three-clouds-webgpu** (`js/clouds.js`, built from `vendor/clouds/three-clouds-webgpu-0.1.0-alpha.7.tgz`): John
   Fewell's volumetric clouds for WebGPU, a port of takram's three-clouds. MIT, © Shota Matsuda & John Fewell; notice in the tarball's
-  LICENSE. Built on **@takram/three-atmosphere 0.19.1+fork.7** and **@takram/three-geospatial 0.9.1+fork.7** (MIT, © takram; compatibility fixes by John Fewell).
+  LICENSE. Built on **@takram/three-atmosphere 0.19.1+fork.8** and **@takram/three-geospatial 0.9.1+fork.8** (MIT, © takram; compatibility fixes by John Fewell).
 - **earcut** by Mapbox (3.2.4, `js/earcut.js`, copied unchanged from the locked npm package): the `?massing=1` roof caps,
   triangulated in a module worker that can't reach three.js's own copy. ISC. https://github.com/mapbox/earcut
 - **EZ-Tree** by Dan Greenheck: procedural trees. MIT. https://github.com/dgreenheck/ez-tree

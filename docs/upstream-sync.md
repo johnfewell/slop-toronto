@@ -568,3 +568,14 @@ cherry-picked.
   50.9 KB on the phone tier. The storefront and entrance work sits in `If` branches that only run on shop ground floors
   and entrance bays.
 - gpu2 captures: see [storefronts](storefronts.md#verification).
+
+# three.js r187 release — 2026-11-01
+
+Bead `st-43w2`. The browser moves from the dev pin `b3396270` to the stock r187 release (tag `r187`, commit
+[`7e89746a`](https://github.com/mrdoob/three.js/tree/r187)), 34 three.js commits later
+([compare](https://github.com/mrdoob/three.js/compare/b3396270682287470d161658ac01084d25e8dba6...r187)). npm `three`
+moves from 0.186.1 to 0.187.0, the same build file for file, and `vendor/three/` is now that stock build (no struct
+adapter). The clouds move to alpha.7 with the takram fork release 8. The pin lives in the same places as before
+(`explore.html`, the three preview tools, `vendor/clouds/release.json`), and `tests/threejs-pin.test.cjs` also checks
+npm, the lockfile and `vendor/three/` against it. The `renderGroup` uniforms above stay. What the 34 commits change for
+Toronto, and the verification, are in [clouds-alpha7](clouds-alpha7.md#renderer).

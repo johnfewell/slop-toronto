@@ -220,6 +220,8 @@ async function buildShaders(storefronts) {
   const renderer = new THREE.WebGPURenderer({ canvas: { addEventListener() {}, style: {}, getContext: () => null } });
   renderer.backend.device = { limits: { maxUniformBufferBindingSize: 65536, maxStorageBufferBindingSize: 1 << 27 }, features: new Set() };
   renderer.hasFeature = () => false; // (no adapter: the WGSL is generated, not compiled)
+  // (r187 declares the bind-group cache null until init(), and the builder only skips sharing when it is undefined)
+  renderer._bindings = undefined;
   const box = { x: 0, y: 5, z: 0, w: 12, h: 10, d: 8, faces: [C.WALL_KINDS.shop, C.WALL_KINDS.entry, 2, 3], paint: [0.5, 0.4, 0.3, 2.5] };
   const out = {}, vertexOf = new Map();
   const build = (name, mesh) => {
@@ -285,7 +287,7 @@ test('the storefront & entrance shaders build to WGSL on both detail levels', as
     // (the footprint walls' vertex stage reads the building table and takes its height and normal from it, st-2nl.3)
     assert.match(footprintVertex, /textureLoad\(/);
     assert.match(footprintVertex, /positionLocal = vec3<f32>\( position\.x, \(/);
-    assert.match(footprintVertex, /normalLocal = nodeVar\d+;/);
+    assert.match(footprintVertex, /normalLocal = node(?:Var|Const)\d+;/); // (r187 emits the decoded normal as a `let` nodeConst)
     // (each value its style's own uniform, picked by a flat style index: the floats are the styles' own)
     const flat = out['curtain-footprint-styles'].match(/@interpolate\( flat, either \) (nodeVarying\d+) : f32/);
     assert.ok(flat, 'a flat style index');

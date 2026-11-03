@@ -187,6 +187,8 @@ async function seasonShaders() {
   const renderer = new THREE.WebGPURenderer({ canvas: { addEventListener() {}, style: {}, getContext: () => null } });
   renderer.backend.device = { limits: { maxUniformBufferBindingSize: 65536, maxStorageBufferBindingSize: 1 << 27 }, features: new Set() };
   renderer.hasFeature = () => false; // (no adapter: the WGSL is generated, not compiled)
+  // (r187 declares the bind-group cache null until init(), and the builder only skips sharing when it is undefined)
+  renderer._bindings = undefined;
   const meshes = {};
   const plane = new THREE.PlaneGeometry(1, 1);
   meshes.lawn = new THREE.Mesh(plane, C.createParkLawnMaterial(false));
