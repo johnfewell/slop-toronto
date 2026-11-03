@@ -1,0 +1,44 @@
+[
+ {
+  "name": "t00-hud",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();",
+  "wait": 2000
+ },
+ {
+  "name": "mouth-street",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7383, 1.8, -706], look: [-7455, 1.0, -850], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "bridge-street",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7366, 1.8, -720], look: [-7480, 5, -620], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "bridge-lake",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7395, 5, -540], look: [-7445, 7, -660], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "mouth-aerial",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7300, 170, -500], look: [-7440, 0, -720], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "ride",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); document.getElementById('tp-humberArch').click(); a.cameraSystem.zoomMultiplier = 1.5; a.cameraSystem.orbitPitchOffset = 0.22; })()",
+  "wait": 7000
+ },
+ {
+  "name": "ride-above",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; const p = a.controllerManager.getActiveEntity().position; console.log('[probe] rider at ' + p.x.toFixed(1) + ',' + p.y.toFixed(2) + ',' + p.z.toFixed(1) + ' start ' + JSON.stringify(window.CITY.TELEPORT_LOCATIONS.humberArch)); })();(() => { const a = window.__CITY_APP; const T = window.CITY.TELEPORT_LOCATIONS.humberArch; a.cameraSystem.cinema = () => ({ pos: [T.x - 60, 140, T.z + 90], look: [T.x - 20, 0, T.z - 10], fov: 55 }); })()",
+  "wait": 5000
+ }
+]

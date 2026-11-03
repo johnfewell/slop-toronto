@@ -10,6 +10,8 @@ const {
   CITY_BOUNDS,
   BLOCKS,
   WATER_BODIES,
+  EDGE_WATERS,
+  bankBetween,
   STREAMS,
   DECKS,
   GEO,
@@ -632,39 +634,46 @@ function buildCityGrid(scene) {
   const bankMat = new THREE.MeshStandardNodeMaterial({ color: 0x6f4a32, roughness: 0.95, side: THREE.DoubleSide });
   {
     const bank = makeAcc();
-    for (const w of bigLakes) {
-      // the lake with its islands as holes, out to the horizon
-      const shape = createWorldXZShape(w.pts);
-      for (const h of w.holes) shape.holes.push(new THREE.Path(h.pts.map((p) => new THREE.Vector2(p.x, -p.z))));
+    // a ring's banks: earth from under the water up to the street level, but not along the city's edge nor between two
+    // waters (the Humber's mouth into the lake: city-config.js bankBetween)
+    const onEdge = (p) => Math.abs(p.x - B.minX) < 1.5 || Math.abs(p.x - B.maxX) < 1.5 || Math.abs(p.z - B.minZ) < 1.5 || Math.abs(p.z - B.maxZ) < 1.5;
+    const banks = (ring) => {
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i], b = ring[(i + 1) % ring.length];
+        const L = Math.hypot(b.x - a.x, b.z - a.z);
+        if (L < 0.01 || (onEdge(a) && onEdge(b)) || !bankBetween(a, b)) continue;
+        const n = [-(b.z - a.z) / L, 0, (b.x - a.x) / L];
+        accQuad(bank, [a.x, -2.5, a.z], [b.x, -2.5, b.z], [b.x, SW_TOP, b.z], [a.x, SW_TOP, a.z], n, [[0, 0], [L, 0], [L, 1], [0, 1]]);
+      }
+    };
+    const flatGeometry = (pts, holes = []) => {
+      const shape = createWorldXZShape(pts);
+      for (const h of holes) shape.holes.push(new THREE.Path(h.map((p) => new THREE.Vector2(p.x, -p.z))));
       const g = new THREE.ShapeGeometry(shape, 1);
       g.rotateX(-Math.PI / 2);
       g.translate(0, CITY_BOUNDS.waterLevel, 0);
-      const m = new THREE.Mesh(g, lakeMat);
+      return g;
+    };
+    // the water running out over the city's edge (city-config.js EDGE_WATERS), cut to it: the rivers & channels that
+    // open into the lake are the lake's own water (one mesh, so the Humber's mouth has no seam), the rest ponds
+    const openWater = EDGE_WATERS.filter((e) => e.open).map((e) => flatGeometry(e.pts));
+    for (const e of EDGE_WATERS) {
+      if (!e.open) group.add(createFlatPolygonMesh(e.pts, CITY_BOUNDS.waterLevel, waterMat, true));
+      banks(e.pts);
+    }
+    for (const w of bigLakes) {
+      // the lake with its islands as holes, out to the horizon
+      const g = flatGeometry(w.pts, w.holes.map((h) => h.pts));
+      const m = new THREE.Mesh(openWater.length ? mergeGeometries([g, ...openWater.splice(0)], false) : g, lakeMat);
       m.receiveShadow = true;
       m.name = 'LakeOntario';
       group.add(m);
       // banks along the shore inside the city and round the islands
-      for (const ring of [clipToCity(w.pts), ...w.holes.filter((h) => inside(h.pts, 0)).map((h) => h.pts)]) {
-        for (let i = 0; i < ring.length; i++) {
-          const a = ring[i], b = ring[(i + 1) % ring.length];
-          const L = Math.hypot(b.x - a.x, b.z - a.z);
-          if (L < 0.01) continue;
-          const onEdge = (p) => Math.abs(p.x - B.minX) < 1.5 || Math.abs(p.x - B.maxX) < 1.5 || Math.abs(p.z - B.minZ) < 1.5 || Math.abs(p.z - B.maxZ) < 1.5;
-          if (onEdge(a) && onEdge(b)) continue;
-          const n = [-(b.z - a.z) / L, 0, (b.x - a.x) / L];
-          accQuad(bank, [a.x, -2.5, a.z], [b.x, -2.5, b.z], [b.x, SW_TOP, b.z], [a.x, SW_TOP, a.z], n, [[0, 0], [L, 0], [L, 1], [0, 1]]);
-        }
-      }
+      for (const ring of [clipToCity(w.pts), ...w.holes.filter((h) => inside(h.pts, 0)).map((h) => h.pts)]) banks(ring);
     }
     for (const w of lakes) {
       group.add(createFlatPolygonMesh(w.pts, CITY_BOUNDS.waterLevel, waterMat, true));
-      for (let i = 0; i < w.pts.length; i++) {
-        const a = w.pts[i], b = w.pts[(i + 1) % w.pts.length];
-        const L = Math.hypot(b.x - a.x, b.z - a.z);
-        if (L < 0.01) continue;
-        const n = [-(b.z - a.z) / L, 0, (b.x - a.x) / L];
-        accQuad(bank, [a.x, -2.5, a.z], [b.x, -2.5, b.z], [b.x, SW_TOP, b.z], [a.x, SW_TOP, a.z], n, [[0, 0], [L, 0], [L, 1], [0, 1]]);
-      }
+      banks(w.pts);
     }
     const g = accGeometry(bank);
     if (g) group.add(new THREE.Mesh(g, bankMat));

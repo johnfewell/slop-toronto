@@ -105,6 +105,48 @@ function waterAt(x, z) {
 function isOnLand(x, z, margin = 0) {
   return x > DETAIL.x0 + margin && x < DETAIL.x1 - margin && z > DETAIL.z0 + margin && z < DETAIL.z1 - margin && !waterAt(x, z);
 }
+// The water that runs out over the detailed city's edge: the Humber's mouth, the Don, the Ship Channel, ponds on the
+// west edge. The street level is open over all water (GEO.waterMask), but city-grid.js draws a surface only for the
+// water wholly inside the city and for Lake Ontario: these showed the sunken terrain under the street level (flat
+// stripes) and, where it is left out, nothing (black, under the Gardiner's & Lake Shore's bridges). Each is cut to the
+// city's edge; `open` where it meets the lake (the Humber, the Ship Channel), so it is drawn as the lake's own water and
+// its mouth has no seam. [{ body, pts (clipped), open }]
+function clipToBox(pts, x0, x1, z0, z1) {
+  let c = pts;
+  for (const [nx, nz, k] of [[1, 0, x0], [-1, 0, -x1], [0, 1, z0], [0, -1, -z1]]) {
+    const out = [];
+    for (let i = 0; i < c.length; i++) {
+      const a = c[i], b = c[(i + 1) % c.length];
+      const da = nx * a.x + nz * a.z - k, db = nx * b.x + nz * b.z - k;
+      if (da >= 0) out.push(a);
+      if ((da >= 0) !== (db >= 0)) { const t = da / (da - db); out.push({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t }); }
+    }
+    c = out;
+  }
+  return c;
+}
+const EDGE_WATERS = (() => {
+  const out = [];
+  const inside = (p) => p.x > DETAIL.x0 + 5 && p.x < DETAIL.x1 - 5 && p.z > DETAIL.z0 + 5 && p.z < DETAIL.z1 - 5;
+  const dvBox = window.CITY.DON_VALLEY && window.CITY.DON_VALLEY.inBox;
+  for (const w of WATER_BODIES) {
+    if (w.pts.length < 3 || WATER_EVERYWHERE.includes(w) || w.pts.every(inside)) continue;
+    if (w.maxX < DETAIL.x0 || w.minX > DETAIL.x1 || w.maxZ < DETAIL.z0 || w.minZ > DETAIL.z1) continue;
+    const pts = clipToBox(w.pts, DETAIL.x0 + 1, DETAIL.x1 - 1, DETAIL.z0 + 1, DETAIL.z1 - 1);
+    if (pts.length < 3) continue;
+    // (the Don Valley pilot draws the Don in its valley: js/don-valley.js)
+    if (dvBox && pts.some((p) => dvBox(p.x, p.z))) continue;
+    const open = w.pts.some((p) => WATER_EVERYWHERE.some((L) => [[2, 0], [-2, 0], [0, 2], [0, -2]].some(([dx, dz]) => inWaterBody(L, p.x + dx, p.z + dz))));
+    out.push({ body: w, pts, open });
+  }
+  return out;
+})();
+/** Whether a bank belongs between a and b: not where there is water on both sides (the Humber's mouth into the lake) */
+function bankBetween(a, b) {
+  const L = Math.hypot(b.x - a.x, b.z - a.z) || 1, nx = -(b.z - a.z) / L, nz = (b.x - a.x) / L;
+  const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+  return !(waterAt(mx + nx * 1.5, mz + nz * 1.5) && waterAt(mx - nx * 1.5, mz - nz * 1.5));
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Roads: every road of the city (the real centre lines), by name, for labels, maps & lookups
@@ -384,7 +426,32 @@ const TERRAIN = (() => {
     if (o < bytes.length) bytes[o++] = v & 255;
   }
   const h = new Int16Array(bytes.buffer, 0, bytes.length >> 1);
-  return { x0: T.x0, z0: T.z0, step: T.step, n: T.n, h };
+  // The shore of the lake and the water open to it (the Humber's mouth, the Ship Channel), a grid node within 90 m of
+  // it, is the street level, as its banks are (city-grid.js: earth up to the curb islands' top). The build holds the terrain there only near roads,
+  // rails and buildings, so in the waterfront's parks the 60 m grid kept SRTM's metre or three of trees and fill
+  // (Humber Bay Park East, the Islands, the Port Lands): a slab of terrain rising behind the bank, seen from the street
+  // as stripes, and a player walking 2.5 m over the trail beside it. Inland ponds keep their real slopes (High Park's
+  // down to Grenadier Pond). ?shore=raw shows the build's terrain.
+  const raw = typeof location !== 'undefined' && /[?&]shore=raw(&|$)/.test(location.search || '');
+  const lakeside = (x, z) => {
+    const w = waterAt(x, z);
+    return !!w && (WATER_EVERYWHERE.includes(w) || EDGE_WATERS.some((e) => e.open && e.body === w));
+  };
+  let held = 0;
+  for (let r = 0; r < T.n && !raw; r++) {
+    for (let c = 0; c < T.n; c++) {
+      const k = r * T.n + c;
+      if (h[k] <= 0) continue;
+      const x = T.x0 + c * T.step, z = T.z0 + r * T.step;
+      if (!(x > DETAIL.x0 && x < DETAIL.x1 && z > DETAIL.z0 && z < DETAIL.z1)) continue;
+      let shore = false;
+      for (const d of [T.step / 2, T.step, T.step * 1.5]) {
+        for (let a = 0; a < 8 && !shore; a++) shore = lakeside(x + Math.cos((a * Math.PI) / 4) * d, z + Math.sin((a * Math.PI) / 4) * d);
+      }
+      if (shore) { h[k] = 0; held++; }
+    }
+  }
+  return { x0: T.x0, z0: T.z0, step: T.step, n: T.n, h, shoreHeld: held };
 })();
 /** Height of the land above street level at (x, z) (Aso Rock, the ridges; 0 wherever the city is built) */
 // Ground height above street level; water cells carry -30 m (tools/geo-terrain.mjs), so this never goes below 0
@@ -874,6 +941,54 @@ for (const [kind, , , flags, flat] of GEO.rails || []) {
     }
   }
 }
+// The trail bridges over the water: the Humber Bay Arch Bridge (Montgomery Sisam Architects & Delcan, 1994) carries the
+// Martin Goodman Trail over the Humber's mouth, on OpenStreetMap way 33398082 (its two ends; a bridge, so the City's
+// cycling network and GEO.cycling's trail pieces stop at the banks). 139 m long, the deck hung from twin white steel
+// pipe arches (1.2 m) over a 100 m clear span, 21.3 m high, on 44 stainless hangers, one at each end of 22 floor beams.
+// js/humber-arch-bridge.js builds it; here its deck is a walking & riding surface over the water (deckHeightAt,
+// trailBridgeAt). Each: { name, a, b, L, ux, uz, w (the deck), trailW, s0, s1 (the arch's springings along it), rise,
+// heightAt(s) (the deck's top), local(x, z) -> { s, l } }
+const TRAIL_BRIDGES = [
+  { name: 'Humber Bay Arch Bridge', osm: 33398082, from: [43.6323417, -79.4708671], to: [43.6313426, -79.4717235], w: 5.2, trailW: 4, span: 100, rise: 21.3, camber: 1.4 }
+].map((d) => {
+  const a = worldFromLatLon(...d.from), b = worldFromLatLon(...d.to);
+  const L = Math.hypot(b.x - a.x, b.z - a.z), ux = (b.x - a.x) / L, uz = (b.z - a.z) / L;
+  // the span centred on the water under it
+  let w0 = null, w1 = null;
+  for (let s = 0; s <= L; s += 1) if (waterAt(a.x + ux * s, a.z + uz * s)) { if (w0 === null) w0 = s; w1 = s; }
+  const mid = w0 === null ? L / 2 : (w0 + w1) / 2;
+  const s0 = Math.max(6, mid - d.span / 2), s1 = Math.min(L - 6, mid + d.span / 2);
+  // the deck's top: a little over the trail's paving at its ends (the curb islands' 0.22 m), rising gently over the span
+  const end = CITY_BOUNDS.sidewalkHeight + 0.08;
+  const heightAt = (s) => end + d.camber * Math.sin(Math.PI * Math.max(0, Math.min(1, s / L)));
+  const local = (x, z) => ({ s: (x - a.x) * ux + (z - a.z) * uz, l: (x - a.x) * -uz + (z - a.z) * ux });
+  return { ...d, a, b, L, ux, uz, s0, s1, wet: [w0, w1], heightAt, local };
+});
+/** On a trail bridge's deck (within `margin` m of its edge: negative, inside it), or null */
+function trailBridgeAt(x, z, margin = 0) {
+  for (const t of TRAIL_BRIDGES) {
+    const { s, l } = t.local(x, z);
+    if (s >= 0 && s <= t.L && Math.abs(l) <= t.w / 2 + margin) return t;
+  }
+  return null;
+}
+// its deck in the player's deck grid (a cell keeps the deck's highest point in it, as the flyovers do)
+for (const t of TRAIL_BRIDGES) {
+  const deck = { trailBridge: t };
+  for (let s = -1; s <= t.L + 1; s += 1) {
+    const h = t.heightAt(s);
+    for (let l = -t.w / 2; l <= t.w / 2 + 1e-6; l += t.w / 8) {
+      const x = t.a.x + t.ux * s - t.uz * l, z = t.a.z + t.uz * s + t.ux * l;
+      const key = Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL);
+      let list = DECK_GRID.get(key);
+      if (!list) DECK_GRID.set(key, (list = []));
+      const same = list.find((e) => e.deck === deck);
+      if (same) same.h = Math.max(same.h, h);
+      else list.push({ h, deck });
+    }
+  }
+}
+
 // No tree in the rail corridor: none within 7 m of a heavy-rail track (the beds, between the tracks, the yards), nor on
 // a raised track's embankment or under its bridge (1.6 m more per metre up: its grassed sides,
 // js/rail-corridor.js SLOPE)
@@ -919,6 +1034,11 @@ function inModelledLandmark(x, z) {
 /** Whether a tree may stand at (x, z): clear of the rail corridor & the subway's open cuts, and not in a landmark */
 function treeOffRail(x, z) {
   if (inModelledLandmark(x, z)) return false;
+  // (nor in the water: the City's inventory sets a few of the trees along the Humber's banks inside OpenStreetMap's
+  // riverbank, where the water now draws over them)
+  if (waterAt(x, z)) return false;
+  // (nor on a trail bridge or under its arches, js/humber-arch-bridge.js)
+  if (TRAIL_BRIDGES.some((t) => { const p = t.local(x, z); return p.s > -4 && p.s < t.L + 4 && Math.abs(p.l) < t.w / 2 + 7; })) return false;
   // (nor down in a road cut; on its grassed banks, yes, up from their foot: js/ez-trees.js sets them on the slope)
   if (roadCutAt(x, z) < 0 && !ROAD_CUTS.some((c) => { const p = c.bankSt && cutLocal(c, x, z); return p && p.bank && p.into > 2.5; })) return false;
   if (window.CITY.subwayCutAt && window.CITY.subwayCutAt(x, z, 2)) return false; // (nor in the subway's trenches, subway.js)
@@ -1216,6 +1336,10 @@ Object.assign(window.CITY, {
   deckRuns,
   deckOutline,
   ROAD_BRIDGES,
+  EDGE_WATERS,
+  bankBetween,
+  TRAIL_BRIDGES,
+  trailBridgeAt,
   bridgeAt,
   BUS_CONTRAFLOWS,
   ROAD_LINKS,

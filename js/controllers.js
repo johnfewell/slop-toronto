@@ -9,6 +9,8 @@
 
 const { THREE } = window.CITY;
 const { CITY_BOUNDS, TELEPORT_LOCATIONS, isTypingInField, blockAt, waterAt, terrainHeightAt, deckHeightAt } = window.CITY;
+// (the deck of a trail bridge over the water, the Humber Bay Arch Bridge's: walked & ridden, not driven, 0.4 m in from its edges)
+const onTrailBridge = (x, z) => !!(window.CITY.trailBridgeAt && window.CITY.trailBridgeAt(x, z, -0.4));
 // Start on Yonge Street by Sankofa Square, heading north to Dundas (city-config.js TELEPORT_LOCATIONS)
 const SPAWN = (TELEPORT_LOCATIONS && TELEPORT_LOCATIONS.start) || { x: 0, z: 140, heading: Math.PI };
 const {
@@ -430,7 +432,7 @@ class ThirdPersonControllerManager {
       const m = heli ? margin : -8;
       pz = Math.max(CITY_BOUNDS.minZ - m, Math.min(CITY_BOUNDS.maxZ + m, pz));
       px = Math.max(CITY_BOUNDS.minX - m, Math.min(CITY_BOUNDS.maxX + m, px));
-      if (!heli && waterAt(px, pz)) return null; // not in a lake
+      if (!heli && waterAt(px, pz) && (car || !onTrailBridge(px, pz))) return null; // not in a lake (on foot or by bike, a trail bridge's deck)
       if (!heli && window.CITY.subwayCutAt && window.CITY.subwayCutAt(px, pz, 1, false)) return null; // nor down a subway cut (subway.js)
       return { x: px, z: pz };
     };
@@ -1029,7 +1031,7 @@ class ThirdPersonControllerManager {
     pos.x = bx;
     pos.z = bz;
     if (!heli) {
-      if (waterAt(pos.x, pos.z) && this._dry) {
+      if (waterAt(pos.x, pos.z) && (this.activeMode === 'car' || !onTrailBridge(pos.x, pos.z)) && this._dry) {
         pos.x = this._dry.x;
         pos.z = this._dry.z;
         if (carEntity && carEntity.speed) carEntity.speed *= 0.3;

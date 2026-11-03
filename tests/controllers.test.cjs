@@ -595,3 +595,21 @@ test('a cycle track separator is crossed on a bicycle only steeply, held along a
   assert.ok(run('person', -1.5, Math.PI / 2, 1.6, 120).x > 0.5, 'a walker steps over it');
   assert.ok(run('car', -3, Math.PI / 2, 10, 60).x < -1, 'a car is stopped by it');
 });
+
+test('st-01vq.7: a trail bridge\'s deck over the water is walked and ridden, but not driven, and its edges hold', () => {
+  // a lake over x > 100, a trail bridge's deck across it along z = 0, 5.2 m wide (city-config.js trailBridgeAt)
+  const lake = (x) => (x > 100 ? { name: 'Lake Ontario' } : null);
+  for (const mode of ['person', 'cyclist', 'car']) {
+    const { controller, ent, window } = teleportHarness(mode, [], lake);
+    window.CITY.trailBridgeAt = (x, z, m = 0) => (x > 90 && x < 220 && Math.abs(z) <= 2.6 + m ? { name: 'Humber Bay Arch Bridge' } : null);
+    ent.position.x = 90; ent.position.z = 0;
+    controller.resolveHorizontalCollision(ent.position, 0.48, ent.position.y + 1);
+    ent.position.x = 140;
+    controller.resolveHorizontalCollision(ent.position, 0.48, ent.position.y + 1);
+    if (mode === 'car') { assert.ok(ent.position.x <= 100, 'no car on the trail bridge'); continue; }
+    assert.equal(ent.position.x, 140, `${mode}: out over the water on the deck`);
+    ent.position.z = 4;
+    controller.resolveHorizontalCollision(ent.position, 0.48, ent.position.y + 1);
+    assert.deepEqual([ent.position.x, ent.position.z], [140, 0], `${mode}: off the deck's edge is undone`);
+  }
+});

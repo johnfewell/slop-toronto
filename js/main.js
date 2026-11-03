@@ -125,6 +125,8 @@ async function initApp() {
   window.CITY.buildSurroundings(scene, boroughs.group, QUALITY);
   markInit('terrain');
   const { colliders: landmarkColliders } = buildLandmarks(scene);
+  // the Humber Bay Arch Bridge, the Martin Goodman Trail over the Humber's mouth (humber-arch-bridge.js)
+  if (window.CITY.buildTrailBridges) landmarkColliders.push(...window.CITY.buildTrailBridges(scene).colliders);
   markInit('landmarks');
   // ?massing=1: every building from the City's 3D Massing polygons instead of its boxes (docs/massing-buildings.md;
   // js/massing-data.js and data/toronto-massing.bin are fetched only then, so normal play never loads them)
