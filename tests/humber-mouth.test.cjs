@@ -117,3 +117,53 @@ test('st-01vq.8: the lake\'s shore is the street level beside its banks, and no 
   const ST = GEO.streetTrees;
   for (let i = 0; i < ST.length; i += 4) if (waterAt(ST[i], ST[i + 1])) assert.equal(treeOffRail(ST[i], ST[i + 1]), false);
 });
+
+test('st-72lu: the arches\' feet are set into the banks, and the thin steel keeps a pixel\'s width at a distance', async () => {
+  const THREE = await import('three/webgpu');
+  const TSL = await import('three/tsl');
+  const { mergeGeometries } = await import('three/addons/utils/BufferGeometryUtils.js');
+  const ctx = vm.createContext({ window: { CITY: { THREE, TSL, Addons: { mergeGeometries } } }, console: { info() {}, warn() {}, log() {} } });
+  for (const path of ['js/toronto-geodata.js', 'js/city-config.js', 'js/humber-arch-bridge.js']) vm.runInContext(read(path), ctx);
+  const C = ctx.window.CITY, t = C.TRAIL_BRIDGES[0];
+  const { group } = C.buildArchBridge(t);
+  // the four plinths: the concrete's boxes on the banks beyond the abutments, out at the arches' feet
+  const conc = group.getObjectByName('HumberArchBridge-concrete').geometry.attributes.position;
+  const feet = new Map();
+  for (let i = 0; i < conc.count; i++) {
+    const x = conc.getX(i), y = conc.getY(i), z = conc.getZ(i), { s, l } = t.local(x, z);
+    if (Math.abs(l) < t.w / 2 + 1.5 || (s > t.wet[0] && s < t.wet[1])) continue;
+    const k = `${s < t.L / 2 ? 'east' : 'west'} ${l < 0 ? 'right' : 'left'}`;
+    const f = feet.get(k) || { lo: Infinity, hi: -Infinity, x: 0, z: 0, n: 0 };
+    f.lo = Math.min(f.lo, y); f.hi = Math.max(f.hi, y); f.x += x; f.z += z; f.n++; feet.set(k, f);
+  }
+  assert.equal(feet.size, 4, 'four feet');
+  for (const [k, f] of feet) {
+    const ground = blockAt(f.x / f.n, f.z / f.n) ? B.sidewalkHeight : 0;
+    assert.ok(f.hi > ground && f.hi - ground <= 0.15, `${k}: its top ${(f.hi - ground).toFixed(2)} m over the ground (was 0.48)`);
+    assert.ok(f.lo < ground - 0.4, `${k}: its foot in the ground`);
+  }
+  // the hangers & railings: each vertex knows its piece's radius; the shader widens them, the shadow pass doesn't
+  const steel = group.getObjectByName('HumberArchBridge-steel');
+  const r = steel.geometry.attributes.steelR;
+  assert.ok(r && r.count === steel.geometry.attributes.position.count && [...r.array].every((v) => v > 0.019 && v < 0.061));
+  assert.ok(steel.material.positionNode && steel.material.castShadowPositionNode);
+  assert.equal(steel.receiveShadow, false, 'the widened steel takes no shadows (they dotted it)');
+});
+
+test('st-72lu: the lake\'s night skyline fades out at the open ends of its boxes, not where two boxes meet', async () => {
+  const THREE = await import('three/webgpu');
+  const TSL = await import('three/tsl');
+  const ctx = vm.createContext({ window: { CITY: { THREE, TSL, cityUniforms: {} } }, console: { info() {}, warn() {}, log() {} } });
+  vm.runInContext(read('js/pbr-water.js'), ctx);
+  const { PBR_SKYLINE: S, pbrSkylineOpenSides: open } = ctx.window.CITY;
+  const at = (x, z) => S.findIndex(([x0, z0, x1, z1]) => x >= x0 && x <= x1 && z >= z0 && z <= z1);
+  // Humber Bay Shores, west of the Humber's mouth: its east side (over the river) and its north end open, so its
+  // reflection no longer stops square under the arch bridge; its west and south sides run on into the next boxes
+  const hbs = at(-7700, -700);
+  assert.ok(hbs >= 0);
+  assert.equal(open(hbs), 2 | 4);
+  // downtown's boxes, one 500 m cell beside another: no fade between them
+  const fd = at(250, -250);
+  assert.equal(open(fd) & (1 | 2), 0, 'the Financial District\'s box runs on east and west');
+  assert.ok(S.every((_, i) => open(i) >= 0 && open(i) <= 15));
+});

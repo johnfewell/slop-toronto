@@ -1,0 +1,62 @@
+[
+ {
+  "name": "t00-hud",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();",
+  "wait": 500
+ },
+ {
+  "name": "arch-twilight",
+  "time": "twilight",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7395,5,-540], look: [-7445,9,-660], fov: 60 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "arch-twilight-east",
+  "time": "twilight",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7330,4,-640], look: [-7440,6,-660], fov: 60 }); })()",
+  "wait": 4000
+ },
+ {
+  "name": "arch-midnight",
+  "time": "midnight",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7395, 5, -540], look: [-7445, 9, -660], fov: 60 }); })()",
+  "wait": 4000
+ },
+ {
+  "name": "arch-golden-far",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7300,8,-470], look: [-7440,10,-655], fov: 45 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "arch-golden-side",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7520,3,-720], look: [-7440,10,-655], fov: 55 }); })()",
+  "wait": 4000
+ },
+ {
+  "name": "arch-midday-far",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7230,30,-900], look: [-7440,10,-655], fov: 40 }); })()",
+  "wait": 4000
+ },
+ {
+  "name": "arch-footing-close",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7385,2.2,-676], look: [-7400,0.4,-690], fov: 55 }); })()",
+  "wait": 4000
+ },
+ {
+  "name": "arch-footing-west",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7468,2.2,-605], look: [-7477,0.4,-622], fov: 55 }); })()",
+  "wait": 4000
+ },
+ {
+  "name": "deck-ride",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-7393.2, -697.3, -0.8463); a.cameraSystem.zoomMultiplier = 1.5; a.cameraSystem.orbitPitchOffset = 0.22; })()",
+  "wait": 7000
+ }
+]

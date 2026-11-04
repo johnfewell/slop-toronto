@@ -69,8 +69,27 @@ function makeQuads() {
   return { quad, geometry };
 }
 
+// The hangers & railings are 2-7 cm steel: thinner than a pixel from a hundred metres, they broke into dashes. Their
+// material keeps every piece at least about 1.7 pixels wide: each vertex moves out along its normal to that half width
+// (from the camera's distance & the pixel's angle) less the piece's own (its `steelR` attribute). The shadow pass keeps
+// the real sizes.
+function createThinSteelMaterial(params) {
+  const { positionLocal, normalLocal, cameraPosition, cameraProjectionMatrix, screenSize, attribute, max, distance } = C.TSL;
+  const mat = new THREE.MeshStandardNodeMaterial(params);
+  // (the bridge's meshes sit at the world's origin: positionLocal is the world position)
+  const pixel = distance(positionLocal, cameraPosition).mul(2).div(cameraProjectionMatrix.element(1).element(1).mul(screenSize.y));
+  mat.positionNode = positionLocal.add(normalLocal.mul(max(pixel.mul(0.85).sub(attribute('steelR', 'float')), 0)));
+  mat.castShadowPositionNode = positionLocal;
+  return mat;
+}
+
 function buildArchBridge(t) {
   const parts = { white: [], steel: [], concrete: [], red: [], yellow: [] };
+  // a steel piece of radius (or half width) r
+  const steel = (g, r) => {
+    g.setAttribute('steelR', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count).fill(r), 1));
+    parts.steel.push(g);
+  };
   const top = (s) => t.heightAt(s);
   const SLAB = 0.45;
   const inSpan = (s) => s > t.wet[0] - 1 && s < t.wet[1] + 1;
@@ -128,16 +147,16 @@ function buildArchBridge(t) {
   for (const A of arch) {
     const pts = [];
     for (let i = 0; i <= 64; i++) pts.push(A(i / 64));
-    // (a little into the feet, so the pipe meets its plinth)
-    pts[0] = pts[0].clone().add(new THREE.Vector3(-0.3, -0.4, 0));
-    pts[64] = pts[64].clone().add(new THREE.Vector3(0.3, -0.4, 0));
+    // (on into the feet, so the pipe meets its plinth and its open end is buried in it)
+    pts[0] = pts[0].clone().add(new THREE.Vector3(-0.7, -1.0, 0));
+    pts[64] = pts[64].clone().add(new THREE.Vector3(0.7, -1.0, 0));
     parts.white.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 96, 0.6, 14, false).toNonIndexed());
   }
   for (const { u, s } of stations) {
     for (const [side, A] of [[-1, arch[0]], [1, arch[1]]]) {
       const p = A(u);
       const foot = new THREE.Vector3(s, top(s) - SLAB - 0.1, side * hangerL);
-      parts.steel.push(rod(foot, new THREE.Vector3(p.x, p.y - 0.55, p.z - side * 0.05), 0.06, 5));
+      steel(rod(foot, new THREE.Vector3(p.x, p.y - 0.55, p.z - side * 0.05), 0.06, 5), 0.06);
     }
   }
   // the bracing: struts across between the arches and a zigzag of diagonals, over two stretches either side of the crown
@@ -157,10 +176,15 @@ function buildArchBridge(t) {
       prev = { l, r };
     }
   }
-  // the arches' feet: concrete plinths on the banks
+  // the arches' feet: concrete plinths set into the banks, their tops a little over the ground where they stand (the
+  // curb island's lawn), down 0.6 m into it (they stood 0.5 m proud of the grass, slabs laid on it)
+  const groundAt = (s, l) => {
+    const x = t.a.x + t.ux * s - t.uz * l, z = t.a.z + t.uz * s + t.ux * l;
+    return (C.blockAt && C.blockAt(x, z) ? C.CITY_BOUNDS.sidewalkHeight : 0) + Math.max(0, C.terrainHeightAt ? C.terrainHeightAt(x, z) : 0);
+  };
   for (const u of [0, 1]) for (const A of arch) {
-    const p = A(u);
-    parts.concrete.push(box(p.x + (u ? 0.6 : -0.6), 0.1, p.z, 3.6, 1.2, 2.8));
+    const p = A(u), ps = p.x + (u ? 0.6 : -0.6), g = groundAt(ps, p.z), top = g + 0.1, bottom = g - 0.6;
+    parts.concrete.push(box(ps, (top + bottom) / 2, p.z, 3.6, top - bottom, 2.8));
   }
   // the abutments at the water's edge: walls across under the deck, from the river's bed to the slab
   for (const [s, dir] of [[t.wet[0] - 1, -1], [t.wet[1] + 1, 1]]) {
@@ -171,11 +195,12 @@ function buildArchBridge(t) {
   // --- The railings: stainless posts every 2 m, a top rail & two rails between, 1.2 m (a bicycle's height), each side
   {
     const rail = (l) => {
-      for (let s = 0.3; s <= t.L - 0.3; s += 2) parts.steel.push(box(s, top(s) + 0.6, l, 0.06, 1.2, 0.06));
+      for (let s = 0.3; s <= t.L - 0.3; s += 2) steel(box(s, top(s) + 0.6, l, 0.06, 1.2, 0.06), 0.03);
       for (const h of [1.2, 0.75, 0.35]) {
         for (let s = 0.3; s < t.L - 0.3 - 1e-6; s += 4) {
           const s2 = Math.min(t.L - 0.3, s + 4);
-          parts.steel.push(rod(new THREE.Vector3(s, top(s) + h, l), new THREE.Vector3(s2, top(s2) + h, l), h === 1.2 ? 0.035 : 0.02, 5));
+          const r = h === 1.2 ? 0.035 : 0.02;
+          steel(rod(new THREE.Vector3(s, top(s) + h, l), new THREE.Vector3(s2, top(s2) + h, l), r, 5), r);
         }
       }
     };
@@ -187,7 +212,7 @@ function buildArchBridge(t) {
   const frame = new THREE.Matrix4().makeBasis(new THREE.Vector3(t.ux, 0, t.uz), Y, new THREE.Vector3(-t.uz, 0, t.ux)).setPosition(t.a.x, 0, t.a.z);
   const mats = {
     white: new THREE.MeshStandardNodeMaterial({ color: WHITE, roughness: 0.45, metalness: 0.1 }),
-    steel: new THREE.MeshStandardNodeMaterial({ color: STEEL, roughness: 0.35, metalness: 0.75 }),
+    steel: createThinSteelMaterial({ color: STEEL, roughness: 0.35, metalness: 0.75 }),
     concrete: new THREE.MeshStandardNodeMaterial({ color: CONCRETE, roughness: 0.86 }),
     red: new THREE.MeshStandardNodeMaterial({ color: TRAIL_RED, roughness: 0.9 }),
     yellow: new THREE.MeshStandardNodeMaterial({ color: LINE_YELLOW, roughness: 0.7 })
@@ -205,7 +230,9 @@ function buildArchBridge(t) {
     const m = new THREE.Mesh(g, mats[key]);
     m.name = `HumberArchBridge-${key}`;
     m.castShadow = key !== 'yellow' && key !== 'red';
-    m.receiveShadow = true;
+    // (the thin steel takes no shadows: its widened surface stands out of the real rod's shadow, and the shadow map's
+    // texels broke it into dots along its length)
+    m.receiveShadow = key !== 'steel';
     group.add(m);
   }
   // the arches' feet stand in the way on the banks

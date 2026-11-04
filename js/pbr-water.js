@@ -102,6 +102,21 @@ const SKYLINE = [
   [3573, 817, 3693, 937, 50, 1]
 ];
 
+// The reflection fades out over a box's last this many metres towards an open side (createPBRLakeWater)
+const SKYLINE_END_FADE = 90;
+/** Box i's open sides as bits (1 x0, 2 x1, 4 z0, 8 z1): no other box within 30 m beside it along that side */
+function skylineOpenSides(i) {
+  const [x0, z0, x1, z1] = SKYLINE[i], GAP = 30;
+  const overlapZ = (b) => Math.min(z1, b[3]) - Math.max(z0, b[1]) > 0, overlapX = (b) => Math.min(x1, b[2]) - Math.max(x0, b[0]) > 0;
+  const shut = [
+    (b) => overlapZ(b) && Math.abs(b[2] - x0) < GAP,
+    (b) => overlapZ(b) && Math.abs(b[0] - x1) < GAP,
+    (b) => overlapX(b) && Math.abs(b[3] - z0) < GAP,
+    (b) => overlapX(b) && Math.abs(b[1] - z1) < GAP
+  ];
+  return shut.reduce((bits, test, k) => bits + (SKYLINE.some((b, j) => j !== i && test(b)) ? 0 : 2 ** k), 0);
+}
+
 // Share of the window [x - s, x + s] covered by the interval [a, b]: an exact box filter for bands & points of light
 const waterBoxCover = Fn(([x, a, b, s]) => {
   const xv = float(x).toVar();
@@ -198,9 +213,12 @@ function createPBRLakeWater(colourKey) {
   })();
   mat.colorNode = bodyColor.mul(smoothstep(0.6, 2.4, waves.w).mul(0.35).add(1.0));
 
-  // The night skyline's boxes, as uniforms (one loop in the shader, not 66 unrolled tests)
+  // The night skyline's boxes, as uniforms (one loop in the shader, not 66 unrolled tests). Each box's open sides (no
+  // other box beside it: the end of a cluster) are flagged, 1 x0, 2 x1, 4 z0, 8 z1: the reflection fades out over its
+  // last SKYLINE_END_FADE m towards them, where it ended square (st-72lu: Humber Bay Shores' box, ending at its corner
+  // under the Humber Bay Arch Bridge, drew a dark, straight-edged patch in the lit water from twilight on)
   const boxBounds = uniformArray(SKYLINE.map(([x0, z0, x1, z1]) => new THREE.Vector4(x0, z0, x1, z1)), 'vec4');
-  const boxInfo = uniformArray(SKYLINE.map(([, , , , S, lit]) => new THREE.Vector4(S, lit, 0, 0)), 'vec4');
+  const boxInfo = uniformArray(SKYLINE.map(([, , , , S, lit], i) => new THREE.Vector4(S, lit, skylineOpenSides(i), 0)), 'vec4');
   const NBOX = SKYLINE.length;
   const cn = window.CITY.GEO.points.cnTower;
 
@@ -238,6 +256,8 @@ function createPBRLakeWater(colourKey) {
       const tHit = float(1e5).toVar();
       const sHit = float(0.0).toVar();
       const litHit = float(0.0).toVar();
+      const bHit = vec4(0.0).toVar();
+      const openHit = float(0.0).toVar();
       Loop(NBOX, ({ i }) => {
         const b = boxBounds.element(i);
         const info = boxInfo.element(i);
@@ -250,11 +270,21 @@ function createPBRLakeWater(colourKey) {
         tHit.assign(select(hit, tn, tHit));
         sHit.assign(select(hit, S, sHit));
         litHit.assign(select(hit, info.y, litHit));
+        bHit.assign(select(hit, b, bHit));
+        openHit.assign(select(hit, info.z, openHit));
       });
       const anyHit = step(tHit, 9e4);
       const tH = min(tHit, 9e4);
       const hit = P.add(dir.mul(tH));
       const hRefl = tH.mul(tanEl); // height up the facades that this reflection sees
+      // (towards an open side of the box hit: faded out over its last SKYLINE_END_FADE m; the face hit is itself a side,
+      // 0 m from the hit, and is left out)
+      const endFade = float(1.0).toVar();
+      const sideD = [hit.x.sub(bHit.x), bHit.z.sub(hit.x), hit.y.sub(bHit.y), bHit.w.sub(hit.y)];
+      sideD.forEach((d, k) => {
+        const open = floor(openHit.div(2 ** k)).mod(2.0);
+        endFade.mulAssign(select(open.greaterThan(0.5).and(d.greaterThan(0.5)), smoothstep(0.0, SKYLINE_END_FADE, d), 1.0));
+      });
       const u = hit.x.add(hit.y); // runs along whichever face was hit
 
       // Footprint on the facades (m): unresolved slopes tilt the reflection ±2σ, laterally foreshortened when grazing
@@ -287,7 +317,7 @@ function createPBRLakeWater(colourKey) {
       const city = tint.mul(windows.mul(upper).mul(0.95))
         .add(color(0xffcf9a).mul(ground.mul(shopLit).mul(0.4)))
         .add(color(0xffd9b0).mul(lamps))
-        .mul(litHit.mul(anyHit));
+        .mul(litHit.mul(anyHit).mul(endFade));
 
       // The CN Tower: where the reflected ray passes closest to its axis, the lit main pod, the SkyPod & the beacons
       const rel = vec2(cn[0], cn[1]).sub(P);
@@ -344,5 +374,5 @@ async function openPBRTunePanel(w, colourKey) {
   gui.domElement.appendChild(out);
 }
 
-Object.assign(window.CITY, { createPBRLakeWater, openPBRTunePanel, PBR_WATER_COLOURS: WATER_COLOURS });
+Object.assign(window.CITY, { createPBRLakeWater, openPBRTunePanel, PBR_WATER_COLOURS: WATER_COLOURS, PBR_SKYLINE: SKYLINE, pbrSkylineOpenSides: skylineOpenSides });
 })();
