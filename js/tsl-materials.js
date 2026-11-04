@@ -3128,8 +3128,11 @@ function createParkLawnMaterial(isMeadow = false) {
       cGrassMid,
       macroPatch.mul(0.45).add(midClover.mul(0.35)).add(mowStripe.mul(0.20))
     );
-    // (the season: spring's fresh green, winter's dormant turf, lying snow)
-    return snowOver(seasonalGrass(mix(baseLawn, cGrassSun, microBlade.mul(0.38))), wp, float(1.0));
+    // (the season: spring's fresh green, winter's dormant turf, lying snow; over High Park its woodland floor and
+    // meadows, high-park-woods.js, and outside its box the lawn as it was)
+    const lawn = seasonalGrass(mix(baseLawn, cGrassSun, microBlade.mul(0.38)));
+    const HPW = window.CITY.highParkWoods;
+    return snowOver(HPW ? HPW.groundNode(lawn, wp, { seasonalGrass, noise2D }) : lawn, wp, float(1.0));
   })();
 
   mat.normalNode = Fn(() => {

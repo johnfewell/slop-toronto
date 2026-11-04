@@ -21,6 +21,15 @@ const MID = window.CITY.QUALITY.treeMid; // decimated mesh within; whole-crown c
 // mid trees further than this cast no shadow (a twin mesh that skips the shadow maps): drawing the ~500 mid trees of a
 // 320 m circle into both cascades cost 2.2 ms a frame on the M4 mini, for shadows a few pixels long
 const MID_SHADOW = Number(new URLSearchParams(location.search).get('treeshadow') ?? window.CITY.QUALITY.treeMidShadow); // ?treeshadow=320: all of them, for A/B
+// High Park's woods (high-park-woods.js): their trees stand 50-70 to the hectare and hide each other, so they are a class
+// of their own (WOODS_CLASS) handing over to the coarser levels nearer, at these shares of the distances above
+const WOODS_CLASS = 6, CLASSES = 7;
+const WOODS_SHARE = { near: 0.55, mid: 0.42, shadow: 0.5 };
+const nearOf = (c) => (c === WOODS_CLASS ? NEAR * WOODS_SHARE.near : NEAR);
+// (the mid level and its shadows nearer still on the lighter tiers, by their treeFar: a phone's woods hand over to the
+// cards at 53 m, where 50-70 trees to the hectare had made the woods 25% more triangles than the parkland grid's trees)
+const midOf = (c) => (c === WOODS_CLASS ? MID * WOODS_SHARE.mid * Math.min(1, FAR) : MID);
+const shadowOf = (c) => (c === WOODS_CLASS ? MID_SHADOW * WOODS_SHARE.shadow * Math.min(1, FAR) : MID_SHADOW);
 // ?lodfade=0: the old hard swap (no masks, no bands), for A/B
 const FADE = new URLSearchParams(location.search).get('lodfade') !== '0';
 // hand-over bands, centred on the edge (m): near <-> mid, mid <-> far, the last level -> nothing
@@ -206,11 +215,16 @@ async function buildEzTrees(scene, generated) {
     if (sp === 2) return ids.indexOf(big ? 'ez-aspen-large' : 'ez-aspen-medium');
     return ids.indexOf(['ez-oak-small', 'ez-oak-medium', 'ez-oak-large'][big]);
   };
+  let inWoods = 0;
   for (const t of generated) {
     if (window.CITY.bikeShareAt && window.CITY.bikeShareAt(t.x, t.z)) continue;
-    const h = t.scale * slopHeight;
-    sites.push({ x: t.x, y: (t.y || 0) + cutDown(t.x, t.z), z: t.z, model: genModel(t.species || 0, h), height: h, tier: t.tier || 0 });
+    // (High Park's lidar trees name their model, height and crown radius: high-park-woods.js)
+    const h = t.height || t.scale * slopHeight, named = t.model ? ids.indexOf(t.model) : -1;
+    sites.push({ x: t.x, y: (t.y || 0) + cutDown(t.x, t.z), z: t.z, model: named >= 0 ? named : genModel(t.species || 0, h), height: h, tier: t.tier || 0, width: t.width || 0, woods: !!t.woods });
+    if (t.woods) inWoods++;
   }
+  // (High Park: the City's trees piled on one address point, all but one, its lidar crowns standing for them)
+  const piled = window.CITY.highParkWoods ? window.CITY.highParkWoods.dropPiledCityTrees(sites) : 0;
   // a few on the road cuts' grassed banks (Rosedale Valley Road: the ravine's wooded sides), every ~11 m where a bank is
   // over 6 m wide, partway up it (11 m or more from the road's middle)
   let onBanks = 0;
@@ -231,6 +245,8 @@ async function buildEzTrees(scene, generated) {
     }
   }
 
+  // each model's crown radius at its own height (half its near mesh's mean width), for the trees that name a width
+  const crownR = models.map((m) => { const b = m.near.boundingBox; return (b.max.x - b.min.x + b.max.z - b.min.z) / 4; });
   const group = new THREE.Group();
   group.name = 'Trees';
   const N = sites.length;
@@ -243,7 +259,7 @@ async function buildEzTrees(scene, generated) {
   const midFarOf = new Int16Array(N);
   const tier = new Uint8Array(N);
   const isPine = new Uint8Array(N);
-  const cls = new Uint8Array(N); // tree class: tier * 2 + pine (the hand-over edges are the same within a class)
+  const cls = new Uint8Array(N); // tree class: tier * 2 + pine, or WOODS_CLASS (the hand-over edges are the same within a class)
   const levels = new Uint8Array(N); // bit L: drawn at level L (both levels inside a hand-over band)
   const meshes = [];
   const make = (geo, material, name, attrs, noShadow) => { meshes.push({ geo, material, name, capacity: 0, attrs, noShadow }); return meshes.length - 1; };
@@ -258,26 +274,29 @@ async function buildEzTrees(scene, generated) {
     const r1 = hashPos(t.x, 1.3, t.z), r2 = hashPos(t.z, 7.1, t.x), r3 = hashPos(t.x + t.z, 3.3, 0.7);
     const yaw = r2 * Math.PI * 2;
     const s = (t.height / heights[m]) * (0.92 + r1 * 0.16);
+    // (a tree with its crown's width, from the lidar: the crown spread to it, within reason)
+    const wf = t.width ? Math.max(0.75, Math.min(1.35, t.width / (crownR[m] * s))) : 1;
     dummy.position.set(t.x, t.y, t.z);
     dummy.rotation.set(0, yaw, 0);
-    dummy.scale.set(s * (0.93 + r3 * 0.14), s, s * (0.93 + r1 * 0.14));
+    dummy.scale.set(s * wf * (0.93 + r3 * 0.14), s, s * wf * (0.93 + r1 * 0.14));
     dummy.updateMatrix();
     dummy.matrix.toArray(matsNear, i * 16);
     const sp = FAR_SPECIES(models[m].id);
     isPine[i] = sp < 0 ? 1 : 0;
     if (sp >= 0) {
       const fs = t.height / farHeight[sp];
-      dummy.scale.set(fs, fs, fs);
+      dummy.scale.set(fs * wf, fs, fs * wf);
       dummy.updateMatrix();
       dummy.matrix.toArray(matsFar, i * 16);
-      tint.setHex(TREE_SPECIES[sp].tints[Math.floor(r3 * 2.999)]).multiplyScalar(0.82 + r1 * 0.36);
+      // (the woods' cards a little darker: closed canopy, and they stand beside the woods' mid meshes from nearer)
+      tint.setHex(TREE_SPECIES[sp].tints[Math.floor(r3 * 2.999)]).multiplyScalar((0.82 + r1 * 0.36) * (t.woods ? 0.85 : 1));
       farData.set([tint.r, tint.g, tint.b, sp + r2 * 0.999], i * 4);
     }
     // a little colour between trees of one model, so a street doesn't read as copies
     tints.set([0.86 + r1 * 0.2, 0.88 + r3 * 0.16, 0.86 + r2 * 0.18], i * 3);
     px[i] = t.x; py[i] = t.y + t.height * 0.5; pz[i] = t.z;
     tier[i] = Math.min(2, t.tier);
-    cls[i] = tier[i] * 2 + isPine[i];
+    cls[i] = t.woods && !isPine[i] ? WOODS_CLASS : tier[i] * 2 + isPine[i];
     meshOf[i * 3] = idxNear[m];
     meshOf[i * 3 + 1] = idxMid[m];
     meshOf[i * 3 + 2] = sp >= 0 ? idxFar[sp] : idxMid[m];
@@ -309,22 +328,23 @@ async function buildEzTrees(scene, generated) {
   });
   // The hand-over edges per tree class, at street level (index 1) and aloft (0): per level [edge in, band in, edge
   // out, band out] as float32s (what aLodFade carries), and the distances where a class's level set changes
-  const classFades = [new Float32Array(6 * 12), new Float32Array(6 * 12)];
+  const classFades = [new Float32Array(CLASSES * 12), new Float32Array(CLASSES * 12)];
   const classEdges = [[], []];
   for (let lowIdx = 0; lowIdx < 2; lowIdx++) {
     const low = lowIdx === 1;
-    for (let c = 0; c < 6; c++) {
-      const tr = c >> 1, pine = c & 1;
+    for (let c = 0; c < CLASSES; c++) {
+      const tr = c === WOODS_CLASS ? 0 : c >> 1, pine = c === WOODS_CLASS ? 0 : c & 1;
+      const near = nearOf(c), mid = midOf(c);
       let maxD = low ? Math.min(MAX_DIST[tr], LOW_CUTOFF) : MAX_DIST[tr];
       if (pine) maxD = Math.min(maxD, PINE_FAR);
       // [edge in, band in, edge out, band out] per level; pines have no far level (their mid mesh goes out to maxD)
       const f = classFades[lowIdx];
       const o = c * 12;
-      f[o] = ALL_IN; f[o + 1] = 1; f[o + 2] = NEAR; f[o + 3] = BAND[0];
-      f[o + 4] = NEAR; f[o + 5] = BAND[0];
+      f[o] = ALL_IN; f[o + 1] = 1; f[o + 2] = near; f[o + 3] = BAND[0];
+      f[o + 4] = near; f[o + 5] = BAND[0];
       if (pine) { f[o + 6] = maxD; f[o + 7] = BAND[2]; f[o + 8] = ALL_OUT; f[o + 9] = 1; f[o + 10] = ALL_OUT; f[o + 11] = 1; }
-      else { f[o + 6] = MID; f[o + 7] = BAND[1]; f[o + 8] = MID; f[o + 9] = BAND[1]; f[o + 10] = maxD; f[o + 11] = BAND[2]; }
-      const edges = [MID_SHADOW];
+      else { f[o + 6] = mid; f[o + 7] = BAND[1]; f[o + 8] = mid; f[o + 9] = BAND[1]; f[o + 10] = maxD; f[o + 11] = BAND[2]; }
+      const edges = [shadowOf(c)];
       for (let l = 0; l < 3; l++) edges.push(f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN);
       classEdges[lowIdx][c] = edges;
     }
@@ -337,7 +357,7 @@ async function buildEzTrees(scene, generated) {
       const lo = f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, hi = f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN;
       if (d >= lo && d < hi) bits |= 1 << l;
     }
-    if (bits & 2 && d > MID_SHADOW) bits |= 8;
+    if (bits & 2 && d > shadowOf(c)) bits |= 8;
     return bits;
   }
 
@@ -361,7 +381,7 @@ async function buildEzTrees(scene, generated) {
     const x = (x0 + x1) * 0.5, y = (y0 + y1) * 0.5, z = (z0 + z1) * 0.5;
     let r2 = 0;
     for (const i of trees) r2 = Math.max(r2, (px[i] - x) ** 2 + (py[i] - y) ** 2 + (pz[i] - z) ** 2);
-    const classes = [0, 1, 2, 3, 4, 5].filter((c) => mask & (1 << c));
+    const classes = [0, 1, 2, 3, 4, 5, 6].filter((c) => mask & (1 << c));
     const edges = [0, 1].map((lowIdx) => Float64Array.from(new Set(classes.flatMap((c) => classEdges[lowIdx][c]))).sort());
     // sig: the cell's level bits, 4 per class (bits 4c..4c+3), while every tree of a class shares them; -1 otherwise
     return { trees, x, y, z, r: Math.sqrt(r2) + 1e-3, classes, edges, sig: 0 };
@@ -493,7 +513,7 @@ async function buildEzTrees(scene, generated) {
     mesh.instanceMatrix.needsUpdate = true;
   });
   scene.add(group);
-  console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards, ${onBanks} on road cuts' banks), ${ids.length} models`);
+  console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards (${inWoods} in High Park's woods; ${piled} of the City's piled on one point there left out), ${onBanks} on road cuts' banks), ${ids.length} models`);
   return { group, update };
 }
 

@@ -13,14 +13,20 @@
 // Writes <tile>.tif (Deflate-compressed float32 GeoTIFF) and the region's manifest (manifest.json for the Don Valley,
 // manifest-high-park.json for High Park: tiles, their catalogue ids, bounds, sha256, retrieval date). Existing tiles are
 // kept unless --force.
-// usage: node tools/fetch-don-valley-dtm.mjs [--region don-valley|high-park] [--force]
+// usage: node tools/fetch-don-valley-dtm.mjs [--region don-valley|high-park] [--product dtm|dsm] [--force]
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
 const OUT = process.env.DON_VALLEY_DTM || path.join(os.homedir(), '.cache/slop-toronto/raw/ontario-dtm-gta2023');
-const SERVICE = 'https://ws.geoservices.lrc.gov.on.ca/arcgis5/rest/services/Elevation/Ontario_DTM_LidarDerived/ImageServer';
+// --product dsm: the same project's Digital Surface Model (the highest surface: the canopy, roofs), for High Park's trees
+// (tools/build-high-park-woods.mjs), into the same folder beside the DTM (its tiles are named ..._DSM), manifest
+// manifest-dsm.json / manifest-high-park-dsm.json
+const productArg = process.argv.indexOf('--product');
+const PRODUCT = productArg > 0 ? process.argv[productArg + 1] : 'dtm';
+if (PRODUCT !== 'dtm' && PRODUCT !== 'dsm') throw new Error('--product dtm|dsm');
+const SERVICE = `https://ws.geoservices.lrc.gov.on.ca/arcgis5/rest/services/Elevation/Ontario_${PRODUCT === 'dsm' ? 'DSM' : 'DTM'}_LidarDerived/ImageServer`;
 const PROJECT = 'GTA 2023';
 // Each pilot's working grid in WGS84, plus a little: the Don Valley's (tools/build-don-valley.mjs: the box grown by
 // 600 m), High Park's (tools/build-high-park.mjs: the box grown by 300 m)
@@ -93,14 +99,14 @@ for (const it of items) {
     verticalAccuracyClass: it.VerticalAccuracyClass, year: it.EndYear, sha256 });
 }
 const manifest = {
-  dataset: `Ontario Elevation Mapping Program, ${PROJECT} lidar, Digital Terrain Model (bare earth)`,
+  dataset: `Ontario Elevation Mapping Program, ${PROJECT} lidar, ${PRODUCT === 'dsm' ? 'Digital Surface Model' : 'Digital Terrain Model (bare earth)'}`,
   service: SERVICE, licence: 'Open Government Licence – Ontario', licenceUrl: 'https://www.ontario.ca/page/open-government-licence-ontario',
   attribution: 'Contains information licensed under the Open Government Licence – Ontario.',
   crs: 'NAD83(CSRS) / UTM zone 17N (EPSG:2958)', vertical: 'CGVD2013 (EPSG:6647), metres', envelopeWgs84: ENVELOPE,
   retrieved: new Date().toISOString().slice(0, 10), tiles
 };
 // (a rerun that changes nothing keeps the first retrieval date)
-const mf = path.join(OUT, REGION.manifest);
+const mf = path.join(OUT, PRODUCT === 'dsm' ? REGION.manifest.replace(/\.json$/, '-dsm.json') : REGION.manifest);
 if (fs.existsSync(mf)) {
   const old = JSON.parse(fs.readFileSync(mf, 'utf8'));
   if (JSON.stringify(old.tiles) === JSON.stringify(tiles)) manifest.retrieved = old.retrieved;

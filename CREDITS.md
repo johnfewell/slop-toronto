@@ -139,6 +139,11 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   (`tools/subway-station-facts.mjs`). The High Park terrain (on by default): `js/high-park-data.js` (by
   `tools/build-high-park.mjs`) is built from 16 more tiles of the same Digital Terrain Model, fetched by
   `tools/fetch-don-valley-dtm.mjs --region high-park` (retrieved 2026-11-02; tile names and SHA-256s in the data file).
+  High Park's trees and woodland floor: `js/high-park-woods-data.js` (by `tools/build-high-park-woods.mjs`) is built
+  from the same project's Digital Surface Model over its Digital Terrain Model, 16 tiles of each, the surface model's
+  fetched from the Ontario GeoHub image service `Elevation/Ontario_DSM_LidarDerived` by
+  `tools/fetch-don-valley-dtm.mjs --region high-park --product dsm` (retrieved 2026-11-03; tile names and SHA-256s in
+  the data file).
   The raw tiles are not in this repository. Contains information licensed under the Open Government Licence – Ontario.
 - **Wikimedia Commons photos** of Toronto's buildings: the facade base colours (`tools/data/commons_palette.json`) were
   measured from 384 freely licensed photos (CC0, public domain, CC BY, CC BY-SA). The photos are not in this

@@ -762,6 +762,9 @@ function buildStreetDetails(scene) {
   // out to the yard trees' distance (tier 2), not the parks' (they're small trees in small parks, and frame time)
   for (const t of window.CITY.parketteTrees || []) treePositions.push({ x: t.x, y: SW_Y, z: t.z, scale: 0.6 + t.s * 0.3, species: broadleaf(t.r), tier: 2 });
   palms.length = 0; // Toronto: no palms (the Abuja verges' royal palms)
+  // Toronto: High Park's islands have their own trees, every crown the lidar has, in place of the parkland grid's
+  // (high-park-woods.js)
+  if (window.CITY.highParkWoods) window.CITY.highParkWoods.replaceTrees(treePositions, SW_Y);
   // Toronto: none of these in the rail corridor (its yards & wild verges are islands too: city-config.js treeOffRail)
   {
     const kept = treePositions.filter((t) => window.CITY.treeOffRail(t.x, t.z));
