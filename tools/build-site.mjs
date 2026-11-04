@@ -1,7 +1,7 @@
 // tools/build-site.mjs: fingerprints code and copies the published site into dist/ (Cloudflare serves dist/ as a Worker's static
 // assets, see wrangler.jsonc; dist/_headers sets the response headers).
 // usage: node tools/build-site.mjs [outDir]   (default dist; node builtins only, no install needed)
-// Ships the two pages, css/, assets/ (minus the git-ignored Abuja leftovers), data/ (the city database,
+// Ships the two pages and the paper's story pages (news/*.html, which name their stylesheet as ../css/), css/, assets/ (minus the git-ignored Abuja leftovers), data/ (the city database,
 // data/toronto-geodata.bin) and only the js/ files the pages load:
 // every ./js/*.js named in index.html / explore.html, plus whatever those files import or reference in turn
 // (e.g. sky-clouds.js -> import('./clouds.js')). tools/, tests/, vendor/ and node_modules never ship.
@@ -20,8 +20,16 @@ const TEXT = ['LICENSE', 'CREDITS.md'];
 const SKIP = [/^assets\/landing(\/|$)/, /^assets\/og-image\.jpg$/, /(^|\/)\.DS_Store$/, /\.(?:webp|png|jpe?g)\.json$/,
   /^assets\/brand\/slop-toronto-(?:logo|mark)\.png$/];
 
+// the site's pages: the two top-level ones and every story page of the paper
+function sitePages(root) {
+  const news = path.join(root, 'news');
+  const stories = fs.existsSync(news) ? fs.readdirSync(news).filter((n) => n.endsWith('.html')).sort().map((n) => `news/${n}`) : [];
+  return [...PAGES, ...stories];
+}
+
 export function buildSite({ root = ROOT, out = path.join(root, 'dist') } = {}) {
   const OUT = path.resolve(out);
+  const pageList = sitePages(root);
   if (!OUT.startsWith(path.resolve(root) + path.sep)) throw new Error(`refusing to build into ${OUT}`);
   fs.rmSync(OUT, { recursive: true, force: true }); // dist/ is this script's own output (git-ignored)
 
@@ -51,7 +59,7 @@ export function buildSite({ root = ROOT, out = path.join(root, 'dist') } = {}) {
     scripts.add(rel);
     queue.push(rel);
   };
-  for (const page of PAGES) {
+  for (const page of pageList) {
     const html = fs.readFileSync(path.join(root, page), 'utf8');
     for (const m of html.matchAll(/['"]\.\/(js\/[\w./-]+\.m?js)/g)) want(m[1]);
   }
@@ -72,6 +80,10 @@ export function buildSite({ root = ROOT, out = path.join(root, 'dist') } = {}) {
   function rewrite(source, rel) {
     source = source.replace(/(['"`])(\.\/(?:js|css)\/[\w./-]+\.(?:m?js|css))(?:\?[^'"`]*)?\1/g,
       (_, quote, ref) => `${quote}./${emit(ref.slice(2))}${quote}`);
+    // a page in a subdirectory (news/x.html) names code relative to itself: ../css/news.css
+    const dir = path.posix.dirname(rel);
+    if (dir !== '.' && !/^(?:js|css)\//.test(rel)) source = source.replace(/(['"`])((?:\.\.\/)+(?:js|css)\/[\w./-]+\.(?:m?js|css))(?:\?[^'"`]*)?\1/g,
+      (_, quote, ref) => `${quote}${path.posix.relative(dir, emit(path.posix.normalize(path.posix.join(dir, ref))))}${quote}`);
     if (rel.startsWith('js/')) source = source.replace(/((?:import\s*\(\s*|from\s+)['"`])(\.\.?\/[\w./-]+\.m?js)(['"`])/g,
       (_, before, ref, after) => {
         const target = path.posix.normalize(path.posix.join(path.posix.dirname(rel), ref));
@@ -100,7 +112,7 @@ export function buildSite({ root = ROOT, out = path.join(root, 'dist') } = {}) {
   if (fs.existsSync(path.join(root, 'css'))) for (const name of fs.readdirSync(path.join(root, 'css'))) {
     if (name.endsWith('.css')) emit(`css/${name}`);
   }
-  const pages = new Map(PAGES.map((rel) => [rel, rewrite(fs.readFileSync(path.join(root, rel), 'utf8'), rel)]));
+  const pages = new Map(pageList.map((rel) => [rel, rewrite(fs.readFileSync(path.join(root, rel), 'utf8'), rel)]));
   const manifest = { build: hash([...pages.values()].join('\n')), assets: Object.fromEntries([...assets].sort()) };
   // Stamp the identifier into the same document that loaded the scripts. A later manifest fetch could name a
   // newer deployment than the running app. The build digest deliberately excludes its own inserted stamp.
@@ -110,7 +122,10 @@ export function buildSite({ root = ROOT, out = path.join(root, 'dist') } = {}) {
   // Cache-Control values via overlapping Cloudflare _headers rules.
   fs.writeFileSync(path.join(OUT, '_headers'), [
     '/*', '  X-Content-Type-Options: nosniff', '  Referrer-Policy: strict-origin-when-cross-origin',
-    ...['/', '/index', '/explore', '/*.html', '/asset-manifest.json', '/assets/*'].flatMap((p) => [p, '  Cache-Control: no-cache']),
+    // '/*.html' also covers news/*.html (a splat crosses '/'); a story is served at its extensionless path, named
+    // exactly so that no two rules overlap
+    ...['/', '/index', '/explore', ...pageList.filter((p) => p.includes('/')).map((p) => '/' + p.slice(0, -'.html'.length)),
+      '/*.html', '/asset-manifest.json', '/assets/*'].flatMap((p) => [p, '  Cache-Control: no-cache']),
     ...['/js/*', '/css/*'].flatMap((p) => [p, '  Cache-Control: public, max-age=31536000, immutable']),
     // the city database (data/toronto-geodata.bin): the page asks for it by its hash (?v=, set by tools/build-geodata.mjs).
     // It ships gzip'd inside (js/geodata-loader.js inflates it): Cloudflare compresses JS but not

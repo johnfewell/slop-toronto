@@ -20,6 +20,9 @@ function fixture(t) {
   fs.writeFileSync(path.join(root, 'assets/photo.png'), 'fixture image');
   const html = `<html><head><meta name="city-build" content="__CITY_BUILD__"><link rel="stylesheet" href="./css/style.css"></head><body><script type="module" src="./js/main.js"></script></body></html>`;
   for (const page of ['index.html', 'explore.html']) fs.writeFileSync(path.join(root, page), html);
+  // a story page of the paper: one directory down, naming its stylesheet relative to itself
+  fs.mkdirSync(path.join(root, 'news'));
+  fs.writeFileSync(path.join(root, 'news/story.html'), `<html><head><link rel="stylesheet" href="../css/style.css"></head><body><img src="../assets/photo.png"></body></html>`);
   return { root, out: path.join(root, 'dist') };
 }
 
@@ -38,6 +41,9 @@ test('production URLs are deterministic fingerprints, including lazy modules and
   const css = fs.readFileSync(path.join(options.out, first.assets['css/style.css']), 'utf8');
   assert.ok(css.includes('../assets/photo.png'), 'media URLs still resolve relative to their stylesheet');
   assert.ok(fs.existsSync(path.join(options.out, 'assets/photo.png')));
+  const story = fs.readFileSync(path.join(options.out, 'news/story.html'), 'utf8');
+  assert.ok(story.includes('href="../' + first.assets['css/style.css'] + '"'), 'a story page gets the fingerprinted stylesheet, relative to itself');
+  assert.ok(story.includes('src="../assets/photo.png"'), 'media stays unhashed');
 
   fs.writeFileSync(path.join(options.root, 'js/child.js'), 'export const value = 2;');
   const next = buildSite(options).manifest;
@@ -48,6 +54,7 @@ test('production URLs are deterministic fingerprints, including lazy modules and
   assert.notEqual(next.build, first.build);
   const headers = fs.readFileSync(path.join(options.out, '_headers'), 'utf8');
   assert.match(headers, /\/\*\.html\n  Cache-Control: no-cache/);
+  assert.match(headers, /\n\/news\/story\n  Cache-Control: no-cache\n/, 'a story revalidates at its extensionless address too');
   assert.match(headers, /\/js\/\*\n  Cache-Control: public, max-age=31536000, immutable/);
   assert.doesNotMatch(headers, /stale-while-revalidate/);
 });
@@ -87,11 +94,12 @@ test('shipped file names need no URL escaping, and every page image reference ex
   const shipped = ['assets', 'css', 'js'].filter((d) => fs.existsSync(path.join(repo, d))).flatMap(walk);
   assert.ok(shipped.some((f) => f.startsWith('assets/brand/')));
   assert.deepEqual(shipped.filter((f) => !/^[A-Za-z0-9._/-]+$/.test(f)), []);
-  for (const page of ['index.html', 'explore.html']) {
+  const news = fs.existsSync(path.join(repo, 'news')) ? fs.readdirSync(path.join(repo, 'news')).filter((n) => n.endsWith('.html')).map((n) => `news/${n}`) : [];
+  for (const page of ['index.html', 'explore.html', ...news]) {
     const html = fs.readFileSync(path.join(repo, page), 'utf8');
     const refs = [...html.matchAll(/(?:src|srcset)="([^"]+)"/g)].flatMap((m) => m[1].split(','))
-      .map((s) => s.trim().split(/\s+/)[0]).filter((u) => u.startsWith('./assets/'));
+      .map((s) => s.trim().split(/\s+/)[0]).filter((u) => /^(?:\.\/|(?:\.\.\/)+)assets\//.test(u));
     assert.ok(refs.length > 0, page);
-    for (const ref of refs) assert.ok(fs.existsSync(path.join(repo, ref)), `${page}: ${ref}`);
+    for (const ref of refs) assert.ok(fs.existsSync(path.join(repo, path.dirname(page), ref)), `${page}: ${ref}`);
   }
 });
