@@ -1,0 +1,96 @@
+[
+ {
+  "name": "t00-setup",
+  "time": "golden",
+  "mode": "person",
+  "x": -6560,
+  "z": -1985,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000
+ },
+ {
+  "name": "park-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6150,520,-700], look: [-6550,0,-1900], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "park-aerial-low-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6230,190,-1000], look: [-6520,0,-1950], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-climb-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6309, g(-6309, -1238) + 1.7, -1238], L = [-6352, g(-6352, -1395) + 3, -1395]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-climb-down-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6356, g(-6356, -1340) + 1.7, -1340], L = [-6300, g(-6300, -1230) + -2, -1230]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-kerb-close-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6322, g(-6322, -1262) + 1.2, -1262], L = [-6345, g(-6345, -1305) + 1.5, -1305]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 55 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "cafe-edge-road-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6462, g(-6462, -1615) + 1.7, -1615], L = [-6512, g(-6512, -1735) + 0, -1735]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "cafe-edge-from-west-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6700,30,-1640], look: [-6500,15,-1710], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "park-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6150,520,-700], look: [-6550,0,-1900], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "park-aerial-low-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6230,190,-1000], look: [-6520,0,-1950], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-climb-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6309, g(-6309, -1238) + 1.7, -1238], L = [-6352, g(-6352, -1395) + 3, -1395]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-climb-down-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6356, g(-6356, -1340) + 1.7, -1340], L = [-6300, g(-6300, -1230) + -2, -1230]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-kerb-close-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6322, g(-6322, -1262) + 1.2, -1262], L = [-6345, g(-6345, -1305) + 1.5, -1305]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 55 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "cafe-edge-road-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6462, g(-6462, -1615) + 1.7, -1615], L = [-6512, g(-6512, -1735) + 0, -1735]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "cafe-edge-from-west-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6700,30,-1640], look: [-6500,15,-1710], fov: 55 }); })()",
+  "wait": 5000
+ }
+]

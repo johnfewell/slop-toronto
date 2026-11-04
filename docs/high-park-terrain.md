@@ -71,7 +71,7 @@ they are present).
 | edge | The relief fades in from the park's kerbs: 0 for 8 m (the sidewalk and verge), full from 45 m (smoothstep); among the houses (by their share within 60 m) full from 110 m, so they step up from Ellis Avenue over the width of the strip | |
 | shores | Each pond's grid nodes at its level (its bed 1.5 m under, a 15 m shelf at the waterline inside its outline, so the drawn ground meets the water at the outline); the ground within 60 m (fading to 100 m) never under its water, and within 30 m no steeper than a 35% bank up from it (no earth wall over the water) | 854 samples filled up to 6.3 m, 158 cut up to 4.8 m |
 | pads | The tennis courts and pads, the rinks, and the ball diamonds level at their mean; pads within 15 m of each other (a club's courts, the rink's two pads) at one level. Every node within 14.5 m of a pad takes it, so the pad is exactly level (any grid triangle reaching into it has its nodes that close), blending back over the next 12 m; the roads leave those nodes alone. Without it the slopes rejected 3 of the park's tennis courts and 2 of its rink pads (`grade`) | 23 pads in 5 levels, up to 6.5 m |
-| roads | Each park road's profile from the 0.5 m lidar along its centreline (the median of three pixels across it) over the datum, smoothed over 45 m; its roadway level across, blending back over 12 m; then the grid fitted to it under each station away from junctions and the edge (by 2 m at most a node). The 10 m grid's cell means take in the banks beside a road cut into a hillside: they had made Colborne Lodge Drive 20% where the lidar says 7% | 39 roads, fit within 0.29 m |
+| roads | Each park road's profile from the 0.5 m lidar along its centreline (the median of three pixels across it) over the datum, smoothed over 45 m; its roadway level across, blending back over 12 m; the nodes of every grid triangle reaching the roadway or its kerbs (to 1 m past the road's half width) at the profile of their nearest point on it, so the kerbs run straight, and the ground round a node so held that moved laid back to no steeper than 70% (a cut bank above the road, a fill below it); then the grid fitted to it under each station away from junctions and the edge (by 2 m at most a node). The 10 m grid's cell means take in the banks beside a road cut into a hillside: they had made Colborne Lodge Drive 20% where the lidar says 7%. Among the houses (the strip along Ellis Avenue) only the blend, as first built | 39 roads, 966 nodes held to the kerbs, 50 laid back (up to 7.1 m), fit within 0.19 m |
 | footing | Each building on the relief stands on the highest ground under its footprint, a concrete plinth down to the lowest | 158 buildings (the strip's houses among them), 143 plinths, deepest 6.0 m |
 
 ## 2. One surface, two pilots
@@ -143,6 +143,15 @@ still holds with the pilot on (its fingerprint is unchanged: "prebuilt layout" a
   (the Don's problem too, `st-051`). The stream ribbons are draped on the ravine's floor.
 - **Steep cells.** The steepest 10 m cells are 93% (the lidar's own reach 66% there): the plateau's west edge above the
   pond and beside the roads' levelled corridors.
+- **Kerbs on the slopes** (`st-eki4`). Held level only to 2 m past its kerbs, a road crossing the 10 m grid aslant on a
+  hillside had its kerbs in triangles that took the bank's nodes in proportions changing cell by cell: Colborne Lodge
+  Drive's kerb on its climb from the Queensway waved by up to 1.9 m over 10 m, 0.8 m off the roadway's level. Every
+  triangle reaching a kerb is now level with the road, so the road has a level shoulder of up to one cell (0–14 m) and its
+  bank begins beyond it, laid back to 70% at most (62 nodes moved over 2 m, the most 8.6 m on the plateau's edge by the
+  café, where Colborne Lodge Drive runs along the top of the slope to Grenadier Pond). The park roads' kerbs now keep
+  within 0.04 m of their roadway's level, except where a pad holds the ground beside the road (the rink and pool's pads,
+  1.4 m under the service drive beside them), and on the houses' streets in the Ellis Avenue strip, left as they were
+  (Grenadier Heights' kerb stands up to 0.8 m off its roadway, `tests/high-park.test.mjs`).
 - **Steep connectors** (`diagnostics.roads`, review over 12%): Howard Park Avenue's spur into the park (12.6%, its own
   3.8% in the lidar), Colborne Lodge Drive's climb from the Queensway (12.6%, the lidar's own 12.0%).
 - **Not modelled:** the creeks' channels (the 10 m grid smooths them) and the woods (`st-8g3r`). Catfish Pond is in,

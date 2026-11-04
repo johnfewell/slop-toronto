@@ -32,8 +32,9 @@
 //   5. pads: the tennis courts, the rinks and the pool, and the ball diamonds are level (pads side by side at one level),
 //      exactly over each and 14.5 m round it, blending out over the next 12 m; the roads leave them as they are
 //   6. roads: each park road gets a profile from the 0.5 m lidar along its centreline, over the datum, smoothed along it
-//      (a 45 m window); its roadway is level across, blending back to the ground over 12 m beyond its kerbs (the Don
-//      Valley's rules 5 and 8)
+//      (a 45 m window); its roadway is level across, with every grid triangle reaching its roadway or kerbs (so the kerbs
+//      run straight on the 10 m grid), blending back to the ground over 12 m beyond its kerbs (the Don Valley's rules 5
+//      and 8); among the houses (the strip along Ellis Avenue) only the blend, as first built
 // Footing: a building in the park stands on the highest ground under its footprint (`buildings`: [x, z, base, lowest] by
 // building centre); where the ground falls away under it, the runtime adds a plinth down to its lowest ground.
 // Usage: node tools/build-high-park.mjs [--out js/high-park-data.js]
@@ -58,6 +59,12 @@ const POND_CONTACT = 80;
 // the outline: the curb island's lawn, 0.22 m over the ground, 0.12 m over the water); the pond's bed (under the water,
 // not drawn) POND_BED under it
 const SHORE_LIFT = -0.1, POND_BED = 1.5, SHELF = 15, SHORE_SLOPE = 0.35;
+// rule 6: the band each side of a park road's roadway whose grid triangles are held level with it (the kerb: the curb
+// island's outline, within 0.3 m of the road's half width, and its 0.25 m top), sampled every KERB_STEP m
+const KERB_REACH = 1, KERB_STEP = 0.5;
+// and the ground round a node so held laid back to no steeper than ROAD_BANK from it (the lidar's own steepest in the
+// park, 66%), within BANK_REACH m
+const ROAD_BANK = 0.7, BANK_REACH = 40;
 // rule 5: pads larger than this are not levelled (m²)
 const PAD_MAX = 20000;
 
@@ -431,7 +438,7 @@ const datumAt = (x, z) => {
 };
 const roadReport = [];
 {
-  const target = new Float32Array(N).fill(NaN), weight = new Float32Array(N), sumW = new Float64Array(N);
+  const target = new Float32Array(N).fill(NaN), weight = new Float32Array(N), sumW = new Float64Array(N), HELD = new Uint8Array(N);
   for (const road of C.ROADS) {
     const P = road.pts;
     if (road.raised || !P.some((p) => inside(p) && parkAt(p.x, p.z))) continue;
@@ -453,11 +460,29 @@ const roadReport = [];
     });
     const sm = h.map((_, i) => { let t = 0, n = 0; for (let j = Math.max(0, i - 4); j <= Math.min(h.length - 1, i + 4); j++) { t += h[j]; n++; } return t / n; });
     const half = road.w / 2;
+    // (the nodes of every grid triangle reaching the roadway or its kerbs take the road's level whatever their distance:
+    // the drawn roadway and both kerbs then lie on the profile and run straight. Level only to 2 m past the kerbs, the
+    // triangles across a kerb took the bank's nodes in proportions changing cell by cell along a road crossing the grid
+    // aslant, and the kerb on a hillside, Colborne Lodge Drive's climb, waved up and down by up to 0.7 m)
+    const onRoad = new Set();
+    for (let i = 0; i + 1 < st.length; i++) {
+      const a = st[i], b = st[i + 1], L = Math.hypot(b.x - a.x, b.z - a.z) || 1, ux = (b.x - a.x) / L, uz = (b.z - a.z) / L;
+      for (let s = 0; s <= L; s += KERB_STEP) for (let o = -half - KERB_REACH; o <= half + KERB_REACH + 1e-6; o += KERB_STEP) {
+        const x = a.x + ux * s - uz * o, z = a.z + uz * s + ux * o;
+        if (!inside({ x, z })) continue;
+        const fc = (x - BOX.x0) / S, fr = (z - BOX.z0) / S, c = Math.min(nx - 2, Math.floor(fc)), r = Math.min(nz - 2, Math.floor(fr)), k = r * nx + c;
+        for (const q of (fc - c + fr - r <= 1 ? [k, k + 1, k + nx] : [k + 1, k + nx, k + nx + 1])) onRoad.add(q);
+      }
+    }
+    const nearest = new Map();
     for (let i = 0; i + 1 < st.length; i++) {
       const a = st[i], b = st[i + 1];
-      cellsNear(Math.min(a.x, b.x) - half - 14, Math.max(a.x, b.x) + half + 14, Math.min(a.z, b.z) - half - 14, Math.max(a.z, b.z) + half + 14, (c, r, k) => {
+      cellsNear(Math.min(a.x, b.x) - half - 16, Math.max(a.x, b.x) + half + 16, Math.min(a.z, b.z) - half - 16, Math.max(a.z, b.z) + half + 16, (c, r, k) => {
         if (!MASK[k] || pondOf[k] >= 0 || PADNODE[k]) return;
-        const q = segDist(xOf(c), zOf(r), a, b), w = 1 - smooth(half + 2, half + 14, q.d);
+        const q = segDist(xOf(c), zOf(r), a, b);
+        // (a held node takes the profile at its nearest point on the road, below)
+        if (onRoad.has(k) && !(RESW[k] > 0)) { const n = nearest.get(k); if (!n || q.d < n.d) nearest.set(k, { d: q.d, v: sm[i] + (sm[i + 1] - sm[i]) * q.t }); return; }
+        const w = 1 - smooth(half + 2, half + 14, q.d);
         if (w <= 0) return;
         const wt = w ** 4;
         weight[k] = Math.max(weight[k], w);
@@ -465,13 +490,45 @@ const roadReport = [];
         sumW[k] += wt; target[k] /= sumW[k];
       });
     }
+    for (const [k, n] of nearest) {
+      if (n.d > half + 2) HELD[k] = 1;
+      weight[k] = 1;
+      target[k] = ((Number.isFinite(target[k]) ? target[k] * sumW[k] : 0) + n.v) / (sumW[k] + 1);
+      sumW[k] += 1;
+    }
     roadReport.push({ name: road.name || '(unnamed)', w: road.w, pts: st, prof: sm });
   }
   let changed = 0, maxM = 0;
+  const before = Float32Array.from(H);
   for (let k = 0; k < N; k++) if (weight[k] > 0 && Number.isFinite(target[k])) {
     const v = H[k] + (target[k] - H[k]) * weight[k];
     if (Math.abs(v - H[k]) > 0.05) { changed++; maxM = Math.max(maxM, Math.abs(v - H[k])); }
     H[k] = v;
+  }
+  // (a node held level with a road on a hillside stands up to 14 m out from its kerb, where the ground may be metres over
+  // or under it: the ground round it is laid back to ROAD_BANK at most, a cut bank above the road, a fill below it,
+  // rather than a cliff in the next triangle)
+  let banked = 0, bankMax = 0;
+  {
+    const src = [];
+    for (let k = 0; k < N; k++) if (HELD[k] && Math.abs(H[k] - before[k]) > 0.3) src.push(k);
+    const R = Math.ceil(BANK_REACH / S), lo = new Float32Array(N).fill(-Infinity), hi = new Float32Array(N).fill(Infinity);
+    for (const f of src) {
+      const fc = f % nx, fr = Math.floor(f / nx);
+      for (let dr = -R; dr <= R; dr++) for (let dc = -R; dc <= R; dc++) {
+        const c = fc + dc, r = fr + dr;
+        if (c < 0 || r < 0 || c >= nx || r >= nz) continue;
+        const k = r * nx + c, d = Math.hypot(dc, dr) * S;
+        if (d > BANK_REACH) continue;
+        lo[k] = Math.max(lo[k], H[f] - ROAD_BANK * d); hi[k] = Math.min(hi[k], H[f] + ROAD_BANK * d);
+      }
+    }
+    for (let k = 0; k < N; k++) {
+      if (!MASK[k] || pondOf[k] >= 0 || PADNODE[k] || HELD[k] || RESW[k] > 0 || DIN[k] < EDGE[0] || lo[k] > hi[k]) continue;
+      const v = Math.max(lo[k], Math.min(hi[k], H[k]));
+      if (Math.abs(v - H[k]) > 0.05) { banked++; bankMax = Math.max(bankMax, Math.abs(v - H[k])); }
+      H[k] = v;
+    }
   }
   // (the 10 m grid's triangles reach past a narrow road's corridor: wherever the surface under a station still stands off
   // its profile, its triangle's three nodes move by the difference, a few times over, so the drawn road is the profile)
@@ -494,7 +551,7 @@ const roadReport = [];
     }));
     if (fitWorst <= 0.05) break;
   }
-  alterations.roads = { roads: roadReport.length, samples: changed, maxM: +maxM.toFixed(1), fitWorstM: +fitWorst.toFixed(2), fitWorstAt: fitAt };
+  alterations.roads = { roads: roadReport.length, samples: changed, maxM: +maxM.toFixed(1), kerbHeld: HELD.reduce((t, v) => t + v, 0), banked, bankMaxM: +bankMax.toFixed(1), bankSlope: ROAD_BANK, fitWorstM: +fitWorst.toFixed(2), fitWorstAt: fitAt };
 }
 // (the edge again: nothing the later rules did reaches the sidewalk round the park)
 for (let k = 0; k < N; k++) if (!MASK[k] || DIN[k] < EDGE[0]) H[k] = 0;

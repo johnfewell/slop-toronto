@@ -496,6 +496,47 @@ test('the park roads\' grades are recorded; the steep ones are reviewed against 
   for (const r of R.filter((q) => q.review)) assert.ok(Number.isFinite(r.lidarPct), `${r.name}: its own slope in the lidar recorded`);
 });
 
+test('the park roads\' kerbs run straight on the relief: no wave along a kerb that the roadway does not have (st-eki4)', () => {
+  // (along each kerb, every 1 m: its 5 m second difference less the centreline's, so the road's own crests and dips
+  // cancel; away from junctions, where two roads' profiles meet. Before the roads rule held every grid triangle reaching
+  // the kerbs, Colborne Lodge Drive's climb from the Queensway waved by 1.5-1.9 m over 10 m, its kerb 0.8 m off the
+  // centreline's level)
+  const segNear = (o, x, z, r) => o.pts.some((p, j) => {
+    if (!j) return false;
+    const q = o.pts[j - 1], dx = p.x - q.x, dz = p.z - q.z, t = Math.max(0, Math.min(1, ((x - q.x) * dx + (z - q.z) * dz) / (dx * dx + dz * dz || 1)));
+    return Math.hypot(q.x + dx * t - x, q.z + dz * t - z) < r;
+  });
+  // (and away from the pads, which the roads rule leaves level: the rink and pool's pads beside Colborne Lodge Drive's
+  // service drive on the plateau stand 1.4 m under it)
+  const P = city({ files: ['toronto-tennis', 'toronto-rinks'] }), pads = [];
+  for (const t of P.TENNIS.records) pads.push([t.x, t.z]);
+  for (const r of P.RINKS.records) for (const g of r.polygons) for (const [x, z] of g.outer) pads.push([x, z]);
+  const nearPad = (x, z) => pads.some(([px, pz]) => Math.hypot(px - x, pz - z) < 40);
+  for (const name of ['Colborne Lodge Drive', 'West Road', 'Centre Road', 'Spring Road', 'Deer Pen Road']) {
+    let worst = 0, at = null, n = 0;
+    for (const r of ON.ROADS) {
+      if (r.name !== name || r.raised) continue;
+      const others = ON.ROADS.filter((o) => o !== r && !o.raised && o.pts.some((p) => insideBox(p.x, p.z)));
+      for (let i = 0; i + 1 < r.pts.length; i++) {
+        const a = r.pts[i], b = r.pts[i + 1], L = Math.hypot(b.x - a.x, b.z - a.z), px = -(b.z - a.z) / L, pz = (b.x - a.x) / L, o = r.w / 2 + 0.2;
+        for (let s = 15; s <= L - 15; s += 1) {
+          const x = a.x + ((b.x - a.x) * s) / L, z = a.z + ((b.z - a.z) * s) / L;
+          if (!insideBox(x, z) || Math.abs(HP.heightAt(x, z)) < 0.05 || nearPad(x, z) || others.some((q) => segNear(q, x, z, 30))) continue;
+          const h = (u, off) => HP.heightAt(x + ((b.x - a.x) * u) / L + px * off, z + ((b.z - a.z) * u) / L + pz * off);
+          const d2 = (off) => h(-5, off) - 2 * h(0, off) + h(5, off);
+          for (const side of [-1, 1]) {
+            const e = Math.abs(d2(side * o) - d2(0));
+            n++;
+            if (e > worst) { worst = e; at = [Math.round(x), Math.round(z)]; }
+          }
+        }
+      }
+    }
+    assert.ok(n > 10, `${name}: ${n} kerb samples`);
+    assert.ok(worst < 0.3, `${name}: its kerb waves ${worst.toFixed(2)} m over 10 m at ${at}`);
+  }
+});
+
 test('the build is reproducible from the lidar tiles', { skip: !fs.existsSync(path.join(process.env.DON_VALLEY_DTM || path.join(os.homedir(), '.cache/slop-toronto/raw/ontario-dtm-gta2023'), 'manifest-high-park.json')) && 'no lidar tiles (node tools/fetch-don-valley-dtm.mjs --region high-park)' }, () => {
   const out = path.join(os.tmpdir(), `high-park-data-${process.pid}.js`);
   execFileSync(process.execPath, [new URL('../tools/build-high-park.mjs', import.meta.url).pathname, '--out', out], { stdio: 'pipe' });
