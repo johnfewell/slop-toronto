@@ -327,6 +327,17 @@ lay 6 m over the cars and the markings in it. It is now draped with the street l
 6 m and more under the deck, with its walls' colliders. Tests: `tests/don-valley.test.mjs` (st-4qix). Captures:
 `tools/shots/rosedale-deck-rvr.json`, flag on (desktop, phone) and off (desktop).
 
+**Bloor's cars over the cut (`st-3xe9`).** From Rosedale Valley Road, Bloor Street's cars on the Rosedale section
+seemed to float over the deck's edge. They were on the deck (0.40 m, its asphalt at 0.43 m), but the deck had no
+underside there: city-grid.js gives a deck a soffit only where both ends of a stretch stand 4.6 m or more over the
+ground under them, and the stretch over the cut, 98 m from the box's edge to the joint, has its west end 2.9 m over
+the ravine's slope. Its top is one-sided, so from down in the cut the sky showed through it, cars and all. A deck
+stretch with a road cut 4.6 m or more under it (`roadCutAt`, sampled every 2 m along it and at both edges) now gets a
+soffit and fascias at least 1.25 m deep; beside the cut they are in the ground. Only that stretch matches, and only in
+the pilot: the flat city's decks over cuts were already deep at both ends, and the default city (High Park on) has
+none. Test: `tests/don-valley.test.mjs` (st-3xe9). Captures: `tools/shots/rosedale-deck-cars.json`, flag on (desktop,
+phone).
+
 ## 7. Risks and limits
 
 - **Dev pilot.** The surface has no IDs or connectivity. A deck is chosen by yHint and step alone, and an arrival

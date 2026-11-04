@@ -680,7 +680,12 @@ test('the Rosedale section\'s deck joint: one run, no gap or step, the 22 m deck
 });
 
 // --- decks over road cuts (st-4qix): city-grid.js built in node, its materials stand-ins (the mask is what is tested)
+const GROUNDS = new Map(); // (each built once: the tests below share them)
 function groundOf(pilot) {
+  if (!GROUNDS.has(pilot)) GROUNDS.set(pilot, buildGround(pilot));
+  return GROUNDS.get(pilot);
+}
+function buildGround(pilot) {
   const mat = () => new THREE.MeshStandardNodeMaterial();
   const mats = Object.fromEntries(['createRoadSurfaceMaterial', 'createSidewalkMaterial', 'createCurbMaterial', 'createWaterMaterial', 'createParkLawnMaterial',
     'createTerrainMaterial', 'createPlotGroundMaterial', 'createForecourtMaterial', 'createRenderedWallMaterial', 'createConcreteMaterial'].map((k) => [k, mat]));
@@ -757,5 +762,24 @@ test('decks over road cuts: no hole in the flyovers over a cut, their piers on i
     // ...and its walls' colliders with it: none near the crossing reaches the deck
     const walls = built.colliders.filter((c) => c.obb && Math.hypot(c.obb.cx - N.x, c.obb.cz - N.z) < 15);
     assert.ok(walls.length && walls.every((c) => c.maxY < deck - 2), `${walls.length} wall colliders under the deck`);
+  }
+});
+
+test('Bloor Street\'s Rosedale deck over Rosedale Valley Road\'s cut has a soffit: seen from the cut, its cars are on a deck, not on nothing (st-3xe9)', () => {
+  const N = { x: 1692.6, z: -2659 };
+  const s = [0.436, 0.9]; // (across Bloor Street there)
+  for (const [mode, pilot] of [['flat city', false], ['pilot', true]]) {
+    const { C, ground } = groundOf(pilot);
+    const structure = ground.getObjectByName('FlyoverStructure');
+    const deck = pilot ? C.deckHeightAt(N.x, N.z, 0.4, 0.6) : C.deckHeightAt(N.x, N.z, 9, 2);
+    const ray = new THREE.Raycaster();
+    // up from the cut's roadway, across the deck's width (its traffic lanes and the bike lanes at its edges)
+    for (const l of [-8, -4, 0, 4, 8]) {
+      const x = N.x + s[0] * l, z = N.z + s[1] * l, floor = C.cutAt(x, z);
+      ray.set(new THREE.Vector3(x, floor + 1.5, z), new THREE.Vector3(0, 1, 0));
+      const hit = ray.intersectObject(structure, false)[0];
+      assert.ok(hit && hit.point.y < deck && hit.point.y > floor + 3, `${mode}: the deck's underside over the cut ${l} m across Bloor (${hit ? hit.point.y.toFixed(2) : 'nothing'}, the deck at ${deck.toFixed(2)})`);
+      assert.ok(hit.face.normal.y < -0.9, `${mode}: the soffit faces down into the cut`);
+    }
   }
 });

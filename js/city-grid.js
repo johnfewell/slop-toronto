@@ -1248,6 +1248,23 @@ function buildCityGrid(scene) {
       const deep = (p) => p.h - gOf(p) > 4.6;
       const yTop = (p) => Math.max(gOf(p) + 0.03, p.h + 0.03);
       const yBot = (p) => (deep(p) ? p.h - 1.25 : gOf(p));
+      // (a low deck over a road cut spans it too, though its vertices' ground, either side of the cut, is not far under
+      // it: it had no soffit. The Don Valley pilot's Rosedale section, at 0.4 m with Rosedale Valley Road's cut 6 m
+      // under it: from down in the cut, Bloor Street's cars stood on nothing, st-3xe9. Such a stretch gets a soffit and
+      // fascias at least 1.25 m deep, as a raised one; below the ground beside the cut they are buried)
+      const ROAD_CUT_AT = window.CITY.roadCutAt;
+      const overCut = (a, b, ahw, bhw, L) => {
+        if (!ROAD_CUT_AT || !ROAD_CUTS || !ROAD_CUTS.length) return false;
+        const n = Math.max(1, Math.ceil(L / 2)), ux = (b.x - a.x) / L, uz = (b.z - a.z) / L;
+        for (let k = 0; k <= n; k++) {
+          const t = k / n, h = a.h + (b.h - a.h) * t, hw = ahw + (bhw - ahw) * t;
+          for (const l of [-hw, 0, hw]) {
+            const cut = ROAD_CUT_AT(a.x + (b.x - a.x) * t - uz * l, a.z + (b.z - a.z) * t + ux * l);
+            if (cut < -0.5 && h - cut > 4.6) return true;
+          }
+        }
+        return false;
+      };
       let s = 0, sp = 0; // (sp: along the original deck, which keeps its piers' spacing)
       for (let i = 0; i + 1 < P.length; i++) {
         const a = P[i], b = P[i + 1];
@@ -1260,11 +1277,13 @@ function buildCityGrid(scene) {
         accQuad(top, aR, bR, bL, aL, [0, 1, 0], [[0, 0], [1, 0], [1, 1], [0, 1]]);
         // side faces & soffit
         const lo = (p, side) => [p[0], side, p[2]];
+        const span = !(deep(a) && deep(b)) && overCut(a, b, ahw, bhw, L);
+        const ya = span ? Math.min(yBot(a), a.h - 1.25) : yBot(a), yb = span ? Math.min(yBot(b), b.h - 1.25) : yBot(b);
         // (wound to face outward & down: the deck read hollow from the street, its far side's inner face seen through
         // a missing soffit)
-        accQuad(faces, aL, bL, lo(bL, yBot(b)), lo(aL, yBot(a)), [anx, 0, anz], [[s, 1], [s + L, 1], [s + L, 0], [s, 0]]);
-        accQuad(faces, bR, aR, lo(aR, yBot(a)), lo(bR, yBot(b)), [-anx, 0, -anz], [[s + L, 1], [s, 1], [s, 0], [s + L, 0]]);
-        if (deep(a) && deep(b)) accQuad(faces, lo(aL, yBot(a)), lo(bL, yBot(b)), lo(bR, yBot(b)), lo(aR, yBot(a)), [0, -1, 0], [[0, 1], [1, 1], [1, 0], [0, 0]]);
+        accQuad(faces, aL, bL, lo(bL, yb), lo(aL, ya), [anx, 0, anz], [[s, 1], [s + L, 1], [s + L, 0], [s, 0]]);
+        accQuad(faces, bR, aR, lo(aR, ya), lo(bR, yb), [-anx, 0, -anz], [[s + L, 1], [s, 1], [s, 0], [s + L, 0]]);
+        if ((deep(a) && deep(b)) || span) accQuad(faces, lo(aL, ya), lo(bL, yb), lo(bR, yb), lo(aR, ya), [0, -1, 0], [[0, 1], [1, 1], [1, 0], [0, 0]]);
         // parapets (0.9 m concrete barriers) along both edges
         for (const sgn of [1, -1]) {
           const ax = a.x + anx * (ahw - 0.25) * sgn, az = a.z + anz * (ahw - 0.25) * sgn;
