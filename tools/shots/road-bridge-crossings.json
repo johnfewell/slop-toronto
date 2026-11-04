@@ -1,0 +1,138 @@
+[
+ {
+  "name": "queensway-aerial",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7560,70,-1060], look: [-7670,0,-960], fov: 50 }); })()",
+  "wait": 4000
+ },
+ {
+  "name": "queensway-person-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('person'); a.selectCamera('chase', true); a.teleportTo(-7620.4, -993.9, -0.934); })()",
+  "wait": 3500
+ },
+ {
+  "name": "queensway-person-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "queensway-person-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "queensway-person-3",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "queensway-person-end",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "queensway-cyclist-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-7620.4, -993.9, -0.934); })()",
+  "wait": 3500
+ },
+ {
+  "name": "queensway-cyclist-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "queensway-cyclist-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "queensway-cyclist-3",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "queensway-cyclist-end",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "lakeshore-aerial",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7470,60,-920], look: [-7550,0,-815], fov: 50 }); })()",
+  "wait": 4000
+ },
+ {
+  "name": "lakeshore-person-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('person'); a.selectCamera('chase', true); a.teleportTo(-7490.4, -838.8, -1.267); })()",
+  "wait": 3500
+ },
+ {
+  "name": "lakeshore-person-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "lakeshore-person-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "lakeshore-person-3",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "lakeshore-person-end",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "lakeshore-cyclist-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-7490.4, -838.8, -1.267); })()",
+  "wait": 3500
+ },
+ {
+  "name": "lakeshore-cyclist-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "lakeshore-cyclist-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "lakeshore-cyclist-3",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "lakeshore-cyclist-end",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)) }; })()",
+  "wait": 300,
+  "record": true
+ }
+]

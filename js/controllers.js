@@ -9,8 +9,12 @@
 
 const { THREE } = window.CITY;
 const { CITY_BOUNDS, TELEPORT_LOCATIONS, isTypingInField, blockAt, waterAt, terrainHeightAt, deckHeightAt } = window.CITY;
-// (the deck of a trail bridge over the water, the Humber Bay Arch Bridge's: walked & ridden, not driven, 0.4 m in from its edges)
-const onTrailBridge = (x, z) => !!(window.CITY.trailBridgeAt && window.CITY.trailBridgeAt(x, z, -0.4));
+// A bridge's deck over the water, where the lake does not stop a body on the ground: a trail bridge's (the Humber Bay
+// Arch Bridge's, 0.4 m in from its edges) is walked & ridden, not driven; a road bridge's at street level (city-config.js
+// ROAD_BRIDGES: the Queensway & Lake Shore over the Humber, Cherry Street over the Don's mouth...) is walked, ridden and
+// driven, 0.7 m in from its roadway's edges (city-grid.js stands its parapets on them)
+const onDeckOverWater = (x, z, mode) => !!((mode !== 'car' && window.CITY.trailBridgeAt && window.CITY.trailBridgeAt(x, z, -0.4))
+  || (window.CITY.bridgeAt && window.CITY.bridgeAt(x, z, -0.7)));
 // Start on Yonge Street by Sankofa Square, heading north to Dundas (city-config.js TELEPORT_LOCATIONS)
 const SPAWN = (TELEPORT_LOCATIONS && TELEPORT_LOCATIONS.start) || { x: 0, z: 140, heading: Math.PI };
 const {
@@ -432,7 +436,7 @@ class ThirdPersonControllerManager {
       const m = heli ? margin : -8;
       pz = Math.max(CITY_BOUNDS.minZ - m, Math.min(CITY_BOUNDS.maxZ + m, pz));
       px = Math.max(CITY_BOUNDS.minX - m, Math.min(CITY_BOUNDS.maxX + m, px));
-      if (!heli && waterAt(px, pz) && (car || !onTrailBridge(px, pz))) return null; // not in a lake (on foot or by bike, a trail bridge's deck)
+      if (!heli && waterAt(px, pz) && !onDeckOverWater(px, pz, this.activeMode)) return null; // not in a lake (but on a bridge's deck)
       if (!heli && window.CITY.subwayCutAt && window.CITY.subwayCutAt(px, pz, 1, false)) return null; // nor down a subway cut (subway.js)
       return { x: px, z: pz };
     };
@@ -1032,7 +1036,7 @@ class ThirdPersonControllerManager {
     pos.x = bx;
     pos.z = bz;
     if (!heli) {
-      if (waterAt(pos.x, pos.z) && (this.activeMode === 'car' || !onTrailBridge(pos.x, pos.z)) && this._dry) {
+      if (waterAt(pos.x, pos.z) && !onDeckOverWater(pos.x, pos.z, this.activeMode) && this._dry) {
         pos.x = this._dry.x;
         pos.z = this._dry.z;
         if (carEntity && carEntity.speed) carEntity.speed *= 0.3;

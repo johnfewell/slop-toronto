@@ -730,8 +730,9 @@ for (const d of DECK_RUNS) {
 // Road bridges over the water at street level: the stretches of the roads at grade (not service roads) whose centre
 // line crosses a river, a channel or a slip, dry ground at both ends (The Queensway over the Humber, Cherry Street &
 // Commissioners Street over the Don's new mouth and the Ship Channel). The geodata has no decks for them (its decks are
-// the flyovers over roads & railways) and the street level is open water there: city-grid.js lays a deck on each, and
-// road-network.js drives the road's lanes across it. [{ name, w, pts: [{ x, z, h: 0 }] }]
+// the flyovers over roads & railways) and the street level is open water there: city-grid.js lays a deck on each,
+// road-network.js drives the road's lanes across it, and the player walks, cycles and drives over it (bridgeAt,
+// controllers.js). [{ name, w, pts: [{ x, z, h: 0 }] }]
 const ROAD_BRIDGES = [];
 const BRIDGE_CELL = 32;
 const BRIDGE_GRID = new Map(); // cell -> [[a, b, half width]]

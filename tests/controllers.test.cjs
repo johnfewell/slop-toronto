@@ -217,13 +217,14 @@ for (const mode of ['Person', 'Car', 'Cyclist', 'Helicopter']) {
   });
 }
 
-function teleportHarness(mode, colliders = [], waterAt = () => null) {
+function teleportHarness(mode, colliders = [], waterAt = () => null, city = {}) {
   const harness = keyboardHarness({
     CITY_BOUNDS: { minX: -500, maxX: 500, minZ: -500, maxZ: 500, sidewalkHeight: 0.22 },
     waterAt,
     terrainHeightAt: () => 0,
     deckHeightAt: () => 0,
-    blockAt: () => null
+    blockAt: () => null,
+    ...city
   });
   const { controller } = harness;
   const position = (x = 0, y = 0, z = 0) => ({ x, y, z, copy(p) { this.x = p.x; this.y = p.y; this.z = p.z; } });
@@ -611,5 +612,59 @@ test('st-01vq.7: a trail bridge\'s deck over the water is walked and ridden, but
     ent.position.z = 4;
     controller.resolveHorizontalCollision(ent.position, 0.48, ent.position.y + 1);
     assert.deepEqual([ent.position.x, ent.position.z], [140, 0], `${mode}: off the deck's edge is undone`);
+  }
+});
+
+test('st-5rys: a road bridge\'s deck over the water is walked, ridden and driven, and its edges hold', () => {
+  // a lake over x > 100, a road bridge's deck across it along z = 0, 8 m wide (city-config.js bridgeAt)
+  const lake = (x) => (x > 100 ? { name: 'Humber River' } : null);
+  for (const mode of ['person', 'cyclist', 'car']) {
+    const { controller, ent, window } = teleportHarness(mode, [], lake);
+    window.CITY.trailBridgeAt = () => null;
+    window.CITY.bridgeAt = (x, z, m = 0) => x > 90 && x < 220 && Math.abs(z) <= 4 + m;
+    ent.position.x = 90; ent.position.z = 0;
+    controller.resolveHorizontalCollision(ent.position, 0.48, ent.position.y + 1);
+    ent.position.x = 140;
+    controller.resolveHorizontalCollision(ent.position, 0.48, ent.position.y + 1);
+    assert.equal(ent.position.x, 140, `${mode}: out over the water on the deck`);
+    assert.ok(controller.findTeleportPosition(150, 0, 0, 0, true), `${mode}: may arrive on the deck`);
+    ent.position.z = 6;
+    controller.resolveHorizontalCollision(ent.position, 0.48, ent.position.y + 1);
+    assert.deepEqual([ent.position.x, ent.position.z], [140, 0], `${mode}: off the deck's edge is undone`);
+    assert.equal(controller.findTeleportPosition(150, 8, 0, 0, true), null, `${mode}: no arrival in the water beside it`);
+  }
+});
+
+test('st-5rys: across the Queensway, Lake Shore and Cherry Street bridges on foot, by bike and by car (the city\'s own data)', () => {
+  const city = vm.createContext({ window: { CITY: {} } });
+  for (const path of ['js/toronto-geodata.js', 'js/city-config.js']) vm.runInContext(readFileSync(join(__dirname, '..', path), 'utf8'), city);
+  const C = city.window.CITY;
+  const crossings = [['The Queensway', 100], ['Lake Shore Boulevard West', 90], ['Cherry Street', 30]];
+  for (const [name, longer] of crossings) {
+    const bridge = C.ROAD_BRIDGES.filter((b) => b.name === name).sort((a, b) => b.pts.length - a.pts.length)[0];
+    assert.ok(bridge, `${name} has a road bridge over the water`);
+    const P = bridge.pts;
+    let wet = 0, L = 0;
+    for (const mode of ['person', 'cyclist', 'car']) {
+      const { controller, ent } = teleportHarness(mode, [], C.waterAt, { CITY_BOUNDS: C.CITY_BOUNDS, bridgeAt: C.bridgeAt, trailBridgeAt: C.trailBridgeAt });
+      ent.position.x = P[0].x; ent.position.z = P[0].z;
+      controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+      wet = 0; L = 0;
+      // along its centre line in 0.5 m steps, a little to the right of it (a walker keeps to the side)
+      for (let i = 0; i + 1 < P.length; i++) {
+        const a = P[i], b = P[i + 1], n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.5);
+        const ux = (b.x - a.x) / Math.hypot(b.x - a.x, b.z - a.z), uz = (b.z - a.z) / Math.hypot(b.x - a.x, b.z - a.z);
+        const off = bridge.w / 2 - 1;
+        for (let k = 1; k <= n; k++) {
+          const x = a.x + ((b.x - a.x) * k) / n - uz * off, z = a.z + ((b.z - a.z) * k) / n + ux * off;
+          ent.position.x = x; ent.position.z = z;
+          controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+          assert.deepEqual([ent.position.x, ent.position.z], [x, z], `${mode} on ${name}: held back at ${x.toFixed(1)}, ${z.toFixed(1)}`);
+          if (C.waterAt(x, z)) wet += 0.5;
+          L += Math.hypot(b.x - a.x, b.z - a.z) / n;
+        }
+      }
+      assert.ok(wet > 0.5 * L && L > longer * 0.9, `${mode}: over ${wet.toFixed(0)} m of water on ${name}'s ${L.toFixed(0)} m`);
+    }
   }
 });
