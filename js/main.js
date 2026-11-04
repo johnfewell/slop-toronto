@@ -159,6 +159,10 @@ async function initApp() {
   // The City's rink and skate-trail outlines in their scene-date season (rinks.js); after tennis, whose paving one meets
   const rinks = window.CITY.buildRinks?.(scene, allColliders);
   if (rinks) allColliders.push(...rinks.colliders);
+  // High Park's paths, gardens, paddocks, fences and Colborne Lodge on its terrain (high-park-features.js); before the
+  // park's trees (street-details.js keeps them off the paths and buildings)
+  const highParkFeatures = window.CITY.buildHighParkFeatures?.(scene);
+  if (highParkFeatures) allColliders.push(...highParkFeatures.colliders);
 
   const streetDetails = buildStreetDetails(scene);
   // These positions are procedural park/yard trees; the City street-tree
@@ -230,6 +234,8 @@ async function initApp() {
       ? window.CITY.sidewalkWalkIndex(window.CITY.sidewalkPieceMap) : null
   });
   window.CITY.auditPatioLanes?.(trafficSystem.network);
+  // the park roads closed to cars: West Road and Colborne Lodge Drive's middle always, all of them on a weekend
+  window.CITY.closeHighParkRoads?.(trafficSystem.network);
   markInit('traffic');
   // the cars parked at the curbs where the City allows it, clear of the lanes just built (parked-cars.js): solid to the
   // player and the walkers, and the traffic's swerves keep off them (traffic.js wayRound). ?parked=0 leaves them out

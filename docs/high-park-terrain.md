@@ -100,7 +100,7 @@ surface is exactly what it is alone (tested).
 The pilot was first built behind `?highpark=1`, with the recommendation to keep it there until John had seen the datum
 (§4) and the cost (§5). On 2026-11-03 John had it shipped on by default, with no flag (PR #79), and the Grenadier
 Pond west bank at its 13–15 m (§4). Smoother lawns and the Ellis Avenue bluff's full height stay follow-ups, with the
-woods (`st-8g3r`) and the park's features (`st-5yps`).
+woods (`st-8g3r`); the park's features (`st-5yps`) are [their own](high-park-features.md).
 
 With the pilot's runtime always loaded, `window.CITY.DON_VALLEY` always exists, so every reader that asked only
 whether a pilot was on was checked for what it did outside the box. Four did something city-wide, and now keep the

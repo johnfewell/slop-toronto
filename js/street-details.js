@@ -724,6 +724,7 @@ function buildStreetDetails(scene) {
           const jx = x + (hashPos(x, 1, z) - 0.5) * spacing * 0.8, jz = z + (hashPos(z, 2, x) - 0.5) * spacing * 0.8;
           if (hashPos(jx, 9, jz) < (park ? 0.35 : 0.55)) continue;
           if (!pointInPoly(b.poly, jx, jz) || !clearOfBuildings(jx, jz) || window.CITY.waterAt(jx, jz)) continue;
+          if (window.CITY.highParkFeatureAt?.(jx, jz, 2)) continue; // (High Park's paths, beds & buildings)
           spots.push([jx, jz]);
         }
       }

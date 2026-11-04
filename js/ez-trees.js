@@ -197,6 +197,7 @@ async function buildEzTrees(scene, generated) {
     // (none in the rail corridor, on its embankments or under its bridges: city-config.js treeOffRail)
     if (!window.CITY.treeOffRail(x, z)) { offRail++; continue; }
     if (window.CITY.bikeShareAt && window.CITY.bikeShareAt(x, z)) continue; // (none in a Bike Share station: bike-share.js)
+    if (window.CITY.highParkBuildingAt?.(x, z, 1.5)) continue; // (none in Colborne Lodge: high-park-features.js)
     sites.push({ x, y: (blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0) + cutDown(x, z), z, model: ST[i + 2], height: ST[i + 3] / 10, tier: 1 });
   }
   const genModel = (sp, h) => {
