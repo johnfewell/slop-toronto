@@ -38,7 +38,7 @@ import { packGeo } from './geo-pack.mjs';
 import { rowCheck, MASSING_SCHEMA } from '../js/massing-data.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const { values: opt, positionals } = parseArgs({ allowPositionals: true, options: { out: { type: 'string' }, json: { type: 'string' } } });
+const { values: opt, positionals } = parseArgs({ allowPositionals: true, options: { out: { type: 'string' }, json: { type: 'string' }, geo: { type: 'string' }, ids: { type: 'string' }, frame: { type: 'string' } } });
 const COMMITTED = path.join(ROOT, 'data/toronto-massing.bin');
 const OUT = path.resolve(opt.out || COMMITTED);
 const SHP = positionals[0] || path.join(os.homedir(), '.cache/slop-toronto/raw/massing2025/3DMassingShapefile_2025_WGS84.shp');
@@ -53,15 +53,18 @@ const MIN_HOLE = 4; // m²: a smaller courtyard is noise
 
 const load = (file, ctx = { window: {} }) => {
   vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), ctx);
+  const p = path.isAbsolute(file) ? file : path.join(ROOT, file);
+  vm.runInContext(fs.readFileSync(p, 'utf8'), ctx);
   return ctx.window.CITY;
 };
-const geoSource = fs.readFileSync(path.join(ROOT, 'js/toronto-geodata.js'), 'utf8');
+const GEO_PATH = opt.geo ? path.resolve(opt.geo) : path.join(ROOT, 'js/toronto-geodata.js');
+const IDS_PATH = opt.ids ? path.resolve(opt.ids) : (opt.geo ? opt.geo.replace(/\.js$/, '-ids.js') : path.join(ROOT, 'js/toronto-geodata-ids.js'));
+const geoSource = fs.readFileSync(GEO_PATH, 'utf8');
 const cityCtx = { window: {}, Math, JSON, Object, Array, Number, Map, Set };
-const { GEO } = load('js/toronto-geodata.js', cityCtx);
+const { GEO } = load(GEO_PATH, cityCtx);
 load('js/city-config.js', cityCtx);
 const { nearestRoads } = cityCtx.window.CITY;
-const { GEO_IDS } = load('js/toronto-geodata-ids.js');
+const { GEO_IDS } = load(IDS_PATH);
 const geodataHash = createHash('sha256').update(geoSource).digest('hex').slice(0, 16);
 if (GEO_IDS.geodata !== geodataHash) throw new Error(`js/toronto-geodata-ids.js describes geodata ${GEO_IDS.geodata}, not this ${geodataHash}`);
 if (GEO_IDS.buildings.length !== GEO.buildings.length) throw new Error('GEO_IDS.buildings is not row for row with GEO.buildings');

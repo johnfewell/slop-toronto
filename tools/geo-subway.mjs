@@ -13,10 +13,28 @@
 //              below ground or indoors, the PATH's & the malls' doors; sign: 0 the insignia pylon, 1 the older square
 //              lantern on its pole's top, 2 the lantern hung from an arm off its pole, from LANTERNS below)
 //   (the source ids come last, so the older readers' positional fields are unchanged)
+import fs from 'node:fs';
 import { toWorld, rdp, load, log } from './geo-base.mjs';
 
 // the detailed city (as tools/geo-roads.mjs DETAIL; not imported: that module builds the whole road network)
-const DETAIL = { x0: -7900, x1: 3700, z0: -3000, z1: 3600 };
+export const FRAMES = {
+  detail: { x0: -7900, x1: 3700, z0: -3000, z1: 3600 }
+};
+const cliFrame = (() => {
+  const i = process.argv.indexOf('--frame');
+  return i >= 0 && i + 1 < process.argv.length ? process.argv[i + 1] : null;
+})();
+const FRAME_NAME = process.env.SLOP_FRAME || cliFrame || 'detail';
+const DETAIL = (() => {
+  if (FRAMES[FRAME_NAME]) return FRAMES[FRAME_NAME];
+  if (fs.existsSync(FRAME_NAME)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(FRAME_NAME, 'utf8'));
+      return parsed.world || parsed;
+    } catch {}
+  }
+  return FRAMES.detail;
+})();
 const near = (x, z, m) => x > DETAIL.x0 - m && x < DETAIL.x1 + m && z > DETAIL.z0 - m && z < DETAIL.z1 + m;
 const MARGIN = 400;
 const q = (v) => Math.round(v * 10) / 10;

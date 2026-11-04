@@ -26,12 +26,15 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const RAW = process.env.OPENDATA || path.join(os.homedir(), '.cache/slop-toronto/opendata');
-const OUT = process.env.TRAFFIC_DATA_OUT || path.join(ROOT, 'js/toronto-traffic-data.js');
+const geoIdx = process.argv.indexOf('--geo');
+const GEODATA_PATH = geoIdx >= 0 && geoIdx + 1 < process.argv.length ? process.argv[geoIdx + 1] : (process.env.GEODATA_PATH || path.join(ROOT, 'js/toronto-geodata.js'));
+const outIdx = process.argv.indexOf('--out');
+const OUT = outIdx >= 0 && outIdx + 1 < process.argv.length ? process.argv[outIdx + 1] : (process.env.TRAFFIC_DATA_OUT || path.join(ROOT, 'js/toronto-traffic-data.js'));
 const t0 = Date.now();
 const log = (...a) => console.log('[traffic-data]', ...a);
 
 const ctx = vm.createContext({ window: { CITY: {} }, console });
-vm.runInContext(fs.readFileSync(path.join(ROOT, 'js/toronto-geodata.js'), 'utf8'), ctx);
+vm.runInContext(fs.readFileSync(GEODATA_PATH, 'utf8'), ctx);
 const GEO = ctx.window.CITY.GEO;
 const P = GEO.frame.projection;
 function world(lat, lon) {

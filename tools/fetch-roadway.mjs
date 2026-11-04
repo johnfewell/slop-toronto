@@ -8,14 +8,33 @@ import path from 'node:path';
 import readline from 'node:readline';
 import { spawn } from 'node:child_process';
 
-const [GPKG] = process.argv.slice(2);
-const DATA = process.env.GEO_DATA;
-if (!GPKG || !DATA) throw new Error('usage: GEO_DATA=<dir> node tools/fetch-roadway.mjs <edge-of-roadway-4326.gpkg>');
+const SPATS = {
+  detail: ['-79.505', '43.585', '-79.305', '43.7']
+};
+const frameIndex = process.argv.indexOf('--frame');
+const frameName = frameIndex >= 0 && frameIndex + 1 < process.argv.length ? process.argv[frameIndex + 1] : (process.env.SLOP_FRAME || 'detail');
+const spat = (() => {
+  if (SPATS[frameName]) return SPATS[frameName];
+  if (fs.existsSync(frameName)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(frameName, 'utf8'));
+      if (parsed.bbox) return parsed.bbox.map(String);
+    } catch {}
+  }
+  return SPATS.detail;
+})();
+const nonOptionArgs = process.argv.slice(2).filter((arg, i, arr) => arg !== '--frame' && (i === 0 || arr[i - 1] !== '--frame'));
+const defaultData = path.join(process.env.HOME, '.cache/slop-toronto/osm');
+const DATA = process.env.GEO_DATA || defaultData;
+const defaultGpkg = path.join(process.env.HOME, '.cache/slop-toronto/raw/edge-of-roadway-4326.gpkg');
+const GPKG = nonOptionArgs[0] || (fs.existsSync(defaultGpkg) ? defaultGpkg : null);
+if (!GPKG || !DATA) throw new Error('usage: GEO_DATA=<dir> node tools/fetch-roadway.mjs [--frame <name|path>] <edge-of-roadway-4326.gpkg>');
+fs.mkdirSync(DATA, { recursive: true });
 const KEEP = new Set(['Road Edge', 'Intersection', 'Lane Edge', 'Road Bridge']);
 const out = { source: 'City of Toronto, Topographic Mapping – Edge of Roadway (OGL – Toronto)', polygons: [] };
 const counts = {};
 await new Promise((resolve, reject) => {
-  const p = spawn('ogr2ogr', ['-f', 'GeoJSONSeq', '/vsistdout/', GPKG, '-spat', '-79.505', '43.585', '-79.305', '43.7'], { stdio: ['ignore', 'pipe', 'ignore'] });
+  const p = spawn('ogr2ogr', ['-f', 'GeoJSONSeq', '/vsistdout/', GPKG, '-spat', ...spat], { stdio: ['ignore', 'pipe', 'ignore'] });
   readline.createInterface({ input: p.stdout }).on('line', (l) => {
     if (!l.trim()) return;
     const f = JSON.parse(l.replace(/^\x1e/, ''));

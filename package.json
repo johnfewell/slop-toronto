@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node tools/prepare-bench.mjs && node tools/dev-server.mjs",
     "build": "node tools/prepare-bench.mjs && npm run build:clouds && node tools/build-site.mjs",
-    "test": "node --test tests/*.cjs tests/*.mjs",
+    "test": "node --test tests/*.cjs tests/*.mjs tests/*/*.mjs",
     "test:geodata": "GEO_DATA=\"${GEO_DATA:-$HOME/.cache/slop-toronto/osm-ids}\" PROPS_DATA=\"${PROPS_DATA:-$HOME/.cache/slop-toronto/raw}\" node --test tests/geodata.test.mjs",
     "capture": "node tools/capture.mjs",
     "build:water": "node tools/build-water.mjs",
@@ -22,8 +22,8 @@
     "vite": "8.3.5"
   },
   "dependencies": {
-    "@takram/three-atmosphere": "https://raw.githubusercontent.com/johnfewell/three-clouds-webgpu/0fefeeb11c4cd1e149b18538d4378af4ee902a14/vendor/takram-three-atmosphere-0.19.1%2Bfork.8.tgz",
-    "@takram/three-geospatial": "https://raw.githubusercontent.com/johnfewell/three-clouds-webgpu/0fefeeb11c4cd1e149b18538d4378af4ee902a14/vendor/takram-three-geospatial-0.9.1%2Bfork.8.tgz",
+    "@takram/three-atmosphere": "https://github.com/johnfewell/three-geospatial/releases/download/fork-release-8/takram-three-atmosphere-0.19.1%2Bfork.8.tgz",
+    "@takram/three-geospatial": "https://github.com/johnfewell/three-geospatial/releases/download/fork-release-8/takram-three-geospatial-0.9.1%2Bfork.8.tgz",
     "three-clouds-webgpu": "file:vendor/clouds/three-clouds-webgpu-0.1.0-alpha.7.tgz"
   },
   "overrides": {

@@ -10,11 +10,30 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { open } from 'shapefile';
 
-const DATA = process.env.GEO_DATA;
-const SHP = process.argv[2];
-if (!DATA || !SHP) throw new Error('usage: GEO_DATA=<dir> node tools/fetch-massing.mjs <shp>');
-// the Overpass box (tools/data/q_buildings.overpassql)
-const BOX = { s: 43.595, w: -79.495, n: 43.692, e: -79.315 };
+const frameIndex = process.argv.indexOf('--frame');
+const frameName = frameIndex >= 0 && frameIndex + 1 < process.argv.length ? process.argv[frameIndex + 1] : (process.env.SLOP_FRAME || 'detail');
+const nonOptionArgs = process.argv.slice(2).filter((arg, i, arr) => arg !== '--frame' && (i === 0 || arr[i - 1] !== '--frame'));
+const defaultData = path.join(process.env.HOME, '.cache/slop-toronto/osm');
+const DATA = process.env.GEO_DATA || defaultData;
+const defaultShp = path.join(process.env.HOME, '.cache/slop-toronto/raw/massing2025/3DMassingShapefile_2025_WGS84.shp');
+const SHP = nonOptionArgs[0] || (fs.existsSync(defaultShp) ? defaultShp : null);
+if (!DATA || !SHP) throw new Error('usage: GEO_DATA=<dir> node tools/fetch-massing.mjs [--frame <name|path>] <shp>');
+fs.mkdirSync(DATA, { recursive: true });
+// the Overpass box (tools/data/q_buildings.overpassql) or custom frame
+const BOXES = {
+  detail: { s: 43.595, w: -79.495, n: 43.692, e: -79.315 }
+};
+const BOX = (() => {
+  if (BOXES[frameName]) return BOXES[frameName];
+  if (fs.existsSync(frameName)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(frameName, 'utf8'));
+      if (parsed.box) return parsed.box;
+      if (parsed.bbox) return { w: parsed.bbox[0], s: parsed.bbox[1], e: parsed.bbox[2], n: parsed.bbox[3] };
+    } catch {}
+  }
+  return BOXES.detail;
+})();
 const EDITION = '3DMassingShapefile_2025_WGS84';
 const R = 6378137;
 const lonLat = ([x, y]) => [
@@ -47,4 +66,5 @@ for (;;) {
 }
 fs.writeFileSync(path.join(DATA, 'massing.json'), JSON.stringify({ source: 'City of Toronto 3D Massing 2025 (OGL – Toronto)', edition: EDITION, parts }));
 const tall = parts.filter((p) => p.max > 100).length;
-console.log(`[massing] ${parts.length} parts in the box (of ${seen} records); ${tall} over 100 m; tallest ${Math.max(...parts.map((p) => p.max))} m`);
+const tallest = parts.reduce((m, p) => Math.max(m, p.max), 0);
+console.log(`[massing] ${parts.length} parts in the box (of ${seen} records); ${tall} over 100 m; tallest ${tallest} m`);

@@ -41,11 +41,11 @@ const inRing = (x, z, r) => {
 const waterAt = isWater;
 const ARGS = (() => {
   const { values, positionals } = parseArgs({
-    options: { out: { type: 'string' }, bin: { type: 'string' }, ids: { type: 'string' }, poles: { type: 'string' } },
+    options: { out: { type: 'string' }, bin: { type: 'string' }, ids: { type: 'string' }, poles: { type: 'string' }, frame: { type: 'string' } },
     allowPositionals: true
   });
   if (positionals.length > 1 || (positionals.length && values.out)) {
-    throw new Error('usage: build-geodata.mjs [--out out.js] [--bin out.bin] [--ids out-ids.js] [--poles poles.js]');
+    throw new Error('usage: build-geodata.mjs [--out out.js] [--bin out.bin] [--ids out-ids.js] [--poles poles.js] [--frame name]');
   }
   return { ...values, out: values.out ?? positionals[0] };
 })();

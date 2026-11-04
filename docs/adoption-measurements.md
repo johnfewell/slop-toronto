@@ -70,7 +70,7 @@ Both tiers booted and exported valid windows, raw distributions, renderer/owned 
 | Low, 412×915, skyline | 239 | 33.3 / 33.4 ms |
 | Low, 412×915, street | 239 | 33.3 / 33.4 ms |
 
-Receipts: `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-adoption-metrics/`, `high-metrics.json`, `low-metrics.json`, per-shot JSON/PNGs and console logs. Browser 156.0.8078.4, WebGPU Metal on the Mini; high MSAA and low FXAA were recorded in the metadata. Main `86ffc0d76030…` and cloud `8ade1946424a…` hashes match between these runs. The high collector was `4479f9f14998…`; the low collector was `a2de94b9244f…` after tightening interrupted-window validity. Consequently these are **not a matched cross-tier performance comparison**. Future idle runs must use identical candidate code.
+Receipts: `$GPU2_REVIEW_DIR/slop-toronto-adoption-metrics/`, `high-metrics.json`, `low-metrics.json`, per-shot JSON/PNGs and console logs. Browser 156.0.8078.4, WebGPU Metal on the Mini; high MSAA and low FXAA were recorded in the metadata. Main `86ffc0d76030…` and cloud `8ade1946424a…` hashes match between these runs. The high collector was `4479f9f14998…`; the low collector was `a2de94b9244f…` after tightening interrupted-window validity. Consequently these are **not a matched cross-tier performance comparison**. Future idle runs must use identical candidate code.
 
 `st-wt0.2.1` records completed functional instrumentation acceptance. `st-wt0.2.2` retains the idle-baseline work, coordinated with `st-oiw`; M0i and performance release gates remain open. The capture spike may consume the verified instrumentation while those measurements wait.
 
@@ -170,4 +170,4 @@ The few long animation frames (51–88 ms, five in total) and the 50–66 ms fra
 ### Receipts
 
 - In the repo, under [perf/idle-baseline-2026-10-29](perf/idle-baseline-2026-10-29/): `adoption-summary.json` and `transit-summary.json` (summarizer output, one row per run and shot, plus pools), `raw-metrics.tar.gz` (every aggregate `metrics.json` with raw samples, the 40-cycle lifecycle records and console logs) and `run-order.txt`. The host observations for each run (load, GPU utilization and capture output) are kept internally, not published here.
-- On the laptop: per-shot JSON and PNG files are in `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-adoption-metrics/` (`idle-*`, `transit-*-run*`).
+- On the laptop: per-shot JSON and PNG files are in `$GPU2_REVIEW_DIR/slop-toronto-adoption-metrics/` (`idle-*`, `transit-*-run*`).

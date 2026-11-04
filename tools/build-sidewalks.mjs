@@ -167,10 +167,15 @@ export function buildSidewalks(gpkg, CITY) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const gpkg = process.argv[2] || path.join(RAW, 'sidewalks-4326.gpkg');
-  const OUT = process.argv[3] || path.join(ROOT, 'js/toronto-sidewalks.js');
-  const srcMeta = JSON.parse(fs.readFileSync(path.join(path.dirname(gpkg), 'source.json'), 'utf8'));
-  const CITY = loadCity();
+  const geoIdx = process.argv.indexOf('--geo');
+  const geoPath = geoIdx >= 0 && geoIdx + 1 < process.argv.length ? process.argv[geoIdx + 1] : path.join(ROOT, 'js/toronto-geodata.js');
+  const outIdx = process.argv.indexOf('--out');
+  const nonOptionArgs = process.argv.slice(2).filter((arg, i, arr) => !arg.startsWith('--') && (i === 0 || !arr[i - 1].startsWith('--')));
+  const gpkg = nonOptionArgs[0] || (fs.existsSync(path.join(RAW, 'sidewalks-4326.gpkg')) ? path.join(RAW, 'sidewalks-4326.gpkg') : path.join(os.homedir(), '.cache/slop-toronto/raw/sidewalks-4326.gpkg'));
+  const OUT = (outIdx >= 0 && process.argv[outIdx + 1]) || nonOptionArgs[1] || path.join(ROOT, 'js/toronto-sidewalks.js');
+  const metaPath = path.join(path.dirname(gpkg), 'source.json');
+  const srcMeta = fs.existsSync(metaPath) ? JSON.parse(fs.readFileSync(metaPath, 'utf8')) : { title: 'Topographic Mapping – Physical area of sidewalks', page: '', resource: '', resourceId: '', lastRefreshed: '', fetchedAt: '' };
+  const CITY = loadCity(geoPath);
   const t0 = Date.now();
   const { polys, stats, maint, elevation } = buildSidewalks(gpkg, CITY);
   const data = {

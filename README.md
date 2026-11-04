@@ -75,7 +75,13 @@ as skipped, with the reason, when it is missing:
 - **Headless browser UI:** the photo and postcard UI tests run in Playwright's Chromium with the GPU disabled. They
   skip until it is installed (`npx playwright install chromium`).
 - **WebGPU:** rendering and capture checks are not part of `npm test`; run them on the Mac mini through `gpu2` (see
-  [the capture recipe](docs/adoption-measurements.md)).
+  [the capture recipe](docs/adoption-measurements.md)). `gpu2` copies each named run's output back to
+  `$GPU2_REVIEW_DIR/<gpu2 name>/` (on John's laptop, `review/gpu2/` in the ride-anywhere-geo checkout). The docs
+  write capture folders that way, and `tools/massing-baseline.sh` reads `GPU2_REVIEW_DIR` (or `RESULTS`) from the
+  environment.
+- **No local paths:** `tests/no-local-paths.test.mjs` fails if a tracked file that the public snapshot publishes names
+  a laptop home folder (anything under `/Users`) or a machine's local host name (a Bonjour `.local` or Tailscale
+  `.ts.net` name). Write such locations as `$GPU2_REVIEW_DIR/…`, `~/.cache/…` or a description instead.
 
 A failing test is a regression or a recorded bug: the suite does not mark known failures as skipped.
 

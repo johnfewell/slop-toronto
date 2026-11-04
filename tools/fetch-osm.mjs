@@ -10,13 +10,31 @@ import readline from 'node:readline';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const DATA = process.env.GEO_DATA;
-const PBF = process.argv[2];
-if (!DATA || !PBF) throw new Error('usage: GEO_DATA=<dir> node tools/fetch-osm.mjs <extract.osm.pbf>');
+const FRAMES = {
+  detail: [-79.505, 43.585, -79.305, 43.7]
+};
+const frameIndex = process.argv.indexOf('--frame');
+const frameName = frameIndex >= 0 && frameIndex + 1 < process.argv.length ? process.argv[frameIndex + 1] : (process.env.SLOP_FRAME || 'detail');
+const nonOptionArgs = process.argv.slice(2).filter((arg, i, arr) => arg !== '--frame' && (i === 0 || arr[i - 1] !== '--frame'));
+const defaultData = path.join(process.env.HOME, '.cache/slop-toronto/osm');
+const DATA = process.env.GEO_DATA || defaultData;
+const defaultPbf = path.join(process.env.HOME, '.cache/slop-toronto/raw/ontario-latest.osm.pbf');
+const PBF = nonOptionArgs[0] || (fs.existsSync(defaultPbf) ? defaultPbf : null);
+if (!DATA || !PBF) throw new Error('usage: GEO_DATA=<dir> node tools/fetch-osm.mjs [--frame <name|path>] <extract.osm.pbf>');
+fs.mkdirSync(DATA, { recursive: true });
 const CONF = fileURLToPath(new URL('osmconf.ini', import.meta.url));
 // [west, south, east, north]: the city box (tools/data/q_*.overpassql), a wider one for place names, all of Toronto
-const CITY = [-79.505, 43.585, -79.305, 43.7];
-const WIDE = [-79.6, 43.55, -79.2, 43.75];
+const CITY = (() => {
+  if (FRAMES[frameName]) return FRAMES[frameName];
+  if (fs.existsSync(frameName)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(frameName, 'utf8'));
+      if (parsed.bbox) return parsed.bbox;
+    } catch {}
+  }
+  return FRAMES.detail;
+})();
+const WIDE = [-79.6, 43.55, -79.2, 43.78];
 const TORONTO = [-79.64, 43.58, -79.11, 43.86];
 // the lake shore out to the horizon: about 35 km each way along it
 const SHORE = [-79.85, 43.25, -78.9, 43.9];

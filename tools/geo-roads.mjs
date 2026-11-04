@@ -7,10 +7,28 @@
 //   climb over them, tools/geo-rails.mjs.)
 // - The street graph (js/road-network.js builds lanes, junctions & turns from it) with the heights of the decks & ramps,
 //   the decks & ramps themselves (city-grid.js builds them), and every road for the maps & labels
+import fs from 'node:fs';
 import { toWorld, rdp, log, load, osmRoads } from './geo-base.mjs';
 
 // Detailed city (world frame, metres): the Humber to Cherry Beach, the lake to Bloor
-export const DETAIL = { x0: -7900, x1: 3700, z0: -3000, z1: 3600 };
+export const FRAMES = {
+  detail: { x0: -7900, x1: 3700, z0: -3000, z1: 3600 }
+};
+const cliFrame = (() => {
+  const i = process.argv.indexOf('--frame');
+  return i >= 0 && i + 1 < process.argv.length ? process.argv[i + 1] : null;
+})();
+export const ACTIVE_FRAME_NAME = process.env.SLOP_FRAME || cliFrame || 'detail';
+export const DETAIL = (() => {
+  if (FRAMES[ACTIVE_FRAME_NAME]) return FRAMES[ACTIVE_FRAME_NAME];
+  if (fs.existsSync(ACTIVE_FRAME_NAME)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(ACTIVE_FRAME_NAME, 'utf8'));
+      return parsed.world || parsed;
+    } catch {}
+  }
+  return FRAMES.detail;
+})();
 export const inDetail = (x, z, m = 0) => x > DETAIL.x0 - m && x < DETAIL.x1 + m && z > DETAIL.z0 - m && z < DETAIL.z1 + m;
 
 // Unambiguous misspellings in the map data (the street signs read these names)

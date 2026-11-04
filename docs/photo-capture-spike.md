@@ -59,7 +59,7 @@ Whole capture includes waiting for a fresh browser frame and excludes FileReader
 
 The versioned raw reports are kept with the internal research captures, not published here. Both served app builds are `f8c7ef17b28b`: main `e2a4aca4ef98…`, cloud wrapper `bdf554cbbca2…`, shader clock `a7a5ee4857ee…`, measurements `a2de94b9244f…`, cloud bundle `8ade1946424a…`; the browser import map pins Three.js `e27dfa95…`. Each report includes full hashes, runtime settings, per-cycle counters, sample states and runner hash. Low boot was retried after a 30-second page-load timeout; the successful retry uses a 120-second load timeout against the same app build.
 
-All JPEGs, lossless references, checkpoints and diagnostic attempts remain in `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-photo-spike/`. Reproduce with the `gpu2` lock, `CAPTURE_ROOT=dist PHOTO_TAG=phase-matched PHOTO_SETTLE_FRAMES=512 PHOTO_TIER=high PHOTO_REPEATS=20 node tools/check-photo-capture.mjs`, then low. The tool refuses to run outside `gpu2`.
+All JPEGs, lossless references, checkpoints and diagnostic attempts remain in `$GPU2_REVIEW_DIR/slop-toronto-photo-spike/`. Reproduce with the `gpu2` lock, `CAPTURE_ROOT=dist PHOTO_TAG=phase-matched PHOTO_SETTLE_FRAMES=512 PHOTO_TIER=high PHOTO_REPEATS=20 node tools/check-photo-capture.mjs`, then low. The tool refuses to run outside `gpu2`.
 
 Validation: 193 tests, 180 pass, the same 13 baseline failures by name; 12 targeted clock/measurement/loader/cache tests pass; production build and syntax/diff checks pass. See [measurement protocol](adoption-measurements.md). Idle evidence remains `st-wt0.2.2`, coordinated with `st-oiw`.
 

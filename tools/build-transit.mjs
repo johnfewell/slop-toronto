@@ -15,13 +15,18 @@ import vm from 'node:vm';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-const FEED = process.argv[2] || path.join(process.env.HOME, '.cache/slop-toronto/gtfs/feed');
-const OUT = process.argv[3] || fileURLToPath(new URL('../js/toronto-transit.js', import.meta.url));
+const outIdx = process.argv.indexOf('--out');
+const feedIdx = process.argv.indexOf('--feed');
+const nonFlagArgs = process.argv.slice(2).filter((a, i, arr) => !a.startsWith('--') && (i === 0 || !arr[i - 1].startsWith('--')));
+const FEED = (feedIdx >= 0 && process.argv[feedIdx + 1]) || nonFlagArgs[0] || path.join(process.env.HOME, '.cache/slop-toronto/gtfs/feed');
+const OUT = (outIdx >= 0 && process.argv[outIdx + 1]) || nonFlagArgs[1] || fileURLToPath(new URL('../js/toronto-transit.js', import.meta.url));
 const SOURCE = (() => { try { return JSON.parse(fs.readFileSync(path.join(FEED, '../SOURCE.json'), 'utf8')); } catch { return {}; } })();
 const log = (...a) => console.log('[transit]', ...a);
 
 // The world frame the city was built in (js/toronto-geodata.js GEO.frame: projection & the detailed area)
-const geoSrc = fs.readFileSync(fileURLToPath(new URL('../js/toronto-geodata.js', import.meta.url)), 'utf8');
+const geoIdx = process.argv.indexOf('--geo');
+const geoPath = geoIdx >= 0 && geoIdx + 1 < process.argv.length ? process.argv[geoIdx + 1] : fileURLToPath(new URL('../js/toronto-geodata.js', import.meta.url));
+const geoSrc = fs.readFileSync(geoPath, 'utf8');
 const frame = { projection: JSON.parse(geoSrc.match(/"projection":(\{[^}]*\})/)[1]), detail: JSON.parse(geoSrc.match(/"detail":(\{[^}]*\})/)[1]) };
 const P = frame.projection;
 const toWorld = (lat, lon) => {

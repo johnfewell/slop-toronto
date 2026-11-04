@@ -24,7 +24,7 @@ Both high 1600×900/MSAA and low 412×915/FXAA passed `tools/shots/adoption-owne
 - Actual subway service advancement to an arrival, alighting while retaining station ownership, then a safe surface exit.
 - Safe-ground persistence and reload, map/help gating, and rejection of competing overlay/film ownership.
 
-Artifacts and console receipts: `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-adoption-metrics/owner-{high,low}-*`. Production transcription was active: these validate function and rendering, not frame-time budgets or real-phone performance. The full idle-baseline gate remains `st-wt0.2.2` / `st-oiw`.
+Artifacts and console receipts: `$GPU2_REVIEW_DIR/slop-toronto-adoption-metrics/owner-{high,low}-*`. Production transcription was active: these validate function and rendering, not frame-time budgets or real-phone performance. The full idle-baseline gate remains `st-wt0.2.2` / `st-oiw`.
 
 Reproduce after building the site:
 

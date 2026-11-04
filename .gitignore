@@ -23,3 +23,8 @@ tools/prop-src/
 # local agent and design-tool state
 .claude/
 .impeccable/
+.agy-brief.md
+.agy-report.md
+
+# wide-frame generated outputs
+out/

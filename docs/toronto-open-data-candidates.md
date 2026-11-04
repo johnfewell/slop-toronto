@@ -52,4 +52,4 @@ There is a meaningful inconsistency in the drinking-water package: its 4326 GeoJ
 
 Many portal pages display the Open Government Licence – Toronto, while some CKAN packages have null or `notspecified` licence fields. Preserve package/resource provenance and resolve that metadata discrepancy when adding each source to `CREDITS.md`. Data records and linked artwork/images are separate inputs; linked images are not bundled models. Current City/OSM-derived combined database attribution also needs to be preserved.
 
-Raw metadata, samples, downloaded layers and count summaries are cached outside the app at `/Users/johnfewell/code/toronto-open-data-research-2026-10-28/`. Only this report belongs in the app repository. No new scenery or live-data code was added by this research.
+Raw metadata, samples, downloaded layers and count summaries are cached outside the app, in a local research folder next to the checkout (`toronto-open-data-research-2026-10-28/`). Only this report belongs in the app repository. No new scenery or live-data code was added by this research.

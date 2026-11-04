@@ -1,0 +1,7 @@
+tools/isometric/** export-ignore
+tests/isometric/** export-ignore
+.beads/** export-ignore
+AGENTS.md export-ignore
+CLAUDE.md export-ignore
+.claude/** export-ignore
+.impeccable/** export-ignore

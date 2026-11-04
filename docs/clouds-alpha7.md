@@ -11,16 +11,19 @@ supersedes alpha.6 (`docs/clouds-alpha6.md` before this change, bead `st-43w2`).
 | --- | --- | --- |
 | `three` | 0.187.0 (npm) | the browser loads the same build from the r187 release commit, see below |
 | `three-clouds-webgpu` | 0.1.0-alpha.7 | `vendor/clouds/three-clouds-webgpu-0.1.0-alpha.7.tgz` |
-| `@takram/three-atmosphere` | 0.19.1+fork.8 | the archive the clouds release vendors, at its tag commit |
+| `@takram/three-atmosphere` | 0.19.1+fork.8 | the `fork-release-8` release of `johnfewell/three-geospatial` |
 | `@takram/three-geospatial` | 0.9.1+fork.8 | the same |
 
 The clouds declare Three.js `>=0.187.0 <0.188.0` and vendor the two takram fork builds; their README says to install
-the fork archives and the `overrides` together. `package.json` takes both archives from the clouds repository at the
-release's tag commit (`raw.githubusercontent.com/johnfewell/three-clouds-webgpu/0fefeeb…/vendor/…`, an immutable
-commit URL; there is no `fork-release-8` on `johnfewell/three-geospatial`), and its `overrides` pin both packages,
-including where the clouds name them as peers. Their SHA-256s match the clouds release record
-(`829ec23b…` atmosphere, `10127715…` geospatial), and the lockfile carries their integrity. npm resolves one copy
-each of `three`, the clouds and the two takram packages; `tests/threejs-pin.test.cjs` checks the lockfile for it.
+the fork archives and the `overrides` together. `package.json` takes both archives from the
+[`fork-release-8`](https://github.com/johnfewell/three-geospatial/releases/tag/fork-release-8) release on
+`johnfewell/three-geospatial` (tag at `cecb98ca`, branch `fork/r187-types`, one commit on `fork-release-7`), as it took
+`fork-release-7` before. They are byte-identical to the archives the clouds release vendors at its tag commit `0fefeeb`,
+which the city loaded from `raw.githubusercontent.com` until that release was published. The `overrides` pin both
+packages, including where the clouds name them as peers. Their SHA-256s match the clouds release record and the
+release's asset digests (`829ec23b…` atmosphere, `10127715…` geospatial), and the lockfile carries their integrity.
+npm resolves one copy each of `three`, the clouds and the two takram packages; `tests/threejs-pin.test.cjs` checks the
+lockfile for it.
 
 Fork 8 against fork 7 changes types only (r187's typed `UniformNode<'vec3', …>`, `AtmosphereLightNode`'s return
 types) and the `forkBuild.release` marker (7 to 8). The built JavaScript is otherwise byte-identical, including
@@ -126,6 +129,12 @@ gpu2 <name> -- env CAPTURE_ROOT=dist CAPTURE_CDN_CACHE=1 CAPTURE_QUERY='?autosca
 
   The frames match main. The cloud shapes differ only as far as the clouds evolve (their clock is wall time). On
   WebGL2 the sky has the atmosphere without volumetric clouds, as before.
+- Release URLs (3 November 2026): the `fork-release-8` assets are byte-identical to the `raw.githubusercontent.com`
+  archives the city loaded before (same SHA-256s and lockfile `integrity`). A fresh `npm ci` with an empty cache fetches
+  them from the release. `npm test`: 601 tests, 599 pass, 2 skipped (main the same), and `dist/` is byte-identical to
+  main's build. On the Mac mini (`tools/shots/clouds-r187.json`, golden and midday, `cloudSpeed=0`) WebGPU and
+  `?webgl=1`, desktop and phone, all reached ready with no errors, and the frames match main apart from moving foliage,
+  traffic and billboards.
 
 ## History
 

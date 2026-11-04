@@ -21,7 +21,8 @@
 # env: GPU2 (the gpu2 wrapper, default gpu2), GPU2_NAME (default slop-toronto-r3-ride), CAPTURE_PORT (8834),
 #      REPS (3), MAIN_REF (origin/main), GPU2_LOCK_WAIT (1800), SHOTS (tools/shots/massing-baseline.json), WARM (1; 0
 #      skips the warm-up runs: only for checking the script itself), PREFIX (mb: the runs' tag prefix), RESULTS (default
-#      /Users/johnfewell/code/ride-anywhere-geo/review/gpu2/$GPU2_NAME, where gpu2 copies the mini's output)
+#      $GPU2_REVIEW_DIR/$GPU2_NAME; GPU2_REVIEW_DIR is the folder gpu2 copies the mini's output back to, and one of
+#      RESULTS or GPU2_REVIEW_DIR must be set)
 # Output in $RESULTS: mb-baseline-run-order.txt, every run's <tag>-metrics.json, <tag>-console.log, shot PNGs and
 # host observations (tags mb-<arm>-<tier>-r<round>), then mb-baseline-<arm>-<tier>.summary.json
 # (tools/metrics-summary.mjs, per arm and tier) and mb-baseline-summary.{json,md} (tools/massing-baseline-summary.mjs:
@@ -36,7 +37,10 @@ SHOTS=${SHOTS:-tools/shots/massing-baseline.json}
 WARM=${WARM:-1}
 PREFIX=${PREFIX:-mb}
 MAIN_REF=${MAIN_REF:-origin/main}
-RESULTS=${RESULTS:-/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/$NAME}
+if [ -z "${RESULTS:-}" ]; then
+  [ -n "${GPU2_REVIEW_DIR:-}" ] || { echo "massing-baseline: set GPU2_REVIEW_DIR (the folder gpu2 copies runs back to) or RESULTS"; exit 2; }
+  RESULTS=$GPU2_REVIEW_DIR/$NAME
+fi
 export GPU2_LOCK_WAIT=${GPU2_LOCK_WAIT:-1800}
 
 if [ "${1:-}" = "--build" ]; then

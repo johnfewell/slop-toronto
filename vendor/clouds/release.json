@@ -10,12 +10,12 @@
   "dependencies": {
     "@takram/three-atmosphere": {
       "version": "0.19.1+fork.8",
-      "url": "https://raw.githubusercontent.com/johnfewell/three-clouds-webgpu/0fefeeb11c4cd1e149b18538d4378af4ee902a14/vendor/takram-three-atmosphere-0.19.1%2Bfork.8.tgz",
+      "url": "https://github.com/johnfewell/three-geospatial/releases/download/fork-release-8/takram-three-atmosphere-0.19.1%2Bfork.8.tgz",
       "sha256": "829ec23b8754700f93e9764b8473924ac4995c634dccd6e96401f5b944eb34e1"
     },
     "@takram/three-geospatial": {
       "version": "0.9.1+fork.8",
-      "url": "https://raw.githubusercontent.com/johnfewell/three-clouds-webgpu/0fefeeb11c4cd1e149b18538d4378af4ee902a14/vendor/takram-three-geospatial-0.9.1%2Bfork.8.tgz",
+      "url": "https://github.com/johnfewell/three-geospatial/releases/download/fork-release-8/takram-three-geospatial-0.9.1%2Bfork.8.tgz",
       "sha256": "10127715aeb9ac35e7d7e8bf443817d08e9bae845851810d5471628c3b91be25"
     }
   }

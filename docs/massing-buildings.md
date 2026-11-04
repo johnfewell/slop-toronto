@@ -474,7 +474,7 @@ stand-in materials) takes 1.7–1.9 s for the polygons in `buildCityBlocks`, the
 - **Errors:** none. Every run's only console errors are the capture server's missing `/live/vehicles` (both sides).
 - **Flag off:** the prebuilt CaféTO layout is used (fingerprint ok) on both tiers, as on main.
 
-**What the frames show** (in `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-r3-phone/`:
+**What the frames show** (in `$GPU2_REVIEW_DIR/slop-toronto-r3-phone/`:
 `desk-off--*`, `desk-on2--*`, `phone-off--*`, `phone-on2--*`, each with its `console.log`):
 
 - **Towers** keep their curtain walls and gain their real plans: chamfered and stepped towers in the Financial
@@ -763,7 +763,7 @@ The worker built all three tiers in 422 ms, while the main thread went on throug
 
 These are the node report's numbers for that shot (181 → 85, 958,937 → 438,638).
 
-**Frames** in `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-r3-ride/`:
+**Frames** in `$GPU2_REVIEW_DIR/slop-toronto-r3-ride/`:
 
 - `ab-{desk,phone}-{main,cells,near}-*.png`, with each run's `console.log`
 - the side-by-side and diff images in `massing3-ab-sheets/{desk,phone,desk-near,phone-near}/` (`<shot>-ab.png`: main
@@ -803,14 +803,15 @@ Before starting, check that the mini is quiet:
 Then, from this checkout on the laptop:
 
 ```sh
-GPU2=gpu2 GPU2_NAME=slop-toronto-r3-ride GPU2_LOCK_WAIT=1800 tools/massing-baseline.sh --build
+GPU2_REVIEW_DIR=<where gpu2 copies runs back> GPU2=gpu2 GPU2_NAME=slop-toronto-r3-ride GPU2_LOCK_WAIT=1800 \
+  tools/massing-baseline.sh --build
 ```
 
 - **Time.** 22 runs of about three minutes each, so 70–80 minutes if nobody else queues on the mini.
 - **Checked.** One short round (`PREFIX=mbcheck REPS=1 WARM=0`, two shots) ran end to end on the shared mini on
   2026-11-01. Its numbers are contended, so they are not a baseline:
-  `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-r3-ride/mbcheck-baseline-summary.md`.
-- **Output.** `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/<GPU2_NAME>/`: every run's files (tags
+  `$GPU2_REVIEW_DIR/slop-toronto-r3-ride/mbcheck-baseline-summary.md`.
+- **Output.** `$GPU2_REVIEW_DIR/<GPU2_NAME>/`: every run's files (tags
   `mb-<arm>-<tier>-r<round>`), `mb-baseline-run-order.txt`, `mb-baseline-<arm>-<tier>.summary.json`
   (`tools/metrics-summary.mjs`) and `mb-baseline-summary.{json,md}` (`tools/massing-baseline-summary.mjs`). The
   summary gives, per arm, tier and shot: frame p50/p95, CPU, draws, triangles, attribute memory, and the startup
@@ -845,7 +846,7 @@ other frame, so its per-frame figures are halves.
 at the Augusta/Baldwin corner. The collider outlines are drawn over the city, so you can see that the walker now
 meets the polygon walls, not the old boxes. Near the walker there are 11 building colliders instead of 14 box parts.
 
-**Frames** in `/Users/johnfewell/code/ride-anywhere-geo/review/gpu2/slop-toronto-r3-phone/`:
+**Frames** in `$GPU2_REVIEW_DIR/slop-toronto-r3-phone/`:
 
 - `desk-before-*` / `desk-after-*`
 - `phone-before-*` / `phone-after-*`
