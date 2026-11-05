@@ -934,7 +934,7 @@ function createStreetcarMaterial(lamp = 0xfff1d6, atlas = null, reversed = false
   const lampMask = smoothstep(0.6, 0.63, y).mul(float(1.0).sub(smoothstep(0.76, 0.79, y))).mul(front).mul(smoothstep(0.8, 0.84, lx)).mul(float(1.0).sub(smoothstep(1.06, 1.1, lx)));
   // the sign: the route & destination in amber LEDs (without an atlas, a plain amber line)
   const led = atlas
-    ? texture(atlas.tex, vec2(positionGeometry.x.div(1.6).add(0.5), attribute('signRow', 'float').add(float(3.47).sub(y).div(0.34).clamp(0.02, 0.98)).div(atlas.rows))).rgb.mul(sign).mul(1.6)
+    ? texture(atlas.tex, atlas.uv(positionGeometry.x.div(1.6).add(0.5), attribute('signRow', 'float'), float(3.47).sub(y).div(0.34).clamp(0.02, 0.98))).rgb.mul(sign).mul(1.6)
     : color(0xffa020).mul(sign.mul(smoothstep(3.22, 3.25, y)).mul(float(1.0).sub(smoothstep(3.36, 3.39, y))).mul(step(lx, 0.62)));
   mat.emissiveNode = color(0xffe2b0).mul(band.max(doorGlass).mul(float(1.0).sub(front)).mul(0.55).mul(night))
     .add(color(lamp).mul(lampMask).mul(night.mul(2.2).add(0.25)))

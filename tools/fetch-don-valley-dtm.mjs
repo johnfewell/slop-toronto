@@ -13,7 +13,7 @@
 // Writes <tile>.tif (Deflate-compressed float32 GeoTIFF) and the region's manifest (manifest.json for the Don Valley,
 // manifest-high-park.json for High Park: tiles, their catalogue ids, bounds, sha256, retrieval date). Existing tiles are
 // kept unless --force.
-// usage: node tools/fetch-don-valley-dtm.mjs [--region don-valley|high-park] [--product dtm|dsm] [--force]
+// usage: node tools/fetch-don-valley-dtm.mjs [--region don-valley|high-park|toronto-island] [--product dtm|dsm] [--force]
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -21,7 +21,7 @@ import crypto from 'node:crypto';
 
 const OUT = process.env.DON_VALLEY_DTM || path.join(os.homedir(), '.cache/slop-toronto/raw/ontario-dtm-gta2023');
 // --product dsm: the same project's Digital Surface Model (the highest surface: the canopy, roofs), for High Park's trees
-// (tools/build-high-park-woods.mjs), into the same folder beside the DTM (its tiles are named ..._DSM), manifest
+// and other parks' woods (tools/build-park-woods.mjs), into the same folder beside the DTM (its tiles are named ..._DSM), manifest
 // manifest-dsm.json / manifest-high-park-dsm.json
 const productArg = process.argv.indexOf('--product');
 const PRODUCT = productArg > 0 ? process.argv[productArg + 1] : 'dtm';
@@ -32,7 +32,10 @@ const PROJECT = 'GTA 2023';
 // 600 m), High Park's (tools/build-high-park.mjs: the box grown by 300 m)
 const REGIONS = {
   'don-valley': { envelope: { west: -79.3825, south: 43.6585, east: -79.3435, north: 43.6905 }, manifest: 'manifest.json' },
-  'high-park': { envelope: { west: -79.4812, south: 43.6328, east: -79.4482, north: 43.6592 }, manifest: 'manifest-high-park.json' }
+  'high-park': { envelope: { west: -79.4812, south: 43.6328, east: -79.4482, north: 43.6592 }, manifest: 'manifest-high-park.json' },
+  // (Toronto Island Park's woods, tools/build-park-woods.mjs --park toronto-island: its islands' box grown by 300 m;
+  // the project has no tiles over the open lake)
+  'toronto-island': { envelope: { west: -79.4109, south: 43.6056, east: -79.3448, north: 43.6449 }, manifest: 'manifest-toronto-island.json' }
 };
 const regionArg = process.argv.indexOf('--region');
 const REGION = REGIONS[regionArg > 0 ? process.argv[regionArg + 1] : 'don-valley'];

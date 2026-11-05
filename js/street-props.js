@@ -33,6 +33,46 @@ const ROUND = { hydrant: 0.85 };
 // roadway, buildings and other furniture), with its own collider below; the rest gets its model's footprint
 const LAID_OUT = ['parkingMeter', 'bench', 'wayfinding', 'infoPillar'];
 
+// A uniform grid over items' bounds, for the startup placement checks below (st-bz1o.2). `some(x0, x1, z0, z1, test)`
+// runs `test` on every item whose bounds share a cell with the query's, and on the items with no usable bounds or
+// spanning too many cells, which every query tests. Exact for tests that reject items whose bounds miss the query's
+// (world-collision.js contact() starts with that very bounds test; a point farther than r on either axis is farther
+// than r): the answer is the one a scan of the whole list gives, the scan just never reaches the far items. Before it,
+// each furniture candidate scanned every collider and prop of the map: 4 s of today's load, 35 s of an Eglinton
+// frame's and 118 s of the whole City's (docs/map-scale-measurements.md).
+const GRID_CELL = 16, GRID_MAX_CELLS = 4096;
+function boundsGrid(items, boundsOf) {
+  const cells = new Map(), always = [];
+  const key = (i, j) => i * 100003 + j;
+  for (const item of items) {
+    const [x0, x1, z0, z1] = boundsOf(item);
+    if (![x0, x1, z0, z1].every(Number.isFinite)) { always.push(item); continue; }
+    const i0 = Math.floor(x0 / GRID_CELL), i1 = Math.floor(x1 / GRID_CELL), j0 = Math.floor(z0 / GRID_CELL), j1 = Math.floor(z1 / GRID_CELL);
+    if ((i1 - i0 + 1) * (j1 - j0 + 1) > GRID_MAX_CELLS) { always.push(item); continue; }
+    for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+      const k = key(i, j);
+      const list = cells.get(k);
+      if (list) list.push(item); else cells.set(k, [item]);
+    }
+  }
+  return {
+    some(x0, x1, z0, z1, test) {
+      if (always.some(test)) return true;
+      for (let i = Math.floor(x0 / GRID_CELL); i <= Math.floor(x1 / GRID_CELL); i++) {
+        for (let j = Math.floor(z0 / GRID_CELL); j <= Math.floor(z1 / GRID_CELL); j++) {
+          const list = cells.get(key(i, j));
+          if (list && list.some(test)) return true;
+        }
+      }
+      return false;
+    }
+  };
+}
+// a grid of points [x0, z0, x1, z1, ...] (their indices) and of sites { x, z }
+const pointGrid = (pts) => boundsGrid(Array.from({ length: pts.length / 2 }, (_, n) => 2 * n), (i) => [pts[i], pts[i], pts[i + 1], pts[i + 1]]);
+const siteGrid = (sites) => boundsGrid(sites, (s) => [s.x, s.x, s.z, s.z]);
+const nearSite = (grid, x, z, r) => grid.some(x - r, x + r, z - r, z + r, (s) => Math.hypot(s.x - x, s.z - z) < r);
+
 function hash(x, z) {
   const s = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
   return s - Math.floor(s);
@@ -67,14 +107,19 @@ async function buildStreetProps(scene, staticColliders = []) {
   const W = window.CITY.WorldCollision;
   // Broad-phase checks keep the new cabinets clear of buildings/landmarks, other
   // furniture and boarding shelters. These run once at startup, never per frame.
+  // (in grids, built at the first check: the colliders by their bounds, each kind of prop by its points)
+  let colliderGrid = null, propGrids = null;
   const obstruction = (x,z,height=1.8288) => {
     const shape = W.circleShape(x,z,0.35);
     const ground = CITY_BOUNDS.sidewalkHeight+(window.CITY.cutAt?.(x,z)||0);
-    if (staticColliders.some((c) => (c.maxY ?? Infinity)>ground+0.05 && (c.minY ?? -Infinity)<ground+height && W.contact(shape,c))) return true;
+    colliderGrid ||= boundsGrid(staticColliders, (c) => [c.minX, c.maxX, c.minZ, c.maxZ]);
+    if (colliderGrid.some(shape.minX, shape.maxX, shape.minZ, shape.maxZ,
+      (c) => (c.maxY ?? Infinity)>ground+0.05 && (c.minY ?? -Infinity)<ground+height && W.contact(shape,c))) return true;
+    propGrids ||= Object.fromEntries(['hydrant','bikeRing','postBox','shelter','litterBin'].map((key) => [key, pointGrid(props[key] || [])]));
     for (const key of ['hydrant','bikeRing','postBox','shelter','litterBin']) {
       const radius = key === 'shelter' ? 3 : 0.8;
       const points = props[key] || [];
-      for (let i=0; i<points.length; i+=2) if (Math.hypot(points[i]-x,points[i+1]-z) < radius) return true;
+      if (propGrids[key].some(x - radius, x + radius, z - radius, z + radius, (i) => Math.hypot(points[i]-x,points[i+1]-z) < radius)) return true;
     }
     return false;
   };
@@ -83,11 +128,13 @@ async function buildStreetProps(scene, staticColliders = []) {
     : { sites: [], rejected: {} };
   props.parkingMeter = meterLayout.sites.flatMap((s) => [s.x,s.z]);
   window.CITY.parkingMeterStats = { sourceCount: sourceMeters.length, accepted: meterLayout.sites.length, placed: 0, rejected: meterLayout.rejected, sites: meterLayout.sites };
+  const meterGrid = siteGrid(meterLayout.sites);
   const sourceBenches = window.CITY.BENCHES?.records || [];
   const benchLayout = W && window.CITY.benchSites
     ? window.CITY.benchSites(sourceBenches, { nearestRoads, blockAt, bikeShareAt:window.CITY.bikeShareAt,
-      blocked:(x,z)=>obstruction(x,z)||meterLayout.sites.some((s)=>Math.hypot(s.x-x,s.z-z)<.75) })
+      blocked:(x,z)=>obstruction(x,z)||nearSite(meterGrid,x,z,.75) })
     : {sites:[],rejected:{}};
+  const benchGrid = siteGrid(benchLayout.sites);
   props.bench = benchLayout.sites.flatMap((s)=>[s.x,s.z]);
   window.CITY.benchStats = {sourceCount:sourceBenches.length, accepted:benchLayout.sites.length, placed:0, rejected:benchLayout.rejected, sites:benchLayout.sites};
   const sourceSigns = window.CITY.WAYFINDING?.records || [];
@@ -96,13 +143,14 @@ async function buildStreetProps(scene, staticColliders = []) {
       // John's photographed legend says the reader faces East. The sign's +Z
       // front therefore points West in the rotated game frame.
       headingFor:(record,road,yaw)=>record.id==='IP-00839'?(GEO.frame.bearingDeg-90)*Math.PI/180:yaw,
-      blocked:(x,z)=>obstruction(x,z,2.7)||meterLayout.sites.some((s)=>Math.hypot(s.x-x,s.z-z)<.75)||benchLayout.sites.some((s)=>Math.hypot(s.x-x,s.z-z)<1.3)})
+      blocked:(x,z)=>obstruction(x,z,2.7)||nearSite(meterGrid,x,z,.75)||nearSite(benchGrid,x,z,1.3)})
     : {sites:[],rejected:{}};
+  const signGrid = siteGrid(signLayout.sites);
   props.wayfinding=signLayout.sites.flatMap((s)=>[s.x,s.z]);
   window.CITY.wayfindingStats={sourceCount:sourceSigns.length,unsupported:sourceSigns.filter((r)=>r.type!=='TO360').length,accepted:signLayout.sites.length,placed:0,rejected:signLayout.rejected,sites:signLayout.sites};
   const infoLayout=W&&window.CITY.benchSites
     ?window.CITY.benchSites(sourceSigns.filter((r)=>r.type==='Info Pillar'),{nearestRoads,blockAt,bikeShareAt:window.CITY.bikeShareAt,halfWidth:.73,halfDepth:.32,clearBehind:1.2,
-      blocked:(x,z)=>obstruction(x,z,3)||meterLayout.sites.some((s)=>Math.hypot(s.x-x,s.z-z)<.75)||benchLayout.sites.some((s)=>Math.hypot(s.x-x,s.z-z)<1.3)||signLayout.sites.some((s)=>Math.hypot(s.x-x,s.z-z)<.7)})
+      blocked:(x,z)=>obstruction(x,z,3)||nearSite(meterGrid,x,z,.75)||nearSite(benchGrid,x,z,1.3)||nearSite(signGrid,x,z,.7)})
     :{sites:[],rejected:{}};
   // Long advertising wing follows the street; the narrow walking map addresses
   // pedestrians approaching along it. The City source does not supply yaw.
@@ -237,5 +285,5 @@ async function buildStreetProps(scene, staticColliders = []) {
   return { group, counts, colliders };
 }
 
-Object.assign(window.CITY, { buildStreetProps });
+Object.assign(window.CITY, { buildStreetProps, streetPropGrid: { boundsGrid, pointGrid, siteGrid, nearSite } }); // (the grids: tests/street-prop-grid.test.mjs)
 })();

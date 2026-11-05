@@ -534,7 +534,11 @@ function buildBikePosts(scene) {
   mesh.userData.cullDistance = 110;
   mesh.userData.cullCell = 60;
   mesh.computeBoundingSphere();
-  scene.add(mesh);
+  // (in a group of its own, a culling root of main.js: scene-culling.js puts the chunks beside the mesh they replace)
+  const group = new THREE.Group();
+  group.name = 'BikePosts';
+  group.add(mesh);
+  scene.add(group);
   console.info(`[cycling] ${spots.length / 3} flexi-posts on the cycle tracks' separators (${colliders.length} colliders with the curbs)`);
   return { mesh, colliders };
 }

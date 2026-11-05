@@ -15,10 +15,10 @@ const read = (f) => fs.readFileSync(new URL(`../js/${f}.js`, import.meta.url), '
 function city() {
   const context = vm.createContext({ window: { CITY: { THREE, Addons: { mergeGeometries }, DEBUG_ROADS: false }, addEventListener() {} }, document: { addEventListener() {}, hidden: false },
     console: { info() {}, warn() {}, log() {} }, atob });
-  for (const f of ['toronto-geodata', 'toronto-subway', 'toronto-subway-topology', 'high-park-data', 'don-valley', 'city-config', 'high-park-woods-data', 'high-park-woods']) vm.runInContext(read(f), context);
+  for (const f of ['toronto-geodata', 'toronto-subway', 'toronto-subway-topology', 'high-park-data', 'don-valley', 'city-config', 'high-park-woods-data', 'park-woods']) vm.runInContext(read(f), context);
   return context.window.CITY;
 }
-const C = city(), W = C.highParkWoods, D = C.HIGH_PARK_WOODS_DATA;
+const C = city(), W = C.parkWoods, D = C.HIGH_PARK_WOODS_DATA;
 const onPark = (x, z) => { const b = C.blockAt(x, z); return !!(b && W.replacesBlock(b)); };
 const inPoly = (flat, x, z) => { let c = false; for (let i = 0, j = flat.length - 2; i < flat.length; j = i, i += 2) { if ((flat[i + 1] > z) !== (flat[j + 1] > z) && x < ((flat[j] - flat[i]) * (z - flat[i + 1])) / (flat[j + 1] - flat[i + 1]) + flat[i]) c = !c; } return c; };
 
@@ -44,6 +44,14 @@ test('the data names its source (the GTA 2023 lidar\'s surface over its terrain)
   assert.ok(woods.length > 3000 && ravine.length > 1000 && open.length > 500, `${woods.length} woods, ${ravine.length} ravine, ${open.length} open`);
   assert.ok(ravine.every((c) => c.woods));
   assert.ok(D.diagnostics.canopyShare > 0.6 && D.diagnostics.canopyShare < 0.9, `canopy ${D.diagnostics.canopyShare}`);
+  // not orchard rows (st-w050): the woods' crowns are as wide as their own edges, not each the share of the way to its
+  // nearest neighbour; some stand closer than the window (clumps); the tops sit between the 1 m cells
+  const ws = woods.filter((c) => !c.ravine), near = (c) => Math.min(...ws.filter((o) => o !== c && Math.abs(o.x - c.x) < 15 && Math.abs(o.z - c.z) < 15).map((o) => Math.hypot(o.x - c.x, o.z - c.z)));
+  const sample = ws.filter((_, n) => n % 7 === 0), nn = sample.map(near);
+  const clamped = sample.filter((c, n) => Math.abs(c.r - 0.8 * nn[n]) < 0.11).length / sample.length;
+  assert.ok(clamped < 0.4, `${(clamped * 100).toFixed(0)}% of the woods' crowns as wide as their spacing`);
+  assert.ok(nn.filter((d) => d < 3).length > 0, 'no two woods\' tops nearer than 3 m');
+  assert.ok(crowns.filter((c) => Math.abs(((c.x - D.box.x0) % 1) - 0.5) > 0.05).length > crowns.length / 3, 'the tops on the 1 m cells\' centres');
   // (oaks most of all: the black oak savanna and woodland)
   assert.ok(crowns.filter((c) => c.model.includes('oak')).length > crowns.length / 2);
 });
@@ -68,7 +76,7 @@ test('the lidar\'s trees replace street-details.js\'s invented ones on the park\
     assert.ok(t.scale > 0 && [0, 1, 2].includes(t.species), 'the fallback trees (mrdoob\'s) can draw it');
   }
   // (street-details.js hands its sites over once they are all placed; ez-trees.js draws the named model, height & width)
-  assert.match(read('street-details'), /window\.CITY\.highParkWoods\.replaceTrees\(treePositions, SW_Y\)/);
+  assert.match(read('street-details'), /window\.CITY\.parkWoods\.replaceTrees\(treePositions, SW_Y\)/);
   const ez = read('ez-trees');
   assert.match(ez, /model: named >= 0 \? named : genModel\(t\.species \|\| 0, h\)/);
   assert.match(ez, /cls\[i\] = t\.woods && !isPine\[i\] \? WOODS_CLASS : tier\[i\] \* 2 \+ isPine\[i\]/);
@@ -91,7 +99,7 @@ test('the City\'s trees piled on one address point in the park (519 at the Bloor
   assert.equal(left.size, P.length);
   assert.ok([...left.values()].every((n) => n === 1));
   assert.equal(sites.filter((t) => !piles.has(key(t.x, t.z))).length, ST.length / 4 - P.reduce((t, p) => t + p[2], 0) + 0);
-  assert.match(read('ez-trees'), /window\.CITY\.highParkWoods \? window\.CITY\.highParkWoods\.dropPiledCityTrees\(sites\) : 0/);
+  assert.match(read('ez-trees'), /window\.CITY\.parkWoods \? window\.CITY\.parkWoods\.dropPiledCityTrees\(sites\) : 0/);
 });
 
 test('the woods\' trees hand over to their coarser levels nearer than the parks\' (they stand 50-70 to the hectare)', () => {
@@ -115,12 +123,20 @@ test('the ground: woodland floor under the canopy and meadow in the savanna, on 
     const x = D.box.x0 + (i + 0.5) * cell, z = D.box.z0 + (j + 0.5) * cell;
     assert.ok([[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]].some(([a, b]) => onPark(x + a * cell * 0.5, z + b * cell * 0.5)), `ground cover off the park at ${x}, ${z}`);
   }
+  // (open floor, st-xk79: only where there is floor; more of it under the savanna's crowns than under the woods')
+  const openAt = (x, z) => { const i = Math.floor((x - D.box.x0) / cell), j = Math.floor((z - D.box.z0) / cell); return g.data[(j * w + i) * 4 + 2] / 255; };
+  for (let q = 0; q < w * h; q++) if (g.data[q * 4 + 2]) assert.ok(g.data[q * 4] > 0, 'open floor where there is no floor');
+  const mean = (cs) => cs.reduce((t, c) => t + openAt(c.x, c.z), 0) / cs.length, cs = W.crowns();
+  const openWoods = mean(cs.filter((c) => c.woods && !c.ravine)), openSavanna = mean(cs.filter((c) => !c.woods));
+  assert.ok(openWoods < 0.25 && openSavanna > 0.5, `open floor ${openWoods.toFixed(2)} in the woods, ${openSavanna.toFixed(2)} in the open`);
   const ha = (v) => (v * cell * cell) / 1e4;
   assert.ok(ha(floor) > 60 && ha(floor) < 120, `woodland floor ${ha(floor).toFixed(1)} ha`);
   assert.ok(ha(meadow) > 5 && ha(meadow) < 40, `meadow ${ha(meadow).toFixed(1)} ha`);
   // the lawn material takes it through this one hook (outside the box: the lawn's own colour, nothing computed)
-  assert.match(read('tsl-materials'), /HPW \? HPW\.groundNode\(lawn, wp, \{ seasonalGrass, noise2D \}\) : lawn/);
-  assert.match(read('high-park-woods'), /If\(uv\.x\.greaterThan\(0\.0\)\.and\(uv\.x\.lessThan\(1\.0\)\)\.and\(uv\.y\.greaterThan\(0\.0\)\)\.and\(uv\.y\.lessThan\(1\.0\)\)/);
+  assert.match(read('tsl-materials'), /PW \? PW\.groundNode\(lawn, wp, \{ seasonalGrass, noise2D \}\) : lawn/);
+  // (the floor follows the sun's height: golden hour's litter, the high sun's grass where the floor is open)
+  assert.match(read('park-woods'), /const noon = smoothstep\(0\.25, 0\.65, normalize\(C\.cityUniforms\.uSkySunDir\)\.y\)/);
+  assert.match(read('park-woods'), /If\(uv\.x\.greaterThan\(0\.0\)\.and\(uv\.x\.lessThan\(1\.0\)\)\.and\(uv\.y\.greaterThan\(0\.0\)\)\.and\(uv\.y\.lessThan\(1\.0\)\)/);
 });
 
 test('the build is reproducible from the lidar tiles', { skip: !fs.existsSync(path.join(process.env.DON_VALLEY_DTM || path.join(os.homedir(), '.cache/slop-toronto/raw/ontario-dtm-gta2023'), 'manifest-high-park-dsm.json')) && 'no surface model tiles (node tools/fetch-don-valley-dtm.mjs --region high-park --product dsm)' }, () => {

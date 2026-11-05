@@ -1,0 +1,210 @@
+[
+ {
+  "name": "humber-bank-person-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('person'); a.selectCamera('chase', true); a.teleportTo(-7650, -1030, -1.571); })()",
+  "wait": 3500
+ },
+ {
+  "name": "humber-bank-person-start-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "humber-bank-person-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 5000
+ },
+ {
+  "name": "humber-bank-person-1-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "humber-bank-person-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 5000
+ },
+ {
+  "name": "humber-bank-person-2-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "lake-edge-person-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('person'); a.selectCamera('chase', true); a.teleportTo(400, 676, 0); })()",
+  "wait": 3500
+ },
+ {
+  "name": "lake-edge-person-start-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "lake-edge-person-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 5000
+ },
+ {
+  "name": "lake-edge-person-1-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "lake-edge-person-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 5000
+ },
+ {
+  "name": "lake-edge-person-2-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "humber-bank-cyclist-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-7650, -1030, -1.571); })()",
+  "wait": 3500
+ },
+ {
+  "name": "humber-bank-cyclist-start-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "humber-bank-cyclist-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 5000
+ },
+ {
+  "name": "humber-bank-cyclist-1-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "humber-bank-cyclist-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 5000
+ },
+ {
+  "name": "humber-bank-cyclist-2-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "lake-edge-cyclist-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(400, 676, 0); })()",
+  "wait": 3500
+ },
+ {
+  "name": "lake-edge-cyclist-start-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "lake-edge-cyclist-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 5000
+ },
+ {
+  "name": "lake-edge-cyclist-1-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "lake-edge-cyclist-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 5000
+ },
+ {
+  "name": "lake-edge-cyclist-2-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "queensway-person-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = null; a.selectMode('person'); a.selectCamera('chase', true); a.teleportTo(-7636.5, -1007.0, -0.927); })()",
+  "wait": 3500
+ },
+ {
+  "name": "queensway-person-start-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "queensway-person-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "queensway-person-1-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "queensway-person-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "queensway-person-2-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "queensway-person-3",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "queensway-person-3-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ }
+]

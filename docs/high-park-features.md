@@ -123,5 +123,6 @@ and summed; only the moving trains, streetcars and vehicles differ, as they do b
 - **Colborne Lodge's look** is from descriptions, not measured drawings: the proportions follow the footprint, the
   storeys, verandah, bay and chimneys are as described. A photo pass could tune the colours and the verandah's roof.
 - **The City's stacked trees:** the tree inventory puts dozens of park trees on single points (36 on the lodge's address,
-  519 at the Bloor gate); this keeps them out of the lodge only. Bead `st-unco`.
+  519 at the Bloor gate); this keeps them out of the lodge, the woods keep one of each pile (`high-park-woods.md`) and
+  the geodata build spreads the piles outside the park along their frontage (`tools/geo-tree-piles.mjs`, `st-unco`).
 - **The animals** are simple boxes (about 100 triangles each), static.

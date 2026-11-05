@@ -2143,6 +2143,8 @@ function createRoadSurfaceMaterial() {
   const cAsphaltLight = color(0x716f6b);
   const cManhole = color(0x4a433c);
   const cOldPatch = color(0x77756f);
+  // A fresh patch's albedo as a share of the roadway's at the same spot (linear): new asphalt is about half as bright
+  const FRESH_PATCH_SHADE = 0.55;
 
   // World size of a pixel: fine texture settles to its mean before it can alias at grazing angles or from the air
   const pixelSize = length(fwidth(positionWorld.xz));
@@ -2226,7 +2228,9 @@ function createRoadSurfaceMaterial() {
     // Utility-cut patches with their tar-sealed edges, stone chips, tar snakes, oil drips, cracks & potholes
     let surface = baseAsphalt;
     if (wearLite) {
-      const patchCol = mix(mix(baseAsphalt, cOldPatch, 0.45).mul(1.06), color(0x2e2d2c).mul(0.85), patchFresh);
+      // fresh blacktop is the roadway's own aggregate, darker: its grain keeps showing. (A flat near-black fill, a fifth
+      // of the roadway's albedo, read in daylight as a hard-edged shadow: on Colborne Lodge Drive it passed for a car's)
+      const patchCol = mix(mix(baseAsphalt, cOldPatch, 0.45).mul(1.06), baseAsphalt.mul(FRESH_PATCH_SHADE), patchFresh);
       surface = mix(baseAsphalt, patchCol, patchCover)
         .mul(float(1.0).sub(patchSeal.mul(0.5)))
         .mul(float(1.0).sub(pothole.mul(0.4)));
@@ -3128,11 +3132,11 @@ function createParkLawnMaterial(isMeadow = false) {
       cGrassMid,
       macroPatch.mul(0.45).add(midClover.mul(0.35)).add(mowStripe.mul(0.20))
     );
-    // (the season: spring's fresh green, winter's dormant turf, lying snow; over High Park its woodland floor and
-    // meadows, high-park-woods.js, and outside its box the lawn as it was)
+    // (the season: spring's fresh green, winter's dormant turf, lying snow; over the wooded parks their woodland floor
+    // and meadows, park-woods.js, and outside the parks' boxes the lawn as it was)
     const lawn = seasonalGrass(mix(baseLawn, cGrassSun, microBlade.mul(0.38)));
-    const HPW = window.CITY.highParkWoods;
-    return snowOver(HPW ? HPW.groundNode(lawn, wp, { seasonalGrass, noise2D }) : lawn, wp, float(1.0));
+    const PW = window.CITY.parkWoods;
+    return snowOver(PW ? PW.groundNode(lawn, wp, { seasonalGrass, noise2D }) : lawn, wp, float(1.0));
   })();
 
   mat.normalNode = Fn(() => {

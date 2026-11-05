@@ -1,0 +1,78 @@
+[
+ {
+  "name": "t00-setup",
+  "time": "golden",
+  "mode": "person",
+  "x": -1440,
+  "z": 2660,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000
+ },
+ {
+  "name": "island-aerial2-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-650, 190, 2050], look: [-1350, 0, 2780], fov: 55 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "tris-island-aerial",
+  "record": true,
+  "wait": 500,
+  "js": "(() => new Promise((res) => { const i = window.__CITY_APP.renderer.info, out = []; const f = () => { out.push(i.render.triangles); if (out.length < 60) requestAnimationFrame(f); else { const nz = out.filter(Boolean).sort((a, b) => a - b); res({ frames: out.length, nonzero: nz.length, max: nz[nz.length - 1] || 0, median: nz[nz.length >> 1] || 0, calls: i.render.drawCalls }); } }; requestAnimationFrame(f); }))()"
+ },
+ {
+  "name": "island-walk-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-1440, g(-1440, 2660) + 1.7, 2660], L = [-1480, g(-1480, 2750) + 4, 2750]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 6000
+ },
+ {
+  "name": "tris-island-walk",
+  "record": true,
+  "wait": 500,
+  "js": "(() => new Promise((res) => { const i = window.__CITY_APP.renderer.info, out = []; const f = () => { out.push(i.render.triangles); if (out.length < 60) requestAnimationFrame(f); else { const nz = out.filter(Boolean).sort((a, b) => a - b); res({ frames: out.length, nonzero: nz.length, max: nz[nz.length - 1] || 0, median: nz[nz.length >> 1] || 0, calls: i.render.drawCalls }); } }; requestAnimationFrame(f); }))()"
+ },
+ {
+  "name": "island-edge2-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-1400, g(-1400, 2740) + 1.7, 2740], L = [-1400, g(-1400, 2660) + 5, 2660]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 6000
+ },
+ {
+  "name": "harbourfront-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, p = C.worldFromLatLon(43.6384, -79.3878), q = C.worldFromLatLon(43.6215, -79.3800), g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [p.x, g(p.x, p.z) + 1.7, p.z], L = [q.x, 6, q.z]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 6000
+ },
+ {
+  "name": "tris-harbourfront",
+  "record": true,
+  "wait": 500,
+  "js": "(() => new Promise((res) => { const i = window.__CITY_APP.renderer.info, out = []; const f = () => { out.push(i.render.triangles); if (out.length < 60) requestAnimationFrame(f); else { const nz = out.filter(Boolean).sort((a, b) => a - b); res({ frames: out.length, nonzero: nz.length, max: nz[nz.length - 1] || 0, median: nz[nz.length >> 1] || 0, calls: i.render.drawCalls }); } }; requestAnimationFrame(f); }))()"
+ },
+ {
+  "name": "island-aerial2-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-650, 190, 2050], look: [-1350, 0, 2780], fov: 55 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "island-walk-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-1440, g(-1440, 2660) + 1.7, 2660], L = [-1480, g(-1480, 2750) + 4, 2750]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 6000
+ },
+ {
+  "name": "island-edge2-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-1400, g(-1400, 2740) + 1.7, 2740], L = [-1400, g(-1400, 2660) + 5, 2660]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 6000
+ },
+ {
+  "name": "harbourfront-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, p = C.worldFromLatLon(43.6384, -79.3878), q = C.worldFromLatLon(43.6215, -79.3800), g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [p.x, g(p.x, p.z) + 1.7, p.z], L = [q.x, 6, q.z]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 6000
+ }
+]

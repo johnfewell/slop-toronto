@@ -284,7 +284,7 @@ if (unreviewed.length) throw new Error(`shapes calling at the same stops take di
 for (const [id, p] of merged) if ((VARIANTS.aliases || {})[id]) throw new Error(`pattern alias ${id} is a live pattern ID`);
 for (const [from, to] of Object.entries(VARIANTS.aliases || {})) if (!merged.has(to)) throw new Error(`pattern alias ${from} -> ${to}: no such pattern`);
 patterns.length = 0;
-patterns.push(...merged.values());
+for (const p of merged.values()) patterns.push(p); // (no spread: a bigger frame's patterns, st-6m6l)
 patterns.sort((a, b) => a.r - b.r || a.d - b.d || b.n - a.n);
 const byType = (ty) => patterns.filter((p) => p.t === ty);
 log(`${patterns.length} patterns on ${routeOut.length} routes (${byType(0).length} streetcar, ${byType(3).length} bus, ${byType(1).length} subway), ${stopOut.length / 2} stops`);

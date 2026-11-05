@@ -66,7 +66,9 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   assert.equal(links.length, preloadScript[1].match(/'\.\/js\/[\w-]+\.js'/g).filter((s) => !s.includes('geodata-loader') && !s.includes('/don-valley-data')).length);
   assert.ok(links.includes('./js/high-park-data.js') && links.includes('./js/don-valley.js'), 'High Park\'s terrain is on by default');
   assert.ok(!links.includes('./js/don-valley-data.js'), 'the Don Valley pilot is not loaded without its flag');
-  assert.ok(links.indexOf('./js/high-park-woods-data.js') + 1 === links.indexOf('./js/high-park-woods.js'), 'High Park\'s woods load by default');
+  // (the wooded parks' data, High Park's and Toronto Island's, just before their runtime)
+  assert.ok(links.indexOf('./js/high-park-woods-data.js') + 2 === links.indexOf('./js/park-woods.js'), 'High Park\'s woods load by default');
+  assert.ok(links.indexOf('./js/toronto-island-woods-data.js') + 1 === links.indexOf('./js/park-woods.js'), 'Toronto Island\'s woods load by default');
   assert.ok(links.findIndex((src) => src.includes('/audio-system.js')) < links.findIndex((src) => src.includes('/main.js')));
   assert.equal(new Set(links).size, links.length, 'each script is preloaded once');
 

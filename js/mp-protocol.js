@@ -122,6 +122,16 @@
     return !!m && Number(m[1]) <= maxPublic;
   }
 
+  // A link's #at: "x,z" (world metres: a friend's room link) or "x,z,bearing" (also the way to face, in degrees clockwise
+  // from the street grid's north, for deep links that drop the player on a street facing along it: 0 up Yonge, 90 along
+  // Queen St eastbound). Returns { x, z, heading } with heading in the engine's radians (facing (sin h, cos h); pi =
+  // grid north), undefined for "x,z", or null. Each part reads as Number() reads it.
+  function parseAt(value) {
+    const n = String(value ?? '').split(',').map(Number);
+    if ((n.length !== 2 && n.length !== 3) || !n.every(Number.isFinite)) return null;
+    return { x: n[0], z: n[1], heading: n.length === 3 ? Math.PI - (n[2] * Math.PI) / 180 : undefined };
+  }
+
   // The private zone round the player's real location (the spec's Privacy section), as a pure state machine the page
   // feeds once a frame: update({ x, z, real, teleported }) -> true while the player must stay hidden.
   // - real: the live GPS fix in the city ({ x, z }) or null; it (re)centres the zone
@@ -153,6 +163,6 @@
   root.MP_PROTOCOL = {
     VERSION, STATE, SNAPSHOT, HIDE, STATE_BYTES, HIDE_BYTES, HEADER_BYTES, RECORD_BYTES, MAX_RECORDS, MODES, HIDE_REASONS,
     FLAG_BOOST, FLAG_MAP_ONLY, BOUNDS, FRESH,
-    encodeState, encodeHide, decodeClient, encodeSnapshot, decodeSnapshot, isRoomName, createPrivacy
+    encodeState, encodeHide, decodeClient, encodeSnapshot, decodeSnapshot, isRoomName, parseAt, createPrivacy
   };
 })(typeof window !== 'undefined' ? (window.CITY = window.CITY || {}) : globalThis);

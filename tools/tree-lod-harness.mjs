@@ -10,7 +10,8 @@ function tslNode() {
   const node = new Proxy(function () {}, { get: (_, key) => (key === 'value' ? undefined : node), apply: () => node });
   return node;
 }
-const TSL = new Proxy({}, { get: (_, key) => (key === 'uniform' ? (value) => ({ value, setGroup() { return this; } }) : () => tslNode()) });
+// (each export a node too, so the objects, positionLocal and the like, work as well as the functions)
+const TSL = new Proxy({}, { get: (_, key) => (key === 'uniform' ? (value) => ({ value, setGroup() { return this; } }) : tslNode()) });
 
 class MeshStandardNodeMaterial extends CORE.Material {
   constructor(params = {}) {

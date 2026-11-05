@@ -1,0 +1,124 @@
+[
+ {
+  "name": "t00-setup",
+  "time": "midday",
+  "mode": "person",
+  "x": -4385.5,
+  "z": 298.9,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000
+ },
+ {
+  "name": "marilyn-bell-high",
+  "time": "midday",
+  "mode": "person",
+  "x": -4385.5,
+  "z": 298.9,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-4385.5 + 110, 90, 298.9 + 110], look: [-4385.5, 0, 298.9], fov: 50 }); })()",
+  "wait": 7000
+ },
+ {
+  "name": "tris-marilyn-bell-high",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls }; })()"
+ },
+ {
+  "name": "marilyn-bell-low",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-4385.5 + 45, 22, 298.9 + 45], look: [-4385.5, 0, 298.9], fov: 60 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "tris-marilyn-bell-low",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls }; })()"
+ },
+ {
+  "name": "gzowski-high",
+  "time": "midday",
+  "mode": "person",
+  "x": -7004.7,
+  "z": -906.3,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7004.7 + 110, 90, -906.3 + 110], look: [-7004.7, 0, -906.3], fov: 50 }); })()",
+  "wait": 7000
+ },
+ {
+  "name": "tris-gzowski-high",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls }; })()"
+ },
+ {
+  "name": "gzowski-low",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7004.7 + 45, 22, -906.3 + 45], look: [-7004.7, 0, -906.3], fov: 60 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "tris-gzowski-low",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls }; })()"
+ },
+ {
+  "name": "moss-park-high",
+  "time": "midday",
+  "mode": "person",
+  "x": 1108.9,
+  "z": -839.1,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1108.9 + 110, 90, -839.1 + 110], look: [1108.9, 0, -839.1], fov: 50 }); })()",
+  "wait": 7000
+ },
+ {
+  "name": "tris-moss-park-high",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls }; })()"
+ },
+ {
+  "name": "moss-park-low",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1108.9 + 45, 22, -839.1 + 45], look: [1108.9, 0, -839.1], fov: 60 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "tris-moss-park-low",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls }; })()"
+ },
+ {
+  "name": "dufferin-grove-high",
+  "time": "midday",
+  "mode": "person",
+  "x": -3725.9,
+  "z": -2471.1,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-3725.9 + 110, 90, -2471.1 + 110], look: [-3725.9, 0, -2471.1], fov: 50 }); })()",
+  "wait": 7000
+ },
+ {
+  "name": "tris-dufferin-grove-high",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls }; })()"
+ },
+ {
+  "name": "dufferin-grove-low",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-3725.9 + 45, 22, -2471.1 + 45], look: [-3725.9, 0, -2471.1], fov: 60 }); })()",
+  "wait": 6000
+ },
+ {
+  "name": "tris-dufferin-grove-low",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls }; })()"
+ }
+]

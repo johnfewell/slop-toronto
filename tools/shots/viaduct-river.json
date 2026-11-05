@@ -1,0 +1,140 @@
+[
+ {
+  "name": "viaduct-person-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY; a.cameraSystem.cinema = null; a.selectMode('person'); a.selectCamera('chase', true);\n const r = C.DECK_RUNS.find((d) => /^Bloor Street/.test(d.name) && Math.min(d.pts[0].x, d.pts[d.pts.length - 1].x) < 2240 && Math.max(d.pts[0].x, d.pts[d.pts.length - 1].x) > 2240 && d.pts.every((p) => Math.abs(p.z + 2800) < 30));\n let p = null, q = null; for (let i = 0; i + 1 < r.pts.length; i++) { const u = r.pts[i], v = r.pts[i + 1]; if (!p || Math.hypot(v.x - u.x, v.z - u.z) > Math.hypot(q.x - p.x, q.z - p.z)) { p = u; q = v; } }\n if (q.x < p.x) [p, q] = [q, p];\n const L = Math.hypot(q.x - p.x, q.z - p.z), ux = (q.x - p.x) / L, uz = (q.z - p.z) / L;\n const x = p.x + ux * 5 - uz * 2, z = p.z + uz * 5 + ux * 2, y = C.deckHeightAt(x, z, 1, 1);\n a.teleportTo(x, z, Math.atan2(ux, uz), y); return { start: [+x.toFixed(1), +z.toFixed(1)], y, heading: +Math.atan2(ux, uz).toFixed(3), end: [+q.x.toFixed(1), +q.z.toFixed(1)], length: +L.toFixed(0) }; })()",
+  "wait": 3500,
+  "record": true
+ },
+ {
+  "name": "viaduct-person-start-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-person-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 30000
+ },
+ {
+  "name": "viaduct-person-1-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-person-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 30000
+ },
+ {
+  "name": "viaduct-person-2-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-person-3",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 30000
+ },
+ {
+  "name": "viaduct-person-3-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-person-4",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 30000
+ },
+ {
+  "name": "viaduct-person-4-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-cyclist-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true);\n const r = C.DECK_RUNS.find((d) => /^Bloor Street/.test(d.name) && Math.min(d.pts[0].x, d.pts[d.pts.length - 1].x) < 2240 && Math.max(d.pts[0].x, d.pts[d.pts.length - 1].x) > 2240 && d.pts.every((p) => Math.abs(p.z + 2800) < 30));\n let p = null, q = null; for (let i = 0; i + 1 < r.pts.length; i++) { const u = r.pts[i], v = r.pts[i + 1]; if (!p || Math.hypot(v.x - u.x, v.z - u.z) > Math.hypot(q.x - p.x, q.z - p.z)) { p = u; q = v; } }\n if (q.x < p.x) [p, q] = [q, p];\n const L = Math.hypot(q.x - p.x, q.z - p.z), ux = (q.x - p.x) / L, uz = (q.z - p.z) / L;\n const x = p.x + ux * 5 - uz * 2, z = p.z + uz * 5 + ux * 2, y = C.deckHeightAt(x, z, 1, 1);\n a.teleportTo(x, z, Math.atan2(ux, uz), y); return { start: [+x.toFixed(1), +z.toFixed(1)], y, heading: +Math.atan2(ux, uz).toFixed(3), end: [+q.x.toFixed(1), +q.z.toFixed(1)], length: +L.toFixed(0) }; })()",
+  "wait": 3500,
+  "record": true
+ },
+ {
+  "name": "viaduct-cyclist-start-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-cyclist-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 10000
+ },
+ {
+  "name": "viaduct-cyclist-1-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-cyclist-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 10000
+ },
+ {
+  "name": "viaduct-cyclist-2-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-cyclist-3",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 10000
+ },
+ {
+  "name": "viaduct-cyclist-3-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-cyclist-4",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 10000
+ },
+ {
+  "name": "viaduct-cyclist-4-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), deck: C.deckStoodOn ? !!C.deckStoodOn(p.x, p.z, p.y, 0.6) : null, bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "viaduct-aerial",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [2275, 45, -2900], look: [2275, -10, -2800], fov: 55 }); })()",
+  "wait": 4000
+ }
+]

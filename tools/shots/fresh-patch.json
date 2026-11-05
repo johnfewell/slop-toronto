@@ -1,0 +1,30 @@
+[
+ {
+  "name": "t00-setup",
+  "time": "golden",
+  "mode": "person",
+  "x": -6560,
+  "z": -1985,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000
+ },
+ {
+  "name": "colborne-climb-down-midday-notraffic",
+  "time": "midday",
+  "js": "(() => { const g = window.__CITY_APP.scene.getObjectByName('TrafficAndPedestrians'); if (g) g.visible = false; })();(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6356, g(-6356, -1340) + 1.7, -1340], L = [-6300, g(-6300, -1230) + -2, -1230]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-climb-down-golden-notraffic",
+  "time": "golden",
+  "js": "(() => { const g = window.__CITY_APP.scene.getObjectByName('TrafficAndPedestrians'); if (g) g.visible = false; })();(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6356, g(-6356, -1340) + 1.7, -1340], L = [-6300, g(-6300, -1230) + -2, -1230]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ },
+ {
+  "name": "colborne-kerb-close-midday-notraffic",
+  "time": "midday",
+  "js": "(() => { const g = window.__CITY_APP.scene.getObjectByName('TrafficAndPedestrians'); if (g) g.visible = false; })();(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6322, g(-6322, -1262) + 1.2, -1262], L = [-6345, g(-6345, -1305) + 1.5, -1305]; a.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 55 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ }
+]

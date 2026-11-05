@@ -39,10 +39,11 @@ export function utm17(lat, lon) {
  * - pixel: the 0.5 m pixel under a UTM position;
  * - demAt: the DTM's mean over the 10 m cell centred on world (x, z) (1 m sub-samples, each the 0.5 m pixel under it);
  * - fineAt: the 0.5 m pixel under world (x, z).
+ * `allowMissing`: a pixel where the project has no tile (open lake) is NaN, not an error.
  * The world frame is a turned tangent plane: over the box, UTM is affine in (x, z) to a few millimetres; its derivatives
  * are taken once, at the box's centre.
  */
-export function openDtm(C, box, manifestFile = 'manifest.json') {
+export function openDtm(C, box, manifestFile = 'manifest.json', { allowMissing = false } = {}) {
   const manifest = JSON.parse(fs.readFileSync(path.join(DTM_DIR, manifestFile), 'utf8'));
   const tiles = new Map();
   for (const t of manifest.tiles) {
@@ -53,7 +54,7 @@ export function openDtm(C, box, manifestFile = 'manifest.json') {
   }
   function pixel(E, N) {
     const tx = Math.floor(E / 1000) * 1000, ty = Math.floor(N / 1000) * 1000 + 1000, t = tiles.get(`${tx},${ty}`);
-    if (!t) throw new Error(`no DTM tile for UTM ${E.toFixed(0)} ${N.toFixed(0)} (node tools/fetch-don-valley-dtm.mjs)`);
+    if (!t) { if (allowMissing) return NaN; throw new Error(`no DTM tile for UTM ${E.toFixed(0)} ${N.toFixed(0)} (node tools/fetch-don-valley-dtm.mjs)`); }
     const c = Math.min(t.width - 1, Math.floor((E - tx) / t.pixel[0])), r = Math.min(t.height - 1, Math.floor((ty - N) / t.pixel[1]));
     return t.data[r * t.width + c];
   }

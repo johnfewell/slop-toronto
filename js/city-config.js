@@ -732,10 +732,43 @@ for (const d of DECK_RUNS) {
 // Commissioners Street over the Don's new mouth and the Ship Channel). The geodata has no decks for them (its decks are
 // the flyovers over roads & railways) and the street level is open water there: city-grid.js lays a deck on each,
 // road-network.js drives the road's lanes across it, and the player walks, cycles and drives over it (bridgeAt,
-// controllers.js). [{ name, w, pts: [{ x, z, h: 0 }] }]
+// controllers.js). A city street's bridge has a sidewalk on either side where the real one has (BRIDGE_SIDEWALKS); a
+// motorway's (the Gardiner, the Bayview-Bloor ramp & their links) has none and is driven only (bridgeWalkAt).
+// [{ name, w, cls, dir, foot, sidewalks: [left, right] (m, left & right of the line's own direction), pts: [{ x, z, h: 0 }] }]
 const ROAD_BRIDGES = [];
 const BRIDGE_CELL = 32;
-const BRIDGE_GRID = new Map(); // cell -> [[a, b, half width]]
+const BRIDGE_GRID = new Map(); // cell -> [[a, b, half width, bridge]]
+// Motorways (OpenStreetMap highway=motorway, trunk & their links; rank 5+ in the geodata's decks, which keep only the
+// rank): no sidewalks, and no walking or cycling on their decks, over the water or over the city (motorwayDeckAt)
+const MOTORWAY_CLASSES = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link']);
+const MOTORWAY_RANK = 5;
+// The sidewalks on the road bridges over the water, by road: which side (of the way the traffic runs, a two-way
+// road's of its line) and how wide (m). From the City of Toronto's physical sidewalks (tools/fetch-sidewalks.mjs:
+// polygons from the 2021 aerials, measured beside each deck over the water) and OpenStreetMap's sidewalk tags:
+// - The Queensway over the Humber: a walk on the outer, right-hand side of each one-way carriageway, 2.5-3 m
+//   (OpenStreetMap: sidewalk:right=separate); Lake Shore Boulevard West the same, 3 m; Queens Quay West's slip, one
+//   side, 2.5 m.
+// - None on Unwin Avenue's & Lake Shore Boulevard East's (OpenStreetMap: sidewalk=no, foot=no; nor in the City's
+//   polygons), nor on Algonquin Bridge Road's to Algonquin Island (a living street: the whole bridge is the walk).
+// Any other city street's bridge (Cherry & Commissioners Streets over the Don's new mouth and the Ship Channel, opened
+// after the City's survey) has one on both sides, 2.5 m; a link or an unnamed road's has none.
+const BRIDGE_SIDEWALKS = {
+  'The Queensway': ['right', 2.5],
+  'Lake Shore Boulevard West': ['right', 3],
+  'Queens Quay West': ['right', 2.5],
+  'Unwin Avenue': ['none'],
+  'Lake Shore Boulevard East': ['none'],
+  'Algonquin Bridge Road': ['none']
+};
+const BRIDGE_SIDEWALK_W = 2.5;
+/** A road bridge's sidewalks: [left, right] widths (m) of its line's own direction */
+function bridgeSidewalks(r) {
+  if (MOTORWAY_CLASSES.has(r.cls)) return [0, 0];
+  const [side, w = BRIDGE_SIDEWALK_W] = BRIDGE_SIDEWALKS[r.name] || (!r.name || /_link$|^service$|^living_street$/.test(r.cls || '') ? ['none'] : ['both']);
+  // (right of the traffic: of the line's own direction, or against it on a one-way mapped backwards)
+  const right = r.dir < 0 ? 'left' : 'right', left = r.dir < 0 ? 'right' : 'left';
+  return [side === 'both' || side === left ? w : 0, side === 'both' || side === right ? w : 0];
+}
 const roadEnds = new Map(); // (a road's end shared with another road goes on: a bridge mapped as a way of its own)
 const endKey = (p) => `${Math.round(p.x)},${Math.round(p.z)}`;
 for (const r of ROADS) for (const p of [r.pts[0], r.pts[r.pts.length - 1]]) roadEnds.set(endKey(p), (roadEnds.get(endKey(p)) || 0) + 1);
@@ -761,13 +794,14 @@ for (const r of ROADS) {
       const pts = [];
       const i0 = Math.max(0, i - 3), i1 = Math.min(S.length - 1, j + 3); // (a few metres onto the banks)
       for (let k = i0; k <= i1; k++) if (k === i0 || k === i1 || (k - i0) % 4 === 0) pts.push({ x: S[k][0], z: S[k][1], h: 0 });
-      ROAD_BRIDGES.push({ name: r.name, w: r.w, pts });
+      const bridge = { name: r.name, w: r.w, cls: r.cls, dir: r.dir, foot: !MOTORWAY_CLASSES.has(r.cls), sidewalks: bridgeSidewalks(r), pts };
+      ROAD_BRIDGES.push(bridge);
       for (let k = 0; k + 1 < pts.length; k++) {
         const a = pts[k], b = pts[k + 1];
         const key = Math.floor((a.x + b.x) / 2 / BRIDGE_CELL) * 100000 + Math.floor((a.z + b.z) / 2 / BRIDGE_CELL);
         for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
           const kk = key + dx * 100000 + dz;
-          (BRIDGE_GRID.get(kk) || BRIDGE_GRID.set(kk, []).get(kk)).push([a, b, r.w / 2]);
+          (BRIDGE_GRID.get(kk) || BRIDGE_GRID.set(kk, []).get(kk)).push([a, b, r.w / 2, bridge]);
         }
       }
     }
@@ -786,13 +820,38 @@ const BUS_CONTRAFLOWS = [{ name: 'The Esplanade', lat: 43.64836, lon: -79.37032 
 const ROAD_LINKS = [{ name: 'Ellis Avenue', w: 11.3, lanes: 3, rank: 2, from: [43.6371191, -79.4659272], to: [43.6368311, -79.4656913] }]
   .map((l) => ({ ...l, from: worldFromLatLon(...l.from), to: worldFromLatLon(...l.to) }));
 
-/** On a road bridge's deck (within `margin` m of its edge) */
+/** On a road bridge's roadway (within `margin` m of its edge) */
 function bridgeAt(x, z, margin = 0) {
   for (const [a, b, hw] of BRIDGE_GRID.get(Math.floor(x / BRIDGE_CELL) * 100000 + Math.floor(z / BRIDGE_CELL)) || []) {
     const ex = b.x - a.x, ez = b.z - a.z;
     const t = Math.max(0, Math.min(1, ((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez || 1)));
     if (Math.hypot(a.x + ex * t - x, a.z + ez * t - z) <= hw + margin) return true;
   }
+  return false;
+}
+// Where (x, z) lies across a road bridge's deck: [bridge, how far out from its line, how wide the roadway & the
+// sidewalk on that side reach], for each of its pieces in reach
+function* bridgeAcross(x, z) {
+  for (const [a, b, hw, bridge] of BRIDGE_GRID.get(Math.floor(x / BRIDGE_CELL) * 100000 + Math.floor(z / BRIDGE_CELL)) || []) {
+    const ex = b.x - a.x, ez = b.z - a.z, L = Math.hypot(ex, ez) || 1, u = ((x - a.x) * ex + (z - a.z) * ez) / (L * L);
+    const t = Math.max(0, Math.min(1, u));
+    const dx = x - (a.x + ex * t), dz = z - (a.z + ez * t);
+    // (left of the line: along its left normal (ez, -ex), as city-grid.js draws the deck)
+    const sw = bridge.sidewalks[(dx * ez - dz * ex) / L >= 0 ? 0 : 1];
+    // (past either end of the deck)
+    const past = (u < 0 && a === bridge.pts[0]) || (u > 1 && b === bridge.pts[bridge.pts.length - 1]);
+    yield [bridge, Math.hypot(dx, dz), hw, sw, past];
+  }
+}
+/** On a road bridge's deck where walkers & cyclists go (within `margin` m of its outer edges): a city street's
+ * roadway and sidewalks, not a motorway's (controllers.js) */
+function bridgeWalkAt(x, z, margin = 0) {
+  for (const [bridge, d, hw, sw] of bridgeAcross(x, z)) if (bridge.foot && d <= hw + sw + margin) return true;
+  return false;
+}
+/** On a road bridge's sidewalk, up the kerb from its roadway (walkers & cyclists stand on it at the sidewalk height) */
+function bridgeSidewalkAt(x, z) {
+  for (const [bridge, d, hw, sw, past] of bridgeAcross(x, z)) if (bridge.foot && sw > 0 && !past && d > hw && d <= hw + sw + 0.3) return true;
   return false;
 }
 
@@ -1125,6 +1184,33 @@ function treeOffRail(x, z) {
   }
   return true;
 }
+/** The deck something at height y stands on at (x, z): of the decks within `step` of y (up or down) whose footprint
+ * (x, z) is on exactly, the highest, as a DECK_GRID entry { h, deck: its run }, or null. A body on it is on the deck,
+ * not in the water or the valley under it (controllers.js); not one far under the body (the DVP down in the valley
+ * under the Prince Edward Viaduct's deck, ?donvalley=1) nor overhead. */
+function deckStoodOn(x, z, y = 0, step = 0.6) {
+  const list = DECK_GRID.get(Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL));
+  let best = null;
+  for (const e of list || []) if (e.h <= y + step && e.h >= y - step && (!best || e.h > best.h) && onDeckRun(e.deck, x, z)) best = e;
+  return best;
+}
+/** Whether the deck under (x, z) that something at height y would stand on (deckStoodOn) is a motorway's (the
+ * Gardiner, the DVP, their ramps & links): walkers & cyclists are kept off it (controllers.js), as off the water.
+ * Under it, at the street level, they go on. */
+function motorwayDeckAt(x, z, y = 0, step = 0.6) {
+  const e = deckStoodOn(x, z, y, step);
+  return !!e && e.deck.rank >= MOTORWAY_RANK;
+}
+/** On a deck run's footprint: within its half width (its roadway's) of its line */
+function onDeckRun(run, x, z) {
+  const P = run.pts, W = run.ws;
+  for (let i = 0; i + 1 < P.length; i++) {
+    const a = P[i], b = P[i + 1], ex = b.x - a.x, ez = b.z - a.z;
+    const t = Math.max(0, Math.min(1, ((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez || 1)));
+    if (Math.hypot(a.x + ex * t - x, a.z + ez * t - z) <= (W[i] + (W[i + 1] - W[i]) * t) / 2) return true;
+  }
+  return false;
+}
 /** The deck surface under (x, z) that something at height y can stand on (stepping up at most `step`), or 0 */
 function deckHeightAt(x, z, y = 0, step = 0.6) {
   const list = DECK_GRID.get(Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL));
@@ -1420,6 +1506,11 @@ Object.assign(window.CITY, {
   TRAIL_BRIDGES,
   trailBridgeAt,
   bridgeAt,
+  bridgeWalkAt,
+  bridgeSidewalkAt,
+  motorwayDeckAt,
+  deckStoodOn,
+  MOTORWAY_CLASSES,
   BUS_CONTRAFLOWS,
   ROAD_LINKS,
   SIGNAL_JUNCTIONS,

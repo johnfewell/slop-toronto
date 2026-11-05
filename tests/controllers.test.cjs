@@ -668,3 +668,260 @@ test('st-5rys: across the Queensway, Lake Shore and Cherry Street bridges on foo
     }
   }
 });
+
+// (the city's own data, as the browser loads it: js/city-config.js over js/toronto-geodata.js)
+function realCity() {
+  const city = vm.createContext({ window: { CITY: {} } });
+  for (const path of ['js/toronto-geodata.js', 'js/city-config.js']) vm.runInContext(readFileSync(join(__dirname, '..', path), 'utf8'), city);
+  return city.window.CITY;
+}
+// Points along a road bridge's line every 0.5 m, `off` m to the right of it (negative: to its left)
+function alongBridge(bridge, off) {
+  const out = [], P = bridge.pts;
+  for (let i = 0; i + 1 < P.length; i++) {
+    const a = P[i], b = P[i + 1], L = Math.hypot(b.x - a.x, b.z - a.z), n = Math.ceil(L / 0.5);
+    const ux = (b.x - a.x) / L, uz = (b.z - a.z) / L;
+    for (let k = 1; k <= n; k++) out.push({ x: a.x + ((b.x - a.x) * k) / n - uz * off, z: a.z + ((b.z - a.z) * k) / n + ux * off });
+  }
+  return out;
+}
+
+test('st-keok: the Queensway & Lake Shore bridges over the Humber have a sidewalk on the right of their traffic, walked & ridden up its kerb', () => {
+  const C = realCity();
+  const SW = C.CITY_BOUNDS.sidewalkHeight;
+  const bridges = C.ROAD_BRIDGES.filter((b) => b.name === 'The Queensway' || b.name === 'Lake Shore Boulevard West');
+  assert.equal(bridges.filter((b) => b.name === 'The Queensway').length, 2, 'both of the Queensway\'s carriageways');
+  assert.ok(bridges.some((b) => b.name === 'Lake Shore Boulevard West'));
+  for (const bridge of bridges) {
+    const [left, right] = bridge.sidewalks;
+    assert.equal(bridge.dir, 1, `${bridge.name} runs one way along its line`);
+    assert.ok(right >= 2.5 && left === 0, `${bridge.name}: a walk on its right only (${left}, ${right})`);
+    assert.equal(bridge.foot, true);
+    const walk = alongBridge(bridge, bridge.w / 2 + right / 2);
+    for (const mode of ['person', 'cyclist', 'car']) {
+      const { controller, ent } = teleportHarness(mode, [], C.waterAt, {
+        CITY_BOUNDS: C.CITY_BOUNDS, blockAt: C.blockAt, bridgeAt: C.bridgeAt, bridgeWalkAt: C.bridgeWalkAt,
+        bridgeSidewalkAt: C.bridgeSidewalkAt, motorwayDeckAt: C.motorwayDeckAt, trailBridgeAt: C.trailBridgeAt
+      });
+      const ground = (x, z) => Object.getPrototypeOf(controller).getGroundHeight.call(controller, x, z, mode, SW);
+      ent.position.x = bridge.pts[0].x; ent.position.z = bridge.pts[0].z;
+      controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+      let wet = 0, held = 0;
+      for (const p of walk) {
+        if (!C.waterAt(p.x, p.z)) continue;
+        wet++;
+        ent.position.x = p.x; ent.position.z = p.z;
+        controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+        if (ent.position.x !== p.x || ent.position.z !== p.z) { held++; continue; }
+        assert.ok(C.bridgeSidewalkAt(p.x, p.z), `${bridge.name}: on its sidewalk at ${p.x.toFixed(1)}, ${p.z.toFixed(1)}`);
+        assert.equal(controller.isRoadway(p.x, p.z), false, 'not in the traffic\'s way');
+        assert.equal(ground(p.x, p.z), SW, `${mode} stands up the kerb, at the sidewalk height`);
+      }
+      assert.ok(wet * 0.5 > 60, `${bridge.name}: ${wet * 0.5} m of its sidewalk over the water`);
+      // (the car keeps to the roadway: the sidewalk over the water is no more driven than the water was)
+      if (mode === 'car') assert.equal(held, wet, 'the car is held off the sidewalk');
+      else assert.equal(held, 0, `${mode} walks the whole sidewalk`);
+    }
+    // its left side has no walk: over the water past the roadway's edge is the lake
+    const { controller, ent } = teleportHarness('person', [], C.waterAt, { CITY_BOUNDS: C.CITY_BOUNDS, bridgeAt: C.bridgeAt, bridgeWalkAt: C.bridgeWalkAt, trailBridgeAt: C.trailBridgeAt });
+    const mid = alongBridge(bridge, 0).filter((p) => C.waterAt(p.x, p.z));
+    const p = mid[Math.floor(mid.length / 2)], q = alongBridge(bridge, -(bridge.w / 2 + 1.25)).filter((p) => C.waterAt(p.x, p.z))[Math.floor(mid.length / 2)];
+    ent.position.x = p.x; ent.position.z = p.z;
+    controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+    ent.position.x = q.x; ent.position.z = q.z;
+    controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+    assert.deepEqual([ent.position.x, ent.position.z], [p.x, p.z], `${bridge.name}: no walk past its left-hand edge`);
+    assert.equal(C.bridgeSidewalkAt(q.x, q.z), false);
+  }
+});
+
+test('st-keok: walkers & cyclists are kept off the motorways\' decks over the water (the Gardiner & its ramps over the Humber, the Bayview-Bloor ramp), which are still driven', () => {
+  const C = realCity();
+  const motorways = C.ROAD_BRIDGES.filter((b) => C.MOTORWAY_CLASSES.has(b.cls));
+  assert.ok(motorways.filter((b) => b.name === 'Gardiner Expressway').length >= 2, 'the Gardiner over the Humber');
+  assert.ok(motorways.some((b) => b.name === 'Bayview-Bloor Ramp'));
+  assert.ok(C.ROAD_BRIDGES.filter((b) => !C.MOTORWAY_CLASSES.has(b.cls)).every((b) => b.foot), 'a city street\'s bridge is walked');
+  let walked = 0;
+  for (const bridge of motorways) {
+    assert.equal(bridge.foot, false, `${bridge.name || bridge.cls}: not walked`);
+    assert.deepEqual([...bridge.sidewalks], [0, 0], `${bridge.name || bridge.cls}: no sidewalks`);
+    // (from its end on dry ground: a piece of a bridge mapped in several ways may start out over the water)
+    let line = alongBridge(bridge, 0);
+    if (C.waterAt(line[0].x, line[0].z)) line = line.reverse();
+    const wetAt = line.findIndex((p) => C.waterAt(p.x, p.z));
+    assert.ok(wetAt > 0, `${bridge.name || bridge.cls} crosses the water from dry ground`);
+    const dry = line[wetAt - 1], wet = line.filter((p) => C.waterAt(p.x, p.z));
+    assert.equal(C.bridgeWalkAt(wet[wet.length >> 1].x, wet[wet.length >> 1].z, -0.7), false, 'not walked');
+    // (walked into from the detailed city: the Bayview-Bloor ramp lies outside it, without the Don Valley pilot)
+    const B = C.CITY_BOUNDS;
+    if (!line.every((p) => p.x > B.minX + 8 && p.x < B.maxX - 8 && p.z > B.minZ + 8 && p.z < B.maxZ - 8)) continue;
+    walked++;
+    for (const mode of ['person', 'cyclist', 'car']) {
+      const { controller, ent } = teleportHarness(mode, [], C.waterAt, { CITY_BOUNDS: C.CITY_BOUNDS, bridgeAt: C.bridgeAt, bridgeWalkAt: C.bridgeWalkAt, trailBridgeAt: C.trailBridgeAt });
+      ent.position.x = dry.x; ent.position.z = dry.z;
+      controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+      let held = 0;
+      for (const p of wet) {
+        ent.position.x = p.x; ent.position.z = p.z;
+        controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+        if (ent.position.x !== p.x || ent.position.z !== p.z) held++;
+      }
+      const arrive = controller.findTeleportPosition(wet[wet.length >> 1].x, wet[wet.length >> 1].z, 0, 0, true);
+      if (mode === 'car') {
+        assert.equal(held, 0, `the car drives ${bridge.name || bridge.cls}`);
+        assert.ok(arrive, 'and may arrive on it');
+      } else {
+        assert.equal(held, wet.length, `${mode}: held at the water's edge of ${bridge.name || bridge.cls}`);
+        assert.deepEqual([ent.position.x, ent.position.z], [dry.x, dry.z], `${mode}: back where it last stood`);
+        assert.equal(arrive, null, `${mode}: no arrival on it`);
+      }
+    }
+  }
+  assert.ok(walked >= 4, `${walked} of the Gardiner's & its ramps' bridges over the Humber tried on foot, by bike & by car`);
+});
+
+test('st-keok: walkers & cyclists can\'t step up onto a motorway\'s flyover or ramp, but go under it, and on a city street\'s deck', () => {
+  const C = realCity();
+  const at = (run, i, f = 0.5) => { const a = run.pts[i], b = run.pts[i + 1]; return { x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f, h: a.h + (b.h - a.h) * f }; };
+  // the Gardiner, raised: on it at its height, not from the street under it
+  const gardiner = C.DECK_RUNS.filter((d) => d.name === 'Gardiner Expressway' && d.rank === 6);
+  assert.ok(gardiner.length > 0);
+  let up = 0;
+  for (const run of gardiner) for (let i = 0; i + 1 < run.pts.length; i++) {
+    const p = at(run, i);
+    if (p.h < 6 || C.deckHeightAt(p.x, p.z, p.h, 0.6) !== p.h) continue;
+    up++;
+    assert.equal(C.motorwayDeckAt(p.x, p.z, p.h, 0.6), true, `on the Gardiner at ${p.x.toFixed(0)}, ${p.z.toFixed(0)}`);
+    assert.equal(C.motorwayDeckAt(p.x, p.z, 0, 0.6), false, 'under it at the street level');
+    assert.equal(C.motorwayDeckAt(p.x, p.z, p.h + 5, 0.6), false, 'over it on a deck of its own (Bloor\'s viaduct over the DVP)');
+  }
+  assert.ok(up > 20, `${up} points up on the Gardiner`);
+  // a ramp's foot (motorway_link, rank 5), from the street level
+  const feet = C.DECK_RUNS.filter((d) => d.rank >= 5 && d.pts[0].h < 0.6 && d.pts.length > 2);
+  assert.ok(feet.length > 0, 'the Gardiner\'s & the DVP\'s ramps touch down');
+  let onFoot = 0;
+  for (const run of feet) {
+    const p = at(run, 0, 0.3);
+    if (C.deckHeightAt(p.x, p.z, 0, 0.6) === 0) continue;
+    onFoot++;
+    assert.equal(C.motorwayDeckAt(p.x, p.z, 0, 0.6), true, `up the ramp's foot at ${p.x.toFixed(0)}, ${p.z.toFixed(0)}`);
+  }
+  assert.ok(onFoot > 0);
+  // a city street's deck (Lake Shore Boulevard's, Bloor Street's over the valley...) is walked
+  for (const name of ['Lake Shore Boulevard West', 'Bloor Street East', 'Spadina Avenue']) {
+    const run = C.DECK_RUNS.find((d) => d.name === name);
+    assert.ok(run, name);
+    for (let i = 0; i + 1 < run.pts.length; i++) { const p = at(run, i); assert.equal(C.motorwayDeckAt(p.x, p.z, p.h, 0.6), false, `${name} is walked`); }
+  }
+
+  // the controller: a motorway deck east of x = 100 at the street level
+  for (const mode of ['person', 'cyclist', 'car']) {
+    const { controller, ent } = teleportHarness(mode, [], () => null, { motorwayDeckAt: (x, z, y, step) => x > 100 && y + step >= 0.3 });
+    ent.position.x = 90; ent.position.y = 0; ent.position.z = 0;
+    controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+    ent.position.x = 104;
+    controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+    const arrive = controller.findTeleportPosition(120, 0, 0, 0, true);
+    if (mode === 'car') {
+      assert.equal(ent.position.x, 104, 'the car drives up it');
+      assert.ok(arrive, 'and may arrive on it');
+    } else {
+      assert.equal(ent.position.x, 90, `${mode}: back where it last stood`);
+      assert.equal(arrive, null, `${mode}: no arrival on it`);
+    }
+  }
+});
+
+test('st-phq5: the water stops a body at its level, not one up on a deck over it (a flyover\'s, the viaduct\'s over the Don)', () => {
+  // a lake over x > 100; a deck 8 m up across it along z = 0, 10 m wide (city-config.js deckStoodOn)
+  const lake = (x) => (x > 100 ? { name: 'Don River' } : null);
+  const deckStoodOn = (x, z, y, step) => (Math.abs(z) <= 5 && Math.abs(8 - y) <= step ? { h: 8, deck: { rank: 4 } } : null);
+  for (const mode of ['person', 'cyclist', 'car']) {
+    const { controller, ent } = teleportHarness(mode, [], lake, { deckStoodOn });
+    // up on the deck: out over the water and on
+    ent.position.x = 90; ent.position.y = 8; ent.position.z = 0;
+    controller.resolveHorizontalCollision(ent.position, 0.48, 9);
+    ent.position.x = 140;
+    controller.resolveHorizontalCollision(ent.position, 0.48, 9);
+    assert.equal(ent.position.x, 140, `${mode}: over the water on the deck`);
+    assert.ok(controller.findTeleportPosition(150, 0, 0, 8, true), `${mode}: may arrive on the deck over the water`);
+    // off its side, into the water: back on the deck
+    ent.position.z = 8;
+    controller.resolveHorizontalCollision(ent.position, 0.48, 9);
+    assert.deepEqual([ent.position.x, ent.position.z], [140, 0], `${mode}: off the deck's side is undone`);
+    // at the water's level under it: the lake
+    ent.position.x = 90; ent.position.y = 0;
+    controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+    ent.position.x = 120;
+    controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+    assert.equal(ent.position.x, 90, `${mode}: under the deck the water stops it`);
+    assert.equal(controller.findTeleportPosition(150, 0, 0, 0, true), null, `${mode}: no arrival in the water under the deck`);
+  }
+});
+
+test('st-phq5: across the Prince Edward Viaduct over the Don on foot, by bike & by car (?donvalley=1); the default city\'s Humber & lake edges still hold', async () => {
+  const THREE = await import('three/webgpu');
+  const context = vm.createContext({ window: { CITY: { THREE } }, console: { info() {}, warn() {}, log() {} }, atob });
+  for (const f of ['toronto-geodata', 'toronto-subway', 'toronto-subway-topology', 'don-valley-data', 'don-valley', 'city-config']) {
+    vm.runInContext(readFileSync(join(__dirname, '..', 'js', `${f}.js`), 'utf8'), context);
+  }
+  const DVC = context.window.CITY;
+  const run = DVC.DECK_RUNS.find((d) => /^Bloor Street/.test(d.name) && Math.min(d.pts[0].x, d.pts[d.pts.length - 1].x) < 2240 && Math.max(d.pts[0].x, d.pts[d.pts.length - 1].x) > 2240 && d.pts.every((p) => Math.abs(p.z + 2800) < 30));
+  assert.ok(run, 'Bloor Street\'s deck across the valley');
+  // (along its line, the longest stretch: Bloor across the valley, from its west rim to its east)
+  let a = null, b = null;
+  for (let i = 0; i + 1 < run.pts.length; i++) {
+    const p = run.pts[i], q = run.pts[i + 1];
+    if (!a || Math.hypot(q.x - p.x, q.z - p.z) > Math.hypot(b.x - a.x, b.z - a.z)) { a = p; b = q; }
+  }
+  const L = Math.hypot(b.x - a.x, b.z - a.z), ux = (b.x - a.x) / L, uz = (b.z - a.z) / L;
+  assert.ok(L > 400, `${L.toFixed(0)} m of deck`);
+  const city = (C) => ({ CITY_BOUNDS: C.CITY_BOUNDS, bridgeAt: C.bridgeAt, bridgeWalkAt: C.bridgeWalkAt, trailBridgeAt: C.trailBridgeAt, deckStoodOn: C.deckStoodOn, motorwayDeckAt: C.motorwayDeckAt });
+  for (const mode of ['person', 'cyclist', 'car']) {
+    // (its middle and 3 m in from either edge: DECK_GRID fills a deck's cells 2 m apart from one edge, so the last metre
+    // or two of the other may have none, there as on any deck)
+    for (const off of [-(run.ws[0] / 2 - 3), 0, run.ws[0] / 2 - 3]) {
+      const { controller, ent } = teleportHarness(mode, [], DVC.waterAt, city(DVC));
+      let y = DVC.deckHeightAt(a.x, a.z, 1, 1), wet = 0;
+      for (let s = 1; s < L - 1; s += 0.5) {
+        const x = a.x + ux * s - uz * off, z = a.z + uz * s + ux * off;
+        y = DVC.deckHeightAt(x, z, y, 0.6); // (on its surface, as getGroundHeight keeps it)
+        ent.position.x = x; ent.position.y = y; ent.position.z = z;
+        controller.resolveHorizontalCollision(ent.position, 0.48, y + 1);
+        assert.deepEqual([ent.position.x, ent.position.z], [x, z], `${mode} ${off.toFixed(1)} m across: held back at ${x.toFixed(1)}, ${z.toFixed(1)} (y ${y})`);
+        if (DVC.waterAt(x, z)) wet += 0.5;
+      }
+      assert.ok(wet >= 15, `${mode}: ${wet} m over the Don`);
+    }
+    // down in the valley, at the river's level, the Don still stops it
+    const { controller, ent } = teleportHarness(mode, [], DVC.waterAt, city(DVC));
+    let k = 0;
+    while (!DVC.waterAt(a.x + ux * k, a.z + uz * k)) k += 0.5;
+    const dry = { x: a.x + ux * (k - 3), z: a.z + uz * (k - 3) }, wetP = { x: a.x + ux * (k + 2), z: a.z + uz * (k + 2) };
+    const floor = DVC.DON_VALLEY.heightAt(dry.x, dry.z);
+    ent.position.x = dry.x; ent.position.y = floor; ent.position.z = dry.z;
+    controller.resolveHorizontalCollision(ent.position, 0.48, floor + 1);
+    ent.position.x = wetP.x; ent.position.z = wetP.z;
+    controller.resolveHorizontalCollision(ent.position, 0.48, floor + 1);
+    assert.deepEqual([ent.position.x, ent.position.z], [dry.x, dry.z], `${mode}: held at the Don's bank ${(-floor).toFixed(0)} m down in the valley`);
+  }
+
+  // the default city: walked & ridden off the Humber's east bank and Queens Quay's edge, at the street level
+  const C = realCity();
+  for (const [x0, z0, dx, dz, what] of [[-7650, -1030, -1, 0, 'the Humber'], [400, 676, 0, 1, 'the lake']]) {
+    for (const mode of ['person', 'cyclist', 'car']) {
+      const { controller, ent } = teleportHarness(mode, [], C.waterAt, city(C));
+      ent.position.x = x0; ent.position.y = 0; ent.position.z = z0;
+      controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+      let last = { x: x0, z: z0 };
+      for (let s = 0.5; s < 30; s += 0.5) {
+        const x = x0 + dx * s, z = z0 + dz * s;
+        ent.position.x = x; ent.position.z = z;
+        controller.resolveHorizontalCollision(ent.position, 0.48, 1);
+        if (ent.position.x === x && ent.position.z === z) last = { x, z };
+      }
+      assert.ok(!C.waterAt(last.x, last.z), `${mode}: never out on ${what} (${last.x}, ${last.z})`);
+      assert.ok(Math.hypot(last.x - x0, last.z - z0) > 5, `${mode}: up to ${what}'s edge`);
+    }
+  }
+});

@@ -57,3 +57,18 @@ test('the private zone: hidden inside it, after a reload, in links; resumes only
   assert.equal(q.update({ x: 3000, z: -900, teleported: true }), false); // one landing outside resumes
   assert.equal(q.zone, null); // and, with no live fix, the stored zone is forgotten
 });
+
+test('#at: x,z as before, x,z,bearing also faces that way, anything else is ignored', () => {
+  assert.deepEqual(P.parseAt('-1060,-724'), { x: -1060, z: -724, heading: undefined });
+  assert.deepEqual(P.parseAt('12.5,3'), { x: 12.5, z: 3, heading: undefined });
+  // bearings from the street grid's north, clockwise -> the engine's heading (facing (sin h, cos h) in x, z)
+  const face = (b) => { const h = P.parseAt(`0,0,${b}`).heading; return [Math.round(Math.sin(h) * 1e6) / 1e6, Math.round(Math.cos(h) * 1e6) / 1e6]; };
+  assert.deepEqual(face(0), [0, -1]); // grid north: -z
+  assert.deepEqual(face(90), [1, 0]); // grid east: +x
+  assert.deepEqual(face(180), [0, 1]);
+  assert.deepEqual(face(270), [-1, 0]);
+  close(P.parseAt('0,0,0').heading, Math.PI, 1e-12); // the default teleport heading
+  for (const bad of [null, undefined, '', '5', '1,2,3,4', 'a,b', '1,NaN', '1,2,x', 'Infinity,0']) assert.equal(P.parseAt(bad), null, String(bad));
+  // as Number() reads each part (the old reader's rule): a blank part is 0
+  assert.deepEqual(P.parseAt(',4'), { x: 0, z: 4, heading: undefined });
+});

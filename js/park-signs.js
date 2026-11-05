@@ -71,7 +71,8 @@ function layoutAddress(ctx, number, street) {
 // the address under it (both a quarter of the face's size). White-on-clear text drawn on a scratch canvas, its coverage
 // copied into the cell's channel.
 function buildAtlas(signs) {
-  const cols = 4, perRow = cols * 4;
+  // (4 cells across, more when a bigger map's parks would run the atlas past WebGPU's 8192 texels, st-bz1o.3)
+  const cols = Math.max(4, Math.ceil(Math.ceil(signs.length / 4) / Math.floor(8192 / CELL_H))), perRow = cols * 4;
   const rows = Math.ceil(signs.length / perRow);
   const W = cols * CELL_W, H = Math.max(1, rows) * CELL_H;
   const data = new Uint8Array(W * H * 4);
@@ -269,5 +270,5 @@ function clearParkSignTrees(trees) {
   return removed;
 }
 
-Object.assign(window.CITY, { buildParkSigns, clearParkSignTrees });
+Object.assign(window.CITY, { buildParkSigns, clearParkSignTrees, parkSignAtlas: buildAtlas }); // (parkSignAtlas: tests/sign-atlas.test.mjs)
 })();

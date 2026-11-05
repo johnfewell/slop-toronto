@@ -249,6 +249,7 @@ The inviter moves into the private room before any link exists, so the friend ne
 3. **Repeated clicks:** in a private room, the button copies the same room's link again. A "Leave room" item returns the player to `public-1`.
 4. **Opening a link:**
    - `#room` and `#at` take precedence over the saved position and the default start. `#place` and `#ride` deep links take precedence over `#at`.
+   - `#at=x,z,bearing` (a deep link onto a street) also turns the player to face `bearing`, degrees clockwise from the street grid's north (0 up Yonge, 90 east along Queen); `#at=x,z` faces grid north as before. `js/mp-protocol.js` `parseAt` reads both.
    - If the private room is full or can't be reached, the player is told ("Your friend's room is full" or "Couldn't reach your friend's room, retrying"). They ride alone while it retries, and are never moved to a public room without being told.
 5. **Reloading:** `#room` stays in the address while you're in a private room, so a reload returns there.
 

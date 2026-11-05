@@ -11,10 +11,26 @@ const { THREE } = window.CITY;
 const { CITY_BOUNDS, TELEPORT_LOCATIONS, isTypingInField, blockAt, waterAt, terrainHeightAt, deckHeightAt } = window.CITY;
 // A bridge's deck over the water, where the lake does not stop a body on the ground: a trail bridge's (the Humber Bay
 // Arch Bridge's, 0.4 m in from its edges) is walked & ridden, not driven; a road bridge's at street level (city-config.js
-// ROAD_BRIDGES: the Queensway & Lake Shore over the Humber, Cherry Street over the Don's mouth...) is walked, ridden and
-// driven, 0.7 m in from its roadway's edges (city-grid.js stands its parapets on them)
-const onDeckOverWater = (x, z, mode) => !!((mode !== 'car' && window.CITY.trailBridgeAt && window.CITY.trailBridgeAt(x, z, -0.4))
-  || (window.CITY.bridgeAt && window.CITY.bridgeAt(x, z, -0.7)));
+// ROAD_BRIDGES: the Queensway & Lake Shore over the Humber, Cherry Street over the Don's mouth...) is driven on its
+// roadway, 0.7 m in from its edges (its kerbs, or its parapets where it has no sidewalk), and a city street's is walked
+// & ridden on its roadway & sidewalks, 0.7 m in from the parapets at their outer edges (bridgeWalkAt); a motorway's
+// (the Gardiner & its ramps over the Humber) is driven only
+const onDeckOverWater = (x, z, mode) => {
+  const C = window.CITY;
+  if (mode === 'car') return !!(C.bridgeAt && C.bridgeAt(x, z, -0.7));
+  if (C.trailBridgeAt && C.trailBridgeAt(x, z, -0.4)) return true;
+  const walkAt = C.bridgeWalkAt || C.bridgeAt;
+  return !!(walkAt && walkAt(x, z, -0.7));
+};
+// In the water: over a lake or river at its level, not on a bridge's deck there (onDeckOverWater) nor up on a deck
+// over it that the body at height y stands on (city-config.js deckStoodOn: a flyover's, or with ?donvalley=1 the Prince
+// Edward Viaduct's over the Don), wherever that is
+const inWater = (x, z, mode, y) => !!waterAt(x, z) && !onDeckOverWater(x, z, mode)
+  && !(window.CITY.deckStoodOn && window.CITY.deckStoodOn(x, z, Number.isFinite(y) ? y : 0, mode === 'car' ? 0.9 : 0.6));
+// Walkers & cyclists are kept off the motorways' decks (city-config.js motorwayDeckAt: the Gardiner, the DVP, their
+// ramps & links) the way they are kept out of the lake: back to where they last stood. A body at height y would stand
+// on the deck there; under it, at the street level, they go on. Cars & the helicopter go anywhere.
+const offMotorway = (x, z, mode, y) => mode !== 'car' && mode !== 'helicopter' && !!(window.CITY.motorwayDeckAt && window.CITY.motorwayDeckAt(x, z, y, 0.6));
 // Start on Yonge Street by Sankofa Square, heading north to Dundas (city-config.js TELEPORT_LOCATIONS)
 const SPAWN = (TELEPORT_LOCATIONS && TELEPORT_LOCATIONS.start) || { x: 0, z: 140, heading: Math.PI };
 const {
@@ -436,7 +452,8 @@ class ThirdPersonControllerManager {
       const m = heli ? margin : -8;
       pz = Math.max(CITY_BOUNDS.minZ - m, Math.min(CITY_BOUNDS.maxZ + m, pz));
       px = Math.max(CITY_BOUNDS.minX - m, Math.min(CITY_BOUNDS.maxX + m, px));
-      if (!heli && waterAt(px, pz) && !onDeckOverWater(px, pz, this.activeMode)) return null; // not in a lake (but on a bridge's deck)
+      if (!heli && inWater(px, pz, this.activeMode, altitude)) return null; // not in a lake (but on a bridge's or a flyover's deck)
+      if (offMotorway(px, pz, this.activeMode, Number.isFinite(altitude) ? altitude : 0)) return null; // nor, on foot or by bike, on a motorway's deck
       if (!heli && window.CITY.subwayCutAt && window.CITY.subwayCutAt(px, pz, 1, false)) return null; // nor down a subway cut (subway.js)
       return { x: px, z: pz };
     };
@@ -932,16 +949,19 @@ class ThirdPersonControllerManager {
     };
   }
 
-  // On a raised curb island (city-config.js BLOCKS: the real blocks, medians & verges)
+  // On a raised curb island (city-config.js BLOCKS: the real blocks, medians & verges) or a road bridge's sidewalk
+  // (city-config.js bridgeSidewalkAt: up its kerb, beside the roadway over the water)
   isPointOnSidewalk(x, z) {
     const b = blockAt(x, z);
-    return !!b;
+    return !!b || !!(window.CITY.bridgeSidewalkAt && window.CITY.bridgeSidewalkAt(x, z));
   }
 
-  // In the traffic's way: off the curb islands, or on a median between a dual carriageway's two roadways
+  // In the traffic's way: off the curb islands and the bridges' sidewalks, or on a median between a dual carriageway's
+  // two roadways
   isRoadway(x, z) {
     const b = blockAt(x, z);
-    return !b || !!b.median;
+    if (b) return !!b.median;
+    return !(window.CITY.bridgeSidewalkAt && window.CITY.bridgeSidewalkAt(x, z));
   }
 
   // Height of what stands under (x, z): the raised curb island (walking), the hills (Aso Rock, the ridges), or a flyover
@@ -1025,7 +1045,8 @@ class ThirdPersonControllerManager {
     return out;
   }
 
-  // Keeps pos inside the city & out of the lake (ground modes go back to the last dry spot)
+  // Keeps pos inside the city & out of the lake, and walkers & cyclists off the motorways' decks (ground modes go back
+  // to the last spot they were allowed)
   clampToWorld(pos, carEntity = null) {
     // The detailed city (the helicopter may roam out over the hills around it); no driving or walking into a lake
     const heli = this.activeMode === 'helicopter';
@@ -1036,7 +1057,10 @@ class ThirdPersonControllerManager {
     pos.x = bx;
     pos.z = bz;
     if (!heli) {
-      if (waterAt(pos.x, pos.z) && !onDeckOverWater(pos.x, pos.z, this.activeMode) && this._dry) {
+      // (in the lake off a bridge's deck, or on foot or by bike up onto a motorway's deck: back to where it last stood)
+      const barred = inWater(pos.x, pos.z, this.activeMode, pos.y)
+        || offMotorway(pos.x, pos.z, this.activeMode, Number.isFinite(pos.y) ? pos.y : 0);
+      if (barred && this._dry) {
         pos.x = this._dry.x;
         pos.z = this._dry.z;
         if (carEntity && carEntity.speed) carEntity.speed *= 0.3;

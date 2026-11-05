@@ -26,19 +26,27 @@ const patterns = D.patterns.map((p, i) => {
 const headway = (p, h = hour) => (p.perHour[h] > 0 ? 3600 / p.perHour[h] : Infinity);
 
 // The destination signs: one row per distinct sign, the route number large on the left, the route's name over the
-// destination on the right, amber on black. `aspect` = the sign's width / height on the vehicle.
+// destination on the right, amber on black. `aspect` = the sign's width / height on the vehicle. Rows run down a column
+// to WebGPU's 8192-texel limit, then on in the next column (a bigger map's hundreds of signs, st-bz1o.3; today's fit
+// one column). `uv(u, index, v)`: the TSL coordinates of (u, v) in sign `index`'s cell.
+const MAX_TEXTURE = 8192;
 function signAtlas(signs, aspect) {
   const keys = [...new Set(signs.map((s) => s.join('|')))];
   const W = 512, H = Math.round(W / aspect);
+  const rows = Math.max(1, Math.min(keys.length, Math.floor(MAX_TEXTURE / H))), cols = Math.max(1, Math.ceil(keys.length / rows));
+  if (cols * W > MAX_TEXTURE) console.warn(`[transit] ${keys.length} destination signs: the atlas is ${cols * W} px wide`);
   const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H * Math.max(1, keys.length);
+  canvas.width = W * cols;
+  canvas.height = H * rows;
   const g = canvas.getContext('2d');
   g.fillStyle = '#07080a';
   g.fillRect(0, 0, canvas.width, canvas.height);
   g.fillStyle = '#ffae2a';
   g.textBaseline = 'middle';
-  keys.forEach((k, row) => {
+  keys.forEach((k, i) => {
+    const row = i % rows, col = Math.floor(i / rows);
+    g.save();
+    g.translate(col * W, 0);
     const [label, dest] = k.split('|');
     const m = label.match(/^(\d+[A-Z]?)\s*(.*)$/) || [label, label, ''];
     const y0 = row * H;
@@ -59,13 +67,19 @@ function signAtlas(signs, aspect) {
       g.font = `700 ${size}px "Arial Narrow", "Helvetica Neue", Arial, sans-serif`;
       g.fillText(dest || m[2], numW, y0 + H * 0.54, room);
     }
+    g.restore();
   });
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.flipY = false; // (rows from the top, as drawn)
   tex.anisotropy = 4;
   tex.generateMipmaps = true;
-  return { tex, rows: keys.length, rowOf: (sign) => Math.max(0, keys.indexOf(sign.join('|'))) };
+  const uvOf = (u, index, v) => {
+    const { floor, vec2, float } = window.CITY.TSL;
+    const col = floor(index.add(0.5).div(rows)), row = index.sub(col.mul(rows));
+    return vec2(col.add(u).div(cols), row.add(v).div(rows));
+  };
+  return { tex, rows, cols, uv: uvOf, rowOf: (sign) => Math.max(0, keys.indexOf(sign.join('|'))) };
 }
 
 // The buses' destination signs (traffic.js: the panels over the windscreen, by the door & at the back, uv 0..1 each):
@@ -75,10 +89,10 @@ function busSigns(attr) {
   if (busSignsCache) return busSignsCache;
   const signs = patterns.filter((p) => p.type === 3).map((p) => p.sign);
   if (!signs.length) return null;
-  const { texture, attribute, uv, vec2, float } = window.CITY.TSL;
+  const { texture, attribute, uv, float } = window.CITY.TSL;
   const atlas = signAtlas(signs, 1.9 / 0.27);
   const material = new THREE.MeshBasicNodeMaterial();
-  material.colorNode = texture(atlas.tex, vec2(uv().x, attribute(attr, 'float').add(float(1).sub(uv().y).clamp(0.03, 0.97)).div(atlas.rows))).rgb;
+  material.colorNode = texture(atlas.tex, atlas.uv(uv().x, attribute(attr, 'float'), float(1).sub(uv().y).clamp(0.03, 0.97))).rgb;
   busSignsCache = { material, rowOf: atlas.rowOf, rows: atlas.rows };
   return busSignsCache;
 }

@@ -21,7 +21,7 @@ const MID = window.CITY.QUALITY.treeMid; // decimated mesh within; whole-crown c
 // mid trees further than this cast no shadow (a twin mesh that skips the shadow maps): drawing the ~500 mid trees of a
 // 320 m circle into both cascades cost 2.2 ms a frame on the M4 mini, for shadows a few pixels long
 const MID_SHADOW = Number(new URLSearchParams(location.search).get('treeshadow') ?? window.CITY.QUALITY.treeMidShadow); // ?treeshadow=320: all of them, for A/B
-// High Park's woods (high-park-woods.js): their trees stand 50-70 to the hectare and hide each other, so they are a class
+// The wooded parks' woods (park-woods.js: High Park, Toronto Island): their trees stand 50-70 to the hectare and hide each other, so they are a class
 // of their own (WOODS_CLASS) handing over to the coarser levels nearer, at these shares of the distances above
 const WOODS_CLASS = 6, CLASSES = 7;
 const WOODS_SHARE = { near: 0.55, mid: 0.42, shadow: 0.5 };
@@ -42,7 +42,7 @@ const LOW_CUTOFF = 1150 * FAR; // at street level everything further is behind t
 const PINE_FAR = Number(new URLSearchParams(location.search).get('pinefar') ?? 600 * FAR); // pines keep their mid mesh far out (mrdoob's species are all broadleaf)
 
 // model family -> mrdoob's far crown species (0 London plane, 1 honey locust, 2 elm); -1: no far crown (pines)
-const FAR_SPECIES = (id) => (id.includes('pine') ? -1 : id.includes('ash') ? 1 : id.includes('aspen') ? 2 : 0);
+const FAR_SPECIES = (id) => (id.includes('pine') ? -1 : id.includes('ash') ? 1 : /aspen|cottonwood/.test(id) ? 2 : 0);
 const hashPos = (x, y, z) => {
   const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453;
   return s - Math.floor(s);
@@ -145,6 +145,23 @@ function fadeMaterial(src, seasonal = false) {
   return mat;
 }
 
+// Toronto Island's cottonwoods (park-woods-parks.mjs): the aspen's form, in an old cottonwood's bark, grey-brown and
+// deeply furrowed, in place of the aspen's white. The bark is the ash model's own (the same atlas layout: the bark from
+// u 0.8, round the trunk), greyed, paled and warmed a little, its furrows deepened; the leaves are the aspen's
+function cottonwoodBark(mat, barkMap) {
+  const { uv, vec3, vec4, mix, dot, texture, materialColor } = window.CITY.TSL;
+  const base = mat.colorNode || materialColor, t = uv();
+  const ash = texture(barkMap, t).rgb, lum = dot(ash, vec3(0.299, 0.587, 0.114));
+  // (greyer, paler and a little warmer than the ash's, its furrows deepened: an old cottonwood's grey-brown ridges)
+  const bark = mix(vec3(lum), ash, 0.75).mul(vec3(1.15, 1.07, 0.94)).mul(lum.mul(3.0).add(0.75));
+  mat.colorNode = vec4(t.x.greaterThanEqual(0.8).select(bark, base.rgb), base.a);
+  mat.roughness = 1;
+  mat.name = mat.name.replace('_lodfade', '_cottonwood_lodfade');
+  return mat;
+}
+// (variants: [id, the model whose geometry and leaves it takes, the model whose bark, the bark's treatment])
+const VARIANTS = [['ez-cottonwood-medium', 'ez-aspen-medium', 'ez-ash-medium', cottonwoodBark], ['ez-cottonwood-large', 'ez-aspen-large', 'ez-ash-large', cottonwoodBark]];
+
 /**
  * Loads the EZ-Tree models and builds the field for the City's street trees plus `generated` ({ x, y, z, scale,
  * species, tier } from street-details.js, in mrdoob's species & scales). Returns { group, update } or null when the
@@ -168,8 +185,15 @@ async function buildEzTrees(scene, generated) {
         else if (!near) near = o;
       });
       mid = mid || near;
-      return { id, near: bakedGeometry(near), mid: bakedGeometry(mid), material: fadeMaterial(near.material, !id.includes('pine')) };
+      return { id, near: bakedGeometry(near), mid: bakedGeometry(mid), material: fadeMaterial(near.material, !id.includes('pine')), src: near.material };
     }));
+    // (variants: a model's geometry in another bark, for the parks that name them: park-woods-parks.mjs modelNames)
+    for (const [id, base, barkOf, bark] of VARIANTS) {
+      const b = ids.indexOf(base), k = ids.indexOf(barkOf);
+      if (b < 0 || k < 0 || !models[k].src.map) continue;
+      ids.push(id); heights.push(heights[b]);
+      models.push({ id, near: models[b].near, mid: models[b].mid, material: bark(fadeMaterial(models[b].src, true), models[k].src.map), src: models[b].src });
+    }
   } catch (e) {
     console.warn('[ezTrees] models did not load, mrdoob\'s trees stay:', e);
     return null;
@@ -218,13 +242,13 @@ async function buildEzTrees(scene, generated) {
   let inWoods = 0;
   for (const t of generated) {
     if (window.CITY.bikeShareAt && window.CITY.bikeShareAt(t.x, t.z)) continue;
-    // (High Park's lidar trees name their model, height and crown radius: high-park-woods.js)
+    // (the wooded parks' lidar trees name their model, height and crown radius: park-woods.js)
     const h = t.height || t.scale * slopHeight, named = t.model ? ids.indexOf(t.model) : -1;
     sites.push({ x: t.x, y: (t.y || 0) + cutDown(t.x, t.z), z: t.z, model: named >= 0 ? named : genModel(t.species || 0, h), height: h, tier: t.tier || 0, width: t.width || 0, woods: !!t.woods });
     if (t.woods) inWoods++;
   }
   // (High Park: the City's trees piled on one address point, all but one, its lidar crowns standing for them)
-  const piled = window.CITY.highParkWoods ? window.CITY.highParkWoods.dropPiledCityTrees(sites) : 0;
+  const piled = window.CITY.parkWoods ? window.CITY.parkWoods.dropPiledCityTrees(sites) : 0;
   // a few on the road cuts' grassed banks (Rosedale Valley Road: the ravine's wooded sides), every ~11 m where a bank is
   // over 6 m wide, partway up it (11 m or more from the road's middle)
   let onBanks = 0;
@@ -513,7 +537,7 @@ async function buildEzTrees(scene, generated) {
     mesh.instanceMatrix.needsUpdate = true;
   });
   scene.add(group);
-  console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards (${inWoods} in High Park's woods; ${piled} of the City's piled on one point there left out), ${onBanks} on road cuts' banks), ${ids.length} models`);
+  console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards (${inWoods} in the wooded parks' woods; ${piled} of the City's piled on one point in those parks left out), ${onBanks} on road cuts' banks), ${ids.length} models`);
   return { group, update };
 }
 

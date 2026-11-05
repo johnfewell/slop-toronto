@@ -498,8 +498,9 @@ function createMultiplayer({ scene, controllerManager, privateZone = null }) {
       room = asked && P.isRoomName(asked) && isPrivate(asked) ? asked : 'public-1';
       fromLink = isPrivate(room);
       // #at (a friend's link) wins over the saved position; #place & #ride win over #at
-      const at = (h.get('at') || '').split(',').map(Number);
-      if (!h.has('place') && !h.has('ride') && at.length === 2 && at.every(Number.isFinite) && ctx.teleportTo) ctx.teleportTo(at[0], at[1]);
+      // (#at=x,z,bearing also says which way to face: a deep link onto a street)
+      const at = P.parseAt(h.get('at'));
+      if (!h.has('place') && !h.has('ride') && at && ctx.teleportTo) ctx.teleportTo(at.x, at.z, at.heading);
       connect();
     },
     // every frame, after the player moves

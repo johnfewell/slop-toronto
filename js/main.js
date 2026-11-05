@@ -83,6 +83,9 @@ async function initApp() {
   }
   container.appendChild(renderer.domElement);
 
+  // Appends a list one item at a time: the colliders and trees grow with the map, and spreading hundreds of thousands
+  // of them into push() overflows the call stack (st-6m6l)
+  const pushAll = (dst, src) => { for (const v of src) dst.push(v); };
   // Start-up phase timings (logged once as "[init] ...") to keep load-time regressions traceable
   let initTimings = [];
   let initMark = performance.now();
@@ -126,7 +129,7 @@ async function initApp() {
   markInit('terrain');
   const { colliders: landmarkColliders } = buildLandmarks(scene);
   // the Humber Bay Arch Bridge, the Martin Goodman Trail over the Humber's mouth (humber-arch-bridge.js)
-  if (window.CITY.buildTrailBridges) landmarkColliders.push(...window.CITY.buildTrailBridges(scene).colliders);
+  if (window.CITY.buildTrailBridges) pushAll(landmarkColliders, window.CITY.buildTrailBridges(scene).colliders);
   markInit('landmarks');
   // ?massing=1: every building from the City's 3D Massing polygons instead of its boxes (docs/massing-buildings.md;
   // js/massing-data.js and data/toronto-massing.bin are fetched only then, so normal play never loads them)
@@ -155,14 +158,14 @@ async function initApp() {
   const allColliders = [...landmarkColliders, ...cityBlocks.colliders, ...boroughs.colliders, ...(cityGrid.colliders || [])];
 
   const tennis = window.CITY.buildTennis?.(scene, allColliders);
-  if (tennis) allColliders.push(...tennis.colliders);
+  if (tennis) pushAll(allColliders, tennis.colliders);
   // The City's rink and skate-trail outlines in their scene-date season (rinks.js); after tennis, whose paving one meets
   const rinks = window.CITY.buildRinks?.(scene, allColliders);
-  if (rinks) allColliders.push(...rinks.colliders);
+  if (rinks) pushAll(allColliders, rinks.colliders);
   // High Park's paths, gardens, paddocks, fences and Colborne Lodge on its terrain (high-park-features.js); before the
   // park's trees (street-details.js keeps them off the paths and buildings)
   const highParkFeatures = window.CITY.buildHighParkFeatures?.(scene);
-  if (highParkFeatures) allColliders.push(...highParkFeatures.colliders);
+  if (highParkFeatures) pushAll(allColliders, highParkFeatures.colliders);
 
   const streetDetails = buildStreetDetails(scene);
   // These positions are procedural park/yard trees; the City street-tree
@@ -170,7 +173,7 @@ async function initApp() {
   if (tennis || rinks) {
     const clear = streetDetails.treePositions.filter((t) => !(tennis && (tennis.sites.some((s) => window.CITY.onCourt(s,t.x,t.z,1))||tennis.pads.some((p)=>window.CITY.inTennisPad(p,t.x,t.z))))&&!(rinks && rinks.sites.some((s)=>window.CITY.inRecord(s,t.x,t.z,1))));
     streetDetails.treePositions.length = 0;
-    streetDetails.treePositions.push(...clear);
+    pushAll(streetDetails.treePositions, clear);
   }
   markInit('streetDetails');
   // Trees: the City's street trees & the parkland ones in John's EZ-Tree models (ez-trees.js), else mrdoob's
@@ -187,21 +190,21 @@ async function initApp() {
   for (const c of streetProps.colliders || []) (c.openData ? allColliders : propColliders).push(c);
   const wayfindingMaps=window.CITY.buildWayfindingMaps?.(streetProps.group);
   // the flexi-posts on the cycle tracks' separators, and the separators' & posts' colliders (cycling.js)
-  if (window.CITY.buildBikePosts) propColliders.push(...(window.CITY.buildBikePosts(scene)?.colliders || []));
-  propColliders.push(...(streetDetails.colliders || []));
+  if (window.CITY.buildBikePosts) pushAll(propColliders, (window.CITY.buildBikePosts(scene)?.colliders || []));
+  pushAll(propColliders, (streetDetails.colliders || []));
   // the City's park name signs at the parks' entrances, each with its park's name & address (park-signs.js)
   if (window.CITY.buildParkSigns) {
     const parkSigns = await window.CITY.buildParkSigns(scene);
-    allColliders.push(...parkSigns.colliders);
-    if (parkSigns.textures) uploadedTextures.push(...parkSigns.textures);
+    pushAll(allColliders, parkSigns.colliders);
+    if (parkSigns.textures) pushAll(uploadedTextures, parkSigns.textures);
   }
   // Bike Share Toronto's stations, docks, pay stations & (live) bikes (bike-share.js)
   const bikeShare = window.CITY.buildBikeShare ? await window.CITY.buildBikeShare(scene) : null;
-  if (bikeShare) allColliders.push(...bikeShare.colliders);
+  if (bikeShare) pushAll(allColliders, bikeShare.colliders);
   // the City's public art: two simplified public-domain monuments and a stand-in marker at each outdoor work, clear of
   // everything solid above (public-art.js); the cafés below keep clear of them in turn
   const publicArt = window.CITY.buildPublicArt?.(scene, [...allColliders, ...propColliders]);
-  if (publicArt) allColliders.push(...publicArt.colliders);
+  if (publicArt) pushAll(allColliders, publicArt.colliders);
   // the City's CaféTO sidewalk & curb lane cafés, placed by rule clear of everything above (cafeto-patios.js)
   const patioFurniture = [['bench', 'benchStats'], ['parkingMeter', 'parkingMeterStats'], ['wayfinding', 'wayfindingStats'], ['infoPillar', 'infoPillarStats']]
     .flatMap(([kind, key]) => (window.CITY[key]?.sites || []).map((s) => ({ x: s.x, z: s.z, kind })));
@@ -209,7 +212,7 @@ async function initApp() {
   const patios = window.CITY.buildPatios
     ? await window.CITY.buildPatios(scene, allColliders, { furniture: patioFurniture, bikeShareAt: window.CITY.bikeShareAt })
     : { colliders: [], pedestrianObstacles: [] };
-  allColliders.push(...patios.colliders);
+  pushAll(allColliders, patios.colliders);
   // Yonge & Dundas: the screens round Sankofa Square (yonge-dundas.js)
   window.CITY.buildYongeDundas(scene);
   markInit('streetProps');
@@ -243,12 +246,12 @@ async function initApp() {
     ? window.CITY.buildParkedCars(scene, trafficSystem.network, { patioColliders: patios.colliders })
     : null;
   if (parkedCars) {
-    allColliders.push(...parkedCars.colliders);
+    pushAll(allColliders, parkedCars.colliders);
     trafficSystem.network.parkedAt = parkedCars.parkedAt;
   }
   markInit('parkedCars');
   // the people's heads at every crosswalk, the midblock signals & the pedestrian crossovers (pedestrian-signals.js)
-  if (window.CITY.buildPedestrianSignals) propColliders.push(...(window.CITY.buildPedestrianSignals(scene, trafficSystem, streetDetails.signalClock)?.colliders || []));
+  if (window.CITY.buildPedestrianSignals) pushAll(propColliders, (window.CITY.buildPedestrianSignals(scene, trafficSystem, streetDetails.signalClock)?.colliders || []));
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
   // --- Toronto layer (after aalghooneh/slop-toronto): the TTC's streetcars, which the traffic keeps behind ---
   const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
@@ -256,12 +259,12 @@ async function initApp() {
   const transitBuses = window.CITY.createTransitBuses ? window.CITY.createTransitBuses(trafficSystem) : null;
   // the Union Station Rail Corridor's tracks & GO trains (rail-corridor.js)
   const railCorridor = window.CITY.createRailCorridor(scene, trafficSystem);
-  allColliders.push(...railCorridor.colliders); // the raised tracks' embankments (the player's only)
+  pushAll(allColliders, railCorridor.colliders); // the raised tracks' embankments (the player's only)
   // the streetcars' sounds (audio branch: reads streetcars.cars, safe before the audio exists)
   if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(streetcars);
   // the TTC subway where it shows: Line 2 on the Bloor Viaduct, the station entrances (subway.js)
   const subway = window.CITY.createSubway(scene);
-  allColliders.push(...subway.colliders);
+  pushAll(allColliders, subway.colliders);
   // the TTC's subway pylons at the entrances (ttc-pylons.js; their colliders are subway.js's)
   if (window.CITY.buildTtcPylons) await window.CITY.buildTtcPylons(scene, subway.entrances.pylons);
   if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(subway);
@@ -349,8 +352,9 @@ async function initApp() {
   markInit('controllers');
 
   // City-wide static geometry: chunk & distance-cull the small props, shadow stand-ins for the big casters
-  // (scene-culling.js)
-  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles']
+  // (scene-culling.js). The cycle tracks' flexi-posts and the CaféTO patios set their own cull distances for it; left
+  // out of this list, each drew every post and patio in the city in every frame (~430k triangles, st-z51b)
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   // ?massing=1: the polygon cells, built in a worker since `blocks` (their near tier gives the shadow stand-ins)

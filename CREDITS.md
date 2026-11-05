@@ -143,7 +143,9 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   from the same project's Digital Surface Model over its Digital Terrain Model, 16 tiles of each, the surface model's
   fetched from the Ontario GeoHub image service `Elevation/Ontario_DSM_LidarDerived` by
   `tools/fetch-don-valley-dtm.mjs --region high-park --product dsm` (retrieved 2026-11-03; tile names and SHA-256s in
-  the data file).
+  the data file). Toronto Island Park's trees and woodland floor: `js/toronto-island-woods-data.js` (by
+  `tools/build-park-woods.mjs --park toronto-island`) from 23 tiles of each model,
+  `tools/fetch-don-valley-dtm.mjs --region toronto-island` and the same with `--product dsm` (retrieved 2026-11-04).
   The raw tiles are not in this repository. Contains information licensed under the Open Government Licence – Ontario.
 - **Wikimedia Commons photos** of Toronto's buildings: the facade base colours (`tools/data/commons_palette.json`) were
   measured from 384 freely licensed photos (CC0, public domain, CC BY, CC BY-SA). The photos are not in this

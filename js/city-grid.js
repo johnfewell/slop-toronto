@@ -1311,27 +1311,75 @@ function buildCityGrid(scene) {
       }
     }
     // The road bridges over the water at street level (city-config.js ROAD_BRIDGES): a slab across at the street's
-    // height, its faces down into the water, parapets where no sidewalk runs beside it
-    for (const d of window.CITY.ROAD_BRIDGES || []) {
-      const P = d.pts, hw = d.w / 2 + 0.3, yTop = 0.03, yBot = CITY_BOUNDS.waterLevel - 0.3;
+    // height, its faces down into the water, a sidewalk up a kerb on either side where the real bridge has one (a
+    // city street's, BRIDGE_SIDEWALKS), and parapets along its outer edges where no curb island runs beside it
+    // (the sidewalks in the curb islands' poured concrete, each quad with its walk's frame for the joints, as the road
+    // cuts' walks: js/sidewalk-sections.js walkFrames; their kerbs the islands' too)
+    const bwalk = makeAcc(), bcurb = makeAcc(), bframe = [], bspan = [];
+    (window.CITY.ROAD_BRIDGES || []).forEach((d, bi) => {
+      const P = d.pts, road = d.w / 2, yTop = 0.03, yBot = CITY_BOUNDS.waterLevel - 0.3;
+      const [swL, swR] = d.sidewalks || [0, 0];
+      // (each side's outer edge: the roadway's, 0.3 m out, or its sidewalk's; the sidewalk's top 2 cm over the curb
+      // islands', which it overlaps on the banks)
+      const side = [[1, swL], [-1, swR]].map(([sgn, sw]) => ({ sgn, sw, hw: road + sw + 0.3, y: sw > 0 ? SW_TOP + 0.02 : yTop, edge: sw > 0 ? road : road + 0.3 }));
       let s = 0;
       for (let i = 0; i + 1 < P.length; i++) {
         const a = P[i], b = P[i + 1], L = Math.hypot(b.x - a.x, b.z - a.z);
         if (L < 0.01) continue;
         const nx = (b.z - a.z) / L, nz = -(b.x - a.x) / L;
-        const aL = [a.x + nx * hw, yTop, a.z + nz * hw], aR = [a.x - nx * hw, yTop, a.z - nz * hw];
-        const bL = [b.x + nx * hw, yTop, b.z + nz * hw], bR = [b.x - nx * hw, yTop, b.z - nz * hw];
-        accQuad(top, aR, bR, bL, aL, [0, 1, 0], [[0, 0], [1, 0], [1, 1], [0, 1]]);
-        const lo = (p) => [p[0], yBot, p[2]];
-        accQuad(faces, aL, bL, lo(bL), lo(aL), [nx, 0, nz], [[s, 1], [s + L, 1], [s + L, 0], [s, 0]]);
-        accQuad(faces, bR, aR, lo(aR), lo(bR), [-nx, 0, -nz], [[s + L, 1], [s, 1], [s, 0], [s + L, 0]]);
-        for (const sgn of [1, -1]) {
-          const ax = a.x + nx * (hw - 0.25) * sgn, az = a.z + nz * (hw - 0.25) * sgn;
-          const bx = b.x + nx * (hw - 0.25) * sgn, bz = b.z + nz * (hw - 0.25) * sgn;
-          const mx = (ax + bx) / 2 + nx * 1.5 * sgn, mz = (az + bz) / 2 + nz * 1.5 * sgn;
-          if (!blockAt(mx, mz) && window.CITY.waterAt(ax, az) && window.CITY.waterAt(bx, bz)) accWall(faces, ax, az, bx, bz, yTop, 0.9, 0.4);
+        const at = (p, l, y) => [p.x + nx * l, y, p.z + nz * l];
+        const [Ls, Rs] = side;
+        // the roadway, to its kerbs (or the deck's edges)
+        accQuad(top, at(a, -Rs.edge, yTop), at(b, -Rs.edge, yTop), at(b, Ls.edge, yTop), at(a, Ls.edge, yTop), [0, 1, 0], [[0, 0], [1, 0], [1, 1], [0, 1]]);
+        for (const S of side) {
+          const g = S.sgn, o = S.hw * g;
+          if (S.sw > 0) {
+            // the sidewalk and its kerb face, facing the roadway
+            const k = road * g;
+            if (g > 0) accQuad(bwalk, at(a, k, S.y), at(b, k, S.y), at(b, o, S.y), at(a, o, S.y), [0, 1, 0], [[s, 0], [s + L, 0], [s + L, S.sw], [s, S.sw]]);
+            else accQuad(bwalk, at(b, k, S.y), at(a, k, S.y), at(a, o, S.y), at(b, o, S.y), [0, 1, 0], [[s + L, 0], [s, 0], [s, S.sw], [s + L, S.sw]]);
+            // (its frame, as the road cuts': along the walk, its normal (-uz, ux) out from the kerb, the kerb's line c)
+            const ux = -g * (b.x - a.x) / L, uz = -g * (b.z - a.z) / L, c = g * (a.x * nx + a.z * nz) + road;
+            for (let v = 0; v < 6; v++) { bframe.push(ux, uz, c, window.CITY.runSeed(30000 + bi, g > 0 ? 0 : 1) * 2); bspan.push(0, S.sw + 0.3); }
+            if (g > 0) accQuad(bcurb, at(b, k, S.y), at(a, k, S.y), at(a, k, yTop), at(b, k, yTop), [-nx, 0, -nz], [[s + L, 1], [s, 1], [s, 0], [s + L, 0]]);
+            else accQuad(bcurb, at(a, k, S.y), at(b, k, S.y), at(b, k, yTop), at(a, k, yTop), [nx, 0, nz], [[s, 1], [s + L, 1], [s + L, 0], [s, 0]]);
+            // (its ends on the banks: a step down to the street level)
+            for (const [p, q, f] of [[a, b, i === 0], [b, a, i + 2 === P.length]]) {
+              if (!f) continue;
+              const ux = (p.x - q.x) / L, uz = (p.z - q.z) / L;
+              const c0 = at(p, k, S.y), c1 = at(p, o, S.y);
+              const w0 = (g > 0) === (p === a) ? [c0, c1] : [c1, c0];
+              accQuad(faces, w0[0], w0[1], [w0[1][0], 0, w0[1][2]], [w0[0][0], 0, w0[0][2]], [ux, 0, uz], [[0, 1], [1, 1], [1, 0], [0, 0]]);
+            }
+          }
+          // the deck's outer face, down into the water
+          if (g > 0) accQuad(faces, at(a, o, S.y), at(b, o, S.y), at(b, o, yBot), at(a, o, yBot), [nx, 0, nz], [[s, 1], [s + L, 1], [s + L, 0], [s, 0]]);
+          else accQuad(faces, at(b, o, S.y), at(a, o, S.y), at(a, o, yBot), at(b, o, yBot), [-nx, 0, -nz], [[s + L, 1], [s, 1], [s, 0], [s + L, 0]]);
+          // its parapet, on the deck's (or the sidewalk's) top
+          const ax = a.x + nx * (S.hw - 0.25) * g, az = a.z + nz * (S.hw - 0.25) * g;
+          const bx = b.x + nx * (S.hw - 0.25) * g, bz = b.z + nz * (S.hw - 0.25) * g;
+          const mx = (ax + bx) / 2 + nx * 1.5 * g, mz = (az + bz) / 2 + nz * 1.5 * g;
+          if (!blockAt(mx, mz) && window.CITY.waterAt(ax, az) && window.CITY.waterAt(bx, bz)) accWall(faces, ax, az, bx, bz, S.y, 0.9, 0.4);
         }
         s += L;
+      }
+    });
+    {
+      const gw = accGeometry(bwalk);
+      if (gw) {
+        gw.setAttribute('walkFrame', new THREE.Float32BufferAttribute(bframe, 4));
+        gw.setAttribute('walkSpan', new THREE.Float32BufferAttribute(bspan, 2));
+        const m = new THREE.Mesh(gw, createSidewalkMaterial());
+        m.receiveShadow = true;
+        m.name = 'RoadBridgeSidewalks';
+        group.add(m);
+      }
+      const gc = accGeometry(bcurb);
+      if (gc) {
+        const m = new THREE.Mesh(gc, createCurbMaterial());
+        m.receiveShadow = true;
+        m.name = 'RoadBridgeKerbs';
+        group.add(m);
       }
     }
     for (const p of piers) {

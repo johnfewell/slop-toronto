@@ -1,0 +1,238 @@
+[
+ {
+  "name": "midday-viaduct-person-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, cm = a.controllerManager, y = C.SUBWAY_VIADUCTS[0].deck; a.cameraSystem.cinema = null; a.selectMode('person'); a.selectCamera('chase', true);\n let best = null; for (const r of C.DECK_RUNS) { if (!/^Bloor Street/.test(r.name)) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const p = r.pts[i], q = r.pts[i + 1], d = Math.hypot((p.x + q.x) / 2 - 2240, (p.z + q.z) / 2 + 2800); if (!best || d < best.d) best = { d, p, q }; } }\n const { p, q } = best, L = Math.hypot(q.x - p.x, q.z - p.z); let ux = (q.x - p.x) / L, uz = (q.z - p.z) / L; if (ux < 0) { ux = -ux; uz = -uz; }\n const t = (2240 - p.x) * ux + (-2800 - p.z) * uz, cx = p.x + ux * t, cz = p.z + uz * t;\n a.teleportTo(cx - ux * 70 - uz * 3, cz - uz * 70 + ux * 3, Math.atan2(ux, uz), y); return { start: [+(cx - ux * 70).toFixed(1), +(cz - uz * 70).toFixed(1)], heading: +Math.atan2(ux, uz).toFixed(3), deck: y, run: best.p && best.d }; })()",
+  "wait": 3500,
+  "record": true
+ },
+ {
+  "name": "midday-viaduct-person-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "midday-viaduct-person-1-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "midday-viaduct-person-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "midday-viaduct-person-2-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "midday-viaduct-person-3",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "midday-viaduct-person-3-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "midday-viaduct-person-4",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "midday-viaduct-person-4-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "midday-viaduct-cyclist-start",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, cm = a.controllerManager, y = C.SUBWAY_VIADUCTS[0].deck; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true);\n let best = null; for (const r of C.DECK_RUNS) { if (!/^Bloor Street/.test(r.name)) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const p = r.pts[i], q = r.pts[i + 1], d = Math.hypot((p.x + q.x) / 2 - 2240, (p.z + q.z) / 2 + 2800); if (!best || d < best.d) best = { d, p, q }; } }\n const { p, q } = best, L = Math.hypot(q.x - p.x, q.z - p.z); let ux = (q.x - p.x) / L, uz = (q.z - p.z) / L; if (ux < 0) { ux = -ux; uz = -uz; }\n const t = (2240 - p.x) * ux + (-2800 - p.z) * uz, cx = p.x + ux * t, cz = p.z + uz * t;\n a.teleportTo(cx - ux * 70 - uz * 3, cz - uz * 70 + ux * 3, Math.atan2(ux, uz), y); return { start: [+(cx - ux * 70).toFixed(1), +(cz - uz * 70).toFixed(1)], heading: +Math.atan2(ux, uz).toFixed(3), deck: y, run: best.p && best.d }; })()",
+  "wait": 3500,
+  "record": true
+ },
+ {
+  "name": "midday-viaduct-cyclist-1",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "midday-viaduct-cyclist-1-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "midday-viaduct-cyclist-2",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "midday-viaduct-cyclist-2-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "midday-viaduct-cyclist-3",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "midday-viaduct-cyclist-3-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "midday-viaduct-cyclist-4",
+  "time": "midday",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "midday-viaduct-cyclist-4-at",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-person-start",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, cm = a.controllerManager, y = C.SUBWAY_VIADUCTS[0].deck; a.cameraSystem.cinema = null; a.selectMode('person'); a.selectCamera('chase', true);\n let best = null; for (const r of C.DECK_RUNS) { if (!/^Bloor Street/.test(r.name)) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const p = r.pts[i], q = r.pts[i + 1], d = Math.hypot((p.x + q.x) / 2 - 2240, (p.z + q.z) / 2 + 2800); if (!best || d < best.d) best = { d, p, q }; } }\n const { p, q } = best, L = Math.hypot(q.x - p.x, q.z - p.z); let ux = (q.x - p.x) / L, uz = (q.z - p.z) / L; if (ux < 0) { ux = -ux; uz = -uz; }\n const t = (2240 - p.x) * ux + (-2800 - p.z) * uz, cx = p.x + ux * t, cz = p.z + uz * t;\n a.teleportTo(cx - ux * 70 - uz * 3, cz - uz * 70 + ux * 3, Math.atan2(ux, uz), y); return { start: [+(cx - ux * 70).toFixed(1), +(cz - uz * 70).toFixed(1)], heading: +Math.atan2(ux, uz).toFixed(3), deck: y, run: best.p && best.d }; })()",
+  "wait": 3500,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-person-1",
+  "time": "golden",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "golden-viaduct-person-1-at",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-person-2",
+  "time": "golden",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "golden-viaduct-person-2-at",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-person-3",
+  "time": "golden",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "golden-viaduct-person-3-at",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-person-4",
+  "time": "golden",
+  "hold": "KeyW",
+  "wait": 9000
+ },
+ {
+  "name": "golden-viaduct-person-4-at",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-cyclist-start",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, cm = a.controllerManager, y = C.SUBWAY_VIADUCTS[0].deck; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true);\n let best = null; for (const r of C.DECK_RUNS) { if (!/^Bloor Street/.test(r.name)) continue; for (let i = 0; i + 1 < r.pts.length; i++) { const p = r.pts[i], q = r.pts[i + 1], d = Math.hypot((p.x + q.x) / 2 - 2240, (p.z + q.z) / 2 + 2800); if (!best || d < best.d) best = { d, p, q }; } }\n const { p, q } = best, L = Math.hypot(q.x - p.x, q.z - p.z); let ux = (q.x - p.x) / L, uz = (q.z - p.z) / L; if (ux < 0) { ux = -ux; uz = -uz; }\n const t = (2240 - p.x) * ux + (-2800 - p.z) * uz, cx = p.x + ux * t, cz = p.z + uz * t;\n a.teleportTo(cx - ux * 70 - uz * 3, cz - uz * 70 + ux * 3, Math.atan2(ux, uz), y); return { start: [+(cx - ux * 70).toFixed(1), +(cz - uz * 70).toFixed(1)], heading: +Math.atan2(ux, uz).toFixed(3), deck: y, run: best.p && best.d }; })()",
+  "wait": 3500,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-cyclist-1",
+  "time": "golden",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "golden-viaduct-cyclist-1-at",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-cyclist-2",
+  "time": "golden",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "golden-viaduct-cyclist-2-at",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-cyclist-3",
+  "time": "golden",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "golden-viaduct-cyclist-3-at",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "golden-viaduct-cyclist-4",
+  "time": "golden",
+  "hold": "KeyW",
+  "wait": 3500
+ },
+ {
+  "name": "golden-viaduct-cyclist-4-at",
+  "time": "golden",
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, e = a.controllerManager.getActiveEntity(), p = e.position; return { mode: a.controllerManager.activeMode, x: +p.x.toFixed(1), y: +p.y.toFixed(2), z: +p.z.toFixed(1), water: !!C.waterAt(p.x, p.z), roadBridge: !!(C.bridgeAt && C.bridgeAt(p.x, p.z)), bridgeSidewalk: !!(C.bridgeSidewalkAt && C.bridgeSidewalkAt(p.x, p.z)), curbIsland: !!C.blockAt(p.x, p.z), deck: C.SUBWAY_VIADUCTS[0].deck, motorwayDeck: !!C.motorwayDeckAt(p.x, p.z, p.y, 0.6) }; })()",
+  "wait": 300,
+  "record": true
+ }
+]

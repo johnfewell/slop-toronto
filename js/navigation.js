@@ -466,7 +466,7 @@ function findRoute(from, to, mode = 'car') {
     if (prevRun && (prevRun.name === name || (!name && leg.len < 60) || (!prevRun.name && prevRun.len < 60))) {
       if (!prevRun.name && name) prevRun.name = name;
       prevRun.len += leg.len;
-      prevRun.pts.push(...leg.pts.slice(1));
+      for (let k = 1; k < leg.pts.length; k++) prevRun.pts.push(leg.pts[k]); // (a route across the city: no spread)
     } else runs.push({ name, len: leg.len, pts: leg.pts.slice(), at: along });
     along += leg.len;
   }
@@ -482,7 +482,7 @@ function findRoute(from, to, mode = 'car') {
   // and two stretches of one street with only a connector between them are one
   for (let i = runs.length - 1; i >= 1; i--) {
     if (runs[i].name !== runs[i - 1].name) continue;
-    runs[i - 1].pts.push(...runs[i].pts.slice(1));
+    for (let k = 1; k < runs[i].pts.length; k++) runs[i - 1].pts.push(runs[i].pts[k]);
     runs[i - 1].len += runs[i].len;
     runs.splice(i, 1);
   }

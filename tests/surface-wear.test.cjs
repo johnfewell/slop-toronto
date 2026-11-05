@@ -77,3 +77,17 @@ test('the road & sidewalk shaders read the wear level and keep the expensive wor
     assert.equal(outside, 0, `${name} only at level 2`);
   }
 });
+
+// st-scy0: a fresh utility-cut patch was a flat 0x2e2d2c x 0.85, about a fifth of the roadway's albedo and with none of
+// its grain; at midday on Colborne Lodge Drive it read as a car's contact shadow with no car. A fresh patch is now the
+// roadway's own aggregate darkened by FRESH_PATCH_SHADE, so it keeps its texture and stays clearly lighter than that.
+test('a fresh utility-cut patch is the asphalt darkened, never a flat fill that reads as a shadow', () => {
+  const src = readFileSync(join(__dirname, '../js/tsl-materials.js'), 'utf8');
+  const road = src.slice(src.indexOf('function createRoadSurfaceMaterial('), src.indexOf('\n}\n', src.indexOf('function createRoadSurfaceMaterial(')));
+  const shade = Number(road.match(/const FRESH_PATCH_SHADE = ([\d.]+);/)?.[1]);
+  assert.ok(shade >= 0.45 && shade <= 0.75, `FRESH_PATCH_SHADE ${shade}: darker than the roadway, but not shadow-dark`);
+  const patchCol = road.match(/const patchCol = (.*);/)?.[1];
+  assert.ok(patchCol, 'patchCol');
+  assert.match(patchCol, /baseAsphalt\.mul\(FRESH_PATCH_SHADE\), patchFresh\)$/, 'the fresh patch keeps the roadway grain');
+  assert.doesNotMatch(patchCol, /color\(0x/, 'no flat colour for a fresh patch');
+});

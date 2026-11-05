@@ -121,6 +121,6 @@
   "name": "check",
   "record": true,
   "wait": 1500,
-  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, W = C.highParkWoods; let inst = 0, tris = 0, meshes = 0; a.scene.traverse((o) => { if (o.isInstancedMesh && /^Trees_/.test(o.name) && o.visible) { meshes++; inst += o.count; const g = o.geometry; tris += o.count * (g.index ? g.index.count : g.attributes.position.count) / 3; } }); const box = C.HIGH_PARK_DATA.box; return { woods: W ? W.stats : null, treeMeshes: meshes, treeInstancesDrawn: inst, treeTrianglesDrawn: tris, heapMB: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null, readyMs: a.startupReadyMs || null }; })()"
+  "js": "(() => { const a = window.__CITY_APP, C = window.CITY, W = C.parkWoods; let inst = 0, tris = 0, meshes = 0; a.scene.traverse((o) => { if (o.isInstancedMesh && /^Trees_/.test(o.name) && o.visible) { meshes++; inst += o.count; const g = o.geometry; tris += o.count * (g.index ? g.index.count : g.attributes.position.count) / 3; } }); const box = C.HIGH_PARK_DATA.box; return { woods: W ? W.stats : null, treeMeshes: meshes, treeInstancesDrawn: inst, treeTrianglesDrawn: tris, heapMB: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null, readyMs: a.startupReadyMs || null }; })()"
  }
 ]
