@@ -1,0 +1,7 @@
+[
+ {"name": "t00", "time": "midday", "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()", "wait": 2000},
+ {"name": "dbg-lagoon-top", "time": "midday", "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-400, 30, 3000], look: [-400, -0.7, 2975], fov: 55 }); })()", "wait": 4000},
+ {"name": "dbg-gren-east-top", "time": "midday", "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-6715, 30, -1640], look: [-6740, -1.6, -1640], fov: 55 }); })()", "wait": 4000},
+ {"name": "dbg-beach-top", "time": "midday", "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [380, 40, 3010], look: [410, -0.7, 3045], fov: 55 }); })()", "wait": 4000},
+ {"name": "dbg-gren-south", "time": "midday", "js": "(() => { const C = window.CITY, g = C.DON_VALLEY.heightAt(-6750, -1236); window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-6750, g + 1.75, -1236], look: [-6830, -1.6, -1520], fov: 60 }); })()", "wait": 4000}
+]

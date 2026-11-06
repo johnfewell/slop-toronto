@@ -1,0 +1,178 @@
+[
+ {
+  "name": "w0-00-base",
+  "wait": 5000,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()",
+  "mode": "person",
+  "x": -6135.9,
+  "z": -1807.8,
+  "heading": -1.9642469647238323
+ },
+ {
+  "name": "w0-01-nofar",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();hide(/^Trees_far_/);app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-02-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-03-nomid",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();hide(/_mid(_noshadow)?$/);app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-04-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-05-nonear",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();hide(/_near$/);app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-06-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-07-noshadowcast",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();each(/^Trees_/,(m)=>{m.userData.__cs=m.castShadow;m.castShadow=false;});app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-08-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-09-notrees",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();T.visible=false;app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-10-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w0-census",
+  "wait": 200,
+  "metricsMs": 0,
+  "record": true,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');const out={};T.children.forEach((m)=>{if(!m.visible||!m.count)return;const g=m.geometry;const tri=(g.index?g.index.count:g.attributes.position.count)/3;const k=m.name.replace(/^Trees_(ez-)?/,'').replace(/-(small|medium|large)/,'');out[k]=out[k]||{n:0,tri:0};out[k].n+=m.count;out[k].tri+=m.count*tri;});const i=app.renderer.info.render;return {levels:out,draws:i.drawCalls,triangles:i.triangles,net:app.qualityNet&&app.qualityNet.state?app.qualityNet.state():null};})()"
+ },
+ {
+  "name": "w1-00-base",
+  "wait": 5000,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()",
+  "mode": "person",
+  "x": -6163.6,
+  "z": -1819.3,
+  "heading": -1.9642469647238323
+ },
+ {
+  "name": "w1-01-nofar",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();hide(/^Trees_far_/);app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-02-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-03-nomid",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();hide(/_mid(_noshadow)?$/);app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-04-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-05-nonear",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();hide(/_near$/);app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-06-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-07-noshadowcast",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();each(/^Trees_/,(m)=>{m.userData.__cs=m.castShadow;m.castShadow=false;});app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-08-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-09-notrees",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();T.visible=false;app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-10-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');window.__ko=window.__ko||{};const each=(re,f)=>T.children.forEach((m)=>{if(re.test(m.name))f(m);});const reset=()=>{T.visible=true;T.children.forEach((m)=>{if(m.userData.__vis!==undefined){m.visible=m.userData.__vis;delete m.userData.__vis;}if(m.userData.__cs!==undefined){m.castShadow=m.userData.__cs;delete m.userData.__cs;}});app.renderer.shadowMap.autoUpdate=true;};const hide=(re)=>each(re,(m)=>{m.userData.__vis=m.visible;m.visible=false;m.count0=m.count;});reset();app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "w1-census",
+  "wait": 200,
+  "metricsMs": 0,
+  "record": true,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Trees');const out={};T.children.forEach((m)=>{if(!m.visible||!m.count)return;const g=m.geometry;const tri=(g.index?g.index.count:g.attributes.position.count)/3;const k=m.name.replace(/^Trees_(ez-)?/,'').replace(/-(small|medium|large)/,'');out[k]=out[k]||{n:0,tri:0};out[k].n+=m.count;out[k].tri+=m.count*tri;});const i=app.renderer.info.render;return {levels:out,draws:i.drawCalls,triangles:i.triangles,net:app.qualityNet&&app.qualityNet.state?app.qualityNet.state():null};})()"
+ }
+]

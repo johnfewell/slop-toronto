@@ -1,0 +1,76 @@
+[
+ {
+  "name": "p-woods-a",
+  "mode": "person",
+  "x": -6135.9,
+  "z": -1807.8,
+  "heading": -1.9642469647238323,
+  "wait": 5000,
+  "metricsMs": 0,
+  "js": "(()=>{const app=window.__CITY_APP;app.controllerManager.keys.boost=false;const sc=app.scene;for(const n of ['TrafficAndPedestrians','HighwayTraffic','Streetcars','RailCorridor','Subway','ParkedCars','PlayerCyclist','PlayerTaxiCar','PlayerHelicopter','PlayerPerson'])sc.traverse((o)=>{if(o.name===n)o.visible=false;});})()"
+ },
+ {
+  "name": "p-woods-a-stat",
+  "wait": 100,
+  "metricsMs": 0,
+  "record": true,
+  "js": "(()=>{const a=window.__CITY_APP;const i=a.renderer.info.render;return {trees:window.CITY.treeStats||null,draws:i.drawCalls,triangles:i.triangles};})()"
+ },
+ {
+  "name": "p-woods-b",
+  "mode": "person",
+  "x": -6163.6,
+  "z": -1819.3,
+  "heading": -1.9642469647238323,
+  "wait": 5000,
+  "metricsMs": 0,
+  "js": "(()=>{const app=window.__CITY_APP;app.controllerManager.keys.boost=false;const sc=app.scene;for(const n of ['TrafficAndPedestrians','HighwayTraffic','Streetcars','RailCorridor','Subway','ParkedCars','PlayerCyclist','PlayerTaxiCar','PlayerHelicopter','PlayerPerson'])sc.traverse((o)=>{if(o.name===n)o.visible=false;});})()"
+ },
+ {
+  "name": "p-woods-back",
+  "mode": "person",
+  "x": -6163.6,
+  "z": -1819.3,
+  "heading": 1.1773456888659608,
+  "wait": 5000,
+  "metricsMs": 0,
+  "js": "(()=>{const app=window.__CITY_APP;app.controllerManager.keys.boost=false;const sc=app.scene;for(const n of ['TrafficAndPedestrians','HighwayTraffic','Streetcars','RailCorridor','Subway','ParkedCars','PlayerCyclist','PlayerTaxiCar','PlayerHelicopter','PlayerPerson'])sc.traverse((o)=>{if(o.name===n)o.visible=false;});})()"
+ },
+ {
+  "name": "p-island",
+  "mode": "person",
+  "x": -658,
+  "z": 2419,
+  "heading": -1.967237610013338,
+  "wait": 5000,
+  "metricsMs": 0,
+  "js": "(()=>{const app=window.__CITY_APP;app.controllerManager.keys.boost=false;const sc=app.scene;for(const n of ['TrafficAndPedestrians','HighwayTraffic','Streetcars','RailCorridor','Subway','ParkedCars','PlayerCyclist','PlayerTaxiCar','PlayerHelicopter','PlayerPerson'])sc.traverse((o)=>{if(o.name===n)o.visible=false;});})()"
+ },
+ {
+  "name": "p-hp-aerial",
+  "mode": "person",
+  "x": -6122,
+  "z": -1802,
+  "heading": 0,
+  "wait": 5000,
+  "metricsMs": 0,
+  "js": "(()=>{const app=window.__CITY_APP;app.controllerManager.keys.boost=false;const sc=app.scene;for(const n of ['TrafficAndPedestrians','HighwayTraffic','Streetcars','RailCorridor','Subway','ParkedCars','PlayerCyclist','PlayerTaxiCar','PlayerHelicopter','PlayerPerson'])sc.traverse((o)=>{if(o.name===n)o.visible=false;});const cam={pos:[-5600, 260, -1300],look:[-6300, 0, -2100],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "p-queen-west",
+  "mode": "person",
+  "x": -2700,
+  "z": -750,
+  "heading": 0,
+  "wait": 5000,
+  "metricsMs": 0,
+  "js": "(()=>{const app=window.__CITY_APP;app.controllerManager.keys.boost=false;const sc=app.scene;for(const n of ['TrafficAndPedestrians','HighwayTraffic','Streetcars','RailCorridor','Subway','ParkedCars','PlayerCyclist','PlayerTaxiCar','PlayerHelicopter','PlayerPerson'])sc.traverse((o)=>{if(o.name===n)o.visible=false;});const cam={pos:[-2700, 1.7, -757],look:[-2950, 1.6, -760],fov:60};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "p-queen-west-stat",
+  "wait": 100,
+  "metricsMs": 0,
+  "record": true,
+  "js": "(()=>{const a=window.__CITY_APP;const i=a.renderer.info.render;return {trees:window.CITY.treeStats||null,draws:i.drawCalls,triangles:i.triangles};})()"
+ }
+]

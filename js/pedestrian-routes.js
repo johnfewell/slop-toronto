@@ -49,14 +49,32 @@ function createPedestrianRoutes({ walkable: roadWalkable, onSidewalk, midCrossin
     gapBlocked: 0, walkLinks: 0, bandLinks: 0, walkMs: 0, followMs: 0 };
 
   // The furniture, in 8 m cells: { minX.., circle } or { minX.., obb } (world-collision.js's shapes), or a plain box
-  const CELL = 8, cells = new Map();
+  // The 8 m cells are filled a 256 m tile at a time, the first time a walker's line or dodge looks there: a city's
+  // worth of them up front held ~50 MB of a bigger map's heap for streets nobody walks (st-bz1o); the same cells, in
+  // the same order, whenever they're asked for
+  const CELL = 8, cells = new Map(), TILE = 256, PER = TILE / CELL, tiles = new Map(), filled = new Set();
   const cellKey = (ix, iz) => (ix + 4096) * 8192 + iz + 4096;
   if (detours) {
     for (const o of obstacles) {
       if (!(o.maxX > o.minX) || !(o.maxZ > o.minZ)) continue;
       stats.obstacles++;
-      for (let ix = Math.floor(o.minX / CELL); ix <= Math.floor(o.maxX / CELL); ix++) {
-        for (let iz = Math.floor(o.minZ / CELL); iz <= Math.floor(o.maxZ / CELL); iz++) {
+      for (let tx = Math.floor(o.minX / TILE); tx <= Math.floor(o.maxX / TILE); tx++) {
+        for (let tz = Math.floor(o.minZ / TILE); tz <= Math.floor(o.maxZ / TILE); tz++) {
+          const k = cellKey(tx, tz);
+          (tiles.get(k) || tiles.set(k, []).get(k)).push(o);
+        }
+      }
+    }
+  }
+  const hasFurniture = stats.obstacles > 0;
+  function fillTile(tx, tz) {
+    const key = cellKey(tx, tz);
+    if (filled.has(key)) return;
+    filled.add(key);
+    const ix0 = tx * PER, ix1 = ix0 + PER - 1, iz0 = tz * PER, iz1 = iz0 + PER - 1;
+    for (const o of tiles.get(key) || []) {
+      for (let ix = Math.max(ix0, Math.floor(o.minX / CELL)); ix <= Math.min(ix1, Math.floor(o.maxX / CELL)); ix++) {
+        for (let iz = Math.max(iz0, Math.floor(o.minZ / CELL)); iz <= Math.min(iz1, Math.floor(o.maxZ / CELL)); iz++) {
           const k = cellKey(ix, iz);
           (cells.get(k) || cells.set(k, []).get(k)).push(o);
         }
@@ -108,12 +126,13 @@ function createPedestrianRoutes({ walkable: roadWalkable, onSidewalk, midCrossin
   function furnitureAt(minX, maxX, minZ, maxZ) {
     for (let ix = Math.floor(minX / CELL); ix <= Math.floor(maxX / CELL); ix++) {
       for (let iz = Math.floor(minZ / CELL); iz <= Math.floor(maxZ / CELL); iz++) {
+        fillTile(Math.floor(ix / PER), Math.floor(iz / PER));
         for (const o of cells.get(cellKey(ix, iz)) || []) if (hits(o, minX, maxX, minZ, maxZ)) return true;
       }
     }
     return false;
   }
-  const walkable = cells.size
+  const walkable = hasFurniture
     ? (minX, maxX, minZ, maxZ) => roadWalkable(minX, maxX, minZ, maxZ) && !furnitureAt(minX, maxX, minZ, maxZ)
     : roadWalkable;
   const point = (track, end) => ({ x: track.ax + track.ux * track.len * end, z: track.az + track.uz * track.len * end });
@@ -239,7 +258,7 @@ function createPedestrianRoutes({ walkable: roadWalkable, onSidewalk, midCrossin
           if (points.length < 2) {
             // no way round: dropped where the footprints block it, as before; straight through the furniture otherwise
             // (`throughFurniture`), never fewer lines than without it
-            if (cells.size && clear(a, b, block, 0, roadWalkable)) { stats.throughFurniture++; points = [a, b]; }
+            if (hasFurniture && clear(a, b, block, 0, roadWalkable)) { stats.throughFurniture++; points = [a, b]; }
             else { stats.lineBlocked++; continue; }
           } else stats.detoured++;
         } else if (mapped?.offsets && !onWalk(a, b, block, 0, 0, 2)) {

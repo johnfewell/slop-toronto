@@ -1,0 +1,23 @@
+{
+  "name": "eglinton",
+  "description": "The detail frame extended north to Eglinton Avenue and east to Victoria Park Avenue (world metres, the detail frame projection)",
+  "areaKm2": 190.8,
+  "world": {
+    "x0": -7900,
+    "x1": 9600,
+    "z0": -7300,
+    "z1": 3600
+  },
+  "bbox": [
+    -79.5064,
+    43.5895,
+    -79.2477,
+    43.7374
+  ],
+  "box": {
+    "s": 43.5895,
+    "w": -79.5064,
+    "n": 43.7374,
+    "e": -79.2477
+  }
+}

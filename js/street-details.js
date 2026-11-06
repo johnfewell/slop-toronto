@@ -940,7 +940,16 @@ function buildStreetDetails(scene) {
   }
 
   scene.add(group);
-  return { group, footprints, colliders, signalClock, audioSignals, update, treePositions, addFallbackTrees };
+  // Once the trees are built (main.js): the build's own indexes (the poles placed, the roads by cell) and the tree sites,
+  // which nothing reads afterwards; update() keeps the closure they live in (a bigger map's ~3x of them, st-bz1o)
+  // after the build: the placement indexes and the per-instance matrices (copied into the instance buffers) are
+  // only read while building, but the update closure keeps this whole scope alive, so drop them by hand
+  const releaseBuildIndexes = () => {
+    poleCells.clear(); roadCells.clear(); occupied.clear(); treePositions.length = 0;
+    for (const a of [poleMatrices, armMatrices, headMatrices, lensMatrices, pedHeadMatrices, lampHeadMatrices, solarMatrices, lampSites]) a.length = 0;
+    for (const k in modelMatrices) modelMatrices[k].length = 0;
+  };
+  return { group, footprints, colliders, signalClock, audioSignals, update, treePositions, addFallbackTrees, releaseBuildIndexes };
 }
 
 Object.assign(window.CITY, { buildStreetDetails });

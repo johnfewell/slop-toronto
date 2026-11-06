@@ -1,0 +1,33 @@
+[
+ {
+  "name": "t-queen-west",
+  "mode": "person",
+  "x": -2700,
+  "z": -750,
+  "heading": -1.57,
+  "wait": 3000,
+  "js": "\nwindow.__census = async (name) => {\n  const app = window.__CITY_APP, r = app.renderer, scene = app.scene;\n  const raf = () => new Promise((res) => requestAnimationFrame(res));\n  const stack = [], frames = new Map();\n  const origDirect = r._renderObjectDirect, origUpdate = r.info.update;\n  const rootOf = (o) => { while (o.parent && o.parent !== scene) o = o.parent; return o.name || o.type; };\n  r._renderObjectDirect = function (object, material, sc, camera) {\n    const pass = sc === scene ? (camera.isOrthographicCamera ? 'shadow' : 'main') : 'other';\n    let root = sc === scene ? rootOf(object) : (object.name || object.type);\n    if (root === 'Trees') { const m = /_(near|mid|far)/.exec(object.name || '') || /(card|crown)/i.exec(object.name || ''); root += '/' + (m ? m[1] : (object.name || '?')); }\n    stack.push([pass, root]);\n    try { return origDirect.apply(this, arguments); } finally { stack.pop(); }\n  };\n  r.info.update = function (object, count, instanceCount) {\n    const [pass, root] = stack[stack.length - 1] || ['unlabelled', '?'];\n    const f = app.frameNo; let fr = frames.get(f); if (!fr) frames.set(f, fr = { passes: {}, roots: {} });\n    const tri = (object.isMesh || object.isSprite) ? instanceCount * count / 3 : 0;\n    const p = fr.passes[pass] || (fr.passes[pass] = { draws: 0, triangles: 0 }); p.draws++; p.triangles += tri;\n    const k = pass + ' ' + root; const q = fr.roots[k] || (fr.roots[k] = { draws: 0, triangles: 0 }); q.draws++; q.triangles += tri;\n    return origUpdate.apply(this, arguments);\n  };\n  const f0 = app.frameNo; while (app.frameNo < f0 + 4) await raf();\n  r._renderObjectDirect = origDirect; delete r._renderObjectDirect; r.info.update = origUpdate; delete r.info.update;\n  const keys = [...frames.keys()].sort((a, b) => a - b); const fr = frames.get(keys[Math.floor(keys.length / 2)]);\n  let objects = 0, visible = 0, meshes = 0, autoUpd = 0; scene.traverse((o) => { objects++; if (o.isMesh) { meshes++; if (o.matrixAutoUpdate) autoUpd++; } }); scene.traverseVisible(() => visible++);\n  const umw = []; let umwTotal = 0;\n  for (const c of scene.children) { let n = 0; c.traverse(() => n++); const t = performance.now(); for (let k = 0; k < 20; k++) c.updateMatrixWorld(); const ms = (performance.now() - t) / 20; umwTotal += ms; umw.push({ root: c.name || c.type, objects: n, ms: +ms.toFixed(3), frozen: c.updateMatrixWorld.toString().length < 20 }); }\n  const t1 = performance.now(); for (let k = 0; k < 20; k++) scene.updateMatrixWorld(); const sceneUmwMs = +((performance.now() - t1) / 20).toFixed(3);\n  umw.sort((a, b) => b.ms - a.ms);\n  const top = Object.entries(fr.roots).sort((a, b) => b[1].triangles - a[1].triangles).slice(0, 40).map(([k, v]) => ({ k, draws: v.draws, ktris: Math.round(v.triangles / 1000) }));\n  const total = Object.values(fr.passes).reduce((a, p) => ({ draws: a.draws + p.draws, triangles: a.triangles + p.triangles }), { draws: 0, triangles: 0 });\n  const res = { name, framesSeen: keys.length, frameUsed: keys[Math.floor(keys.length / 2)], tier: CITY.QUALITY.tier, canvas: [r.domElement.width, r.domElement.height],\n    passes: fr.passes, total, rendererInfoLastFrame: { drawCalls: r.info.render.drawCalls, triangles: r.info.render.triangles },\n    shadowMapSize: app.lightingSystem?.sunLight?.shadow?.mapSize?.x, shadowFar: app.lightingSystem?.sunLight?.shadow?.camera?.far,\n    sceneObjects: objects, visibleWalk: visible, meshes, meshesWithMatrixAutoUpdate: autoUpd, cullingStats: app.cullingStats, sceneUpdateMatrixWorldMs: sceneUmwMs, updateMatrixWorldByRoot: umw.slice(0, 25), top };\n  console.log('[census] ' + JSON.stringify({ name, passes: fr.passes, total }));\n  return res;\n};\n(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;app.controllerManager.keys.boost=false;const cam={pos:[-2700,1.7,-757],look:[-2950,1.6,-760],fov:60};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "t-queen-west-treeshadow0",
+  "wait": 2000,
+  "js": "(()=>{window.__tc=[];window.__CITY_APP.scene.getObjectByName('Trees').traverse((o)=>{if(o.castShadow){o.castShadow=false;window.__tc.push(o);}});return window.__tc.length;})()"
+ },
+ {
+  "name": "t-queen-west-notrees",
+  "wait": 2000,
+  "js": "(()=>{for(const o of window.__tc)o.castShadow=true;const t=window.__CITY_APP.scene.getObjectByName('Trees');t.visible=false;window.__trees=t;return 1;})()"
+ },
+ {
+  "name": "t-queen-west-again",
+  "wait": 2000,
+  "js": "(()=>{window.__trees.visible=true;return 1;})()"
+ },
+ {
+  "name": "census-queen-west",
+  "metricsMs": 0,
+  "wait": 1500,
+  "record": true,
+  "js": "new Promise((res)=>setTimeout(res,1200)).then(()=>window.__census('queen-west'))"
+ }
+]

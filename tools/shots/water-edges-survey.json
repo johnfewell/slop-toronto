@@ -1,0 +1,164 @@
+[
+ {
+  "name": "t00-hud",
+  "time": "midday",
+  "js": "(async () => { (() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })(); await (window.CITY.waterEdgesReady || null); })()",
+  "wait": 2000
+ },
+ {
+  "name": "gren-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [-6600, 80, -1290], look: [-6850, -1.6, -1800], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "gren-east-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-6723, -1640) : 0; return { pos: [-6723, g + 1.75, -1640], look: [-6860, -1.6, -1500], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "gren-south-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-6750, -1236) : 0; return { pos: [-6750, g + 1.75, -1236], look: [-6830, -1.6, -1520], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [-150, 110, 2420], look: [-450, -0.7, 2860], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-lagoon-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-400, 2994) : 0; return { pos: [-400, g + 1.95, 2994], look: [-300, -0.7, 2930], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-lagoon2-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-200, 2749) : 0; return { pos: [-200, g + 1.95, 2749], look: [-60, -0.7, 2722], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-beach-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [760, 60, 3330], look: [380, -0.7, 3020], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-beach-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(396, 3020) : 0; return { pos: [396, g + 1.95, 3020], look: [560, -0.7, 2960], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "cherry-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [2750, 70, 2150], look: [2650, -0.7, 1720], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "cherry-beach-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(2700, 1681) : 0; return { pos: [2700, g + 1.95, 1681], look: [2900, -0.7, 1640], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "humber-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [-7300, 90, -400], look: [-7600, -0.7, -800], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "don-mouth-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [2600, 70, 1000], look: [2400, -0.7, 650], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "harbourfront-wall-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [-400, 30, 950], look: [-450, -0.7, 640], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "gren-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [-6600, 80, -1290], look: [-6850, -1.6, -1800], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "gren-east-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-6723, -1640) : 0; return { pos: [-6723, g + 1.75, -1640], look: [-6860, -1.6, -1500], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "gren-south-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-6750, -1236) : 0; return { pos: [-6750, g + 1.75, -1236], look: [-6830, -1.6, -1520], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [-150, 110, 2420], look: [-450, -0.7, 2860], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-lagoon-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-400, 2994) : 0; return { pos: [-400, g + 1.95, 2994], look: [-300, -0.7, 2930], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-lagoon2-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-200, 2749) : 0; return { pos: [-200, g + 1.95, 2749], look: [-60, -0.7, 2722], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-beach-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [760, 60, 3330], look: [380, -0.7, 3020], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-beach-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(396, 3020) : 0; return { pos: [396, g + 1.95, 3020], look: [560, -0.7, 2960], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "cherry-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [2750, 70, 2150], look: [2650, -0.7, 1720], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "cherry-beach-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(2700, 1681) : 0; return { pos: [2700, g + 1.95, 1681], look: [2900, -0.7, 1640], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "humber-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [-7300, 90, -400], look: [-7600, -0.7, -800], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "don-mouth-aerial-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [2600, 70, 1000], look: [2400, -0.7, 650], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "harbourfront-wall-golden",
+  "time": "golden",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [-400, 30, 950], look: [-450, -0.7, 640], fov: 55 })); })()",
+  "wait": 5000
+ }
+]

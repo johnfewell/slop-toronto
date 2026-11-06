@@ -59,7 +59,8 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   vm.runInContext(preloadScript[1].replace(/\bimport\(/g, '__import('), context);
   assert.equal(scripts.length, 0);
   assert.equal(fetched.length, 1);
-  assert.match(fetched[0], /^\.\/data\/toronto-geodata\.bin\?v=[0-9a-f]{12}$/);
+  // (a desktop's default visit: the Eglinton map, explore.html EGLINTON_ON_DESKTOP; tests/eglinton-frame.test.mjs has the rest)
+  assert.match(fetched[0], /^\.\/data\/frames\/eglinton\/toronto-geodata\.bin\?v=[0-9a-f]{12}$/);
   // every script the loader lists, once (the count follows the list: scripts are added often; the geodata loader is
   // imported, not listed)
   // (High Park's terrain pilot loads by default; the Don Valley's data only with ?donvalley=1: see the next tests)

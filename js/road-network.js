@@ -1273,9 +1273,16 @@ function buildRoadNetwork(sidewalks, obstacles) {
 
   // 8. Signalised junctions are exactly the mapped ones (city-config.js SIGNAL_JUNCTIONS, whose heads street-details.js
   //    mounts): every junction node within 12 m of one of their graph nodes; n.sigJ: which (signal-plan.js runs its lights)
+  //    (the nodes in 24 m cells: each junction looks only round its points, in the same order as a scan of them all)
+  const nodeCells = new Map();
+  for (const n of nodes) {
+    const k = Math.floor(n.x / 24) * 100000 + Math.floor(n.z / 24);
+    (nodeCells.get(k) || nodeCells.set(k, []).get(k)).push(n);
+  }
   SIGNAL_JUNCTIONS.forEach((j, ji) => {
     for (const p of j.pts) {
-      for (const n of nodes) {
+      const ix = Math.floor(p.x / 24), iz = Math.floor(p.z / 24);
+      for (let a = ix - 1; a <= ix + 1; a++) for (let b = iz - 1; b <= iz + 1; b++) for (const n of nodeCells.get(a * 100000 + b) || []) {
         if (!n.shape && Math.abs(n.x - p.x) < 12 && Math.abs(n.z - p.z) < 12 && Math.hypot(n.x - p.x, n.z - p.z) < 12) {
           n.signal = true;
           n.sigJ = ji;
@@ -1373,7 +1380,11 @@ function buildRoadNetwork(sidewalks, obstacles) {
   if (window.CITY.DEBUG_ROADS !== false) console.info(`[roads] crosswalks: ${legsWith} sides of signalised junctions with one, ${legsWithout} without; ${midCrossings.filter((c) => c.kind === 'signal').length} midblock signals & ${midCrossings.filter((c) => c.kind === 'pxo').length} crossovers on the road`);
 
   const isRoadClear = (x, z, clear = 0.15) => !blockedOnStreet(x, z, clear);
-  return { nodes, edges, paintEdges, connector, curvePoint, walkable, onSidewalk, isRoadClear, midCrossings };
+  // releasePaint: the paint snapshot is only read by road-paint.js at load; main.js drops it after (the closures here keep
+  // this scope, paintNodes with it, alive)
+  const network = { nodes, edges, paintEdges, connector, curvePoint, walkable, onSidewalk, isRoadClear, midCrossings };
+  network.releasePaint = () => { paintNodes.clear(); network.paintEdges = null; };
+  return network;
 }
 
 // The largest strongly connected set of `list` (a Set), going on from item e to the items next(e)

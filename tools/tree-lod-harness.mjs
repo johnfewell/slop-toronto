@@ -36,7 +36,7 @@ class GLTFLoader {
 }
 
 export const QUALITY_TIERS = {
-  high: { treeNear: 55, treeMid: 320, treeMidShadow: 130, treeFar: 1 },
+  high: { treeNear: 55, treeMid: 320, treeMidStreet: 180, treeMidShadow: 65, treeFar: 1 },
   medium: { treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85 },
   low: { treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7 }
 };

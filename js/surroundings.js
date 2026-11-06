@@ -326,7 +326,10 @@ const exclude = (x, z, r) => EXCLUSIONS.push({ x, z, r });
 const excluded = (x, z, r = 0) => EXCLUSIONS.some((e) => Math.hypot(x - e.x, z - e.z) < e.r + r);
 const MAX_BUILD_DIST = 10000;
 // dry land outside the detailed city (and 60 m clear of it): not in the lake, not in the terrain's water cells
-const onLand = (x, z) => !inDetail(x, z, 60) && terrainRawAt(x, z) > -1 && !waterAt(x, z);
+// (a bigger map's far band, city-config.js FAR_BAND: the far city stands there too, shown only where scene-culling.js
+// has hidden the band's own city in the distance)
+const BAND = window.CITY.FAR_BAND;
+const onLand = (x, z) => !(BAND ? BAND.inCore(x, z, 60) : inDetail(x, z, 60)) && terrainRawAt(x, z) > -1 && !waterAt(x, z);
 // (the Don Valley pilot carries the valley on north of the city: js/don-valley.js)
 const groundAt = (x, z) => Math.max(0, terrainRawAt(x, z)) + (window.CITY.DON_VALLEY ? window.CITY.DON_VALLEY.heightAt(x, z) : 0);
 
@@ -526,7 +529,15 @@ function buildSurroundings(scene, terrain, quality = {}) {
   buildLandmarks(group);
   const { list, stats } = generateBuildings(quality.farCity ?? 1);
   const mat = createBuildingMaterial();
-  for (const mesh of buildBuildingChunks(list, mat, 1200 * (quality.staticCell || 1), 'SurroundingBuildings')) group.add(mesh);
+  const band = BAND ? list.filter((b) => inDetail(b.x, b.z)) : [];
+  const beyond = BAND ? list.filter((b) => !inDetail(b.x, b.z)) : list;
+  for (const mesh of buildBuildingChunks(beyond, mat, 1200 * (quality.staticCell || 1), 'SurroundingBuildings')) group.add(mesh);
+  // the band's stand-ins in the band's own 1 km cells (scene-culling.js shows each where it hides that cell's city)
+  for (const mesh of buildBuildingChunks(band, mat, BAND ? BAND.cell : 1, 'SurroundingBandBuildings')) {
+    const [i, j] = mesh.name.split(':')[1].split(',').map(Number);
+    mesh.userData.bandStandIn = { i, j };
+    group.add(mesh);
+  }
 
   scene.add(group);
   console.info(`[surroundings] ${list.length} buildings ${JSON.stringify(stats)}, built in ${(performance.now() - t0).toFixed(0)} ms`);

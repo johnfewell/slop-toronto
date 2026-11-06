@@ -15,7 +15,7 @@ const {
   smoothstep,
   renderOutput
 } = window.CITY.TSL;
-const { ssr, fxaa } = window.CITY.PostFX;
+const { ssr, fxaa, smaa } = window.CITY.PostFX;
 // The quality tier, chosen before anything was built (quality.js): desktops draw everything, phones less
 const QUALITY = window.CITY.QUALITY;
 const { createPostProcessing } = window.CITY;
@@ -180,6 +180,7 @@ async function initApp() {
   const treeMode = new URLSearchParams(location.search).get('trees'); // ?trees=slop: mrdoob's trees (comparison)
   if (window.CITY.clearParkSignTrees) window.CITY.clearParkSignTrees(streetDetails.treePositions); // (park-signs.js)
   if (treeMode === 'slop' || !(await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees(allColliders);
+  streetDetails.releaseBuildIndexes();
   markInit('trees');
   // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
   // Street furniture is solid (world-collision.js prop colliders; ?propcolliders=0 leaves the new ones out, for A/B):
@@ -271,6 +272,7 @@ async function initApp() {
   markInit('streetcars');
   // --- end Toronto layer ---
   buildRoadPaint(scene, trafficSystem.network);
+  if (trafficSystem.network.releasePaint) trafficSystem.network.releasePaint();
   markInit('roadPaint');
   // the terrain pilots (js/don-valley.js: High Park's, and the Don Valley's with ?donvalley=1): the static ground (street level, curb islands,
   // walks, lawns, streams, road markings, track beds) split along each pilot's grid and moved onto its surface; the Don
@@ -288,6 +290,10 @@ async function initApp() {
     console.info(`[terrain-pilot] by mesh: ${stats.flatMap((s) => s.byMesh || []).sort((a, b) => b.ms - a.ms).slice(0, 12).map((m) => `${m.name}/${m.material} ${m.source}->${m.pieces} pieces, ${m.merged} whole, ${m.triangles} tris, ${m.ms} ms`).join('; ')}`);
     markInit('donValley');
   }
+  // Naturalistic water edges (water-edges.js): the natural shores' apron, shallows & swash, after the terrain pilots'
+  // ponds have their levels
+  const waterEdges = (window.CITY.buildWaterEdges && window.CITY.buildWaterEdges(scene)) || null;
+  if (waterEdges) markInit('waterEdges');
 
   // 4. Initialize Third-Person Controllers (Person, Car, Cyclist, Helicopter) & Multi-Camera System
   const controllerManager = new ThirdPersonControllerManager(scene, allColliders);
@@ -353,8 +359,9 @@ async function initApp() {
 
   // City-wide static geometry: chunk & distance-cull the small props, shadow stand-ins for the big casters
   // (scene-culling.js). The cycle tracks' flexi-posts and the CaféTO patios set their own cull distances for it; left
-  // out of this list, each drew every post and patio in the city in every frame (~430k triangles, st-z51b)
-  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios']
+  // out of this list, each drew every post and patio in the city in every frame (~430k triangles, st-z51b). The TTC
+  // pylons keep their reach (no cull distance) and are cut into kilometre cells the view frustum skips
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios', 'TtcPylons']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   // ?massing=1: the polygon cells, built in a worker since `blocks` (their near tier gives the shadow stand-ins)
@@ -462,13 +469,11 @@ async function initApp() {
   const { bloomPass } = colorGrade;
   // the live sky's rain & snow (precipitation.js): nothing is built until a reading calls for it
   const precipitation = window.CITY.createPrecipitation(scene, { quality: QUALITY });
-  // FXAA instead of MSAA (the low tier): it smooths the tone-mapped sRGB image, so the pipeline's own output transform
-  // moves ahead of it
-  const renderPipeline = new THREE.RenderPipeline(
-    renderer,
-    QUALITY.aa === 'fxaa' ? fxaa(renderOutput(colorGrade.outputNode)) : colorGrade.outputNode
-  );
-  if (QUALITY.aa === 'fxaa') renderPipeline.outputColorTransform = false;
+  // FXAA (the low tier) or SMAA instead of MSAA: either smooths the tone-mapped sRGB image, so the pipeline's own
+  // output transform moves ahead of it
+  const postAA = QUALITY.aa === 'fxaa' ? fxaa : QUALITY.aa === 'smaa' ? smaa : null;
+  const renderPipeline = new THREE.RenderPipeline(renderer, postAA ? postAA(renderOutput(colorGrade.outputNode)) : colorGrade.outputNode);
+  if (postAA) renderPipeline.outputColorTransform = false;
 
   // 6. Wire UI Controls (Strictly using safe DOM APIs: textContent, classList, addEventListener)
   const modeButtons = document.querySelectorAll('[data-mode]');
@@ -1272,6 +1277,7 @@ async function initApp() {
   };
   // The quality safety net & the ?fps=1 readout (quality.js), fed every real-time frame
   const qualityNet = QUALITY.attach(window.__CITY_APP);
+  window.__CITY_APP.qualityNet = qualityNet; // (its rung & step count, for captures)
 
   // 6b. Shader pre-compilation behind the loading screen: one compileAsync() over the scene. It builds the node graphs
   //     one after another, in 8 ms slices, while the GPU process compiles up to 16 pipelines in parallel.
@@ -1529,6 +1535,7 @@ async function initApp() {
       if (++shadowFrame % QUALITY.shadowEvery === 0 || !warmedUp) sh.needsUpdate = true;
     }
     lakeWater.update(elapsed);
+    if (waterEdges) waterEdges.update(cameraSystem.camera.position);
     if (skyClouds) skyClouds.update(holding ? 0 : dt);
     precipitation.update(subwayRide.inside || (rideSession.active && cameraSystem.activePresetId === 'pov'));
     if (!holding) {
@@ -1588,8 +1595,9 @@ async function initApp() {
         openDeepLink();
         if (multiplayer) multiplayer.start({ tourGuide, rideSession, subwayRide, teleportTo, camera: cameraSystem.camera });
         // The phone tiers: the CPU copies of what the GPU now holds go (scene-culling.js), a second pass a little later
-        // for what the first frames uploaded
-        if (QUALITY.lean) {
+        // for what the first frames uploaded. And a bigger map (city-config.js FAR_BAND) on any tier: its city is ~3x
+        // today's, and the copies are most of the JS heap
+        if (QUALITY.lean || window.CITY.FAR_BAND) {
           const LEAN_ROOTS = new Set(['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns',
             'CityLandmarks', 'Terrain', 'StorefrontSigns', 'RoadMarkings', 'Trees', 'RailCorridor', 'Streetcars', 'Subway', 'ShadowProxy', 'ShadowProxies']);
           const release = () => {
@@ -1695,7 +1703,7 @@ async function initApp() {
         cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
         cityBlocks.updateLights?.(cameraSystem.camera); streetDetails.update?.(cameraSystem.camera);
         for (const light of staticLights) { light.updateMatrixWorld(); light.target?.updateMatrixWorld(); }
-        lightingSystem.update(cameraSystem.currentPos); lakeWater.update(elapsed);
+        lightingSystem.update(cameraSystem.currentPos); lakeWater.update(elapsed); if (waterEdges) waterEdges.update(cameraSystem.camera.position);
         if (resetHistory) lightingSystem.sunLight.shadow.needsUpdate = true;
         updateSceneCulling(cameraSystem.camera.position);
         cityBlocks.updateMassingTiers(cameraSystem.camera);

@@ -62,6 +62,42 @@ function layoutSign(name, maxW, measure) {
   return { lines: best.lines, px: best.px, cellW, textW: Math.min(textW, boardW - 0.04), boardW, squeeze: best.squeeze };
 }
 
+// Another frame's geodata (?map=eglinton) holds the same buildings and places in other rows: point each record at the
+// row whose building stands at the centre it was compiled for (one pass over the buildings, once per data set), and its
+// place (`poi`, which the map's place card matches) at that building's place of the same name, else its nearest. A row
+// that already holds it is kept; a record no row holds keeps its row, and the centre check below skips it.
+const rebound = new WeakSet();
+function rebindStorefrontRows(data = window.CITY.STOREFRONTS, buildings = window.CITY.GEO?.buildings, pois = window.CITY.GEO?.pois) {
+  if (!data?.signs?.length || !buildings || rebound.has(data)) return data;
+  rebound.add(data);
+  const near = (b, s) => b && Math.abs(b[0] - s.bc[0]) <= 0.05 && Math.abs(b[1] - s.bc[1]) <= 0.05;
+  const key = (x, z) => `${Math.round(x * 10)},${Math.round(z * 10)}`;
+  const wanted = new Map();
+  for (const s of data.signs) {
+    if (near(buildings[s.b], s)) continue;
+    for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
+      const k = `${Math.round(s.bc[0] * 10) + dx},${Math.round(s.bc[1] * 10) + dz}`;
+      (wanted.get(k) || wanted.set(k, []).get(k)).push(s);
+    }
+  }
+  if (!wanted.size) return data;
+  for (let i = 0; i < buildings.length; i++) {
+    const list = wanted.get(key(buildings[i][0], buildings[i][1]));
+    if (list) for (const s of list) if (near(buildings[i], s) && !near(buildings[s.b], s)) s.b = i;
+  }
+  const moved = new Map(); // building row -> its records whose place row is another building's
+  for (const s of data.signs) if (pois && near(buildings[s.b], s) && pois[s.poi]?.[4] !== s.b) (moved.get(s.b) || moved.set(s.b, []).get(s.b)).push(s);
+  const places = new Map();
+  if (moved.size) pois.forEach((p, i) => { if (moved.has(p[4])) (places.get(p[4]) || places.set(p[4], []).get(p[4])).push(i); });
+  for (const [b, list] of moved) for (const s of list) {
+    const at = places.get(b) || [];
+    const named = at.filter((i) => pois[i][2] === s.name);
+    const pick = (named.length ? named : at).sort((i, j) => Math.hypot(pois[i][0] - s.x, pois[i][1] - s.z) - Math.hypot(pois[j][0] - s.x, pois[j][1] - s.z))[0];
+    s.poi = pick ?? -1;
+  }
+  return data;
+}
+
 // The per-tier atlas: two cells across, four boards per cell (RGBA), only as many rows as needed
 function atlasSize(count, res) {
   const rows = Math.max(1, Math.ceil(count / 8));
@@ -71,7 +107,7 @@ function atlasSize(count, res) {
 
 function buildStorefrontSigns(scene, { facadeOf = () => null } = {}) {
   const CITY = window.CITY;
-  const data = CITY.STOREFRONTS;
+  const data = rebindStorefrontRows(CITY.STOREFRONTS, CITY.GEO?.buildings, CITY.GEO?.pois);
   const QUALITY = CITY.QUALITY || { tier: 'high' };
   const stats = { records: data?.signs?.length || 0, placed: 0, skipped: {}, atlas: null, attribution: data?.attribution || null };
   CITY.storefrontStats = stats;
@@ -92,6 +128,10 @@ function buildStorefrontSigns(scene, { facadeOf = () => null } = {}) {
     // (a building on High Park's relief stands on its base, js/don-valley.js buildingBase)
     const base = CITY.DON_VALLEY?.buildingBase ? CITY.DON_VALLEY.buildingBase(b[0], b[1]) : 0;
     signs.push({ ...s, y: base + top - BOARD_H / 2 });
+  }
+  if (!signs.length) {
+    console.info(`[storefronts] no signs: ${JSON.stringify(stats.skipped)}`);
+    return { group: null, texture: null, gpuBytes: 0, cpuBytes: 0, signs: [] };
   }
   // the atlas at this tier's resolution, halved until it fits its ceiling
   let res = (QUALITY.signRes ?? 1) < 1 ? 0.5 : 1;
@@ -232,5 +272,5 @@ function createSignMaterial(tex) {
   return mat;
 }
 
-Object.assign(window.CITY, { buildStorefrontSigns, createStorefrontSignMaterial: createSignMaterial, layoutSign, storefrontAtlasSize: atlasSize, STOREFRONT_SIGN_STYLES: STYLES, STOREFRONT_ATLAS_CEILING: ATLAS_CEILING });
+Object.assign(window.CITY, { buildStorefrontSigns, rebindStorefrontRows, createStorefrontSignMaterial: createSignMaterial, layoutSign, storefrontAtlasSize: atlasSize, STOREFRONT_SIGN_STYLES: STYLES, STOREFRONT_ATLAS_CEILING: ATLAS_CEILING });
 })();

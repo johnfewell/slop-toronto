@@ -29,8 +29,10 @@ function syntheticTrees(treeModels) {
 // The levels each tree drew before the cells (ez-trees.js as of 35e8e84, one tree at a time)
 function ezOracle(quality, treeModels, streetTrees, generated) {
   const ids = treeModels.map(([id]) => id);
-  const FAR = quality.treeFar, NEAR = quality.treeNear, MID = quality.treeMid, MID_SHADOW = quality.treeMidShadow;
-  const BAND = [14, 50, 80], MARGIN = 6, MAX_DIST = [3000 * FAR, 1600 * FAR, 950 * FAR], LOW_CUTOFF = 1150 * FAR, PINE_FAR = 600 * FAR;
+  const FAR = quality.treeFar, NEAR = quality.treeNear, MID_SHADOW = quality.treeMidShadow;
+  // (since st-z51b: narrower hand-over bands, and the mid level nearer from street level)
+  const MID_ALOFT = quality.treeMid, MID_STREET = Math.min(quality.treeMid, quality.treeMidStreet ?? quality.treeMid);
+  const BAND = [8, 24, 40], MARGIN = 6, MAX_DIST = [3000 * FAR, 1600 * FAR, 950 * FAR], LOW_CUTOFF = 1150 * FAR, PINE_FAR = 600 * FAR;
   const FAR_SPECIES = (id) => (id.includes('pine') ? -1 : id.includes('ash') ? 1 : id.includes('aspen') ? 2 : 0);
   const genModel = (sp, h) => {
     const big = h > 15 ? 2 : h > 9 ? 1 : 0;
@@ -46,7 +48,7 @@ function ezOracle(quality, treeModels, streetTrees, generated) {
     Object.assign(t, { id, sp, pine: sp < 0, origin: [t.x, t.y + t.height * 0.5, t.z].map(Math.fround) });
   }
   return (cam) => {
-    const low = cam.y < 40, rows = new Map();
+    const low = cam.y < 40, rows = new Map(), MID = low ? MID_STREET : MID_ALOFT;
     const add = (name, row) => { if (!rows.has(name)) rows.set(name, []); rows.get(name).push(row); };
     for (const t of trees) {
       const [x, y, z] = t.origin;

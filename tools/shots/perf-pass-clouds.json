@@ -1,0 +1,56 @@
+[
+ {
+  "name": "cl-skyline-golden",
+  "time": "golden",
+  "camera": "skyline",
+  "wait": 4000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;})()"
+ },
+ {
+  "name": "cl-aerial-golden",
+  "time": "golden",
+  "mode": "person",
+  "x": -600,
+  "z": -200,
+  "heading": 0,
+  "wait": 4000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;const cam={pos:[-600,320,-200],look:[-300,180,-200],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "cl-street-golden",
+  "time": "golden",
+  "mode": "person",
+  "x": 130,
+  "z": -345,
+  "heading": 0,
+  "wait": 4000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;const cam={pos:[130,1.7,-352],look:[-100,60,-352],fov:60};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "cl-skyline-midday",
+  "time": "midday",
+  "camera": "skyline",
+  "wait": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;})()"
+ },
+ {
+  "name": "cl-aerial-midday",
+  "time": "midday",
+  "mode": "person",
+  "x": -600,
+  "z": -200,
+  "heading": 0,
+  "wait": 4000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;const cam={pos:[-600,320,-200],look:[-300,180,-200],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "cl-street-midday",
+  "time": "midday",
+  "mode": "person",
+  "x": 130,
+  "z": -345,
+  "heading": 0,
+  "wait": 4000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;const cam={pos:[130,1.7,-352],look:[-100,60,-352],fov:60};app.cameraSystem.cinema=()=>cam;})()"
+ }
+]

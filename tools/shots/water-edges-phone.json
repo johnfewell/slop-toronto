@@ -1,0 +1,39 @@
+[
+ {
+  "name": "t00-hud",
+  "time": "midday",
+  "js": "(async () => { (() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })(); await (window.CITY.waterEdgesReady || null); })()",
+  "wait": 2000
+ },
+ {
+  "name": "gren-south-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-6750, -1236) : 0; return { pos: [-6750, g + 1.75, -1236], look: [-6830, -1.6, -1520], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-lagoon-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-400, 2994) : 0; return { pos: [-400, g + 1.95, 2994], look: [-300, -0.7, 2930], fov: 60 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-beach-aerial-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => ({ pos: [-380, 45, 3560], look: [-640, -0.7, 3380], fov: 55 })); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-beach-midday",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-608.4, 3375.8) : 0; return { pos: [-608.4, g + 1.95, 3375.8], look: [-649.4, -0.7, 3408], fov: 62 }; }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "tris",
+  "time": "midday",
+  "js": "(() => { const C=window.CITY; let t=0; const g=window.__CITY_APP; return { info: C.waterEdgesInfo, tier: C.QUALITY.tier }; })()",
+  "wait": 300,
+  "record": true
+ }
+]

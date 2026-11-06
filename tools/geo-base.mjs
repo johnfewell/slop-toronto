@@ -293,6 +293,13 @@ const centroid = (r) => [r.reduce((t, p) => t + p[0], 0) / r.length, r.reduce((t
 // =====================================================================================================================
 // 3. FRAME CALIBRATION FROM THE CENTRAL BUSINESS DISTRICT'S STREET GRID
 // =====================================================================================================================
+function pinnedTheta() {
+  const i = process.argv.indexOf('--frame');
+  const f = process.env.SLOP_FRAME || (i >= 0 && i + 1 < process.argv.length ? process.argv[i + 1] : null);
+  if (!f || !f.endsWith('.json') || !fs.existsSync(f)) return null;
+  const t = JSON.parse(fs.readFileSync(f, 'utf8')).projection?.theta;
+  return Number.isFinite(t) ? t : null;
+}
 const osmRoads = load('osm_roads.json');
 const osmPlaces = load('osm_places.json');
 {
@@ -331,6 +338,13 @@ const osmPlaces = load('osm_places.json');
   let north = med;
   while (north > 45) north -= 90;
   THETA = (north * Math.PI) / 180;
+  // A frame file (--frame <file> or SLOP_FRAME) may pin the bearing (projection.theta, radians): a frame away from
+  // downtown has none of the streets measured above, and every frame of one map must share the same world axes
+  const pinned = pinnedTheta();
+  if (pinned !== null) {
+    log(`grid bearing pinned by the frame file at ${(pinned * 180 / Math.PI).toFixed(4)}° (measured ${(THETA * 180 / Math.PI).toFixed(4)}°, ${angs.length} road pieces)`);
+    THETA = pinned;
+  }
 
   // Origin: Union Station's Front Street entrance (the downtown grid's centre for this world)
   const o = [-79.3806, 43.6453];

@@ -14,7 +14,11 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const ctx = vm.createContext({ window: { CITY: { DEBUG_ROADS: false, SIGNAL_PLAN_BUILD: true } }, console });
-for (const f of ['js/toronto-geodata.js', 'js/toronto-traffic-data.js', 'js/city-config.js', 'js/signal-plan.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
+// (SIGNAL_PLAN_GEO / SIGNAL_PLAN_TRAFFIC: another frame's geodata & traffic data, tools/frames/build-frame.mjs)
+const INPUTS = { 'js/toronto-geodata.js': process.env.SIGNAL_PLAN_GEO, 'js/toronto-traffic-data.js': process.env.SIGNAL_PLAN_TRAFFIC };
+for (const f of ['js/toronto-geodata.js', 'js/toronto-traffic-data.js', 'js/city-config.js', 'js/signal-plan.js']) {
+  vm.runInContext(fs.readFileSync(INPUTS[f] ? path.resolve(INPUTS[f]) : path.join(ROOT, f), 'utf8'), ctx, { filename: f });
+}
 const { SIGNALS, SIGNAL_TIMING: T, SIGNAL_CROSSINGS } = ctx.window.CITY;
 const J = SIGNALS.junctions;
 const C = T.cycle, V = SIGNALS.V_PROG, LOST = 3;

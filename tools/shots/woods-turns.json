@@ -1,0 +1,20 @@
+[
+ {
+  "name": "t-woods-turns",
+  "mode": "person",
+  "x": -6163.6,
+  "z": -1819.3,
+  "heading": -1.9642469647238323,
+  "wait": 2000,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 10000,
+  "js": "(()=>{const app=window.__CITY_APP;app.controllerManager.keys.boost=false;const t0=performance.now();app.cameraSystem.cinema=()=>{const a=(performance.now()-t0)/1000*3;return {pos:[-6163.6,1.7,-1819.3],look:[-6163.6+Math.sin(a)*50,1.7,-1819.3+Math.cos(a)*50],fov:60};};})()"
+ },
+ {
+  "name": "t-woods-turns-stat",
+  "wait": 100,
+  "metricsMs": 0,
+  "record": true,
+  "js": "(()=>{const a=window.__CITY_APP;const i=a.renderer.info.render;return {trees:window.CITY.treeStats||null,draws:i.drawCalls,triangles:i.triangles};})()"
+ }
+]

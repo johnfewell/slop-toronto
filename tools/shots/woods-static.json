@@ -1,0 +1,34 @@
+[
+ {
+  "name": "ws-00-base",
+  "mode": "person",
+  "x": -6163.6,
+  "z": -1819.3,
+  "heading": -1.9642469647238323,
+  "wait": 5000,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Terrain');const G=app.scene.getObjectByName('HighParkFeatureGround');app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "ws-01-nofloor",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Terrain');const G=app.scene.getObjectByName('HighParkFeatureGround');T.visible=false;if(G)G.visible=false;})()"
+ },
+ {
+  "name": "ws-02-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Terrain');const G=app.scene.getObjectByName('HighParkFeatureGround');T.visible=true;if(G)G.visible=true;})()"
+ },
+ {
+  "name": "ws-03-base",
+  "wait": 1500,
+  "metricsWarmupMs": 1000,
+  "metricsMs": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;const T=app.scene.getObjectByName('Terrain');const G=app.scene.getObjectByName('HighParkFeatureGround');})()"
+ }
+]

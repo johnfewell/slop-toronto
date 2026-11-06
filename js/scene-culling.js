@@ -89,14 +89,76 @@ function copyObjectState(dst, src) {
   if (Object.prototype.hasOwnProperty.call(src, 'onAfterRender')) dst.onAfterRender = src.onAfterRender;
 }
 
+// Several plain meshes of one kind (one parent, material, name & attributes: a city-wide batch built in strips) cut
+// together by keyOf(x, z) of their triangles' centres: one piece per key from all of them (splitMeshIntoCells, for many)
+function splitFamilyIntoRegions(meshes, keyOf, wholeKey = null) {
+  const parent = meshes[0].parent;
+  const srcs = meshes.map((m) => (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry));
+  const byKey = new Map();
+  const add = (key, k, t, n) => {
+    let list = byKey.get(key);
+    if (!list) byKey.set(key, (list = [[], 0]));
+    list[0].push(k, t);
+    list[1] += n;
+  };
+  srcs.forEach((src, k) => {
+    const pos = src.attributes.position, mw = meshes[k].matrixWorld;
+    // (a member wholly in one region goes in whole: today's city's strips, most of a batch)
+    const whole = wholeKey ? wholeKey(meshes[k]) : null;
+    if (whole !== null) return add(whole, k, -1, pos.count / 3);
+    const a = pos.array, identity = mw.equals(IDENTITY);
+    for (let t = 0; t + 2 < pos.count; t += 3) {
+      let cx, cz;
+      if (identity && !pos.isInterleavedBufferAttribute && pos.itemSize === 3) {
+        cx = (a[t * 3] + a[t * 3 + 3] + a[t * 3 + 6]) / 3;
+        cz = (a[t * 3 + 2] + a[t * 3 + 5] + a[t * 3 + 8]) / 3;
+      } else {
+        _t0.fromBufferAttribute(pos, t).applyMatrix4(mw);
+        _t1.fromBufferAttribute(pos, t + 1).applyMatrix4(mw);
+        _t2.fromBufferAttribute(pos, t + 2).applyMatrix4(mw);
+        cx = (_t0.x + _t1.x + _t2.x) / 3;
+        cz = (_t0.z + _t1.z + _t2.z) / 3;
+      }
+      add(keyOf(cx, cz), k, t, 1);
+    }
+  });
+  const names = Object.keys(srcs[0].attributes);
+  const pieces = [];
+  for (const [tris, n] of byKey.values()) {
+    const geo = new THREE.BufferGeometry();
+    for (const name of names) {
+      const a0 = srcs[0].attributes[name], sz = a0.itemSize, arr = new a0.array.constructor(n * 3 * sz);
+      let o = 0;
+      for (let j = 0; j < tris.length; j += 2) {
+        const a = srcs[tris[j]].attributes[name], t = tris[j + 1];
+        if (t < 0) { arr.set(a.array, o); o += a.array.length; } else { arr.set(a.array.subarray(t * sz, (t + 3) * sz), o); o += 3 * sz; }
+      }
+      geo.setAttribute(name, new THREE.BufferAttribute(arr, sz, a0.normalized));
+    }
+    geo.computeBoundingSphere();
+    geo.computeBoundingBox();
+    const piece = new THREE.Mesh(geo, meshes[0].material);
+    copyObjectState(piece, meshes[0]);
+    pieces.push(piece);
+  }
+  for (const m of meshes) parent.remove(m);
+  pieces.forEach((piece, k) => {
+    parent.add(piece);
+    if (k > 0) piece.userData.sharesPipelineWith = pieces[0];
+    piece.updateMatrixWorld(true);
+  });
+  srcs.forEach((src, k) => { if (src !== meshes[k].geometry) src.dispose(); meshes[k].geometry.dispose(); });
+  return pieces;
+}
+
 // One InstancedMesh per `cell` x `cell` m square of the instances' positions, sharing the source's vertex data and
 // material (so the same shader pipeline) with its per-instance data split up
-function chunkInstancedMesh(mesh, cell) {
+function chunkInstancedMesh(mesh, cell, keyOf = null) {
   const n = mesh.count;
   const src = mesh.instanceMatrix.array;
   const cells = new Map();
   for (let i = 0; i < n; i++) {
-    const key = Math.floor(src[i * 16 + 12] / cell) + ',' + Math.floor(src[i * 16 + 14] / cell);
+    const key = keyOf ? keyOf(src[i * 16 + 12], src[i * 16 + 14]) : Math.floor(src[i * 16 + 12] / cell) + ',' + Math.floor(src[i * 16 + 14] / cell);
     let ids = cells.get(key);
     if (!ids) cells.set(key, (ids = []));
     ids.push(i);
@@ -231,9 +293,9 @@ function proxyableMaterial(mat) {
 
 // Splits an instanced mesh into cells in place of the original (the first chunk compiles the pipeline every chunk of
 // the mesh shares, main.js)
-function replaceWithChunks(mesh, cell) {
+function replaceWithChunks(mesh, cell, keyOf = null) {
   const parent = mesh.parent;
-  const chunks = chunkInstancedMesh(mesh, cell);
+  const chunks = chunkInstancedMesh(mesh, cell, keyOf);
   parent.remove(mesh);
   chunks.forEach((chunk, k) => {
     parent.add(chunk);
@@ -241,6 +303,52 @@ function replaceWithChunks(mesh, cell) {
     chunk.updateMatrixWorld(true);
   });
   return chunks;
+}
+
+// A plain mesh's triangles cut into `cell` x `cell` m squares of the world (by each triangle's centre), one mesh per
+// square in the same material, so each scene render (the view and every shadow cascade) can skip the squares outside
+// its frustum. The same triangles, so the same pixels; the first piece compiles the pipeline the others share (main.js)
+const _t0 = new THREE.Vector3(), _t1 = new THREE.Vector3(), _t2 = new THREE.Vector3();
+function splitMeshIntoCells(mesh, cell, keyOf = null) {
+  const parent = mesh.parent;
+  const src = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry;
+  const pos = src.attributes.position;
+  const byKey = new Map();
+  for (let t = 0; t + 2 < pos.count; t += 3) {
+    _t0.fromBufferAttribute(pos, t).applyMatrix4(mesh.matrixWorld);
+    _t1.fromBufferAttribute(pos, t + 1).applyMatrix4(mesh.matrixWorld);
+    _t2.fromBufferAttribute(pos, t + 2).applyMatrix4(mesh.matrixWorld);
+    const cx = (_t0.x + _t1.x + _t2.x) / 3, cz = (_t0.z + _t1.z + _t2.z) / 3;
+    const key = keyOf ? keyOf(cx, cz) : Math.floor(cx / cell) + ',' + Math.floor(cz / cell);
+    let list = byKey.get(key);
+    if (!list) byKey.set(key, (list = []));
+    list.push(t);
+  }
+  if (byKey.size < 2) return [mesh];
+  const attrs = Object.entries(src.attributes);
+  const pieces = [];
+  for (const tris of byKey.values()) {
+    const geo = new THREE.BufferGeometry();
+    for (const [name, a] of attrs) {
+      const s = a.itemSize, arr = new a.array.constructor(tris.length * 3 * s);
+      tris.forEach((t, j) => arr.set(a.array.subarray(t * s, (t + 3) * s), j * 3 * s));
+      geo.setAttribute(name, new THREE.BufferAttribute(arr, s, a.normalized));
+    }
+    geo.computeBoundingSphere();
+    geo.computeBoundingBox();
+    const piece = new THREE.Mesh(geo, mesh.material);
+    copyObjectState(piece, mesh);
+    pieces.push(piece);
+  }
+  parent.remove(mesh);
+  pieces.forEach((piece, k) => {
+    parent.add(piece);
+    if (k > 0) piece.userData.sharesPipelineWith = pieces[0];
+    piece.updateMatrixWorld(true);
+  });
+  if (src !== mesh.geometry) src.dispose();
+  mesh.geometry.dispose();
+  return pieces;
 }
 
 /**
@@ -258,6 +366,8 @@ function setupSceneCulling(scene, roots, shadow = null) {
   const parents = [];
   for (const root of roots) root.traverse((o) => { if (o.children.length) parents.push(o); });
   const merge = mergeSmallMeshes(parents);
+  // (a bigger map's far band: its city-wide meshes cut at today's city's edge first, see splitFarBand)
+  stats.bandSplit = splitFarBand(roots);
   stats.mergedMeshes = merge.merged;
   stats.mergedInto = merge.into;
 
@@ -303,6 +413,27 @@ function setupSceneCulling(scene, roots, shadow = null) {
     }
     stats.chunkedMeshes++;
     stats.chunks += chunks.length;
+  }
+
+  // 1b. The big static casters that can have no stand-in below (a masked material: the kerbs, cut round the ponds and
+  //     the decks) in STATIC_CELL squares: merged city-wide, the kerbs' ~0.4M triangles went into both shadow cascades
+  //     from every view, as one piece reaches every cascade's frustum (st-z51b). (500 m squares cut the shadow pass as
+  //     well but added ~170 draws to the view, +1 ms of render submission on the M4 mini)
+  if (shadow) {
+    const big = [];
+    for (const root of roots) {
+      root.traverse((o) => {
+        if (!o.castShadow || o.isInstancedMesh || !isStaticMesh(o) || Array.isArray(o.material) || proxyableMaterial(o.material)) return;
+        const g = o.geometry;
+        if (g.groups.length || g.morphAttributes.position || triangleCount(g) < 20000) return;
+        if (!g.boundingSphere) g.computeBoundingSphere();
+        if (g.boundingSphere.radius * o.matrixWorld.getMaxScaleOnAxis() > 600) big.push(o);
+      });
+    }
+    for (const o of big) {
+      const pieces = splitMeshIntoCells(o, STATIC_CELL);
+      if (pieces.length > 1) { stats.cellCasters = (stats.cellCasters || 0) + 1; stats.cellCasterPieces = (stats.cellCasterPieces || 0) + pieces.length; }
+    }
   }
 
   // 2. Shadow stand-ins for the big static casters
@@ -488,10 +619,207 @@ function setupSceneCulling(scene, roots, shadow = null) {
   state.culled = culled;
   state.buckets = bucketCulled(culled);
   stats.buckets = state.buckets.length;
+  setupFarBand(scene, roots, new Set(culled.map((c) => c.mesh)), stats);
   return stats;
 }
 
 const state = { culled: [], buckets: null, started: false };
+
+// 4. A bigger map's far band (city-config.js FAR_BAND, st-bz1o): the city beyond today's detailed city (north of Bloor,
+//    east of the Don) in 1 km cells, each cell's meshes in one group per parent, hidden beyond FAR_BAND.distance of the
+//    camera, where the far city (surroundings.js: its band buildings, the terrain's painted ground) shows instead, as it
+//    does beyond today's map. The city-wide meshes reaching into the band are cut into the cells first (their core part
+//    stays as it was). So the views from downtown draw and walk what they did on today's map
+const band = { cells: [], last: null };
+const bandBox = new THREE.Box3();
+function bandBounds(o) {
+  if (o.isInstancedMesh) {
+    o.computeBoundingBox();
+    bandBox.copy(o.boundingBox);
+  } else {
+    if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+    bandBox.copy(o.geometry.boundingBox);
+  }
+  return bandBox.applyMatrix4(o.matrixWorld);
+}
+// (not the terrain, which carries the far city's painted ground over the band, nor the water: the lake and the rivers
+// have nothing standing in for them)
+const bandKept = (o) => /lake|water|pond|stream|river/i.test(o.name || '');
+function bandCandidates(roots, skip = null) {
+  const list = [];
+  for (const root of roots) {
+    if (root.name === 'Terrain') continue;
+    root.traverse((o) => {
+      if ((skip && skip.has(o)) || !isStaticMesh(o) || o.isBatchedMesh || o.userData.shadowProxy || bandKept(o)) return;
+      if (o.isInstancedMesh && o.count !== o.instanceMatrix.count) return;
+      list.push(o);
+    });
+  }
+  return list;
+}
+// Before the steps above: every city-wide mesh reaching from today's city into the band is cut in two regions, its
+// core part (whole, as today's map has it, so the steps above treat it as they always did) and the band's 1 km cells
+// (userData.farBand, which the steps' own chunks and pieces inherit)
+// A mesh's userData as a family key: its values, objects (a shadow stand-in, a shared array) by identity
+const objectIds = new WeakMap();
+let nextObjectId = 1;
+function userDataKey(ud) {
+  return Object.keys(ud).sort().map((k) => {
+    const v = ud[k];
+    if (v === null || typeof v !== 'object' && typeof v !== 'function') return k + '=' + String(v);
+    if (!objectIds.has(v)) objectIds.set(v, nextObjectId++);
+    return k + '#' + objectIds.get(v);
+  }).join(';');
+}
+function splitFarBand(roots) {
+  const B = window.CITY.FAR_BAND;
+  if (!B) return 0;
+  const C = B.cell, core = B.core;
+  // (numbers: per triangle, millions of them; -1 today's city, else the band cell)
+  const regionKey = (x, z) => (B.inCore(x, z) ? -1 : Math.floor(x / C) * 100000 + Math.floor(z / C));
+  const touchesCore = (b) => b.max.x > core.x0 && b.min.x < core.x1 && b.max.z > core.z0 && b.min.z < core.z1;
+  const inCoreOnly = (b) => b.min.x >= core.x0 && b.max.x <= core.x1 && b.min.z >= core.z0 && b.max.z <= core.z1;
+  let split = 0;
+  // a piece's region from one of its triangles' (or instances') centre, as regionKey cut it: an L-shaped piece round a
+  // corner of today's city has its box's centre inside it
+  const at = new THREE.Vector3();
+  const mark = (pieces) => {
+    for (const p of pieces) {
+      if (p.isInstancedMesh) {
+        const m = p.instanceMatrix.array;
+        at.set(m[12], m[13], m[14]).applyMatrix4(p.matrixWorld);
+      } else {
+        const pos = p.geometry.attributes.position;
+        _t0.fromBufferAttribute(pos, 0).applyMatrix4(p.matrixWorld);
+        _t1.fromBufferAttribute(pos, 1).applyMatrix4(p.matrixWorld);
+        _t2.fromBufferAttribute(pos, 2).applyMatrix4(p.matrixWorld);
+        at.copy(_t0).add(_t1).add(_t2).divideScalar(3);
+      }
+      p.userData.farBand = !B.inCore(at.x, at.z);
+      if (p.userData.farBand) p.userData.bandCell = [Math.floor(at.x / C), Math.floor(at.z / C)];
+    }
+  };
+  const plain = (o) => !o.isInstancedMesh && !Array.isArray(o.material) && !o.geometry.groups.length && !Object.keys(o.geometry.morphAttributes).length &&
+    !Object.values(o.geometry.attributes).some((a) => a.isInterleavedBufferAttribute || a.isInstancedBufferAttribute);
+  // A city-wide batch built in strips (city-grid.js mergeInto: 300 islands a mesh, in the bigger map's order) is cut as
+  // one: its core part one mesh, as many draws as today's strips or fewer, and one piece per band cell, not one per strip
+  const families = new Map();
+  for (const o of bandCandidates(roots)) {
+    if (!plain(o)) continue;
+    const g = o.geometry;
+    const key = [o.parent.uuid, o.name, o.material.uuid, o.castShadow, o.receiveShadow, o.renderOrder, o.layers.mask, userDataKey(o.userData),
+      ...Object.keys(g.attributes).sort().map((k) => `${k}:${g.attributes[k].itemSize}:${g.attributes[k].array.constructor.name}:${g.attributes[k].normalized}`)].join('|');
+    (families.get(key) || families.set(key, []).get(key)).push(o);
+  }
+  const done = new Set();
+  let families_ = 0;
+  for (const list of families.values()) {
+    if (list.length < 2 || !list.every((o) => o.matrixWorld.equals(list[0].matrixWorld))) continue;
+    const boxes = list.map((o) => bandBounds(o).clone());
+    if (!boxes.some((b) => !b.isEmpty() && touchesCore(b) && !inCoreOnly(b))) continue;
+    if (!boxes.some((b) => !b.isEmpty() && touchesCore(b))) continue;
+    const pieces = splitFamilyIntoRegions(list, regionKey, (o) => (inCoreOnly(bandBounds(o)) ? -1 : null));
+    mark(pieces);
+    for (const o of list) done.add(o);
+    families_++;
+  }
+  splitFarBand.families = families_;
+  for (const o of bandCandidates(roots)) {
+    if (done.has(o)) continue;
+    const b = bandBounds(o);
+    if (b.isEmpty() || inCoreOnly(b) || !touchesCore(b)) continue;
+    const g = o.geometry;
+    let pieces = null;
+    if (o.isInstancedMesh) pieces = replaceWithChunks(o, C, regionKey);
+    else if (!Array.isArray(o.material) && !g.groups.length && !Object.keys(g.morphAttributes).length &&
+      !Object.values(g.attributes).some((a) => a.isInterleavedBufferAttribute || a.isInstancedBufferAttribute)) pieces = splitMeshIntoCells(o, C, regionKey);
+    if (!pieces || pieces.length < 2) continue;
+    mark(pieces);
+    split++;
+  }
+  return split;
+}
+// After them: each band cell's meshes (the cut ones' band pieces, and whatever stands wholly outside today's city) into
+// one group per parent, which updateFarBand shows within reach of the camera, its far-city stand-ins beyond
+function setupFarBand(scene, roots, alreadyCulled, stats) {
+  const B = window.CITY.FAR_BAND;
+  if (!B) return;
+  const C = B.cell, core = B.core;
+  const touchesCore = (b) => b.max.x > core.x0 && b.min.x < core.x1 && b.max.z > core.z0 && b.min.z < core.z1;
+  const cells = new Map();
+  for (const o of bandCandidates(roots, alreadyCulled)) {
+    const b = bandBounds(o), mx = (b.min.x + b.max.x) / 2, mz = (b.min.z + b.max.z) / 2;
+    // (a mesh reaching into today's city stays drawn; a cut piece is in the band by its triangles' or instances' centres)
+    if (o.userData.farBand === false || (o.userData.farBand === undefined && touchesCore(b))) continue;
+    const [i, j] = o.userData.bandCell || [Math.floor(mx / C), Math.floor(mz / C)], key = i + ',' + j;
+    let cell = cells.get(key);
+    if (!cell) cells.set(key, (cell = { i, j, x: (i + 0.5) * C, z: (j + 0.5) * C, byParent: new Map(), groups: [], standIns: [] }));
+    let list = cell.byParent.get(o.parent);
+    if (!list) cell.byParent.set(o.parent, (list = []));
+    list.push(o);
+  }
+  let moved = 0;
+  for (const cell of cells.values()) {
+    for (const [parent, list] of cell.byParent) {
+      const group = new THREE.Group();
+      group.name = (parent.name || 'City') + 'Band';
+      const set = new Set(list);
+      parent.children = parent.children.filter((o) => !set.has(o));
+      for (const o of list) { o.parent = group; group.children.push(o); }
+      group.parent = parent;
+      parent.children.push(group);
+      group.updateMatrixWorld(true);
+      cell.groups.push(group);
+      moved += list.length;
+    }
+    cell.byParent = null;
+  }
+  scene.traverse((o) => {
+    const s = o.userData.bandStandIn;
+    if (!s) return;
+    const key = s.i + ',' + s.j;
+    let cell = cells.get(key);
+    if (!cell) cells.set(key, (cell = { i: s.i, j: s.j, x: (s.i + 0.5) * C, z: (s.j + 0.5) * C, groups: [], standIns: [] }));
+    cell.standIns.push(o);
+  });
+  // whole groups that ask for it (subway.js's open cuts: not in the culling roots) and stand wholly beyond today's city
+  const groupBox = new THREE.Box3(), meshBox = new THREE.Box3();
+  let bandGroups = 0;
+  scene.traverse((o) => {
+    if (!o.userData.farBandGroup) return;
+    groupBox.makeEmpty();
+    o.updateMatrixWorld(true);
+    o.traverse((m) => {
+      if (!m.isMesh) return;
+      if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+      meshBox.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld);
+      if ([meshBox.min.x, meshBox.min.z, meshBox.max.x, meshBox.max.z].every(Number.isFinite)) groupBox.union(meshBox);
+    });
+    if (groupBox.isEmpty() || touchesCore(groupBox)) return;
+    const i = Math.floor((groupBox.min.x + groupBox.max.x) / 2 / C), j = Math.floor((groupBox.min.z + groupBox.max.z) / 2 / C), key = i + ',' + j;
+    let cell = cells.get(key);
+    if (!cell) cells.set(key, (cell = { i, j, x: (i + 0.5) * C, z: (j + 0.5) * C, groups: [], standIns: [] }));
+    cell.groups.push(o);
+    bandGroups++;
+  });
+  band.cells = [...cells.values()];
+  // within reach: the cell's nearest point within FAR_BAND.distance of the camera
+  band.reach = B.distance;
+  band.half = C / 2;
+  Object.assign(stats, { bandCells: band.cells.length, bandMeshes: moved, bandSplit: stats.bandSplit || 0, bandFamilies: splitFarBand.families || 0, bandGroups,
+    bandStandIns: band.cells.reduce((n, c) => n + c.standIns.length, 0) });
+}
+// Per frame (once started): each band cell's city within reach of the camera, its far-city stand-in otherwise
+function updateFarBand(x, z) {
+  for (const c of band.cells) {
+    const h = band.half;
+    const near = Math.hypot(Math.max(Math.abs(c.x - x) - h, 0), Math.max(Math.abs(c.z - z) - h, 0)) < band.reach;
+    if (c.near === near) continue;
+    c.near = near;
+    for (const g of c.groups) g.visible = near;
+    for (const s of c.standIns) s.visible = !near;
+  }
+}
 
 const PROXY_BUCKET = 1000;
 const _pm = new THREE.Matrix4();
@@ -577,6 +905,7 @@ function bucketCulled(culled) {
 function updateSceneCulling(cameraPosition) {
   state.started = true;
   const { x, y, z } = cameraPosition;
+  if (band.cells.length) updateFarBand(x, z);
   const k = Q.dist;
   const cull = (c) => {
     const dx = c.x - x;
@@ -604,6 +933,7 @@ function updateSceneCulling(cameraPosition) {
 // or 1 after computeVertexNormals; not instanced, not storage, static usage) that the WebGPU backend has already uploaded; the array becomes an empty one
 // of the same type (the pipelines read its type, the draws its count). Bounds are computed first (frustum culling
 // computes them lazily from the array). Canvases & data textures already uploaded shrink the same way. Returns MB freed
+function gpuOnlyRaycast() {} // (released: nothing to test the ray against on the CPU)
 function releaseCpuCopies(renderer, roots, textures = []) {
   const backend = renderer.backend;
   if (!backend.isWebGPUBackend) return 0;
@@ -619,7 +949,7 @@ function releaseCpuCopies(renderer, roots, textures = []) {
     attr.array = new attr.array.constructor(0);
   };
   // bounds first, for every geometry: chunks share their source's attributes (scene-culling's chunkInstancedMesh)
-  const geos = [];
+  const geos = [], objects = [];
   for (const root of roots) {
     if (!root) continue;
     root.traverse((o) => {
@@ -629,11 +959,21 @@ function releaseCpuCopies(renderer, roots, textures = []) {
       if (!g.boundingBox) g.computeBoundingBox();
       if (o.isInstancedMesh && !o.boundingSphere) o.computeBoundingSphere();
       geos.push(g);
+      objects.push(o);
     });
   }
   for (const g of geos) {
     for (const name in g.attributes) release(g.attributes[name]);
     release(g.index);
+  }
+  // A geometry whose positions (or index) went keeps its count, so three's raycast read the empty array as NaN
+  // vertices: hits at NaN distance (st-bz1o.12: the lake & walls straight down over a plaza, on the Eglinton map and
+  // the phone tiers). Its vertices are on the GPU only now, so a raycast passes it by, as it does an invisible mesh
+  for (const o of objects) {
+    const g = o.geometry, p = g.attributes.position;
+    if ((p && !p.isInterleavedBufferAttribute && p.array && p.array.length === 0 && p.count > 0) || (g.index && g.index.array.length === 0 && g.index.count > 0)) {
+      o.raycast = gpuOnlyRaycast;
+    }
   }
   for (const t of textures) {
     const img = t && t.image;

@@ -193,9 +193,11 @@
     };
   }
   // the pylons' poles (TtcPylons: the model's pole at 1-2 m up, per instance) vs the pole colliders
-  let pylonMesh = null;
-  app.scene.traverse((o) => { if (o.isInstancedMesh && o.name === 'TtcPylons') pylonMesh = o; });
-  if (pylonMesh && pylonMesh.isInstancedMesh) {
+  // (scene-culling.js cuts the pylons into kilometre cells: every chunk is an InstancedMesh named TtcPylons)
+  const pylonMeshes = [];
+  app.scene.traverse((o) => { if (o.isInstancedMesh && o.name === 'TtcPylons') pylonMeshes.push(o); });
+  const pylonMesh = pylonMeshes[0];
+  if (pylonMesh) {
     const pos = pylonMesh.geometry.attributes.position;
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
     for (let i = 0; i < pos.count; i++) {
@@ -204,8 +206,8 @@
       x0 = Math.min(x0, pos.getX(i)); x1 = Math.max(x1, pos.getX(i)); z0 = Math.min(z0, pos.getZ(i)); z1 = Math.max(z1, pos.getZ(i));
     }
     const local = new T.Vector3((x0 + x1) / 2, 1.4, (z0 + z1) / 2), m = new T.Matrix4(), off = [];
-    for (let i = 0; i < pylonMesh.count; i++) {
-      pylonMesh.getMatrixAt(i, m);
+    for (const mesh of pylonMeshes) for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, m);
       const p = local.clone().applyMatrix4(m);
       let best = Infinity;
       for (const c of cm.nearColliders(p.x, p.z, 3)) if (c.maxX - c.minX < 1.5 && c.maxZ - c.minZ < 1.5) best = Math.min(best, Math.hypot((c.minX + c.maxX) / 2 - p.x, (c.minZ + c.maxZ) / 2 - p.z));

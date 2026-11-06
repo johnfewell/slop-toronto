@@ -3136,7 +3136,10 @@ function createParkLawnMaterial(isMeadow = false) {
     // and meadows, park-woods.js, and outside the parks' boxes the lawn as it was)
     const lawn = seasonalGrass(mix(baseLawn, cGrassSun, microBlade.mul(0.38)));
     const PW = window.CITY.parkWoods;
-    return snowOver(PW ? PW.groundNode(lawn, wp, { seasonalGrass, noise2D }) : lawn, wp, float(1.0));
+    const ground = PW ? PW.groundNode(lawn, wp, { seasonalGrass, noise2D }) : lawn;
+    // (the beaches' sand over the lawn: water-edges.js)
+    const WE = window.CITY.waterEdges;
+    return snowOver(WE && WE.on ? WE.sandInto(ground, wp) : ground, wp, float(1.0));
   })();
 
   mat.normalNode = Fn(() => {
@@ -3298,6 +3301,8 @@ function createTerrainMaterial() {
     const shrubs = smoothstep(0.58, 0.74, fbm2(p.mul(0.045).add(27.3)));
     let ground = mix(seasonalGrass(grass), laterite, bare.mul(0.7));
     ground = mix(ground, color(0x334322), shrubs.mul(0.75));
+    const WE = window.CITY.waterEdges;
+    if (WE && WE.on) ground = WE.sandInto(ground, p); // (the beaches' sand: water-edges.js)
     ground = snowOver(ground, p, float(1.0)); // (lying snow on the gentle ground; the rock below sheds it)
     // Granite: grey-pink with dark lichen & water streaks down the slope, pale fresh exfoliation sheets
     const streaks = smoothstep(0.55, 0.8, noise2D(vec2(p.x.mul(0.35).add(p.y.mul(0.2)), wp.y.mul(0.02))));

@@ -527,8 +527,10 @@ function storefrontSelection(pois = GEO.pois || []) {
   return { own, onStrip: (x, z, street) => count(x, z, street, 30) >= 2 };
 }
 // The source-keyed signs by building row: the walls (createFacadeBoxes order: -u, +u, -v, +v) that carry one. A record
-// whose row no longer holds the building it was compiled for is ignored (js/storefront-signs.js skips it too)
+// whose row no longer holds the building it was compiled for (after another frame's rows are matched up by centre:
+// js/storefront-signs.js rebindStorefrontRows) is ignored (js/storefront-signs.js skips it too)
 function signedWalls(data = window.CITY.STOREFRONTS) {
+  if (window.CITY.rebindStorefrontRows) window.CITY.rebindStorefrontRows(data, GEO.buildings, GEO.pois); // (storefront-signs.js)
   const walls = new Map();
   for (const s of data?.signs || []) {
     const b = GEO.buildings[s.b];

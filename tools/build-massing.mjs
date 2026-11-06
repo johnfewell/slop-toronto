@@ -62,6 +62,12 @@ const IDS_PATH = opt.ids ? path.resolve(opt.ids) : (opt.geo ? opt.geo.replace(/\
 const geoSource = fs.readFileSync(GEO_PATH, 'utf8');
 const cityCtx = { window: {}, Math, JSON, Object, Array, Number, Map, Set };
 const { GEO } = load(GEO_PATH, cityCtx);
+// js/city-config.js names the waterfront from GEO's mapped areas and expects the Distillery District among them; a
+// frame (--frame) away from downtown has none, so it gets a stand-in far outside the frame (only nearestRoads is used)
+if (opt.frame && !GEO.areas.some((a) => a[1] === 'Distillery District')) {
+  const { x0, z0 } = GEO.frame.detail;
+  GEO.areas.push(['name', 'Distillery District', [x0 - 1e5, z0 - 1e5, x0 - 1e5 + 1, z0 - 1e5, x0 - 1e5, z0 - 1e5 + 1], []]);
+}
 load('js/city-config.js', cityCtx);
 const { nearestRoads } = cityCtx.window.CITY;
 const { GEO_IDS } = load(IDS_PATH);

@@ -1,0 +1,5 @@
+[
+ {"name": "t00", "time": "midday", "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()", "wait": 2000},
+ {"name": "slab-top", "time": "midday", "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-350, 35, 2995], look: [-345, -0.7, 2965], fov: 55 }); })()", "wait": 4000},
+ {"name": "slab-ground", "time": "midday", "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-372, 1.95, 2985], look: [-330, -0.7, 2968], fov: 60 }); })()", "wait": 4000}
+]

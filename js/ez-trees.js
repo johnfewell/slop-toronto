@@ -18,6 +18,10 @@ const V3 = THREE.Vector3;
 // (the distances by quality tier, quality.js: 55, 320 & 130 m on desktops)
 const NEAR = window.CITY.QUALITY.treeNear; // full EZ-Tree mesh within (m)
 const MID = window.CITY.QUALITY.treeMid; // decimated mesh within; whole-crown cards beyond
+// ...nearer from street level (the camera under 40 m): there the parks' far trees mostly stand behind the buildings,
+// and at Queen St W by Trinity Bellwoods the mid meshes out to 320 m were 3.9M triangles and ~2.5 ms of an M4 mini's
+// frame for trees nobody saw (st-z51b). ?treemidstreet=<m> for A/B (the woods keep their own share of MID)
+const MID_STREET = Math.min(MID, Number(new URLSearchParams(location.search).get('treemidstreet') ?? window.CITY.QUALITY.treeMidStreet ?? MID));
 // mid trees further than this cast no shadow (a twin mesh that skips the shadow maps): drawing the ~500 mid trees of a
 // 320 m circle into both cascades cost 2.2 ms a frame on the M4 mini, for shadows a few pixels long
 const MID_SHADOW = Number(new URLSearchParams(location.search).get('treeshadow') ?? window.CITY.QUALITY.treeMidShadow); // ?treeshadow=320: all of them, for A/B
@@ -28,12 +32,15 @@ const WOODS_SHARE = { near: 0.55, mid: 0.42, shadow: 0.5 };
 const nearOf = (c) => (c === WOODS_CLASS ? NEAR * WOODS_SHARE.near : NEAR);
 // (the mid level and its shadows nearer still on the lighter tiers, by their treeFar: a phone's woods hand over to the
 // cards at 53 m, where 50-70 trees to the hectare had made the woods 25% more triangles than the parkland grid's trees)
-const midOf = (c) => (c === WOODS_CLASS ? MID * WOODS_SHARE.mid * Math.min(1, FAR) : MID);
+const midOf = (c, low = false) => (c === WOODS_CLASS ? MID * WOODS_SHARE.mid * Math.min(1, FAR) : low ? MID_STREET : MID);
 const shadowOf = (c) => (c === WOODS_CLASS ? MID_SHADOW * WOODS_SHARE.shadow * Math.min(1, FAR) : MID_SHADOW);
 // ?lodfade=0: the old hard swap (no masks, no bands), for A/B
 const FADE = new URLSearchParams(location.search).get('lodfade') !== '0';
 // hand-over bands, centred on the edge (m): near <-> mid, mid <-> far, the last level -> nothing
-const BAND = FADE ? [14, 50, 80] : [0, 0, 0];
+// (narrowed from 14 / 50 / 80 m, st-z51b: a tree inside a band draws at both levels, and at Queen St W the bands
+// cost ~2.9 ms of an M4 mini's frame; ?lodbands=14,50,80 for A/B)
+const BAND_PARAM = new URLSearchParams(location.search).get('lodbands');
+const BAND = FADE ? (BAND_PARAM ? BAND_PARAM.split(',').map(Number) : [8, 24, 40]) : [0, 0, 0];
 // the levels are regrouped every 4 m of camera travel: a tree joins a level this much before its band starts
 const MARGIN = FADE ? 6 : 0;
 const FAR = window.CITY.QUALITY.treeFar; // (x the furthest distances below: nearer on the phone tiers, quality.js)
@@ -88,6 +95,14 @@ const lodKeep = (() => {
   return h.lessThan(share(fade.x, fade.y)).and(h.greaterThanEqual(share(fade.z, fade.w)));
 })();
 const ALL_IN = -1e6, ALL_OUT = 1e9;
+// The levels that cast no shadow (the mid mesh beyond its shadow distance, the crown cards) draw only the cells in a cone
+// round the view: the camera's frustum (the cone round its corners) widened by VIEW_MARGIN, so the cone is re-cut only
+// after the camera has turned by most of the margin (RECUT). A cell's sphere round its trees' middles is grown by
+// CROWN_PAD for their crowns. Every tree that can be in the frame still draws, and every shadow caster draws all round,
+// so the frame is the same; the GPU stops transforming the woods behind the camera (st-usbd: High Park's woods walk
+// drew ~480 mid trees and ~12,000 cards all round). ?treecull=0 draws them all round, for A/B
+const VIEW_CULL = new URLSearchParams(location.search).get('treecull') !== '0';
+const VIEW_MARGIN = 0.5, RECUT = 0.3, CROWN_PAD = 25; // (rad, rad, m)
 // Trees are binned into square cells this wide for the level updates (cell-hierarchical, after mrdoob's trees.js in
 // upstream e35c06c): a cell lying wholly between two hand-over edges takes one level set per tree class without
 // per-tree distances; only the cells straddling an edge evaluate their trees one by one
@@ -358,7 +373,7 @@ async function buildEzTrees(scene, generated) {
     const low = lowIdx === 1;
     for (let c = 0; c < CLASSES; c++) {
       const tr = c === WOODS_CLASS ? 0 : c >> 1, pine = c === WOODS_CLASS ? 0 : c & 1;
-      const near = nearOf(c), mid = midOf(c);
+      const near = nearOf(c), mid = midOf(c, low);
       let maxD = low ? Math.min(MAX_DIST[tr], LOW_CUTOFF) : MAX_DIST[tr];
       if (pine) maxD = Math.min(maxD, PINE_FAR);
       // [edge in, band in, edge out, band out] per level; pines have no far level (their mid mesh goes out to maxD)
@@ -408,39 +423,79 @@ async function buildEzTrees(scene, generated) {
     const classes = [0, 1, 2, 3, 4, 5, 6].filter((c) => mask & (1 << c));
     const edges = [0, 1].map((lowIdx) => Float64Array.from(new Set(classes.flatMap((c) => classEdges[lowIdx][c]))).sort());
     // sig: the cell's level bits, 4 per class (bits 4c..4c+3), while every tree of a class shares them; -1 otherwise
-    return { trees, x, y, z, r: Math.sqrt(r2) + 1e-3, classes, edges, sig: 0 };
+    return { trees, x, y, z, r: Math.sqrt(r2) + 1e-3, classes, edges, sig: 0, inView: true };
   });
 
+  const cellOf = new Array(N); // (each tree's cell)
+  for (const cell of cells) for (const i of cell.trees) cellOf[i] = cell;
   const counts = new Int32Array(instanced.length);
   let fadesNow = classFades[0];
+  // (for captures: how often the instances were regrouped, the view cone re-cut, and the last regroup's CPU time)
+  const stats = { rebuilds: 0, recuts: 0, lastRebuildMs: 0, viewCull: VIEW_CULL, sorted: null };
+  // Each level's instances go to its mesh nearest first when SORT is on: the trees are drawn front to back, so the leaves
+  // of the trees behind fail the depth test before their (alpha-tested) shading instead of after it (st-usbd). The
+  // image is the same. ?treesort=0 keeps the cells' order, for A/B
+  const SORT = new URLSearchParams(location.search).get('treesort') !== '0';
+  // (a counting sort on the distance in 4 m steps: linear in the trees drawn, ~20,000 of them from the woods)
+  const BUCKET = 4, BUCKETS = 1024;
+  let order = new Int32Array(1024), sorted = new Int32Array(1024);
+  const key = new Uint16Array(N), bucketStart = new Int32Array(BUCKETS + 1);
+  function put(i, l, bits, F) {
+    const mi = l === 1 && bits & 8 ? midFarOf[i] : meshOf[i * 3 + l];
+    const mesh = instanced[mi];
+    const c = counts[mi]++;
+    const far = meshes[mi].attrs;
+    const a = mesh.geometry.attributes;
+    const src = far ? matsFar : matsNear, dst = mesh.instanceMatrix.array;
+    for (let j = 0; j < 16; j++) dst[c * 16 + j] = src[i * 16 + j];
+    if (far) { const t = a.aTreeData.array; t[c * 4] = farData[i * 4]; t[c * 4 + 1] = farData[i * 4 + 1]; t[c * 4 + 2] = farData[i * 4 + 2]; t[c * 4 + 3] = farData[i * 4 + 3]; }
+    else { const t = mesh.instanceColor.array; t[c * 3] = tints[i * 3]; t[c * 3 + 1] = tints[i * 3 + 1]; t[c * 3 + 2] = tints[i * 3 + 2]; }
+    const og = a.aLodOrigin.array;
+    og[c * 3] = px[i]; og[c * 3 + 1] = py[i]; og[c * 3 + 2] = pz[i];
+    const fd = a.aLodFade.array, fl = cls[i] * 12 + l * 4;
+    fd[c * 4] = F[fl]; fd[c * 4 + 1] = F[fl + 1]; fd[c * 4 + 2] = F[fl + 2]; fd[c * 4 + 3] = F[fl + 3];
+  }
   function rebuild() {
+    const t0 = performance.now();
     counts.fill(0);
     const F = fadesNow;
+    let n = 0;
     for (let ci = 0; ci < cells.length; ci++) {
       const cell = cells[ci];
       if (cell.sig === 0) continue; // (nothing drawn)
+      const outOfView = !cell.inView;
       const trees = cell.trees;
       for (let k = 0; k < trees.length; k++) {
         const i = trees[k];
         const bits = levels[i];
         if (!bits) continue;
-        const fo = cls[i] * 12;
-        for (let l = 0; l < 3; l++) {
-          if (!(bits & (1 << l))) continue;
-          const mi = l === 1 && bits & 8 ? midFarOf[i] : meshOf[i * 3 + l];
-          const mesh = instanced[mi];
-          const c = counts[mi]++;
-          const far = meshes[mi].attrs;
-          const a = mesh.geometry.attributes;
-          const src = far ? matsFar : matsNear, dst = mesh.instanceMatrix.array;
-          for (let j = 0; j < 16; j++) dst[c * 16 + j] = src[i * 16 + j];
-          if (far) { const t = a.aTreeData.array; t[c * 4] = farData[i * 4]; t[c * 4 + 1] = farData[i * 4 + 1]; t[c * 4 + 2] = farData[i * 4 + 2]; t[c * 4 + 3] = farData[i * 4 + 3]; }
-          else { const t = mesh.instanceColor.array; t[c * 3] = tints[i * 3]; t[c * 3 + 1] = tints[i * 3 + 1]; t[c * 3 + 2] = tints[i * 3 + 2]; }
-          const og = a.aLodOrigin.array;
-          og[c * 3] = px[i]; og[c * 3 + 1] = py[i]; og[c * 3 + 2] = pz[i];
-          const fd = a.aLodFade.array, fl = fo + l * 4;
-          fd[c * 4] = F[fl]; fd[c * 4 + 1] = F[fl + 1]; fd[c * 4 + 2] = F[fl + 2]; fd[c * 4 + 3] = F[fl + 3];
+        // (a level that casts no shadow out of the view cone can't be in the frame: the mid mesh beyond its shadow
+        // distance, the cards)
+        if (outOfView && !(bits & 1) && (!(bits & 2) || bits & 8)) continue;
+        if (n === order.length) { const o = new Int32Array(n * 2); o.set(order); order = o; sorted = new Int32Array(n * 2); }
+        order[n++] = i;
+        if (SORT) {
+          const dx = px[i] - cam.x, dy = py[i] - cam.y, dz = pz[i] - cam.z;
+          key[i] = Math.min(BUCKETS - 1, Math.sqrt(dx * dx + dy * dy + dz * dz) / BUCKET) | 0;
         }
+      }
+    }
+    let list = order;
+    if (SORT) {
+      bucketStart.fill(0);
+      for (let k = 0; k < n; k++) bucketStart[key[order[k]] + 1]++;
+      for (let b = 0; b < BUCKETS; b++) bucketStart[b + 1] += bucketStart[b];
+      for (let k = 0; k < n; k++) { const i = order[k]; sorted[bucketStart[key[i]]++] = i; }
+      list = sorted;
+    }
+    for (let k = 0; k < n; k++) {
+      const i = list[k];
+      const bits = levels[i];
+      const outOfView = !cellOf[i].inView;
+      for (let l = 0; l < 3; l++) {
+        if (!(bits & (1 << l))) continue;
+        if (outOfView && (l === 2 || (l === 1 && bits & 8))) continue; // (casts no shadow, can't be in the frame)
+        put(i, l, bits, F);
       }
     }
     instanced.forEach((mesh, mi) => {
@@ -457,13 +512,46 @@ async function buildEzTrees(scene, generated) {
       mesh.count = n;
       mesh.visible = n > 0;
     });
+    stats.rebuilds++;
+    stats.sorted = SORT;
+    stats.lastRebuildMs = performance.now() - t0;
   }
   const last = new V3(Infinity, Infinity, Infinity);
   const cam = new V3();
   let lastLow = null;
-  function update(position) {
+  // The view cone (VIEW_CULL): its axis, the cosine of the camera's turn since it was cut, its half angle
+  const fwd = new V3(), cutFwd = new V3(), cutAt = new V3(Infinity, Infinity, Infinity);
+  let cutFov = 0, cutAspect = 0;
+  const cosRecut = Math.cos(RECUT);
+  // Re-cuts the cone when the camera has turned by RECUT, moved, or zoomed: true when a cell's view changed
+  function cutView(camera) {
+    camera.getWorldDirection(fwd);
+    if (fwd.dot(cutFwd) >= cosRecut && camera.fov === cutFov && camera.aspect === cutAspect && cam.distanceToSquared(cutAt) < 16) return false;
+    cutFwd.copy(fwd); cutAt.copy(cam); cutFov = camera.fov; cutAspect = camera.aspect;
+    const tanV = Math.tan((camera.fov * Math.PI) / 360);
+    const half = Math.atan(Math.hypot(tanV, tanV * camera.aspect)) + VIEW_MARGIN;
+    let viewChanged = false;
+    for (let ci = 0; ci < cells.length; ci++) {
+      const cell = cells[ci];
+      const ex = cell.x - cam.x, ey = cell.y - cam.y, ez = cell.z - cam.z;
+      const d = Math.sqrt(ex * ex + ey * ey + ez * ez), pad = cell.r + CROWN_PAD;
+      const inView = half >= Math.PI || d <= pad ||
+        Math.acos(Math.max(-1, Math.min(1, (ex * fwd.x + ey * fwd.y + ez * fwd.z) / d))) <= half + Math.asin(pad / d);
+      if (inView !== cell.inView) {
+        cell.inView = inView;
+        if (cell.sig !== 0) viewChanged = true;
+      }
+    }
+    if (viewChanged) stats.recuts++;
+    return viewChanged;
+  }
+  function update(position, camera = null) {
     cam.copy(position);
-    if (cam.distanceToSquared(last) < 16) return false;
+    const viewChanged = VIEW_CULL && camera ? cutView(camera) : false;
+    if (cam.distanceToSquared(last) < 16) {
+      if (viewChanged) rebuild();
+      return viewChanged;
+    }
     last.copy(cam);
     const low = cam.y < 40;
     let changed = low !== lastLow; // the far edges move with the camera's height: every tree's bands change
@@ -506,8 +594,8 @@ async function buildEzTrees(scene, generated) {
         if (bits !== levels[i]) { levels[i] = bits; changed = true; }
       }
     }
-    if (changed) rebuild();
-    return changed;
+    if (changed || viewChanged) rebuild();
+    return changed || viewChanged;
   }
   // follow the view camera of every scene render (the shadow cascades keep the view's levels)
   const viewPos = new V3();
@@ -517,7 +605,7 @@ async function buildEzTrees(scene, generated) {
     if (camera.isOrthographicCamera === true || camera.isArrayCamera === true) return;
     viewPos.setFromMatrixPosition(camera.matrixWorld);
     viewer.value.copy(viewPos);
-    update(viewPos);
+    update(viewPos, camera.isPerspectiveCamera ? camera : null);
   };
   // levels for the start view, so the shader warm-up sees the tree meshes
   const start = (window.CITY.TELEPORT_LOCATIONS || {}).start || { x: 0, z: 0 };
@@ -538,7 +626,8 @@ async function buildEzTrees(scene, generated) {
   });
   scene.add(group);
   console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards (${inWoods} in the wooded parks' woods; ${piled} of the City's piled on one point in those parks left out), ${onBanks} on road cuts' banks), ${ids.length} models`);
-  return { group, update };
+  window.CITY.treeStats = stats;
+  return { group, update, stats };
 }
 
 Object.assign(window.CITY, { buildEzTrees, ezTreeMaterial: fadeMaterial }); // (the material: tests/seasons.test.mjs builds it)

@@ -19,6 +19,7 @@ function buildTerrain(scene) {
   const tx1 = T.x0 + (T.n - 1) * T.step, tz1 = T.z0 + (T.n - 1) * T.step;
   const inDetail = (x, z) => x > CITY_BOUNDS.minX && x < CITY_BOUNDS.maxX && z > CITY_BOUNDS.minZ && z < CITY_BOUNDS.maxZ;
   const SUNK = -3.0;
+  const BAND = window.CITY.FAR_BAND, BAND_FLOOR = -0.6;
   // the terrain pilots' boxes (js/don-valley.js builds the Don Valley's own terrain there, on its finer grid; in High
   // Park's the city's ground is the terrain, and the 60 m SRTM grid's canopy mounds no longer poke through its lawn)
   const PILOT = window.CITY.DON_VALLEY || null, DVB = PILOT ? (PILOT.boxes || [PILOT.box]) : null;
@@ -28,6 +29,9 @@ function buildTerrain(scene) {
     // Lake Ontario & the other water: the build marks its cells -30 m. The bed lies 25 m down, so the stylized water
     // reads deep offshore; the 60 m grid shelves it from the shore (its shallow colour shows only near the banks)
     if (h < -1) return LAKE_BED;
+    // (a bigger map's far band, city-config.js FAR_BAND: the ground just under the street level, painted with the far
+    // city like the land beyond, for when scene-culling.js hides the band's own ground in the distance)
+    if (BAND && BAND.inBand(x, z) && !(h > 0.05)) return BAND_FLOOR;
     if (inDetail(x, z)) return h > 0.05 && !(PILOT && PILOT.clearsTerrainAt && PILOT.clearsTerrainAt(x, z)) ? h : SUNK;
     return Math.max(0, h);
   };

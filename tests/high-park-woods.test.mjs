@@ -108,7 +108,8 @@ test('the woods\' trees hand over to their coarser levels nearer than the parks\
   assert.ok(share.near < 1 && share.mid < 1 && share.shadow < 1, JSON.stringify(share));
   // (every other class keeps its distances: only the woods' class reads the shares)
   assert.match(ez, /const nearOf = \(c\) => \(c === WOODS_CLASS \? NEAR \* WOODS_SHARE\.near : NEAR\);/);
-  assert.match(ez, /const midOf = \(c\) => \(c === WOODS_CLASS \? MID \* WOODS_SHARE\.mid \* Math\.min\(1, FAR\) : MID\);/);
+  // (the woods keep their share of MID from street level too: MID_STREET is the other classes', st-z51b)
+  assert.match(ez, /const midOf = \(c, low = false\) => \(c === WOODS_CLASS \? MID \* WOODS_SHARE\.mid \* Math\.min\(1, FAR\) : low \? MID_STREET : MID\);/);
 });
 
 test('the ground: woodland floor under the canopy and meadow in the savanna, on the park\'s islands only', () => {

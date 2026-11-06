@@ -28,3 +28,6 @@ tools/prop-src/
 
 # wide-frame generated outputs
 out/
+
+# experimental bigger frames for ?frame=<name> (tools/frames/build-frame.mjs output; measurement only, never shipped)
+/frames/

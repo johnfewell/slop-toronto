@@ -1,0 +1,78 @@
+[
+ {
+  "name": "u-king-bay",
+  "mode": "person",
+  "x": 130,
+  "z": -345,
+  "heading": 0,
+  "wait": 2000,
+  "metricsWarmupMs": 3000,
+  "metricsMs": 20000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;app.controllerManager.keys.boost=false;const cam={pos:[130,1.7,-352],look:[-200,2.5,-352],fov:60};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "u-queen-west",
+  "mode": "person",
+  "x": -2700,
+  "z": -750,
+  "heading": -1.57,
+  "wait": 2000,
+  "metricsWarmupMs": 3000,
+  "metricsMs": 20000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;app.controllerManager.keys.boost=false;const cam={pos:[-2700,1.7,-757],look:[-2950,1.6,-760],fov:60};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "u-skyline",
+  "camera": "skyline",
+  "wait": 2000,
+  "metricsWarmupMs": 3000,
+  "metricsMs": 20000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "u-core-aerial",
+  "mode": "person",
+  "x": -600,
+  "z": -200,
+  "heading": 0,
+  "wait": 2000,
+  "metricsWarmupMs": 3000,
+  "metricsMs": 20000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;app.controllerManager.keys.boost=false;const cam={pos:[-600,320,-200],look:[-300,140,-200],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "u-high-aerial",
+  "mode": "person",
+  "x": 0,
+  "z": 0,
+  "heading": 0,
+  "wait": 2000,
+  "metricsWarmupMs": 3000,
+  "metricsMs": 20000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;app.controllerManager.keys.boost=false;const cam={pos:[-2500,900,1800],look:[300,0,-600],fov:55};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "u-high-park-walk",
+  "mode": "person",
+  "x": -6122,
+  "z": -1802,
+  "heading": -1.9642469647238323,
+  "hold": "KeyW",
+  "wait": 2000,
+  "metricsWarmupMs": 3000,
+  "metricsMs": 20000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;app.controllerManager.keys.boost=false;})()"
+ },
+ {
+  "name": "u-island-walk",
+  "mode": "person",
+  "x": -658,
+  "z": 2419,
+  "heading": -1.967237610013338,
+  "hold": "KeyW",
+  "wait": 2000,
+  "metricsWarmupMs": 3000,
+  "metricsMs": 20000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;app.controllerManager.keys.boost=false;})()"
+ }
+]

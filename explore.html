@@ -34,9 +34,24 @@
   <script>
     // Download the city scripts while Three.js loads; execute them only after its imports are ready below.
     const cityAppScripts = (() => {
-      return [
+      // The map: the bigger one (the Humber to Victoria Park, the lake to Eglinton: tools/frames/eglinton.json,
+      // docs/map-scale-measurements.md), its own city data from data/frames/eglinton/ & js/frames/eglinton/, or today's.
+      // ?map=eglinton | ?map=detail choose; else desktops get EGLINTON_ON_DESKTOP's choice (st-bz1o.11) and phones,
+      // tablets, ?quality=low|medium and machines reporting under 8 GB keep today's map (its JS heap is ~1 GB after
+      // load; the bigger one's ~1.5 GB). A desktop here is what quality.js keeps at `high` by default: no touch-first
+      // screen. On since John's go (2026-11-05)
+      const EGLINTON_ON_DESKTOP = true;
+      const params = new URLSearchParams(location.search);
+      const mm = (q) => typeof matchMedia === 'function' && matchMedia(q).matches;
+      const nav = typeof navigator === 'object' ? navigator : {};
+      const touchFirst = nav.maxTouchPoints > 0 && mm('(pointer: coarse)') && mm('(hover: none)');
+      const desktop = !touchFirst && !['low', 'medium'].includes(params.get('quality')) && !(nav.deviceMemory && nav.deviceMemory < 8);
+      const map = params.get('map') === 'eglinton' || params.get('map') === 'detail' ? params.get('map')
+        : EGLINTON_ON_DESKTOP && desktop ? 'eglinton' : 'detail';
+      const eglinton = map === 'eglinton';
+      return Object.assign([
         './js/quality.js',
-        './js/toronto-sidewalks.js',
+        eglinton ? './js/frames/eglinton/toronto-sidewalks.js' : './js/toronto-sidewalks.js',
         './js/toronto-parking-meters.js',
         './js/toronto-benches.js',
         './js/toronto-city-facilities.js',
@@ -48,10 +63,10 @@
         './js/toronto-tennis.js',
         './js/toronto-rinks.js',
         './js/high-park-features-data.js',
-        './js/toronto-subway.js',
-        './js/toronto-subway-topology.js',
-        './js/toronto-traffic-data.js',
-        './js/toronto-transit.js',
+        eglinton ? './js/frames/eglinton/toronto-subway.js' : './js/toronto-subway.js',
+        eglinton ? './js/frames/eglinton/toronto-subway-topology.js' : './js/toronto-subway-topology.js',
+        eglinton ? './js/frames/eglinton/toronto-traffic-data.js' : './js/toronto-traffic-data.js',
+        eglinton ? './js/frames/eglinton/toronto-transit.js' : './js/toronto-transit.js',
         './js/transit.js',
         './js/transit-live.js',
         // the terrain pilots (docs/high-park-terrain.md, docs/don-valley-terrain.md), their data and their one runtime,
@@ -60,10 +75,13 @@
         './js/high-park-data.js',
         './js/don-valley.js',
         './js/city-config.js',
-        './js/toronto-signal-plan.js',
+        eglinton ? './js/frames/eglinton/toronto-signal-plan.js' : './js/toronto-signal-plan.js',
         './js/signal-plan.js',
         './js/world-collision.js',
         './js/tsl-materials.js',
+        // (the naturalistic water edges' shore data & runtime: the ground materials read its sand, main.js builds it)
+        './js/toronto-shores.js',
+        './js/water-edges.js',
         // (before cycling.js: seasons.js picks CITY.SITE_DATE, the day the rinks, patios & bikeways are built on)
         './js/live-sky.js',
         './js/seasons.js',
@@ -151,13 +169,13 @@
         './js/mp-protocol.js',
         './js/multiplayer.js',
         './js/main.js'
-      ];
+      ], { cityMap: map }); // (cityAppScripts.cityMap: which city data the page fetches below)
     })();
     // The city database (window.CITY.GEO), the mapped poles (POLES) and the parked cars (PARKED_CARS): data/toronto-geodata.bin
     // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by
     // js/geodata-loader.js while three.js loads
     const cityGeo = (() => {
-      const bin = fetch('./data/toronto-geodata.bin?v=29bc2e17e738');
+      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=db15e398f378' : './data/toronto-geodata.bin?v=29bc2e17e738');
       return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
     for (const src of cityAppScripts) {
@@ -775,6 +793,7 @@
     import { bloom } from 'three/addons/tsl/display/BloomNode.js';
     import { ssr } from 'three/addons/tsl/display/SSRNode.js';
     import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
+    import { smaa } from 'three/addons/tsl/display/SMAANode.js';
     import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
     import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
     import { SunLight } from 'three/addons/lights/SunLight.js';
@@ -787,7 +806,7 @@
     window.CITY = {
       THREE,
       TSL,
-      PostFX: { bloom, ssr, fxaa },
+      PostFX: { bloom, ssr, fxaa, smaa },
       StylizedWater,
       Addons: {
         mergeGeometries,

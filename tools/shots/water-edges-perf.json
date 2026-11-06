@@ -1,0 +1,48 @@
+[
+ {
+  "name": "t00",
+  "time": "midday",
+  "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+  "wait": 3000
+ },
+ {
+  "name": "downtown-yonge-north",
+  "time": "midday",
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [132, 1.7, -450], look: [132, 6, -1100], fov: 60 }); })()",
+  "wait": 3000,
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ },
+ {
+  "name": "downtown-aerial-to-island",
+  "time": "midday",
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [0, 160, 450], look: [-200, 0, 2600], fov: 55 }); })()",
+  "wait": 3000,
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ },
+ {
+  "name": "island-lagoon-ground",
+  "time": "midday",
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-400, 1.95, 2994], look: [-300, -0.7, 2930], fov: 60 }); })()",
+  "wait": 3000,
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ },
+ {
+  "name": "gren-aerial",
+  "time": "golden",
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-6600, 80, -1290], look: [-6850, -1.6, -1800], fov: 55 }); })()",
+  "wait": 3000,
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ },
+ {
+  "name": "east-waterfront-aerial",
+  "time": "midday",
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [3000, 120, 2400], look: [4500, 0, 800], fov: 55 }); })()",
+  "wait": 3000,
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ }
+]

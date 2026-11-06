@@ -280,7 +280,9 @@ for (const m of merged.values()) {
     if (d > (same ? same.maxStray : PATH_TOLERANCE)) unreviewed.push(`${m.id} (${routeOut[m.r][0]} d${m.d}): a shape strays ${Math.round(d)} m from the longest`);
   }
 }
-if (unreviewed.length) throw new Error(`shapes calling at the same stops take different paths; add reviewed variants to tools/data/transit-variants.json:\n  ${unreviewed.join('\n  ')}`);
+// (--allow-unreviewed: a frame built for another use than the shipped game lists them and keeps the longest path)
+if (unreviewed.length && process.argv.includes('--allow-unreviewed')) log(`unreviewed shape variants kept as one pattern (the longest path):\n  ${unreviewed.join('\n  ')}`);
+else if (unreviewed.length) throw new Error(`shapes calling at the same stops take different paths; add reviewed variants to tools/data/transit-variants.json:\n  ${unreviewed.join('\n  ')}`);
 for (const [id, p] of merged) if ((VARIANTS.aliases || {})[id]) throw new Error(`pattern alias ${id} is a live pattern ID`);
 for (const [from, to] of Object.entries(VARIANTS.aliases || {})) if (!merged.has(to)) throw new Error(`pattern alias ${from} -> ${to}: no such pattern`);
 patterns.length = 0;

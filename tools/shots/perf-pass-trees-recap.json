@@ -1,0 +1,62 @@
+[
+ {
+  "name": "tr-queen-west",
+  "time": "golden",
+  "mode": "person",
+  "x": -2700,
+  "z": -750,
+  "heading": -1.57,
+  "wait": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;const cam={pos:[-2700,1.7,-757],look:[-2950,1.6,-760],fov:60};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "tr-bellwoods-in",
+  "time": "golden",
+  "mode": "person",
+  "x": -2850,
+  "z": -800,
+  "heading": 3.14,
+  "wait": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;})()"
+ },
+ {
+  "name": "tr-high-park-walk",
+  "time": "midday",
+  "mode": "person",
+  "x": -6122,
+  "z": -1802,
+  "heading": -1.9642469647238323,
+  "wait": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;})()"
+ },
+ {
+  "name": "tr-high-park-aerial",
+  "time": "midday",
+  "mode": "person",
+  "x": -6300,
+  "z": -1900,
+  "heading": 0,
+  "wait": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;const cam={pos:[-5700,120,-1500],look:[-6400,0,-2000],fov:60};app.cameraSystem.cinema=()=>cam;})()"
+ },
+ {
+  "name": "tr-island-walk",
+  "time": "midday",
+  "mode": "person",
+  "x": -658,
+  "z": 2419,
+  "heading": -1.967237610013338,
+  "wait": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;})()"
+ },
+ {
+  "name": "tr-island-aerial",
+  "time": "golden",
+  "mode": "person",
+  "x": -700,
+  "z": 2400,
+  "heading": 0,
+  "wait": 5000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;const cam={pos:[-200,150,1900],look:[-900,0,2600],fov:60};app.cameraSystem.cinema=()=>cam;})()"
+ }
+]

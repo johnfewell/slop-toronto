@@ -1,5 +1,5 @@
 // Part 8: the railways (OpenStreetMap, osm_rails.json from tools/fetch-osm.mjs ONLY=rails): the TTC's streetcar tracks
-// (railway=tram, with the loops & sidings: 501 Queen out to the Humber Loop, 504 King, 505 Dundas, 506 College,
+// (railway=tram, and Line 5 Eglinton's railway=light_rail, with the loops & sidings: 501 Queen out to the Humber Loop, 504 King, 505 Dundas, 506 College,
 // 509 Harbourfront & 510 Spadina on their rights-of-way, 511 Bathurst, 512 St Clair's stub), the streetcar stops
 // (railway=tram_stop), and the heavy-rail lines of the Union Station Rail Corridor & its subdivisions (railway=rail:
 // GO Transit, VIA & UP Express, with their yard tracks, sidings & crossovers). The subway stays underground (left out).
@@ -50,7 +50,9 @@ export const rails = [];
 for (const e of elements) {
   if (e.type !== 'way' || !e.geometry) continue;
   const t = e.tags || {};
-  const kind = t.railway === 'tram' ? 0 : t.railway === 'rail' ? 1 : -1;
+  // (Line 5 Eglinton is railway=light_rail: the TTC runs it as a streetcar route, through its tunnels under the
+  // middle of Eglinton and in the street's median east of Laird, st-bz1o.6)
+  const kind = t.railway === 'tram' || t.railway === 'light_rail' ? 0 : t.railway === 'rail' ? 1 : -1;
   if (kind < 0) continue;
   const tunnel = !!t.tunnel && t.tunnel !== 'no';
   if (kind === 1 && tunnel) continue; // heavy rail under the city: nothing to see

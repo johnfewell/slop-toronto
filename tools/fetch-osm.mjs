@@ -34,7 +34,8 @@ const CITY = (() => {
   }
   return FRAMES.detail;
 })();
-const WIDE = [-79.6, 43.55, -79.2, 43.78];
+// (grown to take in a frame box that reaches past it, so the points of a bigger frame are all read)
+const WIDE = [Math.min(-79.6, CITY[0]), Math.min(43.55, CITY[1]), Math.max(-79.2, CITY[2]), Math.max(43.78, CITY[3])];
 const TORONTO = [-79.64, 43.58, -79.11, 43.86];
 // the lake shore out to the horizon: about 35 km each way along it
 const SHORE = [-79.85, 43.25, -78.9, 43.9];

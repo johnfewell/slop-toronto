@@ -885,6 +885,7 @@ function createChainLinkMaterial() {
 function buildCut(C, parent, colliders, mats) {
   const group = new THREE.Group();
   group.name = 'SubwayCut';
+  group.userData.farBandGroup = true; // (a bigger map's far band hides a cut beyond today's city out of reach: scene-culling.js)
   parent.add(group);
   const SWH = CITY_BOUNDS.sidewalkHeight;
   const TOP = SWH + CUT_UPSTAND; // the walls' top
@@ -956,7 +957,10 @@ function buildCut(C, parent, colliders, mats) {
     for (const [s, t, f] of [[S0, G.t0, 1], [S1, G.t1, -1]]) {
       // f: the way into the trench
       const ls = C.chains.map((c) => trackLAt(c.Q, t)).filter((v) => v !== null);
-      const h0 = Math.max(s.l0 + 0.2, Math.min(...ls) - 2.3), h1 = Math.min(s.l1 - 0.2, Math.max(...ls) + 2.3);
+      // (no main track reaching this end, as at a segment's end of a trench in several pieces: the opening is the
+      // trench's width; Math.min() of nothing made the portal Infinity wide and its geometry NaN)
+      const h0 = ls.length ? Math.max(s.l0 + 0.2, Math.min(...ls) - 2.3) : s.l0 + 0.2;
+      const h1 = ls.length ? Math.min(s.l1 - 0.2, Math.max(...ls) + 2.3) : s.l1 - 0.2;
       const back = t - f * 0.8;
       const fx = ux * f, fz = uz * f;
       const W0 = s.l0 - CUT_WALL, W1 = s.l1 + CUT_WALL;

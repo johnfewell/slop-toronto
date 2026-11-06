@@ -1,6 +1,6 @@
 // tools/capture.mjs — screenshots of the running app for review (run on the Mac mini via gpu2, never on the laptop)
 // usage: GPU2_OUT=out node tools/capture.mjs [shot.json]   (serves this folder itself: vite would rewrite the import map)
-// A shot is { name, mode?, time?, camera?, x?, z?, heading?, wait?, js? } (js: a page expression run before the shot) (world metres, see the geodata frame); the
+// A shot is { name, mode?, time?, camera?, x?, z?, heading?, wait?, js?, metricsMs?, metricsWarmupMs? } (js: a page expression run before the shot) (world metres, see the geodata frame); the
 // A shot may also tap a selector (`tap`) after its setup or reload before setup (`reload`); async `js` is awaited. The
 // default list is one overview per time of day.
 // CAPTURE_ROOT=dist serves another folder (the built site); CAPTURE_STATIC=1 with CAPTURE_PAGE=index.html screenshots a
@@ -57,8 +57,10 @@ if (process.env.CAPTURE_IDLE_CHECK === '1') {
 }
 const measurementClass = contention.wrapperMarker || contention.processes.some((p) => p.cpuPercent >= 1) ? 'contended-functional'
   : contention.processes.length ? 'background-processes-unqualified' : contention.checked ? 'no-observed-contention' : 'unqualified';
+// CAPTURE_HEADED=1: a real window (on the mini's logged-in desktop) instead of headless
 const browser = await chromium.launch({
   channel: 'chromium',
+  headless: !process.env.CAPTURE_HEADED,
   args: ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist',
     ...(process.env.CAPTURE_UNCAPPED ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : []),
     // CAPTURE_HEAP=1 also exposes gc(), so ?memlog=1 reads the heap after a full collection
@@ -182,6 +184,7 @@ const stopHeap = async () => {
     ...[...bySite].sort((a, b) => b[1] - a[1]).slice(0, 80).map(([k, v]) => `${mb(v)}  ${k}`)].join('\n') + '\n');
 };
 const t0 = Date.now();
+page.on('crash', () => log.push(`[capture] page crashed ${Date.now() - t0} ms after navigation`));
 const captureUrl = new URL(`${BASE}/${process.env.CAPTURE_PAGE || 'explore.html'}${process.env.CAPTURE_QUERY || ''}`);
 if (METRICS_MS) captureUrl.searchParams.set('metrics', '1');
 await page.goto(captureUrl.href, { waitUntil: 'load', timeout: Number(process.env.CAPTURE_LOAD_TIMEOUT_MS || process.env.CAPTURE_NAVIGATION_TIMEOUT_MS || 30000) });
@@ -206,10 +209,11 @@ if (process.env.CAPTURE_STATIC) {
   process.exit(0);
 }
 try {
-  await page.waitForFunction(() => window.__CITY_APP?.ready, null, { timeout: 240000 });
+  await page.waitForFunction(() => window.__CITY_APP?.ready, null, { timeout: Number(process.env.CAPTURE_READY_TIMEOUT_MS || 240000) });
 } catch (e) {
   log.push(`[capture] not ready: ${e.message.split('\n')[0]}`);
-  await page.screenshot({ path: path.join(OUT, 'not-ready.png') });
+  flush(); // (before the screenshot: a crashed page has none, and its console is the evidence)
+  await page.screenshot({ path: path.join(OUT, 'not-ready.png') }).catch((err) => log.push(`[capture] no screenshot: ${err.message.split('\n')[0]}`));
   flush();
   console.log(log.slice(-30).join('\n'));
   process.exit(1);
@@ -229,7 +233,7 @@ try {
     if (s.viewport) await page.setViewportSize(s.viewport === 'default' ? { width: VW, height: VH } : s.viewport);
     if (s.reload) {
       await page.reload({ waitUntil: 'load' });
-      await page.waitForFunction(() => window.__CITY_APP?.ready, null, { timeout: 240000 });
+      await page.waitForFunction(() => window.__CITY_APP?.ready, null, { timeout: Number(process.env.CAPTURE_READY_TIMEOUT_MS || 240000) });
     }
     const shotResult = await page.evaluate((s) => {
       const app = window.__CITY_APP;
@@ -257,15 +261,17 @@ try {
     }
     if (s.hold) await page.keyboard.down(s.hold);
     await page.waitForTimeout(s.wait ?? 4000);
-    if (METRICS_MS) {
+    // (a shot's own metricsMs / metricsWarmupMs override the run's; metricsMs 0 skips its window)
+    const shotMetricsMs = s.metricsMs ?? METRICS_MS, shotWarmupMs = s.metricsWarmupMs ?? METRICS_WARMUP;
+    if (METRICS_MS && shotMetricsMs) {
       await Promise.all(receipts);
       await page.evaluate(({ label, warmupMs }) => {
         const app = window.__CITY_APP;
         if (!app.measurements) throw new Error('frame instrumentation unavailable');
         app.gpuTimes?.(); // Reset optional legacy averages; these are not frame-latency percentiles.
         app.measurements.start({ label, warmupMs });
-      }, { label: `${TAG}${s.name}`, warmupMs: METRICS_WARMUP });
-      await page.waitForTimeout(METRICS_WARMUP + METRICS_MS);
+      }, { label: `${TAG}${s.name}`, warmupMs: shotWarmupMs });
+      await page.waitForTimeout(shotWarmupMs + shotMetricsMs);
       // Stop before screenshot/readback, and before any resource inspection that walks data.
       const report = await page.evaluate(() => {
         const app = window.__CITY_APP;

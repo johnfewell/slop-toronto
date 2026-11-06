@@ -21,6 +21,23 @@ const DETAIL = GEO.frame.detail;
 // ---------------------------------------------------------------------------------------------------------------------
 const PROJ = GEO.frame.projection; // lat / lon <-> world (worldFromLatLon, below)
 const CITY_BOUNDS = { minX: DETAIL.x0, maxX: DETAIL.x1, minZ: DETAIL.z0, maxZ: DETAIL.z1, sidewalkHeight: 0.22, waterLevel: -0.7 };
+// A bigger map's far band (st-bz1o: ?map=eglinton): today's detailed city (the Humber to Cherry Beach, the lake to Bloor)
+// is its core; the rest of the frame, north of Bloor and east of the Don, is the band. scene-culling.js hides the band's
+// city in 1.2 km cells (the far city's own chunks: as many stand-in draws as today's map has there) whose nearest point
+// is beyond FAR_BAND.distance of the camera, where surroundings.js's far city and the terrain's painted one stand in for
+// it as they do beyond today's map, so the views from downtown cost what they did. ?band=<m> sets the distance
+// (?band=0: no band, everything drawn)
+const CORE_FRAME = { x0: -7900, x1: 3700, z0: -3000, z1: 3600 };
+const FAR_BAND = (() => {
+  const big = DETAIL.x0 <= CORE_FRAME.x0 && DETAIL.x1 >= CORE_FRAME.x1 && DETAIL.z0 <= CORE_FRAME.z0 && DETAIL.z1 >= CORE_FRAME.z1 &&
+    (DETAIL.x0 < CORE_FRAME.x0 || DETAIL.x1 > CORE_FRAME.x1 || DETAIL.z0 < CORE_FRAME.z0 || DETAIL.z1 > CORE_FRAME.z1);
+  const forced = typeof location === 'undefined' ? null : ((location.search || '').match(/[?&]band=([^&]*)/) || [])[1] ?? null;
+  const distance = forced !== null && Number.isFinite(Number(forced)) ? Number(forced) : 2000;
+  if (!big || !(distance > 0)) return null;
+  const inCore = (x, z, m = 0) => x > CORE_FRAME.x0 - m && x < CORE_FRAME.x1 + m && z > CORE_FRAME.z0 - m && z < CORE_FRAME.z1 + m;
+  return { core: CORE_FRAME, distance, cell: 1200, inCore,
+    inBand: (x, z) => !inCore(x, z) && x > DETAIL.x0 && x < DETAIL.x1 && z > DETAIL.z0 && z < DETAIL.z1 };
+})();
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Land cover (lakes & reservoirs, parks, woods, rock, sports grounds) & streams
@@ -94,12 +111,43 @@ for (const w of WATER_BODIES) {
   }
 }
 const WATER_EVERYWHERE = WATER_BODIES.filter((w) => (w.maxX - w.minX) * (w.maxZ - w.minZ) > 4e8);
-/** The lake or reservoir at (x, z), or null */
-function waterAt(x, z) {
+function waterAtExact(x, z) {
   for (const w of WATER_EVERYWHERE) if (inWaterBody(w, x, z)) return w;
   const near = WATER_GRID.get(Math.floor(x / WATER_CELL) * 100000 + Math.floor(z / WATER_CELL));
   if (near) for (const w of near) if (inWaterBody(w, x, z)) return w;
   return null;
+}
+// 32 m cells no water outline (nor island's) crosses are wholly in one water body or none: answered once, from the
+// cell's centre, in a raster over the detailed city; only the cells along the shores test the point (the road network,
+// the street details and the ground ask millions of times at start-up, a bigger map the most)
+const WATER_FAST = 32;
+const WATER_RASTER = (() => {
+  const x0 = Math.floor(DETAIL.x0 / WATER_FAST) - 1, z0 = Math.floor(DETAIL.z0 / WATER_FAST) - 1;
+  const nx = Math.ceil(DETAIL.x1 / WATER_FAST) + 1 - x0 + 1, nz = Math.ceil(DETAIL.z1 / WATER_FAST) + 1 - z0 + 1;
+  const cells = new Int32Array(nx * nz); // 0 not asked yet, -1 a shore cell (test the point), 1 dry, 2 + i in WATER_BODIES[i]
+  for (const w of WATER_BODIES) {
+    for (const p of [w, ...w.holes]) {
+      const pts = p.pts;
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const a = pts[i], b = pts[j];
+        const i0 = Math.max(0, Math.floor((Math.min(a.x, b.x) - 1) / WATER_FAST) - x0), i1 = Math.min(nx - 1, Math.floor((Math.max(a.x, b.x) + 1) / WATER_FAST) - x0);
+        const k0 = Math.max(0, Math.floor((Math.min(a.z, b.z) - 1) / WATER_FAST) - z0), k1 = Math.min(nz - 1, Math.floor((Math.max(a.z, b.z) + 1) / WATER_FAST) - z0);
+        for (let ix = i0; ix <= i1; ix++) for (let iz = k0; iz <= k1; iz++) cells[iz * nx + ix] = -1;
+      }
+    }
+  }
+  return { x0, z0, nx, nz, cells };
+})();
+/** The lake or reservoir at (x, z), or null */
+function waterAt(x, z) {
+  const R = WATER_RASTER, ix = Math.floor(x / WATER_FAST) - R.x0, iz = Math.floor(z / WATER_FAST) - R.z0;
+  if (!(ix >= 0 && ix < R.nx && iz >= 0 && iz < R.nz)) return waterAtExact(x, z);
+  const c = iz * R.nx + ix, v = R.cells[c];
+  if (v < 0) return waterAtExact(x, z);
+  if (v > 0) return v === 1 ? null : WATER_BODIES[v - 2];
+  const w = waterAtExact((ix + R.x0 + 0.5) * WATER_FAST, (iz + R.z0 + 0.5) * WATER_FAST);
+  R.cells[c] = w ? 2 + WATER_BODIES.indexOf(w) : 1;
+  return w;
 }
 /** Inside the detailed city and not in a lake (`margin` metres in from its edge) */
 function isOnLand(x, z, margin = 0) {
@@ -307,9 +355,17 @@ function blockAt(x, z) {
   if (!list) return null;
   for (const b of list) {
     if (x < b.minX || x > b.maxX || z < b.minZ || z > b.maxZ) continue;
-    if (b.rect || pointInPoly(b.poly, x, z)) return b;
+    if (b.rect || inBandedPoly(blockBands(b), x, z)) return b;
   }
   return null;
+}
+// A block's outline in bands of z (bandPoly), made the first time a point near its curb asks: the same crossing test
+// as pointInPoly over the few edges in the point's band (a long block's outline has hundreds)
+const BLOCK_BANDS = new WeakMap();
+function blockBands(b) {
+  let p = BLOCK_BANDS.get(b);
+  if (!p) BLOCK_BANDS.set(b, (p = bandPoly({ pts: b.poly, minZ: Math.min(...b.poly.map((q) => q.z)), maxZ: Math.max(...b.poly.map((q) => q.z)) })));
+  return p;
 }
 /** Blocks whose bounds overlap a rectangle */
 function blocksInRect(minX, maxX, minZ, maxZ) {
@@ -1489,6 +1545,7 @@ function geoDistance(lat1, lon1, lat2, lon2) {
 
 Object.assign(window.CITY, {
   CITY_BOUNDS,
+  FAR_BAND,
   AREAS,
   WATER_BODIES,
   STREAMS,

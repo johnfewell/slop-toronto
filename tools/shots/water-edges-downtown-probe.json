@@ -1,0 +1,27 @@
+[
+ {
+  "name": "t00",
+  "time": "midday",
+  "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+  "wait": 2000
+ },
+ {
+  "name": "downtown-street-south",
+  "time": "midday",
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [60, 1.7, -150], look: [60, 12, 800], fov: 60 }); })()",
+  "wait": 3000
+ },
+ {
+  "name": "probe",
+  "time": "midday",
+  "js": "(() => { const a = window.__CITY_APP, T = window.CITY.THREE; const rc = new T.Raycaster(); const out = {};\n const hit = (o, d, label) => { rc.set(new T.Vector3(...o), new T.Vector3(...d).normalize()); rc.far = 2000; const h = rc.intersectObjects(a.scene.children, true).filter((x) => x.object.visible).slice(0, 4);\n   out[label] = h.map((x) => ({ name: x.object.name || x.object.parent?.name || '?', parent: x.object.parent?.name || '', mat: (Array.isArray(x.object.material) ? x.object.material[0] : x.object.material)?.name || (x.object.material?.type), d: +x.distance.toFixed(2), p: x.point.toArray().map((v) => +v.toFixed(1)) })); };\n hit([60, 1.7, -150], [0, -1, 0], 'down'); hit([60, 60, -150], [0, -1, 0], 'downFrom60'); hit([60, 1.7, -150], [0, 10.3 / 950, 950], 'forward'); hit([60, 1.7, -150], [0, -0.3, 1], 'floorAhead');\n return out; })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "downtown-above",
+  "time": "midday",
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [60, 120, -260], look: [60, 0, -150], fov: 55 }); })()",
+  "wait": 3000
+ }
+]

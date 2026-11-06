@@ -1,0 +1,23 @@
+{
+  "name": "city",
+  "description": "The whole City of Toronto: Etobicoke Creek and Highway 427 to the Rouge, the lake to Steeles (a world-axis box around the 630 km2 city)",
+  "areaKm2": 922.1,
+  "world": {
+    "x0": -16900,
+    "x1": 25400,
+    "z0": -18100,
+    "z1": 3700
+  },
+  "bbox": [
+    -79.6516,
+    43.5655,
+    -79.0596,
+    43.8712
+  ],
+  "box": {
+    "s": 43.5655,
+    "w": -79.6516,
+    "n": 43.8712,
+    "e": -79.0596
+  }
+}

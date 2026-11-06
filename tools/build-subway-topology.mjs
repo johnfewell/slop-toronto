@@ -12,7 +12,9 @@ import { STATION_FACTS, GTFS_STATION_ALIASES, SUPPORTED_RIDES, PROFILE_LIMITS } 
 
 export function readInputs(root = new URL('..', import.meta.url)) {
   const context = vm.createContext({ window: { CITY: {} } });
-  for (const file of ['js/toronto-subway.js', 'js/toronto-transit.js']) vm.runInContext(fs.readFileSync(new URL(file, root), 'utf8'), context);
+  // (SUBWAY_TOPOLOGY_SUBWAY / SUBWAY_TOPOLOGY_TRANSIT: another frame's files, tools/frames/build-frame.mjs)
+  const own = { 'js/toronto-subway.js': process.env.SUBWAY_TOPOLOGY_SUBWAY, 'js/toronto-transit.js': process.env.SUBWAY_TOPOLOGY_TRANSIT };
+  for (const file of ['js/toronto-subway.js', 'js/toronto-transit.js']) vm.runInContext(fs.readFileSync(own[file] || new URL(file, root), 'utf8'), context);
   const { GEO_SUBWAY: subway, GEO_TRANSIT: transit } = context.window.CITY;
   return { subway, transit, facts: STATION_FACTS, aliases: GTFS_STATION_ALIASES, rides: SUPPORTED_RIDES, limits: PROFILE_LIMITS };
 }
