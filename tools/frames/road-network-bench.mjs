@@ -13,8 +13,8 @@ const { values: A } = parseArgs({ options: { frame: { type: 'string' }, runs: { 
 import crypto from 'node:crypto';
 const read = (f) => fs.readFileSync(ROOT + f, 'utf8');
 
-export async function loadCity(frame) {
-  const CITY = { THREE, Addons: {}, DEBUG_ROADS: false };
+export async function loadCity(frame, { extra = [], CITY: more = {} } = {}) {
+  const CITY = { THREE, Addons: {}, DEBUG_ROADS: false, ...more };
   const context = vm.createContext({ window: { CITY }, document: { addEventListener() {}, hidden: false }, addEventListener() {},
     location: { search: frame ? `?map=${frame}` : '' }, console: { info() {}, warn() {}, log() {}, error() {} }, atob, URLSearchParams });
   if (frame) {
@@ -26,6 +26,7 @@ export async function loadCity(frame) {
     'toronto-signal-plan', 'road-network']) {
     if (fs.existsSync(ROOT + js(f))) vm.runInContext(read(js(f)), context, { filename: js(f) });
   }
+  for (const f of extra) vm.runInContext(read(f), context, { filename: f });
   return CITY;
 }
 

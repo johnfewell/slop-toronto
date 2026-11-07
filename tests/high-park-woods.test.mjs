@@ -79,7 +79,8 @@ test('the lidar\'s trees replace street-details.js\'s invented ones on the park\
   assert.match(read('street-details'), /window\.CITY\.parkWoods\.replaceTrees\(treePositions, SW_Y\)/);
   const ez = read('ez-trees');
   assert.match(ez, /model: named >= 0 \? named : genModel\(t\.species \|\| 0, h\)/);
-  assert.match(ez, /cls\[i\] = t\.woods && !isPine\[i\] \? WOODS_CLASS : tier\[i\] \* 2 \+ isPine\[i\]/);
+  // (the pilot's woods trees are their own class, IMP_CLASS: their impostors, docs/park-cover.md)
+  assert.match(ez, /cls\[i\] = imp \? IMP_CLASS : t\.woods && !isPine\[i\] \? WOODS_CLASS : tier\[i\] \* 2 \+ isPine\[i\]/);
 });
 
 test('the City\'s trees piled on one address point in the park (519 at the Bloor gate) are one tree each; no others go', () => {
@@ -106,10 +107,12 @@ test('the woods\' trees hand over to their coarser levels nearer than the parks\
   const ez = read('ez-trees');
   const share = JSON.parse(ez.match(/const WOODS_SHARE = (\{[^}]+\})/)[1].replace(/(\w+):/g, '"$1":'));
   assert.ok(share.near < 1 && share.mid < 1 && share.shadow < 1, JSON.stringify(share));
-  // (every other class keeps its distances: only the woods' class reads the shares)
-  assert.match(ez, /const nearOf = \(c\) => \(c === WOODS_CLASS \? NEAR \* WOODS_SHARE\.near : NEAR\);/);
+  // (every other class keeps its distances: only the woods' classes read the shares; the pilot's impostor class hands
+  // over from its mid mesh at IMP_MID, docs/park-cover.md)
+  assert.match(ez, /const isWoods = \(c\) => c === WOODS_CLASS \|\| c === IMP_CLASS;/);
+  assert.match(ez, /const nearOf = \(c\) => \(isWoods\(c\) \? NEAR \* WOODS_SHARE\.near : NEAR\);/);
   // (the woods keep their share of MID from street level too: MID_STREET is the other classes', st-z51b)
-  assert.match(ez, /const midOf = \(c, low = false\) => \(c === WOODS_CLASS \? MID \* WOODS_SHARE\.mid \* Math\.min\(1, FAR\) : low \? MID_STREET : MID\);/);
+  assert.match(ez, /const midOf = \(c, low = false\) => \(c === IMP_CLASS \? IMP_MID : c === WOODS_CLASS \? MID \* WOODS_SHARE\.mid \* Math\.min\(1, FAR\) : low \? MID_STREET : MID\);/);
 });
 
 test('the ground: woodland floor under the canopy and meadow in the savanna, on the park\'s islands only', () => {

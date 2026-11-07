@@ -37,6 +37,9 @@ const TIERS = {
     shadowFar: 1, // x the sun shadow distance (300 m at street level)
     // ez-trees.js: full mesh, decimated mesh (from street level: treeMidStreet) & its shadows within (m)
     treeNear: 55, treeMid: 320, treeMidStreet: 180, treeMidShadow: 65,
+    // ez-trees.js: the High Park pilot's woods trees hand over from the mid mesh to their baked impostor here (m;
+    // tree-impostors.js, docs/park-cover.md)
+    treeImpMid: 45,
     treeFar: 1, // x the trees' furthest distances (3 km in the parks, 600 m for pines)
     // buildings.js ?massing=1 (js/massing-cells.js): a 500 m cell draws its buildings' full outlines within the first
     // distance (m, x dist), simplified ones within the second, their boxes beyond
@@ -75,7 +78,7 @@ const TIERS = {
   medium: {
     scale: 1, aa: 'msaa', ssr: false, bloom: true, clouds: 'medium', cloudScale: 0.75,
     shadowTile: 2048, shadowFar: 0.75,
-    treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85, massingLimits: [450, 1300],
+    treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85, treeImpMid: 40, massingLimits: [450, 1300],
     cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, subway: 1, farCity: 0.6, lightPool: 0.6,
     parkedCars: 7000, parkedNear: 50, parkedFar: 200, parkedShadows: true,
     signRes: 1, lean: true, surfaceWear: 1, storefronts: 2, poleWires: false, tramSpans: true,
@@ -84,7 +87,7 @@ const TIERS = {
   low: {
     scale: 1, aa: 'fxaa', ssr: false, bloom: true, clouds: 'low', cloudScale: 0.5,
     shadowTile: 1024, shadowFar: 0.5,
-    treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7,
+    treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7, treeImpMid: 35,
     massingLimits: [300, 1000], // (the full outlines only close by on a phone)
     cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
     // (parked cars: about half, the full model only close by and no shadows from them)

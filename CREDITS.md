@@ -51,6 +51,31 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   triangulated in a module worker that can't reach three.js's own copy. ISC. https://github.com/mapbox/earcut
 - **EZ-Tree** by Dan Greenheck: procedural trees. MIT. https://github.com/dgreenheck/ez-tree
 - **lil-gui** (loaded only for the `?waterTune` tuning panel). MIT.
+- **threejs-nanites** ("Nanite Forest") by Victor Zakharov, MIT (https://github.com/VictorZakharov/threejs-nanites,
+  commit `500113d`). High Park's woods borrow two of its techniques, rewritten for this engine's instanced trees and
+  ground: the lit tree impostors (`js/tree-impostors.js`: each model baked from four elevations into an albedo and a
+  normal atlas, the quad cross-fading between the two nearest, lit at runtime with the baked normals; after its
+  `src/nanite-lib/impostors/atlas.ts` and `gpu/billboards.ts`), and the grass in rings round the viewer
+  (`js/park-cover.js`: a grid of cells per ring snapped to the camera, each cell's clump decided on the GPU from a hash
+  of the cell and the ground's maps, coarser rings cross-faded by a dither; after its `src/grass.ts`). Its licence:
+
+  > MIT License
+  >
+  > Copyright (c) 2026 Victor Zakharov
+  >
+  > Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+  > documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+  > the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+  > permit persons to whom the Software is furnished to do so, subject to the following conditions:
+  >
+  > The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+  > the Software.
+  >
+  > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+  > THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  > AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+  > TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  > SOFTWARE.
 - **Umami** (https://umami.is), self-hosted at umami.cloud6711.workers.dev: privacy-friendly page analytics, counted
   only on sloptoronto.ca; no cookies. MIT.
 - **aalghooneh/slop-toronto** by aalghooneh, another Toronto fork of Slop New York. MIT.
@@ -143,7 +168,8 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   from the same project's Digital Surface Model over its Digital Terrain Model, 16 tiles of each, the surface model's
   fetched from the Ontario GeoHub image service `Elevation/Ontario_DSM_LidarDerived` by
   `tools/fetch-don-valley-dtm.mjs --region high-park --product dsm` (retrieved 2026-11-03; tile names and SHA-256s in
-  the data file). Toronto Island Park's trees and woodland floor: `js/toronto-island-woods-data.js` (by
+  the data file). High Park's shrub layer (`js/high-park-cover-data.js`, by `tools/build-park-cover.mjs`) is read
+  from the same High Park tiles of both models. Toronto Island Park's trees and woodland floor: `js/toronto-island-woods-data.js` (by
   `tools/build-park-woods.mjs --park toronto-island`) from 23 tiles of each model,
   `tools/fetch-don-valley-dtm.mjs --region toronto-island` and the same with `--product dsm` (retrieved 2026-11-04).
   The raw tiles are not in this repository. Contains information licensed under the Open Government Licence – Ontario.

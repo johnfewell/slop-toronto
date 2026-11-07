@@ -40,7 +40,8 @@ const BUILT_NAME = /slip|channel|basin|rink|splash|memorial|fountain|pool|reflec
 const HARD_ZONES = [
   [-2500, 200, 2150, 1000], // the inner harbour's north shore, Bathurst Quay to the Cherry Street bridge
   [-3900, 300, -2450, 1400], // Ontario Place's islands & the western channel
-  [-1500, 1880, -300, 2520], // Billy Bishop airport's island
+  [-1500, 1880, -300, 2520], // the Islands' yacht clubs & marinas on their north shore
+  [-2450, 940, -1380, 1460], // Billy Bishop airport's seawalls (its west, north & east sides; Hanlan's beach below stays)
   [1700, 380, 2560, 640] // the Keating Channel's walls
 ];
 // The rollout, area by area (st-de3g): the natural shores inside these boxes get their edges, [x0, z0, x1, z1]; the
@@ -50,7 +51,12 @@ const ROLLOUT = {
   'toronto-island': [-1750, 1850, 1950, 3650], // the Islands' lagoons & beaches (the pilot; Ward's east end since batch A)
   // batch A, the east waterfront: Cherry Beach, the Portlands & the Don's new mouth, the Leslie Street Spit's marshes,
   // Ashbridges Bay, Woodbine & Kew Beaches (the Eglinton map)
-  'east-waterfront': [1450, -800, 9600, 3650]
+  'east-waterfront': [1450, -800, 9600, 3650],
+  // batch B, the west: the Humber's mouth & banks, Humber Bay Park's beaches, Sunnyside
+  'west-waterfront': [-8000, -3500, -4800, 1500],
+  // batch C, the rest of the map: the Don's & the Humber's valleys, Taylor Creek & the other ravines, the city's ponds,
+  // the Eglinton map's band, Hanlan's Point (the box: every shore of either map)
+  rest: [-1e5, -1e5, 1e5, 1e5]
 };
 const BEACHES_SHORE = [6200, -800, 8600, 400];
 const inBox = ([x0, z0, x1, z1], x, z) => x > x0 && x < x1 && z > z0 && z < z1;
@@ -163,6 +169,54 @@ function naturalAreaAt(x, z) {
 // ---------------------------------------------------------------------------------------------------------------------
 // Which shores are natural: every water outline the city draws, sampled every STEP m
 // ---------------------------------------------------------------------------------------------------------------------
+// Where the lake & the rivers running out over the map's edge are drawn: the street level drops its asphalt over them by
+// the build's water mask (city-grid.js maskedByWater, GEO.waterMask: 4 m cells, row runs dry / wet from dry). A river the
+// mask leaves out lies under the asphalt (the Humber north of the Queensway on the Eglinton map), and its shores get no
+// edges: an apron there would draw on the road
+let maskData = null;
+function drawnWet(x, z) {
+  const M = C.GEO.waterMask;
+  if (!M) return true;
+  if (!maskData) {
+    const bin = atob(M.runs), runs = new Uint16Array(bin.length / 2);
+    for (let i = 0; i < runs.length; i++) runs[i] = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
+    maskData = new Uint8Array(M.w * M.h);
+    let k = 0;
+    for (let j = 0; j < M.h; j++) {
+      let i = 0, v = 0;
+      while (i < M.w) { const n = runs[k++]; if (v) maskData.fill(1, j * M.w + i, j * M.w + i + n); i += n; v ^= 1; }
+      if (v === 0 && runs[k] === 0) k++;
+    }
+  }
+  const i = Math.floor((x - M.x0) / M.res), j = Math.floor((z - M.z0) / M.res);
+  if (i < 0 || j < 0 || i >= M.w || j >= M.h) return false;
+  // (the cell or one beside it: the mask is linear-filtered in the street level's material)
+  for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) {
+    const ii = i + a, jj = j + b;
+    if (ii >= 0 && jj >= 0 && ii < M.w && jj < M.h && maskData[jj * M.w + ii]) return true;
+  }
+  return false;
+}
+
+// A pond shows where no curb island covers it, or where the island is parkland or open land (city-grid.js cuts its
+// ponds out of those yards); over a paved or built plot the pond lies under the paving (Taddle Creek Pond on the
+// Eglinton map), and an apron there would draw across the plaza. (The bigger map's band shows its ponds since
+// st-bz1o.13: its terrain floor lies under the water near them)
+function pondShows(x, z, ring) {
+  if (ring.pilot) return true;
+  const b = C.blockAt(x, z);
+  return !b || b.park > 0.6 || b.wild > 0.5;
+}
+
+// In the bigger map's band the terrain's floor lies under the water within 60 m of it (st-bz1o.13), but not where the
+// 60 m relief stands 3 m or more: there the water stays under the ground, and an apron would draw a mud bank by no
+// water. (The terrain is built before the water edges: terrain.js terrainNearHeightAt)
+function bandCovered(x, z, ring) {
+  const B = C.FAR_BAND, T = C.terrainNearHeightAt;
+  if (!B || !T || ring.pilot || B.inCore(x, z)) return false;
+  return T(x, z) > ring.level - 0.05;
+}
+
 function shoreRings() {
   const B = C.CITY_BOUNDS, PILOT = C.DON_VALLEY || null;
   const inside = (pts, m = 0) => pts.every((p) => p.x > B.minX + m && p.x < B.maxX - m && p.z > B.minZ + m && p.z < B.maxZ - m);
@@ -172,7 +226,7 @@ function shoreRings() {
     const built = BUILT_NAME.test(w.name || '');
     if (inside(w.pts, 5)) {
       const level = PILOT && PILOT.pondLevel ? PILOT.pondLevel(w) : null;
-      rings.push({ pts: w.pts, level: level ?? B.waterLevel, pilot: level !== null, built, mainland: false, body: w });
+      rings.push({ pts: w.pts, level: level ?? B.waterLevel, pilot: level !== null, built, mainland: false, pond: true, body: w });
     } else if (w.holes && w.holes.length) {
       rings.push({ pts: w.pts, level: B.waterLevel, built, mainland: true, body: w }); // (sampled inside the city only)
       for (const h of w.holes) if (inside(h.pts, 0)) rings.push({ pts: h.pts, level: B.waterLevel, built: false, mainland: false, island: true, body: w });
@@ -247,7 +301,7 @@ function* naturalShoresSteps() {
         const x = a.x + ((b.x - a.x) * j) / k, z = a.z + ((b.z - a.z) * j) / k;
         let cls = 0;
         let gap = 0;
-        if (ok && inCity(x, z) && !onEdge(x, z)) { cls = classify(x, z, nx, nz, ring); gap = classify.gap || 0; }
+        if (ok && inCity(x, z) && !onEdge(x, z) && (ring.pond ? pondShows(x + nx * 2.5, z + nz * 2.5, ring) : drawnWet(x + nx * 2.5, z + nz * 2.5)) && !bandCovered(x + nx * 3, z + nz * 3, ring)) { cls = classify(x, z, nx, nz, ring); gap = classify.gap || 0; }
         samples.push({ x, z, nx, nz, cls, gap });
       }
     }
@@ -822,12 +876,21 @@ function buildWaterEdges(scene, { sync = false } = {}) {
     scene.add(group);
     // far cells hidden: the reeds beyond 450 m, the shallows beyond 1.4 km, the apron beyond 3 km (sub-pixel there; the old
     // bank stands in)
-    const far = group.children.map((m) => { const b = m.boundingSphere || m.geometry.boundingSphere; return { m, c: b.center, r: b.radius, max: m.name === 'ShoreShallows' ? 1400 : m.name === 'ShoreReeds' ? 450 : 3000 }; });
+    // (in the bigger map's band, no further than the band's own city: beyond FAR_BAND.distance scene-culling.js hides
+    // its ground & lawns and the terrain's floor stands in, 15 cm under the water, where an apron's top would float)
+    const BAND = C.FAR_BAND;
+    const far = group.children.map((m) => {
+      const b = m.boundingSphere || m.geometry.boundingSphere;
+      let max = m.name === 'ShoreShallows' ? 1400 : m.name === 'ShoreReeds' ? 450 : 3000;
+      const band = !!(BAND && !BAND.inCore(b.center.x, b.center.z));
+      if (band) max = Math.min(max, BAND.distance);
+      return { m, c: b.center, r: b.radius, max, band };
+    });
     let lastX = Infinity, lastZ = Infinity;
     const update = (pos) => {
       if (!pos || Math.hypot(pos.x - lastX, pos.z - lastZ) < 25) return;
       lastX = pos.x; lastZ = pos.z;
-      for (const f of far) f.m.visible = Math.hypot(f.c.x - pos.x, f.c.z - pos.z) - f.r < f.max * Math.max(1, pos.y / 300);
+      for (const f of far) f.m.visible = Math.hypot(f.c.x - pos.x, f.c.z - pos.z) - f.r < f.max * (f.band ? 1 : Math.max(1, pos.y / 300));
     };
     const info = { runs: stats.runs, metres: Math.round(stats.length), bank: Math.round(stats.byClass[BANK]), beach: Math.round(stats.byClass[BEACH]), marsh: Math.round(stats.byClass[MARSH]), reeds: reedCount, meshes: group.children.length, triangles: tris, classifyMs: Math.round(t1 - t0), ms: Math.round(performance.now() - t0), sync };
     console.info(`[water-edges] ${info.metres} m of natural shore (${info.beach} m beach, ${info.bank} m bank, ${info.marsh} m marsh) in ${info.runs} runs, ${info.reeds} reed clumps: ${info.meshes} meshes, ${info.triangles} triangles, ${info.ms} ms${sync ? '' : ' (sliced, after the city is on screen)'}, classified in ${info.classifyMs} ms`);

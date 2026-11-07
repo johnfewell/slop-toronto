@@ -41,13 +41,27 @@ const VIEWS = {
   'sunnyside-aerial': [[-5480, 50, -330], [-5700, -0.7, -660], 55],
   'humber-bay-beach': [[-7781.3, 1.95, -438.3], [-7810.6, -0.7, -403.3], 62, true],
   'humber-mouth-bank': [[-7423, 1.95, -757.6], [-7386.3, -0.7, -743.3], 62, true],
-  'humber-river-bank': [[-7661.1, 1.95, -1107.2], [-7673.5, -0.7, -1143.5], 62, true]
+  'humber-river-bank': [[-7661.1, 1.95, -1107.2], [-7673.5, -0.7, -1143.5], 62, true],
+  // batch C, the rest: the valleys' rivers, the ravines, the city's ponds, Hanlan's Point
+  'don-bank': [[2316.6, 1.95, -3038.5], [2334.9, -0.7, -3071.5], 62, true],
+  'don-aerial': [[2600, 80, -2700], [2330, -0.7, -3100], 55],
+  'don-north-bank': [[3490.5, 1.95, -4876.5], [3473.7, -0.7, -4841.4], 62, true],
+  'taylor-creek-bank': [[6169.2, 1.95, -4687.8], [6134, -0.7, -4683.7], 62, true],
+  'humber-north-bank': [[-7600.8, 1.95, -5761.2], [-7563.2, -0.7, -5758.7], 62, true],
+  'hanlan-beach': [[-2242.6, 1.95, 1695.6], [-2287.8, -0.7, 1663], 62, true],
+  'hanlan-aerial': [[-2650, 50, 1950], [-2250, -0.7, 1650], 55],
+  'sanctuary-pond': [[2378.7, 1.95, -1905.3], [2370.7, -0.7, -1879.2], 62, true],
+  'taddle-creek-pond': [[-1960, 1.95, -4305.2], [-1955.9, -0.7, -4327.7], 62, true],
+  // the band's ponds & rivers (st-bz1o.13): the Don valley from above
+  'don-valley-aerial': [[3150, 90, -4350], [3480, -0.7, -4860], 55]
 };
 const SETS = {
   survey: Object.keys(VIEWS),
   pilot: ['gren-aerial', 'gren-east', 'gren-south', 'island-aerial', 'island-lagoon', 'island-lagoon2', 'island-beach-aerial', 'island-beach', 'wards-beach', 'harbourfront-wall'],
   batchA: ['cherry-aerial', 'cherry-beach', 'wards-east', 'spit-marsh', 'spit-aerial', 'don-mouth-aerial', 'don-mouth', 'woodbine-beach', 'kew-beach', 'woodbine-aerial', 'harbourfront-wall', 'downtown-yonge'],
   batchB: ['humber-aerial', 'humber-mouth-bank', 'humber-river-bank', 'humber-bay-beach', 'sunnyside-beach', 'sunnyside-aerial', 'harbourfront-wall', 'downtown-yonge'],
+  batchC: ['don-bank', 'don-aerial', 'don-north-bank', 'taylor-creek-bank', 'humber-north-bank', 'hanlan-beach', 'hanlan-aerial', 'sanctuary-pond', 'taddle-creek-pond', 'harbourfront-wall', 'downtown-yonge'],
+  band: ['don-bank', 'don-north-bank', 'taylor-creek-bank', 'humber-north-bank', 'taddle-creek-pond', 'don-valley-aerial', 'harbourfront-wall', 'downtown-yonge'],
   // (the pilot's views by night: twilight & midnight)
   night: ['gren-south', 'island-lagoon', 'island-beach', 'island-beach-aerial']
 };

@@ -180,6 +180,8 @@ async function initApp() {
   const treeMode = new URLSearchParams(location.search).get('trees'); // ?trees=slop: mrdoob's trees (comparison)
   if (window.CITY.clearParkSignTrees) window.CITY.clearParkSignTrees(streetDetails.treePositions); // (park-signs.js)
   if (treeMode === 'slop' || !(await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees(allColliders);
+  // (the woods' impostors, tree-impostors.js: their atlases drawn once, before the shader warm-up sees them)
+  if (window.CITY.bakeTreeImpostors) window.CITY.bakeTreeImpostors(renderer);
   streetDetails.releaseBuildIndexes();
   markInit('trees');
   // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
@@ -294,6 +296,10 @@ async function initApp() {
   // ponds have their levels
   const waterEdges = (window.CITY.buildWaterEdges && window.CITY.buildWaterEdges(scene)) || null;
   if (waterEdges) markInit('waterEdges');
+  // High Park's ground cover and understory (park-cover.js): the savanna's tall grass and forbs, the woods' ground
+  // plants and the shrub layer, round the viewer
+  const parkCover = (window.CITY.buildParkCover && window.CITY.buildParkCover(scene)) || null;
+  if (parkCover) markInit('parkCover');
 
   // 4. Initialize Third-Person Controllers (Person, Car, Cyclist, Helicopter) & Multi-Camera System
   const controllerManager = new ThirdPersonControllerManager(scene, allColliders);
@@ -1535,7 +1541,7 @@ async function initApp() {
       if (++shadowFrame % QUALITY.shadowEvery === 0 || !warmedUp) sh.needsUpdate = true;
     }
     lakeWater.update(elapsed);
-    if (waterEdges) waterEdges.update(cameraSystem.camera.position);
+    if (waterEdges) waterEdges.update(cameraSystem.camera.position); if (parkCover) parkCover.update(cameraSystem.camera);
     if (skyClouds) skyClouds.update(holding ? 0 : dt);
     precipitation.update(subwayRide.inside || (rideSession.active && cameraSystem.activePresetId === 'pov'));
     if (!holding) {
@@ -1703,7 +1709,7 @@ async function initApp() {
         cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
         cityBlocks.updateLights?.(cameraSystem.camera); streetDetails.update?.(cameraSystem.camera);
         for (const light of staticLights) { light.updateMatrixWorld(); light.target?.updateMatrixWorld(); }
-        lightingSystem.update(cameraSystem.currentPos); lakeWater.update(elapsed); if (waterEdges) waterEdges.update(cameraSystem.camera.position);
+        lightingSystem.update(cameraSystem.currentPos); lakeWater.update(elapsed); if (waterEdges) waterEdges.update(cameraSystem.camera.position); if (parkCover) parkCover.update(cameraSystem.camera);
         if (resetHistory) lightingSystem.sunLight.shadow.needsUpdate = true;
         updateSceneCulling(cameraSystem.camera.position);
         cityBlocks.updateMassingTiers(cameraSystem.camera);

@@ -1,0 +1,42 @@
+[
+ {
+  "name": "setup",
+  "mode": "person",
+  "x": -6560,
+  "z": -1985,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000
+ },
+ {
+  "name": "woodswalk",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6240, g(-6240, -2350) + 1.7, -2350], L = [-6200, g(-6200, -2440) + 4, -2440]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); })()",
+  "wait": 4500
+ },
+ {
+  "name": "woodsfar",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6250, g(-6250, -2200) + 1.7, -2200], L = [-6400, g(-6400, -2500) + 6, -2500]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); })()",
+  "wait": 4500
+ },
+ {
+  "name": "savanna",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6340, g(-6340, -2340) + 1.7, -2340], L = [-6280, g(-6280, -2340) + 2.5, -2340]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); })()",
+  "wait": 4500
+ },
+ {
+  "name": "woodsabove",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6120,70,-2230], look: [-6280,10,-2400], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "aerial",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6230,190,-1000], look: [-6520,0,-1950], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "season",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const u = window.CITY.cityUniforms; return { leaf: u.uLeaf.value, autumn: u.uAutumn.value, dormant: u.uDormant.value, snow: u.uSnow.value, imp: !!(window.CITY.treeStats && window.CITY.treeStats.impostors) }; })()"
+ }
+]

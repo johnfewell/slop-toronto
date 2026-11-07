@@ -70,12 +70,25 @@ test('every sample faces the water and has a level & a land top above it', () =>
   }
 });
 
-test('the rollout: by default only the pilot areas (High Park, the Toronto Islands) get their natural shores', () => {
-  const pilot = city('').waterEdges;
-  const inside = (p) => Object.values(pilot.ROLLOUT).some(([x0, z0, x1, z1]) => p.x > x0 && p.x < x1 && p.z > z0 && p.z < z1);
-  const runsPilot = pilot.naturalShores();
-  const pts = runsPilot.flatMap((r) => r.pts);
-  assert.ok(pts.length > 1000, `${pts.length} samples in the pilot`);
-  assert.equal(pts.filter((p) => !inside(p)).length, 0, 'no natural shore outside the rollout');
-  assert.ok(length(runsPilot) < length(runs), 'the pilot is a part of the whole');
+test('the rollout: every batch shipped, the default draws every natural shore the map has (as ?shores=all)', () => {
+  const def = city('').waterEdges;
+  assert.deepEqual(Object.keys(def.ROLLOUT), ['high-park', 'toronto-island', 'east-waterfront', 'west-waterfront', 'rest']);
+  assert.ok(Math.abs(length(def.naturalShores()) - length(runs)) < 1, 'the default is the whole map');
+});
+
+test('st-bz1o.13: the bigger map\'s band ponds get their shores; ponds under paved plots still do not', async () => {
+  const { unpackGeo } = await import('../js/geodata-loader.js');
+  const layers = await unpackGeo(readFileSync(join(__dirname, '..', 'data/frames/eglinton/toronto-geodata.bin')));
+  const context = vm.createContext({
+    window: { CITY: { ...layers } }, console: { info() {}, log() {}, warn() {} }, Buffer, URLSearchParams, performance,
+    atob: (s) => Buffer.from(s, 'base64').toString('binary'), location: { search: '' }
+  });
+  for (const path of ['js/high-park-data.js', 'js/don-valley.js', 'js/city-config.js', 'js/toronto-shores.js', 'js/water-edges.js']) vm.runInContext(read(path), context);
+  const E = context.window.CITY;
+  assert.ok(E.FAR_BAND, 'the Eglinton map has a band');
+  const pts = E.waterEdges.naturalShores().flatMap((r) => r.pts);
+  const band = pts.filter((p) => !E.FAR_BAND.inCore(p.x, p.z));
+  assert.ok(band.length * 3 > 10000, `${band.length * 3} m of natural shore in the band`);
+  const taddle = E.POND_BODIES.find((w) => w.name === 'Taddle Creek Pond');
+  assert.equal(pts.filter((p) => p.x > taddle.minX - 3 && p.x < taddle.maxX + 3 && p.z > taddle.minZ - 3 && p.z < taddle.maxZ + 3).length, 0, 'Taddle Creek Pond, under its plaza, keeps no apron');
 });

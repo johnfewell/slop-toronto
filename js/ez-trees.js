@@ -27,13 +27,68 @@ const MID_STREET = Math.min(MID, Number(new URLSearchParams(location.search).get
 const MID_SHADOW = Number(new URLSearchParams(location.search).get('treeshadow') ?? window.CITY.QUALITY.treeMidShadow); // ?treeshadow=320: all of them, for A/B
 // The wooded parks' woods (park-woods.js: High Park, Toronto Island): their trees stand 50-70 to the hectare and hide each other, so they are a class
 // of their own (WOODS_CLASS) handing over to the coarser levels nearer, at these shares of the distances above
-const WOODS_CLASS = 6, CLASSES = 7;
+const WOODS_CLASS = 6, IMP_CLASS = 7, CLASSES = 8;
 const WOODS_SHARE = { near: 0.55, mid: 0.42, shadow: 0.5 };
-const nearOf = (c) => (c === WOODS_CLASS ? NEAR * WOODS_SHARE.near : NEAR);
+// The High Park pilot's woods trees (IMP_CLASS: docs/park-cover.md, st-annt.4) hand over from the mid mesh to a baked,
+// lit impostor (tree-impostors.js) at IMP_MID instead of to the crown cards at the woods' mid distance: one quad a tree
+// from there out. ?treeimp=0: the woods as before; ?treeimp=all: every park's woods (the Island's too); ?treeimpmid=<m>
+const IMP_PARAM = new URLSearchParams(location.search).get('treeimp');
+// (2026-11-06: their leaf-fall had broken into squares in autumn, off for a day; fixed with a smooth leaf key, checked in
+// every season: tools/shots/park-seasons.json)
+const IMP_ON = IMP_PARAM !== '0' && !!window.CITY.treeImpostors;
+const IMP_ALL = IMP_PARAM === 'all';
+const IMP_MID = Number(new URLSearchParams(location.search).get('treeimpmid') ?? window.CITY.QUALITY.treeImpMid ?? 45);
+// (the rollout, as water-edges.js's: the pilot's box, High Park's woods [x0, z0, x1, z1])
+const IMP_ROLLOUT = { 'high-park': [-7200, -2940, -5760, -1080] };
+const inImpRollout = (x, z) => IMP_ALL || Object.values(IMP_ROLLOUT).some(([x0, z0, x1, z1]) => x > x0 && x < x1 && z > z0 && z < z1);
+const isWoods = (c) => c === WOODS_CLASS || c === IMP_CLASS;
+// The pilot's canopy (docs/park-cover.md, John 2026-11-06): the park's trees in a deeper summer yellow-green than the
+// models' mint (their leaf texels only, by where the tree stands: on High Park's islands, read off the woods' ground
+// cover in the vertex stage; the street trees on the sidewalks round it, the Island's and every other tree keep
+// theirs), and the woods' lidar trees a little less even: a stem up to 1.2 m off its crown's top, a lean of up to 4
+// degrees, 10% more spread in height. ?canopy=0 / ?treevary=0: as before
+const CANOPY_ON = new URLSearchParams(location.search).get('canopy') !== '0';
+const VARY_ON = new URLSearchParams(location.search).get('treevary') !== '0';
+const PILOT_BOX = IMP_ROLLOUT['high-park'];
+const inPilot = (x, z) => x > PILOT_BOX[0] && x < PILOT_BOX[2] && z > PILOT_BOX[1] && z < PILOT_BOX[3];
+/**
+ * The pilot's summer grade of a leaf colour (TSL vec3): the models' mint turned to a deep summer green, closer to the
+ * park's photos, and each tree its own: `treeRnd` (0..1, the tree's hash of where it stands, the same on its meshes and
+ * its impostor) moves its value (0.62-1.12) and its hue between a yellower and a bluer green, so the woods from the air
+ * keep the tree-to-tree variation the crown cards had
+ */
+function canopyGrade(c, treeRnd) {
+  const { vec3, dot, mix, fract, float } = window.CITY.TSL;
+  const r2 = fract(treeRnd.mul(7.31)), r3 = fract(treeRnd.mul(13.7));
+  const hue = mix(vec3(0.82, 0.86, 0.46), vec3(0.6, 0.78, 0.64), r2); // (yellower .. bluer)
+  const g = c.mul(hue).mul(mix(float(0.62), float(1.12), r3.mul(r3).oneMinus())).mul(0.82); // (a few dark trees, most mid)
+  return mix(vec3(dot(g, vec3(0.3, 0.59, 0.11))), g, 1.15).max(0);
+}
+/** A tree's hash from where it stands (its aLodOrigin): the seasons' and the canopy grade's per-tree random */
+function treeRndNode() {
+  const { attribute, fract, sin, dot, vec2 } = window.CITY.TSL;
+  return fract(sin(dot(attribute('aLodOrigin', 'vec3').xz, vec2(12.9898, 78.233))).mul(43758.5453));
+}
+// (per vertex: 1 for a tree on High Park's islands, by its middle, 0 elsewhere; the woods' ground cover's alpha is 1 on
+// the park's islands)
+let pilotNode = null;
+function inPilotNode() {
+  if (pilotNode) return pilotNode;
+  const T = window.CITY.TSL, PWx = window.CITY.parkWoods;
+  const { attribute, texture, vec2, varying, float, select } = T;
+  if (!CANOPY_ON || !PWx || !PWx.parks.length) return (pilotNode = float(0));
+  const hp = PWx.parks[0], b = hp.box;
+  const o = attribute('aLodOrigin', 'vec3');
+  const uv = o.xz.sub(vec2(b.x0, b.z0)).div(vec2(b.x1 - b.x0, b.z1 - b.z0));
+  const inBox = uv.x.greaterThan(0).and(uv.x.lessThan(1)).and(uv.y.greaterThan(0)).and(uv.y.lessThan(1));
+  pilotNode = varying(select(inBox, texture(hp.groundCover().texture, uv).a, float(0)), 'vPilotCanopy');
+  return pilotNode;
+}
+const nearOf = (c) => (isWoods(c) ? NEAR * WOODS_SHARE.near : NEAR);
 // (the mid level and its shadows nearer still on the lighter tiers, by their treeFar: a phone's woods hand over to the
 // cards at 53 m, where 50-70 trees to the hectare had made the woods 25% more triangles than the parkland grid's trees)
-const midOf = (c, low = false) => (c === WOODS_CLASS ? MID * WOODS_SHARE.mid * Math.min(1, FAR) : low ? MID_STREET : MID);
-const shadowOf = (c) => (c === WOODS_CLASS ? MID_SHADOW * WOODS_SHARE.shadow * Math.min(1, FAR) : MID_SHADOW);
+const midOf = (c, low = false) => (c === IMP_CLASS ? IMP_MID : c === WOODS_CLASS ? MID * WOODS_SHARE.mid * Math.min(1, FAR) : low ? MID_STREET : MID);
+const shadowOf = (c) => (isWoods(c) ? MID_SHADOW * WOODS_SHARE.shadow * Math.min(1, FAR) : MID_SHADOW);
 // ?lodfade=0: the old hard swap (no masks, no bands), for A/B
 const FADE = new URLSearchParams(location.search).get('lodfade') !== '0';
 // hand-over bands, centred on the edge (m): near <-> mid, mid <-> far, the last level -> nothing
@@ -132,7 +187,9 @@ function seasonNodes(map) {
   const leafRnd = mix(mix(h(vec2(0, 0)), h(vec2(1, 0)), s.x), mix(h(vec2(0, 1)), h(vec2(1, 1)), s.x), s.y);
   const keep = leafness.lessThan(0.5).or(leafStays(leafRnd.mul(0.75).add(treeRnd.mul(0.25))));
   const base = materialColor;
-  const color = vec4(mix(base.rgb, autumnLeaf(base.rgb, treeRnd, leafRnd), leafness), base.a); // (TSL's a.mix(b, t) is mix(b, t, a): the function form)
+  // (the pilot's canopy grade on the leaves only, before the autumn's)
+  const summer = CANOPY_ON ? mix(base.rgb, canopyGrade(base.rgb, treeRnd), leafness.mul(inPilotNode())) : base.rgb;
+  const color = vec4(mix(summer, autumnLeaf(summer, treeRnd, leafRnd), leafness), base.a); // (TSL's a.mix(b, t) is mix(b, t, a): the function form)
   return { color, keep };
 }
 
@@ -213,6 +270,11 @@ async function buildEzTrees(scene, generated) {
     console.warn('[ezTrees] models did not load, mrdoob\'s trees stay:', e);
     return null;
   }
+  // the broadleaf models' impostors (tree-impostors.js), baked by main.js once the renderer can draw (bakeImpostors)
+  const impostors = IMP_ON ? window.CITY.treeImpostors.createImpostors(models.filter((m) => !m.id.includes('pine')), CANOPY_ON ? canopyGrade : null, treeRndNode) : null;
+  const impOf = impostors ? models.map((m) => impostors.models.indexOf(m)) : models.map(() => -1);
+  const impMaterial = impostors ? impostors.material(viewer, FADE ? lodKeep : null) : null;
+  const impGeometry = impostors ? impostors.geometry() : null;
 
   // mrdoob's whole-crown cards for the far level, one per species, scaled to each tree's height
   const atlas = createLeafAtlas();
@@ -298,25 +360,37 @@ async function buildEzTrees(scene, generated) {
   const midFarOf = new Int16Array(N);
   const tier = new Uint8Array(N);
   const isPine = new Uint8Array(N);
-  const cls = new Uint8Array(N); // tree class: tier * 2 + pine, or WOODS_CLASS (the hand-over edges are the same within a class)
+  const cls = new Uint8Array(N); // tree class: tier * 2 + pine, WOODS_CLASS or IMP_CLASS (the hand-over edges are the same within a class)
+  const impData = new Float32Array(N * 4); // (IMP_CLASS: the impostor's frame width and height (m), its model, a random)
   const levels = new Uint8Array(N); // bit L: drawn at level L (both levels inside a hand-over band)
   const meshes = [];
-  const make = (geo, material, name, attrs, noShadow) => { meshes.push({ geo, material, name, capacity: 0, attrs, noShadow }); return meshes.length - 1; };
+  const make = (geo, material, name, attrs, noShadow, imp = false) => { meshes.push({ geo, material, name, capacity: 0, attrs, noShadow, imp }); return meshes.length - 1; };
   const idxNear = models.map((m) => make(m.near, m.material, `Trees_${m.id}_near`));
   const idxMid = models.map((m) => make(m.mid, m.material, `Trees_${m.id}_mid`));
   const idxMidFar = models.map((m) => make(m.mid, m.material, `Trees_${m.id}_mid_noshadow`, false, true));
   const idxFar = farGeos.map((g, s) => make(g, farMaterial, `Trees_far_${TREE_SPECIES[s].name}`, true));
+  const idxImp = models.map((m, k) => (impOf[k] >= 0 ? make(impGeometry, impMaterial, `Trees_${m.id}_impostor`, false, true, true) : -1));
+  let impTrees = 0;
   const dummy = new THREE.Object3D();
   const tint = new THREE.Color();
   sites.forEach((t, i) => {
     const m = Math.max(0, t.model);
     const r1 = hashPos(t.x, 1.3, t.z), r2 = hashPos(t.z, 7.1, t.x), r3 = hashPos(t.x + t.z, 3.3, 0.7);
     const yaw = r2 * Math.PI * 2;
-    const s = (t.height / heights[m]) * (0.92 + r1 * 0.16);
+    // (the pilot's lidar trees a little less even: VARY_ON)
+    const vary = VARY_ON && t.width > 0 && inPilot(t.x, t.z);
+    if (vary) {
+      const r4 = hashPos(t.z, 5.9, t.x), r5 = hashPos(t.x, 9.1, t.z), off = Math.min(1.2, 0.25 * t.width) * r4, a = r5 * Math.PI * 2;
+      const nx = t.x + Math.cos(a) * off, nz = t.z + Math.sin(a) * off;
+      if (!(window.CITY.highParkFeatureAt && window.CITY.highParkFeatureAt(nx, nz, 1.5))) { t.x = nx; t.z = nz; }
+    }
+    const s = (t.height / heights[m]) * (vary ? 0.86 + r1 * 0.28 : 0.92 + r1 * 0.16);
     // (a tree with its crown's width, from the lidar: the crown spread to it, within reason)
     const wf = t.width ? Math.max(0.75, Math.min(1.35, t.width / (crownR[m] * s))) : 1;
     dummy.position.set(t.x, t.y, t.z);
-    dummy.rotation.set(0, yaw, 0);
+    // (a lean of up to 4 degrees, for the pilot's varied trees)
+    if (vary) dummy.rotation.set((hashPos(t.x, 2.1, t.z) - 0.5) * 0.14, yaw, (hashPos(t.z, 4.3, t.x) - 0.5) * 0.14, 'YXZ');
+    else dummy.rotation.set(0, yaw, 0);
     dummy.scale.set(s * wf * (0.93 + r3 * 0.14), s, s * wf * (0.93 + r1 * 0.14));
     dummy.updateMatrix();
     dummy.matrix.toArray(matsNear, i * 16);
@@ -335,15 +409,22 @@ async function buildEzTrees(scene, generated) {
     tints.set([0.86 + r1 * 0.2, 0.88 + r3 * 0.16, 0.86 + r2 * 0.18], i * 3);
     px[i] = t.x; py[i] = t.y + t.height * 0.5; pz[i] = t.z;
     tier[i] = Math.min(2, t.tier);
-    cls[i] = t.woods && !isPine[i] ? WOODS_CLASS : tier[i] * 2 + isPine[i];
+    const imp = t.woods && !isPine[i] && idxImp[m] >= 0 && inImpRollout(t.x, t.z);
+    cls[i] = imp ? IMP_CLASS : t.woods && !isPine[i] ? WOODS_CLASS : tier[i] * 2 + isPine[i];
     meshOf[i * 3] = idxNear[m];
     meshOf[i * 3 + 1] = idxMid[m];
-    meshOf[i * 3 + 2] = sp >= 0 ? idxFar[sp] : idxMid[m];
+    meshOf[i * 3 + 2] = imp ? idxImp[m] : sp >= 0 ? idxFar[sp] : idxMid[m];
     meshes[idxNear[m]].capacity++;
     meshes[idxMid[m]].capacity++;
     midFarOf[i] = idxMidFar[m];
     meshes[idxMidFar[m]].capacity++;
-    if (sp >= 0) meshes[idxFar[sp]].capacity++;
+    if (imp) {
+      // (the impostor's frame at the tree's size: its model's frame by the height scale, widened as the crown is)
+      const f = impostors.frames[impOf[m]];
+      impData.set([f.w * s * wf, f.h * s, impOf[m], r2], i * 4);
+      meshes[idxImp[m]].capacity++;
+      impTrees++;
+    } else if (sp >= 0) meshes[idxFar[sp]].capacity++;
   });
   const instanced = meshes.map((m) => {
     const geo = new THREE.BufferGeometry();
@@ -352,6 +433,7 @@ async function buildEzTrees(scene, generated) {
     geo.boundingSphere = m.geo.boundingSphere;
     const cap = Math.max(1, m.capacity);
     if (m.attrs) geo.setAttribute('aTreeData', new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4));
+    if (m.imp) geo.setAttribute('aImp', new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4));
     geo.setAttribute('aLodOrigin', new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3));
     geo.setAttribute('aLodFade', new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4));
     const mesh = new THREE.InstancedMesh(geo, m.material, cap);
@@ -372,7 +454,7 @@ async function buildEzTrees(scene, generated) {
   for (let lowIdx = 0; lowIdx < 2; lowIdx++) {
     const low = lowIdx === 1;
     for (let c = 0; c < CLASSES; c++) {
-      const tr = c === WOODS_CLASS ? 0 : c >> 1, pine = c === WOODS_CLASS ? 0 : c & 1;
+      const tr = isWoods(c) ? 0 : c >> 1, pine = isWoods(c) ? 0 : c & 1;
       const near = nearOf(c), mid = midOf(c, low);
       let maxD = low ? Math.min(MAX_DIST[tr], LOW_CUTOFF) : MAX_DIST[tr];
       if (pine) maxD = Math.min(maxD, PINE_FAR);
@@ -382,7 +464,9 @@ async function buildEzTrees(scene, generated) {
       f[o] = ALL_IN; f[o + 1] = 1; f[o + 2] = near; f[o + 3] = BAND[0];
       f[o + 4] = near; f[o + 5] = BAND[0];
       if (pine) { f[o + 6] = maxD; f[o + 7] = BAND[2]; f[o + 8] = ALL_OUT; f[o + 9] = 1; f[o + 10] = ALL_OUT; f[o + 11] = 1; }
-      else { f[o + 6] = mid; f[o + 7] = BAND[1]; f[o + 8] = mid; f[o + 9] = BAND[1]; f[o + 10] = maxD; f[o + 11] = BAND[2]; }
+      // (the pilot's impostors match their mesh in colour and form: a narrow hand-over, 6 m, so fewer trees stand
+      // half-dissolved in the screen-door dither at once; the cards' 24 m band stays for the other classes)
+      else { const bm = c === IMP_CLASS && FADE ? 6 : BAND[1]; f[o + 6] = mid; f[o + 7] = bm; f[o + 8] = mid; f[o + 9] = bm; f[o + 10] = maxD; f[o + 11] = BAND[2]; }
       const edges = [shadowOf(c)];
       for (let l = 0; l < 3; l++) edges.push(f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN);
       classEdges[lowIdx][c] = edges;
@@ -420,7 +504,7 @@ async function buildEzTrees(scene, generated) {
     const x = (x0 + x1) * 0.5, y = (y0 + y1) * 0.5, z = (z0 + z1) * 0.5;
     let r2 = 0;
     for (const i of trees) r2 = Math.max(r2, (px[i] - x) ** 2 + (py[i] - y) ** 2 + (pz[i] - z) ** 2);
-    const classes = [0, 1, 2, 3, 4, 5, 6].filter((c) => mask & (1 << c));
+    const classes = Array.from({ length: CLASSES }, (_, c) => c).filter((c) => mask & (1 << c));
     const edges = [0, 1].map((lowIdx) => Float64Array.from(new Set(classes.flatMap((c) => classEdges[lowIdx][c]))).sort());
     // sig: the cell's level bits, 4 per class (bits 4c..4c+3), while every tree of a class shares them; -1 otherwise
     return { trees, x, y, z, r: Math.sqrt(r2) + 1e-3, classes, edges, sig: 0, inView: true };
@@ -450,6 +534,7 @@ async function buildEzTrees(scene, generated) {
     for (let j = 0; j < 16; j++) dst[c * 16 + j] = src[i * 16 + j];
     if (far) { const t = a.aTreeData.array; t[c * 4] = farData[i * 4]; t[c * 4 + 1] = farData[i * 4 + 1]; t[c * 4 + 2] = farData[i * 4 + 2]; t[c * 4 + 3] = farData[i * 4 + 3]; }
     else { const t = mesh.instanceColor.array; t[c * 3] = tints[i * 3]; t[c * 3 + 1] = tints[i * 3 + 1]; t[c * 3 + 2] = tints[i * 3 + 2]; }
+    if (meshes[mi].imp) a.aImp.array.set(impData.subarray(i * 4, i * 4 + 4), c * 4);
     const og = a.aLodOrigin.array;
     og[c * 3] = px[i]; og[c * 3 + 1] = py[i]; og[c * 3 + 2] = pz[i];
     const fd = a.aLodFade.array, fl = cls[i] * 12 + l * 4;
@@ -503,7 +588,7 @@ async function buildEzTrees(scene, generated) {
       if (n > 0) {
         const a = mesh.geometry.attributes;
         const extra = meshes[mi].attrs ? a.aTreeData : mesh.instanceColor;
-        for (const attr of [mesh.instanceMatrix, extra, a.aLodOrigin, a.aLodFade]) {
+        for (const attr of [mesh.instanceMatrix, extra, a.aLodOrigin, a.aLodFade, ...(meshes[mi].imp ? [a.aImp] : [])]) {
           attr.clearUpdateRanges();
           attr.addUpdateRange(0, n * attr.itemSize);
           attr.needsUpdate = true;
@@ -625,7 +710,13 @@ async function buildEzTrees(scene, generated) {
     mesh.instanceMatrix.needsUpdate = true;
   });
   scene.add(group);
-  console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards (${inWoods} in the wooded parks' woods; ${piled} of the City's piled on one point in those parks left out), ${onBanks} on road cuts' banks), ${ids.length} models`);
+  if (impostors) {
+    // (main.js: once the renderer can draw, before the shader warm-up)
+    window.CITY.bakeTreeImpostors = (renderer) => impostors.bake(renderer);
+    window.CITY.treeImpostorAtlases = impostors.atlases; // (captures: the baked atlases)
+    stats.impostors = { trees: impTrees, models: impostors.models.length, state: impostors.state, mid: IMP_MID };
+  }
+  console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards (${inWoods} in the wooded parks' woods; ${piled} of the City's piled on one point in those parks left out), ${onBanks} on road cuts' banks), ${ids.length} models${impostors ? `; ${impTrees} woods trees with impostors beyond ${IMP_MID} m` : ''}`);
   window.CITY.treeStats = stats;
   return { group, update, stats };
 }

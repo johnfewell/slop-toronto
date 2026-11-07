@@ -1,0 +1,96 @@
+[
+ {
+  "name": "setup",
+  "time": "midday",
+  "mode": "person",
+  "x": -6560,
+  "z": -1985,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000
+ },
+ {
+  "name": "savanna",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6340, g(-6340, -2340) + 1.7, -2340], L = [-6280, g(-6280, -2340) + 2.5, -2340]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "meadowtrail",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6699.3, g(-6699.3, -2063.1) + 1.7, -2063.1], L = [-6747.7, g(-6747.7, -2098.6) + 2.5, -2098.6]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "tallmeadow",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6832, g(-6832, -2097) + 1.7, -2097], L = [-6772, g(-6772, -2097) + 2.5, -2097]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "woodstrail",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6722.7, g(-6722.7, -2549.3) + 1.7, -2549.3], L = [-6771.4, g(-6771.4, -2514.3) + 2.5, -2514.3]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "goldenrod",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6617, g(-6617, -2580) + 1.7, -2580], L = [-6561.6, g(-6561.6, -2603.1) + 2.5, -2603.1]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "naturetrail",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6177.8, g(-6177.8, -1319.6) + 1.7, -1319.6], L = [-6234.7, g(-6234.7, -1338.6) + 2.5, -1338.6]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "pathways01",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6173.1, g(-6173.1, -1270) + 1.7, -1270], L = [-6187.8, g(-6187.8, -1211.8) + 2.5, -1211.8]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "understory",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6113.7, g(-6113.7, -2298.1) + 1.7, -2298.1], L = [-6095.9, g(-6095.9, -2355.4) + 2.5, -2355.4]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "pondcoast",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6693, g(-6693, -1235) + 1.7, -1235], L = [-6633, g(-6633, -1235) + 2.5, -1235]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "woodsabove",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6120,70,-2230], look: [-6280,10,-2400], fov: 55 }); })()",
+  "wait": 4500
+ },
+ {
+  "name": "aerial",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6230,190,-1000], look: [-6520,0,-1950], fov: 55 }); })()",
+  "wait": 4500
+ },
+ {
+  "name": "tris-aerial",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; const C = window.CITY; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls, imp: C.treeStats && C.treeStats.impostors, cover: C.parkCoverStats || null }; })()"
+ },
+ {
+  "name": "woodswalk",
+  "time": "midday",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-6240, g(-6240, -2350) + 1.7, -2350], L = [-6200, g(-6200, -2440) + 4, -2440]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 3500
+ },
+ {
+  "name": "tris-woodswalk",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const i = window.__CITY_APP.renderer.info; const C = window.CITY; return { triangles: i.render && i.render.triangles, calls: i.render && i.render.drawCalls, imp: C.treeStats && C.treeStats.impostors, cover: C.parkCoverStats || null }; })()"
+ }
+]

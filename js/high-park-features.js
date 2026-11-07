@@ -41,6 +41,54 @@ const areaOf = (pts) => { let s = 0; for (let i = 0; i < pts.length; i++) { cons
 
 // --- the data, unpacked
 const PATHS = F.paths.map(([surf, w, ...f]) => ({ surf, w, pts: pairs(f) }));
+
+// --- the natural trails' (surface 1, earth: OSM's dirt, ground, earth and unsurfaced paths) shape, shared by their
+// material and js/park-cover.js. The mapped centreline and width stay the walkable corridor (walking, cycling and
+// collision don't change); inside it the worn earth is a narrower single track, TRAIL.earth[0]-[1] times the mapped
+// half width by a smooth field along the park (sums of sines, so the shader and the CPU agree to float precision),
+// narrowest in the meadows, wider in the woods and at junctions (the shader's), its edge ragged. Short trodden grass
+// fills the rest of the corridor, and the plants start at the corridor's edge, a margin from a tuft poking 0.15 m in
+// to 0.45 m out by a second field. ?trails=0: the trails as before
+const TRAIL = { on: new URLSearchParams(typeof location !== 'undefined' ? location.search : '').get('trails') !== '0', earth: [0.45, 0.8], woods: 0.25, junction: 0.2, rag: 0.12, ox: -6500, oz: -2000 };
+/** 0..1, smooth over 30-70 m: how wide the worn earth runs here */
+function trailWide(x, z) {
+  const px = x - TRAIL.ox, pz = z - TRAIL.oz;
+  const a = Math.sin(px * 0.21 + 1.3 * Math.sin(pz * 0.153)), b = Math.sin(pz * 0.17 + 1.1 * Math.sin(px * 0.137 + 0.7)), c = Math.sin((px + pz) * 0.091);
+  return Math.max(0, Math.min(1, 0.5 + 0.22 * a + 0.18 * b + 0.1 * c));
+}
+/** 0..1, over 6-12 m: the plants' margin past the corridor's edge */
+function trailMarginField(x, z) {
+  const px = x - TRAIL.ox, pz = z - TRAIL.oz;
+  return Math.max(0, Math.min(1, 0.5 + 0.3 * Math.sin(px * 0.71 + 1.7 * Math.sin(pz * 0.53)) + 0.2 * Math.sin(pz * 0.97 + 1.2 * Math.sin(px * 0.61))));
+}
+/** A natural trail's worn earth's half width (m) at (x, z) in the open, mapped width w (the woods and the junctions widen
+ * it in the shader by up to TRAIL.woods + TRAIL.junction: at most 1.1 times the mapped one with its ragged edge) */
+const trailHalfWidth = (x, z, w) => (w / 2) * (TRAIL.on ? TRAIL.earth[0] + (TRAIL.earth[1] - TRAIL.earth[0]) * trailWide(x, z) : 1);
+/** Where the plants stop past a natural trail's centreline (m), its worn earth's half width `earthHalf` there: they grow
+ * into the corridor (cards have no collision) to 0.1-0.3 m past the earth's edge, by the margin field */
+const trailPlantEdge = (x, z, w, earthHalf = trailHalfWidth(x, z, w)) => (TRAIL.on ? earthHalf + 0.1 + 0.2 * trailMarginField(x, z) : w / 2 + 0.15);
+/** The corridor's edge (m from the centreline): the shrubs (bulk the cyclist would see as blocking) keep out of it */
+const trailCorridorEdge = (x, z, w) => w / 2 + 0.15;
+// (the woods' floor under a point, as the trail material's floorAt: the woods data's ground cover, bilinear)
+function floorAtCPU(x, z) {
+  const PWk = C.parkWoods && C.parkWoods.parks[0];
+  if (!PWk) return 0;
+  const g = PWk.groundCover(), b = PWk.box;
+  const fx = ((x - b.x0) / (b.x1 - b.x0)) * g.W - 0.5, fz = ((z - b.z0) / (b.z1 - b.z0)) * g.H - 0.5;
+  const i = Math.max(0, Math.min(g.W - 2, Math.floor(fx))), j = Math.max(0, Math.min(g.H - 2, Math.floor(fz))), u = Math.max(0, Math.min(1, fx - i)), v = Math.max(0, Math.min(1, fz - j));
+  const at = (ii, jj) => g.data[(jj * g.W + ii) * 4] / 255;
+  return (at(i, j) * (1 - u) + at(i + 1, j) * u) * (1 - v) + (at(i, j + 1) * (1 - u) + at(i + 1, j + 1) * u) * v;
+}
+const sstep = (e0, e1, v) => { const t = Math.max(0, Math.min(1, (v - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+/** A natural trail's worn earth's half width at its point k (and t of the way to k + 1), as its material draws it: the
+ * open field, wider in the woods and near junctions */
+function trailEarthAt(p, k, t, x, z) {
+  const jn = trailJunctions(p), j = jn[k] + (jn[Math.min(jn.length - 1, k + 1)] - jn[k]) * t;
+  return (p.w / 2) * (TRAIL.earth[0] + (TRAIL.earth[1] - TRAIL.earth[0]) * trailWide(x, z) + sstep(0.3, 0.8, floorAtCPU(x, z)) * TRAIL.woods + j * TRAIL.junction);
+}
+const JCACHE = new Map();
+const trailJunctions = (p) => JCACHE.get(p) || JCACHE.set(p, junctionNear(p)).get(p);
+
 const AREAS = F.areas.map(([kind, name, ...f]) => { const pts = pairs(f); return { kind: name === 'High Park Maple Leaf' ? 'leaf' : kind, name, pts, box: bboxOf(pts) }; });
 const BARRIERS = (F.barriers || []).map(([kind, ...f]) => ({ kind, pts: pairs(f) }));
 const BUILDINGS = new Map(F.buildings.map(([name, ...f]) => [name, pairs(f)]));
@@ -162,12 +210,13 @@ function materials() {
     const edge = smoothstep(0.55, 1.0, abs(attribute('uv', 'vec2').y));
     return snow(mix(mix(color(0x4b4b48), color(0x5d5c57), n.mul(0.6).add(m.mul(0.4))), color(0x6b6a62), edge.mul(0.35)), 0.8);
   }, { bias: -2 });
-  M.earth = flat({ roughness: 0.97 }, () => {
+  if (!TRAIL.on) M.earth = flat({ roughness: 0.97 }, () => {
     const wp = positionWorld.xz, n = noise(wp.mul(0.9)), m = noise(wp.mul(6.0));
     const edge = smoothstep(0.35, 1.0, abs(attribute('uv', 'vec2').y)).mul(m.mul(0.6).add(0.4));
     const soil = mix(color(0x6b5237), color(0x806648), n);
     return snow(mix(soil, grassy(vec3(0.07, 0.15, 0.05)), edge.mul(0.75)), 0.9);
   }, { bias: -2 });
+  else M.earth = trailMaterial({ flat, noise, hash2, snow, grassy });
   M.boardwalk = flat({ roughness: 0.85 }, () => {
     const p = attribute('uv', 'vec2'), plank = fract(p.x.mul(1 / 0.16)), seam = smoothstep(0.0, 0.08, plank).mul(smoothstep(1.0, 0.92, plank));
     const n = hash2(floor(vec2(p.x.mul(1 / 0.16), 0)));
@@ -263,10 +312,159 @@ function materials() {
   return M;
 }
 
+// The natural trails' worn earth (TRAIL) and the trodden grass round it, over a ribbon the width of the corridor and its
+// margin: uv = (metres along, metres across), color = (the mapped half width, how near a junction 0..1). The earth: a
+// darker compacted centre (two worn lines in stretches, ruts), lighter dusty edges, colour drifting along the trail,
+// damp patches and puddles (darker and glossier), pebbles and stones to 15 cm, in the woods drifted litter and roots
+// crossing the trail, grass tufts in the middle where it is narrowest. The phone tier keeps the outline, the centre and
+// the edges, without the stones, roots, ruts and puddles
+function trailMaterial({ flat, noise, hash2, snow, grassy }) {
+  const T = C.TSL;
+  const { float, vec2, vec3, color, mix, smoothstep, positionWorld, attribute, fract, floor, sin, abs, length, max, min, step, texture, select } = T;
+  const LOW = (C.QUALITY || {}).tier === 'low';
+  const wideNode = (wp) => {
+    const px = wp.x.sub(TRAIL.ox), pz = wp.y.sub(TRAIL.oz);
+    const a = sin(px.mul(0.21).add(sin(pz.mul(0.153)).mul(1.3))), b = sin(pz.mul(0.17).add(sin(px.mul(0.137).add(0.7)).mul(1.1))), c = sin(px.add(pz).mul(0.091));
+    return a.mul(0.22).add(b.mul(0.18)).add(c.mul(0.1)).add(0.5).clamp(0, 1);
+  };
+  const marginNode = (wp) => {
+    const px = wp.x.sub(TRAIL.ox), pz = wp.y.sub(TRAIL.oz);
+    return sin(px.mul(0.71).add(sin(pz.mul(0.53)).mul(1.7))).mul(0.3).add(sin(pz.mul(0.97).add(sin(px.mul(0.61)).mul(1.2))).mul(0.2)).add(0.5).clamp(0, 1);
+  };
+  // (the woods' floor under the trail, park-woods.js: litter and roots only in the woods)
+  const PWk = C.parkWoods && C.parkWoods.parks[0];
+  const floorAt = (wp) => {
+    if (!PWk) return float(0);
+    const b = PWk.box, uv = wp.sub(vec2(b.x0, b.z0)).div(vec2(b.x1 - b.x0, b.z1 - b.z0));
+    return texture(PWk.groundCover().texture, uv).r;
+  };
+  // the shape at a fragment: { s across (m, abs), h mapped half width, wide, fl woods, edgeD the earth's ragged edge,
+  // plantEdge the corridor's ragged edge }
+  const shape = () => {
+    const wp = positionWorld.xz, uv = attribute('uv', 'vec2'), col = attribute('color', 'vec3'), h = col.x, junc = col.y;
+    const wide = wideNode(wp), fl = floorAt(wp);
+    const f = wide.mul(TRAIL.earth[1] - TRAIL.earth[0]).add(TRAIL.earth[0]).add(smoothstep(0.3, 0.8, fl).mul(TRAIL.woods)).add(junc.mul(TRAIL.junction));
+    // (the edge's raggedness: slow, over 10-20 m, so the track doesn't pulse in width every few metres; a fine
+    // ±3 cm break-up on top)
+    const rag = noise(wp.mul(0.075)).mul(0.8).add(noise(wp.mul(0.19)).mul(0.2)).sub(0.5).mul(TRAIL.rag * 2).add(noise(wp.mul(9.0)).sub(0.5).mul(0.06));
+    const hwE = h.mul(f), edgeD = hwE.add(rag).max(0.12);
+    // (the short trodden grass round the earth, on under the low plants beside it, ragged: 0.8-1.35 m past its edge)
+    const plantEdge = hwE.add(0.1).add(marginNode(wp).mul(0.2)).add(0.7).add(noise(wp.mul(3.7)).mul(0.35));
+    return { wp, uv, s: abs(uv.y), along: uv.x, h, wide, fl, hwE, edgeD, plantEdge };
+  };
+  const m = flat({ roughness: 0.97 }, () => {
+    const { wp, uv, s, along, wide, fl, hwE, edgeD } = shape();
+    const t = s.div(edgeD); // (0 centre .. 1 the earth's edge)
+    const n1 = noise(wp.mul(0.9)), n2 = noise(wp.mul(2.7)), drift = noise(wp.mul(0.06));
+    let soil = mix(mix(color(0x5a432c), color(0x76593c), n1), mix(color(0x5c4f40), color(0x726252), n1), drift);
+    // (mottled and cloddy: the trodden earth is never one colour; clods and cracks at 10-30 cm)
+    const mott = noise(wp.mul(7.0)).mul(0.6).add(noise(wp.mul(17.0)).mul(0.4));
+    const clod = noise(wp.mul(3.2)).mul(0.55).add(noise(wp.mul(31.0)).mul(0.45));
+    soil = soil.mul(mott.sub(0.5).mul(0.3).add(1.0)).mul(clod.sub(0.5).mul(0.38).add(1.0));
+    // (clods: darker lumps; grit: a 2 cm speckle, faded with distance as it would alias)
+    soil = soil.mul(float(1).sub(smoothstep(0.5, 0.62, noise(wp.mul(4.3).add(9.0))).mul(0.2)));
+    const grit = hash2(floor(wp.mul(45.0))).sub(0.5).mul(0.22).mul(float(1).sub(smoothstep(4.0, 12.0, length(T.cameraPosition.xz.sub(wp)))));
+    soil = soil.mul(grit.add(1.0));
+    // the worn, compacted centre (darker, cooler): one line, or in stretches two worn lines a stride apart
+    const twin = smoothstep(0.5, 0.62, noise(wp.mul(0.045).add(3.1)));
+    const wob = noise(wp.mul(0.9).add(4.0)).sub(0.5).mul(0.22);
+    const single = float(1).sub(smoothstep(0.1, 0.42, t.add(wob)));
+    const lines = float(1).sub(smoothstep(0.0, 0.2, abs(t.sub(0.42).add(wob))));
+    const worn = mix(single, lines, twin);
+    soil = mix(soil, soil.mul(vec3(0.62, 0.6, 0.62)), worn.mul(0.9));
+    // the dusty edges
+    soil = mix(soil, color(0x8c7656), smoothstep(0.55, 0.95, t).mul(0.5).mul(n2.mul(0.5).add(0.5)));
+    let rough = float(0.97);
+    if (!LOW) {
+      // ruts (the worn lines sunk, darker and damper) and puddles in them, glossy
+      const rut = worn.mul(smoothstep(0.45, 0.75, noise(wp.mul(0.21).add(7.0))));
+      const puddle = smoothstep(0.66, 0.74, noise(wp.mul(0.5).add(1.7))).mul(worn).mul(smoothstep(0.4, 0.7, noise(wp.mul(0.11))));
+      soil = mix(soil, soil.mul(vec3(0.55, 0.53, 0.52)), rut.mul(0.45));
+      soil = mix(soil, vec3(0.06, 0.055, 0.05), puddle.mul(0.75));
+      rough = mix(rough, 0.25, puddle).mul(float(1).sub(rut.mul(0.15)));
+      // damp patches
+      soil = mix(soil, soil.mul(vec3(0.8, 0.78, 0.76)), smoothstep(0.64, 0.74, noise(wp.mul(0.33))).mul(0.6));
+      // stones: pebbles (0.25 m grid, 1.5-6 cm) and a few bigger ones (0.7 m grid, 5-15 cm), shaded: lit top, dark rim
+      const stones = (cellM, rMin, rMax, dens, seed) => {
+        const g = wp.div(cellM), cell = floor(g), hc = hash2(cell.add(seed)), hj = hash2(cell.add(vec2(7.0, 3.0)).add(seed));
+        const c0 = vec2(hj, fract(hj.mul(13.7))).mul(0.5).add(0.25), off = fract(g).sub(c0).mul(cellM);
+        const ang = T.atan(off.y, off.x), wb = sin(ang.mul(3.0).add(hc.mul(20.0))).mul(0.2).add(sin(ang.mul(5.0).add(hj.mul(9.0))).mul(0.1)).add(1.0);
+        const r = fract(hc.mul(7.3)).pow(1.5).mul(rMax - rMin).add(rMin).mul(wb), d = length(off);
+        const on = step(hc, dens);
+        const body = on.mul(float(1).sub(smoothstep(r.mul(0.85), r, d)));
+        const rim = on.mul(smoothstep(r.mul(0.6), r.mul(0.95), d)).mul(body);
+        const lit = on.mul(smoothstep(0.0, r, off.x.add(off.y).mul(-0.7)).mul(body));
+        const grey = mix(mix(color(0x5d584f), color(0x7c7568), fract(hc.mul(31.7))), color(0x6e6252), fract(hc.mul(5.1)).mul(0.5));
+        return { body, c: grey.mul(rim.mul(-0.45).add(1)).mul(lit.mul(0.18).add(1)) };
+      };
+      const peb = stones(0.22, 0.008, 0.03, t.mul(0.3).add(0.15), vec2(0, 0));
+      soil = mix(soil, peb.c, peb.body.mul(0.85));
+      const big = stones(0.6, 0.025, 0.075, t.mul(0.2).add(0.14), vec2(41, 17));
+      soil = mix(soil, big.c, big.body);
+      // roots crossing the trail in the woods: one every 2-6 m in stretches, wavering across, raised (lit edge)
+      const cellA = floor(along.div(2.5)), ha = hash2(vec2(cellA, 3.0)), hb = hash2(vec2(cellA, 9.0));
+      const a0 = cellA.add(ha.mul(0.7).add(0.15)).mul(2.5);
+      const rx = along.sub(a0).sub(sin(uv.y.mul(2.3).add(hb.mul(6.0))).mul(0.25)).sub(uv.y.mul(hb.sub(0.5).mul(0.8)));
+      const rw = hb.mul(0.035).add(0.025);
+      const rootOn = step(0.45, ha).mul(smoothstep(0.45, 0.75, fl)).mul(step(0.4, noise(wp.mul(0.09))));
+      const root = rootOn.mul(float(1).sub(smoothstep(rw.mul(0.6), rw, abs(rx))));
+      const rootLit = rootOn.mul(float(1).sub(smoothstep(0.0, rw.mul(0.5), abs(rx.add(rw.mul(0.35))))));
+      soil = mix(soil, mix(color(0x4a3725), color(0x7a6045), rootLit.mul(0.6)), root.mul(0.9));
+      // leaf litter drifted onto the trail in the woods, most at its edges
+      const litter = mix(color(0x765838), color(0x8f6c40), noise(wp.mul(3.3)));
+      soil = mix(soil, litter, fl.mul(smoothstep(0.2, 1.0, t).mul(0.6).add(0.1)).mul(smoothstep(0.35, 0.6, noise(wp.mul(1.6)))).mul(float(1).sub(root)));
+    } else {
+      soil = mix(soil, color(0x765838), fl.mul(t).mul(0.35));
+    }
+    soil = mix(soil, soil.mul(1.08), smoothstep(0.7, 1.0, t).mul(0.5));
+    // the trodden grass: short grass, blades in streaks, the soil showing through in patches; a shade darker than the
+    // open lawn (the plants' shade)
+    const blades = noise(vec2(wp.x.mul(9.0), wp.y.mul(9.0)).add(n2.mul(3.0))).mul(0.6).add(noise(wp.mul(23.0)).mul(0.4));
+    // (dark green and olive, dry yellower blades in streaks: the meadow's own grass, short)
+    const sward0 = mix(mix(color(0x34481b), color(0x4d6526), blades), color(0x6c6c34), smoothstep(0.55, 0.9, noise(wp.mul(5.5).add(2.0))).mul(0.7));
+    const sward = grassy(mix(sward0, color(0x5b6a2a), noise(wp.mul(1.3)).mul(0.35)));
+    const margin = mix(sward, soil.mul(0.85), smoothstep(0.62, 0.82, noise(wp.mul(3.1))).mul(0.35));
+    // the earth's edge bitten into by tufts, and tufts in the middle where it is narrowest
+    const tuftE = noise(wp.mul(4.1)).mul(0.6).add(noise(wp.mul(12.0)).mul(0.4));
+    const midTuft = float(1).sub(smoothstep(0.0, 0.28, wide)).mul(step(0.62, tuftE)).mul(float(1).sub(smoothstep(0.05, 0.22, s)));
+    const inEarth = s.lessThan(edgeD.sub(tuftE.mul(0.1))).and(midTuft.lessThan(0.5));
+    void hwE;
+    return snow(select(inEarth, soil, margin), 0.9);
+  }, { bias: -1 });
+  if (!LOW) m.roughnessNode = T.Fn(() => {
+    const { wp, s, edgeD } = shape();
+    const t = s.div(edgeD), n2 = noise(wp.mul(2.7));
+    const twin = smoothstep(0.5, 0.62, noise(wp.mul(0.045).add(3.1))), wob = n2.sub(0.5).mul(0.25);
+    const worn = mix(float(1).sub(smoothstep(0.1, 0.42, t.add(wob))), float(1).sub(smoothstep(0.0, 0.2, abs(t.sub(0.42).add(wob)))), twin);
+    const puddle = smoothstep(0.66, 0.74, noise(wp.mul(0.5).add(1.7))).mul(worn).mul(smoothstep(0.4, 0.7, noise(wp.mul(0.11)))).mul(step(t, 1.0));
+    return mix(float(0.97), float(0.22), puddle);
+  })();
+  // (cut to the corridor's ragged edge, where the plants start)
+  m.maskNode = T.Fn(() => { const { s, plantEdge } = shape(); return s.lessThan(plantEdge); })();
+  m.name = 'HighParkTrailEarth';
+  return m;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // The flat layers: paths and areas at the lawn's height, draped
 // ---------------------------------------------------------------------------------------------------------------------
 const SURF_NAMES = ['paved', 'earth', 'boardwalk', 'gravel', 'steps'];
+// How near each point of path p is to a junction (another path's point within 2.5 m), 1 at it, 0 from 6 m along
+let JGRID = null;
+function junctionNear(p) {
+  if (!JGRID) {
+    JGRID = new Map();
+    PATHS.forEach((q, qi) => q.pts.forEach(([x, z]) => { const k = Math.floor(x / 4) * 100003 + Math.floor(z / 4); (JGRID.get(k) || JGRID.set(k, []).get(k)).push([x, z, qi]); }));
+  }
+  const me = PATHS.indexOf(p), at = p.pts.map(([x, z]) => {
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const [qx, qz, qi] of JGRID.get((Math.floor(x / 4) + a) * 100003 + Math.floor(z / 4) + b) || []) if (qi !== me && (qx - x) ** 2 + (qz - z) ** 2 < 6.25) return true;
+    return false;
+  });
+  // (falling off along the path over 6 m from a junction)
+  const along = [0]; for (let i = 1; i < p.pts.length; i++) along.push(along[i - 1] + Math.hypot(p.pts[i][0] - p.pts[i - 1][0], p.pts[i][1] - p.pts[i - 1][1]));
+  const js = along.filter((_, i) => at[i]);
+  return along.map((a) => { let d = Infinity; for (const j of js) d = Math.min(d, Math.abs(a - j)); return Math.max(0, 1 - d / 6); });
+}
 function flatLayers(group, M, top) {
   const { THREE } = C;
   const stats = { triangles: 0, meshes: 0 };
@@ -282,7 +480,11 @@ function flatLayers(group, M, top) {
   // across in half widths)
   const bySurf = SURF_NAMES.map(() => makeBuf());
   for (const p of PATHS) {
-    const B = bySurf[p.surf] || bySurf[0], h = p.w / 2, y = top + 0.05 + (p.surf === 0 ? 0.005 : 0);
+    const B = bySurf[p.surf] || bySurf[0], y = top + 0.05 + (p.surf === 0 ? 0.005 : 0);
+    // (a natural trail's ribbon: as wide as its worn earth can get, uv.y in metres across, its mapped half width in the
+    // vertex colour: trailMaterial cuts it to the trail's outline)
+    const natural = TRAIL.on && p.surf === 1, h = natural ? (p.w / 2) * 1.25 + 1.3 : p.w / 2, vs = natural ? h : 1;
+    const junc = natural ? trailJunctions(p) : null;
     let along = 0;
     for (let i = 1; i < p.pts.length; i++) {
       const [ax0, az0] = p.pts[i - 1], [bx0, bz0] = p.pts[i], L = Math.hypot(bx0 - ax0, bz0 - az0);
@@ -290,12 +492,27 @@ function flatLayers(group, M, top) {
       const ux = (bx0 - ax0) / L, uz = (bz0 - az0) / L, ext = i === 1 ? 0 : Math.min(h, 1.2), ext2 = i === p.pts.length - 1 ? 0 : Math.min(h, 1.2);
       const ax = ax0 - ux * ext, az = az0 - uz * ext, bx = bx0 + ux * ext2, bz = bz0 + uz * ext2;
       const a0 = along - ext, a1 = along + L + ext2;
-      const q = [[ax + uz * h, az - ux * h, a0, -1], [bx + uz * h, bz - ux * h, a1, -1], [bx - uz * h, bz + ux * h, a1, 1], [ax - uz * h, az + ux * h, a0, 1]];
+      const q = [[ax + uz * h, az - ux * h, a0, -vs], [bx + uz * h, bz - ux * h, a1, -vs], [bx - uz * h, bz + ux * h, a1, vs], [ax - uz * h, az + ux * h, a0, vs]];
       triUp(B, q[0], q[1], q[2], y); triUp(B, q[0], q[2], q[3], y);
+      if (natural) {
+        // (the quad's corners: a and b ends' junction nearness; triUp wrote 6 vertices: q0 q1 q2, q0 q2 q3 in some order)
+        const n0 = B.col.length / 3, ja = junc[i - 1], jb = junc[i];
+        for (let v = n0; v < B.pos.length / 3; v++) {
+          const vx = B.pos[v * 3], vz = B.pos[v * 3 + 2], da = (vx - ax0) ** 2 + (vz - az0) ** 2, db = (vx - bx0) ** 2 + (vz - bz0) ** 2;
+          B.col.push(p.w / 2, da < db ? ja : jb, 0);
+        }
+      }
       along += L;
     }
   }
-  bySurf.forEach((B, s) => add(B, M[SURF_NAMES[s]], `HighParkPaths_${SURF_NAMES[s]}`));
+  bySurf.forEach((B, s) => {
+    if (s === 1 && TRAIL.on && B.pos.length) {
+      const g = bufGeometry(B, true), m = new C.THREE.Mesh(g, M.earth);
+      m.name = 'HighParkPaths_earth'; m.receiveShadow = true; m.castShadow = false; group.add(m);
+      return;
+    }
+    add(B, M[SURF_NAMES[s]], `HighParkPaths_${SURF_NAMES[s]}`);
+  });
   // areas: triangulated outlines at their layer's height
   const LAYER = { zoo: 0.03, dogs: 0.03, garden: 0.04, allotments: 0.04, parking: 0.045, amphitheatre: 0.04, labyrinth: 0.045, bed: 0.065, leaf: 0.065 };
   const byKind = new Map();
@@ -879,5 +1096,7 @@ function buildHighParkFeatures(scene) {
   return { group: root, colliders, stats };
 }
 
-Object.assign(C, { buildHighParkFeatures, closeHighParkRoads, highParkFeatureAt, highParkBuildingAt, highParkTorontoWeekend: torontoWeekend });
+// (the shapes, for js/park-cover.js: its ground cover keeps off the paths, beds, paved areas and buildings)
+const highParkFeatureShapes = { paths: PATHS, areas: AREAS, buildings: [...BUILDINGS.values()], trail: { ...TRAIL, halfWidth: trailHalfWidth, plantEdge: trailPlantEdge, corridorEdge: trailCorridorEdge, earthAt: trailEarthAt, wide: trailWide } };
+Object.assign(C, { buildHighParkFeatures, closeHighParkRoads, highParkFeatureAt, highParkBuildingAt, highParkTorontoWeekend: torontoWeekend, highParkFeatureShapes });
 })();

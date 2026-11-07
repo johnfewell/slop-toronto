@@ -1,0 +1,14 @@
+[
+ {
+  "name": "u-high-park-walk",
+  "mode": "person",
+  "x": -6122,
+  "z": -1802,
+  "heading": -1.9642469647238323,
+  "hold": "KeyW",
+  "wait": 2000,
+  "metricsWarmupMs": 3000,
+  "metricsMs": 20000,
+  "js": "(()=>{const app=window.__CITY_APP;app.cameraSystem.cinema=null;app.controllerManager.keys.boost=false;})()"
+ }
+]

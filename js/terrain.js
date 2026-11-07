@@ -11,6 +11,51 @@ const { THREE } = window.CITY;
 const { GEO, CITY_BOUNDS, terrainRawAt } = window.CITY;
 const { createTerrainMaterial } = window.CITY;
 
+// GEO.waterMask (row runs of 4 m cells, dry / wet from dry: city-grid.js maskedByWater) as a coarse grid of `C` m cells
+// that hold any water, and every water body's outline & inside (the mask leaves out some of the narrow rivers' cells)
+// but the lake's (its bed is the terrain's own, LAKE_BED); near(x, z, r): any such cell within r of (x, z)
+function wetGrid(M, C, bodies = []) {
+  const bin = atob(M.runs);
+  const f = Math.max(1, Math.round(C / M.res)), w = Math.ceil(M.w / f), h = Math.ceil(M.h / f), cells = new Uint8Array(w * h);
+  let k = 0;
+  for (let j = 0; j < M.h; j++) {
+    let i = 0, v = 0;
+    while (i < M.w) {
+      const n = bin.charCodeAt(2 * k) | (bin.charCodeAt(2 * k + 1) << 8);
+      k++;
+      if (v && n) for (let c = Math.floor(i / f); c <= Math.floor((i + n - 1) / f); c++) cells[Math.floor(j / f) * w + c] = 1;
+      i += n;
+      v ^= 1;
+    }
+    if (v === 0 && k < bin.length / 2 && (bin.charCodeAt(2 * k) | (bin.charCodeAt(2 * k + 1) << 8)) === 0) k++;
+  }
+  const cs = f * M.res;
+  const mark = (x, z) => {
+    const c = Math.floor((x - M.x0) / cs), r = Math.floor((z - M.z0) / cs);
+    if (c >= 0 && r >= 0 && c < w && r < h) cells[r * w + c] = 1;
+  };
+  for (const b of bodies) {
+    if ((b.maxX - b.minX) * (b.maxZ - b.minZ) > 4e8) continue; // (the lake)
+    for (const P of [b.pts]) {
+      for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+        const a = P[j], e = P[i], n = Math.ceil(Math.hypot(e.x - a.x, e.z - a.z) / (cs / 2)) || 1;
+        for (let k = 0; k <= n; k++) mark(a.x + ((e.x - a.x) * k) / n, a.z + ((e.z - a.z) * k) / n);
+      }
+    }
+    for (let x = Math.floor(b.minX / cs) * cs + cs / 2; x < b.maxX; x += cs) {
+      for (let z = Math.floor(b.minZ / cs) * cs + cs / 2; z < b.maxZ; z += cs) if (window.CITY.pointInPoly(b.pts, x, z)) mark(x, z);
+    }
+  }
+  return {
+    near(x, z, r) {
+      const c0 = Math.max(0, Math.floor((x - r - M.x0) / cs)), c1 = Math.min(w - 1, Math.floor((x + r - M.x0) / cs));
+      const r0 = Math.max(0, Math.floor((z - r - M.z0) / cs)), r1 = Math.min(h - 1, Math.floor((z + r - M.z0) / cs));
+      for (let rr = r0; rr <= r1; rr++) for (let c = c0; c <= c1; c++) if (cells[rr * w + c]) return true;
+      return false;
+    }
+  };
+}
+
 function buildTerrain(scene) {
   const group = new THREE.Group();
   group.name = 'Terrain';
@@ -20,6 +65,11 @@ function buildTerrain(scene) {
   const inDetail = (x, z) => x > CITY_BOUNDS.minX && x < CITY_BOUNDS.maxX && z > CITY_BOUNDS.minZ && z < CITY_BOUNDS.maxZ;
   const SUNK = -3.0;
   const BAND = window.CITY.FAR_BAND, BAND_FLOOR = -0.6;
+  // (within 60 m of the band's water the floor stands just under the water's level, not over it: a pond or river there
+  // was drawn under it, st-bz1o.13. Only a little under, so the far city's painted ground beyond the band's reach keeps
+  // its level and the water shows in its own outline; the relief's low swells by the water are flattened to it too)
+  const bandWet = BAND && GEO.waterMask ? wetGrid(GEO.waterMask, 20, window.CITY.WATER_BODIES || []) : null;
+  const BAND_WET_FLOOR = CITY_BOUNDS.waterLevel - 0.15;
   // the terrain pilots' boxes (js/don-valley.js builds the Don Valley's own terrain there, on its finer grid; in High
   // Park's the city's ground is the terrain, and the 60 m SRTM grid's canopy mounds no longer poke through its lawn)
   const PILOT = window.CITY.DON_VALLEY || null, DVB = PILOT ? (PILOT.boxes || [PILOT.box]) : null;
@@ -31,7 +81,11 @@ function buildTerrain(scene) {
     if (h < -1) return LAKE_BED;
     // (a bigger map's far band, city-config.js FAR_BAND: the ground just under the street level, painted with the far
     // city like the land beyond, for when scene-culling.js hides the band's own ground in the distance)
-    if (BAND && BAND.inBand(x, z) && !(h > 0.05)) return BAND_FLOOR;
+    if (BAND && BAND.inBand(x, z)) {
+      // (by the water the 60 m relief's low swells, under 3 m, go too: the valleys' rivers lie in it, st-bz1o.13)
+      if (h < 3 && bandWet && bandWet.near(x, z, 60)) return BAND_WET_FLOOR;
+      if (!(h > 0.05)) return BAND_FLOOR;
+    }
     if (inDetail(x, z)) return h > 0.05 && !(PILOT && PILOT.clearsTerrainAt && PILOT.clearsTerrainAt(x, z)) ? h : SUNK;
     return Math.max(0, h);
   };

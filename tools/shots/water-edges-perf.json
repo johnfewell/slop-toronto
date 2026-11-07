@@ -44,5 +44,21 @@
   "wait": 3000,
   "metricsMs": 6000,
   "metricsWarmupMs": 2000
+ },
+ {
+  "name": "don-valley-aerial",
+  "time": "midday",
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [3150, 90, -4350], look: [3480, -0.7, -4860], fov: 55 }); })()",
+  "wait": 3000,
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ },
+ {
+  "name": "humber-north-ground",
+  "time": "midday",
+  "js": "(() => { window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-7600.8, 1.95, -5761.2], look: [-7563.2, -0.7, -5758.7], fov: 62 }); })()",
+  "wait": 3000,
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
  }
 ]
