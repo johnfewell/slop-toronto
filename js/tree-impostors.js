@@ -122,7 +122,7 @@ function createImpostors(models, grade = null, treeRndNode = null) {
    * random 0..1); instanceColor its tint; `viewer` the view camera's position (ez-trees.js), `lodKeep` the hand-over
    * dissolve's mask
    */
-  function material(viewer, lodKeep) {
+  function material(viewer, lodKeep, { shadowProxy = false } = {}) {
     const T = C.TSL;
     const { attribute, positionLocal, vec2, vec3, vec4, float, normalize, cross, asin, clamp, smoothstep, mix, texture, varying,
       cameraViewMatrix, uniform, fract, sin, dot, max, abs, dFdx, dFdy, log2, select } = T;
@@ -134,11 +134,14 @@ function createImpostors(models, grade = null, treeRndNode = null) {
     // (the tree's own random as its meshes read it, ez-trees.js treeRndNode: the canopy grade and the seasons match at the hand-over)
     const vTree = varying(float(0), 'vImpTree');
     const nModels = float(n), cols = float(COLS), tileSize = vec2(TILE_W / W, TILE_H / H);
-    mat.positionNode = T.Fn(() => {
+    // (the quad faces `eye`: the view camera's position for the impostor; for the shadow proxy, the direction to the sun
+    // (the cascades are orthographic, along it): its elevation picks the bake's view, so the shadow is the crown as the
+    // sun sees it)
+    const place = (eye, isDir = false) => T.Fn(() => {
       const base = positionLocal; // (the instance matrix applied to (0, 0, 0): the tree's base)
       const fw = imp.x, fh = imp.y;
       const pivot = base.add(vec3(0, fh.mul(0.5), 0));
-      const toV = viewer.sub(pivot);
+      const toV = isDir ? eye : eye.sub(pivot);
       const dir = normalize(toV);
       // (straight down: any right will do)
       const flat = vec3(dir.z, 0, dir.x.negate());
@@ -159,6 +162,13 @@ function createImpostors(models, grade = null, treeRndNode = null) {
       vDir.assign(dir);
       return pivot.add(right.mul(corner.x.sub(0.5).mul(fw))).add(up.mul(corner.y.sub(0.5).mul(fh)));
     })();
+    if (shadowProxy) {
+      // a shadow-only stand-in (ez-trees.js, st-annt.9): nothing in the view (the quad collapsed under the ground: no
+      // fragments), the crown's picture facing the sun in the shadow maps
+      mat.name = 'TreeImpostorShadow';
+      mat.positionNode = vec3(0, -1e4, 0);
+      mat.castShadowPositionNode = place(normalize(C.cityUniforms.uSkySunDir), true);
+    } else mat.positionNode = place(viewer);
     // the two tiles' uv in the atlases (tile t = elevation * models + model, rows of COLS from the top; within a tile
     // the bake's up is towards v 0, as the render target's texture is sampled)
     const tileUv = (e) => {
@@ -222,6 +232,24 @@ function createImpostors(models, grade = null, treeRndNode = null) {
     let mask = shape.and(shade.a.greaterThan(0.5));
     if (lodKeep) mask = mask.and(lodKeep);
     mat.maskNode = mask;
+    if (shadowProxy) {
+      // (the shadow pass needs only the cut-out: one albedo tile, no mip-level coverage boost, no normals, no colour;
+      // the fallen leaves' gaps off summer, behind the same uniform branch)
+      const cut = texture(albedoTex, mix(uv0, uv1, vBand.y.round())).a.greaterThan(0.5);
+      const keep = T.Fn(() => {
+        const k = float(1).toVar();
+        if (inSeason && leafStays) T.If(inSeason, () => {
+          const a = texture(albedoTex, uv0), nr = texture(normalTex, uv0);
+          const leafy = smoothstep(0.35, 0.65, nr.a.div(max(a.a, 1e-3))).greaterThan(0.5);
+          const stays = leafStays(vn(p).mul(0.75).add(vTree.mul(0.25)));
+          k.assign(T.select(leafy.and(stays.not()), float(0), float(1)));
+        });
+        return k;
+      })();
+      mat.colorNode = vec4(1);
+      mat.maskShadowNode = cut.and(keep.greaterThan(0.5)).and(lodKeep || T.bool(true));
+      return mat;
+    }
     // the baked model-space normal turned to the view (the bake looked from +z): x along the quad's right, z towards the
     // viewer, level; into view space
     const nb = nrm.xyz.div(max(albedo.a, 1e-3)).mul(2).sub(1);

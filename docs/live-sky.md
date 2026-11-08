@@ -82,12 +82,24 @@ colours go toward neutral grey. The grade loses a little saturation and gains ex
 fog), as a camera would expose for it; at night the exposure stays as it is. All of these are uniform writes. Only the
 three single-lane cloud types are used, so no weather change rebuilds the cloud march.
 
-**Rain and snow** (`js/precipitation.js`). This is one mesh of camera-facing quads in a box that follows the camera.
-Each drop moves in the vertex shader (seed, shader clock, camera position), with no per-drop CPU work, one draw call,
-no shadow and no depth write. Rain is hairline streaks whose width grows with distance, so they stay about 1.3 px wide.
-Snow is soft swaying discs. The mesh is built the first time a reading needs it, so a dry sky has no mesh, no draw
-call and no shader. It is hidden inside the subway and in a seat inside a streetcar. Drops: 7,000 rain or 4,500 snow
-on high, 60 % of that on medium, 35 % on low (phones).
+**Rain and snow** (`js/precipitation.js`). Both live in a box that follows the camera. Each drop moves in the vertex
+shader (seed, shader clock, camera position), with no per-drop CPU work, one draw call, no shadow and no depth write.
+Drops fade out at the box's edge, so none pops as it wraps, and right in front of the lens; a drizzle shows fewer.
+
+- Rain is 60,000 one-pixel line segments (`LineSegments`, the cheapest primitive) in a 40 × 20 × 40 m box. Each
+  streak is the drop's blur over a 1/18 s exposure: bright at its head, fading to nothing at its tail. Each drop
+  falls at its own speed, 8.5 m/s give or take a third (a drizzle's drops fall slower), and leans with the wind.
+  live-sky.js reads no wind yet, so the default is a modest westerly breeze, about 12° off vertical; `look.wind`
+  (`[x, z]` in m/s) takes a reading's wind when there is one. The colour is the fog's (the sky's light a drop
+  refracts), a little darker. Under a bright grey noon sky (the fog's luminance) the streaks go darker still and a
+  little more opaque, so they read as thin grey lines against pale walls. At night the lit city adds a faint glow,
+  and the four streetlights nearest the camera (street-details.js's spot pool, nearest first) light the drops within
+  10 m of them.
+- Snow is soft swaying camera-facing discs.
+
+The mesh is built the first time a reading needs it, so a dry sky has no mesh, no draw call and no shader. It is
+hidden inside the subway and in a seat inside a streetcar. Drops: 60,000 rain or 4,500 snow on high, 60 % of that on
+medium, 35 % on low (phones). `__CITY_APP.precipitation` is the module, for captures.
 
 **Modes and overrides.** The toolbar has a **Live** button before the four presets. While live it is highlighted,
 shows "Live · 4:12 pm" with a red dot, and its tooltip gives Pearson's condition. Choosing a preset is a manual
@@ -234,10 +246,10 @@ Conifers carry no snow, and neither do the branches.
 - **Cloudy, overcast, fog or haze:** uniform writes and a cloud history reset when the weather changes. The cloud type
   doesn't change the march's cost, though more coverage means more marching samples hit cloud; this was not measured.
   Fog uses the city's existing fog node.
-- **Rain or snow:** one extra transparent draw of 7k/4.5k quads (28k/18k vertices) on high, and 2.5k/1.6k on the phone
-  tier, with simple vertex maths and thin quads, so the fill cost is small. It also compiles one shader the first time
-  it appears. On the shared Mac mini the capture fps did not change, but that is a contended functional run, not a
-  performance budget. A real phone measurement is a follow-up.
+- **Rain or snow:** one extra transparent draw: 60k one-pixel lines (120k vertices) of rain, or 4.5k quads (18k
+  vertices) of snow, on high; 21k lines or 1.6k quads on the phone tier. The vertex maths is simple and a line covers
+  only its own pixels, so the fill cost is small. It also compiles one shader the first time it appears. The rain's
+  uncapped A/B at King & Bay is in bead st-560z; a real phone measurement is a follow-up.
 
 ## Follow-ups (not in this change)
 

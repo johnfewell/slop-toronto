@@ -32,6 +32,7 @@ function ezOracle(quality, treeModels, streetTrees, generated) {
   const FAR = quality.treeFar, NEAR = quality.treeNear, MID_SHADOW = quality.treeMidShadow;
   // (since st-z51b: narrower hand-over bands, and the mid level nearer from street level)
   const MID_ALOFT = quality.treeMid, MID_STREET = Math.min(quality.treeMid, quality.treeMidStreet ?? quality.treeMid);
+  // (since st-annt.9 the mid mesh's shadow dissolves over a band ending the margin short of MID_SHADOW: its twin past MID_SHADOW, as before)
   const BAND = [8, 24, 40], MARGIN = 6, MAX_DIST = [3000 * FAR, 1600 * FAR, 950 * FAR], LOW_CUTOFF = 1150 * FAR, PINE_FAR = 600 * FAR;
   const FAR_SPECIES = (id) => (id.includes('pine') ? -1 : id.includes('ash') ? 1 : id.includes('aspen') ? 2 : 0);
   const genModel = (sp, h) => {

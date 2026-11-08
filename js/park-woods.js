@@ -255,6 +255,8 @@ function groundNode(lawn, wp, fx) {
   return Fn(() => {
     const out = vec3(lawn).toVar();
     for (const p of parks) p.groundInto(out, wp, fx, noon);
+    // (the far meadow, past the grass rings: park-cover.js)
+    if (C.parkCoverGroundInto) C.parkCoverGroundInto(out, wp, fx);
     return out;
   })();
 }

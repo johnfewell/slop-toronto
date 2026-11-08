@@ -1278,6 +1278,7 @@ async function initApp() {
     tourGuide,
     teleportTo,
     quality: QUALITY,
+    precipitation,
     compileLog,
     getFps: () => currentFps
   };

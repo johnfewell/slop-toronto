@@ -10,6 +10,9 @@
 // CAPTURE_UNCAPPED=1 lifts vsync & the frame rate limit, so frame times under 16.7 ms show; CAPTURE_TAG=<t> prefixes
 // the screenshots' names (one shot list for several runs). CAPTURE_HEAP=1 writes heap.txt: what stays alive on the JS
 // heap after the shots, by allocating function & script (a sampling heap profile).
+// A shot's `screencastMs` records that long after its wait, through the compositor's screencast (JPEG frames at the
+// viewport's size, as they are drawn): <tag><name>-frames/<n>.jpg and frames.json (each frame's timestamp, s), for
+// ffmpeg to make a video of (`screencastQuality`, default 92).
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
@@ -289,6 +292,25 @@ try {
       fs.writeFileSync(path.join(OUT, `${TAG}metrics.json`), JSON.stringify(reports, null, 2) + '\n');
       if (!report.frames.valid) throw new Error('measurement has no valid complete sample window (or exceeded bounded capacity); raw report retained');
       log.push(`[metrics] ${TAG}${s.name} n=${report.frames.retainedSamples} median=${report.frames.frameIntervalMs.median}ms p95=${report.frames.frameIntervalMs.p95}ms ${measurementClass}`);
+    }
+    if (s.screencastMs) {
+      const dir = path.join(OUT, `${TAG}${s.name}-frames`);
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.mkdirSync(dir, { recursive: true });
+      const cast = await page.context().newCDPSession(page);
+      const frames = [];
+      cast.on('Page.screencastFrame', ({ data, metadata, sessionId }) => {
+        const file = `${String(frames.length).padStart(5, '0')}.jpg`;
+        fs.writeFileSync(path.join(dir, file), Buffer.from(data, 'base64'));
+        frames.push({ file, t: metadata.timestamp });
+        cast.send('Page.screencastFrameAck', { sessionId }).catch(() => {});
+      });
+      await cast.send('Page.startScreencast', { format: 'jpeg', quality: s.screencastQuality ?? 92, everyNthFrame: 1 });
+      await page.waitForTimeout(s.screencastMs);
+      await cast.send('Page.stopScreencast');
+      await cast.detach();
+      fs.writeFileSync(path.join(dir, 'frames.json'), JSON.stringify(frames) + '\n');
+      log.push(`[capture] ${TAG}${s.name} screencast ${frames.length} frames`);
     }
     if (s.hold) await page.keyboard.up(s.hold);
     const fps = await page.evaluate(() => window.__CITY_APP.getFps());

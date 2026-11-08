@@ -407,8 +407,11 @@ function trailMaterial({ flat, noise, hash2, snow, grassy }) {
       const rx = along.sub(a0).sub(sin(uv.y.mul(2.3).add(hb.mul(6.0))).mul(0.25)).sub(uv.y.mul(hb.sub(0.5).mul(0.8)));
       const rw = hb.mul(0.035).add(0.025);
       const rootOn = step(0.45, ha).mul(smoothstep(0.45, 0.75, fl)).mul(step(0.4, noise(wp.mul(0.09))));
-      const root = rootOn.mul(float(1).sub(smoothstep(rw.mul(0.6), rw, abs(rx))));
-      const rootLit = rootOn.mul(float(1).sub(smoothstep(0.0, rw.mul(0.5), abs(rx.add(rw.mul(0.35))))));
+      // (filtered by the pixel's footprint: a 3-6 cm root is under a pixel from a few metres, and drawn sharp it broke
+      // into a flickering seam line across the trail as you walked; past that it fades to its share of the pixel)
+      const fw = T.fwidth(rx).max(1e-4), cover = rw.mul(1.6).div(rw.mul(1.6).add(fw.mul(1.5))).clamp(0, 1);
+      const root = rootOn.mul(float(1).sub(smoothstep(rw.mul(0.6).sub(fw.mul(0.5)).max(0), rw.add(fw.mul(0.5)), abs(rx)))).mul(cover);
+      const rootLit = rootOn.mul(float(1).sub(smoothstep(0.0, rw.mul(0.5).add(fw), abs(rx.add(rw.mul(0.35)))))).mul(cover.mul(cover));
       soil = mix(soil, mix(color(0x4a3725), color(0x7a6045), rootLit.mul(0.6)), root.mul(0.9));
       // leaf litter drifted onto the trail in the woods, most at its edges
       const litter = mix(color(0x765838), color(0x8f6c40), noise(wp.mul(3.3)));
@@ -465,6 +468,38 @@ function junctionNear(p) {
   const js = along.filter((_, i) => at[i]);
   return along.map((a) => { let d = Infinity; for (const j of js) d = Math.min(d, Math.abs(a - j)); return Math.max(0, 1 - d / 6); });
 }
+// A natural trail's ribbon as one strip, mitred at its points (st-annt.9): the run-on quads overlapped by up to 2.4 m at
+// every point, and where they did, the two quads' junction weights differed, so the earth's width and its worn line
+// broke along a straight seam across the trail, flickering as the overlapping quads fought for the depth. Each point's
+// cross-section lies on the bisector, stretched to keep the half width h off both segments (at most 1.6 x on a sharp
+// bend); uv (metres along, across), colour (mapped half width, the point's junction weight, 0)
+function trailStrip(B, p, h, vs, junc, y) {
+  const P = [], J = [];
+  for (let i = 0; i < p.pts.length; i++) {
+    if (P.length && Math.hypot(p.pts[i][0] - P[P.length - 1][0], p.pts[i][1] - P[P.length - 1][1]) < 0.05) continue;
+    P.push(p.pts[i]); J.push(junc[i]);
+  }
+  if (P.length < 2) return;
+  const n = P.length, L = [0], nx = [], nz = [];
+  for (let i = 1; i < n; i++) L.push(L[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  const dir = (i) => { const d = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]); return [(P[i + 1][0] - P[i][0]) / d, (P[i + 1][1] - P[i][1]) / d]; };
+  for (let i = 0; i < n; i++) {
+    const a = dir(Math.max(0, i - 1)), b = dir(Math.min(n - 2, i));
+    // (the left normals of the segments either side, and their bisector)
+    let mx = a[1] + b[1], mz = -a[0] - b[0];
+    const ml = Math.hypot(mx, mz);
+    if (ml < 1e-6) { mx = b[1]; mz = -b[0]; } else { mx /= ml; mz /= ml; }
+    const k = Math.min(1.6, 1 / Math.max(1e-3, mx * b[1] - mz * b[0]));
+    nx.push(mx * k); nz.push(mz * k);
+  }
+  const C0 = (i, sg) => [P[i][0] + nx[i] * h * sg, P[i][1] + nz[i] * h * sg, L[i], -vs * sg];
+  for (let i = 1; i < n; i++) {
+    const q = [C0(i - 1, 1), C0(i, 1), C0(i, -1), C0(i - 1, -1)];
+    const n0 = B.pos.length / 3;
+    triUp(B, q[0], q[1], q[2], y); triUp(B, q[0], q[2], q[3], y);
+    for (let v = n0; v < B.pos.length / 3; v++) B.col.push(p.w / 2, B.uv[v * 2] === L[i] ? J[i] : J[i - 1], 0);
+  }
+}
 function flatLayers(group, M, top) {
   const { THREE } = C;
   const stats = { triangles: 0, meshes: 0 };
@@ -485,6 +520,7 @@ function flatLayers(group, M, top) {
     // vertex colour: trailMaterial cuts it to the trail's outline)
     const natural = TRAIL.on && p.surf === 1, h = natural ? (p.w / 2) * 1.25 + 1.3 : p.w / 2, vs = natural ? h : 1;
     const junc = natural ? trailJunctions(p) : null;
+    if (natural) { trailStrip(B, p, h, vs, junc, y); continue; }
     let along = 0;
     for (let i = 1; i < p.pts.length; i++) {
       const [ax0, az0] = p.pts[i - 1], [bx0, bz0] = p.pts[i], L = Math.hypot(bx0 - ax0, bz0 - az0);

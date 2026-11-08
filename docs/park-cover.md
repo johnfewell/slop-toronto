@@ -61,7 +61,14 @@ These are drawn on the GPU in rings round the viewer, after threejs-nanites' gra
   (in the tall grass 66% bluestem, 22% goldenrod, 12% asters and other forbs; the woods' herbs elsewhere), how tall,
   and where it stands. Its height comes from the terrain's own grid triangles, the same ones the ground is draped on.
 - A dropped clump collapses to a point, so it has no area to rasterize, and so does one behind the camera.
-- Coarser cells and bigger clumps go further out, cross-faded by a dither.
+- Coarser cells and bigger clumps go further out (high tier: 0.42, 0.84 and 1.26 m cells out to 16, 36 and 64 m).
+  Across a hand-over each clump grows in or shrinks out by the camera's distance, over the last quarter of the ring,
+  and the two rings' densities are complementary, so nothing switches on or off whole (st-annt.9).
+- Past the last ring the meadow is painted into the park's ground (`groundInto`, through park-woods.js's `groundNode`):
+  where the clumps would grow, in their colours through the seasons, streaked and shaded as tufts. It comes in across
+  the last ring's fade-out band, so the clumps shrink away into it. The old outer rings' 3.5-7 m cards had read from the
+  trails as flat brown pads on the lawn. `?coverfar=1`: the old four rings to 150 m; `?coverpaint=0`: no painted
+  meadow.
 - Clumps are three (near) or two crossed cards with procedural sprites, painted on a canvas at start-up. Their tops
   sway in the wind. They follow the lawn's seasons, and they receive the sun's shadows but cast none.
 - Along a path they start 0.15 m from its edge and are shorter for the first 1.5 m, as where they are trodden. The
@@ -115,7 +122,48 @@ collision don't change, and walking on the short grass beside the earth is fine.
 - **The woods' edges:** along the park's streets, the woods within 12 m of the island's edge grow 1.1 more shrubs a
   cell, a screen like the park's own edge plantings.
 - **How they are drawn:** near, a rounded shrub of 14 leaf cards over a dome, lit by the dome's normals, casting
-  shadows. Further out, three crossed cards. They dissolve between the two and out at the edge, as the trees do.
+  shadows. Further out, three crossed cards. They dissolve between the two (over 5 m at 38 m) and out at the edge, as
+  the trees do. Their list is redrawn every 5 m of travel with a 6 m margin past each band, so no shrub enters a band
+  undrawn. The autumn twigs' haze thins out as its cells shrink under a pixel and a half, so a far shrub doesn't
+  speckle.
+
+### Level-of-detail pops (st-annt.9, 2026-11-07)
+
+John: "High Park shadow and grass are very bad." A catalogue from 60 fps films (savanna walk, woods walk, low flight,
+turn in place; summer and autumn) and a per-block step detector, with each pop confirmed by a deterministic A/B
+re-render, found:
+
+- **Tree shadows switched off whole.** The mid mesh beyond its shadow distance (32.5 m in the woods, 65 m elsewhere)
+  swapped to a twin that casts nothing, on the 4 m regroup tick. With the sun low, trees 32-70 m off throw their
+  shadows at the walker's feet, so dappled patches vanished in one frame (gone with `?treeshadow=320`). Now the mid
+  mesh's shadow dissolves in the shadow map over a band that ends the regroup margin short of that distance (10 m in
+  the woods: 16.5-26.5 m; 15 m elsewhere; per-instance `aLodShadow`), so no mid mesh casts further out than before,
+  and the twin takes over at the old distance. Measured on the M4 mini's woods walk (ABAB): a band centred on the old
+  distance drew 14 m more of the woods' mid meshes into both cascades, costing 3 fps in autumn. The band as shipped
+  costs about 0.2.
+  - Tried and left off: a shadow-only stand-in in the pilot's woods (`?treeshadowproxy=1`). It is the tree's impostor
+    quad facing the sun (`castShadowPositionNode`; in the view it collapses to nothing), taking the shadow over from
+    the mid mesh with the same threshold and cast out to 110 m, so the woods across the pond would cast shadows. Its
+    big alpha-tested quads in the shadow maps cost 2.7 fps in autumn and 4.2 at golden hour (the low sun), even with a
+    lean cut-out-only mask.
+  - Not tried: drawing the far cascade less often. three's SunShadowNode clears and refits both cascades every frame,
+    so it would need a change to the library.
+  - `?treeshadowband=0`: the old hard swap; `?treeshadowshift=<m>`: the band's middle at the old distance + m.
+- **The masks' cost.** The dissolves' shares and each object's dither shift are per tree and per shrub, so they are
+  worked out in the vertex stage (one varying). Per fragment that leaves one blue-noise lookup and the compares. Worked
+  out per fragment, they had cost about 1.5 fps of the woods walk.
+- **Grass rings** switching whole clumps by a hash, and the far rings' pads: above.
+- **The dissolves' stipple.** The screen-door threshold was interleaved-gradient noise, whose diagonal lattice showed
+  as a weave over every shrub and tree mid-dissolve. SMAA, not TAA, never resolves it. It is now a 64 × 64 blue-noise
+  tile on the native pixel grid, shifted per object (`lodDither`, tsl-materials.js), with the same threshold for every
+  level of one object, so the masks stay complementary (`?loddither=ign`: the old noise, for A/B). MSAA's alpha-to-coverage (the medium tier) was not used: its
+  hardware sample masks for alpha t and 1 - t aren't complementary, so the two levels would overlap and leave holes.
+- **The trail seam.** A natural trail's ribbon was run-on quads overlapping up to 2.4 m at every point, with different
+  junction weights. Its earth width broke along a straight line across the trail, and the overlapping quads fought for
+  the depth. It is now one mitred strip. The woods' roots across the trail are filtered by the pixel's footprint, so a
+  3-6 cm root no longer flickers as a hairline at a distance.
+- **Not pops:** the cascades' edges (the sun's 2-cascade map already blends between them and fades its far end), the
+  rings themselves (clumps are anchored to the world), and the behind-camera collapse (none seen in the turn).
 
 ### Grenadier Pond's shore (`?shore=0`: as before)
 

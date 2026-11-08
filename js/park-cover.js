@@ -29,16 +29,25 @@ const ROLLOUT = { 'high-park': [D.box.x0, D.box.z0, D.box.x1, D.box.z1] };
 const BOX = D.box;
 const NEAR_BOX = 250; // (m: the layers are on while the camera is this near the box)
 
-// The grass rings by tier: cell (m), outer radius (m); each fades in over the last FADE of the ring inside it
-const RINGS = {
+// The grass rings by tier: cell (m), outer radius (m); each fades in over the last FADE of the ring inside it. The last
+// fades out into the meadow painted on the ground (groundInto): from about 50 m the meadow is the ground's colour and
+// texture, not clumps (st-annt.9: the old outer rings' 3.5-7 m cards, low and wide, read from the trails as flat brown
+// pads scattered on the lawn). ?coverfar=1: the old four rings out to 150 m, for A/B
+const FAR_OLD = params.get('coverfar') === '1';
+const RINGS = (FAR_OLD ? {
   high: [{ cell: 0.42, r: 16 }, { cell: 0.84, r: 36 }, { cell: 1.68, r: 76 }, { cell: 3.36, r: 150 }],
   medium: [{ cell: 0.5, r: 14 }, { cell: 1.0, r: 32 }, { cell: 2.0, r: 66 }, { cell: 4.0, r: 120 }],
   low: [{ cell: 0.62, r: 11 }, { cell: 1.24, r: 26 }, { cell: 2.48, r: 56 }]
-}[TIER];
+} : {
+  high: [{ cell: 0.42, r: 16 }, { cell: 0.84, r: 36 }, { cell: 1.26, r: 64 }],
+  medium: [{ cell: 0.5, r: 14 }, { cell: 1.0, r: 32 }, { cell: 1.5, r: 56 }],
+  low: [{ cell: 0.62, r: 11 }, { cell: 1.24, r: 26 }, { cell: 1.86, r: 48 }]
+})[TIER];
 const FADE = 0.25;
+const TAPER = 0.3; // (of a ring's share: how gradually a clump grows in or shrinks out across a hand-over)
 // The shrubs' hand-overs by tier (m): rounded mesh within, crossed cards out to the last
 const SHRUB = { high: { near: 38, far: 190 }, medium: { near: 30, far: 150 }, low: { near: 18, far: 100 } }[TIER];
-const SHRUB_BAND = [8, 30];
+const SHRUB_BAND = [5, 30]; // (near <-> far 5 m, from 8: fewer shrubs stand mid-dissolve at once, st-annt.9)
 
 const hash2 = (x, z, k) => { const s = Math.sin(x * 127.1 + z * 311.7 + k * 74.7) * 43758.5453; return s - Math.floor(s); };
 const stats = { on: true, mode: MODE || 'all', tier: TIER, shrubs: 0, rings: RINGS.length, instances: 0, ms: {}, rollout: Object.keys(ROLLOUT) };
@@ -612,12 +621,16 @@ function grassMaterial(ring, k) {
     // (the distance counts the camera's height over the park, ~10 m: from the air the rings are empty)
     const up = viewerU.y.sub(10).max(0);
     const d = p.sub(viewerU.xz).length().pow(2).add(up.mul(up)).sqrt();
-    // (the ring's share by distance, a dither by the cell's hash: the inner ring hands over to this one across the
-    // last FADE of its radius, this one to the next across the last FADE of its own)
+    // (the ring's share by distance: the inner ring hands over to this one across the last FADE of its radius, this one
+    // to the next across the last FADE of its own, the two shares complementary. A clump doesn't switch: by the cell's
+    // hash rc it grows in from nothing over a TAPER of the share as the share passes it, and shrinks out the same way,
+    // so the hand-over is clumps growing and shrinking, by the camera's distance, not popping (st-annt.9))
     const fin = k ? smoothstep(inner * (1 - FADE), inner, d) : float(1);
     const fout = float(1).sub(smoothstep(outer * (1 - FADE), outer, d));
-    const share = k === RINGS.length - 1 ? fout : fout;
-    const keepRing = rc.lessThan(fin).and(rc.greaterThanEqual(float(1).sub(share)).or(share.greaterThanEqual(1)));
+    const gIn = clamp(fin.mul(1 + TAPER).sub(rc).div(TAPER), 0, 1);
+    const gOut = clamp(rc.sub(float(1).sub(fout.mul(1 + TAPER))).div(TAPER), 0, 1);
+    const grow = gIn.mul(gOut);
+    const keepRing = grow.greaterThan(0.02);
     // the maps: habitat (R tall grass, G woods' herbs) and clearance (m)
     const uvH = p.sub(vec2(BOX.x0, BOX.z0)).div(vec2(BOX.x1 - BOX.x0, BOX.z1 - BOX.z0));
     const inBox = uvH.x.greaterThan(0).and(uvH.x.lessThan(1)).and(uvH.y.greaterThan(0)).and(uvH.y.lessThan(1));
@@ -643,10 +656,10 @@ function grassMaterial(ring, k) {
     // all lower along the paths' first 1.5 m
     const hBase = select(isTall, mix(float(0.55), float(1.15), pn.mul(0.6).add(ra.mul(0.4))).mul(select(tile.equal(1), float(1.15), float(1))), mix(float(0.35), float(0.8), rb));
     // (graded at an edge: low tufts and short grass beside a path, rising to full height over the first 0.9 m)
-    const hgt = hBase.mul(smoothstep(-0.05, 0.9, clr).mul(0.68).add(0.32)).mul(mix(float(0.8), float(1.2), re));
+    const hgt = hBase.mul(smoothstep(-0.05, 0.9, clr).mul(0.68).add(0.32)).mul(mix(float(0.8), float(1.2), re)).mul(grow);
     // (no card reaches over the trail: near it a clump is narrower, at most twice its clearance across, so the plants'
     // edge is the clumps' own ragged outline along the trail, not their cards' sides)
-    const wid = float(cell * 2.1).mul(mix(float(0.85), float(1.2), rc)).mul(select(isTall, float(1), float(1.05))).min(clr.add(0.5).mul(1.6).max(0.4));
+    const wid = float(cell * 2.1).mul(grow.sqrt()).mul(mix(float(0.85), float(1.2), rc)).mul(select(isTall, float(1), float(1.05))).min(clr.add(0.5).mul(1.6).max(0.4));
     // (behind the camera, beyond 3 m: collapsed, nothing to raster)
     const toP = p.sub(viewerU.xz);
     const ahead = dot(toP, forwardU.xz).greaterThan(-3).or(toP.length().lessThan(6));
@@ -776,6 +789,11 @@ function deciduous(rgb, plant, q) {
     return mix(mix(h(vec2(0, 0)), h(vec2(1, 0)), w.x), mix(h(vec2(0, 1)), h(vec2(1, 1)), w.x), w.y);
   };
   const inSeason = U.uLeaf.lessThan(0.999).or(U.uAutumn.greaterThan(0.001)).or(U.uSpring.greaterThan(0.001));
+  // (the haze's cells per pixel, outside the branch: derivatives want uniform control flow. The haze thins out as its
+  // cells shrink under a pixel and a half, so a far shrub keeps its fallen leaves' share in its turned ones, not a
+  // pixel-fine speckle of twigs: st-annt.9)
+  const hazePx = T.fwidth(q.x).add(T.fwidth(q.y)).mul(2.3 * 0.5);
+  const hazeShare = float(0.34).mul(float(1).sub(T.smoothstep(0.45, 0.9, hazePx)));
   const out = Fn(() => {
     const c = vec3(rgb).toVar(), k = float(1).toVar();
     If(inSeason, () => {
@@ -786,7 +804,7 @@ function deciduous(rgb, plant, q) {
       const twig = mix(vec3(0.06, 0.038, 0.02), vec3(0.12, 0.078, 0.042), leafRnd); // (linear: dead brown leaves and twigs)
       c.assign(select(stays, turned, twig));
       // (the haze kept per fine cell, a cheap hash: the noise's own contours made rings)
-      k.assign(select(stays.or(fract(sin(dot(q.mul(2.3).floor().add(plant.mul(17.0)), vec2(12.9898, 78.233))).mul(43758.5453)).lessThan(0.34)), float(1), float(0)));
+      k.assign(select(stays.or(fract(sin(dot(q.mul(2.3).floor().add(plant.mul(17.0)), vec2(12.9898, 78.233))).mul(43758.5453)).lessThan(hazeShare)), float(1), float(0)));
     });
     return T.vec4(c, k);
   })();
@@ -805,9 +823,11 @@ function shrubMaterial(near) {
   const kind = attribute('aShrub', 'vec4'); // (tile 4-6, origin x, y, z: its middle)
   const fade = attribute('aShrubFade', 'vec4'); // (edge in, band in, edge out, band out), as ez-trees.js's aLodFade
   const d = distance(vec3(kind.y, kind.z, kind.w), viewerU);
-  const h = fract(float(52.9829189).mul(fract(dot(screenCoordinate.xy, vec2(0.06711056, 0.00583715)))));
   const share = (edge, band) => clamp(d.sub(edge.sub(band.mul(0.5))).div(band), 0.0, 1.0);
-  const lodKeep = h.lessThan(share(fade.x, fade.y)).and(h.greaterThanEqual(share(fade.z, fade.w)));
+  // (per shrub, so in the vertex stage: the shares in and out and the shrub's hash; blue noise shifted per shrub)
+  const lv = T.varying(vec3(share(fade.x, fade.y), share(fade.z, fade.w), fract(sin(dot(vec2(kind.y, kind.w), vec2(12.9898, 78.233))).mul(43758.5453)).mul(0.731).add(0.13).fract()), 'vShrubLod');
+  const h = C.lodDither(lv.z);
+  const lodKeep = h.lessThan(lv.x).and(h.greaterThanEqual(lv.y));
   const uvA = vec2(kind.x.add(card.x.clamp(0.01, 0.99)).div(8), card.y.oneMinus().clamp(0.005, 0.995));
   const s = texture(tex, uvA);
   const cut = s.a.greaterThan(0.5);
@@ -905,14 +925,15 @@ function buildShrubs(group) {
     if (cam.distanceToSquared(last) < 25) return;
     last.copy(cam);
     const counts = [0, 0];
-    const reach = SHRUB.far + SHRUB_BAND[1] / 2 + 23;
+    const reach = SHRUB.far + SHRUB_BAND[1] / 2 + 25;
     for (const c of cellList) {
       if (Math.abs(c.x - cam.x) > reach || Math.abs(c.z - cam.z) > reach) continue;
       for (const i of c.list) {
         const s = sites[i], d = Math.hypot(s.x - cam.x, s.y + s.h / 2 - cam.y, s.z - cam.z);
         for (let L = 0; L < 2; L++) {
           const f = L ? fadeFar : fadeNear;
-          if (d < f[0] - f[1] / 2 - 4 || d > f[2] + f[3] / 2 + 4) continue;
+          // (6 m past the band: more than the 5 m the camera moves between updates, so no shrub enters its band undrawn)
+          if (d < f[0] - f[1] / 2 - 6 || d > f[2] + f[3] / 2 + 6) continue;
           const mesh = meshes[L], n = counts[L]++;
           mesh.instanceMatrix.array.set(mats.subarray(i * 16, i * 16 + 16), n * 16);
           mesh.instanceColor.array.set(tints.subarray(i * 3, i * 3 + 3), n * 3);
@@ -1043,6 +1064,46 @@ function buildWillows(group) {
   group.add(mesh);
   return mesh;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The far meadow on the ground (st-annt.9): past the last grass ring the meadow is painted into the park's ground (the
+// park lawn material's colour, park-woods.js groundNode), where the clumps would grow (the habitat, off the paths by the
+// clearance), in the clumps' colours through the seasons (summer's olive and seed heads, autumn's straw and copper, the
+// woods' herbs yellowing), streaked and shaded as tufts. It comes in across the last ring's fade-out band, by the same
+// distance, so the clumps shrink away into it. Inside a TSL Fn: `out` (vec3 var) at world `wp` (vec2 x, z)
+// ---------------------------------------------------------------------------------------------------------------------
+const FAR_PAINT = !FAR_OLD && params.get('coverpaint') !== '0';
+function groundInto(out, wp, fx) {
+  if (!GRASS || !FAR_PAINT) return;
+  const T = C.TSL, { texture, vec2, mix, smoothstep, float, color, cameraPosition, length, select } = T;
+  const { habTex, clrTex } = gpuInputs();
+  const last = RINGS[RINGS.length - 1];
+  const uvH = wp.sub(vec2(BOX.x0, BOX.z0)).div(vec2(BOX.x1 - BOX.x0, BOX.z1 - BOX.z0));
+  const inBox = uvH.x.greaterThan(0).and(uvH.x.lessThan(1)).and(uvH.y.greaterThan(0)).and(uvH.y.lessThan(1));
+  const hab = texture(habTex, uvH), tall = hab.x, herb = hab.y;
+  const clr = texture(clrTex, uvH).x.mul(255 / 32).sub(2);
+  // (the grass rings' own weights: their share of tall grass and herbs, off the paths)
+  const cover = tall.mul(0.97).add(herb.mul(0.7)).min(1).mul(smoothstep(0.1, 1.0, clr));
+  // (the rings' distance, the viewer's height over the park counted)
+  const up = cameraPosition.y.sub(10).max(0), dh = length(wp.sub(cameraPosition.xz));
+  const d = dh.mul(dh).add(up.mul(up)).sqrt();
+  const far = smoothstep(last.r * (1 - FADE), last.r, d);
+  const w = cover.mul(far).mul(select(inBox, float(0.94), float(0)));
+  // the tufts: streaks across the wind, seed heads in drifts, darker between the clumps
+  const n1 = fx.noise2D(wp.mul(0.31)), n2 = fx.noise2D(wp.mul(vec2(1.3, 0.55)).add(3.1)), n3 = fx.noise2D(wp.mul(3.4).add(8.3));
+  const summer = fx.seasonalGrass(mix(color(0x4a5a22), color(0x6f7536), n1));
+  let c = mix(summer, color(0x8c8450), smoothstep(0.5, 0.85, n2).mul(0.45));
+  const U = C.cityUniforms;
+  const dry = U ? U.uDormant.mul(1.4).add(U.uAutumn.mul(0.45)).clamp(0, 1) : float(0);
+  const dryGrass = mix(mix(color(0x9a7f48), color(0x8a5832), n1.mul(0.7)), color(0x847659), smoothstep(0.55, 0.8, n2).mul(0.6));
+  c = mix(c, dryGrass, dry.mul(0.78));
+  // (the woods' herbs, where they and not the grass are the cover)
+  const herbs = mix(fx.seasonalGrass(color(0x3d5424)), color(0x7d7238), dry.mul(0.78));
+  c = mix(c, herbs, herb.div(tall.add(herb).max(1e-3)));
+  c = c.mul(mix(float(0.7), float(1.04), n3.mul(0.6).add(n2.mul(0.4))));
+  out.assign(mix(out, c, w));
+}
+C.parkCoverGroundInto = groundInto;
 
 // ---------------------------------------------------------------------------------------------------------------------
 function buildParkCover(scene) {

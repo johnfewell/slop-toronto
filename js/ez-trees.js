@@ -89,6 +89,24 @@ const nearOf = (c) => (isWoods(c) ? NEAR * WOODS_SHARE.near : NEAR);
 // cards at 53 m, where 50-70 trees to the hectare had made the woods 25% more triangles than the parkland grid's trees)
 const midOf = (c, low = false) => (c === IMP_CLASS ? IMP_MID : c === WOODS_CLASS ? MID * WOODS_SHARE.mid * Math.min(1, FAR) : low ? MID_STREET : MID);
 const shadowOf = (c) => (isWoods(c) ? MID_SHADOW * WOODS_SHARE.shadow * Math.min(1, FAR) : MID_SHADOW);
+// (the mid mesh's shadow dissolves across this band centred on shadowOf; ?treeshadowband=0: the old hard swap)
+const SHADOW_BAND_K = Number(new URLSearchParams(location.search).get('treeshadowband') ?? 1);
+const shadowBand = (c) => (FADE ? (isWoods(c) ? 10 : 15) * SHADOW_BAND_K : 0);
+// (the band's middle: by default the band ends the regroup margin short of shadowOf, so the mid meshes cast no further
+// out than before the band: a band centred on shadowOf drew 14 m more of the woods' mid meshes into both cascades, 3 fps
+// of the autumn woods walk on the M4 mini. ?treeshadowshift=<m>: the middle at shadowOf + m, for A/B)
+const SHIFT_PARAM = new URLSearchParams(location.search).get('treeshadowshift');
+const shadowMid = (c) => shadowOf(c) + (shadowBand(c) > 0 ? (SHIFT_PARAM != null ? Number(SHIFT_PARAM) : -MARGIN - shadowBand(c) * 0.5) : 0);
+// (where the mid level hands over to its twin that casts nothing: past the band, by the regroup margin)
+// The pilot's woods trees (IMP_CLASS) hand their shadow over, across that band, to a shadow-only stand-in: their
+// impostor's quad facing the sun (tree-impostors.js shadowProxy), cast out to PROXY_FAR, dissolving out over
+// PROXY_BAND; the mid mesh's shadow and the stand-in's share one threshold, so the shadow map's texels are each cast by
+// one of them (st-annt.9: one quad a tree in the shadow pass in place of the mid mesh, and the woods across the pond
+// cast shadows). Off by default: on the M4 mini's woods walk the stand-ins' big alpha-tested quads cost 2.7 fps in
+// autumn and 4.2 at golden hour (the low sun), where the mid meshes' band alone costs ~0.2. ?treeshadowproxy=1: on
+const PROXY = new URLSearchParams(location.search).get('lodfade') !== '0' && new URLSearchParams(location.search).get('treeshadowproxy') === '1';
+const PROXY_FAR = Number(new URLSearchParams(location.search).get('treeshadowproxyfar') ?? 110), PROXY_BAND = 20;
+const shadowOut = (c) => shadowMid(c) + shadowBand(c) * 0.5 + (shadowBand(c) > 0 ? MARGIN : 0);
 // ?lodfade=0: the old hard swap (no masks, no bands), for A/B
 const FADE = new URLSearchParams(location.search).get('lodfade') !== '0';
 // hand-over bands, centred on the edge (m): near <-> mid, mid <-> far, the last level -> nothing
@@ -139,16 +157,34 @@ const viewer = (() => {
   const { uniform, renderGroup } = window.CITY.TSL;
   return uniform(new THREE.Vector3()).setGroup(renderGroup);
 })();
-const lodKeep = (() => {
-  const { attribute, screenCoordinate, fract, dot, vec2, float, clamp, distance } = window.CITY.TSL;
+// (the dissolves' threshold, 0..1 per pixel: tsl-materials.js's blue noise, shifted per tree; interleaved-gradient noise
+// where that isn't loaded, as in the tests' harness)
+const lodDither = window.CITY.lodDither || (() => {
+  const { screenCoordinate, fract, dot, vec2, float } = window.CITY.TSL;
+  return fract(float(52.9829189).mul(fract(dot(screenCoordinate.xy, vec2(0.06711056, 0.00583715)))));
+});
+// (per tree, so in the vertex stage: its distance's shares and its dither's shift, as varyings; the fragment does one
+// lookup and the compares. The mask runs on every leaf fragment of every tree, in the view and in both shadow cascades)
+const lodNodes = (() => {
+  const { attribute, fract, sin, dot, vec2, vec4, clamp, distance, varying } = window.CITY.TSL;
   const origin = attribute('aLodOrigin', 'vec3');
   const fade = attribute('aLodFade', 'vec4');
+  const sh = attribute('aLodShadow', 'vec2');
   const d = distance(origin, viewer);
-  // interleaved-gradient noise on the pixel grid
-  const h = fract(float(52.9829189).mul(fract(dot(screenCoordinate.xy, vec2(0.06711056, 0.00583715)))));
   const share = (edge, band) => clamp(d.sub(edge.sub(band.mul(0.5))).div(band), 0.0, 1.0);
-  return h.lessThan(share(fade.x, fade.y)).and(h.greaterThanEqual(share(fade.z, fade.w)));
+  // (x share in, y share out, z the shadow's share out, w the tree's hash)
+  const v = varying(vec4(share(fade.x, fade.y), share(fade.z, fade.w), clamp(d.sub(sh.x).mul(sh.y), 0.0, 1.0),
+    fract(sin(dot(origin.xz, vec2(12.9898, 78.233))).mul(43758.5453))), 'vLodShares');
+  // (blue noise on the pixel grid, shifted per tree by where it stands: tsl-materials.js lodDither)
+  const h = lodDither(v.w);
+  return { v, h };
 })();
+const lodKeep = lodNodes.h.lessThan(lodNodes.v.x).and(lodNodes.h.greaterThanEqual(lodNodes.v.y));
+// The mid mesh's shadow dissolves out across a band round its shadow distance (shadowBand) before the tree hands over
+// to its twin that casts none (st-annt.9: the hard swap had whole dappled patches of the woods' shadows vanish from the
+// trail in one frame). Per instance aLodShadow = (where the band starts, 1 / its width); (0, 0), the default: always
+// casts. Only in the shadow pass, the same blue-noise threshold as lodKeep, on the shadow map's own texels
+const shadowKeep = lodNodes.h.greaterThanEqual(lodNodes.v.z);
 const ALL_IN = -1e6, ALL_OUT = 1e9;
 // The levels that cast no shadow (the mid mesh beyond its shadow distance, the crown cards) draw only the cells in a cone
 // round the view: the camera's frustum (the cone round its corners) widened by VIEW_MARGIN, so the cone is re-cut only
@@ -212,8 +248,8 @@ function fadeMaterial(src, seasonal = false) {
     cutout = cutout.and(season.keep);
   }
   if (mask) mat.maskNode = mask;
-  if (cutout) mat.maskShadowNode = FADE ? cutout.and(lodKeep) : cutout;
-  else if (FADE) mat.maskShadowNode = lodKeep;
+  if (cutout) mat.maskShadowNode = FADE ? cutout.and(lodKeep).and(shadowKeep) : cutout;
+  else if (FADE) mat.maskShadowNode = lodKeep.and(shadowKeep);
   return mat;
 }
 
@@ -275,6 +311,8 @@ async function buildEzTrees(scene, generated) {
   const impOf = impostors ? models.map((m) => impostors.models.indexOf(m)) : models.map(() => -1);
   const impMaterial = impostors ? impostors.material(viewer, FADE ? lodKeep : null) : null;
   const impGeometry = impostors ? impostors.geometry() : null;
+  // (the shadow-only stand-in: the impostor's quad facing the sun, in the shadow maps only; PROXY)
+  const impShadowMaterial = impostors && PROXY ? impostors.material(viewer, lodKeep, { shadowProxy: true }) : null;
 
   // mrdoob's whole-crown cards for the far level, one per species, scaled to each tree's height
   const atlas = createLeafAtlas();
@@ -357,6 +395,7 @@ async function buildEzTrees(scene, generated) {
   const tints = new Float32Array(N * 3);
   const px = new Float32Array(N), py = new Float32Array(N), pz = new Float32Array(N);
   const meshOf = new Int16Array(N * 3);
+  const treeModel = new Int16Array(N); // (each tree's model: its shadow stand-in's mesh)
   const midFarOf = new Int16Array(N);
   const tier = new Uint8Array(N);
   const isPine = new Uint8Array(N);
@@ -370,11 +409,13 @@ async function buildEzTrees(scene, generated) {
   const idxMidFar = models.map((m) => make(m.mid, m.material, `Trees_${m.id}_mid_noshadow`, false, true));
   const idxFar = farGeos.map((g, s) => make(g, farMaterial, `Trees_far_${TREE_SPECIES[s].name}`, true));
   const idxImp = models.map((m, k) => (impOf[k] >= 0 ? make(impGeometry, impMaterial, `Trees_${m.id}_impostor`, false, true, true) : -1));
+  const idxImpShadow = models.map((m, k) => (impOf[k] >= 0 && impShadowMaterial ? make(impGeometry, impShadowMaterial, `Trees_${m.id}_impostor_shadow`, false, false, true) : -1));
   let impTrees = 0;
   const dummy = new THREE.Object3D();
   const tint = new THREE.Color();
   sites.forEach((t, i) => {
     const m = Math.max(0, t.model);
+    treeModel[i] = m;
     const r1 = hashPos(t.x, 1.3, t.z), r2 = hashPos(t.z, 7.1, t.x), r3 = hashPos(t.x + t.z, 3.3, 0.7);
     const yaw = r2 * Math.PI * 2;
     // (the pilot's lidar trees a little less even: VARY_ON)
@@ -423,6 +464,7 @@ async function buildEzTrees(scene, generated) {
       const f = impostors.frames[impOf[m]];
       impData.set([f.w * s * wf, f.h * s, impOf[m], r2], i * 4);
       meshes[idxImp[m]].capacity++;
+      if (idxImpShadow[m] >= 0) meshes[idxImpShadow[m]].capacity++;
       impTrees++;
     } else if (sp >= 0) meshes[idxFar[sp]].capacity++;
   });
@@ -436,6 +478,7 @@ async function buildEzTrees(scene, generated) {
     if (m.imp) geo.setAttribute('aImp', new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4));
     geo.setAttribute('aLodOrigin', new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3));
     geo.setAttribute('aLodFade', new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4));
+    geo.setAttribute('aLodShadow', new THREE.InstancedBufferAttribute(new Float32Array(cap * 2), 2));
     const mesh = new THREE.InstancedMesh(geo, m.material, cap);
     if (!m.attrs) mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
     mesh.name = m.name;
@@ -467,7 +510,7 @@ async function buildEzTrees(scene, generated) {
       // (the pilot's impostors match their mesh in colour and form: a narrow hand-over, 6 m, so fewer trees stand
       // half-dissolved in the screen-door dither at once; the cards' 24 m band stays for the other classes)
       else { const bm = c === IMP_CLASS && FADE ? 6 : BAND[1]; f[o + 6] = mid; f[o + 7] = bm; f[o + 8] = mid; f[o + 9] = bm; f[o + 10] = maxD; f[o + 11] = BAND[2]; }
-      const edges = [shadowOf(c)];
+      const edges = [shadowOut(c)];
       for (let l = 0; l < 3; l++) edges.push(f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN);
       classEdges[lowIdx][c] = edges;
     }
@@ -480,7 +523,7 @@ async function buildEzTrees(scene, generated) {
       const lo = f[o + l * 4] - f[o + l * 4 + 1] * 0.5 - MARGIN, hi = f[o + l * 4 + 2] + f[o + l * 4 + 3] * 0.5 + MARGIN;
       if (d >= lo && d < hi) bits |= 1 << l;
     }
-    if (bits & 2 && d > shadowOf(c)) bits |= 8;
+    if (bits & 2 && d > shadowOut(c)) bits |= 8;
     return bits;
   }
 
@@ -539,7 +582,25 @@ async function buildEzTrees(scene, generated) {
     og[c * 3] = px[i]; og[c * 3 + 1] = py[i]; og[c * 3 + 2] = pz[i];
     const fd = a.aLodFade.array, fl = cls[i] * 12 + l * 4;
     fd[c * 4] = F[fl]; fd[c * 4 + 1] = F[fl + 1]; fd[c * 4 + 2] = F[fl + 2]; fd[c * 4 + 3] = F[fl + 3];
+    if (a.aLodShadow) {
+      // (the mid level that casts: its shadow's band; the near level and the twin: (0, 0))
+      const b = l === 1 && !(bits & 8) ? shadowBand(cls[i]) : 0, sh = a.aLodShadow.array;
+      sh[c * 2] = b > 0 ? shadowMid(cls[i]) - b * 0.5 : 0; sh[c * 2 + 1] = b > 0 ? 1 / b : 0;
+    }
   }
+  // the shadow stand-in of tree i (IMP_CLASS, PROXY): in from the mid mesh's shadow band, out at PROXY_FAR
+  function putProxy(i) {
+    const mi = idxImpShadow[Math.max(0, treeModel[i])];
+    if (mi < 0) return;
+    const mesh = instanced[mi], c = counts[mi]++, a = mesh.geometry.attributes;
+    mesh.instanceMatrix.array.set(matsNear.subarray(i * 16, i * 16 + 16), c * 16);
+    mesh.instanceColor.array.set(tints.subarray(i * 3, i * 3 + 3), c * 3);
+    a.aImp.array.set(impData.subarray(i * 4, i * 4 + 4), c * 4);
+    a.aLodOrigin.array.set([px[i], py[i], pz[i]], c * 3);
+    a.aLodFade.array.set([shadowMid(cls[i]), shadowBand(cls[i]), PROXY_FAR, PROXY_BAND], c * 4);
+    a.aLodShadow.array.set([0, 0], c * 2);
+  }
+  const PROXY_REACH = PROXY_FAR + PROXY_BAND * 0.5 + 40;
   function rebuild() {
     const t0 = performance.now();
     counts.fill(0);
@@ -556,7 +617,8 @@ async function buildEzTrees(scene, generated) {
         if (!bits) continue;
         // (a level that casts no shadow out of the view cone can't be in the frame: the mid mesh beyond its shadow
         // distance, the cards)
-        if (outOfView && !(bits & 1) && (!(bits & 2) || bits & 8)) continue;
+        const proxy = PROXY && cls[i] === IMP_CLASS && bits & 6;
+        if (outOfView && !proxy && !(bits & 1) && (!(bits & 2) || bits & 8)) continue;
         if (n === order.length) { const o = new Int32Array(n * 2); o.set(order); order = o; sorted = new Int32Array(n * 2); }
         order[n++] = i;
         if (SORT) {
@@ -582,13 +644,17 @@ async function buildEzTrees(scene, generated) {
         if (outOfView && (l === 2 || (l === 1 && bits & 8))) continue; // (casts no shadow, can't be in the frame)
         put(i, l, bits, F);
       }
+      if (PROXY && cls[i] === IMP_CLASS && bits & 6) {
+        const dx = px[i] - cam.x, dz = pz[i] - cam.z;
+        if (dx * dx + dz * dz < PROXY_REACH * PROXY_REACH) putProxy(i);
+      }
     }
     instanced.forEach((mesh, mi) => {
       const n = counts[mi];
       if (n > 0) {
         const a = mesh.geometry.attributes;
         const extra = meshes[mi].attrs ? a.aTreeData : mesh.instanceColor;
-        for (const attr of [mesh.instanceMatrix, extra, a.aLodOrigin, a.aLodFade, ...(meshes[mi].imp ? [a.aImp] : [])]) {
+        for (const attr of [mesh.instanceMatrix, extra, a.aLodOrigin, a.aLodFade, ...(meshes[mi].imp ? [a.aImp] : []), ...(a.aLodShadow ? [a.aLodShadow] : [])]) {
           attr.clearUpdateRanges();
           attr.addUpdateRange(0, n * attr.itemSize);
           attr.needsUpdate = true;
