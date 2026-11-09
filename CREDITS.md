@@ -214,6 +214,26 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   https://sketchfab.com/3d-models/cn-tower-low-poly-model-base-mesh-da7bbf4926de434cb5ef8d0e0bea9d59, licensed CC BY 4.0
   (https://creativecommons.org/licenses/by/4.0/). Modified: display plinth removed, scaled to 553.3 m, glass made opaque
   dark glass, compressed (`tools/blender/export_cn_tower.py`).
+- **High Park Zoo animals** (`assets/zoo/*.glb`, the zoo's paddocks in High Park), free low-poly models from
+  [Poly Pizza](https://poly.pizza). Modified for the city by `tools/build-zoo-animals.mjs`: posed at rest, each
+  triangle's texture or material colour baked to a vertex colour, the textures and rigs removed, scaled to the
+  species' real shoulder height, faced and centred, compressed (meshoptimizer). Some are a near relative recoloured to
+  the zoo's species (noted below).
+  - Bison (`bison.glb`): "Bison" by Poly by Google, https://poly.pizza/m/9sTrha-TxdS, CC BY 3.0
+    (https://creativecommons.org/licenses/by/3.0/).
+  - Llama (`llama.glb`): "Llama" by Poly by Google, https://poly.pizza/m/5XUgcfxfBWJ, CC BY 3.0.
+  - Capybara (`capybara.glb`): "Capybara" by Poly by Google, https://poly.pizza/m/66d-mKAgF17, CC BY 3.0.
+  - Emu (`emu.glb`): "Emu" by Poly by Google, https://poly.pizza/m/dVhJSddeK67, CC BY 3.0.
+  - Mouflon (`mouflon.glb`): "Ram" by Poly by Google, https://poly.pizza/m/fm86jjk4m7D, CC BY 3.0.
+  - Barbary sheep (`barbary.glb`): "Bighorn sheep" by Poly by Google, https://poly.pizza/m/4kUChlMv8Vp, CC BY 3.0;
+    recoloured sandy.
+  - Peafowl (`peafowl.glb`): "Pheasant" by Poly by Google, https://poly.pizza/m/1wqLCnNFCgv, CC BY 3.0; recoloured
+    as a peacock and its tail lowered as a folded train.
+  - Reindeer (`reindeer.glb`): "Stag" by Quaternius, https://poly.pizza/m/tQdzbZ1Cmw, CC0 1.0
+    (https://creativecommons.org/publicdomain/zero/1.0/); recoloured.
+  - West Highland cattle (`highland.glb`): "Cow" by Quaternius, https://poly.pizza/m/26zM1outCr, CC0 1.0; recoloured
+    ginger, the horns lengthened.
+  - Yak (`yak.glb`): "Bull" by Quaternius, https://poly.pizza/m/a8PIIYwF7r, CC0 1.0; recoloured, the horns lengthened.
 - **Royal Ontario Museum model** (`assets/landmarks/rom.glb`): from John Fewell's rom-heist project, a SketchUp shell
   re-textured in Blender (`tools/blender/export_rom.py`), with SketchUp library materials and a Flag of Canada image.
   It is not covered by this project's MIT License.

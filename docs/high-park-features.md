@@ -30,8 +30,9 @@ This adds them, all inside the park's box, on its terrain.
 - **The labyrinth** (seven rings of stone in the lawn), **the amphitheatre** (grassed terraces rising from its stage), **the
   allotments** (6 × 9 m plots in rows of crops, bare in winter), **the parking lots** (asphalt).
 - **The zoo's paddocks** along Deer Pen Road: the enclosure's ground worn bare in patches, OpenStreetMap's paddock fences as
-  post-and-rail with wire mesh, and 24 animals, each species in its own stretch of the enclosure: bison, yaks, Highland
-  cattle, llamas, reindeer, sheep and capybaras (simple procedural models: boxes, ~100 triangles each).
+  post-and-rail with wire mesh, and 29 animals, each species in its own stretch of the enclosure: bison, yaks, Highland
+  cattle, llamas, reindeer, mouflon, Barbary sheep, capybaras, emus and peafowl. Low-poly models from Poly Pizza, fetched
+  as the camera comes within 500 m, with simple boxes standing in until then ([the zoo's animals](high-park-zoo-animals.md)).
 - **Dog Hill** and the park's other nine off-leash areas: the grass worn in patches.
 - **Fences and hedges** (97, 8.5 km): the ravines' and the pitches' chain-link (galvanized posts, a top rail and a
   see-through mesh), railings, the sunken garden's hedges, low walls.
@@ -125,4 +126,5 @@ and summed; only the moving trains, streetcars and vehicles differ, as they do b
 - **The City's stacked trees:** the tree inventory puts dozens of park trees on single points (36 on the lodge's address,
   519 at the Bloor gate); this keeps them out of the lodge, the woods keep one of each pile (`high-park-woods.md`) and
   the geodata build spreads the piles outside the park along their frontage (`tools/geo-tree-piles.mjs`, `st-unco`).
-- **The animals** are simple boxes (about 100 triangles each), static.
+- **The animals** are Poly Pizza's low-poly models (boxes until they arrive), static: see
+  [the zoo's animals](high-park-zoo-animals.md#open-questions).

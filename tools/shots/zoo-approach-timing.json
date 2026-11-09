@@ -1,0 +1,28 @@
+[
+ {
+  "name": "setup",
+  "mode": "person",
+  "x": -6470,
+  "z": -2600,
+  "heading": 3.1,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 8000
+ },
+ {
+  "name": "approach",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => C.DON_VALLEY.heightAt(x, z) + (C.blockAt(x, z) ? 0.22 : 0); const T = [-6372, -1592], O = [T[0] + 60, T[1] - 90], ty = g(T[0], T[1]); let t0 = null;\n  window.__zooFrames = []; const tick = (t) => { window.__zooFrames.push(t); if (window.__zooFrames.length < 20000) requestAnimationFrame(tick); }; requestAnimationFrame(tick);\n  A.cameraSystem.cinema = (e) => { if (t0 === null) t0 = e; const y = ty + Math.max(110, 640 - (e - t0) * 13), x = T[0] + (O[0] - T[0]) * (y - ty) / 640, z = T[1] + (O[1] - T[1]) * (y - ty) / 640, d = Math.hypot(T[0] - x, T[1] - z, ty - y);\n    return { pos: [x, y, z], look: [T[0], ty, T[1]], fov: Math.min(40, 2 * Math.atan(32 / d) * 180 / Math.PI) }; };\n  return { start: [O[0], ty + 640, O[1]] }; })()",
+  "wait": 44000
+ },
+ {
+  "name": "approach-frames",
+  "record": true,
+  "wait": 200,
+  "js": "(() => { const F = window.__zooFrames || [], Z = window.CITY.highParkZoo; const dt = F.slice(1).map((t, i) => +(t - F[i]).toFixed(1));\n  const near = (t, w) => F.map((f, i) => [f, dt[i - 1]]).filter(([f, d]) => d !== undefined && Math.abs(f - t) <= w).map(([f, d]) => [Math.round(f - t), d]);\n  const ev = (Z && Z.events) || []; const swap = ev.find((e) => e.what === 'swap'), fetch = ev.find((e) => /^fetch/.test(e.what));\n  const sorted = [...dt].sort((a, b) => a - b), pct = (p) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];\n  return { frames: F.length, p50: pct(0.5), p95: pct(0.95), p99: pct(0.99), max: sorted[sorted.length - 1], over50: dt.filter((d) => d > 50).length, over100: dt.filter((d) => d > 100).length,\n    events: ev, aroundFetch: fetch ? near(fetch.t, 500) : null, aroundSwap: swap ? near(swap.t, 500) : null, start: F[0], dt }; })()"
+ },
+ {
+  "name": "zoo-check",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const Z = window.CITY.highParkZoo, A = window.__CITY_APP, out = {}; A.scene.traverse((o) => { if (o.isInstancedMesh && /^HighParkZoo/.test(o.name)) out[o.name] = { count: o.count, visible: o.visible, tris: (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 }; }); return { zoo: Z ? { mode: Z.mode, state: Z.state, models: Z.models, failed: Z.failed, triangles: Z.triangles, events: Z.events } : null, meshes: out, features: window.CITY.highParkFeatureStats, info: A.renderer.info.render, tier: window.CITY.QUALITY.tier }; })()"
+ }
+]

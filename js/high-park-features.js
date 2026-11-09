@@ -967,21 +967,49 @@ function coachHouse(group, M, top, colliders) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// The zoo's animals: simple procedural beasts (boxes) in the paddocks, each species in its own stretch of the enclosure
+// The zoo's animals (docs/high-park-zoo-animals.md): each species in its own stretch of the enclosure, one InstancedMesh
+// a species. Low-poly models from Poly Pizza (assets/zoo/<species>.glb, tools/build-zoo-animals.mjs; credited in
+// CREDITS.md) are fetched once the camera comes within ZOO_NEAR of the enclosure; until they are in, and for good if
+// they fail, simple procedural beasts (boxes) stand in their places. ?zoo=0: no animals; ?zoo=boxes: the boxes only;
+// ?zoo=models: the models on every tier
 // ---------------------------------------------------------------------------------------------------------------------
 const SPECIES = [
-  // [name, count, body length, shoulder height, colour, head colour, extras]
+  // [name, count, body length, shoulder height (birds: standing height), colour, head colour, extras]
   ['bison', 4, 2.6, 1.7, 0x3d2a1c, 0x2a1d14, { hump: 0.45 }],
   ['yak', 3, 2.2, 1.45, 0x2b2622, 0xe9e2d6, { horns: 0xd8d0c0 }],
   ['highland', 3, 2.0, 1.2, 0xa2582b, 0xa2582b, { horns: 0xd9cdb4, shaggy: true }],
   ['llama', 4, 1.3, 1.1, 0xe2d6c0, 0xd8cbb2, { neck: 0.9 }],
   ['reindeer', 3, 1.6, 1.1, 0x6e5a47, 0xe6ddcf, { antlers: 0x8c7a62 }],
-  ['sheep', 4, 1.1, 0.75, 0xd9d1c2, 0x2a2622, {}],
-  ['capybara', 3, 1.0, 0.5, 0x7a5a3c, 0x6a4c33, { short: true }]
+  ['mouflon', 2, 1.1, 0.72, 0x6b4a2c, 0xe2d8c6, { horns: 0xcdb98e }],
+  ['barbary', 2, 1.3, 0.9, 0xa8804f, 0x9a7446, { horns: 0x8c7a62 }],
+  ['capybara', 3, 1.0, 0.5, 0x7a5a3c, 0x6a4c33, { short: true }],
+  ['emu', 2, 0.9, 1.7, 0x5a5048, 0x2a2622, { bird: { leg: 0.45, tail: 0 } }],
+  ['peafowl', 3, 0.6, 0.95, 0x1d4fa8, 0x1d4fa8, { bird: { leg: 0.4, tail: 1.1 } }]
 ];
+// m from the enclosure: fetch the models (the camera's distance, so a fly-over brings them too). ?zooNear=<m> moves it,
+// for a review that watches the swap close up
+const ZOO_NEAR = (() => {
+  const q = typeof location !== 'undefined' ? Number(new URLSearchParams(location.search).get('zooNear')) : 0;
+  return q >= 10 && q <= 2000 ? q : 500;
+})();
+const ZOO_FAR = 900; // m: past it the models are not drawn (a 2 m animal is under two pixels; they stay loaded)
+const ZOO_MODE = (() => {
+  const q = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('zoo') : null;
+  return q === '0' || q === 'boxes' || q === 'models' ? q : 'auto';
+})();
 function beast(spec) {
   const [, , len, sh, body, head, ex] = spec;
   const B = makeBuf(), bc = RGB(body), hc = RGB(head), dark = RGB(0x1e1a17);
+  if (ex.bird) {
+    // (a bird, facing +z: two legs, the body, the neck up to the head, a tail or a peacock's folded train)
+    const legH = sh * ex.bird.leg, bodyH = sh * 0.28;
+    for (const s of [-1, 1]) box(B, s * len * 0.12, 0, 0, 0.025, legH / 2, 0.025, 0, dark);
+    box(B, 0, legH, 0, len * 0.3, bodyH / 2, len * 0.5, 0, bc);
+    box(B, 0, legH + bodyH * 0.6, len * 0.42, 0.05, (sh - legH - bodyH * 0.6) / 2, 0.06, 0, hc);
+    box(B, 0, sh - 0.1, len * 0.48, 0.06, 0.05, 0.1, 0, hc);
+    if (ex.bird.tail) box(B, 0, legH + bodyH * 0.2, -len * 0.5 - ex.bird.tail / 2, len * 0.22, 0.04, ex.bird.tail / 2, 0, RGB(0x2c5434));
+    return bufGeometry(B, true);
+  }
   const legH = ex.short ? sh * 0.35 : sh * 0.55, bodyH = sh - legH + (ex.hump || 0) * 0.3;
   // (built facing +z: legs, body, hump, neck and head)
   for (const [x, z] of [[-0.22, -0.4], [0.22, -0.4], [-0.22, 0.4], [0.22, 0.4]]) box(B, x * len * 0.8, 0, z * len * 0.9, 0.07 * Math.max(1, len / 1.6), legH / 2, 0.07 * Math.max(1, len / 1.6), 0, dark);
@@ -1000,17 +1028,21 @@ function beast(spec) {
 function animals(group, M, top) {
   const { THREE } = C;
   const zoo = AREAS.find((a) => a.kind === 'zoo');
-  if (!zoo) return 0;
-  // spots in the enclosure clear of the paths through it (Deer Pen Road's footway) and of the fences
+  if (!zoo || ZOO_MODE === '0') return { placed: 0, herds: [] };
+  // spots in the enclosure clear of the paths through it (Deer Pen Road's footway), of Deer Pen Road itself (off the
+  // park's islands: the street) and of the fences
   const spots = [];
   const { x0, x1, z0, z1 } = zoo.box;
+  // (the post-and-rail fences near the enclosure: an animal keeps 2 m off them)
+  const rails = BARRIERS.filter((b) => b.kind === 4 && b.pts.some(([x, z]) => x > x0 - 20 && x < x1 + 20 && z > z0 - 20 && z < z1 + 20));
+  // (m: a margin more, for the herd's paths)
+  const spotOk = (px, pz, m = 0) => inRing(zoo.pts, px, pz) && !highParkFeatureAt(px, pz, 3 + m) && C.blockAt(px, pz) && C.blockAt(px + 2 + m, pz) && C.blockAt(px - 2 - m, pz) && C.blockAt(px, pz + 2 + m) && C.blockAt(px, pz - 2 - m) &&
+    !rails.some((b) => b.pts.some((p, i) => i > 0 && segDist(px, pz, b.pts[i - 1][0], b.pts[i - 1][1], p[0], p[1]) < 2 + m));
   for (let x = x0; x < x1; x += 3) for (let z = z0; z < z1; z += 3) {
     const px = x + (hash(x, z, 1) - 0.5) * 2.6, pz = z + (hash(x, z, 2) - 0.5) * 2.6;
-    if (!inRing(zoo.pts, px, pz) || highParkFeatureAt(px, pz, 3)) continue;
-    if (BARRIERS.some((b) => b.kind === 4 && b.pts.some((p, i) => i > 0 && segDist(px, pz, b.pts[i - 1][0], b.pts[i - 1][1], p[0], p[1]) < 2))) continue;
-    spots.push([px, pz]);
+    if (spotOk(px, pz)) spots.push([px, pz]);
   }
-  if (!spots.length) return 0;
+  if (!spots.length) return { placed: 0, herds: [] };
   // (the enclosure's long axis: the species in order along it, a herd each)
   const cx = spots.reduce((s, p) => s + p[0], 0) / spots.length, cz = spots.reduce((s, p) => s + p[1], 0) / spots.length;
   let sxx = 0, sxz = 0, szz = 0;
@@ -1019,6 +1051,7 @@ function animals(group, M, top) {
   spots.sort((p, q) => ((p[0] - cx) * ax + (p[1] - cz) * az) - ((q[0] - cx) * ax + (q[1] - cz) * az));
   const m4 = new THREE.Matrix4(), qt = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), sc = new THREE.Vector3(1, 1, 1);
   let placed = 0;
+  const herds = [];
   SPECIES.forEach((spec, si) => {
     const band = spots.slice(Math.floor((si * spots.length) / SPECIES.length), Math.floor(((si + 1) * spots.length) / SPECIES.length));
     const picks = [];
@@ -1029,8 +1062,9 @@ function animals(group, M, top) {
     }
     if (!picks.length) return;
     const geo = beast(spec), mesh = new THREE.InstancedMesh(geo, M.solid, picks.length);
+    const yaws = picks.map(([x, z]) => hash(x, z, 3) * Math.PI * 2);
     picks.forEach(([x, z], i) => {
-      qt.setFromAxisAngle(up, hash(x, z, 3) * Math.PI * 2);
+      qt.setFromAxisAngle(up, yaws[i]);
       m4.compose(new THREE.Vector3(x, top(x, z) - 0.02, z), qt, sc);
       mesh.setMatrixAt(i, m4);
     });
@@ -1038,10 +1072,425 @@ function animals(group, M, top) {
     mesh.computeBoundingSphere();
     mesh.name = `HighParkZoo_${spec[0]}`; mesh.castShadow = true; mesh.receiveShadow = true;
     group.add(mesh); placed += picks.length;
+    herds.push({ name: spec[0], boxes: mesh, len: spec[2], band, picks, yaws });
   });
-  return placed;
+  return { placed, herds, box: zoo.box, y: top(cx, cz), spotOk, top };
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The animals' idle life (docs/high-park-zoo-animals.md, st-gtnq): no skeletons. Each model carries per-vertex weights
+// for its neck, head, tail, legs and ears and its hinges (tools/zoo/rig.mjs, baked by tools/build-zoo-animals.mjs); the
+// vertex shader (zooAnimMaterial) bends them, the shadow pass with it. What each animal is doing is a deterministic
+// timeline of acts (zooHerdSim): grazing (pecking, for the birds), standing, looking round, turning on the spot and,
+// now and then, ambling a few metres to another spot in its own species' stretch of the enclosure, clear of the fences,
+// the road and the others. The sim runs on its own clock, only while the zoo is near and drawn, so a capture at the same
+// sim time sees the same herd. ?zooanim=0: the models stand still (the static material, no step)
+// ---------------------------------------------------------------------------------------------------------------------
+const ZOO_ANIM = (() => (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('zooanim') !== '0' : true))();
+// each species' acts and their odds, its walking speed (m/s, slow) and its clearance radius (m) from the others
+const ZOO_LIFE = {
+  bison: { acts: { graze: 0.62, stand: 0.16, walk: 0.1, turn: 0.12 }, speed: 0.55 },
+  yak: { acts: { graze: 0.6, stand: 0.16, walk: 0.11, turn: 0.13 }, speed: 0.55 },
+  highland: { acts: { graze: 0.6, stand: 0.16, walk: 0.11, turn: 0.13 }, speed: 0.5 },
+  llama: { acts: { look: 0.42, graze: 0.2, stand: 0.1, walk: 0.14, turn: 0.14 }, speed: 0.6 },
+  reindeer: { acts: { graze: 0.5, look: 0.14, stand: 0.1, walk: 0.13, turn: 0.13 }, speed: 0.6 },
+  mouflon: { acts: { graze: 0.55, look: 0.12, stand: 0.08, walk: 0.13, turn: 0.12 }, speed: 0.45 },
+  barbary: { acts: { graze: 0.55, look: 0.12, stand: 0.08, walk: 0.13, turn: 0.12 }, speed: 0.45 },
+  // (the capybaras barely move: long rests, a little grazing, the odd turn)
+  capybara: { acts: { rest: 0.7, graze: 0.2, turn: 0.07, walk: 0.03 }, speed: 0.25 },
+  emu: { acts: { peck: 0.45, look: 0.13, stand: 0.08, walk: 0.22, turn: 0.12 }, speed: 0.55 },
+  peafowl: { acts: { peck: 0.5, look: 0.1, stand: 0.08, walk: 0.2, turn: 0.12 }, speed: 0.35 }
+};
+const ZOO_ACT_SECONDS = { graze: [10, 28], stand: [5, 13], look: [7, 15], peck: [5, 12], rest: [15, 40] };
+const mulberry = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+const ease = (x) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
+const segSeg = (a, b, c, d) => {
+  // (the least distance between segments ab and cd, in the plane)
+  const cross = (o, p, q) => (p[0] - o[0]) * (q[1] - o[1]) - (p[1] - o[1]) * (q[0] - o[0]);
+  if (Math.sign(cross(a, b, c)) * Math.sign(cross(a, b, d)) < 0 && Math.sign(cross(c, d, a)) * Math.sign(cross(c, d, b)) < 0) return 0;
+  return Math.min(segDist(a[0], a[1], c[0], c[1], d[0], d[1]), segDist(b[0], b[1], c[0], c[1], d[0], d[1]), segDist(c[0], c[1], a[0], a[1], b[0], b[1]), segDist(d[0], d[1], a[0], a[1], b[0], b[1]));
+};
+// The walk's trapezoid: speed up over ta, at vmax, slow down over ta; s(tau) the distance, e(tau) the "stride distance"
+// (the integral of max(v, v0), v0 = vmax / 2): the legs' cycle advances with it, at full swing above v0 and with the
+// swing scaled by v / v0 below it, so a foot on the ground moves back exactly as fast as the body goes forward
+function walkProfile(dist, vmax) {
+  let ta = 1.6;
+  if (dist < vmax * ta) ta = dist / vmax; // (short: a triangle)
+  const cruise = Math.max(0, (dist - vmax * ta) / vmax), d = 2 * ta + cruise, v0 = vmax / 2, t0 = (ta * v0) / vmax;
+  const s = (t) => (t <= 0 ? 0 : t < ta ? (vmax * t * t) / (2 * ta) : t < ta + cruise ? (vmax * ta) / 2 + vmax * (t - ta) : t < d ? dist - (vmax * (d - t) * (d - t)) / (2 * ta) : dist);
+  const v = (t) => (t <= 0 || t >= d ? 0 : t < ta ? (vmax * t) / ta : t < ta + cruise ? vmax : (vmax * (d - t)) / ta);
+  const ramp = (t) => (t < t0 ? v0 * t : v0 * t0 + (vmax / (2 * ta)) * (t * t - t0 * t0)); // (the integral of max(v, v0) over a ramp)
+  const eUp = ramp(ta);
+  const e = (t) => (t <= 0 ? 0 : t < ta ? ramp(t) : t < ta + cruise ? eUp + vmax * (t - ta) : t < d ? 2 * eUp + vmax * cruise - ramp(d - t) : 2 * eUp + vmax * cruise);
+  return { d, s, v, e, v0 };
+}
+/**
+ * The herd's timeline. animals: [{ species, x, z, yaw, len }]; spotOk(x, z): ground an animal may stand on; region(i)
+ * the species' spots (targets) and inRegion(i, x, z); seed. advance(t) plans acts up to sim time t (in time order, each
+ * act's choices from the animal's own seeded stream and the others' reservations at that moment); state(i, t) the
+ * animal's pose: { x, z, yaw, g (neck down 0-1 of the species' graze, negative raises it), look (the neck's turn, rad),
+ * stride (m), amp (0-1 the legs' swing) }
+ */
+function zooHerdSim({ animals, spotOk, regions, seed = 1, life = ZOO_LIFE }) {
+  const N = animals.length;
+  const radius = (a) => 0.42 * a.len + 0.25;
+  const A = animals.map((a, i) => {
+    const rnd = mulberry(Math.imul(seed, 2654435761) ^ Math.imul(i + 1, 40503));
+    const L = life[a.species] || life.bison;
+    // (a first act part-way through, so the herd starts out of step)
+    const first = { kind: 'stand', t0: -rnd() * 8, d: 8, x: a.x, z: a.z, yaw: a.yaw, k: rnd() };
+    return { ...a, rnd, L, r: radius(a), act: first, queue: [], resv: [[a.x, a.z], [a.x, a.z]] };
+  });
+  const inRegion = (i, x, z, r = 2.2) => regions[i].some((p) => (p[0] - x) ** 2 + (p[1] - z) ** 2 < r * r);
+  // (every 10 cm of the way checked with a 15 cm margin, so the points between the checks are on good ground too)
+  const pathOk = (i, ax, az, bx, bz) => {
+    const n = Math.ceil(Math.hypot(bx - ax, bz - az) / 0.1);
+    for (let k = 1; k <= n; k++) { const x = ax + ((bx - ax) * k) / n, z = az + ((bz - az) * k) / n; if (!inRegion(i, x, z, 2.0) || !spotOk(x, z, 0.15)) return false; }
+    return true;
+  };
+  // (a path keeps every other animal's place or path at least the two clearances off, or, for two already closer than
+  // that, no closer than they are; and it ends clear)
+  const clear = (i, a, b) => A.every((o, j) => {
+    if (j === i) return true;
+    const rr = A[i].r + o.r, now = segSeg(a, a, o.resv[0], o.resv[1]);
+    return segSeg(a, b, o.resv[0], o.resv[1]) >= Math.min(rr, now) - 1e-9 && segSeg(b, b, o.resv[0], o.resv[1]) >= rr;
+  });
+  const end = (o) => o.act.t0 + o.act.d;
+  const where = (o) => (o.act.kind === 'walk' ? [o.act.bx, o.act.bz] : [o.act.x, o.act.z]);
+  function plan(i, t) {
+    const o = A[i], [x, z] = where(o), yaw = o.act.kind === 'walk' ? o.act.yaw : o.act.kind === 'turn' ? o.act.y1 : o.act.yaw;
+    if (o.act.kind === 'walk') o.resv = [[x, z], [x, z]];
+    if (o.queue.length) { o.act = { ...o.queue.shift(), t0: t }; return; }
+    const r = o.rnd;
+    let pick = r(), kind = 'stand';
+    for (const [k, w] of Object.entries(o.L.acts)) { if (pick < w) { kind = k; break; } pick -= w; }
+    if (kind === 'walk') {
+      const reg = regions[i];
+      for (let tries = 0; tries < 10; tries++) {
+        const p = reg[Math.floor(r() * reg.length)], tx = p[0] + (r() - 0.5) * 1.2, tz = p[1] + (r() - 0.5) * 1.2, dist = Math.hypot(tx - x, tz - z);
+        if (dist < 2 || dist > 7 || !pathOk(i, x, z, tx, tz) || !clear(i, [x, z], [tx, tz])) continue;
+        const heading = Math.atan2(tx - x, tz - z);
+        let dy = heading - yaw; dy -= Math.round(dy / (2 * Math.PI)) * 2 * Math.PI;
+        const prof = walkProfile(dist, o.L.speed * (0.85 + 0.3 * r()));
+        o.resv = [[x, z], [tx, tz]];
+        o.queue.push({ kind: 'walk', d: prof.d, ax: x, az: z, bx: tx, bz: tz, yaw: yaw + dy, prof, k: r() });
+        o.act = { kind: 'turn', t0: t, d: 1.2 + Math.abs(dy) / 0.45, x, z, y0: yaw, y1: yaw + dy, k: r() };
+        return;
+      }
+      kind = 'stand';
+    }
+    if (kind === 'turn') {
+      const dy = (r() < 0.5 ? -1 : 1) * (0.5 + 1.1 * r());
+      o.act = { kind, t0: t, d: 1.2 + Math.abs(dy) / 0.45, x, z, y0: yaw, y1: yaw + dy, k: r() };
+      return;
+    }
+    const [lo, hi] = ZOO_ACT_SECONDS[kind];
+    let d = lo + (hi - lo) * r();
+    const k = r();
+    // (pecking: whole pecks, each 1.1-2 s, so the act ends with the head up)
+    if (kind === 'peck') { const P = 1.1 + 0.9 * k; d = P * Math.max(2, Math.round(d / P)); }
+    o.act = { kind, t0: t, d, x, z, yaw, k };
+  }
+  let now = -Infinity;
+  function advance(t) {
+    for (let guard = 0; guard < 100000; guard++) {
+      let i = -1, te = Infinity;
+      for (let j = 0; j < N; j++) { const e = end(A[j]); if (e < te || (e === te && j < i)) { te = e; i = j; } }
+      if (te > t) break;
+      plan(i, te);
+    }
+    now = Math.max(now, t);
+  }
+  function state(i, t) {
+    const o = A[i], a = o.act, tau = Math.max(0, t - a.t0), d = a.d, h = (n) => { const v = Math.sin((a.k * 1000 + n) * 12.9898) * 43758.5453; return v - Math.floor(v); };
+    const env = ease(tau / 1.5) * ease((d - tau) / 1.5);
+    const S = { x: a.x, z: a.z, yaw: a.yaw, g: 0, look: 0, stride: 0, amp: 0 };
+    if (a.kind === 'walk') {
+      const p = a.prof, s = p.s(tau), f = s / Math.hypot(a.bx - a.ax, a.bz - a.az);
+      S.x = a.ax + (a.bx - a.ax) * f; S.z = a.az + (a.bz - a.az) * f; S.yaw = a.yaw;
+      S.amp = Math.min(1, p.v(tau) / p.v0); S.stride = p.e(tau) + a.k * 10;
+      S.g = (0.12 + 0.05 * Math.sin(S.stride * 5)) * S.amp;
+    } else if (a.kind === 'turn') {
+      const f = ease(tau / d);
+      S.yaw = a.y0 + (a.y1 - a.y0) * f;
+      // (a few steps on the spot as it turns)
+      S.amp = 0.3 * Math.sin(Math.PI * Math.min(1, tau / d)); S.stride = tau * 0.25 + a.k * 10; S.g = 0.05 * env;
+    } else if (a.kind === 'graze') {
+      // (head down, nibbling, lifted for a couple of seconds every 7-12 s, up at the end)
+      const P = 7 + 5 * h(1), n = Math.floor(tau / P), l = tau - n * P, lift = (n + 1) * P < d - 2 ? ease((l - (P - 2.6)) / 0.8) * ease((P - l) / 0.8) : 0;
+      S.g = env * (1 - 0.8 * lift) + 0.04 * Math.sin(tau * 5.3) * env;
+      S.look = 0.12 * Math.sin(tau * 0.31 + h(2) * 6) * env;
+    } else if (a.kind === 'peck') {
+      const P = 1.1 + 0.9 * a.k, l = tau % P;
+      S.g = ease(l / 0.18) * ease((0.55 - l) / 0.25);
+      S.look = 0.18 * Math.sin(tau * 0.9 + h(3) * 6) * env;
+    } else if (a.kind === 'look') {
+      // (the head up and turned to a new bearing every few seconds, back to the front at the end)
+      const P = 2.8, n = Math.floor(tau / P), l = tau - n * P, m = Math.max(1, Math.floor(d / P) - 1);
+      const at = (q) => (q <= 0 || q >= m ? 0 : (h(10 + q) * 2 - 1) * 0.8);
+      S.look = (at(n) + (at(n + 1) - at(n)) * ease((l - 1.6) / 1.0)) * env;
+      S.g = -0.12 * env;
+    } else if (a.kind === 'stand') {
+      S.g = 0.12 * env * (0.5 + 0.5 * Math.sin(tau * 0.4 + h(4) * 6));
+      S.look = 0.22 * Math.sin(tau * 0.27 + h(5) * 6) * env;
+    } else if (a.kind === 'rest') {
+      S.g = 0.08 * env * (0.5 + 0.5 * Math.sin(tau * 0.2));
+      S.look = 0.15 * Math.sin(tau * 0.17 + h(6) * 6) * env;
+    }
+    return S;
+  }
+  return { animals: A, advance, state, get now() { return now; }, inRegion, radius: (i) => A[i].r };
+}
+
+// The animals' material: the park's vertex-colour material with the rig bent in the vertex stage, the shadow pass the
+// same (castShadowPositionNode: the bend without the normals). Per instance: zooS0 = (g, look, stride, amp), zooS1 =
+// (seed, yaw); per species (onObjectUpdate, from the model's userData.zooRig): its hinges and gait. The same steps as
+// tools/zoo/rig.mjs pose(), which the review renders use
+function zooAnimMaterial(clock) {
+  const { THREE } = C;
+  const T = C.TSL;
+  const { Fn, attribute, uniform, vec3, float, floor, fract, clamp, sin, cos, asin, max, pow, step, abs, positionLocal, normalLocal, positionGeometry } = T;
+  const mat = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
+  mat.name = 'HighParkZooAnimals';
+  const R = (k) => uniform(new THREE.Vector4()).onObjectUpdate(({ object }) => object.userData.zooU && object.userData.zooU[k]);
+  const U0 = R(0), U1 = R(1), U2 = R(2), U3 = R(3), U4 = R(4), U5 = R(5);
+  // U0 (neck y, z, head y, z), U1 (tail y, z, axis y, z), U2 (front hip y, z, back hip y, z), U3 (excursion, lift, reach,
+  // tail amp), U4 (ear x, y, z, ear amp), U5 (graze neck, head, pitch, belly), all in the model's space
+  const t = clock;
+  const rotX = (p, c, s, py, pz) => vec3(p.x, p.y.sub(py).mul(c).sub(p.z.sub(pz).mul(s)).add(py), p.y.sub(py).mul(s).add(p.z.sub(pz).mul(c)).add(pz));
+  const rotY = (p, c, s, px, pz) => vec3(p.x.sub(px).mul(c).add(p.z.sub(pz).mul(s)).add(px), p.y, p.z.sub(pz).mul(c).sub(p.x.sub(px).mul(s)).add(pz));
+  const rotA = (p, ay, az, c, s, py, pz) => {
+    const x = p.x, y = p.y.sub(py), z = p.z.sub(pz), d = y.mul(ay).add(z.mul(az)), k = float(1).sub(c);
+    return vec3(x.mul(c).add(ay.mul(z).sub(az.mul(y)).mul(s)), y.mul(c).add(az.mul(x).mul(s)).add(ay.mul(d).mul(k)).add(py), z.mul(c).sub(ay.mul(x).mul(s)).add(az.mul(d).mul(k)).add(pz));
+  };
+  const bend = (withNormal) => Fn(() => {
+    const a = attribute('_zooa', 'vec4'), S0 = attribute('zooS0', 'vec4'), S1 = attribute('zooS1', 'vec2');
+    const p0 = positionGeometry;
+    let p = p0.toVar(), n = withNormal ? attribute('normal', 'vec3').toVar() : null;
+    const wn = a.x, wh = a.y, wt = a.z, c8 = a.w.mul(8), code = floor(c8.add(0.02));
+    const wl = clamp(c8.sub(code).div(0.9), 0, 1).mul(step(0.5, code));
+    const isLeg = step(code, 4.5), isEar = step(4.5, code);
+    const seed = S1.x, g = S0.x, look = S0.y, stride = S0.z, amp = S0.w;
+    // breathing: the torso swells across
+    const torso = float(1).sub(wn).mul(float(1).sub(wt)).mul(float(1).sub(wl.mul(isLeg)));
+    const br = sin(t.mul(1.6).add(seed.mul(6.28))).mul(0.012).mul(torso).mul(clamp(p0.y.sub(U5.w).mul(4), 0, 1));
+    p.x.mulAssign(br.add(1));
+    // ears: a flick about the ear's base, now and then
+    const sg = step(5.5, code).mul(-2).add(1), we = wl.mul(isEar);
+    const env = pow(max(sin(t.mul(0.37).add(seed.mul(17)).add(sg)), 0), 24);
+    const ea = sg.mul(U4.w).mul(env).mul(sin(t.mul(22))).mul(we), ec = cos(ea), es = sin(ea);
+    const ex = p.x.sub(sg.mul(U4.x)), ey = p.y.sub(U4.y);
+    p.assign(vec3(ex.mul(ec).sub(ey.mul(es)).add(sg.mul(U4.x)), ex.mul(es).add(ey.mul(ec)).add(U4.y), p.z));
+    if (n) n.assign(vec3(n.x.mul(ec).sub(n.y.mul(es)), n.x.mul(es).add(n.y.mul(ec)), n.z));
+    // legs: swung from the hip, the foot back along the ground at the body's speed (the stance), then lifted forward
+    const duty = 0.65, wleg = wl.mul(isLeg);
+    const off = step(abs(code.sub(1)), 0.5).mul(0.25).add(step(abs(code.sub(2)), 0.5).mul(0.75)).add(step(abs(code.sub(4)), 0.5).mul(0.5));
+    const u = fract(stride.mul(duty / 2).div(U3.x.max(0.01)).add(off));
+    const st = step(duty, u), sw = clamp(u.sub(duty).div(1 - duty), 0, 1);
+    const fx = float(1).sub(u.mul(2 / duty)).mul(float(1).sub(st)).add(sw.mul(sw).mul(float(3).sub(sw.mul(2))).mul(2).sub(1).mul(st));
+    const lift = sin(sw.mul(Math.PI)).mul(st);
+    const front = step(code, 2.5), hy = U2.z.add(U2.x.sub(U2.z).mul(front)), hz = U2.w.add(U2.y.sub(U2.w).mul(front));
+    const la = asin(clamp(U3.x.mul(fx).mul(amp).div(hy), -0.9, 0.9)).mul(wleg);
+    const lc = cos(la), ls = sin(la.negate());
+    const depth = clamp(hy.sub(p0.y).div(hy), 0, 1);
+    p.assign(rotX(p, lc, ls, hy, hz));
+    if (n) n.assign(rotX(n, lc, ls, 0, 0));
+    p.y.addAssign(U3.y.mul(lift).mul(amp).sub(hy.mul(float(1).sub(lc))).mul(depth).mul(wleg));
+    // the tail: swished about its root, in gusts
+    const ta = U3.w.mul(wt).mul(sin(t.mul(2.1).add(seed.mul(9))).mul(0.7).add(sin(t.mul(3.3).add(seed.mul(4))).mul(0.3))).mul(max(sin(t.mul(0.23).add(seed.mul(3))), 0).mul(0.5).add(0.5));
+    const tc = cos(ta), ts = sin(ta);
+    p.assign(rotA(p, U1.z, U1.w, tc, ts, U1.x, U1.y));
+    if (n) n.assign(rotA(n, U1.z, U1.w, tc, ts, 0, 0));
+    // the head about the poll, the neck about its base (down, then turned), the reach, the body's pitch (birds)
+    const ha = g.mul(U5.y).mul(wh), hc = cos(ha), hs = sin(ha);
+    p.assign(rotX(p, hc, hs, U0.z, U0.w));
+    if (n) n.assign(rotX(n, hc, hs, 0, 0));
+    const na = g.mul(U5.x).mul(wn), nc = cos(na), ns = sin(na);
+    p.assign(rotX(p, nc, ns, U0.x, U0.y));
+    if (n) n.assign(rotX(n, nc, ns, 0, 0));
+    const ya = look.mul(wn), yc = cos(ya), ys = sin(ya);
+    p.assign(rotY(p, yc, ys, 0, U0.y));
+    if (n) n.assign(rotY(n, yc, ys, 0, 0));
+    p.y.subAssign(U3.z.mul(clamp(g, 0, 1)).mul(wn));
+    const pa = max(g, 0).mul(U5.z).mul(float(1).sub(wleg)), pc = cos(pa), ps = sin(pa);
+    p.assign(rotX(p, pc, ps, U2.z, U2.w));
+    if (n) n.assign(rotX(n, pc, ps, 0, 0));
+    // walking: the body bobs twice a stride
+    p.y.addAssign(abs(sin(stride.mul(duty * Math.PI).div(U3.x.max(0.01)))).mul(amp).mul(0.012).mul(U2.z).mul(float(1).sub(wleg)));
+    // into the instance's frame: the bend's offset turned with the instance (its yaw; the instance matrix has no scale)
+    const cy = cos(S1.y), sy = sin(S1.y);
+    const dp = p.sub(p0);
+    if (n) normalLocal.assign(rotY(n, cy, sy, 0, 0).normalize());
+    return positionLocal.add(rotY(dp, cy, sy, 0, 0));
+  })();
+  mat.positionNode = bend(true);
+  mat.castShadowPositionNode = bend(false);
+  return mat;
+}
+// (a species' hinges as the material's uniforms, from the model's extras: see tools/zoo/rig.mjs computeRig)
+function zooRigUniforms(rig) {
+  const { THREE } = C;
+  const V = (a, b, c, d) => new THREE.Vector4(a, b, c, d);
+  return [V(rig.neck[0], rig.neck[1], rig.head[0], rig.head[1]), V(rig.tail[0], rig.tail[1], rig.tailAxis[0], rig.tailAxis[1]), V(rig.hipF[0], rig.hipF[1], rig.hipB[0], rig.hipB[1]),
+    V(rig.exc, rig.lift, rig.reach, rig.tailAmp), V(rig.ear[0], rig.ear[1], rig.ear[2], rig.earAmp), V(rig.graze[0], rig.graze[1], rig.graze[2], rig.belly)];
+}
+
+// The models' arrival: fetched once the camera is within ZOO_NEAR of the enclosure (never unloaded); each species'
+// InstancedMesh then warmed hidden (count 0, not frustum culled: its render objects, buffers and pipelines, the shadow
+// pass's too, built a couple a frame), and all swapped in for the boxes together on a later frame that builds nothing.
+// A species whose model fails to load keeps its boxes. C.highParkZoo: the state and its timeline, for the captures
+function zooModels(group, M, herds, enclosure, mode) {
+  const { THREE } = C;
+  const Z = { mode, state: mode === 'models' ? 'boxes' : 'off', near: ZOO_NEAR, box: enclosure.box, far: false, events: [], models: 0, failed: [], triangles: 0 };
+  // the idle life: one sim for the whole herd (every species, in the herds' order), its clock the shader's
+  const seedQ = typeof location !== 'undefined' ? Number(new URLSearchParams(location.search).get('zooSeed')) : 0;
+  const animals = [], regions = [], slots = [];
+  herds.forEach((h, hi) => h.picks.forEach(([x, z], i) => { animals.push({ species: h.name, x, z, yaw: h.yaws[i], len: h.len }); regions.push(h.band); slots.push([hi, i]); }));
+  const clock = C.TSL.uniform(0);
+  const Zs = { enabled: ZOO_ANIM, t: 0, seed: seedQ > 0 ? seedQ : 1, steps: 0, ms: 0, active: false, clock };
+  Zs.inputs = { animals, regions, spotOk: enclosure.spotOk };
+  Zs.sim = zooHerdSim({ ...Zs.inputs, seed: Zs.seed });
+  Z.anim = Zs;
+  let animMat = null;
+  const material = () => (Zs.enabled ? (animMat || (animMat = zooAnimMaterial(clock))) : M.solid);
+  const log = (what) => Z.events.push({ t: Math.round(performance.now()), frame: (window.__CITY_APP && window.__CITY_APP.frameNo) || 0, what });
+  const pending = [];
+  let warmAt = 0, settle = 0;
+  const distance = (p) => {
+    const dx = Math.max(enclosure.box.x0 - p.x, 0, p.x - enclosure.box.x1), dz = Math.max(enclosure.box.z0 - p.z, 0, p.z - enclosure.box.z1);
+    return Math.hypot(dx, dz, Math.max(0, p.y - enclosure.y));
+  };
+  async function load() {
+    const { GLTFLoader, MeshoptDecoder } = C.Addons || {};
+    if (!GLTFLoader || !MeshoptDecoder) { Z.state = 'failed'; log('no GLTFLoader: boxes kept'); return; }
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+    await Promise.all(herds.map(async (h) => {
+      let gltf;
+      try { gltf = await loader.loadAsync(`./assets/zoo/${h.name}.glb`); }
+      catch (e) { console.warn(`[high-park] zoo: ${h.name}.glb did not load, its boxes stay:`, e); Z.failed.push(h.name); return; }
+      let src = null;
+      gltf.scene.traverse((o) => { if (!src && o.isMesh) src = o; });
+      if (!src) { Z.failed.push(h.name); return; }
+      // (meshopt's quantised positions, normals and colours back to floats, the node's transform baked in: see
+      // street-props.js. Floats like the boxes', so the models draw with the boxes' render pipelines: none to compile)
+      const geo = new THREE.BufferGeometry();
+      for (const name of ['position', 'normal', 'color', '_zooa']) {
+        const a = src.geometry.attributes[name];
+        if (!a) continue;
+        const k = a.itemSize, f = new Float32Array(a.count * k);
+        for (let i = 0; i < a.count; i++) for (let c = 0; c < k; c++) f[k * i + c] = a.getComponent(i, c);
+        geo.setAttribute(name, new THREE.BufferAttribute(f, k));
+      }
+      const rig = src.userData && src.userData.zooRig;
+      // (each instance's pose, written each frame the herd is live: zooS0 (graze, look, stride, swing), zooS1 (seed, yaw))
+      const n = h.boxes.count, S0 = new Float32Array(n * 4), S1 = new Float32Array(n * 2);
+      for (let i = 0; i < n; i++) { S1[2 * i] = hash(i, h.len, 11); S1[2 * i + 1] = h.yaws[i]; }
+      geo.setAttribute('zooS0', new THREE.InstancedBufferAttribute(S0, 4).setUsage(THREE.DynamicDrawUsage));
+      geo.setAttribute('zooS1', new THREE.InstancedBufferAttribute(S1, 2).setUsage(THREE.DynamicDrawUsage));
+      if (src.geometry.index) geo.setIndex(src.geometry.index.clone());
+      src.geometry.dispose();
+      src.updateWorldMatrix(true, false);
+      geo.applyMatrix4(src.matrixWorld);
+      const animated = !!(rig && geo.attributes._zooa);
+      if (!animated) { geo.deleteAttribute('zooS0'); geo.deleteAttribute('zooS1'); }
+      const mesh = new THREE.InstancedMesh(geo, animated ? material() : M.solid, h.boxes.count);
+      mesh.instanceMatrix.copy(h.boxes.instanceMatrix);
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingSphere();
+      if (animated) {
+        mesh.userData.zooU = zooRigUniforms(rig);
+        // (the bounds: anywhere in its stretch of the enclosure, as the herd wanders)
+        let sx = 0, sz = 0;
+        for (const [x, z] of h.band) { sx += x; sz += z; }
+        const cx = sx / h.band.length, cz = sz / h.band.length;
+        let r = 0;
+        for (const [x, z] of h.band) r = Math.max(r, Math.hypot(x - cx, z - cz));
+        mesh.boundingSphere.set(new THREE.Vector3(cx, enclosure.top(cx, cz), cz), r + 4 + geo.boundingSphere.radius + 6);
+      }
+      mesh.name = `HighParkZooModel_${h.name}`; mesh.castShadow = true; mesh.receiveShadow = true;
+      Z.triangles += (geo.index ? geo.index.count : geo.attributes.position.count) / 3 * h.boxes.count;
+      pending.push({ herd: h, mesh, n: h.boxes.count, animated });
+    }));
+    log(`loaded ${pending.length} models${Z.failed.length ? `, ${Z.failed.length} failed (${Z.failed.join(', ')})` : ''}`);
+    Z.state = pending.length ? 'warming' : 'failed';
+  }
+  // the herd's step: the sim to its clock, each animal's place, yaw and pose into its mesh. Only while the models are in,
+  // not far, and the enclosure is in the camera's view (else the clock stands still)
+  const m4 = new THREE.Matrix4(), qt = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1), at = new THREE.Vector3();
+  const frustum = new THREE.Frustum(), pv = new THREE.Matrix4();
+  const bounds = new THREE.Sphere(new THREE.Vector3((enclosure.box.x0 + enclosure.box.x1) / 2, enclosure.y, (enclosure.box.z0 + enclosure.box.z1) / 2),
+    Math.hypot(enclosure.box.x1 - enclosure.box.x0, enclosure.box.z1 - enclosure.box.z0) / 2 + 30);
+  let last = null, meshOf = null;
+  const placed = animals.map((a) => [a.x, a.z, a.yaw]);
+  Zs.write = (t) => {
+    Zs.sim.advance(t);
+    if (!meshOf) { const byHerd = new Map(pending.map((p) => [p.herd, p])); meshOf = slots.map(([hi]) => { const p = byHerd.get(herds[hi]); return p && p.animated ? p.mesh : null; }); }
+    for (let k = 0; k < animals.length; k++) {
+      const mesh = meshOf[k];
+      if (!mesh) continue;
+      const i = slots[k][1], S = Zs.sim.state(k, t), g = mesh.geometry, A0 = g.attributes.zooS0, A1 = g.attributes.zooS1, q = placed[k];
+      A0.array[4 * i] = S.g; A0.array[4 * i + 1] = S.look; A0.array[4 * i + 2] = S.stride; A0.array[4 * i + 3] = S.amp;
+      if (q[0] !== S.x || q[1] !== S.z || q[2] !== S.yaw) {
+        q[0] = S.x; q[1] = S.z; q[2] = S.yaw;
+        A1.array[2 * i + 1] = S.yaw;
+        qt.setFromAxisAngle(up, S.yaw);
+        m4.compose(at.set(S.x, enclosure.top(S.x, S.z) - 0.02, S.z), qt, one);
+        mesh.setMatrixAt(i, m4);
+        mesh.instanceMatrix.needsUpdate = true; A1.needsUpdate = true;
+      }
+      A0.needsUpdate = true;
+    }
+    clock.value = t;
+  };
+  Zs.step = (camera) => {
+    const now = performance.now(), dt = last === null ? 0 : Math.min(0.1, (now - last) / 1000);
+    last = now;
+    let seen = !Z.far;
+    if (seen && camera) { pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pv); seen = frustum.intersectsSphere(bounds); }
+    Zs.active = seen;
+    if (!seen || !Zs.enabled || Zs.paused) return;
+    Zs.t += dt;
+    Zs.write(Zs.t);
+    Zs.steps++; Zs.ms += performance.now() - now;
+  };
+  // (for the reviews' A/B: the animals' material on or off in place, the herd frozen where it is)
+  Zs.setEnabled = (on) => {
+    Zs.enabled = !!on;
+    for (const p of pending) if (p.animated) p.mesh.material = material();
+  };
+  Z.update = (cameraPosition, camera) => {
+    if (Z.state === 'models') {
+      const far = distance(cameraPosition) > ZOO_FAR;
+      if (far !== Z.far) { Z.far = far; for (const p of pending) p.mesh.visible = !far; }
+      Zs.step(camera);
+    } else if (Z.state === 'boxes') {
+      Z.distance = distance(cameraPosition);
+      if (Z.distance > ZOO_NEAR) return;
+      Z.state = 'loading'; log(`fetch at ${Math.round(Z.distance)} m`);
+      load().catch((e) => { console.warn('[high-park] zoo models:', e); Z.state = 'failed'; log('failed: boxes kept'); });
+    } else if (Z.state === 'warming') {
+      // (two species a frame, hidden: count 0, every pass builds them)
+      for (let k = 0; k < 2 && warmAt < pending.length; k++, warmAt++) {
+        const p = pending[warmAt];
+        p.mesh.count = 0; p.mesh.frustumCulled = false;
+        group.add(p.mesh);
+      }
+      log(`warm ${warmAt}/${pending.length}`);
+      if (warmAt >= pending.length) { Z.state = 'settling'; settle = 2; }
+    } else if (Z.state === 'settling') {
+      if (--settle > 0) return;
+      // the swap: nothing new to build this frame, only counts and visibility
+      for (const p of pending) {
+        p.mesh.count = p.n; p.mesh.frustumCulled = true;
+        p.herd.boxes.visible = false;
+      }
+      Z.models = pending.length; Z.state = 'models'; log('swap');
+      console.info(`[high-park] zoo: ${pending.length} species' models in for the boxes (${Math.round(Z.triangles)} triangles)`);
+    }
+  };
+  C.highParkZoo = Z;
+  return Z;
+}
 // ---------------------------------------------------------------------------------------------------------------------
 // The park roads closed to cars (the High Park Movement Strategy, City Council 2023): West Road and the middle of
 // Colborne Lodge Drive at all times; on weekends and holidays the whole park's roads (only authorized vehicles: the
@@ -1118,7 +1567,10 @@ function buildHighParkFeatures(scene) {
   const nFountains = fountains(root, M, top, colliders);
   const L = lodge(root, M, top, colliders);
   coachHouse(root, M, top, colliders);
-  const nAnimals = animals(root, M, top);
+  const zooHerds = animals(root, M, top);
+  const nAnimals = zooHerds.placed;
+  // (the models: on every tier unless ?zoo= says otherwise, docs/high-park-zoo-animals.md)
+  const zoo = zooHerds.herds.length && ZOO_MODE !== 'boxes' ? zooModels(root, M, zooHerds.herds, zooHerds, 'models') : null;
   let tris = 0, draws = 0;
   root.traverse((o) => {
     if (!o.isMesh || !o.visible || !o.geometry) return;
@@ -1129,10 +1581,10 @@ function buildHighParkFeatures(scene) {
   const stats = { paths: PATHS.length, areas: AREAS.length, barriers: BARRIERS.length, posts: fences.posts, fountains: nFountains, animals: nAnimals, lodge: !!L, flat: flatStats, triangles: tris, draws, ms: Math.round(performance.now() - t0) };
   C.highParkFeatureStats = stats;
   console.info(`[high-park] features: ${stats.paths} path runs, ${stats.areas} areas, ${stats.barriers} fences & hedges (${stats.posts} posts), ${nFountains} fountains, ${nAnimals} animals, Colborne Lodge ${L ? `(floor ${L.floor.toFixed(1)} m, ridge ${L.ridge.toFixed(1)} m)` : 'missing'}: ${draws} meshes, ${tris} triangles (${flatStats.triangles} draped), in ${stats.ms} ms`);
-  return { group: root, colliders, stats };
+  return { group: root, colliders, stats, zoo };
 }
 
 // (the shapes, for js/park-cover.js: its ground cover keeps off the paths, beds, paved areas and buildings)
 const highParkFeatureShapes = { paths: PATHS, areas: AREAS, buildings: [...BUILDINGS.values()], trail: { ...TRAIL, halfWidth: trailHalfWidth, plantEdge: trailPlantEdge, corridorEdge: trailCorridorEdge, earthAt: trailEarthAt, wide: trailWide } };
-Object.assign(C, { buildHighParkFeatures, closeHighParkRoads, highParkFeatureAt, highParkBuildingAt, highParkTorontoWeekend: torontoWeekend, highParkFeatureShapes });
+Object.assign(C, { buildHighParkFeatures, closeHighParkRoads, highParkFeatureAt, zooHerdSim, zooWalkProfile: walkProfile, highParkBuildingAt, highParkTorontoWeekend: torontoWeekend, highParkFeatureShapes });
 })();

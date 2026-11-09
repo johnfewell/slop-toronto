@@ -1552,6 +1552,7 @@ async function initApp() {
     if (warmedUp) cityBlocks.updateMassingTiers(cameraSystem.camera); // (?massing=1: each 500 m cell's distance tier)
     if (parkedCars) parkedCars.update(cameraSystem.camera); // (the cells in view, re-picked when the camera moves)
     if (warmedUp && bikeShare) bikeShare.update(cameraSystem.camera.position); // the nearby stations' bikes
+    if (warmedUp && highParkFeatures?.zoo) highParkFeatures.zoo.update(cameraSystem.camera.position, cameraSystem.camera); // (the zoo's models, near it)
     if (warmedUp && wayfindingMaps) wayfindingMaps.update(cameraSystem.camera.position,dt);
 
     // The pooled street, head & police lights that are off (intensity 0, parked underground) leave the clustered

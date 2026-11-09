@@ -1,0 +1,30 @@
+[
+ {
+  "name": "setup",
+  "mode": "person",
+  "x": -6560,
+  "z": -1985,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000
+ },
+ {
+  "name": "walk",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => C.DON_VALLEY.heightAt(x, z) + (C.blockAt(x, z) ? 0.22 : 0); const B = window.CITY.highParkZoo.box; let best = null;\n  A.scene.traverse((S) => { if (!S.isInstancedMesh || !/^HighParkZoo_/.test(S.name)) return; const m = new S.matrix.constructor();\n    for (let i = 0; i < S.count; i++) { S.getMatrixAt(i, m); const e = m.elements, x = e[12], z = e[14], fl = Math.hypot(e[8], e[10]) || 1, fx = e[8] / fl, fz = e[10] / fl;\n      for (const side of [1, -1]) { const dx = -fz * 0.8 * side + fx * 0.6, dz = fx * 0.8 * side + fz * 0.6;\n        const tx = dx > 0 ? (B.x1 - x) / dx : (B.x0 - x) / dx, tz = dz > 0 ? (B.z1 - z) / dz : (B.z0 - z) / dz, out = Math.min(tx, tz);\n        if (!best || out < best.out) best = { name: S.name, x, z, dx, dz, out }; } } });\n  const { x, z, dx, dz, out } = best; let t0 = null;\n  window.__zooFrames = []; const tick = (t) => { window.__zooFrames.push(t); if (window.__zooFrames.length < 20000) requestAnimationFrame(tick); }; requestAnimationFrame(tick);\n  A.cameraSystem.cinema = (el) => { if (t0 === null) t0 = el; const d = Math.max(8, out + 45 - (el - t0) * 4), px = x + dx * d, pz = z + dz * d; return { pos: [px, g(px, pz) + 2.2, pz], look: [x, g(x, z) + 0.6, z], fov: 40 }; };\n  return best; })()",
+  "wait": 1000,
+  "screencastMs": 26000,
+  "screencastQuality": 85
+ },
+ {
+  "name": "approach-frames",
+  "record": true,
+  "wait": 200,
+  "js": "(() => { const F = window.__zooFrames || [], Z = window.CITY.highParkZoo; const dt = F.slice(1).map((t, i) => +(t - F[i]).toFixed(1));\n  const near = (t, w) => F.map((f, i) => [f, dt[i - 1]]).filter(([f, d]) => d !== undefined && Math.abs(f - t) <= w).map(([f, d]) => [Math.round(f - t), d]);\n  const ev = (Z && Z.events) || []; const swap = ev.find((e) => e.what === 'swap'), fetch = ev.find((e) => /^fetch/.test(e.what));\n  const sorted = [...dt].sort((a, b) => a - b), pct = (p) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];\n  return { frames: F.length, p50: pct(0.5), p95: pct(0.95), p99: pct(0.99), max: sorted[sorted.length - 1], over50: dt.filter((d) => d > 50).length, over100: dt.filter((d) => d > 100).length,\n    events: ev, aroundFetch: fetch ? near(fetch.t, 500) : null, aroundSwap: swap ? near(swap.t, 500) : null, start: F[0], dt }; })()"
+ },
+ {
+  "name": "zoo-check",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const Z = window.CITY.highParkZoo, A = window.__CITY_APP, out = {}; A.scene.traverse((o) => { if (o.isInstancedMesh && /^HighParkZoo/.test(o.name)) out[o.name] = { count: o.count, visible: o.visible, tris: (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 }; }); return { zoo: Z ? { mode: Z.mode, state: Z.state, models: Z.models, failed: Z.failed, triangles: Z.triangles, events: Z.events } : null, meshes: out, features: window.CITY.highParkFeatureStats, info: A.renderer.info.render, tier: window.CITY.QUALITY.tier }; })()"
+ }
+]

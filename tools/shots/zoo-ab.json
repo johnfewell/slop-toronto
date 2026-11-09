@@ -1,0 +1,81 @@
+[
+ {
+  "name": "setup",
+  "mode": "person",
+  "x": -6560,
+  "z": -1985,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000,
+  "metricsMs": 0
+ },
+ {
+  "name": "zoo-ready",
+  "wait": 500,
+  "js": "(async () => { const t0 = performance.now(); while (performance.now() - t0 < 60000) { const Z = window.CITY.highParkZoo; if (!Z || ['models', 'failed', 'off'].includes(Z.state)) break; await new Promise((r) => setTimeout(r, 250)); } const Z = window.CITY.highParkZoo; return Z ? { state: Z.state, models: Z.models, failed: Z.failed, triangles: Z.triangles, events: Z.events } : null; })()",
+  "metricsMs": 0
+ },
+ {
+  "name": "zoo-check",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const Z = window.CITY.highParkZoo, A = window.__CITY_APP, out = {}; A.scene.traverse((o) => { if (o.isInstancedMesh && /^HighParkZoo/.test(o.name)) out[o.name] = { count: o.count, visible: o.visible, tris: (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 }; }); return { zoo: Z ? { mode: Z.mode, state: Z.state, models: Z.models, failed: Z.failed, triangles: Z.triangles, events: Z.events } : null, meshes: out, features: window.CITY.highParkFeatureStats, info: A.renderer.info.render, tier: window.CITY.QUALITY.tier }; })()",
+  "metricsMs": 0
+ },
+ {
+  "name": "ab-view",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => C.DON_VALLEY.heightAt(x, z) + (C.blockAt(x, z) ? 0.22 : 0); const P = []; A.scene.traverse((o) => { if (o.isInstancedMesh && /^HighParkZoo_/.test(o.name)) { const m = new o.matrix.constructor(); for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); P.push([m.elements[12], m.elements[14]]); } } });\n  const cx = P.reduce((s, p) => s + p[0], 0) / P.length, cz = P.reduce((s, p) => s + p[1], 0) / P.length, ax = 0.63, az = 0.78;\n  const far = Math.max(...P.map((p) => (p[0] - cx) * ax + (p[1] - cz) * az)), px = cx + ax * (far + 40), pz = cz + az * (far + 40);\n  const Pc = [px, g(px, pz) + 30, pz], L = [cx, g(cx, cz), cz]; A.cameraSystem.cinema = () => ({ pos: Pc, look: L, fov: 50 }); return { pos: Pc, look: L }; })()",
+  "wait": 3000,
+  "metricsMs": 0
+ },
+ {
+  "name": "ab-boxes-1",
+  "record": true,
+  "js": "(() => { const A = window.__CITY_APP; let b = 0, m = 0; A.scene.traverse((o) => { if (!o.isInstancedMesh) return; if (/^HighParkZoo_/.test(o.name)) { o.visible = true; if (o.visible) b += o.count; } else if (/^HighParkZooModel_/.test(o.name)) { o.visible = !true; if (o.visible) m += o.count; } }); return { arm: 'boxes', boxes: b, models: m, state: window.CITY.highParkZoo && window.CITY.highParkZoo.state }; })()",
+  "wait": 1500
+ },
+ {
+  "name": "ab-models-1",
+  "record": true,
+  "js": "(() => { const A = window.__CITY_APP; let b = 0, m = 0; A.scene.traverse((o) => { if (!o.isInstancedMesh) return; if (/^HighParkZoo_/.test(o.name)) { o.visible = false; if (o.visible) b += o.count; } else if (/^HighParkZooModel_/.test(o.name)) { o.visible = !false; if (o.visible) m += o.count; } }); return { arm: 'models', boxes: b, models: m, state: window.CITY.highParkZoo && window.CITY.highParkZoo.state }; })()",
+  "wait": 1500
+ },
+ {
+  "name": "ab-boxes-2",
+  "record": true,
+  "js": "(() => { const A = window.__CITY_APP; let b = 0, m = 0; A.scene.traverse((o) => { if (!o.isInstancedMesh) return; if (/^HighParkZoo_/.test(o.name)) { o.visible = true; if (o.visible) b += o.count; } else if (/^HighParkZooModel_/.test(o.name)) { o.visible = !true; if (o.visible) m += o.count; } }); return { arm: 'boxes', boxes: b, models: m, state: window.CITY.highParkZoo && window.CITY.highParkZoo.state }; })()",
+  "wait": 1500
+ },
+ {
+  "name": "ab-models-2",
+  "record": true,
+  "js": "(() => { const A = window.__CITY_APP; let b = 0, m = 0; A.scene.traverse((o) => { if (!o.isInstancedMesh) return; if (/^HighParkZoo_/.test(o.name)) { o.visible = false; if (o.visible) b += o.count; } else if (/^HighParkZooModel_/.test(o.name)) { o.visible = !false; if (o.visible) m += o.count; } }); return { arm: 'models', boxes: b, models: m, state: window.CITY.highParkZoo && window.CITY.highParkZoo.state }; })()",
+  "wait": 1500
+ },
+ {
+  "name": "ab-boxes-3",
+  "record": true,
+  "js": "(() => { const A = window.__CITY_APP; let b = 0, m = 0; A.scene.traverse((o) => { if (!o.isInstancedMesh) return; if (/^HighParkZoo_/.test(o.name)) { o.visible = true; if (o.visible) b += o.count; } else if (/^HighParkZooModel_/.test(o.name)) { o.visible = !true; if (o.visible) m += o.count; } }); return { arm: 'boxes', boxes: b, models: m, state: window.CITY.highParkZoo && window.CITY.highParkZoo.state }; })()",
+  "wait": 1500
+ },
+ {
+  "name": "ab-models-3",
+  "record": true,
+  "js": "(() => { const A = window.__CITY_APP; let b = 0, m = 0; A.scene.traverse((o) => { if (!o.isInstancedMesh) return; if (/^HighParkZoo_/.test(o.name)) { o.visible = false; if (o.visible) b += o.count; } else if (/^HighParkZooModel_/.test(o.name)) { o.visible = !false; if (o.visible) m += o.count; } }); return { arm: 'models', boxes: b, models: m, state: window.CITY.highParkZoo && window.CITY.highParkZoo.state }; })()",
+  "wait": 1500
+ },
+ {
+  "name": "tris-boxes",
+  "record": true,
+  "metricsMs": 0,
+  "wait": 300,
+  "js": "(async () => { const r = (() => { const A = window.__CITY_APP; let b = 0, m = 0; A.scene.traverse((o) => { if (!o.isInstancedMesh) return; if (/^HighParkZoo_/.test(o.name)) { o.visible = true; if (o.visible) b += o.count; } else if (/^HighParkZooModel_/.test(o.name)) { o.visible = !true; if (o.visible) m += o.count; } }); return { arm: 'boxes', boxes: b, models: m, state: window.CITY.highParkZoo && window.CITY.highParkZoo.state }; })(); const A = window.__CITY_APP, s = []; await new Promise((done) => { const t0 = performance.now(); const f = () => { s.push(A.renderer.info.render.triangles); if (performance.now() - t0 < 2000) requestAnimationFrame(f); else done(); }; requestAnimationFrame(f); }); s.sort((a, b) => a - b); return { ...r, trianglesMedian: s[s.length >> 1], samples: s.length }; })()"
+ },
+ {
+  "name": "tris-models",
+  "record": true,
+  "metricsMs": 0,
+  "wait": 300,
+  "js": "(async () => { const r = (() => { const A = window.__CITY_APP; let b = 0, m = 0; A.scene.traverse((o) => { if (!o.isInstancedMesh) return; if (/^HighParkZoo_/.test(o.name)) { o.visible = false; if (o.visible) b += o.count; } else if (/^HighParkZooModel_/.test(o.name)) { o.visible = !false; if (o.visible) m += o.count; } }); return { arm: 'models', boxes: b, models: m, state: window.CITY.highParkZoo && window.CITY.highParkZoo.state }; })(); const A = window.__CITY_APP, s = []; await new Promise((done) => { const t0 = performance.now(); const f = () => { s.push(A.renderer.info.render.triangles); if (performance.now() - t0 < 2000) requestAnimationFrame(f); else done(); }; requestAnimationFrame(f); }); s.sort((a, b) => a - b); return { ...r, trianglesMedian: s[s.length >> 1], samples: s.length }; })()"
+ }
+]
