@@ -1,0 +1,50 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "ferry-terminal-street-midday",
+    "time": "midday",
+    "js": "(()=>{const C=window.CITY,f=C.terminalFrame(),a=C.FERRY_BOOTH_ANCHOR;const p=f.localToWorld(a.u+(3),a.v-1.1-(6.5));const l=f.localToWorld(a.u,a.v-1.1);const app=window.__CITY_APP;const c={pos:[p[0],1.7,p[1]],look:[l[0],1.7,l[1]],fov:58};app.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-street-golden",
+    "time": "golden",
+    "js": "(()=>{const C=window.CITY,f=C.terminalFrame(),a=C.FERRY_BOOTH_ANCHOR;const p=f.localToWorld(a.u+(0),a.v-1.1-(7.1));const l=f.localToWorld(a.u,a.v-1.1);const app=window.__CITY_APP;const c={pos:[p[0],1.65,p[1]],look:[l[0],1.75,l[1]],fov:60};app.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-lake-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [255, 2.4, 742], \"look\": [245, 2.6, 650], \"fov\": 62};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-aerial-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [360, 70, 760], \"look\": [255, 0, 650], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-aerial-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [150, 55, 780], \"look\": [255, 0, 655], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-fingers-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [307, 22, 745], \"look\": [307, 0, 685], \"fov\": 58};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-check-enabled",
+    "time": "midday",
+    "wait": 2000,
+    "js": "(()=>{const C=window.CITY;const r=C.waterfrontFerries;if(!C.waterfrontFerriesEnabled||!r)throw Error('waterfront ferries disabled');const s=r.stats;const need=[s.terminalBoxes>=3,s.ticketBooths===4,s.ticketCounters===8,s.ticketCanopies===1,s.directoryPanels===3,s.fingerPiers>=2,s.routes.length===3,s.terminalName==='JACK LAYTON FERRY TERMINAL'];if(need.some(v=>!v))throw Error('ferry terminal incomplete '+JSON.stringify(need));const ward=r.layout.routes.find(x=>x.id==='ward');if(!C.waterAt(ward.endpoint.x,ward.endpoint.z))throw Error('Ward endpoint not at water');if(C.waterAt(255,684)===false)throw Error('central channel not water');r.group.traverse(o=>{if(o.isInstancedMesh&&!o.instanceMatrix.array.every(Number.isFinite))throw Error('non-finite ferry transform '+o.name);});if(!r.group.children.some(m=>m.userData.role==='ticket-booth-glass'))throw Error('no glazed booths');console.log('[ferry-check] '+JSON.stringify({booths:s.ticketBooths,counters:s.ticketCounters,fingers:s.fingerPiers,berths:s.berths,text:s.textTextures,triangles:s.triangles}));})()"
+  }
+]

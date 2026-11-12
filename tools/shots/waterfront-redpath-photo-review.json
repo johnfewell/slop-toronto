@@ -1,0 +1,26 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "redpath-harbour-wide-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [900, 45, 720], look: [720, 14, 540], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "redpath-roof-profile-from-slip-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [926, 12, 632], look: [811, 11, 523], fov: 52 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "redpath-west-sign-face-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [715, 26, 515], look: [741, 25, 513], fov: 42 }); })()",
+    "wait": 5000
+  }
+]

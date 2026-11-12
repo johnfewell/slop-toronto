@@ -25,8 +25,11 @@ const onDeckOverWater = (x, z, mode) => {
 // In the water: over a lake or river at its level, not on a bridge's deck there (onDeckOverWater) nor up on a deck
 // over it that the body at height y stands on (city-config.js deckStoodOn: a flyover's, or with ?donvalley=1 the Prince
 // Edward Viaduct's over the Don), wherever that is
-const inWater = (x, z, mode, y) => !!waterAt(x, z) && !onDeckOverWater(x, z, mode)
-  && !(window.CITY.deckStoodOn && window.CITY.deckStoodOn(x, z, Number.isFinite(y) ? y : 0, mode === 'car' ? 0.9 : 0.6));
+const inWater = (x, z, mode, y) => {
+  if (!waterAt(x, z) || onDeckOverWater(x, z, mode)) return false;
+  const entry = window.CITY.deckStoodOn?.(x, z, Number.isFinite(y) ? y : 0, mode === 'car' ? 0.9 : 0.6);
+  return !entry || (mode === 'car' && !!entry.deck.pedestrianOnly);
+};
 // Walkers & cyclists are kept off the motorways' decks (city-config.js motorwayDeckAt: the Gardiner, the DVP, their
 // ramps & links) the way they are kept out of the lake: back to where they last stood. A body at height y would stand
 // on the deck there; under it, at the street level, they go on. Cars & the helicopter go anywhere.
@@ -980,6 +983,10 @@ class ThirdPersonControllerManager {
     // lookup below: a bridge above a court is still a separate surface.
     const sportsGround = window.CITY.sportsGroundAt?.(x,z);
     if (Number.isFinite(sportsGround)) ground = sportsGround;
+    // The island verge producer replaces raised sidewalk edges with rendered ramps.
+    // Sample that exact mesh before selecting any higher bridge/deck.
+    const vergeGround = window.CITY.islandVergeSurfaceAt?.(x, z);
+    if (vergeGround && Number.isFinite(vergeGround.h)) ground = vergeGround.h;
     // (a deck only counts where one is in reach: deckHeightAt's 0 is "none", not the street level; in the Don Valley
     // pilot a ramp's deck may lie under the street level, so below 0 too)
     // (y unknown, an arrival: at the street level. In the Don Valley pilot that is the viaduct's deck over the valley,
@@ -987,6 +994,10 @@ class ThirdPersonControllerManager {
     // under a deck says so with its y: js/city-config.js streetArrival, navigation.js's route heights)
     const DV = window.CITY.DON_VALLEY, reach = y === null ? (DV && DV.inBox(x, z) ? Math.max(ground, 0) : ground) : y;
     const deck = deckHeightAt(x, z, reach, mode === 'car' ? 0.9 : 0.6);
+    // A rendered waterfront surface replaces the coarse curb/terrain beneath it,
+    // including low boardwalks and descending ramps. Higher road decks still win.
+    const exact = mode !== 'car' ? window.CITY.waterfrontDeckAt?.(x, z, reach, 0.6) : null;
+    if (exact?.deck.waterfrontId && Math.abs(exact.h - deck) < 0.001) return exact.h;
     return deck !== 0 ? Math.max(ground, deck) : ground;
   }
 

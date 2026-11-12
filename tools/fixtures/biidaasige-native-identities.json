@@ -1,0 +1,169 @@
+{
+  "source": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+  "vintage": "2025 (City acquisition April 9\u2013July 12; park still under construction)",
+  "specification": "https://www.toronto.ca/city-government/data-research-maps/maps/purchase-maps-data/orthoimagery-specifications/",
+  "export": {
+    "href": "https://gis.toronto.ca/arcgis/rest/directories/arcgisoutput/basemap/cot_ortho_2025_color_8cm_MapServer/_ags_mapffb1263fb6d14a9a8703e5f6b57d95f3.png",
+    "width": 2500,
+    "height": 1800,
+    "extent": {
+      "xmin": -8834181.205965238,
+      "ymin": 5410164.128144072,
+      "xmax": -8832288.774621753,
+      "ymax": 5411526.678711382,
+      "spatialReference": {
+        "wkid": 102100,
+        "latestWkid": 3857
+      }
+    },
+    "scale": 2860.9928445308715
+  },
+  "referenceExtentWgs84": [
+    -79.3588,
+    43.6418,
+    -79.3418,
+    43.6505
+  ],
+  "review": "Captain visually reviewed all nine 210px crops at georeferenced massing centres on 2026-11-10. Only these centre+height keyed rows are eligible; park polygon membership is not an exclusion rule.",
+  "rows": [
+    {
+      "id": 1,
+      "x": 2677.7,
+      "z": 630.1,
+      "height": 26.1,
+      "lat": 43.64674486058615,
+      "lon": -79.34656350268227,
+      "pixel": [
+        1799.4848996645544,
+        779.1392818979525
+      ],
+      "observation": "Renaturalized riverbank and path; no 26.1m building.",
+      "status": "removed-industrial-massing"
+    },
+    {
+      "id": 2,
+      "x": 2848.2,
+      "z": 624.4,
+      "height": 12.6,
+      "lat": 43.647232109618294,
+      "lon": -79.34455838634398,
+      "pixel": [
+        2094.3549494150134,
+        680.1154158012558
+      ],
+      "observation": "Open land and path fork beside river; no 12.6m building.",
+      "status": "removed-industrial-massing"
+    },
+    {
+      "id": 3,
+      "x": 2887,
+      "z": 755.6,
+      "height": 12.1,
+      "lat": 43.646200079945245,
+      "lon": -79.34363328492357,
+      "pixel": [
+        2230.399275946064,
+        889.854374708355
+      ],
+      "observation": "Open Don River channel; no building.",
+      "status": "removed-industrial-massing"
+    },
+    {
+      "id": 4,
+      "x": 1780.9,
+      "z": 757.5,
+      "height": 11.3,
+      "lat": 43.64334168687866,
+      "lon": -79.35676537109086,
+      "pixel": [
+        299.21013369445285,
+        1470.7455917053592
+      ],
+      "observation": "Western park landscape under construction; no 11.3m building.",
+      "status": "removed-industrial-massing"
+    },
+    {
+      "id": 5,
+      "x": 2189,
+      "z": 884.9,
+      "height": 10.4,
+      "lat": 43.64329131197532,
+      "lon": -79.35146698490601,
+      "pixel": [
+        1078.3845726442296,
+        1480.9826828940054
+      ],
+      "observation": "Bare park landform and curved path; no 10.4m building.",
+      "status": "removed-industrial-massing"
+    },
+    {
+      "id": 6,
+      "x": 2384,
+      "z": 622,
+      "height": 8.4,
+      "lat": 43.64606010037517,
+      "lon": -79.35008087777304,
+      "pixel": [
+        1282.2238569045744,
+        918.3020866765484
+      ],
+      "observation": "Old Fire Hall site north of new location; current hall is visible south of the road.",
+      "status": "relocated-firehall"
+    },
+    {
+      "id": 7,
+      "x": 2486.6,
+      "z": 687.1,
+      "height": 4.3,
+      "lat": 43.645762171866146,
+      "lon": -79.34863180498085,
+      "pixel": [
+        1495.3227969319687,
+        978.8491616167684
+      ],
+      "observation": "Don River bank/channel and walking trail; no 4.3m building.",
+      "status": "removed-industrial-massing"
+    },
+    {
+      "id": 8,
+      "x": 2422.4,
+      "z": 608.3,
+      "height": 3.6,
+      "lat": 43.646276940249365,
+      "lon": -79.34967321710963,
+      "pixel": [
+        1342.1739544650748,
+        874.2342114350191
+      ],
+      "observation": "Roadside green/path corner near relocated hall; no 3.6m building.",
+      "status": "removed-industrial-massing"
+    },
+    {
+      "id": 9,
+      "x": 1998.2,
+      "z": 782.4,
+      "height": 3.1,
+      "lat": 43.643685229959225,
+      "lon": -79.3540960711525,
+      "pixel": [
+        691.7542422789795,
+        1400.9311972516768
+      ],
+      "observation": "Atlas Crane structure remains, including four feet and lattice shadow; replace only when actual crane model succeeds.",
+      "status": "retained-crane-proxy"
+    }
+  ],
+  "treeDecisions": [
+    {
+      "x": 2180.9,
+      "z": 679.9,
+      "model": 6,
+      "heightDm": 104,
+      "legacyPackedIndex": 154232,
+      "decision": "Exclude only this fingerprinted historical City inventory row after successful dog surface assembly and active frame match.",
+      "evidence": "Captain overlaid current City2026 turf asset989014 on2025 City8cm orthophoto. Turf island has no internal tree; the inventory row lies in its interior.",
+      "source": "https://gis.toronto.ca/arcgis/rest/services/cot_geospatial13/FeatureServer/34",
+      "orthophotoSource": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer"
+    }
+  ]
+}

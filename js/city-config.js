@@ -1244,9 +1244,75 @@ function treeOffRail(x, z) {
  * (x, z) is on exactly, the highest, as a DECK_GRID entry { h, deck: its run }, or null. A body on it is on the deck,
  * not in the water or the valley under it (controllers.js); not one far under the body (the DVP down in the valley
  * under the Prince Edward Viaduct's deck, ?donvalley=1) nor overhead. */
+// (each WaveDeck plan's box, once per deck: a query away from the deck skips its span walk; st-s1y8)
+const WAVEDECK_BOXES = new WeakMap();
+function waveDeckBox(deck) {
+  let b = WAVEDECK_BOXES.get(deck);
+  if (!b) {
+    b = { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity };
+    for (const [px, pz] of deck.plan || []) {
+      b.minX = Math.min(b.minX, px); b.maxX = Math.max(b.maxX, px); b.minZ = Math.min(b.minZ, pz); b.maxZ = Math.max(b.maxZ, pz);
+    }
+    // (a deck without a plan has no box: never reject it)
+    if (!(b.minX <= b.maxX)) b = { minX: -Infinity, maxX: Infinity, minZ: -Infinity, maxZ: Infinity };
+    WAVEDECK_BOXES.set(deck, b);
+  }
+  return b;
+}
+// Waterfront decks use their rendered polygon and stepped surface, rather than the
+// coarse road-deck grid. The builder enables this only in the supported city frame.
+function waterfrontDeckAt(x, z, y, step, standing = false) {
+  const C = window.CITY;
+  let best = null;
+  const garden = C.waterfrontMusicGardenSurfaceAt?.(x, z);
+  if (garden && Number.isFinite(garden.h) && garden.h <= y + step && (!standing || garden.h >= y - step)) {
+    best = { h: garden.h, deck: { rank: 0, pedestrianOnly: true, waterfrontId: garden.id } };
+  }
+  const island = C.islandArrivalSurfaceAt?.(x, z);
+  if (island && Number.isFinite(island.h) && island.h <= y + step && (!standing || island.h >= y - step)
+    && (!best || island.h > best.h)) {
+    best = { h: island.h, deck: { rank: 0, pedestrianOnly: true, waterfrontId: 'island-' + island.dockId } };
+  }
+  const beach = C.waterfrontBeachLandscapeEnabled ? C.waterfrontBeachLandscapeHeightAt?.(x, z) : null;
+  if (Number.isFinite(beach) && beach <= y + step && (!standing || beach >= y - step)
+    && (!best || beach > best.h)) {
+    best = { h: beach, deck: { rank: 0, pedestrianOnly: true, waterfrontId: 'beach-landscape' } };
+  }
+  const hto = C.htoLandscapeSurfaceAt?.(x, z);
+  if (hto && Number.isFinite(hto.h) && hto.h <= y + step && (!standing || hto.h >= y - step)
+    && (!best || hto.h > best.h)) {
+    best = { h: hto.h, deck: { rank: 0, pedestrianOnly: true, waterfrontId: hto.id } };
+  }
+  const islandBeach = C.islandAccessSurfaceAt?.(x, z) || C.islandBeachSurfaceAt?.(x, z);
+  if (islandBeach && Number.isFinite(islandBeach.h) && islandBeach.h <= y + step
+    && (!standing || islandBeach.h >= y - step) && (!best || islandBeach.h > best.h)) {
+    best = { h: islandBeach.h, deck: { rank: 0, pedestrianOnly: true, waterfrontId: islandBeach.id || 'island-beach-' + islandBeach.beachId } };
+  }
+  const park = C.biidaasigeParkSurfaceAt?.(x, z, { baseY: y, maxRise: step });
+  if (park && Number.isFinite(park.h) && park.h <= y + step
+    && (!standing || park.h >= y - step) && (!best || park.h > best.h)) {
+    best = { h: park.h, deck: { rank: 0, pedestrianOnly: true, waterfrontId: park.id || 'biidaasige' } };
+  }
+  const concert = C.concertStageSurfaceAt?.(x, z, { baseY: y, maxRise: step });
+  if (concert && Number.isFinite(concert.h) && concert.h <= y + step
+    && (!standing || concert.h >= y - step) && (!best || concert.h > best.h)) {
+    best = { h: concert.h, deck: { rank: 0, pedestrianOnly: true, waterfrontId: 'concert-stage' } };
+  }
+  if (!C.waterfrontPublicRealmEnabled || !C.waterfrontDeckSpanAt || !C.waterfrontDeckSurfaceHeight) return best;
+  for (const deck of C.WATERFRONT_WAVEDECKS || []) {
+    const b = waveDeckBox(deck);
+    if (x < b.minX || x > b.maxX || z < b.minZ || z > b.maxZ) continue;
+    const span = C.waterfrontDeckSpanAt(deck.plan, x);
+    if (!span || z < span[0] || z > span[1]) continue;
+    const h = C.waterfrontDeckSurfaceHeight(deck, x, z);
+    if (!Number.isFinite(h) || h > y + step || (standing && h < y - step)) continue;
+    if (!best || h > best.h) best = { h, deck: { rank: 0, pedestrianOnly: true, waterfrontId: deck.id } };
+  }
+  return best;
+}
 function deckStoodOn(x, z, y = 0, step = 0.6) {
   const list = DECK_GRID.get(Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL));
-  let best = null;
+  let best = waterfrontDeckAt(x, z, y, step, true);
   for (const e of list || []) if (e.h <= y + step && e.h >= y - step && (!best || e.h > best.h) && onDeckRun(e.deck, x, z)) best = e;
   return best;
 }
@@ -1270,12 +1336,50 @@ function onDeckRun(run, x, z) {
 /** The deck surface under (x, z) that something at height y can stand on (stepping up at most `step`), or 0 */
 function deckHeightAt(x, z, y = 0, step = 0.6) {
   const list = DECK_GRID.get(Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL));
-  if (!list) return 0;
+  const waterfront = waterfrontDeckAt(x, z, y, step);
+  if (!list) return waterfront ? waterfront.h : 0;
   // (in the Don Valley pilot a deck may lie under the street level: 0 still means none. High Park has no decks of its
   // own: its pilot alone leaves this as the flat city's)
   let best = DV && DV.donValley ? -Infinity : 0;
+  if (waterfront && waterfront.h > best) best = waterfront.h;
   for (const e of list) if (e.h <= y + step && e.h > best) best = e.h;
   return best === -Infinity ? 0 : best;
+}
+
+// Camera-only local slab query: preserve every deck level, including an overhead
+// bridge while travelling beneath it. Reuse caller-owned entries; never collapse
+// the stack to the highest deck as a ground-height query does. Thickness follows
+// city-grid's deck slab (the broad-phase cells still require the exact run outline).
+function cameraSurfaceLayersAt(x, z, out = [], padding = 0) {
+  let count = 0;
+  const pool = out._cameraPool || (out._cameraPool = []);
+  const list = DECK_GRID.get(Math.floor(x / DECK_CELL) * 100000 + Math.floor(z / DECK_CELL));
+  for (const entry of list || []) {
+    let nearest = Infinity, height = 0, ground = 0;
+    const run = entry.deck;
+    if (!run.pts) { nearest = 0; height = entry.h; }
+    for (let i = 0; i + 1 < (run.pts?.length || 0); i++) {
+      const a = run.pts[i], b = run.pts[i + 1], dx = b.x - a.x, dz = b.z - a.z;
+      const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1)));
+      const distance = Math.hypot(x - a.x - dx * t, z - a.z - dz * t);
+      const width = run.ws[i] + (run.ws[i + 1] - run.ws[i]) * t;
+      if (distance > width / 2 + .6 + padding || distance >= nearest) continue;
+      nearest = distance; height = a.h + (b.h - a.h) * t; ground = (a.g || 0) + ((b.g || 0) - (a.g || 0)) * t;
+    }
+    if (nearest === Infinity) continue;
+    const level = pool[count] || (pool[count] = {}); out[count] = level;
+    const cut = window.CITY.roadCutAt?.(x, z) || 0;
+    level.top = Math.max(ground + .03, height + .03);
+    level.bottom = height - ground > 4.6 || (cut < -.5 && height - cut > 4.6) ? height - 1.25 : ground;
+    count++;
+  }
+  const exact = waterfrontDeckAt(x, z, 10000, 0);
+  if (exact) {
+    const level = pool[count] || (pool[count] = {}); out[count] = level;
+    level.top = exact.h; level.bottom = exact.h - .18; count++;
+  }
+  out.length = count;
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1334,7 +1438,7 @@ const { SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS, PXOS } = (() => {
 // Landmarks (real OpenStreetMap outlines: centre, width x depth of the minimum rectangle, yaw, height where mapped)
 // ---------------------------------------------------------------------------------------------------------------------
 const LANDMARK_SITES = GEO.landmarks;
-// [site id, label, short label]
+// [site id, label, short label, other names the search answers to]
 const LANDMARK_LABELS = [
   ['cnTower', 'CN Tower', 'CN Tower'],
   ['rogersCentre', 'Rogers Centre', 'Rogers Centre'],
@@ -1346,7 +1450,7 @@ const LANDMARK_LABELS = [
   ['cinesphere', 'Cinesphere', 'Cinesphere'],
   ['stLawrence', 'St. Lawrence Market', 'St. Lawrence Mkt'],
   ['distillery', 'Distillery District', 'Distillery'],
-  ['sugarBeach', 'Sugar Beach', 'Sugar Beach'],
+  ['sugarBeach', 'Sugar Beach', 'Sugar Beach', ["Canada's Sugar Beach"]],
   ['harbourfront', 'Harbourfront Centre', 'Harbourfront'],
   ['musicGarden', 'Toronto Music Garden', 'Music Garden'],
   ['scotiabankArena', 'Scotiabank Arena', 'Scotiabank Arena'],
@@ -1357,9 +1461,12 @@ const LANDMARK_LABELS = [
   ['kensington', 'Kensington Market', 'Kensington'],
   ['exhibitionPlace', 'Exhibition Place', 'Exhibition Place']
 ];
-const CITY_LANDMARKS = LANDMARK_LABELS.filter(([id]) => LANDMARK_SITES[id]).map(([id, name, short]) => {
+// (pinned at its site's centre, or at its anchor where the build gives one: Kensington Market's place node, Centre
+// Island's ferry dock, the inside of Sugar Beach's L; tools/geo-features.mjs)
+const CITY_LANDMARKS = LANDMARK_LABELS.filter(([id]) => LANDMARK_SITES[id]).map(([id, name, short, aliases]) => {
   const s = LANDMARK_SITES[id];
-  return { id, name, short, x: s.x, z: s.z, district: districtAt(s.x, s.z) };
+  const x = s.ax ?? s.x, z = s.az ?? s.z;
+  return { id, name, short, x, z, district: districtAt(x, z), ...(aliases && { aliases }) };
 });
 const CN = GEO.points.cnTower;
 if (!LANDMARK_SITES.cnTower) CITY_LANDMARKS.unshift({ id: 'cnTower', name: 'CN Tower', short: 'CN Tower', x: CN[0], z: CN[1], district: districtAt(CN[0], CN[1]), radius: 60 });
@@ -1435,7 +1542,11 @@ function streetArrival(x, z) {
   if (!spot) return { x, z, heading: undefined, y: null };
   return { x: spot.px, z: spot.pz, heading: Math.atan2(x - spot.px, z - spot.pz), y };
 }
-const TELEPORT_TARGETS = { cnTower: 'cnTower', rogersCentre: 'rogersCentre', unionStation: 'unionStation', cityHall: 'cityHall', rom: 'rom', ontarioPlace: 'ontarioPlace', stLawrence: 'stLawrence', distillery: 'distillery', sugarBeach: 'sugarBeach', harbourfront: 'harbourfront', legislature: 'legislature', kensington: 'kensington' };
+// (the landmarks seen from a distance; a beach, a neighbourhood or an island is arrived at on its own street, facing
+// into it, as any search result is: streetArrival, js/tour-guide.js teleportToPlace. Sugar Beach and Kensington Market
+// were listed here before their sites were found, st-bz1o.8: from 230 and 640 m away they'd arrive across Queens Quay
+// and on Spadina)
+const TELEPORT_TARGETS = { cnTower: 'cnTower', rogersCentre: 'rogersCentre', unionStation: 'unionStation', cityHall: 'cityHall', rom: 'rom', ontarioPlace: 'ontarioPlace', stLawrence: 'stLawrence', distillery: 'distillery', harbourfront: 'harbourfront', legislature: 'legislature' };
 const TELEPORT_LOCATIONS = {};
 for (const [key, id] of Object.entries(TELEPORT_TARGETS)) {
   const s = LANDMARK_SITES[id];
@@ -1483,11 +1594,44 @@ for (const [key, id] of Object.entries(TELEPORT_TARGETS)) {
 TELEPORT_LOCATIONS.yongeDundas = { x: 330.4, z: -1080, heading: Math.atan2(-1.5, -180.5), road: 'Yonge Street' };
 // The start (John, 2026-10-25): Sugar Beach's lawn by the water, facing the CN Tower and the skyline across the slip
 TELEPORT_LOCATIONS.start = { x: 970.7, z: 575.9, heading: Math.atan2(CN[0] - 970.7, CN[1] - 575.9), road: 'Sugar Beach' };
+// An area pinned off its own outline (Centre Island, at the ferry dock OpenStreetMap names Centre Island, on Middle
+// Island inside the outer island's ring, st-bz1o.8): on the pin's street, facing the nearest of the area itself
+// rather than the pin (the dock's building)
+for (const lm of CITY_LANDMARKS) {
+  const s = LANDMARK_SITES[lm.id];
+  if (!s.ring || TELEPORT_LOCATIONS[lm.id] || nearOutline(lm.x, lm.z, s.ring, 0)) continue;
+  const a = streetArrival(lm.x, lm.z);
+  if (a.heading === undefined) continue;
+  let best = Infinity, tx = lm.x, tz = lm.z;
+  for (let i = 0, n = s.ring.length / 2, j = n - 1; i < n; j = i++) {
+    const ax = s.ring[2 * j], az = s.ring[2 * j + 1], dx = s.ring[2 * i] - ax, dz = s.ring[2 * i + 1] - az;
+    const t = Math.max(0, Math.min(1, ((a.x - ax) * dx + (a.z - az) * dz) / (dx * dx + dz * dz || 1)));
+    const d = Math.hypot(ax + dx * t - a.x, az + dz * t - a.z);
+    if (d < best) { best = d; tx = ax + dx * t; tz = az + dz * t; }
+  }
+  const road = nearestRoads(a.x, a.z, 5)[0];
+  TELEPORT_LOCATIONS[lm.id] = { x: Math.round(a.x * 10) / 10, z: Math.round(a.z * 10) / 10, heading: Math.atan2(tx - a.x, tz - a.z), road: road ? road.road.name : '' };
+}
 if (!TELEPORT_LOCATIONS.cnTower) {
   const p = arrivalFor(CN[0], CN[1], 40);
   if (p) TELEPORT_LOCATIONS.cnTower = p;
 }
 
+// A landmark's name labels the ground within its circle; an area's (a circle wider than this: High Park, Exhibition
+// Place, Kensington Market, Centre Island) only within 40 m of its outline or 150 m of its pin, where its circle would
+// overreach (Centre Island's, 2.4 km, would take in the Financial District; Exhibition Place's, Ontario Place). (Centre
+// Island's pin is its ferry dock, on Middle Island inside the outer island's ring)
+const AREA_LABEL_RADIUS = 400, ANCHOR_LABEL_RADIUS = 150;
+function nearOutline(x, z, ring, margin) {
+  let inside = false, d2 = Infinity;
+  for (let i = 0, n = ring.length / 2, j = n - 1; i < n; j = i++) {
+    const ax = ring[2 * j], az = ring[2 * j + 1], bx = ring[2 * i], bz = ring[2 * i + 1];
+    if ((bz > z) !== (az > z) && x < ((ax - bx) * (z - bz)) / (az - bz) + bx) inside = !inside;
+    const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
+    d2 = Math.min(d2, (x - ax - dx * t) ** 2 + (z - az - dz * t) ** 2);
+  }
+  return inside || d2 < margin * margin;
+}
 /**
  * The place at any world (x, z): a landmark's name over its nearest streets, the street corner, the street, or the
  * district
@@ -1499,7 +1643,8 @@ function getLocationLabel(x, z) {
   for (const lm of CITY_LANDMARKS) {
     const s = LANDMARK_SITES[lm.id];
     const r = lm.radius || (s && s.w ? Math.max(60, Math.hypot(s.w, s.d) / 2 + 30) : 80);
-    if (Math.hypot(x - lm.x, z - lm.z) < r) return `${lm.name}${pair ? ` · ${pair}` : near.length ? ` · ${shortName(near[0].road.name)}` : ''}`;
+    const d = Math.hypot(x - lm.x, z - lm.z);
+    if (d < r && (r <= AREA_LABEL_RADIUS || !s.ring || d < ANCHOR_LABEL_RADIUS || nearOutline(x, z, s.ring, 40))) return `${lm.name}${pair ? ` · ${pair}` : near.length ? ` · ${shortName(near[0].road.name)}` : ''}`;
   }
   if (!isOnLand(x, z)) {
     const w = waterAt(x, z);
@@ -1567,6 +1712,8 @@ Object.assign(window.CITY, {
   bridgeSidewalkAt,
   motorwayDeckAt,
   deckStoodOn,
+  waterfrontDeckAt,
+  cameraSurfaceLayersAt,
   MOTORWAY_CLASSES,
   BUS_CONTRAFLOWS,
   ROAD_LINKS,

@@ -80,7 +80,7 @@ const o = (f) => path.join(OUT, f);
 const c = (f) => path.join(CACHE, f);
 
 step('massing', [c('massing.json')], node, [heap, 'tools/fetch-massing.mjs', '--frame', FRAME], geoEnv);
-step('osm', [c('osm_roads.json'), c('osm_land.json')], node, [heap, 'tools/fetch-osm.mjs', '--frame', FRAME], geoEnv);
+step('osm', [c('osm_roads.json'), c('osm_land.json'), c('osm_landmarks.json')], node, [heap, 'tools/fetch-osm.mjs', '--frame', FRAME], geoEnv);
 step('roadway', [c('city_roadway.json')], node, [heap, 'tools/fetch-roadway.mjs', '--frame', FRAME], geoEnv);
 const [w, s, e, n] = frame.bbox;
 step('poles-src', [c('poles-4326.geojson')], 'ogr2ogr',

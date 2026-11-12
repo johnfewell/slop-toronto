@@ -1,0 +1,16 @@
+[
+  {
+    "name": "gardiner-underpass",
+    "time": "midday",
+    "record": true,
+    "wait": 100,
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;a.film.start(30);c.cinema=null;a.selectMode('car');const arrival=a.teleportTo(-600,450,Math.PI/2);if(!arrival)throw Error('underpass arrival unavailable');a.selectCamera('chase',true);for(let i=0;i<30;i++){await new Promise(requestAnimationFrame);await a.film.step(1);}const levels=window.CITY.cameraSurfaceLayersAt(c.currentPos.x,c.currentPos.z,[]),r=c.collision.radius(c.camera);if(!levels.some(l=>l.bottom>c.currentPos.y+r))throw Error('not below Gardiner slab '+JSON.stringify(levels));if(!c.cameraPoseValid||c.collision.sweep(c.currentPos,c.currentPos,r)<1)throw Error('underpass sphere overlap');document.body.classList.add('film');return {arrival,actor:a.controllerManager.getActiveEntity().position.toArray(),eye:c.currentPos.toArray(),radius:r,levels};})()"
+  },
+  {
+    "name": "gardiner-ceiling-clearance",
+    "time": "midday",
+    "record": true,
+    "wait": 100,
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;c.orbitPitchOffset=-.8;c.zoomMultiplier=2.4;for(let i=0;i<60;i++){await new Promise(requestAnimationFrame);await a.film.step(1);}const r=c.collision.radius(c.camera),levels=window.CITY.cameraSurfaceLayersAt(c.currentPos.x,c.currentPos.z,[]);if(!c.cameraPoseValid||c.collision.sweep(c.currentPos,c.currentPos,r)<1)throw Error('ceiling sphere overlap');if(!levels.some(l=>l.bottom>=c.currentPos.y+r-.01))throw Error('camera did not stay below actual soffit');return {eye:c.currentPos.toArray(),radius:r,levels,requestedBoom:c.followRig.boom,displayedReach:c.followRig.displayedReach};})()"
+  }
+]

@@ -39,7 +39,7 @@ function snapshotExperienceCamera(system) {
     yaw: system.orbitYawOffset, pitch: system.orbitPitchOffset, zoom: system.zoomMultiplier,
     cinema: system.cinema, followOverride: system.followOverride, followEntity: system.followEntity,
     initialized: system.initialized, followBaseY: system.followBaseY, smoothedSpeed: system.smoothedSpeed,
-    userOrbitTimer: system.userOrbitTimer, position: camera.position.clone(), quaternion: camera.quaternion.clone(), vectors };
+    userOrbitTimer: system.userOrbitTimer, rig: system.followRig?.snapshot(), director: system.director, position: camera.position.clone(), quaternion: camera.quaternion.clone(), vectors };
 }
 function restoreExperienceCamera(system, state) {
   const camera = system.camera;
@@ -49,6 +49,9 @@ function restoreExperienceCamera(system, state) {
     initialized: state.initialized, followBaseY: state.followBaseY, smoothedSpeed: state.smoothedSpeed,
     userOrbitTimer: state.userOrbitTimer });
   for (const [key, value] of Object.entries(state.vectors)) if (value) system[key].copy(value);
+  if (state.rig) system.followRig?.restore(state.rig);
+  if ('director' in state) system.director = state.director;
+  system._resumeDisplayed = false;
   Object.assign(camera, { near: state.near, far: state.far, fov: state.fov });
   camera.layers.mask = state.mask; camera.position.copy(state.position); camera.quaternion.copy(state.quaternion);
   camera.updateProjectionMatrix(); camera.updateMatrixWorld();

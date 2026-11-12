@@ -1,0 +1,23 @@
+[
+  {
+    "name": "dodem-four-overhead",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP; a.teleportTo(2310,654,0); const c={\"pos\": [2300, 34, 666], \"look\": [2298, 0.3, 666], \"fov\": 58};a.cameraSystem.cinema=()=>c;console.log('source-dodem-coverage',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "dodem-pair-and-oaks",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP; a.teleportTo(2310,654,0); const c={\"pos\": [2311, 3.1, 654], \"look\": [2298, 1.7, 667], \"fov\": 58};a.cameraSystem.cinema=()=>c;console.log('source-dodem-coverage',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "dodem-bear-and-wolf",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP; a.teleportTo(2310,654,0); const c={\"pos\": [2285, 2.7, 676], \"look\": [2298, 1.4, 670], \"fov\": 58};a.cameraSystem.cinema=()=>c;console.log('source-dodem-coverage',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  }
+]

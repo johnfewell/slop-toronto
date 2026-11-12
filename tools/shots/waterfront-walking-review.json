@@ -1,0 +1,56 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "ward-deck-walk-nameboard-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandArrivals,E=C.ISLAND_ARRIVAL_ESTIMATES;const d=r.layout.docks.ward;const x=d.deckAnchor[0],z=d.deckAnchor[1];a.selectMode('person');a.teleportTo(x,z,0);const g=a.controllerManager.getGroundHeight(x,z,'person');if(!(Math.abs(g-E.deckTop)<0.05))throw Error('ward walker ground '+g+' != deck '+E.deckTop);const s=C.islandArrivalSurfaceAt(x,z);if(!s||s.dockId!=='ward')throw Error('ward surface sampler mismatch');const f=d.boardFacing;a.cameraSystem.cinema=()=>({pos:[x+f[0]*7,E.deckTop+1.55,z+f[1]*7],look:[x,E.deckTop+1.85,z],fov:50});return {dock:'ward',teleportGround:g,deckTop:E.deckTop,boardFacing:f};})()",
+    "wait": 4000
+  },
+  {
+    "name": "centre-deck-walk-nameboard-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandArrivals,E=C.ISLAND_ARRIVAL_ESTIMATES;const d=r.layout.docks.centre;const x=d.deckAnchor[0],z=d.deckAnchor[1];a.selectMode('person');a.teleportTo(x,z,0);const g=a.controllerManager.getGroundHeight(x,z,'person');if(!(Math.abs(g-E.deckTop)<0.05))throw Error('centre walker ground '+g+' != deck '+E.deckTop);const s=C.islandArrivalSurfaceAt(x,z);if(!s||s.dockId!=='centre')throw Error('centre surface sampler mismatch');const f=d.boardFacing;a.cameraSystem.cinema=()=>({pos:[x+f[0]*7,E.deckTop+1.55,z+f[1]*7],look:[x,E.deckTop+1.85,z],fov:50});return {dock:'centre',teleportGround:g,deckTop:E.deckTop,boardFacing:f};})()",
+    "wait": 4000
+  },
+  {
+    "name": "hanlans-deck-walk-nameboard-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandArrivals,E=C.ISLAND_ARRIVAL_ESTIMATES;const d=r.layout.docks.hanlans;const x=d.deckAnchor[0],z=d.deckAnchor[1];a.selectMode('person');a.teleportTo(x,z,0);const g=a.controllerManager.getGroundHeight(x,z,'person');if(!(Math.abs(g-E.deckTop)<0.05))throw Error('hanlans walker ground '+g+' != deck '+E.deckTop);const s=C.islandArrivalSurfaceAt(x,z);if(!s||s.dockId!=='hanlans')throw Error('hanlans surface sampler mismatch');const f=d.boardFacing;a.cameraSystem.cinema=()=>({pos:[x+f[0]*7,E.deckTop+1.55,z+f[1]*7],look:[x,E.deckTop+1.85,z],fov:50});return {dock:'hanlans',teleportGround:g,deckTop:E.deckTop,boardFacing:f};})()",
+    "wait": 4000
+  },
+  {
+    "name": "music-garden-pavilion-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1287, 2.2, 590], look: [-1287, 1.8, 564], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "music-garden-rooms-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1240, 32, 620], look: [-1370, 0, 575], fov: 54 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "music-garden-walker-gigue-steps-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; const C = window.CITY; const t = C.waterfrontMusicGardenSurfaceAt ? C.waterfrontMusicGardenSurfaceAt(-1308.4, 594.2) : null; const h = t ? t.h : 1.4; a.cameraSystem.cinema = () => ({ pos: [-1308.4, h + 1.7, 594.2], look: [-1316, 0.3, 601], fov: 65 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "sherbourne-light-showers-profile-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1216, 2.8, 346], look: [1197, 4.6, 300], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "sherbourne-unfinished-arch-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1220, 2.4, 528], look: [1244, 4.6, 516], fov: 60 }); })()",
+    "wait": 5000
+  }
+]

@@ -1,0 +1,5 @@
+[
+ {"name":"west-landing","mode":"person","time":"midday","wait":6500,"js":"(()=>{const a=window.__CITY_APP,p=CITY.worldFromLatLon(43.64298,-79.35605);a.teleportTo(p.x+30,p.z-15,0);const c={pos:[p.x+35,5,p.z-20],look:[p.x,0,p.z],fov:60};a.cameraSystem.cinema=()=>c;console.log('river-review',JSON.stringify({stats:CITY.biidaasigeRiverAccess.stats,sites:CITY.biidaasigeRiverAccess.sites.map(s=>({id:s.id,slope:s.slope,contact:s.waterContact})),mask:CITY.biidaasigeParkStats.nativeGroundMaterialsMasked}));})();"},
+ {"name":"north-beach","mode":"person","time":"midday","wait":6000,"js":"(()=>{const a=window.__CITY_APP,p=CITY.worldFromLatLon(43.6474,-79.3465);a.teleportTo(p.x-25,p.z+25,0);const c={pos:[p.x-28,5,p.z+32],look:[p.x,0,p.z],fov:60};a.cameraSystem.cinema=()=>c;})();"},
+ {"name":"cove-pier","mode":"person","time":"midday","wait":6000,"js":"(()=>{const a=window.__CITY_APP,p=CITY.worldFromLatLon(43.6438,-79.35322);a.teleportTo(p.x+15,p.z-15,0);const c={pos:[p.x+20,4,p.z-18],look:[p.x,.2,p.z],fov:60};a.cameraSystem.cinema=()=>c;})();"}
+]

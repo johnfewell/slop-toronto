@@ -342,6 +342,7 @@ async function buildEzTrees(scene, generated) {
   let offRail = 0;
   for (let i = 0; i < ST.length; i += 4) {
     const x = ST[i], z = ST[i + 1];
+    if (window.CITY.biidaasigeParkExcludesTree?.(x,z,ST[i+2],ST[i+3])) continue;
     // (none in the rail corridor, on its embankments or under its bridges: city-config.js treeOffRail)
     if (!window.CITY.treeOffRail(x, z)) { offRail++; continue; }
     if (window.CITY.bikeShareAt && window.CITY.bikeShareAt(x, z)) continue; // (none in a Bike Share station: bike-share.js)
@@ -355,12 +356,90 @@ async function buildEzTrees(scene, generated) {
     return ids.indexOf(['ez-oak-small', 'ez-oak-medium', 'ez-oak-large'][big]);
   };
   let inWoods = 0;
+  const generatedStart = sites.length;
+  // Source tree points replace only nearby generic scatter. Reconcile before converting
+  // raw sites: after conversion every site has a model, losing that distinction.
+  const residential = window.CITY.islandResidentialCanopySites?.(generated) || [];
+  // The QCYC marina scope (st-sb3r.36): City Tree Points inside the OSM marina polygon. Deduped against the same
+  // preserved mapped trees AND the residential source sites, so a tree in both scopes is drawn once. Absent data or a
+  // mismatched frame yields an empty list (a no-op), exactly like the residential source.
+  const marinaCanopy = window.CITY.islandMarinaCanopySites?.(generated, residential) || [];
+  const mappedCanopy = [...residential, ...marinaCanopy];
+  if (mappedCanopy.length) {
+    const reconciled = window.CITY.islandResidentialCanopyReconcile(mappedCanopy, generated);
+    generated = [...reconciled.kept, ...mappedCanopy];
+    window.CITY.islandResidentialCanopyEzStats = {
+      added: mappedCanopy.length,
+      residential: residential.length,
+      marina: marinaCanopy.length,
+      generatedReconciled: reconciled.removedCount,
+      sourceIds: mappedCanopy.map(t => t.oid),
+      sites: mappedCanopy.map(t => ({ x: t.x, z: t.z, height: t.height, oid: t.oid }))
+    };
+  }
+  // st-sb3r.38: for accepted dinghy placements, drop only GENERIC scatter whose trunk intrudes a placed hull's exact oriented
+  // footprint (plus 0.25 m) — the sapling intersecting a hull. Mapped/source trees (which carry a model, height, oid/
+  // sourceId or htoPlan, or are the residential/marina canopy, or the wooded parks' lidar trees naming their model) are
+  // preserved; a mapped trunk over a hull is reported as a conflict, never erased. The keep-out is a pure, frame-safe test
+  // (no-op on a mismatched frame), and ?dinghies=0 disables both hulls and reconciliation.
+  const dinghyKeepoutOn = window.CITY.waterfrontDinghiesEnabled?.() === true;
+  const isMappedOrSource = window.CITY.waterfrontDinghyIsMappedTree || ((t) => !!(t && (t.model || Number.isFinite(t.height) || t.oid != null || t.sourceId != null || t.htoPlan || t.residentialCanopy || t.woods)));
+  let dinghyScatterDropped = 0, dinghyMappedConflicts = 0;
   for (const t of generated) {
     if (window.CITY.bikeShareAt && window.CITY.bikeShareAt(t.x, t.z)) continue;
+    if (dinghyKeepoutOn) {
+      const keep = window.CITY.waterfrontDinghyKeepout?.(t.x, t.z, 0.25);
+      if (keep && keep.inside) {
+        if (isMappedOrSource(t)) { dinghyMappedConflicts++; }
+        else { dinghyScatterDropped++; continue; }
+      }
+    }
     // (the wooded parks' lidar trees name their model, height and crown radius: park-woods.js)
     const h = t.height || t.scale * slopHeight, named = t.model ? ids.indexOf(t.model) : -1;
     sites.push({ x: t.x, y: (t.y || 0) + cutDown(t.x, t.z), z: t.z, model: named >= 0 ? named : genModel(t.species || 0, h), height: h, tier: t.tier || 0, width: t.width || 0, woods: !!t.woods });
     if (t.woods) inWoods++;
+  }
+  // HTO: the captain-digitized ASLA plan tree symbols, already registered with the module's plan homographies and
+  // clipped to the rendered berms there. They join the same shared EZ instancing field as every other tree. Generated
+  // scatter within 2.5 m of an explicit plan tree is reconciled away; mapped City trunks are never removed.
+  const htoPlanSites = window.CITY.htoLandscapePlanTreeSites?.() || [];
+  if (htoPlanSites.length) {
+    const generatedSlice = sites.slice(generatedStart);
+    const reconcile = window.CITY.htoPlanTreeReconcileGenerated
+      ? window.CITY.htoPlanTreeReconcileGenerated(htoPlanSites, generatedSlice, 2.5)
+      : { kept: generatedSlice, removed: [], removedCount: 0 };
+    if (reconcile.removedCount) {
+      sites.length = generatedStart;
+      for (const t of reconcile.kept) sites.push(t);
+    }
+    for (const t of htoPlanSites) {
+      const m = ids.indexOf(t.model);
+      sites.push({ x: t.x, y: t.y, z: t.z, model: m >= 0 ? m : genModel(0, t.height), height: t.height, tier: 0, htoPlan: true, sourceId: t.sourceId });
+    }
+    window.CITY.htoPlanTreeEzStats = {
+      added: htoPlanSites.length, generatedReconciled: reconcile.removedCount,
+      candidates: window.CITY.htoLandscapePlanTrees?.counts?.candidate ?? null,
+      accepted: window.CITY.htoLandscapePlanTrees?.counts?.accepted ?? null,
+      rejected: window.CITY.htoLandscapePlanTrees?.counts?.rejected ?? null
+    };
+  }
+  // Mapped and generated trees share this exclusion: a trunk cannot stand inside
+  // a new timber deck. The helper checks the active frame before using its footprint.
+  if (window.CITY.waterfrontDeckFootprintAt || window.CITY.gardenStructureKeepoutAt) {
+    for (let i = sites.length - 1; i >= 0; i--) {
+      const { x, z } = sites[i];
+      if (window.CITY.waterfrontDeckFootprintAt?.(x, z, 0.25)
+        || window.CITY.gardenStructureKeepoutAt?.(x, z, 0.25)) sites.splice(i, 1);
+    }
+  }
+  // Keep mapped trunks rooted on the rendered waterfront landforms.
+  if (window.CITY.waterfrontBeachLandscapeEnabled || window.CITY.waterfrontHtoLandscapeEnabled) {
+    for (const site of sites) {
+      const h = window.CITY.waterfrontBeachLandscapeHeightAt?.(site.x, site.z);
+      if (Number.isFinite(h)) site.y = Math.max(site.y, h);
+      const hto = window.CITY.htoLandscapeSurfaceAt?.(site.x, site.z);
+      if (hto && Number.isFinite(hto.h)) site.y = Math.max(site.y, hto.h);
+    }
   }
   // (High Park: the City's trees piled on one address point, all but one, its lidar crowns standing for them)
   const piled = window.CITY.parkWoods ? window.CITY.parkWoods.dropPiledCityTrees(sites) : 0;
@@ -782,6 +861,7 @@ async function buildEzTrees(scene, generated) {
     window.CITY.treeImpostorAtlases = impostors.atlases; // (captures: the baked atlases)
     stats.impostors = { trees: impTrees, models: impostors.models.length, state: impostors.state, mid: IMP_MID };
   }
+  window.CITY.ezTreeDinghyStats = { enabled: dinghyKeepoutOn, scatterDropped: dinghyScatterDropped, mappedConflicts: dinghyMappedConflicts };
   console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards (${inWoods} in the wooded parks' woods; ${piled} of the City's piled on one point in those parks left out), ${onBanks} on road cuts' banks), ${ids.length} models${impostors ? `; ${impTrees} woods trees with impostors beyond ${IMP_MID} m` : ''}`);
   window.CITY.treeStats = stats;
   return { group, update, stats };

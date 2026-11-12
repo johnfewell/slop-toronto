@@ -1,0 +1,44 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "beach-landscape-overview-from-north",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [948, 24, 408], look: [958, 1, 520], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "beach-landscape-beach-outcrop-low",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [925, 4.5, 494], look: [934, 1.2, 505], fov: 52 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "beach-landscape-plaza-outcrop",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [950, 6, 503], look: [968, 1.4, 517], fov: 50 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "beach-landscape-mounds-from-south",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [968, 9, 535], look: [954, 1.2, 486], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "beach-landscape-fountain",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [952, 4.5, 543], look: [964, 0.5, 556], fov: 48 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "beach-landscape-plaza-aerial",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [900, 70, 470], look: [968, 0.5, 520], fov: 55 }); })()",
+    "wait": 5000
+  }
+]

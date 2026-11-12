@@ -1,0 +1,8 @@
+[
+  {
+    "name": "hto-chair-close",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const C=window.CITY,a=window.__CITY_APP,site=C.waterfrontDetails.layout.sites.find(s=>s.id==='htoPark'),c=site.chairs[5],sn=Math.sin(c.yaw),cs=Math.cos(c.yaw);a.cameraSystem.cinema=()=>({pos:[c.x+sn*3+cs*1.2,1.5,c.z+cs*3-sn*1.2],look:[c.x,.8,c.z],fov:46});return {chair:c,model:C.waterfrontDetails.stats.chairModel?.url}})()",
+    "wait": 3500
+  }
+]

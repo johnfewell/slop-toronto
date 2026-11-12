@@ -1,0 +1,205 @@
+{
+  "scope": "st-bmyv.11 (actual-terrain prerequisite for st-bmyv)",
+  "park": "Biidaasige Park (Ookwemin Minising / Lower Don Lands / Port Lands)",
+  "generated": "2026-11-10",
+  "purpose": "Bounded primary-source search for CURRENT (2025/2026) as-built ground relief of the new park. Records what actual elevation data exists, its date/datum/units, and the exact negative checks. Does NOT invent a hill and does NOT treat pre-park DEM as current grade.",
+  "headline": "No published 2025/2026 LiDAR, DSM, DEM, contour or as-built grading plan covers the new park. The only City/Provincial bare-earth and surface models over the park are GTA 2023 (and GTA 2015) LiDAR, acquired BEFORE the park opened (2025 east / 2026 west). The ~9 m western promontory is a primary DESIGN fact (MVVA) plus a primary CONSTRUCTION description (Waterfront Toronto, March 2025), not a surveyed surface. No source geometry is published, so no walkable mesh can be derived from actual data yet.",
+
+  "verticalDatum": {
+    "epsg": 6647,
+    "name": "CGVD2013(CGG2013) height",
+    "note": "Confirmed from the Ontario DTM/DSM ImageServer spatialReference vcsWkid 6647. Matches the City TIN dataset's stated vertical datum (CGVD2013)."
+  },
+  "horizontalDatum": {
+    "provincial": "NAD83(CSRS) / Web Mercator (EPSG:3857) served; source tiles NAD83(CSRS)",
+    "cityTin": "NAD83(CSRS) / MTM zone 10 (EPSG:2952)"
+  },
+
+  "sources": [
+    {
+      "id": "ontario-dtm-lidar",
+      "title": "Ontario Digital Terrain Model (Lidar-Derived)",
+      "publisher": "Ontario Ministry of Natural Resources / Geospatial Ontario",
+      "type": "bare-earth raster (DTM), 0.5 m",
+      "url": "https://ws.geoservices.lrc.gov.on.ca/arcgis5/rest/services/Elevation/Ontario_DTM_LidarDerived/ImageServer",
+      "indexUrl": "https://services1.arcgis.com/TJH5KDher0W13Kgo/arcgis/rest/services/Ontario_Digital_Terrain_Model_Lidar_Derived_WFL1/FeatureServer/0",
+      "licence": "Open Government Licence - Ontario",
+      "parkTiles": [
+        {
+          "project": "GTA 2023",
+          "tile": "1km176320483302023LGTA2023_DTM",
+          "startYear": 2023,
+          "endYear": 2023,
+          "resolution_m": 0.5,
+          "acqMethod": "Linear Mode Lidar",
+          "horizontalAccuracy_m": 0.3,
+          "verticalAccuracyClass": 5,
+          "isCurrentGrade": false,
+          "whyNotCurrent": "Acquired 2023, before the park opened (east 2025, west 2026). Captures mid-construction earthworks, not the final as-built promontory/banks."
+        },
+        {
+          "project": "GTA 2014-18",
+          "tile": "1km176320483302015LGTA2015_DTM",
+          "year": "2015",
+          "resolution_m": 0.5,
+          "acqMethod": "Linear Mode Lidar",
+          "horizontalAccuracy_m": 0.37,
+          "verticalAccuracy_cm": 10,
+          "isCurrentGrade": false,
+          "whyNotCurrent": "2015 acquisition, long before the park existed."
+        }
+      ],
+      "preParkSample_m": {
+        "note": "GTA 2023 DTM values sampled 2026-11-10 across the park footprint. These are 2023 mid-construction elevations, NOT the final park surface. Recorded only as a pre-park baseline, explicitly not current grade.",
+        "datum": "CGVD2013",
+        "samples": [
+          { "label": "NW promontory", "lon": -79.3565, "lat": 43.6465, "elev_m": 75.9175 },
+          { "label": "W promontory", "lon": -79.3555, "lat": 43.6455, "elev_m": 75.616 },
+          { "label": "W edge", "lon": -79.3545, "lat": 43.6445, "elev_m": 78.098 },
+          { "label": "centre", "lon": -79.3515, "lat": 43.6455, "elev_m": 76.624 },
+          { "label": "E centre", "lon": -79.3485, "lat": 43.6455, "elev_m": 73.9483 },
+          { "label": "NE", "lon": -79.3465, "lat": 43.6475, "elev_m": 75.1693 },
+          { "label": "SE", "lon": -79.3475, "lat": 43.6435, "elev_m": 81.586 },
+          { "label": "S", "lon": -79.3515, "lat": 43.6425, "elev_m": 76.317 },
+          { "label": "SW", "lon": -79.3555, "lat": 43.6425, "elev_m": 74.8438 }
+        ]
+      }
+    },
+    {
+      "id": "ontario-dsm-lidar",
+      "title": "Ontario Digital Surface Model (Lidar-Derived)",
+      "publisher": "Ontario Ministry of Natural Resources / Geospatial Ontario",
+      "type": "first-return surface raster (DSM), 0.5 m",
+      "url": "https://ws.geoservices.lrc.gov.on.ca/arcgis5/rest/services/Elevation/Ontario_DSM_LidarDerived/ImageServer",
+      "licence": "Open Government Licence - Ontario",
+      "parkTile": {
+        "project": "GTA 2023",
+        "tile": "1km176320483302023LGTA2023_DSM",
+        "startYear": 2023,
+        "endYear": 2023,
+        "resolution_m": 0.5,
+        "acqMethod": "Linear Mode Lidar",
+        "isCurrentGrade": false,
+        "whyNotCurrent": "Same 2023 pre-park acquisition as the DTM."
+      }
+    },
+    {
+      "id": "city-tin",
+      "title": "Triangular Irregular Network (TIN)",
+      "publisher": "City of Toronto Open Data",
+      "type": "TIN polygon elevation (Avg_Elev, Aspect, Slope, Ptg_Slope)",
+      "url": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/triangular-irregular-network-tin",
+      "download": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/4ab91af6-6b08-4318-aee0-87f163891e53/resource/6877e492-e416-4ce0-bff1-37ffbcc53409/download/triangular-irregular-network.zip",
+      "licence": "Open Government Licence - Toronto",
+      "sourceDate": "2023 LiDAR-derived 2.5 m bare-earth",
+      "lastModified": "2024-10-22",
+      "verticalDatum": "CGVD2013",
+      "horizontalDatum": "NAD83(CSRS) / MTM zone 10 (EPSG:2952)",
+      "isCurrentGrade": false,
+      "whyNotCurrent": "Derived from 2023 LiDAR, before the park opened. Same pre-park vintage as the provincial GTA 2023 DTM."
+    },
+    {
+      "id": "mvva-design",
+      "title": "Port Lands Flood Protection (MVVA project page)",
+      "publisher": "Michael Van Valkenburgh Associates (MVVA)",
+      "type": "design description (primary, but design not survey)",
+      "url": "https://www.mvvainc.com/projects/port-lands-flood-protection2",
+      "licence": "All rights reserved (quoted short facts only)",
+      "quotes": [
+        "the Promontory, a nine-meter landform constructed from the excavation of the Cove, anchors the park's western edge and offers commanding city views.",
+        "The Badlands, inspired by the Cheltenham Badlands, features dramatic topography along with water pumps, cranks, and jets to invite multi-sensory water play."
+      ],
+      "elevationFact": "~9 m promontory landform (design intent).",
+      "isCurrentGrade": false,
+      "whyNotCurrent": "Design narrative, not a surveyed or as-built surface. No coordinates, contours or sections published."
+    },
+    {
+      "id": "wt-march-2025-transcript",
+      "title": "Descriptive transcript: construction, Port Lands, March 2025",
+      "publisher": "Waterfront Toronto",
+      "type": "primary construction description (video transcript)",
+      "url": "https://www.waterfrontoronto.ca/descriptive-transcript-construction-port-lands-march-2025",
+      "licence": "Waterfront Toronto site content (quoted short facts only)",
+      "quotes": [
+        "A construction site, with a large retaining wall in the centre, labeled as a 'promontory/overlook', surrounded by ground of varying elevations.",
+        "The past few months have been busy with landscaping the western part of Biidaasige Park. You can see how we've started to build the rock façade of the promontory, A high point that will offer views of the downtown skyline.",
+        "in 2026, this western section of the park will open, along with the much-anticipated Lassonde Art Trail."
+      ],
+      "elevationFact": "Confirms a built retaining-wall promontory/overlook with 'ground of varying elevations' in the western section (opening 2026).",
+      "isCurrentGrade": false,
+      "whyNotCurrent": "Qualitative construction description; no numeric elevations, contours or coordinates."
+    },
+    {
+      "id": "wt-opening-news",
+      "title": "Largest park in a generation opens on Toronto's new island",
+      "publisher": "Waterfront Toronto",
+      "type": "primary opening announcement",
+      "url": "https://www.waterfrontoronto.ca/news/largest-park--in-a-generation-opens-on-torontos-new-island-through-transformative-port-lands-flood-protection-project",
+      "licence": "Waterfront Toronto site content (quoted short facts only)",
+      "quotes": [
+        "A 'promontory' or lookout over the new river and towards the city skyline.",
+        "Creating the new grading around the river's banks."
+      ],
+      "elevationFact": "Confirms the promontory/lookout is a 2026 feature and that new grading around the river banks was part of the flood-protection scope.",
+      "isCurrentGrade": false,
+      "whyNotCurrent": "Announcement prose; no numeric elevations or geometry."
+    }
+  ],
+
+  "negativeChecks": [
+    {
+      "check": "City of Toronto Open Data: 2025/2026 LiDAR, DSM, DEM, contour or spot-elevation dataset",
+      "result": "NONE FOUND",
+      "detail": "CKAN package_search for 'elevation', 'digital surface model', 'contour', 'topographic', 'digital elevation', 'ground elevation', 'LiDAR 2025', 'LiDAR 2026', 'bare earth', 'spot elevation', 'survey monument' returned only the 2023-derived TIN, 3D Massing (buildings), and topographic vector layers (no elevation raster). No 2025/2026 elevation product exists."
+    },
+    {
+      "check": "City of Toronto basemap services: current-year LiDAR hillshade",
+      "result": "NONE FOUND",
+      "detail": "gis.toronto.ca basemap folder lists only cot_LiDAR_2015_Hillshade_BareEarth and cot_LiDAR_2015_Hillshade_FullFeature. No 2025/2026 hillshade."
+    },
+    {
+      "check": "City 3D Massing 2025 as a ground-elevation source",
+      "result": "NOT APPLICABLE",
+      "detail": "3D Massing is building footprint/massing geometry only (81 MB shapefile, refreshed 2026-04). It carries no bare-earth or ground elevation attribute. Not a terrain source."
+    },
+    {
+      "check": "Provincial LiDAR newer than 2023 covering the park",
+      "result": "NONE FOUND",
+      "detail": "Ontario DTM/DSM package index returns only GTA 2023 and GTA 2015 tiles at the park point. The '2024 LiDAR - Hydro Enforced DTM' item is Washington, D.C. (dcgis), not Toronto. Ontario DEM_ImageryDerived returns NoData at the park."
+    },
+    {
+      "check": "Waterfront Toronto published grading / landscape tender / as-built / contour plan",
+      "result": "NONE FOUND",
+      "detail": "Sitemap and document-library search for 'grading', 'tender', 'as-built', 'elevation', 'contour', 'survey', 'landscape', 'technical' returned only precinct plans, design-review agendas/minutes, construction notices (boilerplate traffic/road text) and backgrounders. No grading plan, tender drawing or as-built survey is published."
+    },
+    {
+      "check": "City Biidaasige Park page for elevation/contour facts",
+      "result": "NONE FOUND",
+      "detail": "The City park page contains no elevation, contour, promontory height or grading text."
+    }
+  ],
+
+  "georeferenceFeasibility": {
+    "existingRasters": "The GTA 2023 DTM/DSM are fully georeferenced (EPSG:3857 served, CGVD2013 vertical) and could be sampled, but they are pre-park and do not contain the final promontory/banks.",
+    "promontory": "No georeferenced surface of the built promontory exists in any published source. The 9 m figure is a design intent; the March 2025 transcript confirms a retaining-wall promontory with 'ground of varying elevations' but gives no numbers or coordinates.",
+    "conclusion": "A faithful walkable mesh of the actual current relief cannot be derived from published actual data at this time. Any promontory mesh would be an explicit estimate for captain review, not a surveyed surface."
+  },
+
+  "recommendation": {
+    "forCaptain": "Do not build a conical hill from the single 9 m design figure. If relief is required now, treat the promontory as an explicit, labelled estimate (design intent + construction description) with a clear uncertainty note, and keep the flat native base elsewhere. The honest current-grade surface is unavailable from published sources.",
+    "nextUsefulEvidence": [
+      "Request the as-built survey / grading drawings from Waterfront Toronto or the landscape contractor (not published online).",
+      "Check for a 2025/2026 City or TRCA LiDAR acquisition flight over the Port Lands (none published as of 2026-11-10).",
+      "If a future City/Provincial LiDAR refresh (2025+) is published, re-run the DTM/DSM identify at the park tiles and compare to the GTA 2023 baseline recorded here."
+    ]
+  },
+
+  "provenance": {
+    "method": "Bounded primary-source search (<=15 min). CKAN package_search, ArcGIS REST service enumeration, Ontario DTM/DSM ImageServer identify at park coordinates, Waterfront Toronto sitemap + page fetch, MVVA page fetch. No image pixels interpreted. No shared runtime touched.",
+    "privateCache": "$WATERFRONT_RESEARCH/biidaasige/relief-primary/ (fetched HTML, sitemap, DTM export JSON)",
+    "ownedRepoFiles": [
+      "docs/biidaasige-relief-source.md",
+      "tools/fixtures/biidaasige-relief-source.json"
+    ]
+  }
+}

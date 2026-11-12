@@ -1,0 +1,99 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "spadina-wavedeck-street-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-1065, 2.5, 582], \"look\": [-1103, 1, 574], \"fov\": 60};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "spadina-wavedeck-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1030, 48, 680], look: [-1120, 0, 568], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "simcoe-wavedeck-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-475, 2.5, 590], \"look\": [-515, 1.5, 582], \"fov\": 60};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "simcoe-wavedeck-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-430, 48, 682], look: [-530, 0, 578], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "rees-wavedeck-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-707, 2.3, 580], \"look\": [-739, 0.8, 572], \"fov\": 60};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "rees-wavedeck-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-665, 48, 675], look: [-752, 0, 570], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "simcoe-walker-standing",
+    "mode": "person",
+    "time": "midday",
+    "wait": 3000,
+    "js": "(async()=>{const a=window.__CITY_APP,C=window.CITY,d=C.WATERFRONT_WAVEDECKS.find(d=>d.id==='simcoe'),x=-526,z=586,h=C.waterfrontDeckSurfaceHeight(d,x,z);if(!C.waterfrontPublicRealmEnabled)throw Error('wavedecks disabled');a.selectMode('person');a.controllerManager.teleportActiveTo(x,z,1.57,h);await new Promise(r=>setTimeout(r,1000));const p=a.controllerManager.getActiveEntity().position;if(Math.hypot(p.x-x,p.z-z)>1||Math.abs(p.y-h)>.12)throw Error('walker not standing on rendered deck '+JSON.stringify({x,z,h,p}));console.log('[waterfront-walk] '+JSON.stringify({x:p.x,y:p.y,z:p.z,expected:h}));const c={pos:[x+5,h+3,z+6],look:[x,h+1,z],fov:55};a.cameraSystem.cinema=()=>c;})()"
+  },
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "ferry-terminal-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [150, 1.8, 605], \"look\": [250, 2.2, 660], \"fov\": 62};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-street-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [165, 1.9, 690], \"look\": [255, 3.0, 640], \"fov\": 60};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-lake-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [255, 2.4, 742], \"look\": [245, 2.6, 650], \"fov\": 62};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-aerial-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [360, 70, 760], \"look\": [255, 0, 650], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-aerial-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [150, 55, 780], \"look\": [255, 0, 655], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-fingers-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [307, 22, 745], \"look\": [307, 0, 685], \"fov\": 58};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-check-enabled",
+    "time": "midday",
+    "wait": 2000,
+    "js": "(()=>{const C=window.CITY;const r=C.waterfrontFerries;if(!C.waterfrontFerriesEnabled||!r)throw Error('waterfront ferries disabled');const s=r.stats;const need=[s.terminalBoxes>=3,s.ticketBooths>=3,s.ticketCanopies>=1,s.directoryPanels===3,s.fingerPiers>=2,s.routes.length===3];if(need.some(v=>!v))throw Error('ferry terminal incomplete '+JSON.stringify(need));const ward=r.layout.routes.find(x=>x.id==='ward');if(!C.waterAt(ward.endpoint.x,ward.endpoint.z))throw Error('Ward endpoint not at water');if(C.waterAt(255,684)===false)throw Error('central channel not water');console.log('[ferry-check] '+JSON.stringify({terminalBoxes:s.terminalBoxes,booths:s.ticketBooths,fingers:s.fingerPiers,berths:s.berths,triangles:s.triangles}));})()"
+  }
+]

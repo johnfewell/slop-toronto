@@ -1,0 +1,32 @@
+[
+  {
+    "name": "island-cottages-wards-third-street-fronts-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1644.72, 1.8, 2003.63], look: [1632.85, 1.7, 2008.19], fov: 66 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-cottages-wards-fifth-street-fronts-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1589.21, 1.8, 2078.31], look: [1595.1, 1.7, 2067.03], fov: 66 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-cottages-wards-lakeshore-fronts-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1574.27, 1.8, 2174.77], look: [1566.03, 1.7, 2165.08], fov: 66 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-cottages-algonquin-nottawa-fronts-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1182.35, 1.8, 2217.04], look: [1189.6, 1.7, 2206.6], fov: 66 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-cottages-wards-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1500, 58, 1880], look: [1640, 0, 2000], fov: 50 }); })()",
+    "wait": 5000
+  }
+]

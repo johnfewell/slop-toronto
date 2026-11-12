@@ -1,0 +1,301 @@
+[
+ {
+  "category": "Snowy Owl play theatre",
+  "requested": "owl",
+  "status": "verified-osm-structure",
+  "refs": [
+   "way/1418541992"
+  ],
+  "note": "The Snowy Owl Theatre AREA way/1418541992 is verified inside the unnamed west play area (way/1418127159). The maker pin stays approximate and is not a body origin."
+ },
+ {
+  "category": "Reaching Raccoon playground",
+  "requested": "raccoon",
+  "status": "verified-osm",
+  "refs": [
+   "way/1418796674"
+  ],
+  "note": "Named OSM playground polygon."
+ },
+ {
+  "category": "Badlands Scramble (1,600 m2)",
+  "requested": "badlands",
+  "status": "verified-osm",
+  "refs": [
+   "way/1418541993"
+  ],
+  "note": "Published 1,600 m2; mapped ring ~1,120 m2."
+ },
+ {
+  "category": "Cableway Canyon (20 m / 40 m cableways)",
+  "requested": "cableway",
+  "status": "verified-osm-partial",
+  "refs": [
+   "way/1552431730",
+   "way/1552431733"
+  ],
+  "note": "Two playground=zipwire map lines verified (ids cableway-20 / cableway-40). Map line length is kept separate from the published published 20 m / 40 m."
+ },
+ {
+  "category": "Swing Hill",
+  "requested": "swings",
+  "status": "verified-osm-partial",
+  "refs": [
+   "node/14124048374"
+  ],
+  "note": "One playground=swing node verified on Swing Hill. Partial: the orthophoto shows two swing pads/frames, so one node is not a full count."
+ },
+ {
+  "category": "Mock beaver dam play area",
+  "requested": "mock-dam",
+  "status": "unverified",
+  "refs": [],
+  "note": "Named by the City. Two OSM sandpit polygons are mapped nearby but not proven to be the mock beaver dam; stays unplaced."
+ },
+ {
+  "category": "Sandpits (generic)",
+  "requested": "sandpits",
+  "status": "verified-osm",
+  "refs": [
+   "way/1552431731",
+   "way/1552431732"
+  ],
+  "note": "Two playground=sandpit polygons verified. Generic identities; not assigned to the mock beaver dam without proof."
+ },
+ {
+  "category": "Unnamed playground structure",
+  "requested": "unnamed-structure",
+  "status": "verified-osm-identity-unresolved",
+  "refs": [
+   "node/14124048373"
+  ],
+  "note": "Mapped playground=structure node inside Badlands. Identity unresolved; not a Dodem animal and not a dam."
+ },
+ {
+  "category": "Dodem animal play structures (7 animals)",
+  "requested": "dodem",
+  "status": "unverified",
+  "refs": [],
+  "note": "Named by the City; no individual positions."
+ },
+ {
+  "category": "Dogs off-leash area east (1,200 m2)",
+  "requested": "dogpark-east",
+  "status": "verified-osm",
+  "refs": [
+   "way/1418542004"
+  ],
+  "note": "Published 1,200 m2; mapped ring ~790 m2."
+ },
+ {
+  "category": "Dogs off-leash area west (800 m2)",
+  "requested": "dogpark-west",
+  "status": "verified-osm",
+  "refs": [
+   "way/1419966624"
+  ],
+  "note": "Published 800 m2; mapped ring ~540 m2."
+ },
+ {
+  "category": "Old Fire Hall 30",
+  "requested": "firehall",
+  "status": "verified-osm",
+  "refs": [
+   "way/494886782"
+  ],
+  "note": "Community centre building polygon."
+ },
+ {
+  "category": "The Drum",
+  "requested": "drum",
+  "status": "unverified",
+  "refs": [],
+  "note": "Named by Waterfront Toronto / City; 2026 completion; no position."
+ },
+ {
+  "category": "Atlas Crane / Marine Terminal 35",
+  "requested": "atlas-crane",
+  "status": "verified-osm",
+  "refs": [
+   "node/9521067431"
+  ],
+  "note": "Crane point verified; other MT35 heritage elements unplaced."
+ },
+ {
+  "category": "River Bend Landing",
+  "requested": "river-bend-landing",
+  "status": "unverified",
+  "refs": [],
+  "note": "Named by the City; no position."
+ },
+ {
+  "category": "East Landing / West Landing",
+  "requested": "landings",
+  "status": "map-label-only",
+  "refs": [],
+  "note": "Map labels only; no registered WGS anchors."
+ },
+ {
+  "category": "Steps",
+  "requested": "steps",
+  "status": "map-label-only",
+  "refs": [],
+  "note": "Map symbol only; no positions or counts."
+ },
+ {
+  "category": "Bridges",
+  "requested": "bridges",
+  "status": "verified-osm",
+  "refs": [
+   "way/1211500112",
+   "way/1157772737"
+  ],
+  "note": "Commissioners and Cherry Street South bridges; bascule retained as context."
+ },
+ {
+  "category": "Canoe Cove",
+  "requested": "canoe-cove",
+  "status": "verified-osm-adjacent",
+  "refs": [
+   "node/10893913022"
+  ],
+  "note": "Water bay 8 m outside the land polygon; park feature."
+ },
+ {
+  "category": "Canoe Cove paddling course / pebble landing",
+  "requested": "paddling",
+  "status": "unverified",
+  "refs": [],
+  "note": "Named in the 2026 release; extent not published."
+ },
+ {
+  "category": "Water's Edge Promenade",
+  "requested": "promenade",
+  "status": "verified-osm",
+  "refs": [
+   "way/1013210805"
+  ],
+  "note": "Named OSM footway line."
+ },
+ {
+  "category": "Lassonde Art Trail",
+  "requested": "art-trail",
+  "status": "verified-osm-partial",
+  "refs": "19 OSM artwork points",
+  "note": "Official total and individual locations are not on the park maps; OSM maps 19 points."
+ },
+ {
+  "category": "Barbecues",
+  "requested": "bbq",
+  "status": "verified-osm-subset",
+  "refs": "7 nodes",
+  "note": "Mapped subset; official count not published."
+ },
+ {
+  "category": "Water fountains",
+  "requested": "fountains",
+  "status": "verified-osm-partial",
+  "refs": "9 nodes (6 park-ring + 3 re-filtered west)",
+  "note": "City Open Data lists 7 park water stations; both OSM fixtures together map 9 drinking-water points. Subset, not the official total."
+ },
+ {
+  "category": "Picnic tables",
+  "requested": "tables",
+  "status": "verified-osm-subset",
+  "refs": "18 nodes",
+  "note": "Mapped subset; official count not published."
+ },
+ {
+  "category": "Benches",
+  "requested": "benches",
+  "status": "verified-osm-subset",
+  "refs": "38 nodes",
+  "note": "Mapped subset (37 inside the park polygon + 1 in the geometry extract); official count not published."
+ },
+ {
+  "category": "Waste bins",
+  "requested": "bins",
+  "status": "verified-osm-subset",
+  "refs": "18 nodes",
+  "note": "Mapped subset (17 inside the park polygon + 1 in the geometry extract); official count not published."
+ },
+ {
+  "category": "Washrooms",
+  "requested": "washrooms",
+  "status": "verified-osm-subset",
+  "refs": "4 nodes",
+  "note": "City describes 5 facilities at Old Fire Hall 30; OSM maps 4 points (one just outside the ring at the Fire Hall entrance)."
+ },
+ {
+  "category": "Fire pit",
+  "requested": "firepit",
+  "status": "verified-osm",
+  "refs": "node/14054044358",
+  "note": "Mapped OSM fire pit inside the park (broader re-filtered extract)."
+ },
+ {
+  "category": "Outdoor fitness",
+  "requested": "fitness",
+  "status": "official-listed-unplaced",
+  "refs": [],
+  "note": "City Recreation page (2026-09-09) lists Outdoor Fitness Equipment west of Cableway Canyon; position not published, so unplaced."
+ },
+ {
+  "category": "Marker trees / directional compasses",
+  "requested": "markers",
+  "status": "unverified",
+  "refs": [],
+  "note": "Named in the 2026 release; no positions."
+ },
+ {
+  "category": "Interpretive signage",
+  "requested": "signage",
+  "status": "unverified",
+  "refs": [],
+  "note": "Named by Waterfront Toronto / City; no positions."
+ },
+ {
+  "category": "Indigenous plantings",
+  "requested": "plantings",
+  "status": "unverified",
+  "refs": [],
+  "note": "Named by the City; no extent."
+ },
+ {
+  "category": "Trails",
+  "requested": "trails",
+  "status": "verified-osm-partial",
+  "refs": "2 cycleway rings",
+  "note": "Main Path and Don Greenway loop verified; five other named trails lack clipped geometry."
+ },
+ {
+  "category": "Event lawn",
+  "requested": "event-lawn",
+  "status": "verified-osm",
+  "refs": [
+   "way/1545116131"
+  ],
+  "note": "3,000-person event lawn."
+ },
+ {
+  "category": "Promontory",
+  "requested": "promontory",
+  "status": "unverified",
+  "refs": [],
+  "note": "Named in the 2026 release; no position."
+ },
+ {
+  "category": "Habitat coves / wetlands",
+  "requested": "habitat",
+  "status": "verified-osm",
+  "refs": "West Habitat Cove + wetland rings",
+  "note": "Water/wetland rings carried raw."
+ },
+ {
+  "category": "Future acres / 2027+ art",
+  "requested": "future",
+  "status": "future",
+  "refs": [],
+  "note": "Not current; marked future and unsupported for placement."
+ }
+]

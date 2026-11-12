@@ -1,0 +1,277 @@
+{
+ "note": "Reviewed OSM building SUBSET for the QCYC clubhouse row-identity audit (st-sb3r.39). It holds only the six ways of the QCYC clubhouse cluster, selected from the captain-local primary Overpass building cache b.json. It is NOT the full b.json: the source hash below is of that ORIGINAL cache (recorded identically in island-outliers.json sources.osmBuildings.sha256), provided as provenance for where these six ways came from — it does not hash this subset. Coordinates are OSM lon/lat; tags are the mapper's own. Pass 2 adds no network fetch; this file is for offline audit.",
+ "sources": {
+  "osmBuildings": {
+   "file": "b.json",
+   "sha256": "10696221e8015fba442942184dbbe6b91cf2f29426230994a7036e843611310b",
+   "timestamp_osm_base": "2026-11-10T12:45:01Z",
+   "query": "way[\"building\"](43.605,-79.405,43.6345,-79.338);out geom tags;",
+   "subsetOf": "b.json (captain-local primary Overpass building cache; only six cluster ways included here)"
+  }
+ },
+ "elements": [
+  {
+   "type": "way",
+   "id": 43805118,
+   "bounds": {
+    "minlat": 43.6300508,
+    "minlon": -79.3584411,
+    "maxlat": 43.6303383,
+    "maxlon": -79.3579614
+   },
+   "geometry": [
+    {
+     "lat": 43.6300508,
+     "lon": -79.358105
+    },
+    {
+     "lat": 43.6302409,
+     "lon": -79.3584411
+    },
+    {
+     "lat": 43.6303383,
+     "lon": -79.3583359
+    },
+    {
+     "lat": 43.6302424,
+     "lon": -79.3581663
+    },
+    {
+     "lat": 43.6302122,
+     "lon": -79.3581129
+    },
+    {
+     "lat": 43.6302477,
+     "lon": -79.3580745
+    },
+    {
+     "lat": 43.6301838,
+     "lon": -79.3579614
+    },
+    {
+     "lat": 43.6300939,
+     "lon": -79.3580585
+    },
+    {
+     "lat": 43.6300508,
+     "lon": -79.358105
+    }
+   ],
+   "tags": {
+    "attribution": "Natural Resources Canada",
+    "building": "yes",
+    "building:levels": "2",
+    "canvec:CODE": "2010252",
+    "canvec:UUID": "c972409441634603a4ea8be0c51fe401",
+    "name": "Queen City Yacht Club clubhouse",
+    "source": "CanVec_Import_2009"
+   }
+  },
+  {
+   "type": "way",
+   "id": 193043051,
+   "bounds": {
+    "minlat": 43.6296656,
+    "minlon": -79.3579056,
+    "maxlat": 43.6298306,
+    "maxlon": -79.3576765
+   },
+   "geometry": [
+    {
+     "lat": 43.6296656,
+     "lon": -79.3577743
+    },
+    {
+     "lat": 43.6297399,
+     "lon": -79.3579056
+    },
+    {
+     "lat": 43.6298306,
+     "lon": -79.3578078
+    },
+    {
+     "lat": 43.6297563,
+     "lon": -79.3576765
+    },
+    {
+     "lat": 43.6296656,
+     "lon": -79.3577743
+    }
+   ],
+   "tags": {
+    "building": "yes"
+   }
+  },
+  {
+   "type": "way",
+   "id": 487167570,
+   "bounds": {
+    "minlat": 43.6296121,
+    "minlon": -79.358771,
+    "maxlat": 43.6298152,
+    "maxlon": -79.3584867
+   },
+   "geometry": [
+    {
+     "lat": 43.6297114,
+     "lon": -79.358771
+    },
+    {
+     "lat": 43.6298152,
+     "lon": -79.3586515
+    },
+    {
+     "lat": 43.6297158,
+     "lon": -79.3584867
+    },
+    {
+     "lat": 43.6296121,
+     "lon": -79.3586062
+    },
+    {
+     "lat": 43.6297114,
+     "lon": -79.358771
+    }
+   ],
+   "tags": {
+    "addr:city": "Toronto",
+    "addr:housenumber": "1",
+    "addr:street": "Seneca Avenue",
+    "building": "yes",
+    "opendata:type": "100001"
+   }
+  },
+  {
+   "type": "way",
+   "id": 487167571,
+   "bounds": {
+    "minlat": 43.6297234,
+    "minlon": -79.3589156,
+    "maxlat": 43.6299172,
+    "maxlon": -79.3586964
+   },
+   "geometry": [
+    {
+     "lat": 43.6297971,
+     "lon": -79.3589156
+    },
+    {
+     "lat": 43.6298261,
+     "lon": -79.3588828
+    },
+    {
+     "lat": 43.6298405,
+     "lon": -79.3589071
+    },
+    {
+     "lat": 43.6299172,
+     "lon": -79.3588204
+    },
+    {
+     "lat": 43.6298567,
+     "lon": -79.3587181
+    },
+    {
+     "lat": 43.6298348,
+     "lon": -79.3587429
+    },
+    {
+     "lat": 43.6298073,
+     "lon": -79.3586964
+    },
+    {
+     "lat": 43.6297234,
+     "lon": -79.3587911
+    },
+    {
+     "lat": 43.6297971,
+     "lon": -79.3589156
+    }
+   ],
+   "tags": {
+    "addr:city": "Toronto",
+    "addr:housenumber": "2",
+    "addr:street": "Seneca Avenue",
+    "building": "yes",
+    "club": "yes",
+    "name": "Learn to Sail building",
+    "opendata:type": "115001"
+   }
+  },
+  {
+   "type": "way",
+   "id": 795796083,
+   "bounds": {
+    "minlat": 43.6297188,
+    "minlon": -79.3583476,
+    "maxlat": 43.6298371,
+    "maxlon": -79.3581914
+   },
+   "geometry": [
+    {
+     "lat": 43.6297188,
+     "lon": -79.3582959
+    },
+    {
+     "lat": 43.6297525,
+     "lon": -79.3583476
+    },
+    {
+     "lat": 43.6298371,
+     "lon": -79.3582431
+    },
+    {
+     "lat": 43.6298035,
+     "lon": -79.3581914
+    },
+    {
+     "lat": 43.6297188,
+     "lon": -79.3582959
+    }
+   ],
+   "tags": {
+    "building": "yes"
+   }
+  },
+  {
+   "type": "way",
+   "id": 795796087,
+   "bounds": {
+    "minlat": 43.6309939,
+    "minlon": -79.3571628,
+    "maxlat": 43.6310718,
+    "maxlon": -79.3570974
+   },
+   "geometry": [
+    {
+     "lat": 43.6310717,
+     "lon": -79.3571628
+    },
+    {
+     "lat": 43.6310718,
+     "lon": -79.3570977
+    },
+    {
+     "lat": 43.630994,
+     "lon": -79.3570974
+    },
+    {
+     "lat": 43.6309939,
+     "lon": -79.3571625
+    },
+    {
+     "lat": 43.6310717,
+     "lon": -79.3571628
+    }
+   ],
+   "tags": {
+    "amenity": "shelter",
+    "bench": "yes",
+    "building": "yes",
+    "building:levels": "1",
+    "name": "The Waiting Shed",
+    "roof:shape": "hipped"
+   }
+  }
+ ]
+}

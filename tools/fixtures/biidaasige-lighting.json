@@ -1,0 +1,672 @@
+{
+ "version": 1,
+ "source": "OpenStreetMap Overpass API geometry extract (ODbL) for the Biidaasige Park bbox: highway=street_lamp, tourism=information, barrier=bollard",
+ "license": "ODbL-1.0",
+ "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+ "attribution": "© OpenStreetMap contributors, ODbL 1.0 — https://www.openstreetmap.org/copyright",
+ "sourceUrl": "https://overpass-api.de/api/interpreter",
+ "osmBaseTimestamp": "2026-11-10T23:24:18Z",
+ "fetchedOn": "2026-11-10",
+ "overpassGenerator": "Overpass API 0.7.62.11 87bfad18",
+ "bbox": {
+  "minLat": 43.642,
+  "minLon": -79.359,
+  "maxLat": 43.65,
+  "maxLon": -79.341
+ },
+ "query": "[out:json][timeout:45];\n(\n  node[highway=street_lamp](43.642,-79.359,43.650,-79.341);\n  node[information](43.642,-79.359,43.650,-79.341);\n  node[barrier=bollard](43.642,-79.359,43.650,-79.341);\n  way[barrier=bollard](43.642,-79.359,43.650,-79.341);\n);\nout geom tags;",
+ "park": {
+  "ref": "way/813717630",
+  "polygonSource": "js/biidaasige-park-data.js BIIDAASIGE_PARK.park.polygon"
+ },
+ "classification": {
+  "method": "ray-cast point-in-polygon against BIIDAASIGE_PARK.park.polygon (lat/lon)",
+  "inside": 3,
+  "outside": 48,
+  "counts": {
+   "streetLamp-out": 47,
+   "bollard-out": 1,
+   "wayfinding-in": 3
+  }
+ },
+ "sourceSites": [
+  {
+   "id": "osm-node-14071202397",
+   "osmId": 14071202397,
+   "kind": "wayfinding",
+   "lat": 43.6453419,
+   "lon": -79.3477229,
+   "tags": {
+    "information": "guidepost",
+    "tourism": "information"
+   },
+   "placement": "osm-node",
+   "positionConfidence": "mapped"
+  },
+  {
+   "id": "osm-node-14071241307",
+   "osmId": 14071241307,
+   "kind": "wayfinding",
+   "lat": 43.6446681,
+   "lon": -79.3486716,
+   "tags": {
+    "information": "guidepost",
+    "tourism": "information"
+   },
+   "placement": "osm-node",
+   "positionConfidence": "mapped"
+  },
+  {
+   "id": "osm-node-14071243053",
+   "osmId": 14071243053,
+   "kind": "wayfinding",
+   "lat": 43.6438325,
+   "lon": -79.350529,
+   "tags": {
+    "information": "guidepost",
+    "tourism": "information"
+   },
+   "placement": "osm-node",
+   "positionConfidence": "mapped"
+  }
+ ],
+ "unplaced": {
+  "streetLamps": 0,
+  "bollards": 0
+ },
+ "context": {
+  "streetLampsOutside": 47,
+  "bollardsOutside": 1
+ },
+ "ortho": {
+  "export": {
+   "href": "https://gis.toronto.ca/arcgis/rest/directories/arcgisoutput/basemap/cot_ortho_2025_color_8cm_MapServer/_ags_map4adf528efd71412db62b56856ff6e6e9.png",
+   "width": 2500,
+   "height": 1726,
+   "extent": {
+    "xmin": -8833462.09959753,
+    "ymin": 5410671.299744126,
+    "xmax": -8833144.136046192,
+    "ymax": 5410890.821779971,
+    "spatialReference": {
+     "wkid": 102100,
+     "latestWkid": 3857
+    }
+   },
+   "scale": 480.6998406223511
+  },
+  "note": "No mapped street lamp lies inside the park polygon. Pole bases are NOT interpreted from the ortho here: the model cannot visually verify pixels, so candidate lamp-base pixels must be supplied by the captain before any lamp is placed. Long shadows and map-label positions are not evidence."
+ },
+ "elements": [
+  {
+   "type": "node",
+   "id": 2496302441,
+   "lat": 43.6468898,
+   "lon": -79.3534105,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2496302442,
+   "lat": 43.6470265,
+   "lon": -79.3530894,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2496302445,
+   "lat": 43.6471008,
+   "lon": -79.3536538,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2496302451,
+   "lat": 43.6471504,
+   "lon": -79.3527835,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2496302459,
+   "lat": 43.6472538,
+   "lon": -79.353296,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2496302463,
+   "lat": 43.6472952,
+   "lon": -79.3524383,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2496302470,
+   "lat": 43.6474234,
+   "lon": -79.3521351,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2496302471,
+   "lat": 43.6474247,
+   "lon": -79.3529016,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2507467423,
+   "lat": 43.6479016,
+   "lon": -79.3529104,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2507467424,
+   "lat": 43.6479445,
+   "lon": -79.3526976,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2507467425,
+   "lat": 43.6476609,
+   "lon": -79.3527973,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 2507467426,
+   "lat": 43.6476999,
+   "lon": -79.3525939,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 5418568244,
+   "lat": 43.6482452,
+   "lon": -79.3552452,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 5418573699,
+   "lat": 43.6480892,
+   "lon": -79.355022,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 5418576637,
+   "lat": 43.6479512,
+   "lon": -79.3547792,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 5418667076,
+   "lat": 43.6494952,
+   "lon": -79.3566984,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 5418681284,
+   "lat": 43.6493438,
+   "lon": -79.3570343,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 8302873395,
+   "lat": 43.6497202,
+   "lon": -79.3583929,
+   "tags": {
+    "access": "yes",
+    "barrier": "bollard",
+    "bicycle": "yes",
+    "bollard": "flexible",
+    "foot": "yes",
+    "horse": "yes",
+    "motor_vehicle": "no"
+   },
+   "kind": "bollard",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 11557775090,
+   "lat": 43.646368,
+   "lon": -79.355133,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 11557790202,
+   "lat": 43.6465071,
+   "lon": -79.3551741,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 11557812493,
+   "lat": 43.6465717,
+   "lon": -79.3553187,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 11557848854,
+   "lat": 43.645541,
+   "lon": -79.3540079,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 11557876995,
+   "lat": 43.6456999,
+   "lon": -79.3541381,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 11557891392,
+   "lat": 43.6452401,
+   "lon": -79.3537582,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 11557891393,
+   "lat": 43.6454009,
+   "lon": -79.3538932,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 11557891686,
+   "lat": 43.6458471,
+   "lon": -79.3542531,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666518,
+   "lat": 43.6450907,
+   "lon": -79.3536424,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666519,
+   "lat": 43.645991,
+   "lon": -79.3543744,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666520,
+   "lat": 43.6461266,
+   "lon": -79.3544825,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666521,
+   "lat": 43.6462726,
+   "lon": -79.354602,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666522,
+   "lat": 43.6464303,
+   "lon": -79.3547325,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666523,
+   "lat": 43.646595,
+   "lon": -79.3548645,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666524,
+   "lat": 43.6467275,
+   "lon": -79.3549749,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666525,
+   "lat": 43.6465449,
+   "lon": -79.3549936,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666526,
+   "lat": 43.6463162,
+   "lon": -79.355007,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666527,
+   "lat": 43.6462338,
+   "lon": -79.3547349,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666528,
+   "lat": 43.6461875,
+   "lon": -79.3548817,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666529,
+   "lat": 43.645936,
+   "lon": -79.3546579,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666530,
+   "lat": 43.6457221,
+   "lon": -79.3543185,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666531,
+   "lat": 43.6457972,
+   "lon": -79.354643,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666532,
+   "lat": 43.6456285,
+   "lon": -79.3545078,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666533,
+   "lat": 43.6454149,
+   "lon": -79.3542309,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666534,
+   "lat": 43.6454508,
+   "lon": -79.3543617,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666536,
+   "lat": 43.645197,
+   "lon": -79.3541556,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666537,
+   "lat": 43.6452483,
+   "lon": -79.3538976,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666538,
+   "lat": 43.6450861,
+   "lon": -79.3540675,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666539,
+   "lat": 43.6449903,
+   "lon": -79.3540011,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 12996666540,
+   "lat": 43.6449104,
+   "lon": -79.3538184,
+   "tags": {
+    "highway": "street_lamp"
+   },
+   "kind": "streetLamp",
+   "inPark": false
+  },
+  {
+   "type": "node",
+   "id": 14071202397,
+   "lat": 43.6453419,
+   "lon": -79.3477229,
+   "tags": {
+    "information": "guidepost",
+    "tourism": "information"
+   },
+   "kind": "wayfinding",
+   "inPark": true
+  },
+  {
+   "type": "node",
+   "id": 14071241307,
+   "lat": 43.6446681,
+   "lon": -79.3486716,
+   "tags": {
+    "information": "guidepost",
+    "tourism": "information"
+   },
+   "kind": "wayfinding",
+   "inPark": true
+  },
+  {
+   "type": "node",
+   "id": 14071243053,
+   "lat": 43.6438325,
+   "lon": -79.350529,
+   "tags": {
+    "information": "guidepost",
+    "tourism": "information"
+   },
+   "kind": "wayfinding",
+   "inPark": true
+  }
+ ]
+}

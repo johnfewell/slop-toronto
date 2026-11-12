@@ -1,0 +1,753 @@
+{
+  "_scope": "st-bmyv.6 Biidaasige Park public art / Indigenous placekeeping / MT35 heritage source contract (current Fall2026 published route; individual installation may remain unverified)",
+  "_generated": "2026-11-10",
+  "_method": "Bounded (<=10 min) source pass. Official Lassonde Art Trail interactive map + artist pages (Fall 2026 map image and A3 PDF, both dated Sep 2026), Waterfront Toronto July 24 2026 western-expansion release, and a City of Toronto Open Data Public Art GeoJSON check. Marker positions were extracted from published HTML/PDF text; lat/lon was NOT inferred from prose or from unverified georeferencing. No pixels inspected.",
+  "_ownership": "NEW files only: docs/biidaasige-placekeeping-source.md and tools/fixtures/biidaasige-placekeeping-source.json. No meshes, shared files, bead closure, commits, GPU/browser, or other agents.",
+  "park": {
+    "name": "Biidaasige Park",
+    "ookwemin": "Ookwemin Minising",
+    "bbox": {
+      "minLat": 43.6402,
+      "maxLat": 43.6499,
+      "minLon": -79.3597,
+      "maxLon": -79.343
+    }
+  },
+  "sources": [
+    {
+      "id": "lat-home",
+      "url": "https://lassondearttrail.org/",
+      "retrieved": "2026-11-10"
+    },
+    {
+      "id": "lat-trail",
+      "url": "https://lassondearttrail.org/art-trail/",
+      "retrieved": "2026-11-10"
+    },
+    {
+      "id": "lat-map-image",
+      "url": "https://latcms.wpenginepowered.com/wp-content/uploads/2026/07/260514_LAT_MAP_FULL_UPSIDE-DOWN-FULLSUMMER2026.jpg",
+      "note": "8580x5616 official interactive map base image, 'upside-down' (not north-up); marker fractions are relative to this image."
+    },
+    {
+      "id": "lat-map-pdf",
+      "url": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/21132201/LAT_MAP_DOWNLOAD-Fall2026.pdf",
+      "note": "A3, 1 page, PDF CreationDate 2026-09-21; numbered art markers 1-14 (3a-3d) plus legend."
+    },
+    {
+      "id": "wt-news",
+      "url": "https://www.waterfrontoronto.ca/news/torontos-largest-park-in-a-generation-just-got-bigger",
+      "published": "2026-07-24",
+      "note": "Names the western-section works and the fall 2026 Monkman/Al Qadiri arrivals; Indigenous design features; MT35 heritage elements."
+    },
+    {
+      "id": "city-map-2026",
+      "url": "https://www.toronto.ca/wp-content/uploads/2026/09/978c-Biidaasige-Park-map.pdf",
+      "note": "City 2026 wayfinding map; text labels only 'Trajet (public art)' and 'The Drum'. Private local copy $WATERFRONT_RESEARCH/biidaasige/inventory/wayfinding-2026.pdf."
+    },
+    {
+      "id": "city-public-art-geojson",
+      "url": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/bfdc6aa8-7ea6-4225-a3f7-e13d1d2b4018/resource/6bcc0225-14f0-4ff2-908c-48b0c457026e/download/public-art-4326.geojson",
+      "note": "459 features; checked for any of the works and for any point in the park bbox. No match."
+    }
+  ],
+  "artTrail": {
+    "trailName": "Lassonde Art Trail",
+    "lengthKm": 4,
+    "mapNumberOfMarkers": 17,
+    "uniqueTitledWorks": 14,
+    "note": "The Fall 2026 map marks 17 sites: Ryan Gander's 'Stories of relics' accounts for four (3a-3d). All 17 markers are inside the park on the official trail map. 'First Sun' (Al Qadiri) page text is stale (says currently in NYC); the July 24 2026 release and Fall 2026 map document the intended fall2026 Toronto route; physical installation is not independently verified.",
+    "works": [
+      {
+        "featureId": "lat-1",
+        "mapNumber": "1",
+        "markerId": "297-0",
+        "name": "Orange Functional",
+        "artist": "Alexandre Arrechea",
+        "workYear": "2022",
+        "installedPhase": "2025-east",
+        "medium": "Steel, basketball nets",
+        "onViewUntil": "Temporary: on view until 2029",
+        "documentedLocation": "Installed at one of the main entrances to Biidaasige Park, in the plaza of Old Fire Hall 30.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.596816,
+          "y": 0.405892,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 702.3,
+          "y": 309.8,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/alexandre-arrechea/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182501/20260509___DSC8769_sm-1.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-2",
+        "mapNumber": "2",
+        "markerId": "307-0",
+        "name": "Crown Act",
+        "artist": "Oluseye",
+        "workYear": "2025",
+        "installedPhase": "2025-east",
+        "medium": "Accoya wood, stain, bronze",
+        "onViewUntil": "Temporary: on view until summer 2028",
+        "documentedLocation": "Commissioned for the overlook of the new Don River mouth.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.825758,
+          "y": 0.466769,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 950.8,
+          "y": 352.2,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/oluseye/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182420/20260603___DSC2367_sm.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-3a",
+        "mapNumber": "3a",
+        "markerId": "308-0",
+        "name": "Stories of relics (i)",
+        "artist": "Ryan Gander",
+        "workYear": "2026",
+        "installedPhase": "2026-west",
+        "medium": "Bronze, armourstone, paint",
+        "onViewUntil": "Temporary: on view until 2027",
+        "documentedLocation": "Four clocks distributed throughout the park; Roman numeral indicates its place in the timekeeping series.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.514705,
+          "y": 0.434673,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 599.0,
+          "y": 334.0,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/ryan-gander/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182444/DSC09900-scaled.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-3b",
+        "mapNumber": "3b",
+        "markerId": "308-1",
+        "name": "Stories of relics (ii)",
+        "artist": "Ryan Gander",
+        "workYear": "2026",
+        "installedPhase": "2026-west",
+        "medium": "Bronze, armourstone, paint",
+        "onViewUntil": "Temporary: on view until 2027",
+        "documentedLocation": "One of four clocks distributed throughout the park.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.561785,
+          "y": 0.652953,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 667.5,
+          "y": 494.1,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/ryan-gander/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182444/DSC09900-scaled.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-3c",
+        "mapNumber": "3c",
+        "markerId": "308-2",
+        "name": "Stories of relics (iii)",
+        "artist": "Ryan Gander",
+        "workYear": "2026",
+        "installedPhase": "2026-west",
+        "medium": "Bronze, armourstone, paint",
+        "onViewUntil": "Temporary: on view until 2027",
+        "documentedLocation": "One of four clocks distributed throughout the park.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.19808,
+          "y": 0.444125,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 243.9,
+          "y": 335.0,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/ryan-gander/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182444/DSC09900-scaled.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-3d",
+        "mapNumber": "3d",
+        "markerId": "308-3",
+        "name": "Stories of relics (iv)",
+        "artist": "Ryan Gander",
+        "workYear": "2026",
+        "installedPhase": "2026-west",
+        "medium": "Bronze, armourstone, paint",
+        "onViewUntil": "Temporary: on view until 2027",
+        "documentedLocation": "One of four clocks distributed throughout the park.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.142142,
+          "y": 0.382781,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 176.4,
+          "y": 302.1,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/ryan-gander/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182444/DSC09900-scaled.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-4",
+        "mapNumber": "4",
+        "markerId": "306-0",
+        "name": "Homing",
+        "artist": "Nadia Belerique & Tony Romano",
+        "workYear": "2026",
+        "installedPhase": "2026 (east; section not stated in the July release)",
+        "medium": "Aluminum, steel",
+        "onViewUntil": "Temporary: on view until 2028",
+        "documentedLocation": "Assembled from four stacked dining-table forms inspired by the park's river, bridges, wildlife and picnic areas.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.468677,
+          "y": 0.645921,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 560.5,
+          "y": 483.2,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/nadia-belerique-tony-romano/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182615/DSC01109.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-5",
+        "mapNumber": "5",
+        "markerId": "310-0",
+        "name": "Roman Standard",
+        "artist": "Tracey Emin",
+        "workYear": "2013",
+        "installedPhase": "2025-east",
+        "medium": "Bronze with patina, steel with wax and pigment coating",
+        "onViewUntil": "Temporary: on view until 2030",
+        "documentedLocation": "A bird perches on a reimagined Roman standard; National Gallery of Canada loan.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.637789,
+          "y": 0.588764,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 737.7,
+          "y": 447.7,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/tracey-emin/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182559/20260424__DSC5691_sm.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-6",
+        "mapNumber": "6",
+        "markerId": "302-0",
+        "name": "Delicate Matter (for the birds)",
+        "artist": "Kara Hamilton",
+        "workYear": "2026",
+        "installedPhase": "2026 (section not stated)",
+        "medium": "Cob (straw and mud), lime wash, brass, rammed earth, beach glass, hyssop",
+        "onViewUntil": "Temporary: on view until summer 2027",
+        "documentedLocation": "Two rammed-earth plinths with embedded beach glass and hyssop plantings.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.732443,
+          "y": 0.600281,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 854.8,
+          "y": 456.2,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/kara-hamilton/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182425/20260603___DSC2018_sm.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-7",
+        "mapNumber": "7",
+        "markerId": "298-0",
+        "name": "Trajet",
+        "artist": "Caroline Monnet & Dean Baldwin Lew",
+        "workYear": "2019",
+        "installedPhase": "permanent (2025-east)",
+        "medium": "Bronze",
+        "onViewUntil": "Permanent",
+        "documentedLocation": "Permanently integrated at the bend of the new Don River mouth, sited as close as possible to the river.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.913738,
+          "y": 0.407859,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 1065.6,
+          "y": 313.1,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/caroline-monnet/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182625/2025_07_18__DSC8933.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-8",
+        "mapNumber": "8",
+        "markerId": "305-0",
+        "name": "First Sun",
+        "artist": "Monira Al Qadiri",
+        "workYear": "2025",
+        "installedPhase": "2026-fall",
+        "medium": "Cast aluminum, steel, automotive paint; patinated brass pedestal",
+        "onViewUntil": "Temporary: on view until summer 2027",
+        "documentedLocation": "Hybrid human-scarab figure after Khepri; co-commission with Public Art Fund (shown at Doris C. Freedman Plaza, NYC, 2025-08-03). Page text still says 'currently installed' in NYC; the Fall 2026 trail map and news release place it in Biidaasige Park.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.321431,
+          "y": 0.376209,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 392.8,
+          "y": 295.8,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/monira-al-qadiri/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/05/16182718/Artwork-Image.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-9",
+        "mapNumber": "9",
+        "markerId": "296-0",
+        "name": "against the wind, with the wind",
+        "artist": "Alexa Kumiko Hatanaka",
+        "workYear": "2026",
+        "installedPhase": "2026-west",
+        "medium": "Ripstop nylon, ink, flagpoles",
+        "onViewUntil": "Temporary: on view until summer 2027",
+        "documentedLocation": "Five flagpoles with hand-sewn koinobori-style fish sculptures referencing the renaturalized Don River mouth.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.27123,
+          "y": 0.430321,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 330.1,
+          "y": 324.1,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/alexa-kumiko-hatanaka/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182433/Screenshot-2026-06-03-at-3.20.33-PM.png",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-10",
+        "mapNumber": "10",
+        "markerId": "303-0",
+        "name": "The Colony",
+        "artist": "Kent Monkman",
+        "workYear": "2026",
+        "installedPhase": "2026-fall",
+        "medium": "Bronze, steel",
+        "onViewUntil": "Permanent",
+        "documentedLocation": "Over-15-foot bronze beaver lodge on the shores of the new waterfront parkland on Ookwemin Minising.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.09983,
+          "y": 0.503278,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 133.6,
+          "y": 382.1,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/kent-monkman/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182357/Screenshot-2026-06-04-at-11.42.37-AM.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-11",
+        "mapNumber": "11",
+        "markerId": "304-0",
+        "name": "Lodestar",
+        "artist": "Lisa Hirmer",
+        "workYear": "2026",
+        "installedPhase": "2026-west",
+        "medium": "Steel",
+        "onViewUntil": "Temporary: on view until 2028",
+        "documentedLocation": "Sculptural poetic text on the layered histories and rehabilitation of Biidaasige Park.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.056084,
+          "y": 0.494514,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 90.7,
+          "y": 368.9,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/lisa-hirmer/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182436/Screenshot-2026-06-03-at-3.11.32-PM.png",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-12",
+        "mapNumber": "12",
+        "markerId": "300-0",
+        "name": "Saverio and Daisy (Navel)",
+        "artist": "Hank Willis Thomas",
+        "workYear": "2018",
+        "installedPhase": "2026-west",
+        "medium": "Rolled steel, enamel paint",
+        "onViewUntil": "Temporary: on view until spring 2028",
+        "documentedLocation": "One of a series of bench-artworks on the new esplanade; frames the Toronto skyline.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.056084,
+          "y": 0.44522,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 90.7,
+          "y": 319.1,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/hank-willis-thomas/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182624/rsw_1280-1024x683.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-13",
+        "mapNumber": "13",
+        "markerId": "1949-0",
+        "name": "Ernest and Ruth (Exuberant Pink)",
+        "artist": "Hank Willis Thomas",
+        "workYear": "2018",
+        "installedPhase": "2026-west",
+        "medium": "Rolled steel, enamel paint",
+        "onViewUntil": "Temporary: on view until spring 2028",
+        "documentedLocation": "Companion bench-artwork on the new esplanade.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.056084,
+          "y": 0.386744,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 90.7,
+          "y": 278.0,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/ernest-and-ruth-exuberant-pink/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/16182622/HWT18.183.3-Ernest-and-Ruth-Exuberant-Pink-A-225x300.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      },
+      {
+        "featureId": "lat-14",
+        "mapNumber": "14",
+        "markerId": "1640-0",
+        "name": "Untitled (Juniper)",
+        "artist": "Virginia Overton",
+        "workYear": "2014",
+        "installedPhase": "2026-west",
+        "medium": "Mild steel, paint",
+        "onViewUntil": "Temporary: on view until 2027",
+        "documentedLocation": "Fully functioning weathervane with a juniper-tree silhouette.",
+        "lat": null,
+        "lon": null,
+        "latLonStatus": "unresolved - no public lat/lon or georeferenced GeoJSON/KML/KMZ found; official point metadata is map-space only",
+        "footprintM": null,
+        "mapPointNormalized": {
+          "x": 0.094093,
+          "y": 0.39264,
+          "coordinateSystem": "fraction of 8580x5616 official interactive Art Trail map image, origin top-left"
+        },
+        "mapPagePointPt": {
+          "x": 127.0,
+          "y": 305.9,
+          "coordinateSystem": "PDF text anchor of the marker number on the A3 (1190.55 x 841.89 pt) Fall 2026 map; label anchor, not a surveyed sculpture centre"
+        },
+        "confidence": "high for work/artist/map position; medium for installedPhase where the July 24 2026 release does not name the section",
+        "sourceUrls": [
+          "https://lassondearttrail.org/art-trail/untitled-juniper/",
+          "https://lassondearttrail.org/art-trail/"
+        ],
+        "publicReferenceImage": "https://assets.lassondearttrail.org/wp-content/uploads/2026/05/16182555/Virginia-Overton_Untitled-Juniper-2014-06.jpg",
+        "imageLicence": "Lassonde Art Trail / photographer; rights reserved - reference URL only, do not commit pixels",
+        "unresolved": []
+      }
+    ]
+  },
+  "indigenousPlacekeeping": [
+    {
+      "featureId": "fire-holder",
+      "name": "Fire Holder",
+      "designer": "Solomon King and Brook McIlroy",
+      "installedPhase": "2026",
+      "lat": null,
+      "lon": null,
+      "latLonStatus": "unresolved",
+      "footprintM": null,
+      "confidence": "existence high; position none",
+      "sourceUrls": [
+        "https://www.waterfrontoronto.ca/news/torontos-largest-park-in-a-generation-just-got-bigger"
+      ],
+      "unresolved": [
+        "No public point, geometry, GeoJSON/KML, or map label. Not on the City 2026 wayfinding map text."
+      ]
+    },
+    {
+      "featureId": "sturgeon-stones",
+      "name": "Teaching Signifier Sturgeon Stones",
+      "designer": "Solomon King and Brook McIlroy",
+      "installedPhase": "2026",
+      "lat": null,
+      "lon": null,
+      "latLonStatus": "unresolved",
+      "footprintM": null,
+      "confidence": "existence high; position none",
+      "sourceUrls": [
+        "https://www.waterfrontoronto.ca/news/torontos-largest-park-in-a-generation-just-got-bigger"
+      ],
+      "unresolved": [
+        "No public point, geometry, GeoJSON/KML, or map label."
+      ]
+    },
+    {
+      "featureId": "marker-trees-directional-compasses",
+      "name": "Directional Compasses / Marker Trees",
+      "designer": "Two Row Architect",
+      "installedPhase": "2026",
+      "lat": null,
+      "lon": null,
+      "latLonStatus": "unresolved",
+      "footprintM": null,
+      "confidence": "existence high; position none",
+      "sourceUrls": [
+        "https://www.waterfrontoronto.ca/news/torontos-largest-park-in-a-generation-just-got-bigger"
+      ],
+      "unresolved": [
+        "Markers may be multiple; no public count, point, or geometry."
+      ]
+    },
+    {
+      "featureId": "interpretive-signage",
+      "name": "Interpretive Signage",
+      "designer": "NVision Insight Group",
+      "installedPhase": "2026",
+      "lat": null,
+      "lon": null,
+      "latLonStatus": "unresolved",
+      "footprintM": null,
+      "confidence": "existence high; position none",
+      "sourceUrls": [
+        "https://www.waterfrontoronto.ca/news/torontos-largest-park-in-a-generation-just-got-bigger"
+      ],
+      "unresolved": [
+        "Signage may be multiple; no public count, point, or geometry."
+      ]
+    },
+    {
+      "featureId": "the-drum",
+      "name": "The Drum",
+      "designer": "Taw\u00e2w Architecture Collective",
+      "installedPhase": "2026",
+      "lat": null,
+      "lon": null,
+      "latLonStatus": "unresolved (integrated elsewhere)",
+      "footprintM": null,
+      "confidence": "existence high; position none",
+      "sourceUrls": [
+        "https://www.tawarc.com/all-projects/the-drum-at-biidaasige-park",
+        "https://www.toronto.ca/wp-content/uploads/2026/09/978c-Biidaasige-Park-map.pdf"
+      ],
+      "unresolved": [
+        "Only a map zone label; no point. Already covered in docs/biidaasige-heritage.md and intentionally not duplicated."
+      ]
+    }
+  ],
+  "mt35Heritage": {
+    "featureId": "marine-terminal-35-heritage",
+    "name": "Marine Terminal 35 heritage elements (fragments)",
+    "installedPhase": "2026",
+    "lat": null,
+    "lon": null,
+    "latLonStatus": "unresolved",
+    "footprintM": null,
+    "confidence": "existence high; position none",
+    "sourceUrls": [
+      "https://www.waterfrontoronto.ca/news/torontos-largest-park-in-a-generation-just-got-bigger"
+    ],
+    "unresolved": [
+      "Waterfront Toronto says 'elements of the Marine Terminal 35 building' are incorporated, but publishes no fragment count, geometry, or point. The Atlas Crane itself is separately mapped at OSM node/9521067431 and already integrated in docs/biidaasige-heritage.md."
+    ]
+  },
+  "negatives": [
+    "No GeoJSON/KML/KMZ endpoint was found on lassondearttrail.org (checked homepage and /art-trail/; the site is Next.js with a raster, non-georeferenced map image).",
+    "City of Toronto Open Data 'Public Art' GeoJSON (459 features) contains no Lassonde Art Trail / Biidaasige work; dataset years run to 2024. No work in the park bbox except three Distillery District pieces outside the park.",
+    "The City 2026 wayfinding map does not label any Indigenous placekeeping feature; only 'Trajet (public art)' and 'The Drum'.",
+    "No public source gives a lat/lon, footprint, or count for the Fire Holder, Sturgeon Stones, Marker Trees/Directional Compasses, Interpretive Signage, or MT35 fragments.",
+    "No source in this pass gives the exact geographic georeference of the official Art Trail map, so marker map-space positions are not converted to lat/lon."
+  ],
+  "privateImageIndexNote": "Public reference image URLs are recorded per work and must not be committed. All Lassonde Art Trail photographs are rights-reserved. The official map image (8580x5616) and A3 Fall 2026 PDF are likewise private reference only; no pixels are copied into the repo."
+}

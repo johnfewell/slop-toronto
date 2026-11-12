@@ -1,0 +1,155 @@
+{
+  "source": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+  "vintage": "2025; City capture window April 9\u2013July 12. Eastern park structures installed in image; west still under construction.",
+  "export": {
+    "href": "https://gis.toronto.ca/arcgis/rest/directories/arcgisoutput/basemap/cot_ortho_2025_color_8cm_MapServer/_ags_map4adf528efd71412db62b56856ff6e6e9.png",
+    "width": 2500,
+    "height": 1726,
+    "extent": {
+      "xmin": -8833462.09959753,
+      "ymin": 5410671.299744126,
+      "xmax": -8833144.136046192,
+      "ymax": 5410890.821779971,
+      "spatialReference": {
+        "wkid": 102100,
+        "latestWkid": 3857
+      }
+    },
+    "scale": 480.6998406223511
+  },
+  "interpretation": "Captain visually inspected full-resolution image/crops on 2026-11-10. Point uncertainty includes feature interpretation and non-ground structure height. Cableway orientation from endpoint pixels, but length uses published City 20/40m lengths.",
+  "features": [
+    {
+      "id": "snowy-owl-base",
+      "pixel": [
+        1870,
+        835
+      ],
+      "latLon": [
+        43.64575505507585,
+        -79.35020363383545
+      ],
+      "errorM": 3,
+      "status": "captain-photo-interpreted-city-ortho",
+      "phase": "2025",
+      "note": "Ground fixture centre interpreted from current-park 2025 8cm City ortho; construction stage. No guessed map label centre."
+    },
+    {
+      "id": "cableway-20",
+      "pixel": [
+        866.5,
+        1245.5
+      ],
+      "latLon": [
+        43.645415670876226,
+        -79.35135015874856
+      ],
+      "errorM": 3,
+      "status": "captain-photo-interpreted-city-ortho",
+      "phase": "2025",
+      "note": "Ground fixture centre interpreted from current-park 2025 8cm City ortho; construction stage. No guessed map label centre.",
+      "endpointsPixel": [
+        [
+          766,
+          1306
+        ],
+        [
+          967,
+          1185
+        ]
+      ],
+      "endpointsLatLon": [
+        [
+          43.64536565184913,
+          -79.35146498261878
+        ],
+        [
+          43.64546568986169,
+          -79.35123533487834
+        ]
+      ],
+      "publishedLengthM": 20
+    },
+    {
+      "id": "cableway-40",
+      "pixel": [
+        673,
+        1553.5
+      ],
+      "latLon": [
+        43.6451610281227,
+        -79.35157123754344
+      ],
+      "errorM": 3,
+      "status": "captain-photo-interpreted-city-ortho",
+      "phase": "2025",
+      "note": "Ground fixture centre interpreted from current-park 2025 8cm City ortho; construction stage. No guessed map label centre.",
+      "endpointsPixel": [
+        [
+          500,
+          1630
+        ],
+        [
+          846,
+          1477
+        ]
+      ],
+      "endpointsLatLon": [
+        [
+          43.64509778064805,
+          -79.35176889455389
+        ],
+        [
+          43.645224275530744,
+          -79.35137358053302
+        ]
+      ],
+      "publishedLengthM": 40
+    },
+    {
+      "id": "swing-hill-north",
+      "pixel": [
+        1555,
+        865
+      ],
+      "latLon": [
+        43.64573025239782,
+        -79.3505635295481
+      ],
+      "errorM": 3,
+      "status": "captain-photo-interpreted-city-ortho",
+      "phase": "2025",
+      "note": "Ground fixture centre interpreted from current-park 2025 8cm City ortho; construction stage. No guessed map label centre."
+    },
+    {
+      "id": "swing-hill-south",
+      "pixel": [
+        1590,
+        1010
+      ],
+      "latLon": [
+        43.645610372643,
+        -79.35052354113559
+      ],
+      "errorM": 3,
+      "status": "captain-photo-interpreted-city-ortho",
+      "phase": "2025",
+      "note": "Ground fixture centre interpreted from current-park 2025 8cm City ortho; construction stage. No guessed map label centre."
+    },
+    {
+      "id": "inverted-timber-cluster",
+      "pixel": [
+        1220,
+        1190
+      ],
+      "latLon": [
+        43.64546155606281,
+        -79.35094627578215
+      ],
+      "errorM": 4,
+      "status": "captain-photo-interpreted-city-ortho",
+      "phase": "2025",
+      "note": "Cluster centroid of six pale inverted-trident timber units visible in City ortho and WholeTrees primary photo. Individual model layout and heights remain photo estimates; uncertainty includes height/parallax."
+    }
+  ]
+}

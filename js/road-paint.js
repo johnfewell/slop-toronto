@@ -100,6 +100,20 @@ function buildRoadPaint(scene, network) {
     }
     return true;
   };
+  // The islands' photo-evidenced unmarked lanes (js/waterfront-island-lanes.js, a pure gate loaded before this file):
+  // where the whole painted run is on one of them, the yellow centre line is simply not emitted. This is the only
+  // island change: no cover geometry, no width/kerb/routing change, no effect when the gate is absent or the point is
+  // not a source-confirmed unmarked island lane. Three samples along the run keep a marked road at a frame/row edge.
+  const islandUnmarkedAt = window.CITY.islandLaneCentreLineSuppressed;
+  const omitIslandCentre = (e, o) => {
+    if (typeof islandUnmarkedAt !== 'function') return false;
+    const s0 = Math.max(0.2, e.len * 0.2), s2 = Math.min(e.len - 0.2, e.len * 0.8), s1 = e.len * 0.5;
+    for (const s of [s0, s1, s2]) {
+      const [x, , z] = at(e, s, o);
+      if (!islandUnmarkedAt(x, z)) return false;
+    }
+    return true;
+  };
 
   // The one or two directed edges of each road between a pair of intersections
   const roadsOf = (edges) => {
@@ -131,10 +145,10 @@ function buildRoadPaint(scene, network) {
       if (p.dir === q.dir) {
         along(e, mid, 0.13, WHITE, 12, 0.25);
       } else if (multiLane) {
-        along(e, mid - 0.11, 0.1, YELLOW);
-        along(e, mid + 0.11, 0.1, YELLOW);
+        if (!omitIslandCentre(e, mid - 0.11)) along(e, mid - 0.11, 0.1, YELLOW);
+        if (!omitIslandCentre(e, mid + 0.11)) along(e, mid + 0.11, 0.1, YELLOW);
       } else {
-        along(e, mid, 0.12, YELLOW, 9, 0.35);
+        if (!omitIslandCentre(e, mid)) along(e, mid, 0.12, YELLOW, 9, 0.35);
       }
     }
 

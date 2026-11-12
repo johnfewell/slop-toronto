@@ -1,0 +1,111 @@
+{
+  "schema": "biidaasige-dog-fence-photos/1",
+  "bead": "st-bmyv.5",
+  "generated": "2026-11-10",
+  "owner": "bounded primary-photo worker",
+  "scope": "Remaining DOG FENCES/GATES source gap: is there a current (2026) primary photo with a caption, alt text or municipal metadata that shows the actual Biidaasige dog-area fence/gate, and does any photo carry GPS or municipal metadata giving an exact source position?",
+  "method": "Bounded primary-source photo pass (~8 min). Fetched and inspected the City Recreation page, City main park page, Waterfront Toronto 2026 west-expansion news, Waterfront Toronto Biidaasige project page, and the MVVA Port Lands project page. Extracted every image URL, caption and alt text; parsed EXIF/XMP for date and GPS. Cached a handful of 2026 candidates privately for the captain. No pixels interpreted; no coordinates invented.",
+  "ownership": "NEW files only: docs/biidaasige-dog-fence-photos.md and this fixture. Private cache under $WATERFRONT_RESEARCH/biidaasige/dog-fence-photos/ (index.json). No meshes/shared files/runtime/GPU/browser/commits/bead-close. Captain integrates and personally views images.",
+  "conclusion": {
+    "answer": "No captioned primary photo of the Biidaasige dog fence/gate was found in this bounded pass. The primary City and Waterfront Toronto pages and the MVVA project page carry no caption or alt text identifying a dog fence or gate. Several 2026 photos exist but are uncaptioned. One 2026 drone photo carries GPS but is a wide aerial ~500 m from the west dog area and is AI-retouched.",
+    "captionedDogFencePhotoFound": false,
+    "fenceGeometryDerivable": false,
+    "gateGeometryDerivable": false,
+    "materialOrHeightDerivable": false,
+    "makerOrContractorFound": false,
+    "assertNoPhotoExistsAnywhere": false,
+    "status": "honest bounded negative; 2026 candidates cached for captain pixel review",
+    "reasoning": "City recreation page, City park page, WT 2026 news, WT project page and MVVA project page were checked. The only dog reference is WT project-page prose ('Two off-leash dog areas') with no photo. MVVA's 19-image gallery has no captions/alt text and no dog/fence mention. The one GPS-bearing 2026 image is a drone aerial with Firefly generative edits, ~500 m from the west dog-area centroid."
+  },
+  "sourcesChecked": [
+    {
+      "id": "city-recreation",
+      "url": "https://www.toronto.ca/explore-enjoy/parks-recreation/places-spaces/beaches-gardens-attractions/biidaasige-park/recreation-at-biidaasige-park/",
+      "cache": "captain/recreation-current.html",
+      "dateModified": "2026-09-09",
+      "images": ["banner", "snowy owl", "Badlands Scramble", "dodem eagle"],
+      "dogFenceCaption": false,
+      "note": "Prose asserts fenced OLAs; no dog fence/gate image or caption."
+    },
+    {
+      "id": "city-park",
+      "url": "https://www.toronto.ca/explore-enjoy/parks-recreation/places-spaces/beaches-gardens-attractions/biidaasige-park/",
+      "cache": "city-park.html",
+      "images": ["history", "placekeeping", "public art", "food & drink", "events", "rules", "2026-07 recreation card", "2026-07 food&drink card"],
+      "dogFenceCaption": false,
+      "note": "2026-07 card images are labeled Recreation / Food & Drink; no dog fence/gate caption or alt text; no EXIF."
+    },
+    {
+      "id": "wt-news-2026",
+      "url": "https://www.waterfrontoronto.ca/news/torontos-largest-park-in-a-generation-just-got-bigger",
+      "cache": "wt-news.html",
+      "date": "2026-07-24",
+      "images": ["opening hero aerial", "related-item thumbnails"],
+      "dogFenceCaption": false,
+      "note": "No dog/fence/gate mention in article text or captions; no EXIF."
+    },
+    {
+      "id": "wt-project",
+      "url": "https://www.waterfrontoronto.ca/our-projects/biidaasige-park",
+      "cache": "wt-project.html",
+      "images": ["opening hero aerial", "related-item thumbnails"],
+      "dogFenceCaption": false,
+      "note": "Prose lists 'Two off-leash dog areas' but has no dog photo, fence/gate caption or gallery."
+    },
+    {
+      "id": "mvva-portlands",
+      "url": "https://www.mvvainc.com/projects/port-lands-flood-protection2",
+      "cache": "mvva-portlands.html",
+      "images": "19-image project gallery (2026 photos included)",
+      "dogFenceCaption": false,
+      "note": "No captions/alt text on gallery images; no dog/fence/gate mention in page text. Filenames identify playground, snowy-owl stage area, Badlands/Cableway, wide aerials."
+    }
+  ],
+  "photoMetadata": {
+    "gpsBearingImages": [
+      {
+        "file": "mvva-biidaasige-park-5.jpg",
+        "sourceUrl": "https://www.mvvainc.com/media/pages/projects/port-lands-flood-protection2/9c1a4d7e55-1787845975/biidaasige-park-5.jpg",
+        "date": "2026-07-19T07:49:06-04:00",
+        "dateSource": "XMP xmp:CreateDate",
+        "gps": { "lat": 43.643138272, "lon": -79.357514022, "source": "XMP drone-dji:GpsLatitude/GpsLongitude", "meaning": "drone capture position, NOT a fence/gate position" },
+        "flags": ["AI-retouched: XMP digitalSourceType compositeWithTrainedAlgorithmicMedia / 'Uses Firefly'", "drone aerial ~500 m SW of the west dog-area centroid"],
+        "label": "uncaptioned 2026 drone aerial; NOT labeled as dog fence"
+      }
+    ],
+    "noGpsImages": [
+      { "file": "mvva-dsc08769.jpg", "date": "2026-07-23T16:08:30-05:00", "dateSource": "EXIF DateTimeOriginal", "note": "genuine 2026 camera photo (Sony ILCE-7SM3); no GPS in EXIF" },
+      { "file": "mvva-portlands-july-2026-09.jpg", "date": "2026-07 (filename)", "note": "no EXIF date/GPS" },
+      { "file": "mvva-dsc05430-topaz.jpg", "date": "2025-09-09T07:27:58", "note": "2025, not 2026; GPS IFD present but no lat/lon" },
+      { "file": "mvva-playground.jpg", "date": "2025-07-21", "note": "playground (filename); not dog fence" },
+      { "file": "mvva-snowy-owl-stage-area.jpg", "date": "2025-07-21", "note": "Snowy Owl stage area (filename); not dog area" },
+      { "file": "mvva-badlands-cableway.jpg", "note": "Badlands Scramble / Cableway Canyon (filename); not dog area" },
+      { "file": "mvva-plfp-wide.jpg", "date": "2014-09-02", "note": "2014, pre-park" },
+      { "file": "city-recreation-card-2026-07.jpg", "date": "2026-07 (upload path)", "note": "City 'Recreation' card; no EXIF" },
+      { "file": "city-fooddrink-card-2026-07.jpg", "date": "2026-07 (upload path)", "note": "City 'Food & Drink' card; no EXIF" },
+      { "file": "wt-hero-2026-opening.jpg", "date": "2026-07 (upload path)", "caption": "Aerial perspective of Toronto's waterfront and skyline from Biidaasige Park", "note": "WT opening hero aerial; no EXIF" }
+    ]
+  },
+  "dogAreaReference": {
+    "west": { "centroid": [43.6450383, -79.352217], "source": "tools/fixtures/biidaasige-dog-turf-city.json" },
+    "east": { "centroid": [43.6462084, -79.3494294], "source": "tools/fixtures/biidaasige-dog-turf-city.json" }
+  },
+  "distinctions": [
+    "mvva-playground.jpg is a playground image (filename); do not treat it as the dog fence.",
+    "mvva-badlands-cableway.jpg is the Badlands Scramble / Cableway Canyon; not the dog area.",
+    "mvva-snowy-owl-stage-area.jpg is the Snowy Owl stage area; not the dog area.",
+    "No cached image is captioned as a construction fence or as the dog fence."
+  ],
+  "priorPassContext": {
+    "fenceSource": "docs/biidaasige-fence-source.md: City line/area asset data has no usable fence/gate geometry; FENCED_OR_BOARDED_IND null; fence line layer is a 24-feature legacy subset; gate layer has zero Biidaasige gates.",
+    "ortho2025": "2025 ortho predates the installed fence; no fence/gate placement inferred from it.",
+    "cityRecreation": "City Recreation page (2026-09-09) asserts both OLAs are fenced with accessible gates."
+  },
+  "whatWouldChangeTheAnswer": [
+    "A City/WT/MVVA photo with a caption or alt text naming the dog off-leash area fence or gate.",
+    "A 2026 photo with GPS EXIF taken inside a dog area (west 43.64504, -79.35222; east 43.64621, -79.34943) showing the installed fence/gate.",
+    "A contractor/as-built record naming the fence material, height and gate locations.",
+    "A populated FENCED_OR_BOARDED_IND = Yes or a Fence/Gate asset feature."
+  ],
+  "licence": "City of Toronto and Waterfront Toronto public web pages; MVVA published project photography. No image pixels ship in the repo. Private cache and index.json under $WATERFRONT_RESEARCH/biidaasige/dog-fence-photos/."
+}

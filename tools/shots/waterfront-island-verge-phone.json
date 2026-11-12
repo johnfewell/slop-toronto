@@ -1,0 +1,26 @@
+[
+  {
+    "name": "island-lanes-wards-third-street-along-midday",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={pos:[1475.78,1.8,1855.92],look:[1579.46,1.4,1952.35],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-wards-lakeshore-along-midday",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={pos:[1715.13,1.8,1971.29],look:[1587.66,1.4,2155.86],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-algonquin-oneida-along-midday",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={pos:[1133.81,1.8,2426.96],look:[1065.02,1.4,2334.98],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-verge-movement-check",
+    "time": "midday",
+    "wait": 1500,
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP,C=window.CITY;let count=0,maxError=0;for(let x=900;x<1800;x+=7)for(let z=1700;z<2600;z+=7){const s=C.islandVergeSurfaceAt?.(x,z);if(!s)continue;for(const mode of ['person','cyclist','car']){const h=a.controllerManager.getGroundHeight(x,z,mode,s.h),error=Math.abs(h-s.h);maxError=Math.max(maxError,error);if(error>.000001)throw Error('Ground mismatch '+JSON.stringify({x,z,mode,s,h,error}));}count++;}if(count<100)throw Error('Too few built ramps '+count);console.log('[island-verge-movement] '+JSON.stringify({count,maxError,stats:C.islandVergeRampStats(),meshRaycast:'verified separately on high detail; phone CPU copies intentionally released'}));return{count,maxError};})()"
+  }
+]

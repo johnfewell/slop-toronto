@@ -10,6 +10,7 @@ import { inDetail } from './geo-roads.mjs';
 import { elemRings, areas } from './geo-land.mjs';
 import { blocks, blockRaster as R, blockLabels as lab, maskRects } from './geo-blocks.mjs';
 import { osmKey, byOsmKey, massingDataset, massingKey, byMassingRecord } from './geo-ids.mjs';
+import { LANDMARK_DEFS } from './landmark-defs.mjs';
 
 // (in source order, tools/geo-ids.mjs: the first match by name, the footprint a part falls in don't hang on file order)
 const osmBuildings = load('osm_buildings.json');
@@ -166,32 +167,7 @@ const parseLevels = (v) => {
 // Landmarks: the real outlines of the places the city is known by (landmarks.js models them; the generic buildings
 // leave their footprints alone)
 // ---------------------------------------------------------------------------------------------------------------------
-// [OSM name, id in the sim, how: 'self' (the feature's own outline) | 'largest' (the largest building inside it)]
-const LANDMARK_DEFS = [
-  ['CN Tower', 'cnTower', 'self'],
-  ['Rogers Centre', 'rogersCentre', 'self'],
-  ['Union Station', 'unionStation', 'building'],
-  ['Toronto City Hall', 'cityHall', 'building'],
-  ['Nathan Phillips Square', 'nathanPhillips', 'self'],
-  ['Royal Ontario Museum', 'rom', 'building'],
-  ['Ontario Place', 'ontarioPlace', 'self'],
-  ['Ontario Place Cinesphere', 'cinesphere', 'building'],
-  ['St. Lawrence Market South', 'stLawrence', 'building'],
-  ['Distillery District', 'distillery', 'self'],
-  ["Canada's Sugar Beach", 'sugarBeach', 'self'],
-  ['Harbourfront Centre', 'harbourfront', 'self'],
-  ['Toronto Music Garden', 'musicGarden', 'self'],
-  ['Scotiabank Arena', 'scotiabankArena', 'building'],
-  ['Ontario Legislative Building', 'legislature', 'building'],
-  ['Centre Island', 'centreIsland', 'self'],
-  ['Trinity Bellwoods Park', 'trinityBellwoods', 'self'],
-  ['High Park', 'highPark', 'self'],
-  ['Kensington Market', 'kensington', 'self'],
-  ['Exhibition Place', 'exhibitionPlace', 'self'],
-  ['Fairmont Royal York Hotel', 'royalYork', 'building'],
-  ['Gooderham Building', 'flatiron', 'building'],
-  ["Princes' Gates", 'princesGates', 'building']
-];
+// (tools/landmark-defs.mjs: [OSM name, id in the sim, how, Wikidata ID])
 // The landmarks landmarks.js models itself (by hand, from the City's 3D Massing multipatch in toronto-landmarks.js, or
 // John's ROM model): the massing boxes inside their outlines are left out
 const MODELLED = new Set(['cnTower', 'rogersCentre', 'cityHall', 'unionStation', 'legislature', 'scotiabankArena', 'stLawrence', 'cinesphere',
@@ -216,24 +192,94 @@ const pointInRing = (x, z, r) => {
   }
   return inside;
 };
+// The distance from a point to a ring's edges
+function ringEdgeDist(x, z, ring) {
+  let best = Infinity;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [ax, az] = ring[j], [bx, bz] = ring[i], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2));
+    best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+  }
+  return best;
+}
+// The point inside a ring farthest from its edges (a coarse-to-fine grid search: deterministic, to about a metre)
+function interiorPoint(ring) {
+  const edgeDist = (x, z) => ringEdgeDist(x, z, ring);
+  const [x0, z0, x1, z1] = ring.reduce(([a, b, c, d], [x, z]) => [Math.min(a, x), Math.min(b, z), Math.max(c, x), Math.max(d, z)], [Infinity, Infinity, -Infinity, -Infinity]);
+  let cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, span = Math.max(x1 - x0, z1 - z0), best = -1;
+  for (let pass = 0; pass < 12 && span > 1; pass++) {
+    const step = span / 24;
+    let bx = cx, bz = cz;
+    for (let i = -12; i <= 12; i++) for (let j = -12; j <= 12; j++) {
+      const x = cx + i * step, z = cz + j * step;
+      if (!pointInRing(x, z, ring)) continue;
+      const d = edgeDist(x, z);
+      if (d > best) { best = d; bx = x; bz = z; }
+    }
+    cx = bx; cz = bz; span = step * 4;
+  }
+  return [cx, cz];
+}
 const landmarkFootprints = new Set();
 export const landmarks = {};
 export const landmarkSources = {}; // landmark id -> the OSM element its outline came from
 {
   const all = [...osmPlaces.elements, ...load('osm_land.json').elements, ...osmBuildings.elements];
   const findEl = (name, wantBuilding) => all.find((e) => (e.tags || {}).name === name && e.type !== 'node' && (!wantBuilding || (e.tags || {}).building));
-  for (const [name, id, how] of LANDMARK_DEFS) {
+  // A landmark OpenStreetMap names or shapes differently (st-bz1o.8) by its Wikidata ID: its largest outline among the
+  // extracts (osm_landmarks.json, fetch-osm.mjs, keeps those the others filter out; a neighbourhood's boundary is in
+  // osm_districts.json), else its node
+  const byWikidata = new Map();
+  for (const e of [...load('osm_landmarks.json').elements, ...all, ...load('osm_districts.json').elements].sort(byOsmKey)) {
+    const w = (e.tags || {}).wikidata;
+    if (!w) continue;
+    const list = byWikidata.get(w) || byWikidata.set(w, []).get(w);
+    if (!list.some((o) => osmKey(o) === osmKey(e))) list.push(e);
+  }
+  const areaOf = (e) => elemRings(e).reduce((a, r) => Math.max(a, Math.abs(ringArea(r))), 0);
+  const findWikidata = (w) => {
+    const els = byWikidata.get(w) || [];
+    let best = null, bestArea = 0;
+    for (const e of els) {
+      if (e.type === 'node') continue;
+      const a = areaOf(e);
+      if (a > bestArea) { best = e; bestArea = a; }
+    }
+    return best || els.find((e) => e.type === 'node') || null;
+  };
+  // a node of one of these names on an outline (in it or within 50 m of it), else within its rectangle (an island's
+  // takes in the lagoons and the islets it wraps): a place node first, then one on the outline, then by OSM ID
+  const namedNodes = [...osmPlaces.elements, ...load('osm_landmarks.json').elements].filter((e) => e.type === 'node' && (e.tags || {}).name).sort(byOsmKey);
+  const namedNodeOn = (names, ring, r) => {
+    const near = [];
+    for (const n of namedNodes) {
+      if (!names.has(n.tags.name)) continue;
+      const [x, z] = toWorld(n.lon, n.lat), dx = x - r.cx, dz = z - r.cz;
+      const on = pointInRing(x, z, ring) || ringEdgeDist(x, z, ring) < 50;
+      if (on || (Math.abs(dx * r.ux + dz * r.uz) <= r.w / 2 && Math.abs(dz * r.ux - dx * r.uz) <= r.d / 2)) near.push({ n, on });
+    }
+    return (near.find((o) => o.n.tags.place) || near.find((o) => o.on) || near[0] || {}).n || null;
+  };
+  const pointLandmark = (id, name, n) => {
+    const [x, z] = toWorld(n.lon, n.lat);
+    landmarks[id] = { name, x: q(x), z: q(z) };
+    landmarkSources[id] = osmKey(n);
+  };
+  for (const [name, id, how, wikidata] of LANDMARK_DEFS) {
     let ring = null, tags = {}, src = null;
     if (how === 'point') {
       const n = osmPlaces.elements.find((e) => (e.tags || {}).name === name && e.type === 'node');
-      if (n) {
-        const [x, z] = toWorld(n.lon, n.lat);
-        landmarks[id] = { name, x: q(x), z: q(z) };
-      }
+      if (n) pointLandmark(id, name, n);
       continue;
     }
-    const el = findEl(name, how === 'building');
+    const byName = findEl(name, how === 'building');
+    const el = byName || (wikidata && findWikidata(wikidata));
     if (!el) { log(`landmark not found: ${name}`); continue; }
+    if (el.type === 'node') {
+      log(`landmark ${name}: no outline mapped, its node ${osmKey(el)}`);
+      pointLandmark(id, name, el);
+      continue;
+    }
     tags = el.tags || {};
     const rings = elemRings(el);
     if (!rings.length) { log(`landmark without outline: ${name}`); continue; }
@@ -262,6 +308,17 @@ export const landmarkSources = {}; // landmark id -> the OSM element its outline
       h: tags.height ? parseFloat(tags.height) : null, levels: parseLevels(tags['building:levels']),
       ring: s.flatMap(([x, z]) => [q(x), q(z)])
     };
+    // Its anchor, where the city pins it and arrives at it (js/city-config.js), when not its rectangle's centre: for a
+    // landmark found by its Wikidata ID, a mapped node bearing its name (Kensington Market's place node; Centre Island's
+    // ferry dock, named Centre Island: OSM's island is the islands' outer landmass from Hanlan's Point and the airport to
+    // Ward's, round the lagoons, Middle Island and the dock), else for an outline its centre falls outside (Sugar
+    // Beach's L), the point inside it farthest from its edges
+    const named = byName ? null : namedNodeOn(new Set([name, tags.name]), s, r);
+    if (named || !pointInRing(r.cx, r.cz, s)) {
+      const [ax, az] = named ? toWorld(named.lon, named.lat) : interiorPoint(s);
+      Object.assign(landmarks[id], { ax: q(ax), az: q(az) });
+      if (named) log(`landmark ${name}: anchored at its node ${osmKey(named)}`);
+    }
   }
   log(`${Object.keys(landmarks).length} landmarks: ${Object.keys(landmarks).join(', ')}`);
 }

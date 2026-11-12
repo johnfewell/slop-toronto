@@ -1,0 +1,38 @@
+[
+  {
+    "name": "t00-model-ready",
+    "time": "midday",
+    "wait": 1000,
+    "js": "(async()=>{document.body.classList.add('film');const C=window.CITY;for(let i=0;i<100&&!C.waterfrontDetails?.stats.chairModel;i++)await new Promise(r=>setTimeout(r,100));if(!C.waterfrontDetails?.stats.chairModel?.url.includes('waterfront-hto-adirondack'))throw Error('Default HTO GLB not loaded');})()"
+  },
+  {
+    "name": "hto-chair-close",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const C=window.CITY,a=window.__CITY_APP,site=C.waterfrontDetails.layout.sites.find(s=>s.id==='htoPark'),c=site.chairs[5],sn=Math.sin(c.yaw),cs=Math.cos(c.yaw);a.cameraSystem.cinema=()=>({pos:[c.x+sn*3+cs*1.2,1.5,c.z+cs*3-sn*1.2],look:[c.x,.8,c.z],fov:46});return {chair:c,model:C.waterfrontDetails.stats.chairModel?.url}})()",
+    "wait": 3500
+  },
+  {
+    "name": "island-lanes-wards-third-street-along-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1475.78,1.8,1855.92],look:[1579.46,1.4,1952.35],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-wards-lakeshore-along-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1715.13,1.8,1971.29],look:[1587.66,1.4,2155.86],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-algonquin-oneida-along-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1133.81,1.8,2426.96],look:[1065.02,1.4,2334.98],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-producer-check",
+    "time": "midday",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,L=C.islandLanesLayout&&C.islandLanesLayout();if(!L||L.skipped)throw Error('island lane gate not active: '+JSON.stringify(L&&L.skipped));const s=L.stats;if(s.unmarked<20)throw Error('too few photo-evidenced unmarked runs: '+s.unmarked);if(!s.serviceUnmarked||!s.livingStreetUnmarked)throw Error('both photographed families must resolve: '+JSON.stringify(s));for(const name of ['Oneida Avenue','Ojibway Avenue','Cibola Avenue','Third Street','Fifth Street']){const r=L.runs.find(r=>r.names.includes(name));if(!r)throw Error('missing photographed row '+name);const p=r.points[Math.floor(r.points.length/2)];if(!C.islandLaneCentreLineSuppressed(p[0],p[1]))throw Error('gate false on '+name);}const svc=C.ISLAND_LANES_DATA.runs.find(r=>r.names.includes('Island Service Road'));if(svc&&svc.unmarked)throw Error('unphotographed service lane marked unmarked');if(C.createWaterfrontIslandLanes||C.islandLaneSurfaceAt)throw Error('rejected overlay API still present');const wood=s.woodKeptUnresolved;if(!wood||!wood.some(w=>w.names.includes('Algonquin Bridge Road')&&w.wood===1))throw Error('wood bridge record lost');console.log('[island-lanes-producer-check] '+JSON.stringify({runs:s.runs,unmarked:s.unmarked,unmarkedM:s.unmarkedM,serviceUnmarked:s.serviceUnmarked,livingStreetUnmarked:s.livingStreetUnmarked,status:C.ISLAND_LANES_PHOTO_STATUS}));return {runs:s.runs,unmarked:s.unmarked,serviceUnmarked:s.serviceUnmarked,livingStreetUnmarked:s.livingStreetUnmarked};})()"
+  }
+]

@@ -22,7 +22,10 @@ test('search finds landmarks, streets, districts and places by the words people 
   assert.equal(top('queens quay w').name, 'Queens Quay West', 'street abbreviations');
   assert.equal(top('royal ontaro museum').name, 'Royal Ontario Museum', 'a typo forgiven');
   assert.equal(top('trinty bellwoods').name, 'Trinity Bellwoods Park', 'a typo forgiven');
-  assert.equal(top('kensington market').kind, 'district');
+  // (a landmark since st-bz1o.8: OpenStreetMap's neighbourhood boundary, pinned at its place node)
+  assert.equal(top('kensington market').kind, 'landmark');
+  assert.equal(top('kensington market').name, 'Kensington Market');
+  assert.equal(top("canada's sugar beach").name, 'Sugar Beach', 'a landmark answers to its other names');
   assert.equal(top('pharmacy').cat, 'health', 'a kind of place answers with places of that kind');
   assert.equal(top('hotel').cat, 'hotel');
   assert.deepEqual(N.searchPlaces('qqqqzzzz'), []);

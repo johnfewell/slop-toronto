@@ -1,0 +1,87 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 1800
+  },
+  {
+    "name": "hto-west-aerial",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-990,105,715],look:[-990,0,612],fov:58})",
+    "wait": 2500
+  },
+  {
+    "name": "hto-west-path",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-959,2.2,652],look:[-988,1,609],fov:62})",
+    "wait": 2500
+  },
+  {
+    "name": "hto-west-berm-walk",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,b=C.waterfrontHtoLandscape.westBerms[3];let y=.22;for(let i=0;i<=240;i++){const t=i/240,x=(b.mesh.minX-1)+(b.cx-b.mesh.minX+1)*t,z=b.cz;const h=C.htoLandscapeSurfaceAt(x,z),g=a.controllerManager.getGroundHeight(x,z,'person',y);if(h&&Math.abs(g-h.h)>.02)throw Error('HTO slope footing '+g+' '+h.h);y=g;}a.selectMode('person');a.teleportTo(b.cx,b.cz,0,y);const T=C.htoLandscapePlanTreeSites?.()||[],seg=(px,pz,ax,az,bx,bz)=>{const dx=bx-ax,dz=bz-az,t=Math.max(0,Math.min(1,((px-ax)*dx+(pz-az)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(px-ax-dx*t,pz-az-dz*t);},clear=([dx,dz])=>T.every(t=>Math.hypot(t.x-b.cx-dx,t.z-b.cz-dz)>Math.max(4,(t.height||8)*.45)&&seg(t.x,t.z,b.cx+dx,b.cz+dz,b.cx,b.cz)>1.5),O=[[5,6],[-5,6],[6,-5],[-6,-5],[0,8],[8,0],[-8,0],[0,-8]],o=O.find(clear)||O[0];a.cameraSystem.cinema=()=>({pos:[b.cx+o[0],y+2,b.cz+o[1]],look:[b.cx,y+.8,b.cz],fov:60});return{surface:y,cameraOffset:o,clearOfPlanTrees:clear(o)};})()",
+    "wait": 2200
+  },
+  {
+    "name": "manitou-beach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-300, 80, 3430],look:[-400, 0, 3260],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "wards-beach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1720, 70, 2470],look:[1700, 0, 2300],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "hanlans-beach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-1920, 70, 3100],look:[-1720, 0, 3100],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "gibraltar-beach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-1300, 65, 3580],look:[-1300, 0, 3400],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "wards-final-approach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1495, 2.4, 2285],look:[1540, 1, 2290],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "island-buildings-wards-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1450, 95, 1750], look: [1600, 0, 2050], fov: 48 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-buildings-wards-street-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1545, 2.2, 1875], look: [1610, 3.0, 2030], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-buildings-algonquin-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [760, 82, 1940], look: [1010, 0, 2190], fov: 52 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "ward-restored-lawn",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1750,3,2250],look:[1750,1,2160],fov:62})",
+    "wait": 2200
+  },
+  {
+    "name": "ward-unmapped-approach-walk",
+    "time": "midday",
+    "record": true,
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,T=C.THREE,r=C.ISLAND_ACCESS_DATA.routes.ward.finalApproach,m=a.controllerManager;a.selectMode('person');let y=.22,maxCorrection=0;for(let i=0;i<=180;i++){const t=i/180,x=r.from[0]+(r.to[0]-r.from[0])*t,z=r.from[1]+(r.to[1]-r.from[1])*t;y=m.getGroundHeight(x,z,'person',y);const p=new T.Vector3(x,y,z);m.resolveHorizontalCollision(p,.35);const delta=Math.hypot(p.x-x,p.z-z);maxCorrection=Math.max(maxCorrection,delta);if(delta>1)throw Error('Approach blocked at '+x+','+z+' correction '+delta);}a.teleportTo(r.to[0],r.to[1],0,y);a.cameraSystem.cinema=()=>({pos:[r.to[0]+5,y+2,r.to[1]+6],look:[r.to[0],y+1,r.to[1]-10],fov:60});return{lengthM:r.gapM,steps:181,maxCorrection,renderedPath:false,sourceGapRetained:true};})()",
+    "wait": 2500
+  }
+]

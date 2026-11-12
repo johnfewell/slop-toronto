@@ -560,6 +560,15 @@ function viewUniforms() {
   if (!viewerU) { const { uniform } = C.TSL; viewerU = uniform(new C.THREE.Vector3()); forwardU = uniform(new C.THREE.Vector3(0, 0, -1)); }
 }
 
+// Set the shared viewer uniform for any layer that reuses the shrub material (e.g. js/waterfront-island-garden-cover.js).
+// High Park's own update() sets it only when the viewer is inside High Park's box; a bounded trial elsewhere MUST call this
+// each frame with its camera so the shader's distance/LOD fade is measured from the real camera, not the frozen origin.
+function updateShrubViewer(position) {
+  if (!position) return;
+  viewUniforms();
+  viewerU.value.copy(position);
+}
+
 // One clump: three upright cards at 60 degrees round its foot (a star), each 1 wide and 1 tall; aCard = (u, v)
 function clumpGeometry(cards) {
   const { THREE } = C;
@@ -1147,5 +1156,9 @@ function buildParkCover(scene) {
   return { group, update, stats };
 }
 
-Object.assign(C, { buildParkCover, parkCover: { clearanceAt, habitatAt, shrubSites, willowSites, ROLLOUT, stats, paintAtlas } });
+// The rounded shrub builders are shared with other ground-cover layers (e.g. js/waterfront-island-garden-cover.js) so a
+// bounded trial can reuse the SAME 14-card rounded crown, atlas texture and shaded foliage material rather than inventing
+// another. They are pure: the caller supplies geometry/material and owns instancing. Exporting them changes no existing
+// behaviour (buildParkCover still uses them internally).
+Object.assign(C, { buildParkCover, parkCover: { clearanceAt, habitatAt, shrubSites, willowSites, ROLLOUT, stats, paintAtlas, shrubGeometry, shrubMaterial, updateShrubViewer } });
 })();

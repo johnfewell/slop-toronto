@@ -43,6 +43,8 @@ test('geodata builds with default paths in a checkout containing spaces and non-
     });
     assert.ifError(result.error);
     assert.equal(result.status, 0, result.stderr + result.stdout);
+    // every landmark tools/landmark-defs.mjs lists is found (st-bz1o.8)
+    assert.doesNotMatch(result.stdout + result.stderr, /landmark (not found|without outline)/);
     const context = { window: {} };
     vm.runInNewContext(fs.readFileSync(path.join(dir, 'js/toronto-geodata.js'), 'utf8'), context);
     const GEO = context.window.CITY.GEO;

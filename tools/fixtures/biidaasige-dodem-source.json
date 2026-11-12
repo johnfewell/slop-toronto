@@ -1,0 +1,148 @@
+{
+  "scope": "st-bmyv.4",
+  "park": "Biidaasige Park",
+  "kind": "dodem-source-evidence",
+  "note": "Primary maker credit and public reference index for the seven Dodem clan-animal sculptures. Source facts and captions only; the model did not inspect image pixels. No coordinates are invented. Reference images are private under /tmp and are not committed.",
+  "primaryCredit": {
+    "text": "Dodem animal sculptures by APE Richter/Christian Huba in consultation with MCFN and MinoKamik Collective",
+    "source": "City of Toronto 2026 Port Lands open-house planning boards, page 5 (zero-index 4), 'Indigenous Presence on the Waterfront'",
+    "url": "https://www.toronto.ca/wp-content/uploads/2026/04/8e64-city-planning-port-lands-open-house-boards.pdf",
+    "localPdf": "$WATERFRONT_RESEARCH/biidaasige/captain/openhouse-2026.pdf",
+    "renderedPage": "$WATERFRONT_RESEARCH/biidaasige/captain/openhouse-2026-dodem.png",
+    "captainCrop": "$WATERFRONT_RESEARCH/biidaasige/captain/openhouse-dodem-image-003.jpg",
+    "captainCropSize": "669x442",
+    "year": 2026,
+    "supersedes": "Earlier assumption that the City published no sculptor name.",
+    "notCurrent": "The 2023 Destination Playground boards (moose/bear/fireboat) are a future proposal and must not be used as the current Dodem design."
+  },
+  "maker": {
+    "manufacturer": "Richter Spielgeräte GmbH",
+    "manufacturerAddress": "D-83112 Frasdorf, Germany",
+    "designer": "Christian Huba",
+    "designerBorn": 1968,
+    "designerBirthplace": "Zell am See, Austria",
+    "designerStudio": "Aschau im Chiemgau, Upper Bavaria, Germany",
+    "designingForRichterSince": 2018,
+    "designerPage": "https://www.richter-spielgeraete.de/en/our-idea/crafts-and-materials/christian-huba-441/",
+    "material": "mountain larch (Lärche) trunks, not oak",
+    "construction": [
+      "roughly life-size",
+      "relief cuts in the centre of the trunk to control cracking",
+      "partial removal of the core (gutting)",
+      "weather-hard wood with strong eccentric grain",
+      "intended to be stroked, touched, sat on and played with"
+    ],
+    "copyright": "Designs are the intellectual property of Richter Spielgeräte GmbH; Christian Huba is the licenser and idea provider. Images/sketches may not be reused without consent. Reference photos are private-only; no pixels, sketches or 3D models are shipped."
+  },
+  "animals": {
+    "bear": {
+      "german": "Bär",
+      "sourceNamed": true,
+      "asBuiltVerified": false,
+      "evidence": "Named in chiemgau24 maker interview; workshop photo 'Christian Huba bei der Arbeit am Bär' (© Huba); City 2026 crop shows an upright carved bear in the background left (captain note)."
+    },
+    "beaver": {
+      "german": "Biber",
+      "sourceNamed": true,
+      "asBuiltVerified": false,
+      "evidence": "Named in chiemgau24 maker interview; Richter programme gallery beaver; City 2026 crop shows a round beaver-like form in the right foreground (captain note)."
+    },
+    "otter": {
+      "german": "Otter",
+      "sourceNamed": true,
+      "asBuiltVerified": false,
+      "evidence": "Named in chiemgau24 maker interview; Richter programme gallery otter; City 2026 crop shows a long low otter-like form in the left foreground (captain note)."
+    },
+    "wolf": {
+      "german": "Wolf",
+      "sourceNamed": true,
+      "asBuiltVerified": false,
+      "evidence": "Named in chiemgau24 maker interview; workshop photo captioned 'Eine Wölfin mit ihren Jungen' (a mother wolf with her cubs), © Blum."
+    },
+    "eagle": {
+      "german": "Adler",
+      "sourceNamed": true,
+      "asBuiltVerified": true,
+      "evidence": "Named in chiemgau24 maker interview; 'Der Adler' photo (© Blum); City primary eagle photo captain/dodem-eagle.jpg already viewed by the captain (natural carved brown wood body, black chest, white head, yellow hooked beak, folded brown wings)."
+    },
+    "musky": {
+      "german": "Moschus (ein Fisch)",
+      "sourceNamed": true,
+      "asBuiltVerified": false,
+      "evidence": "Named in chiemgau24 maker interview as 'Moschus (ein Fisch)' — a fish, i.e. muskellunge. No individual as-built photo located."
+    },
+    "turtle": {
+      "german": "Schildkröte",
+      "sourceNamed": true,
+      "asBuiltVerified": false,
+      "evidence": "Named in chiemgau24 maker interview; made of five parts and weighs about as much as a Fiat Panda (~1 tonne); 'Die Schildkröte' photo (© Huba)."
+    }
+  },
+  "makerFacts": {
+    "monthsOfWork": 12,
+    "monthsOnDesigns": 2,
+    "logWeight": "more than one tonne each",
+    "turtleParts": 5,
+    "turtleWeight": "about a Fiat Panda (~1 tonne)",
+    "client": "Toronto Waterfront",
+    "shipping": "truck to Hamburg, then container ship to Toronto, for a spring park opening",
+    "indigenousConsultation": "Shelley Charles (community spokesperson) guided the design; City credit names MCFN and MinoKamik Collective",
+    "symbolicConstraints": "An animal on its back symbolises death; on its belly, illness."
+  },
+  "catalogUncertainty": {
+    "catalogCanadaList": ["moose", "grizzly bear", "chipmunk", "beaver", "wolf", "salmon"],
+    "note": "The Richter catalogue 'Animals for Canada' set is a generic Canada design set, not the exact seven Biidaasige Dodems. It is related maker material, not proof of the as-built Biidaasige forms."
+  },
+  "placement": {
+    "individualCoordinatesPublished": false,
+    "status": "unplaced",
+    "owlBodyBase": { "lat": 43.645755055, "lon": -79.350203634, "source": "City ortho, 3 m error", "faces": "west" },
+    "osmTheatreArea": 1418541992,
+    "note": "No individual animal points are published or in OSM. Do not invent coordinates. Relative positions may be estimated later by the captain from the City crop and site context."
+  },
+  "sources": [
+    { "name": "City 2026 Port Lands open-house boards (p.5 credit)", "url": "https://www.toronto.ca/wp-content/uploads/2026/04/8e64-city-planning-port-lands-open-house-boards.pdf", "date": "2026" },
+    { "name": "Richter — Christian Huba designer page", "url": "https://www.richter-spielgeraete.de/en/our-idea/crafts-and-materials/christian-huba-441/", "date": "current" },
+    { "name": "Richter — Animal sculptures catalogue (PDF)", "url": "https://www.richter-spielgeraete.de/userdata/files/Animal_sculptures_made_from_mountain_larch_trees.pdf", "date": "05/21" },
+    { "name": "chiemgau24 — maker interview", "url": "https://www.chiemgau24.de/chiemgau/chiemsee/aschau-im-chiemgau-ort79357/bildhauer-christian-huba-totem-skulpturen-aus-aschau-fuer-milliardenprojekt-in-kanada-93434563.html", "date": "2024-12-01", "author": "Tina Blum" },
+    { "name": "rfo — maker TV feature", "url": "https://www.rfo.de/mediathek/video/christian-huba-und-die-tierskulpturen-fuer-toronto/", "date": "2024-06-18" },
+    { "name": "City — Recreation at Biidaasige Park", "url": "https://www.toronto.ca/explore-enjoy/parks-recreation/places-spaces/beaches-gardens-attractions/biidaasige-park/recreation-at-biidaasige-park/", "date": "current" }
+  ],
+  "privateReferenceIndex": {
+    "root": "$WATERFRONT_RESEARCH/biidaasige/dodem-richter/refs",
+    "committed": false,
+    "note": "Private reference only. Captions/credits quoted from source; the model did not inspect pixels.",
+    "city": [
+      { "file": "captain/openhouse-dodem-image-003.jpg", "source": "City 2026 boards p.5", "caption": "Dodem animal sculptures by APE Richter/Christian Huba in consultation with MCFN and MinoKamik Collective", "size": "669x442" }
+    ],
+    "catalog": [
+      { "file": "animal-sculptures.pdf", "source": "Richter catalogue 05/21", "caption": "DESIGN ANIMALS FOR CANADA — moose, grizzly bear, chipmunk, beaver, wolf and salmon. Photo © Daniel Perales." },
+      { "file": "animal-sculptures.txt", "source": "extracted text", "caption": "Full catalogue text incl. Huba quote and copyright." },
+      { "file": "pdfpage-1.png", "source": "rendered page 1", "caption": "Catalogue intro page." },
+      { "file": "pdfpage-2.png", "source": "rendered page 2", "caption": "Canada design set page." },
+      { "file": "pdfimg/canada-*.jpg", "source": "extracted page-2 images", "caption": "Private crops of the Canada design set." }
+    ],
+    "makerGallery": [
+      { "file": "gallery-3143_biber.jpg", "animal": "beaver", "url": "https://www.richter-spielgeraete.de/userdata/gallery/resize/3143_biber.jpg", "size": "768x768" },
+      { "file": "gallery-3145_fischotter.jpg", "animal": "otter", "url": "https://www.richter-spielgeraete.de/userdata/gallery/resize/3145_fischotter.jpg", "size": "768x768" },
+      { "file": "gallery-3146_elch.jpg", "animal": "elk", "url": "https://www.richter-spielgeraete.de/userdata/gallery/resize/3146_elch.jpg", "size": "768x768" },
+      { "file": "gallery-3138_waschbaer.jpg", "animal": "raccoon", "url": "https://www.richter-spielgeraete.de/userdata/gallery/resize/3138_waschbaer.jpg", "size": "768x768" },
+      { "file": "gallery-3139_streifenhoernchen.jpg", "animal": "chipmunk", "url": "https://www.richter-spielgeraete.de/userdata/gallery/resize/3139_streifenhoernchen.jpg", "size": "768x768" },
+      { "file": "gallery-3140_stinktier.jpg", "animal": "skunk", "url": "https://www.richter-spielgeraete.de/userdata/gallery/resize/3140_stinktier.jpg", "size": "768x768" },
+      { "file": "gallery-3141_spitzmaus.jpg", "animal": "shrew", "url": "https://www.richter-spielgeraete.de/userdata/gallery/resize/3141_spitzmaus.jpg", "size": "768x768" },
+      { "file": "gallery-3142_moewe.jpg", "animal": "seagull", "url": "https://www.richter-spielgeraete.de/userdata/gallery/resize/3142_moewe.jpg", "size": "768x768" },
+      { "file": "gallery-3144_specht.jpg", "animal": "woodpecker", "url": "https://www.richter-spielgeraete.de/userdata/gallery/resize/3144_specht.jpg", "size": "768x768" }
+    ],
+    "interview": [
+      { "file": "chiemgau-wolf.jpg", "caption": "Eine Wölfin mit ihren Jungen: Bildhauer Christian Huba bei der Arbeit an der Tierskulptur.", "credit": "© Blum", "size": "200x150" },
+      { "file": "wolf-QWPH.jpg", "caption": "Eine Wölfin mit ihren Jungen (large variant).", "credit": "© Blum", "size": "1600x1067" },
+      { "file": "chiemgau-eagle.jpg", "caption": "Der Adler.", "credit": "© Blum", "size": "768x438" },
+      { "file": "chiemgau-bear.jpg", "caption": "Christian Huba bei der Arbeit am Bär.", "credit": "© Huba", "size": "768x432" },
+      { "file": "chiemgau-turtle.jpg", "caption": "Die Schildkröte wiegt so viel wie ein Fiat Panda.", "credit": "© Huba", "size": "768x1024" },
+      { "file": "chiemgau-shipping.jpg", "caption": "Über ein Jahr hat der Aschauer Bildhauer Christian Huba an Totem-Skulpturen für Toronto gearbeitet. Nun sind sie unterwegs in die kanadische Metropole.", "credit": "© Huba", "size": "768x432" }
+    ],
+    "tv": [
+      { "file": "rfo-thumb.jpg", "caption": "Christian Huba und die Tierskulpturen für Toronto (video still/thumbnail).", "size": "1200x630" }
+    ]
+  }
+}

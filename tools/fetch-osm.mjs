@@ -3,12 +3,13 @@
 // when Overpass is down or too slow; tools/overpass.sh + tools/data/q_*.overpassql remain the other way in.
 // Needs GDAL's ogr2ogr (OSM driver) and tools/osmconf.ini (every tag as JSON).
 // usage: GEO_DATA=~/.cache/slop-toronto/osm node --max-old-space-size=12288 tools/fetch-osm.mjs <ontario-latest.osm.pbf>
-// (ONLY=rails | lake | postboxes | subway writes just that file)
+// (ONLY=rails | lake | postboxes | subway | landmarks writes just that file)
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { LANDMARK_WIKIDATA } from './landmark-defs.mjs';
 
 const FRAMES = {
   detail: [-79.505, 43.585, -79.305, 43.7]
@@ -141,6 +142,13 @@ if (process.env.ONLY === 'rails') {
   await railsOut();
   process.exit(0);
 }
+// The landmarks' own elements (tools/landmark-defs.mjs: by Wikidata ID), whatever they are tagged: a place=island
+// multipolygon or a node whose tourism tag is now disused: falls outside osm_places.json's filters (st-bz1o.8)
+const landmarksOut = (pts, polys) => write('osm_landmarks.json', [...pts.filter((e) => inBox(e.lon, e.lat, CITY)), ...polys].filter((e) => LANDMARK_WIKIDATA.has(e.tags.wikidata)));
+if (process.env.ONLY === 'landmarks') {
+  landmarksOut(nodes(await ogr('points', CITY)), areas(await ogr('multipolygons', CITY, true)));
+  process.exit(0);
+}
 if (process.env.ONLY === 'lake') {
   await lakeOut();
   process.exit(0);
@@ -173,6 +181,7 @@ write('osm_pois.json', [
 ]);
 postBoxesOut(pts);
 subwayOut(pts);
+landmarksOut(pts, polys);
 write('osm_signals.json', pts.filter((e) => cityPt(e) && (e.tags.highway === 'traffic_signals' || e.tags.crossing === 'traffic_signals')));
 const toronto = polysToronto.filter((e) => e.tags.name === 'Toronto' && /^(6|8)$/.test(e.tags.admin_level)).sort((a, b) => +a.tags.admin_level - +b.tags.admin_level);
 write('osm_fct.json', toronto.slice(0, 1).map((e) => ({ ...e, type: 'relation' })));

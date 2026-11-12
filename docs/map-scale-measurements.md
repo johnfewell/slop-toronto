@@ -145,8 +145,12 @@ Also seen in both bigger frames but not in detail: 4 GPU validation errors ("bin
 and 3 geometries with NaN positions. One Eglinton capture showed a Line 5 light-rail train at street level at
 Yonge & Eglinton, where the line runs underground; that wants a check of how the build handles tunnelled light rail.
 
-Not a scale problem, though first listed as one: the build logs "landmark not found" for Ontario Place, Sugar Beach,
-Centre Island and Kensington Market in every frame, today's detail rebuild included (st-bz1o.8).
+Not a scale problem, though first listed as one: the build logged "landmark not found" for Ontario Place, Sugar Beach,
+Centre Island and Kensington Market in every frame, today's detail rebuild included (st-bz1o.8). OpenStreetMap carries
+them differently from the names the build looked for: Sugar Beach as "Sugar Beach", Centre Island as a place=island
+multipolygon and Kensington Market as a neighbourhood boundary (both filtered out of the inputs), Ontario Place as a
+node only. Since 2026-11-10 the build also finds a landmark by its Wikidata ID (`tools/landmark-defs.mjs`,
+`osm_landmarks.json` from `tools/fetch-osm.mjs`), and all 23 are found in the detail, Eglinton and City extracts.
 
 **Since these measurements** (epic st-bz1o, Eglinton desktop-first): the push spreads were fixed on main (#102), the
 street-prop placement checks use spatial grids (#104; today's map: ready 13 s → 9 s, identical placements) and the
@@ -355,7 +359,9 @@ off. Measured on the mini (desktop high, today's map vs Eglinton, before the ban
 
 Rebuild after the raw downloads or the build tools change:
 `node tools/frames/build-frame.mjs --frame tools/frames/eglinton.json --out <dir> --skip massing-bin --install`
-(about 8 minutes; it rewrites the files above and the binary's hash in explore.html).
+(about 8 minutes from a filled cache, 16 from an empty one; it rewrites the files above and the binary's hash in
+explore.html). The 2026-11-10 rebuild (st-bz1o.8) used `--out ~/.cache/slop-toronto/frames/eglinton`, which keeps its
+clipped inputs in `cache/` there for the next one.
 
 ## Reproduce
 

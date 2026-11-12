@@ -1,0 +1,44 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "harbourfront-campus-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-560, 130, 900], look: [-330, 0, 650], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "harbourfront-squares-street-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-236, 2.4, 604], look: [-300, 1.2, 700], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "harbourfront-powerplant-street-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-360, 6.0, 750], look: [-315, 16, 706], fov: 64 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "harbourfront-powerplant-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-380, 55, 800], look: [-315, 15, 706], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "harbourfront-john-quay-boardwalk-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-600, 2.6, 640], look: [-560, 3, 748], fov: 64 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "harbourfront-ann-tindal-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-398, 2.4, 566], look: [-440, 1.5, 640], fov: 62 }); })()",
+    "wait": 5000
+  }
+]

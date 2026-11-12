@@ -1,0 +1,838 @@
+{
+ "schema": "biidaasige-art-registration/1",
+ "generatedFor": [
+  "st-bmyv.6"
+ ],
+ "owner": "bounded art-registration worker",
+ "claim": "Register the rendered official Lassonde Art Trail Fall 2026 map (1800x1273) onto the city world frame with Captain-read control pixels matched by name to verified WGS84 controls, report residuals and leave-one-out, and hold out the Atlas Crane. The primary fit adds the Commissioners Street Bridge road-crossing centre to break the near-collinearity of the original four. The map is a stylised illustration; the affine is map-pixel -> world-metre, not a WGS84 datum transform. Art label anchors are text anchors, not sculpture centres.",
+ "map": {
+  "source": "Lassonde Art Trail, Fall 2026 map PDF (LAT_MAP_DOWNLOAD-Fall2026.pdf)",
+  "sourceUrl": "https://assets.lassondearttrail.org/wp-content/uploads/2026/03/21132201/LAT_MAP_DOWNLOAD-Fall2026.pdf",
+  "renderedImage": "$WATERFRONT_RESEARCH/biidaasige/captain/lat-map-fall2026.png",
+  "renderedPixels": [
+   1800,
+   1273
+  ],
+  "pdfPagePt": [
+   1190.55,
+   841.89
+  ],
+  "pdfCreationDate": "2026-09-21",
+  "scaleUsed": 1.5119063,
+  "scaleNote": "Task-fixed 1800/1190.55 for both axes; the rendered height ratio (1273/841.89) differs by ~0.01%, ignored.",
+  "isDiagram": true,
+  "orientationNote": "Stylised trail illustration; do not assume north-up or a geographic datum.",
+  "datumNote": "MAP-PDF SPACE is a printed illustration in PDF points. WORLD SPACE is the city tangent-plane projection (js/city-config.js worldFromLatLon). The affine below is a 2D pixel->metre fit between them, NOT a WGS84 datum transform."
+ },
+ "projection": {
+  "lat0": 43.6453,
+  "lon0": -79.3806,
+  "kx": 80682.4717990044,
+  "ky": 111105.31871811183,
+  "theta": -0.28949997923178367,
+  "ox": 0,
+  "oz": 0
+ },
+ "controls": [
+  {
+   "name": "firehall_body",
+   "renderedPx": [
+    1015,
+    484
+   ],
+   "lat": 43.6458536,
+   "lon": -79.349925,
+   "world": [
+    2389.5,
+    647.6
+   ],
+   "osmRef": "way/494886782 (Old Fire Hall 30)",
+   "kind": "building-body-centroid",
+   "inOriginal4": true
+  },
+  {
+   "name": "cherry_south_bridge",
+   "renderedPx": [
+    655,
+    620
+   ],
+   "lat": 43.6439147,
+   "lon": -79.3522052,
+   "world": [
+    2151.7,
+    801.5
+   ],
+   "osmRef": "way/1157772737 (Cherry Street South Bridge)",
+   "kind": "road-crossing-centre",
+   "inOriginal4": true
+  },
+  {
+   "name": "cherry_commissioners_jct",
+   "renderedPx": [
+    616,
+    451
+   ],
+   "lat": 43.6448066,
+   "lon": -79.3536348,
+   "world": [
+    2069.4,
+    673.6
+   ],
+   "osmRef": "derived: Cherry Street x Commissioners Street way intersection (Overpass 2026-11-10)",
+   "kind": "road-junction",
+   "inOriginal4": true
+  },
+  {
+   "name": "polson_cherry_jct",
+   "renderedPx": [
+    766,
+    824
+   ],
+   "lat": 43.6430687,
+   "lon": -79.3505691,
+   "world": [
+    2251.4,
+    929.3
+   ],
+   "osmRef": "derived: Polson Street x Cherry Street way intersection (Overpass 2026-11-10)",
+   "kind": "road-junction",
+   "inOriginal4": true
+  },
+  {
+   "name": "commissioners_bridge",
+   "renderedPx": [
+    1507,
+    445
+   ],
+   "lat": 43.6480605,
+   "lon": -79.3463004,
+   "world": [
+    2739.8,
+    496.1
+   ],
+   "osmRef": "way/1211500112 (Commissioners Street Bridge)",
+   "kind": "road-crossing-centre",
+   "inOriginal4": false
+  }
+ ],
+ "fit5": {
+  "label": "PRIMARY: 5 controls (original 4 + Commissioners bridge road-crossing centre)",
+  "model": "affine: world = A * [px, py, 1] (least squares, dense normal equations); separate coefficients per axis",
+  "ax": [
+   0.7444822254686716,
+   0.17729869893157724,
+   1541.3967848168306
+  ],
+  "az": [
+   -0.19548619807851833,
+   0.7452779762601458,
+   466.9249190015954
+  ],
+  "residuals": [
+   {
+    "name": "firehall_body",
+    "m": 19.52
+   },
+   {
+    "name": "cherry_south_bridge",
+    "m": 12.74
+   },
+   {
+    "name": "cherry_commissioners_jct",
+    "m": 13.85
+   },
+   {
+    "name": "polson_cherry_jct",
+    "m": 6.7
+   },
+   {
+    "name": "commissioners_bridge",
+    "m": 8.28
+   }
+  ],
+  "rms": 13.03,
+  "maxResidual": 19.52,
+  "leaveOneOut": [
+   {
+    "name": "firehall_body",
+    "m": 26.54
+   },
+   {
+    "name": "cherry_south_bridge",
+    "m": 18.83
+   },
+   {
+    "name": "cherry_commissioners_jct",
+    "m": 44.3
+   },
+   {
+    "name": "polson_cherry_jct",
+    "m": 50.46
+   },
+   {
+    "name": "commissioners_bridge",
+    "m": 58.36
+   }
+  ],
+  "conditioning": {
+   "nonFirehallTriangleAreaPx2": 10803,
+   "nonFirehallTriangleAnglesDeg": [
+    15.6,
+    8.9,
+    6.6
+   ],
+   "nonFirehallMinAngleDeg": 6.6,
+   "normalMatrixDet": 171251155116,
+   "note": "The original three non-firehall controls remain nearly collinear (min angle 6.6 deg), but the added Commissioners bridge supplies an off-line constraint: the normal-matrix determinant rises and the leave-one-out max falls from 321.74 m to 58.36 m. Residuals and leave-one-out are reported unmodified; no control was pruned."
+  },
+  "gate": {
+   "rmsLimitM": 30,
+   "holdoutLimitM": 50,
+   "rmsPass": true,
+   "holdoutPass": true,
+   "gatePass": true,
+   "looMaxM": 58.36,
+   "looUnstable": true
+  }
+ },
+ "fit4Comparison": {
+  "label": "ORIGINAL: 4 controls (retained unchanged for comparison)",
+  "ax": [
+   0.7631475361140339,
+   0.17493892004339262,
+   1529.1726591532806
+  ],
+  "az": [
+   -0.13539135628211452,
+   0.7376804311855049,
+   427.56811901001936
+  ],
+  "residuals": [
+   {
+    "name": "firehall_body",
+    "m": 1.14
+   },
+   {
+    "name": "cherry_south_bridge",
+    "m": 15.14
+   },
+   {
+    "name": "cherry_commissioners_jct",
+    "m": 9.32
+   },
+   {
+    "name": "polson_cherry_jct",
+    "m": 6.96
+   }
+  ],
+  "rms": 9.56,
+  "maxResidual": 15.14,
+  "leaveOneOut": [
+   {
+    "name": "firehall_body",
+    "m": 321.74
+   },
+   {
+    "name": "cherry_south_bridge",
+    "m": 24.16
+   },
+   {
+    "name": "cherry_commissioners_jct",
+    "m": 39.26
+   },
+   {
+    "name": "polson_cherry_jct",
+    "m": 52.55
+   }
+  ],
+  "conditioning": {
+   "nonFirehallTriangleAreaPx2": 10803,
+   "nonFirehallTriangleAnglesDeg": [
+    15.6,
+    8.9,
+    6.6
+   ],
+   "nonFirehallMinAngleDeg": 6.6,
+   "normalMatrixDet": 116704809
+  },
+  "holdout": {
+   "predictedWorld": [
+    1975.4,
+    773.5
+   ],
+   "errorM": 45.98,
+   "pass": true
+  }
+ },
+ "holdout": {
+  "name": "atlas_crane",
+  "renderedPx": [
+   458,
+   553
+  ],
+  "actualLat": 43.6435284,
+  "actualLon": -79.3538817,
+  "actualWorld": [
+   2009.8,
+   804
+  ],
+  "predictedWorld": [
+   1980.4,
+   789.5
+  ],
+  "errorM": 32.77,
+  "pass": true,
+  "note": "Held out from both fits; compared against the actual OSM node/9521067431 point in osm-verified.json."
+ },
+ "suitability": {
+  "verdict": "MARGINAL-NOT-FOR-RUNTIME",
+  "runtimeUse": "withheld",
+  "reasons": [
+   "5-control RMS 13.03 m (limit 30 m) -> pass",
+   "5-control Atlas Crane holdout 32.77 m (limit 50 m) -> pass",
+   "5-control leave-one-out max 58.36 m -> UNSTABLE",
+   "4-control comparison: RMS 9.56 m, holdout 45.98 m, LOO max 321.74 m"
+  ],
+  "instruction": "Do not snap features. Do not treat these world/latlon values as surveyed. If used at all, use only as provisional anchors and keep the source map-space positions authoritative."
+ },
+ "artAnchors": [
+  {
+   "featureId": "lat-1",
+   "mapNumber": "1",
+   "name": "Orange Functional",
+   "artist": "Alexandre Arrechea",
+   "installedPhase": "2025-east",
+   "pdfAnchorPt": {
+    "x": 702.3,
+    "y": 309.8
+   },
+   "renderedPx": [
+    1061.81,
+    468.39
+   ],
+   "world5": [
+    2414.9,
+    608.4
+   ],
+   "lat5": 43.6462566,
+   "lon5": -79.3497613,
+   "world4": [
+    2421.4,
+    629.3
+   ],
+   "lat4": 43.646093,
+   "lon4": -79.3496103,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-2",
+   "mapNumber": "2",
+   "name": "Crown Act",
+   "artist": "Oluseye",
+   "installedPhase": "2025-east",
+   "pdfAnchorPt": {
+    "x": 950.8,
+    "y": 352.2
+   },
+   "renderedPx": [
+    1437.52,
+    532.49
+   ],
+   "world5": [
+    2706,
+    582.8
+   ],
+   "lat5": 43.6472259,
+   "lon5": -79.3463947,
+   "world4": [
+    2719.4,
+    625.7
+   ],
+   "lat4": 43.6468895,
+   "lon4": -79.346084,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-3a",
+   "mapNumber": "3a",
+   "name": "Stories of relics (i)",
+   "artist": "Ryan Gander",
+   "installedPhase": "2026-west",
+   "pdfAnchorPt": {
+    "x": 599,
+    "y": 334
+   },
+   "renderedPx": [
+    905.63,
+    504.98
+   ],
+   "world5": [
+    2305.2,
+    666.2
+   ],
+   "lat5": 43.6454759,
+   "lon5": -79.3508609,
+   "world4": [
+    2308.6,
+    677.5
+   ],
+   "lat4": 43.645388,
+   "lon4": -79.3507798,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-3b",
+   "mapNumber": "3b",
+   "name": "Stories of relics (ii)",
+   "artist": "Ryan Gander",
+   "installedPhase": "2026-west",
+   "pdfAnchorPt": {
+    "x": 667.5,
+    "y": 494.1
+   },
+   "renderedPx": [
+    1009.2,
+    747.03
+   ],
+   "world5": [
+    2425.2,
+    826.4
+   ],
+   "lat5": 43.6444029,
+   "lon5": -79.3488686,
+   "world4": [
+    2430,
+    842
+   ],
+   "lat4": 43.6442806,
+   "lon4": -79.3487557,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-3c",
+   "mapNumber": "3c",
+   "name": "Stories of relics (iii)",
+   "artist": "Ryan Gander",
+   "installedPhase": "2026-west",
+   "pdfAnchorPt": {
+    "x": 243.9,
+    "y": 335
+   },
+   "renderedPx": [
+    368.75,
+    506.49
+   ],
+   "world5": [
+    1905.7,
+    772.3
+   ],
+   "lat5": 43.6435346,
+   "lon5": -79.3552302,
+   "world4": [
+    1899.2,
+    751.3
+   ],
+   "lat4": 43.6436994,
+   "lon4": -79.3553823,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-3d",
+   "mapNumber": "3d",
+   "name": "Stories of relics (iv)",
+   "artist": "Ryan Gander",
+   "installedPhase": "2026-west",
+   "pdfAnchorPt": {
+    "x": 176.4,
+    "y": 302.1
+   },
+   "renderedPx": [
+    266.7,
+    456.75
+   ],
+   "world5": [
+    1820.9,
+    755.2
+   ],
+   "lat5": 43.6434644,
+   "lon5": -79.356298,
+   "world4": [
+    1812.6,
+    728.4
+   ],
+   "lat4": 43.6436742,
+   "lon4": -79.3564917,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-4",
+   "mapNumber": "4",
+   "name": "Homing",
+   "artist": "Nadia Belerique & Tony Romano",
+   "installedPhase": "2026 (east; section not stated in the July release)",
+   "pdfAnchorPt": {
+    "x": 560.5,
+    "y": 483.2
+   },
+   "renderedPx": [
+    847.42,
+    730.55
+   ],
+   "world5": [
+    2301.8,
+    845.7
+   ],
+   "lat5": 43.6439191,
+   "lon5": -79.3502656,
+   "world4": [
+    2303.7,
+    851.7
+   ],
+   "lat4": 43.6438719,
+   "lon4": -79.3502221,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-5",
+   "mapNumber": "5",
+   "name": "Roman Standard",
+   "artist": "Tracey Emin",
+   "installedPhase": "2025-east",
+   "pdfAnchorPt": {
+    "x": 737.7,
+    "y": 447.7
+   },
+   "renderedPx": [
+    1115.33,
+    676.88
+   ],
+   "world5": [
+    2491.8,
+    753.4
+   ],
+   "lat5": 43.6452039,
+   "lon5": -79.3483362,
+   "world4": [
+    2498.7,
+    775.9
+   ],
+   "lat4": 43.6450275,
+   "lon4": -79.3481734,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-6",
+   "mapNumber": "6",
+   "name": "Delicate Matter (for the birds)",
+   "artist": "Kara Hamilton",
+   "installedPhase": "2026 (section not stated)",
+   "pdfAnchorPt": {
+    "x": 854.8,
+    "y": 456.2
+   },
+   "renderedPx": [
+    1292.38,
+    689.73
+   ],
+   "world5": [
+    2625.8,
+    728.3
+   ],
+   "lat5": 43.6457643,
+   "lon5": -79.346832,
+   "world4": [
+    2636.1,
+    761.4
+   ],
+   "lat4": 43.6455055,
+   "lon4": -79.346593,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-7",
+   "mapNumber": "7",
+   "name": "Trajet",
+   "artist": "Caroline Monnet & Dean Baldwin Lew",
+   "installedPhase": "permanent (2025-east)",
+   "pdfAnchorPt": {
+    "x": 1065.6,
+    "y": 313.1
+   },
+   "renderedPx": [
+    1611.09,
+    473.38
+   ],
+   "world5": [
+    2824.8,
+    504.8
+   ],
+   "lat5": 43.6482037,
+   "lon5": -79.3452601,
+   "world4": [
+    2841.5,
+    558.6
+   ],
+   "lat4": 43.6477821,
+   "lon4": -79.3448708,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-8",
+   "mapNumber": "8",
+   "name": "First Sun",
+   "artist": "Monira Al Qadiri",
+   "installedPhase": "2026-fall",
+   "pdfAnchorPt": {
+    "x": 392.8,
+    "y": 295.8
+   },
+   "renderedPx": [
+    593.88,
+    447.22
+   ],
+   "world5": [
+    2062.8,
+    684.1
+   ],
+   "lat5": 43.6446989,
+   "lon5": -79.3536762,
+   "world4": [
+    2060.6,
+    677.1
+   ],
+   "lat4": 43.6447542,
+   "lon4": -79.3537272,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-9",
+   "mapNumber": "9",
+   "name": "against the wind, with the wind",
+   "artist": "Alexa Kumiko Hatanaka",
+   "installedPhase": "2026-west",
+   "pdfAnchorPt": {
+    "x": 330.1,
+    "y": 324.1
+   },
+   "renderedPx": [
+    499.08,
+    490.01
+   ],
+   "world5": [
+    1999.8,
+    734.6
+   ],
+   "lat5": 43.6441021,
+   "lon5": -79.354246,
+   "world4": [
+    1995.8,
+    721.5
+   ],
+   "lat4": 43.6442046,
+   "lon4": -79.3543406,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-10",
+   "mapNumber": "10",
+   "name": "The Colony",
+   "artist": "Kent Monkman",
+   "installedPhase": "2026-fall",
+   "pdfAnchorPt": {
+    "x": 133.6,
+    "y": 382.1
+   },
+   "renderedPx": [
+    201.99,
+    577.7
+   ],
+   "world5": [
+    1794.2,
+    858
+   ],
+   "lat5": 43.6425091,
+   "lon5": -79.3562518,
+   "world4": [
+    1784.4,
+    826.4
+   ],
+   "lat4": 43.6427565,
+   "lon4": -79.3564803,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-11",
+   "mapNumber": "11",
+   "name": "Lodestar",
+   "artist": "Lisa Hirmer",
+   "installedPhase": "2026-west",
+   "pdfAnchorPt": {
+    "x": 90.7,
+    "y": 368.9
+   },
+   "renderedPx": [
+    137.13,
+    557.74
+   ],
+   "world5": [
+    1742.4,
+    855.8
+   ],
+   "lat5": 43.6423949,
+   "lon5": -79.3568752,
+   "world4": [
+    1731.4,
+    820.4
+   ],
+   "lat4": 43.6426716,
+   "lon4": -79.3571308,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-12",
+   "mapNumber": "12",
+   "name": "Saverio and Daisy (Navel)",
+   "artist": "Hank Willis Thomas",
+   "installedPhase": "2026-west",
+   "pdfAnchorPt": {
+    "x": 90.7,
+    "y": 319.1
+   },
+   "renderedPx": [
+    137.13,
+    482.45
+   ],
+   "world5": [
+    1729,
+    799.7
+   ],
+   "lat5": 43.6428446,
+   "lon5": -79.3572323,
+   "world4": [
+    1718.2,
+    764.9
+   ],
+   "lat4": 43.6431168,
+   "lon4": -79.3574837,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-13",
+   "mapNumber": "13",
+   "name": "Ernest and Ruth (Exuberant Pink)",
+   "artist": "Hank Willis Thomas",
+   "installedPhase": "2026-west",
+   "pdfAnchorPt": {
+    "x": 90.7,
+    "y": 278
+   },
+   "renderedPx": [
+    137.13,
+    420.31
+   ],
+   "world5": [
+    1718,
+    753.4
+   ],
+   "lat5": 43.6432158,
+   "lon5": -79.3575271,
+   "world4": [
+    1707.4,
+    719.1
+   ],
+   "lat4": 43.6434843,
+   "lon4": -79.357775,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  },
+  {
+   "featureId": "lat-14",
+   "mapNumber": "14",
+   "name": "Untitled (Juniper)",
+   "artist": "Virginia Overton",
+   "installedPhase": "2026-west",
+   "pdfAnchorPt": {
+    "x": 127,
+    "y": 305.9
+   },
+   "renderedPx": [
+    192.01,
+    462.49
+   ],
+   "world5": [
+    1766.3,
+    774.1
+   ],
+   "lat5": 43.6431613,
+   "lon5": -79.3568796,
+   "world4": [
+    1756.6,
+    742.7
+   ],
+   "lat4": 43.6434066,
+   "lon4": -79.3571061,
+   "provisional": true,
+   "withheldFromRuntime": true,
+   "note": "PDF text anchor of the printed marker number, not the actual sculpture dot centre; Captain must verify. World/latlon are affine-derived and provisional."
+  }
+ ],
+ "corrections": {
+  "target": "docs/biidaasige-placekeeping-source.md",
+  "oldClaim": "The Fall 2026 map proves the works are installed on site.",
+  "correctedClaim": "The Fall 2026 map is a published current/planned trail route. It does not independently prove on-site installation. The First Sun artist page still says the work is currently installed at Doris C. Freedman Plaza, NYC (run ended 2026-08-03), so the Toronto installation is not independently verified by a dated primary opening source in this pass. Map markers are approximate source positions only.",
+  "action": "Recorded here; the old source doc was not edited because this pass owns only the three new files."
+ },
+ "sources": [
+  {
+   "id": "registration-controls",
+   "path": "tools/fixtures/biidaasige-registration.json",
+   "note": "read-only; verified WGS84 controls by name"
+  },
+  {
+   "id": "art-source",
+   "path": "tools/fixtures/biidaasige-placekeeping-source.json",
+   "note": "read-only; PDF label anchors"
+  },
+  {
+   "id": "osm-verified",
+   "path": "tools/fixtures/biidaasige/osm-verified.json",
+   "note": "read-only; Atlas Crane actual OSM point"
+  },
+  {
+   "id": "projection",
+   "path": "js/toronto-geodata.js",
+   "note": "read-only; city frame projection"
+  }
+ ]
+}

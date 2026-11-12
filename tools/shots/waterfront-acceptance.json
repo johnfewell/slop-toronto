@@ -1,0 +1,87 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film')})()",
+    "wait": 2500
+  },
+  {
+    "name": "terminal-aerial",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[0, 95, 770],look:[-207, 20, 675],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "terminal-clock",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-210, 3, 550],look:[-208, 27, 628],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "redpath-harbour",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[900, 55, 740],look:[700, 15, 550],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "redpath-slip",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[966, 3, 540],look:[825, 12, 545],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "garden-aerial",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-1230, 90, 690],look:[-1340, 0, 570],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "garden-pavilion",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-1200, 2, 620],look:[-1190, 2, 570],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "powerplant-stack",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-290, 3, 755],look:[-315, 20, 706],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "rees-wavedeck-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-707, 2.3, 580], \"look\": [-739, 0.8, 572], \"fov\": 60};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "simcoe-walker-standing",
+    "mode": "person",
+    "time": "midday",
+    "wait": 3000,
+    "js": "(async()=>{const a=window.__CITY_APP,C=window.CITY,d=C.WATERFRONT_WAVEDECKS.find(d=>d.id==='simcoe'),x=-526,z=586,h=C.waterfrontDeckSurfaceHeight(d,x,z);if(!C.waterfrontPublicRealmEnabled)throw Error('wavedecks disabled');a.selectMode('person');a.controllerManager.teleportActiveTo(x,z,1.57,h);await new Promise(r=>setTimeout(r,1000));const p=a.controllerManager.getActiveEntity().position;if(Math.hypot(p.x-x,p.z-z)>1||Math.abs(p.y-h)>.12)throw Error('walker not standing on rendered deck '+JSON.stringify({x,z,h,p}));console.log('[waterfront-walk] '+JSON.stringify({x:p.x,y:p.y,z:p.z,expected:h}));const c={pos:[x+5,h+3,z+6],look:[x,h+1,z],fov:55};a.cameraSystem.cinema=()=>c;})()"
+  },
+  {
+    "name": "ward-arrival-aerial-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [1352, 36, 2042], \"look\": [1320, 0, 2005], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "centre-arrival-aerial-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-520, 42, 2520], \"look\": [-545, 0, 2495], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "hanlans-arrival-aerial-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-1232, 36, 1636], \"look\": [-1207, 0, 1659], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "arrivals-check-enabled",
+    "time": "midday",
+    "wait": 2000,
+    "js": "(()=>{const C=window.CITY;const r=C.waterfrontIslandArrivals;if(!C.waterfrontIslandArrivalsEnabled||!r)throw Error('island arrivals disabled');const s=r.stats;const W=(x,z)=>!!C.waterAt(x,z);if(s.docks!==3)throw Error('expected 3 docks, got '+s.docks);if(s.piers!==3)throw Error('expected 3 decks, got '+s.piers);if(s.nameBoards!==3)throw Error('name boards incomplete');if(!s.connectorsRendered||s.connectorsRendered<6)throw Error('missing real connectors '+s.connectorsRendered);for(const d of Object.values(r.layout.docks)){const a=d.deckAnchor;if(W(a[0],a[1]))throw Error(d.id+' deck anchor is water');const surf=C.islandArrivalSurfaceAt(a[0],a[1]);if(!surf||surf.h!==C.ISLAND_ARRIVAL_ESTIMATES.deckTop)throw Error(d.id+' surface mismatch');}const before=C.waterfrontIslandArrivalsEnabled;C.waterfrontIslandArrivalsEnabled=false;const g=C.islandArrivalSurfaceAt(r.layout.docks.centre.deckAnchor[0],r.layout.docks.centre.deckAnchor[1]);C.waterfrontIslandArrivalsEnabled=before;if(g!==null)throw Error('surface not gated when disabled');console.log('[arrivals-check] '+JSON.stringify({docks:s.docks,piers:s.piers,connectors:s.connectorsRendered,wood:s.woodConnectors,atlas:s.nameAtlas,triangles:s.triangles}));})()"
+  }
+]

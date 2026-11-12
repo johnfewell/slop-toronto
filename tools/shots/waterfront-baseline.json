@@ -1,0 +1,37 @@
+[
+  {
+    "name": "sugar-beach-aerial",
+    "mode": "person",
+    "time": "midday",
+    "wait": 5000,
+    "js": "(()=>{const a=window.__CITY_APP,p=window.CITY.worldFromLatLon(43.6433,-79.3672);a.teleportTo(p.x,p.z,0);const c={pos:[p.x+25,65,p.z+65],look:[p.x,0,p.z],fov:55};a.cameraSystem.cinema=()=>c;})()"
+  },
+  {
+    "name": "hto-aerial",
+    "mode": "person",
+    "time": "midday",
+    "wait": 5000,
+    "js": "(()=>{const a=window.__CITY_APP,p=window.CITY.worldFromLatLon(43.6376,-79.3871);a.teleportTo(p.x,p.z,0);const c={pos:[p.x+25,65,p.z+65],look:[p.x,0,p.z],fov:55};a.cameraSystem.cinema=()=>c;})()"
+  },
+  {
+    "name": "simcoe-aerial",
+    "mode": "person",
+    "time": "midday",
+    "wait": 5000,
+    "js": "(()=>{const a=window.__CITY_APP,p=window.CITY.worldFromLatLon(43.6385,-79.3853);a.teleportTo(p.x,p.z,0);const c={pos:[p.x+25,65,p.z+65],look:[p.x,0,p.z],fov:55};a.cameraSystem.cinema=()=>c;})()"
+  },
+  {
+    "name": "rees-aerial",
+    "mode": "person",
+    "time": "midday",
+    "wait": 5000,
+    "js": "(()=>{const a=window.__CITY_APP,p=window.CITY.worldFromLatLon(43.6383,-79.3869);a.teleportTo(p.x,p.z,0);const c={pos:[p.x+25,65,p.z+65],look:[p.x,0,p.z],fov:55};a.cameraSystem.cinema=()=>c;})()"
+  },
+  {
+    "name": "spadina-aerial",
+    "mode": "person",
+    "time": "midday",
+    "wait": 5000,
+    "js": "(()=>{const a=window.__CITY_APP,p=window.CITY.worldFromLatLon(43.6371,-79.392);a.teleportTo(p.x,p.z,0);const c={pos:[p.x+25,65,p.z+65],look:[p.x,0,p.z],fov:55};a.cameraSystem.cinema=()=>c;})()"
+  }
+]

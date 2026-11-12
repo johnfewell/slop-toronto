@@ -1,0 +1,62 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "qqt-street-from-queens-quay-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-206, 2.4, 610], look: [-206, 22, 692], fov: 58 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "qqt-from-harbour-lakefront-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-150, 8, 792], look: [-206, 26, 692], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "qqt-aerial-northwest-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-320, 96, 590], look: [-206, 24, 692], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "qqt-clock-tower-closeup-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-189, 44, 640], look: [-189, 54, 679], fov: 42 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "redpath-from-sugar-beach-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [936, 2.4, 520], look: [760, 18, 520], fov: 58 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "redpath-from-harbour-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [900, 6, 360], look: [760, 14, 520], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "redpath-aerial-southeast-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [960, 110, 760], look: [740, 0, 515], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "redpath-unloader-green-handler-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [884, 5, 556], look: [846, 8, 524], fov: 48 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "redpath-shed-pitched-roof-from-harbour-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [700, 10, 690], look: [755, 16, 560], fov: 55 }); })()",
+    "wait": 5000
+  }
+]

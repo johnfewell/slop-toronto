@@ -1,0 +1,116 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "sugar-beach-street-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1035, 2.4, 640], look: [955, 0.6, 505], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "sugar-beach-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1150, 62, 720], look: [975, 0, 500], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-park-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-775, 2.2, 742], look: [-855, 0.5, 642], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-park-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-660, 58, 820], look: [-900, 0, 640], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "spadina-wavedeck-street-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1055, 2.2, 620], look: [-1110, 0.6, 565], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "spadina-wavedeck-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1030, 48, 680], look: [-1120, 0, 568], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "simcoe-wavedeck-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-468, 2.2, 622], look: [-525, 0.4, 575], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "simcoe-wavedeck-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-430, 48, 682], look: [-530, 0, 578], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "rees-wavedeck-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-700, 2.2, 615], look: [-750, 0.5, 568], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "rees-wavedeck-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-665, 48, 675], look: [-752, 0, 570], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "music-garden-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1235, 2.2, 650], look: [-1350, 0.6, 578], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "music-garden-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1160, 52, 735], look: [-1355, 0, 575], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "music-garden-rooms-sequence-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1230, 30, 640], look: [-1370, 0, 575], fov: 54 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "harbourfront-promenade-street-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-530, 2.2, 705], look: [-360, 6, 640], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "harbourfront-campus-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-610, 78, 850], look: [-380, 0, 635], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "islands-beach-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-608.4, 2.0, 3375.8], look: [-649.4, -0.4, 3408], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "islands-beach-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-380, 50, 3560], look: [-640, -0.4, 3380], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "islands-lagoon-skyline-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-500, 135, 3560], look: [-450, 0, 2850], fov: 55 }); })()",
+    "wait": 6000
+  }
+]

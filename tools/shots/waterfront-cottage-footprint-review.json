@@ -1,0 +1,14 @@
+[
+  {
+    "name": "nottawa-source-street",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1192.833, 1.8, 2219.071], \"look\": [1195.65, 2.4, 2205.916], \"fov\": 74})",
+    "wait": 3000
+  },
+  {
+    "name": "nottawa-source-aerial",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1197.542, 22, 2176.143], \"look\": [1196.513, 2.4, 2203.204], \"fov\": 64})",
+    "wait": 3000
+  }
+]

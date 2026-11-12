@@ -1,0 +1,39 @@
+{
+  "bead": "st-sb3r.27",
+  "purpose": "Source receipt for the representative visible paved widths used by js/waterfront-island-road-materials.js. This is source-informed typology, not an exact City Road Edge footprint relocation.",
+  "source": {
+    "name": "City of Toronto Topographic Mapping - Edge of Road",
+    "featureService": "https://gis.toronto.ca/arcgis/rest/services/cot_geospatial3/FeatureServer/3",
+    "catalogue": "https://open.toronto.ca/dataset/topographic-mapping-edge-of-road/",
+    "licence": "Open Government Licence - Toronto",
+    "geometryType": "esriGeometryPolygon",
+    "geometryMaintenanceDate": "2021-01-01",
+    "surveyGrade": false,
+    "note": "The layer is named Road Line but its geometryType is esriGeometryPolygon. Geometry maintenance is 2021-01-01, not a current survey guarantee."
+  },
+  "method": "Perpendicular cross-sections through the mapped OSM ways, intersected with the Road Edge polygons; EPSG:3857 lengths scaled by cos(lat) to ground metres. Nearby (not only centre-containing) samples are reported.",
+  "lanes": [
+    {
+      "key": "oneida",
+      "name": "Oneida Avenue",
+      "osmWay": 13541126,
+      "roadEdgeObjectId": 24202,
+      "samples": 19,
+      "widthM": { "min": 2.885, "max": 3.648, "median": 3.29 },
+      "representativePavedWidthM": 3.3
+    },
+    {
+      "key": "ojibway",
+      "name": "Ojibway Avenue",
+      "osmWay": 13541122,
+      "roadEdgeObjectId": 53745,
+      "samples": 22,
+      "widthM": { "min": 2.866, "max": 4.206, "median": 3.492 },
+      "representativePavedWidthM": 3.5
+    }
+  ],
+  "nativeOsmWidthM": 6.4,
+  "nativeOsmWidthNote": "6.4 m is the OSM living_street class default, not a measured width. The native metadata width is left unchanged.",
+  "alignmentNote": "The City Road Edge polygons are offset from the OSM centre line in places (up to ~3.5 m near the SE end of Oneida). The representative strips are centred on the existing OSM frame; the alignment drift is not resolved here.",
+  "decision": "Use a bounded representative visual paved width of 3.3 m (Oneida) and 3.5 m (Ojibway) centred on the existing OSM lane frame, with grass shoulders on the same StreetLevel plane. No routing, metadata width, collider, ground-height or geometry change."
+}

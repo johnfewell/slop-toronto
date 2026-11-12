@@ -1,0 +1,26 @@
+[
+  {
+    "name": "island-oneida-street",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={\"pos\": [1116.4, 1.8, 2405.3], \"look\": [1103.79, 0.15, 2388.0099999999998], \"fov\": 64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 3500
+  },
+  {
+    "name": "island-ojibway-street",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={\"pos\": [1173.7, 1.8, 2350.6], \"look\": [1162.4550000000002, 0.15, 2334.8050000000003], \"fov\": 64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 3500
+  },
+  {
+    "name": "cottage-verified-front-0",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\":[1655.49,2,1902.06],\"look\":[1646.72,2.4,1910.25],\"fov\":64})",
+    "wait": 2500
+  },
+  {
+    "name": "cottage-verified-front-1",
+    "time": "golden",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\":[1495.89,2,2183.82],\"look\":[1489.68,2.4,2173.12],\"fov\":64})",
+    "wait": 2500
+  }
+]

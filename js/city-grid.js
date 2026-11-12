@@ -267,6 +267,7 @@ function polygonCentroidArea(pts) {
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) a += pts[j].x * pts[i].z - pts[i].x * pts[j].z;
   return a * 0.5;
 }
+
 function pointInPolygonXZ(pts, x, z) {
   let inside = false;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
@@ -274,6 +275,318 @@ function pointInPolygonXZ(pts, x, z) {
     if ((a.z > z) !== (b.z > z) && x < ((b.x - a.x) * (z - a.z)) / (b.z - a.z) + a.x) inside = !inside;
   }
   return inside;
+}
+function polygonSignedAreaXZ(pts) {
+  let a = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) a += pts[j].x * pts[i].z - pts[i].x * pts[j].z;
+  return a * 0.5;
+}
+// Do two open segments cross at an interior point? (shared endpoints & touching ends are not crossings)
+function segmentsCrossXZ(a, b, c, d) {
+  const o = (p, q, r) => (q.x - p.x) * (r.z - p.z) - (q.z - p.z) * (r.x - p.x);
+  const d1 = o(c, d, a), d2 = o(c, d, b), d3 = o(a, b, c), d4 = o(a, b, d);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+}
+function ringSelfIntersects(pts) {
+  const n = pts.length;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    for (let j = i + 1; j < n; j++) {
+      if (j === i || j === (i + 1) % n || (j + 1) % n === i) continue;
+      if (segmentsCrossXZ(a, b, pts[j], pts[(j + 1) % n])) return true;
+    }
+  }
+  return false;
+}
+// Is the fixed-band annulus (inner outline, its inward offset prop as a hole) a valid, non-self-intersecting ring?
+// A concave curb island (Ward's Island Park) offsets into a self-crossing prop, and THREE's hole triangulation then
+// floods the whole island with the walkway. When this returns false, city-grid builds the band as edge quads instead.
+function annulusSafeXZ(inner, prop) {
+  if (!prop || prop.length !== inner.length || prop.length < 3) return false;
+  if (ringSelfIntersects(inner) || ringSelfIntersects(prop)) return false;
+  if (Math.abs(polygonSignedAreaXZ(prop)) >= Math.abs(polygonSignedAreaXZ(inner))) return false;
+  for (const p of prop) if (!pointInPolygonXZ(inner, p.x, p.z)) return false;
+  return true;
+}
+// The fixed sidewalk band (inner outline -> its inward offset prop) as per-edge quads: a top strip plus the two low
+// side faces. Equivalent to the extruded annulus for a simple ring, but it cannot flood a concave island's interior.
+function walkBandGeometryXZ(inner, prop, y0, y1) {
+  const A = makeAcc();
+  const tri = (p, q, r, n) => {
+    A.pos.push(p.x, p.y, p.z, q.x, q.y, q.z, r.x, r.y, r.z);
+    for (let k = 0; k < 3; k++) A.nor.push(n[0], n[1], n[2]);
+    A.uv.push(p.x, -p.z, q.x, -q.z, r.x, -r.z);
+  };
+  const quad = (a, b, c, d, n) => {
+    const gx = (p, q, r) => (q.y - p.y) * (r.z - p.z) - (q.z - p.z) * (r.y - p.y);
+    const gy = (p, q, r) => (q.z - p.z) * (r.x - p.x) - (q.x - p.x) * (r.z - p.z);
+    const gz = (p, q, r) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+    const facing = (p, q, r) => gx(p, q, r) * n[0] + gy(p, q, r) * n[1] + gz(p, q, r) * n[2] >= 0;
+    if (facing(a, b, c)) { tri(a, b, c, n); tri(a, c, d, n); } else { tri(a, c, b, n); tri(a, d, c, n); }
+  };
+  const s = polygonSignedAreaXZ(inner) > 0 ? 1 : -1;
+  const n = inner.length;
+  for (let i = 0; i < n; i++) {
+    const i2 = (i + 1) % n;
+    const a = inner[i], b = inner[i2], c = prop[i2], d = prop[i];
+    // top strip (upward)
+    quad({ x: a.x, y: y1, z: a.z }, { x: b.x, y: y1, z: b.z }, { x: c.x, y: y1, z: c.z }, { x: d.x, y: y1, z: d.z }, [0, 1, 0]);
+    // outer face at the inner outline (away from the island's interior)
+    const L = Math.hypot(b.x - a.x, b.z - a.z) || 1e-9;
+    const ox = ((b.z - a.z) / L) * s, oz = ((-(b.x - a.x)) / L) * s;
+    quad({ x: a.x, y: y0, z: a.z }, { x: b.x, y: y0, z: b.z }, { x: b.x, y: y1, z: b.z }, { x: a.x, y: y1, z: a.z }, [ox, 0, oz]);
+    // inner face at the prop outline (toward the island's interior)
+    quad({ x: d.x, y: y0, z: d.z }, { x: c.x, y: y0, z: c.z }, { x: c.x, y: y1, z: c.z }, { x: d.x, y: y1, z: d.z }, [-ox, 0, -oz]);
+  }
+  return accGeometry(A);
+}
+
+// An accumulator quad whose winding is chosen so it faces `n` (points are [x, y, z]; uv = world x, -z).
+function accQuadFacing(A, a, b, c, d, n) {
+  const gx = (p, q, r) => (q[1] - p[1]) * (r[2] - p[2]) - (q[2] - p[2]) * (r[1] - p[1]);
+  const gy = (p, q, r) => (q[2] - p[2]) * (r[0] - p[0]) - (q[0] - p[0]) * (r[2] - p[2]);
+  const gz = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+  const facing = (p, q, r) => gx(p, q, r) * n[0] + gy(p, q, r) * n[1] + gz(p, q, r) * n[2] >= 0;
+  const push = (p, q, r) => {
+    for (const v of [p, q, r]) { A.pos.push(v[0], v[1], v[2]); A.nor.push(n[0], n[1], n[2]); A.uv.push(v[0], -v[2]); }
+  };
+  if (facing(a, b, c)) { push(a, b, c); push(a, c, d); } else { push(a, c, b); push(a, d, c); }
+}
+
+// The fixed band for the kept edges: `keep[i]` truthy builds edge i's top strip and both side faces. Same geometry as
+// walkBandGeometryXZ, so the two cannot drift. Null when no edge is kept.
+function walkBandGeometryXZEdges(inner, prop, y0, y1, keep) {
+  const W = makeAcc();
+  const s = polygonSignedAreaXZ(inner) > 0 ? 1 : -1;
+  const n = inner.length;
+  for (let i = 0; i < n; i++) {
+    if (keep && !keep[i]) continue;
+    const i2 = (i + 1) % n;
+    const a = inner[i], b = inner[i2], c = prop[i2], d = prop[i];
+    // top strip (upward)
+    accQuadFacing(W, [a.x, y1, a.z], [b.x, y1, b.z], [c.x, y1, c.z], [d.x, y1, d.z], [0, 1, 0]);
+    // outer face at the inner outline (away from the island's interior)
+    const L = Math.hypot(b.x - a.x, b.z - a.z) || 1e-9;
+    const ox = ((b.z - a.z) / L) * s, oz = ((-(b.x - a.x)) / L) * s;
+    accQuadFacing(W, [a.x, y0, a.z], [b.x, y0, b.z], [b.x, y1, b.z], [a.x, y1, a.z], [ox, 0, oz]);
+    // inner face at the prop outline (toward the island's interior)
+    accQuadFacing(W, [d.x, y0, d.z], [c.x, y0, c.z], [c.x, y1, c.z], [d.x, y1, d.z], [-ox, 0, -oz]);
+  }
+  return accGeometry(W);
+}
+
+// The visible kerb ring for the kept edges (the 0.25 m top strip between the outline and its inset, plus the outer
+// face). Null when no edge is kept.
+function kerbRingGeometryXZEdges(poly, inner, y0, y1, keep) {
+  const C = makeAcc();
+  const n = poly.length;
+  const s = polygonSignedAreaXZ(poly) > 0 ? 1 : -1;
+  for (let i = 0; i < n; i++) {
+    if (keep && !keep[i]) continue;
+    const i2 = (i + 1) % n;
+    const a = poly[i], b = poly[i2], c = inner[i2], d = inner[i];
+    const L = Math.hypot(b.x - a.x, b.z - a.z);
+    if (L < 1e-6) continue;
+    // top strip (upward) from the outline to the 0.25 m inset
+    accQuadFacing(C, [a.x, y1, a.z], [b.x, y1, b.z], [c.x, y1, c.z], [d.x, y1, d.z], [0, 1, 0]);
+    // outer face at the outline (away from the block's interior)
+    const ox = ((b.z - a.z) / L) * s, oz = ((-(b.x - a.x)) / L) * s;
+    accQuadFacing(C, [a.x, y0, a.z], [b.x, y0, b.z], [b.x, y1, b.z], [a.x, y1, a.z], [ox, 0, oz]);
+  }
+  return accGeometry(C);
+}
+
+// Island-only flush verge: a ramp over the flagged edges, from the road at the block outline (roadY) to the existing
+// yard at the prop inset (walkY). This REPLACES the former kerb strip and walk band on those edges (the caller builds
+// neither there), so no native slab side pokes through and no old curb top remains above it. The outer vertex rises to
+// the kerb top at a flagged/unflagged boundary so the ramp meets the native kerb at the corner (a local approximate
+// transition, not a survey). Returns the geometry to draw; vergeRampStore reads its exact Float32 triangles.
+function rampGeometryXZ(poly, prop, flags, { roadY = 0, walkY = 0.22, kerbY = 0.18 } = {}) {
+  const A = makeAcc();
+  const n = poly.length;
+  const tri = (p, q, r) => {
+    A.pos.push(p[0], p[1], p[2], q[0], q[1], q[2], r[0], r[1], r[2]);
+    for (let k = 0; k < 3; k++) A.nor.push(0, 1, 0);
+    A.uv.push(p[0], -p[2], q[0], -q[2], r[0], -r[2]);
+  };
+  const gy = (p, q, r) => (q[2] - p[2]) * (r[0] - p[0]) - (q[0] - p[0]) * (r[2] - p[2]);
+  // The winding is chosen on the FLOAT32 values that are serialized, not the double ones: a thin/degenerate triangle can
+  // flip winding at quantization and the front-side renderer then culls it while the sampler still counted it. Each
+  // triangle is normalised to face up on the quantized positions and a truly zero-area triangle is dropped.
+  const f = Math.fround;
+  const q = (v) => [f(v[0]), f(v[1]), f(v[2])];
+  const face = (p, a, b) => { const g = gy(p, a, b); if (Math.abs(g) < 1e-12) return; if (g >= 0) tri(p, a, b); else tri(p, b, a); };
+  for (let i = 0; i < n; i++) {
+    if (!flags[i]) continue;
+    const i2 = (i + 1) % n, prev = (i + n - 1) % n;
+    const a = poly[i], b = poly[i2], d = prop[i], c = prop[i2];
+    const ya = flags[prev] ? roadY : kerbY;
+    const yb = flags[i2] ? roadY : kerbY;
+    const P = q([a.x, ya, a.z]), Q = q([b.x, yb, b.z]), R = q([c.x, walkY, c.z]), S = q([d.x, walkY, d.z]);
+    face(P, Q, R);
+    face(P, R, S);
+  }
+  return accGeometry(A);
+}
+
+// Island verge ramp surface: the exact rendered triangles of the flush verge ramps AND the native yard triangles that
+// overlap the ramp footprint at a concave corner, for the walker's ground hook. The producer fills it as it builds;
+// islandVergeSurfaceAt(x, z) barycentric-samples those same triangles and returns the TOPMOST (the rendered surface).
+// Empty (null everywhere) before a build or in an unsupported frame, so an unwired page is a no-op.
+const VERGE_RAMP = { cell: 8, grid: new Map(), tris: [] };
+function vergeRampReset() { VERGE_RAMP.grid.clear(); VERGE_RAMP.tris.length = 0; }
+function vergeRampIndex(P, Q, R, id, kind) {
+  const k = VERGE_RAMP.tris.push({ P, Q, R, id, kind }) - 1;
+  const cell = VERGE_RAMP.cell;
+  const minX = Math.min(P[0], Q[0], R[0]), maxX = Math.max(P[0], Q[0], R[0]);
+  const minZ = Math.min(P[2], Q[2], R[2]), maxZ = Math.max(P[2], Q[2], R[2]);
+  for (let ix = Math.floor(minX / cell); ix <= Math.floor(maxX / cell); ix++) {
+    for (let iz = Math.floor(minZ / cell); iz <= Math.floor(maxZ / cell); iz++) {
+      const key = ix * 100000 + iz;
+      let list = VERGE_RAMP.grid.get(key);
+      if (!list) VERGE_RAMP.grid.set(key, (list = []));
+      list.push(k);
+    }
+  }
+}
+// Store the geometry's exact rendered triangles (its Float32 position array), so the sampler returns the same values
+// the mesh draws, not a higher-precision recomputation.
+function vergeRampStore(geometry, id) {
+  if (!geometry) return;
+  const p = geometry.attributes.position.array;
+  for (let i = 0; i + 8 < p.length; i += 9) {
+    vergeRampIndex([p[i], p[i + 1], p[i + 2]], [p[i + 3], p[i + 4], p[i + 5]], [p[i + 6], p[i + 7], p[i + 8]], id, 'ramp');
+  }
+}
+// Store the upward-facing triangles of a kept native surface (the walk band top, the kerb top) that can overlap the
+// ramp at a corner, so the sampler returns the topmost rendered surface there.
+function vergeTopStore(geometry, id, kind) {
+  if (!geometry) return;
+  const g = geometry.index ? geometry.toNonIndexed() : geometry;
+  const p = g.attributes.position.array, n = g.attributes.normal.array;
+  for (let i = 0; i + 8 < p.length; i += 9) {
+    if ((n[i + 1] + n[i + 4] + n[i + 7]) / 3 < 0.9) continue;
+    vergeRampIndex([p[i], p[i + 1], p[i + 2]], [p[i + 3], p[i + 4], p[i + 5]], [p[i + 6], p[i + 7], p[i + 8]], id, kind);
+  }
+  if (g !== geometry) g.dispose();
+}
+// Store the native yard's top triangles (its actual Float32 positions) for a verge block. A centroid test is not a
+// valid triangle-overlap test (a triangle whose centroid is inside prop can still cross the ramp), so every top
+// triangle is stored; the query's `hasRamp` gate keeps the sampler scoped to the ramp footprint.
+function vergeYardStore(geometry, id) {
+  if (!geometry) return;
+  const g = geometry.index ? geometry.toNonIndexed() : geometry;
+  const p = g.attributes.position.array, n = g.attributes.normal.array;
+  for (let i = 0; i + 8 < p.length; i += 9) {
+    if ((n[i + 1] + n[i + 4] + n[i + 7]) / 3 < 0.9) continue;
+    vergeRampIndex([p[i], p[i + 1], p[i + 2]], [p[i + 3], p[i + 4], p[i + 5]], [p[i + 6], p[i + 7], p[i + 8]], id, 'yard');
+  }
+  if (g !== geometry) g.dispose();
+}
+// The exact flush-verge height at (x, z), barycentric-sampled from the built ramp triangles, or null elsewhere. Where
+// the native yard overlaps the ramp footprint (a concave corner) the TOPMOST rendered surface wins, so the sampler
+// matches the actual ground. This is the contract for the walker's ground hook (report to the captain; do not wire
+// here): controllers.js getGroundHeight should consult it after sportsGround and before the deck query, so higher
+// decks still win.
+function islandVergeSurfaceAt(x, z) {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+  const list = VERGE_RAMP.grid.get(Math.floor(x / VERGE_RAMP.cell) * 100000 + Math.floor(z / VERGE_RAMP.cell));
+  if (!list) return null;
+  let best = null, hasRamp = false;
+  for (const k of list) {
+    const { P, Q, R, id, kind } = VERGE_RAMP.tris[k];
+    const den = (Q[2] - R[2]) * (P[0] - R[0]) + (R[0] - Q[0]) * (P[2] - R[2]);
+    if (Math.abs(den) < 1e-12) continue;
+    const l1 = ((Q[2] - R[2]) * (x - R[0]) + (R[0] - Q[0]) * (z - R[2])) / den;
+    const l2 = ((R[2] - P[2]) * (x - R[0]) + (P[0] - R[0]) * (z - R[2])) / den;
+    const l3 = 1 - l1 - l2;
+    if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+    if (kind === 'ramp') hasRamp = true;
+    const h = l1 * P[1] + l2 * Q[1] + l3 * R[1];
+    // (adjacent ramp quads overlap at the prop edge, and the native yard can overlap at a concave corner: the rendered
+    // topmost surface is the raycast's first hit)
+    if (!best || h > best.h) best = { h, kind, id, u: l1, v: l2, w: l3 };
+  }
+  return hasRamp ? best : null;
+}
+function islandVergeRampStats() {
+  return { triangles: VERGE_RAMP.tris.length, cells: VERGE_RAMP.grid.size };
+}
+
+// Island-only: the per-edge grass flags for a block's inner outline, from the pure verge gate in
+// js/waterfront-island-lanes.js. Null when the gate is absent (mainland pages, tests that do not load it) or when no
+// edge is source-confirmed, so the native concrete band and stone kerb are kept byte for byte.
+function islandVergeFlags(inner) {
+  const gate = window.CITY.islandVergeEdgeMaterial;
+  if (!gate) return null;
+  const n = inner.length;
+  const s = polygonSignedAreaXZ(inner) > 0 ? 1 : -1;
+  const flags = new Uint8Array(n);
+  let any = false;
+  for (let i = 0; i < n; i++) {
+    const i2 = (i + 1) % n;
+    const a = inner[i], b = inner[i2];
+    const L = Math.hypot(b.x - a.x, b.z - a.z) || 1e-9;
+    const ox = ((b.z - a.z) / L) * s, oz = ((-(b.x - a.x)) / L) * s;
+    if (gate(a.x, a.z, b.x, b.z, ox, oz)) { flags[i] = 1; any = true; }
+  }
+  return any ? flags : null;
+}
+
+// Do two simple polygons overlap? Conservative and exact for the shapes here: a vertex of one inside the other, or any
+// pair of edges crossing. (A shared boundary counts as overlap, which is the safe answer for the verge decision.)
+function polygonsOverlapXZ(a, b) {
+  for (const p of a) if (pointInPolygonXZ(b, p.x, p.z)) return true;
+  for (const p of b) if (pointInPolygonXZ(a, p.x, p.z)) return true;
+  for (let i = 0; i < a.length; i++) {
+    const a1 = a[i], a2 = a[(i + 1) % a.length];
+    for (let j = 0; j < b.length; j++) {
+      if (segmentsCrossXZ(a1, a2, b[j], b[(j + 1) % b.length])) return true;
+    }
+  }
+  return false;
+}
+
+// The yard outline for a block that has BOTH City sidewalks and source-confirmed lane edges: the yard runs to the inner
+// outline on the retained (unflagged) edges, exactly as a City-sidewalk block did before, and is cut back to the prop
+// inset only on the flagged edges so the flush ramp is visible. This keeps the original yard material on the untouched
+// bands (no new concrete strip) while the ramp replaces the kerb/band on the lane edges.
+function mixedYardOutline(inner, prop, flags) {
+  const n = inner.length;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const prev = flags[(i + n - 1) % n];
+    const cur = flags[i];
+    if (prev !== cur) {
+      out.push(prev ? prop[i] : inner[i]);
+      out.push(cur ? prop[i] : inner[i]);
+    } else {
+      out.push(cur ? prop[i] : inner[i]);
+    }
+  }
+  return out;
+}
+
+// Does a City sidewalk piece overlap the ramp footprint of edge i (the quad from the block outline to the prop inset)?
+// The City's polygons are clipped to the island slab, so this is an exact polygon/quad overlap, not a sample guess: a
+// narrow or offset piece that crosses the ramp between sample points is still caught. Used to keep the native concrete
+// walk on the edges the City maps, while the source-confirmed unmarked-lane edges the City does NOT map still get the
+// flush verge (the captain's Third Street left edge: block 2887's City sidewalks are on its far side, not on the lane).
+function cityWalkOverlapsEdge(poly, prop, i, walks) {
+  if (!walks || !walks.length) return false;
+  const n = poly.length;
+  const i2 = (i + 1) % n;
+  const quad = [poly[i], poly[i2], prop[i2], prop[i]];
+  let qminX = Infinity, qmaxX = -Infinity, qminZ = Infinity, qmaxZ = -Infinity;
+  for (const p of quad) { qminX = Math.min(qminX, p.x); qmaxX = Math.max(qmaxX, p.x); qminZ = Math.min(qminZ, p.z); qmaxZ = Math.max(qmaxZ, p.z); }
+  for (const piece of walks) {
+    const pts = piece.outer;
+    let pminX = Infinity, pmaxX = -Infinity, pminZ = Infinity, pmaxZ = -Infinity;
+    for (const p of pts) { pminX = Math.min(pminX, p.x); pmaxX = Math.max(pmaxX, p.x); pminZ = Math.min(pminZ, p.z); pmaxZ = Math.max(pmaxZ, p.z); }
+    if (qmaxX < pminX || qminX > pmaxX || qmaxZ < pminZ || qminZ > pmaxZ) continue; // bbox reject
+    if (polygonsOverlapXZ(quad, pts)) return true;
+  }
+  return false;
 }
 
 // --- Toronto layer: polygon intersection for the small parks' lawns & paths (city-grid.js, 2. CURB ISLANDS). Both
@@ -594,12 +907,18 @@ function maskRoadCuts(mat) {
 }
 
 function buildCityGrid(scene) {
+  vergeRampReset(); // (the exact verge surface is rebuilt with the ground; empty before this and in an unsupported frame)
   const group = new THREE.Group();
   group.name = 'CityGround';
   const footprints = []; // ground obstacles traffic & pedestrians keep clear of
   const colliders = []; // player colliders (flyover piers)
   const SW = GEO.frame.sidewalk;
   const SW_TOP = CITY_BOUNDS.sidewalkHeight;
+  // The visible kerb's top (the native kerb extrusion is 0.18 m). The flush ramp uses it at a flagged edge's end so it
+  // meets the native kerb exactly; there it is KERB_TOP below SW_TOP, so the ramp never overlays a kept walk band.
+  const KERB_TOP = 0.18;
+  // Per-edge keep mask for the native kerb ring / walk band: 1 where the edge is NOT a source-confirmed verge.
+  const keepMask = (n, verge) => { const k = new Uint8Array(n); for (let i = 0; i < n; i++) k[i] = verge[i] ? 0 : 1; return k; };
   const inside = (pts, m = 0) => pts.every((p) => p.x > CITY_BOUNDS.minX + m && p.x < CITY_BOUNDS.maxX - m && p.z > CITY_BOUNDS.minZ + m && p.z < CITY_BOUNDS.maxZ - m);
 
   // ===================================================================================================================
@@ -620,6 +939,7 @@ function buildCityGrid(scene) {
     return c;
   };
   const streetMat = GEO.waterMask ? maskedByWater(createRoadSurfaceMaterial(), GEO.waterMask) : roadMat;
+  window.CITY.applyIslandLaneRoadMaterial?.(streetMat);
   {
     const shape = createWorldXZShape(rectPolygon(CITY_BOUNDS.minX, CITY_BOUNDS.maxX, CITY_BOUNDS.minZ, CITY_BOUNDS.maxZ));
     for (const w of lakes) shape.holes.push(new THREE.Path(w.pts.map((p) => new THREE.Vector2(p.x, -p.z))));
@@ -700,6 +1020,12 @@ function buildCityGrid(scene) {
   const curbMat = createCurbMaterial();
   const lawnMat = createParkLawnMaterial(false);
   const plotMat = createPlotGroundMaterial();
+  window.CITY.applyIslandYardMaterial?.(plotMat);
+  window.CITY.applyWaterfrontBeachGroundMask?.(lawnMat);
+  window.CITY.applyWaterfrontIslandGroundMask?.(lawnMat);
+  window.CITY.applyWaterfrontBeachLandscapeGroundMask?.(lawnMat);
+  window.CITY.applyWaterfrontHtoLandscapeGroundMask?.(lawnMat);
+  window.CITY.applyWaterfrontIslandAccessGroundMask?.(lawnMat);
   const wildMat = createTerrainMaterial();
   const blockSidewalks = []; // { cx, cz, w, d, block, cover } axis-aligned cover of each island (street-details.js)
   const roadSidewalks = []; // rectangles inside the curbs that bound the roads (road-network.js)
@@ -710,23 +1036,42 @@ function buildCityGrid(scene) {
   const distilleryBlock = distillerySite && window.CITY.createLanePavingMaterial ? blockAt(distillerySite.x, distillerySite.z) : null;
   // Downtown is concrete to the building line: the core from Spadina to Parliament between the lake & Bloor, and
   // anywhere else a block holds towers or big buildings. Houses keep their front lawns.
-  const blockBuilt = new Map(); // block -> { n, area, top }
+  const blockBuilt = new Map(); // block -> { n, area, top, matchedN, matchedArea, matchedTop, matchedResidentialN }
   for (const bl of GEO.buildings) {
     const b = blockAt(bl[0], bl[1]);
     if (!b) continue;
     let area = 0;
     for (const [u0, u1, v0, v1] of bl[3]) area += (u1 - u0) * (v1 - v0);
-    const s = blockBuilt.get(b) || { n: 0, area: 0, top: 0 };
+    const s = blockBuilt.get(b) || { n: 0, area: 0, top: 0, matchedN: 0, matchedArea: 0, matchedTop: 0, matchedResidentialN: 0 };
     s.n++;
     s.area += area;
-    s.top = Math.max(s.top, bl[4]);
+    // Use the same sourced island height as the building renderer; inherited
+    // tower defaults must not turn cottage yards into downtown concrete. Only a profile that passed the active-frame
+    // and footprint identity guard counts as evidence (a reshaped/missing record or a wrong frame is a no-op).
+    const prof = window.CITY.islandBuildingProfile?.(bl);
+    if (prof) {
+      s.matchedN++;
+      s.matchedArea += area;
+      s.matchedTop = Math.max(s.matchedTop, prof.height);
+      if (prof.typology === 'cottage' || /^residential/.test(prof.category || '')) s.matchedResidentialN++;
+      s.top = Math.max(s.top, prof.height);
+    } else {
+      s.top = Math.max(s.top, bl[4]);
+    }
     blockBuilt.set(b, s);
   }
   const isPaved = (b) => {
     if (b.cx > -1150 && b.cx < 1500 && b.cz > -2750 && b.cz < 650) return true;
     const s = blockBuilt.get(b);
+    if (!s) return false;
+    // Island residential blocks: the validated source-matched cottage profiles are the evidence. Inherited tall rows
+    // that did not match the OSM footprints (the massing's generic tower defaults) must not turn a cottage yard into
+    // downtown concrete. Only the matched heights decide, so a genuinely tall matched building still paves the block.
+    if (s.matchedN >= 3 && s.matchedResidentialN >= s.matchedN * 0.6) {
+      return s.matchedTop >= 20 || (s.matchedTop >= 14 && s.matchedArea / s.matchedN >= 1500);
+    }
     // (the massing merges a row of houses into one long footprint: only height tells them from a block of offices)
-    return !!s && (s.top >= 20 || (s.top >= 14 && s.area / s.n >= 1500));
+    return s.top >= 20 || (s.top >= 14 && s.area / s.n >= 1500);
   };
   const extrude = (shape, y0, h) => {
     const g = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false, curveSegments: 1 });
@@ -820,7 +1165,9 @@ function buildCityGrid(scene) {
     }
     for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) {
       for (const i of bGrid.get((Math.floor(x / 50) + a) * 100003 + Math.floor(z / 50) + c) || []) {
-        const [cx, cz, ang, parts] = GEO.buildings[i];
+        const row = GEO.buildings[i];
+        const [cx, cz, ang, nativeParts] = row;
+        const parts = window.CITY.islandCottageFootprintParts?.(row, i) || nativeParts;
         const cs = Math.cos(ang), sn = Math.sin(ang), dx = x - cx, dz = z - cz;
         const u = dx * cs - dz * sn, v = dx * sn + dz * cs;
         for (const [u0, u1, v0, v1] of parts) if (u > u0 - 2.5 && u < u1 + 2.5 && v > v0 - 2.5 && v < v1 + 2.5) return false;
@@ -966,11 +1313,12 @@ function buildCityGrid(scene) {
   window.CITY.sidewalkPieceMap = cityWalks; // (patio-layout.js keeps the CaféTO cafés on them)
   let walkIslands = 0, walkBands = 0, walkTris = 0, walkMs = 0;
   // the slab's sides alone (its top is the yard's), facing out, in the walkway's concrete
-  const slabSides = (pts, y0, y1) => {
+  const slabSides = (pts, y0, y1, keep = null) => {
     const A = makeAcc();
     let area = 0;
     for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) area += pts[j].x * pts[i].z - pts[i].x * pts[j].z;
     for (let i = 0; i < pts.length; i++) {
+      if (keep && !keep[i]) continue;
       const a = pts[i], c = pts[(i + 1) % pts.length];
       const L = Math.hypot(c.x - a.x, c.z - a.z);
       if (L < 0.01) continue;
@@ -1020,12 +1368,45 @@ function buildCityGrid(scene) {
   for (const b of BLOCKS) {
     const ponds = pondsOnIsland(b); // (st-ejsz: cut out of the kerb's top, the yard & the small parks)
     const inner = offsetPolygonInward(b.poly, 0.25);
-    // kerb ring under the slab (the slab is inset 0.25 m, so the kerb's top & face show). Its top runs over the whole
-    // island, so a pond on it is a hole in it; one across its edge leaves the kerb a ring, the slab's width
-    const kerb = createWorldXZShape(b.poly);
-    if (ponds.some((p) => p.on === 'cross') && inner) kerb.holes.push(new THREE.Path(inner.map((p) => new THREE.Vector2(p.x, -p.z))));
-    else for (const { pond } of ponds) kerb.holes.push(new THREE.Path(pond.pts.map((p) => new THREE.Vector2(p.x, -p.z))));
-    geos.curb.push(extrude(kerb, 0.0, 0.18));
+    const prop = b.area > 400 ? offsetPolygonInward(b.poly, SW) : null;
+    // Island-only: the source-confirmed unmarked lane edges become a flush grass ramp from the road at the block
+    // outline to the existing yard at the prop inset, replacing the former kerb strip and walk band there. The gate is
+    // pure and absent on mainland pages, so nothing changes there; a block with a City sidewalk, a median or a pond
+    // keeps the native treatment.
+    const hasCityWalk = !!(cityWalks && b.area > 400 && cityWalks.get(b.id));
+    // The verge is source-confirmed per edge. A block with City sidewalks keeps the native concrete walk on the edges
+    // the City actually maps, but a source-confirmed unmarked-lane edge the City does NOT map still gets the flush
+    // verge (the captain's Third Street left edge: block 2887's City sidewalks are on its far side, not on the lane).
+    let verge = inner && prop && !b.median && !ponds.length ? islandVergeFlags(inner) : null;
+    if (verge && hasCityWalk) {
+      const pieces = cityWalks.get(b.id);
+      let any = false;
+      for (let i = 0; i < verge.length; i++) {
+        if (!verge[i]) continue;
+        if (cityWalkOverlapsEdge(b.poly, prop, i, pieces)) verge[i] = 0;
+        else any = true;
+      }
+      if (!any) verge = null;
+    }
+    // The yard's material category, resolved before the ramp so the ramp is drawn in the SAME material as the yard it
+    // meets (the captain's material-continuity finding: a bright lawn ramp against a native plot yard).
+    const yard = isRailLand(b) ? 'rail' : b.park > 0.6 ? 'lawn' : b.wild > 0.5 ? 'wild' : isPaved(b) ? 'paved' : 'plot';
+    if (verge) {
+      // The kerb strip is built only on the unflagged edges; the flagged edges are the ramp alone, so no old curb top
+      // remains above it. The ramp is the walk band AND the kerb strip on those edges (the road at the outline, rising
+      // over where the kerb was, to the yard at the prop inset) - never an overlay on a kept top.
+      const ring = kerbRingGeometryXZEdges(b.poly, inner, 0.0, KERB_TOP, keepMask(inner.length, verge));
+      if (ring) { geos.curb.push(ring); vergeTopStore(ring, b.id, 'kerb'); }
+      const ramp = rampGeometryXZ(b.poly, prop, verge, { roadY: 0, walkY: SW_TOP, kerbY: KERB_TOP });
+      if (ramp) { geos[yard].push(ramp); vergeRampStore(ramp, b.id); }
+    } else {
+      // kerb ring under the slab (the slab is inset 0.25 m, so the kerb's top & face show). Its top runs over the whole
+      // island, so a pond on it is a hole in it; one across its edge leaves the kerb a ring, the slab's width
+      const kerb = createWorldXZShape(b.poly);
+      if (ponds.some((p) => p.on === 'cross') && inner) kerb.holes.push(new THREE.Path(inner.map((p) => new THREE.Vector2(p.x, -p.z))));
+      else for (const { pond } of ponds) kerb.holes.push(new THREE.Path(pond.pts.map((p) => new THREE.Vector2(p.x, -p.z))));
+      geos.curb.push(extrude(kerb, 0.0, 0.18));
+    }
     if (!inner) continue;
     if (b.median) {
       const mat = tramMedians.has(b) ? 'paved' : 'lawn';
@@ -1033,22 +1414,37 @@ function buildCityGrid(scene) {
       else { const top = yardGeometry(inner, SW_TOP, ponds); if (top) geos[mat].push(top); }
       continue;
     }
-    const prop = b.area > 400 ? offsetPolygonInward(b.poly, SW) : null;
     // (over the yard, +0.003: under the City's walks, the small parks' lawns & beds)
     if (b === distilleryBlock) geos.lanes.push(flatShape(prop || inner, SW_TOP + 0.003));
-    const yard = isRailLand(b) ? 'rail' : b.park > 0.6 ? 'lawn' : b.wild > 0.5 ? 'wild' : isPaved(b) ? 'paved' : 'plot'; // (rail: Toronto layer)
     const walks = cityWalks && b.area > 400 ? cityWalks.get(b.id) : null; // (Toronto layer: the City's sidewalks)
     const runs = window.CITY.curbRuns(inner);
     const seeds = runs.map((_, i) => window.CITY.runSeed(b.id, i));
     const downtown = isPaved(b) ? 1 : 0;
     if (walks) {
       walkIslands++;
-      const sides = slabSides(inner, 0.03, SW_TOP);
-      if (sides) geos.walk.push(framed(sides, runs, [], seeds, downtown));
-      const top = yardGeometry(inner, SW_TOP, ponds);
-      if (top) geos[yard].push(top);
+      if (verge) {
+        // A block with City sidewalks AND source-confirmed lane edges the City does not map: the yard keeps its original
+        // material and runs to the inner outline on the retained edges, cut back to the prop inset only on the flagged
+        // edges so the flush ramp is visible. No new concrete band is laid on the untouched edges; the City's own
+        // sidewalk pieces are still laid on top where they exist (never on a flagged edge).
+        const top = yardGeometry(mixedYardOutline(inner, prop, verge), SW_TOP, ponds);
+        if (top) { geos[yard].push(top); vergeYardStore(top, b.id); }
+        // The slab's vertical face at the inner outline is kept on the retained edges only: on a flagged edge the ramp
+        // already rises from the road, so a face there would poke above it.
+        const sides = slabSides(inner, 0.03, SW_TOP, keepMask(inner.length, verge));
+        if (sides) geos.walk.push(framed(sides, runs, [], seeds, downtown));
+      } else {
+        const sides = slabSides(inner, 0.03, SW_TOP);
+        if (sides) geos.walk.push(framed(sides, runs, [], seeds, downtown));
+        const top = yardGeometry(inner, SW_TOP, ponds);
+        if (top) geos[yard].push(top);
+      }
       // (over the small parks' lawns, +0.004, under their paths & beds)
-      geos.walk.push(framed(walkPieces(walks, SW_TOP + 0.006), runs, walks.flatMap((w) => [w.outer, ...w.holes]), seeds, downtown));
+      const cityWalkGeo = framed(walkPieces(walks, SW_TOP + 0.006), runs, walks.flatMap((w) => [w.outer, ...w.holes]), seeds, downtown);
+      // (a City sidewalk piece can overlap a ramp footprint at a corner: store its top so the sampler returns the
+      // topmost rendered surface there, exactly as the walker sees it)
+      if (verge) vergeTopStore(cityWalkGeo, b.id, 'walk');
+      geos.walk.push(cityWalkGeo);
       const pk = prop && (yard === 'paved' || yard === 'plot') ? parkettesOf(b, prop, ponds) : null;
       if (pk) {
         geos.lawn.push(pk.lawn);
@@ -1057,11 +1453,30 @@ function buildCityGrid(scene) {
       }
     } else if (prop) {
       if (cityWalks) walkBands++;
-      const ring = createWorldXZShape(inner);
-      ring.holes.push(new THREE.Path(prop.map((p) => new THREE.Vector2(p.x, -p.z))));
-      geos.walk.push(framed(extrude(ring, 0.03, SW_TOP - 0.03), runs, [inner, prop], seeds, downtown));
+      if (verge) {
+        // (the same per-edge quads as the concave fallback, built only on the unflagged edges: the flagged edges are
+        // the flush ramp, so the former band top and its sides are not drawn there at all.)
+        const band = walkBandGeometryXZEdges(inner, prop, 0.03, SW_TOP, keepMask(inner.length, verge));
+        if (band) { vergeTopStore(band, b.id, 'walk'); geos.walk.push(framed(band, runs, [inner, prop], seeds, downtown)); }
+      } else {
+        // (a concave curb island's inward offset can self-cross; the extruded hole then floods the whole island with
+        // walkway — Ward's Island Park. Only then is the band built as edge quads, which cannot overfill.)
+        const band = inner.length > 8 && !annulusSafeXZ(inner, prop)
+          ? walkBandGeometryXZ(inner, prop, 0.03, SW_TOP)
+          : (() => {
+              const ring = createWorldXZShape(inner);
+              ring.holes.push(new THREE.Path(prop.map((p) => new THREE.Vector2(p.x, -p.z))));
+              return extrude(ring, 0.03, SW_TOP - 0.03);
+            })();
+        geos.walk.push(framed(band, runs, [inner, prop], seeds, downtown));
+      }
       const top = yardGeometry(prop, SW_TOP - 0.002, ponds);
-      if (top) geos[yard].push(top);
+      if (top) {
+        geos[yard].push(top);
+        // (the native yard can flood over the ramp at a concave corner: store those pieces so the sampler returns the
+        // topmost rendered surface, not the ramp hidden under them)
+        if (verge) vergeYardStore(top, b.id);
+      }
       const pk = yard === 'paved' || yard === 'plot' ? parkettesOf(b, prop, ponds) : null; // (Toronto layer: the small parks)
       if (pk) {
         geos.lawn.push(pk.lawn);
@@ -1107,10 +1522,14 @@ function buildCityGrid(scene) {
     m.castShadow = false; // (13 cm high: its shadow is a line the kerbs' already draw)
     group.add(m);
   }
+  // Match the source-backed HTO apron treatment on its mapped paths only.
+  window.CITY.applyWaterfrontHtoLandscapePathTone?.(sidewalkMat);
+  const forecourtMat = createForecourtMaterial();
+  window.CITY.applyWaterfrontHtoLandscapePathTone?.(forecourtMat);
   mergeInto(geos.walk, sidewalkMat, false, 'Walkways');
   mergeInto(geos.lawn, lawnMat, false, 'Lawns');
   mergeInto(geos.plot, plotMat, false, 'Yards');
-  mergeInto(geos.paved, createForecourtMaterial(), false, 'Forecourts');
+  mergeInto(geos.paved, forecourtMat, false, 'Forecourts');
   if (geos.lanes.length) mergeInto(geos.lanes, window.CITY.createLanePavingMaterial(), false, 'DistilleryLanes'); // Toronto layer
   mergeInto(geos.wild, wildMat, false, 'OpenLand');
   // (the rail lands' gravel bed is also the small parks' mulch, so the beds add no material: Toronto layer)
@@ -1422,7 +1841,15 @@ function buildCityGrid(scene) {
   //    Rosedale Valley Road, where in the Don Valley pilot the cut's walls showed through at the deck's level, st-4qix.)
   group.traverse((o) => {
     if (/^Flyover/.test(o.name)) return;
-    for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) maskRoadCuts(m);
+    for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) {
+      maskRoadCuts(m);
+      // Timber decks descend below the quay: remove the underlying pavement/bank,
+      // while retaining the lake beneath them and its existing shoreline mask.
+      if (m !== waterMat && m !== lakeMat) {
+        window.CITY.applyWaterfrontDeckGroundMask?.(m);
+        window.CITY.applyWaterfrontHtoBoardwalkGroundMask?.(m);
+      }
+    }
   });
   if (ROAD_CUTS.length) {
     const road = makeAcc(), walk = makeAcc(), curb = makeAcc(), wall = makeAcc();
@@ -1592,5 +2019,5 @@ function buildCityGrid(scene) {
   return { group, sidewalks: roadSidewalks, footprints, highwayLanes, colliders };
 }
 
-Object.assign(window.CITY, { buildCityGrid, maskRoadCuts, batchStaticGroupMeshes, offsetPolygonInward, createExtrudedPolygonMesh, createFlatPolygonMesh, createWorldXZShape });
+Object.assign(window.CITY, { buildCityGrid, maskRoadCuts, batchStaticGroupMeshes, offsetPolygonInward, createExtrudedPolygonMesh, createFlatPolygonMesh, createWorldXZShape, annulusSafeXZ, ringSelfIntersects, walkBandGeometryXZ, walkBandGeometryXZEdges, kerbRingGeometryXZEdges, rampGeometryXZ, islandVergeFlags, cityWalkOverlapsEdge, islandVergeSurfaceAt, islandVergeRampStats });
 })();

@@ -1,0 +1,707 @@
+{
+  "note": "Primary source fixture: all24 City TreePoints inside QCYC polygon plus one outside control; coordinates and source attributes unchanged. Full source reproduction remains a manual cache-backed audit. OGL Toronto.",
+  "sources": [
+    {
+      "file": "city-tree-algonquin.json",
+      "sha256": "9afac820cfa05e5678a510e933258bfbe134cc31f624808ab6dadd6742c585bc"
+    },
+    {
+      "file": "city-tree-marina-qcyc.json",
+      "sha256": "8b5af2e99f91fd1df8519a90909fd1e3688eab601c14a4256dc9a775951dddfd"
+    }
+  ],
+  "layer": "https://gis.toronto.ca/arcgis/rest/services/cot_geospatial3/FeatureServer/10",
+  "licence": "Open Government Licence \u2013 Toronto",
+  "projection": {
+    "lat0": 43.6453,
+    "lon0": -79.3806,
+    "kx": 80682.4717990044,
+    "ky": 111105.31871811183,
+    "theta": -0.28949997923178367,
+    "ox": 0,
+    "oz": 0
+  },
+  "marinaWay": {
+    "type": "way",
+    "id": 193043084,
+    "tags": {
+      "leisure": "marina",
+      "name": "Queen City Yacht Club",
+      "operator": "Queen City Yacht Club",
+      "power_supply": "yes",
+      "sanitary_dump_station": "yes",
+      "seamark:harbour:category": "marina",
+      "seamark:type": "harbour",
+      "vhf": "68",
+      "website": "https://qcyc.ca/about-us/visitors",
+      "wikidata": "Q7270272",
+      "wikipedia": "en:Queen City Yacht Club"
+    },
+    "ring": [
+      [
+        -79.3590711,
+        43.6298647
+      ],
+      [
+        -79.3591695,
+        43.6299168
+      ],
+      [
+        -79.3590331,
+        43.6300429
+      ],
+      [
+        -79.3584062,
+        43.6304203
+      ],
+      [
+        -79.3583802,
+        43.6304361
+      ],
+      [
+        -79.358124,
+        43.6302869
+      ],
+      [
+        -79.3578716,
+        43.6301399
+      ],
+      [
+        -79.3579384,
+        43.6300697
+      ],
+      [
+        -79.3577106,
+        43.6298996
+      ],
+      [
+        -79.3572824,
+        43.6295799
+      ],
+      [
+        -79.3572137,
+        43.6293836
+      ],
+      [
+        -79.3573512,
+        43.6288819
+      ],
+      [
+        -79.3573664,
+        43.6287966
+      ],
+      [
+        -79.3575077,
+        43.6288785
+      ],
+      [
+        -79.3575426,
+        43.6288987
+      ],
+      [
+        -79.3575928,
+        43.6289456
+      ],
+      [
+        -79.3575354,
+        43.6290008
+      ],
+      [
+        -79.357549,
+        43.6290136
+      ],
+      [
+        -79.3575626,
+        43.6290202
+      ],
+      [
+        -79.3585725,
+        43.6295761
+      ],
+      [
+        -79.3590453,
+        43.6298506
+      ],
+      [
+        -79.3590711,
+        43.6298647
+      ]
+    ]
+  },
+  "fields": [
+    {
+      "name": "SUBTYPE_CODE",
+      "alias": "SUBTYPE_CODE",
+      "type": "esriFieldTypeInteger"
+    },
+    {
+      "name": "SUBTYPE_DESC",
+      "alias": "SUBTYPE_DESC",
+      "type": "esriFieldTypeString",
+      "length": 50
+    },
+    {
+      "name": "ELEVATION",
+      "alias": "ELEVATION",
+      "type": "esriFieldTypeSingle"
+    },
+    {
+      "name": "DERIVED_HEIGHT",
+      "alias": "DERIVED_HEIGHT",
+      "type": "esriFieldTypeSingle"
+    },
+    {
+      "name": "DERIVED_OWNER",
+      "alias": "DERIVED_OWNER",
+      "type": "esriFieldTypeString",
+      "length": 100
+    },
+    {
+      "name": "LAST_GEOMETRY_MAINT",
+      "alias": "LAST_GEOMETRY_MAINT",
+      "type": "esriFieldTypeDate",
+      "length": 8
+    },
+    {
+      "name": "LAST_ATTRIBUTE_MAINT",
+      "alias": "LAST_ATTRIBUTE_MAINT",
+      "type": "esriFieldTypeDate",
+      "length": 8
+    },
+    {
+      "name": "X",
+      "alias": "X",
+      "type": "esriFieldTypeDouble"
+    },
+    {
+      "name": "Y",
+      "alias": "Y",
+      "type": "esriFieldTypeDouble"
+    },
+    {
+      "name": "LONGITUDE",
+      "alias": "LONGITUDE",
+      "type": "esriFieldTypeDouble"
+    },
+    {
+      "name": "LATITUDE",
+      "alias": "LATITUDE",
+      "type": "esriFieldTypeDouble"
+    },
+    {
+      "name": "OBJECTID",
+      "alias": "OBJECTID",
+      "type": "esriFieldTypeOID"
+    }
+  ],
+  "geometryType": "esriGeometryPoint",
+  "spatialReference": {
+    "wkid": 4326,
+    "latestWkid": 4326
+  },
+  "features": [
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.75,
+        "DERIVED_HEIGHT": 24.51,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642691000,
+        "LAST_ATTRIBUTE_MAINT": 1621642691000,
+        "X": 316181.698,
+        "Y": 4832226.623,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1108596
+      },
+      "geometry": {
+        "x": -79.35895415291051,
+        "y": 43.62989244716107
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.96,
+        "DERIVED_HEIGHT": 28.44,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642691000,
+        "LAST_ATTRIBUTE_MAINT": 1621642691000,
+        "X": 316220.733,
+        "Y": 4832231.912,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1108599
+      },
+      "geometry": {
+        "x": -79.35847030774181,
+        "y": 43.629939457536096
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.79,
+        "DERIVED_HEIGHT": 27.58,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621657408000,
+        "LAST_ATTRIBUTE_MAINT": 1621657408000,
+        "X": 316228.967,
+        "Y": 4832222.71,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1108600
+      },
+      "geometry": {
+        "x": -79.35836846395965,
+        "y": 43.62985650059329
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.71,
+        "DERIVED_HEIGHT": 26.29,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642691000,
+        "LAST_ATTRIBUTE_MAINT": 1621642691000,
+        "X": 316237.596,
+        "Y": 4832224.015,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1108601
+      },
+      "geometry": {
+        "x": -79.35826150325802,
+        "y": 43.62986811484493
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 76.1,
+        "DERIVED_HEIGHT": 26.69,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642691000,
+        "LAST_ATTRIBUTE_MAINT": 1621642691000,
+        "X": 316215.678,
+        "Y": 4832237.489,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1108602
+      },
+      "geometry": {
+        "x": -79.35853283312743,
+        "y": 43.62998973569149
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.69,
+        "DERIVED_HEIGHT": 29.06,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621657875000,
+        "LAST_ATTRIBUTE_MAINT": 1621657875000,
+        "X": 316264.839,
+        "Y": 4832157.906,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112885
+      },
+      "geometry": {
+        "x": -79.35792530164599,
+        "y": 43.6292726244312
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.96,
+        "DERIVED_HEIGHT": 22.98,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642372000,
+        "LAST_ATTRIBUTE_MAINT": 1621642372000,
+        "X": 316181.074,
+        "Y": 4832221.511,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112901
+      },
+      "geometry": {
+        "x": -79.35896199332534,
+        "y": 43.62984643271499
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.97,
+        "DERIVED_HEIGHT": 26.85,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642372000,
+        "LAST_ATTRIBUTE_MAINT": 1621642372000,
+        "X": 316228.583,
+        "Y": 4832188.88,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112906
+      },
+      "geometry": {
+        "x": -79.35837393764595,
+        "y": 43.629551981260406
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 76.08,
+        "DERIVED_HEIGHT": 26.82,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642373000,
+        "LAST_ATTRIBUTE_MAINT": 1621642373000,
+        "X": 316234.763,
+        "Y": 4832188.148,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112909
+      },
+      "geometry": {
+        "x": -79.35829736914066,
+        "y": 43.62954529735691
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.73,
+        "DERIVED_HEIGHT": 29.64,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642392000,
+        "LAST_ATTRIBUTE_MAINT": 1621642392000,
+        "X": 316260.123,
+        "Y": 4832163.373,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112910
+      },
+      "geometry": {
+        "x": -79.35798362726787,
+        "y": 43.62932190751992
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.88,
+        "DERIVED_HEIGHT": 20.53,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621658058000,
+        "LAST_ATTRIBUTE_MAINT": 1621658058000,
+        "X": 316246.149,
+        "Y": 4832169.646,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112911
+      },
+      "geometry": {
+        "x": -79.35815666284955,
+        "y": 43.629378588087405
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 76.2,
+        "DERIVED_HEIGHT": 29.65,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642392000,
+        "LAST_ATTRIBUTE_MAINT": 1621642392000,
+        "X": 316223.489,
+        "Y": 4832201.472,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112913
+      },
+      "geometry": {
+        "x": -79.35843679762543,
+        "y": 43.629665413657705
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.94,
+        "DERIVED_HEIGHT": 30.69,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621658058000,
+        "LAST_ATTRIBUTE_MAINT": 1621658058000,
+        "X": 316228.388,
+        "Y": 4832213.462,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112914
+      },
+      "geometry": {
+        "x": -79.35837583455917,
+        "y": 43.629773264847145
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.97,
+        "DERIVED_HEIGHT": 28.58,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642392000,
+        "LAST_ATTRIBUTE_MAINT": 1621642392000,
+        "X": 316223.914,
+        "Y": 4832220.772,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112915
+      },
+      "geometry": {
+        "x": -79.35843112316194,
+        "y": 43.62983913350717
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.86,
+        "DERIVED_HEIGHT": 29.41,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642392000,
+        "LAST_ATTRIBUTE_MAINT": 1621642392000,
+        "X": 316220.104,
+        "Y": 4832212.628,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112916
+      },
+      "geometry": {
+        "x": -79.35847850978874,
+        "y": 43.629765884839074
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.79,
+        "DERIVED_HEIGHT": 26.8,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642392000,
+        "LAST_ATTRIBUTE_MAINT": 1621642392000,
+        "X": 316240.615,
+        "Y": 4832220.428,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112917
+      },
+      "geometry": {
+        "x": -79.35822416681253,
+        "y": 43.62983578055263
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.67,
+        "DERIVED_HEIGHT": 27.88,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642464000,
+        "LAST_ATTRIBUTE_MAINT": 1621642464000,
+        "X": 316297.658,
+        "Y": 4832131.58,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1112999
+      },
+      "geometry": {
+        "x": -79.35751917510852,
+        "y": 43.629035139292654
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.95,
+        "DERIVED_HEIGHT": 26.75,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621658109000,
+        "LAST_ATTRIBUTE_MAINT": 1621658109000,
+        "X": 316306.017,
+        "Y": 4832161.485,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1113001
+      },
+      "geometry": {
+        "x": -79.3574149405997,
+        "y": 43.62930420500587
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.93,
+        "DERIVED_HEIGHT": 24.76,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642464000,
+        "LAST_ATTRIBUTE_MAINT": 1621642464000,
+        "X": 316315.99,
+        "Y": 4832161.188,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1113002
+      },
+      "geometry": {
+        "x": -79.35729135972238,
+        "y": 43.62930137738824
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.83,
+        "DERIVED_HEIGHT": 26.78,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642464000,
+        "LAST_ATTRIBUTE_MAINT": 1621642464000,
+        "X": 316302.489,
+        "Y": 4832169.145,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1113003
+      },
+      "geometry": {
+        "x": -79.35745849726368,
+        "y": 43.629373209995755
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.76,
+        "DERIVED_HEIGHT": 25.21,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621642464000,
+        "LAST_ATTRIBUTE_MAINT": 1621642464000,
+        "X": 316307.721,
+        "Y": 4832175.728,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1113004
+      },
+      "geometry": {
+        "x": -79.35739352120967,
+        "y": 43.62943238513097
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 76.31,
+        "DERIVED_HEIGHT": 28.42,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621658109000,
+        "LAST_ATTRIBUTE_MAINT": 1621658109000,
+        "X": 316293.751,
+        "Y": 4832191.986,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1113005
+      },
+      "geometry": {
+        "x": -79.35756629473963,
+        "y": 43.629578945171986
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.97,
+        "DERIVED_HEIGHT": 10.67,
+        "DERIVED_OWNER": null,
+        "LAST_GEOMETRY_MAINT": 1621745574000,
+        "LAST_ATTRIBUTE_MAINT": 1621745574000,
+        "X": 316190.307,
+        "Y": 4832255.135,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1108597
+      },
+      "geometry": {
+        "x": -79.35884686697685,
+        "y": 43.63014896243483
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.6,
+        "DERIVED_HEIGHT": 4.92,
+        "DERIVED_OWNER": "City of Toronto - Parks, Forestry & Recreation",
+        "LAST_GEOMETRY_MAINT": 1621657409000,
+        "LAST_ATTRIBUTE_MAINT": 1621657409000,
+        "X": 316256.544,
+        "Y": 4832242.885,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1108603
+      },
+      "geometry": {
+        "x": -79.35802629425217,
+        "y": 43.630037670248626
+      }
+    },
+    {
+      "attributes": {
+        "SUBTYPE_CODE": 7001,
+        "SUBTYPE_DESC": "Tree Point",
+        "ELEVATION": 75.83,
+        "DERIVED_HEIGHT": 6.09,
+        "DERIVED_OWNER": "City of Toronto - Corridor",
+        "LAST_GEOMETRY_MAINT": 1621745573000,
+        "LAST_ATTRIBUTE_MAINT": 1621745573000,
+        "X": 316162.294,
+        "Y": 4832224.722,
+        "LONGITUDE": null,
+        "LATITUDE": null,
+        "OBJECTID": 1108594
+      },
+      "geometry": {
+        "x": -79.35919465306488,
+        "y": 43.62987563198868
+      }
+    }
+  ],
+  "insideSourceCount": 24,
+  "unionSourceCount": 581,
+  "outsideControlId": 1108594
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "sherbourne-common-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1140, 150, 600], look: [1210, 0, 380], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "sherbourne-light-showers-street-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1178, 3.4, 350], look: [1200, 4.6, 300], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "sherbourne-light-showers-profile-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1216, 2.8, 346], look: [1197, 4.6, 300], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "sherbourne-light-showers-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1150, 60, 430], look: [1198, 0, 285], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "sherbourne-unfinished-arch-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1238, 2.4, 538], look: [1244, 4.6, 516], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "sherbourne-unfinished-arch-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1200, 55, 605], look: [1244, 0, 518], fov: 55 }); })()",
+    "wait": 5000
+  }
+]

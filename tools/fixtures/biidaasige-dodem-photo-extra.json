@@ -1,0 +1,94 @@
+{
+  "schema": "biidaasige-dodem-photo-extra/1",
+  "source": "MVVA finished-site photo, same frame as the eight-control ground registration",
+  "sourceDimensions": [
+    4800,
+    3600
+  ],
+  "cropTransform": {
+    "inputCenter": [
+      3750,
+      2225
+    ],
+    "outputCenter": [
+      538,
+      500
+    ],
+    "rotationClockwiseDeg": 148,
+    "scaleFormula": "1000/(abs(sin(148deg))*2000+abs(cos(148deg))*1450)",
+    "outputSize": [
+      1076,
+      1000
+    ],
+    "note": "Exact recorded crop/rotate/fit raster transform; half-pixel rounding bounded below .1m. +repage resets ImageMagick virtual page before pixel reads."
+  },
+  "animals": [
+    {
+      "id": "dodem-turtle",
+      "originalPhotoBodyPixel": [
+        2006.7,
+        2960
+      ],
+      "originalPhotoHeadPixel": [
+        2062.7,
+        2924.7
+      ],
+      "projectedOrthoBodyPixel": [
+        1428.2924052451237,
+        958.0472132324728
+      ],
+      "projectedOrthoHeadPixel": [
+        1423.356337466184,
+        966.981827167929
+      ],
+      "kind": "turtle",
+      "errorM": 4,
+      "sourceAerialValidation": "Captain personally overlaid these projected centers on the 2025aerial and confirmed the same turtle/musky/eagle forms, each within about1m. No old constructionladder used."
+    },
+    {
+      "id": "dodem-musky",
+      "originalPhotoBodyPixel": [
+        1942,
+        3095.3
+      ],
+      "originalPhotoHeadPixel": [
+        2010,
+        3093.3
+      ],
+      "projectedOrthoBodyPixel": [
+        1426.8389495483539,
+        933.9612909917452
+      ],
+      "projectedOrthoHeadPixel": [
+        1417.776163082093,
+        938.7283967059951
+      ],
+      "kind": "musky",
+      "errorM": 4,
+      "sourceAerialValidation": "Captain personally overlaid these projected centers on the 2025aerial and confirmed the same turtle/musky/eagle forms, each within about1m. No old constructionladder used."
+    },
+    {
+      "id": "dodem-eagle",
+      "originalPhotoBodyPixel": [
+        2436.7,
+        3243.3
+      ],
+      "originalPhotoHeadPixel": [
+        2463.3,
+        3223.3
+      ],
+      "projectedOrthoBodyPixel": [
+        1347.650490529743,
+        944.9943323060033
+      ],
+      "projectedOrthoHeadPixel": [
+        1345.4411162742915,
+        949.746987408826
+      ],
+      "kind": "eagle",
+      "errorM": 4,
+      "sourceAerialValidation": "Captain personally overlaid these projected centers on the 2025aerial and confirmed the same turtle/musky/eagle forms, each within about1m. No old constructionladder used."
+    }
+  ],
+  "policy": "These points are 15\u201325m beyond timber-island control region. Require trace-footprint containment and the independent aerial visual check; 4m uncertainty remains explicit. Body/headpixel fromhighresprimarysourcephoto, no inventedscatter."
+}

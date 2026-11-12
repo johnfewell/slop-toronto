@@ -88,7 +88,7 @@ function buildIndex() {
     it.norm = it.words.join(' ');
     items.push(it);
   };
-  for (const l of CITY_LANDMARKS) add({ kind: 'landmark', name: l.name, x: l.x, z: l.z, sub: `Landmark · ${l.district || districtAt(l.x, l.z)}`, landmarkId: l.id });
+  for (const l of CITY_LANDMARKS) add({ kind: 'landmark', name: l.name, x: l.x, z: l.z, sub: `Landmark · ${l.district || districtAt(l.x, l.z)}`, landmarkId: l.id, aliases: l.aliases });
   const districtNames = new Set();
   for (const d of DISTRICTS) {
     if (districtNames.has(d.name)) continue;

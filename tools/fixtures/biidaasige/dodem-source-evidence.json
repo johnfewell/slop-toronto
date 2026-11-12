@@ -1,0 +1,47 @@
+{
+  "scope": "st-bmyv.4",
+  "park": "Biidaasige Park",
+  "cityListUrl": "https://www.toronto.ca/explore-enjoy/parks-recreation/places-spaces/beaches-gardens-attractions/biidaasige-park/recreation-at-biidaasige-park/",
+  "captainPhoto": "captain/dodem-eagle.jpg",
+  "attribution": "APE Richter/Christian Huba in consultation with MCFN and MinoKamik Collective",
+  "attributionSource": "City of Toronto 2026 Port Lands open-house boards, page 5",
+  "material": "mountain larch (Lärche) trunks, not oak",
+  "note": "The City lists seven Dodem animals but publishes no individual positions. The 2026 City credit names the makers; the maker catalogue states mountain larch, not oak. Only the eagle has a City primary photo plus an installed crop personally viewed by the captain. bear/turtle/wolf are workshop-reference only; otter/beaver are programme-plus-partial-installed; musky has no individual photo. None of the six non-eagle animals is a verified as-built reconstruction. No Indigenous graphics or symbols are invented. Models are unplaced local-origin factories.",
+  "animals": {
+    "bear": {
+      "verified": false,
+      "confidence": "workshop-reference",
+      "evidence": "Workshop photo \"Christian Huba bei der Arbeit am Bär\" (© Huba), the City 2026 crop background-left upright bear, and the public RFO Toronto workshop video at 00:15 and 11:45 (captain-viewed): broad connected black eye mask, black inner ears, very large faceted blunt black nose, natural larch rings around the pupils, forepaws against the belly with black lower-claw accents. Workshop-reference only; not an installed as-built match. Height ~2.4 m is a workshop estimate, not a survey."
+    },
+    "beaver": {
+      "verified": false,
+      "confidence": "programme-and-partial-installed",
+      "evidence": "Richter programme beaver sketch corroborates the crouched upright morphology; the City 2026 installed crop shows a round beaver-like form on the right on a visible blue/green painted metal rocker/spring base, but the identity is not independently captioned. Programme + partial installed; not as-built confirmed. The steel base is a ~0.15 m estimate, not a survey."
+    },
+    "eagle": {
+      "verified": true,
+      "confidence": "primary-photo",
+      "evidence": "City of Toronto primary photo (captain/dodem-eagle.jpg) and the City 2026 installed crop, personally viewed by the captain: squat broad folded scalloped wings, natural brown body, white head with jagged feather edge, black chest, broad yellow hooked beak, three white tail feather tips, yellow talons around a log perch."
+    },
+    "turtle": {
+      "verified": false,
+      "confidence": "workshop-reference",
+      "evidence": "Workshop photo \"Die Schildkröte\" (© Huba) and the maker interview (five parts, ~1 tonne), captain-viewed: a broad low almost-flat segmented shell (~0.45 m rise) of contiguous same-wood panels with thin green recessed seams, a red band/underside, four very broad paddle flippers with three turquoise claw triangles across each outer edge, and a huge wide oval head (~0.75 m wide, ~0.8 m long) with a broad curved black smiling lower face and large circle-outline eyes on the topsides. Workshop-reference only; not an installed as-built match. Approx 3.2 m long, 2.4 m wide, 0.6 m tall is a workshop estimate, not a survey."
+    },
+    "otter": {
+      "verified": false,
+      "confidence": "programme-and-partial-installed",
+      "evidence": "Richter programme otter sketch corroborates the long low arched morphology; the City 2026 installed crop shows a long low otter-like form on the left on a visible blue/green painted metal rocker/spring base, but the identity is not independently captioned. Programme + partial installed; not as-built confirmed. The steel base is a ~0.15 m estimate, not a survey."
+    },
+    "wolf": {
+      "verified": false,
+      "confidence": "workshop-reference",
+      "evidence": "Workshop photo captioned \"Eine Wölfin mit ihren Jungen\" (a mother wolf with her cubs, © Blum), captain-viewed: a solid carved standing all-fours mother with a broad trunk back, a short forward head, clear pointed ears and black eyes/nose, and two complete cubs (four legs, head and ears each) under the belly with feet on the ground. Workshop-reference only; not an installed as-built match. The earlier seated-wolf reading of the owl photo was wrong."
+    },
+    "musky": {
+      "verified": false,
+      "confidence": "partial-installed-photo",
+      "evidence": "Captain-viewed primary MVVA 4800x3600 finished-playground photo (private mvva-badlands-cableway.jpg; crop captain/dodem-west-three.png): a very long low flattened natural brown larch oval with a broad rounded head, two black/teal ringed eyes on the top near the front, and a tapering rounded tail; a moulded solid form with no large dorsal fin, forked tail or pedestal visible from overhead. Partial installed photo only; not a verified as-built match. Width ~0.65 m, length ~2 m, top height ~0.45 m is a photo estimate, not a survey."
+    }
+  }
+}

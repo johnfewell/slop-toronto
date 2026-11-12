@@ -5,7 +5,7 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const read = (path) => readFileSync(join(__dirname, '..', path), 'utf8');
-const source = read('js/cameras.js');
+const source = read('js/world-collision.js') + '\n' + read('js/camera-rig.js') + '\n' + read('js/cameras.js');
 // The scenic presets look out from Toronto's real geography (the CN Tower, the teleport arrivals, lat / lon shore points)
 const city = vm.createContext({ window: { CITY: {} } });
 for (const path of ['js/toronto-geodata.js', 'js/city-config.js']) vm.runInContext(read(path), city);
@@ -109,7 +109,7 @@ test('two canvas touches pinch without orbiting and one remaining touch resumes 
   h.pointer(h.canvas, 'pointermove', 2, 200);
   close(h.camera.zoomMultiplier, 0.5);
   close(h.camera.orbitYawOffset, 0);
-  close(h.camera.orbitPitchOffset, 0.09);
+  close(h.camera.orbitPitchOffset, -0.2);
   h.pointer(h.canvas, 'pointermove', 1, 100);
   close(h.camera.zoomMultiplier, 1);
   h.pointer(h.canvas, 'pointerup', 2, 200);
@@ -172,7 +172,7 @@ test('mouse orbit and wheel zoom retain their behavior and bounds', () => {
   h.pointer(h.canvas, 'pointerdown', 1, 0, 0, 'mouse');
   h.pointer(h.canvas, 'pointermove', 1, 10, 20, 'mouse');
   close(h.camera.orbitYawOffset, -0.065);
-  close(h.camera.orbitPitchOffset, 0.19);
+  close(h.camera.orbitPitchOffset, -0.3);
   h.pointer(h.canvas, 'pointerup', 1, 10, 20, 'mouse');
   let prevented = false;
   h.canvas.dispatch('wheel', { deltaY: 100, preventDefault() { prevented = true; } });
@@ -188,7 +188,7 @@ for (const preset of ['chase', 'skyline', 'cnTower', 'humberBay', 'drone']) {
   test(`teleport after driving, orbiting and ${preset} snaps to a fresh chase view`, () => {
     const h = cameraHarness();
     h.entity.speed = 45;
-    for (let i = 0; i < 180; i++) h.camera.update(1 / 60, i / 60);
+    for (let i = 0; i < 180; i++) { h.entity.position.z += 45 / 60; h.camera.update(1 / 60, i / 60); }
     assert.ok(h.camera.smoothedSpeed > 44);
     h.pointer(h.canvas, 'pointerdown', 1, 0);
     h.pointer(h.canvas, 'pointermove', 1, 200, 80);
@@ -239,10 +239,50 @@ test('teleport releases every camera pointer and ignores old gestures before acc
     h.pointer(h.canvas, 'pointerup', id, 500, 500);
   }
   close(h.camera.orbitYawOffset, 0);
-  close(h.camera.orbitPitchOffset, 0.09);
+  close(h.camera.orbitPitchOffset, -0.2);
   close(h.camera.zoomMultiplier, 1);
   h.pointer(h.canvas, 'pointerdown', 3, 600);
   h.pointer(h.canvas, 'pointermove', 3, 610);
   close(h.camera.orbitYawOffset, -0.065);
   assert.equal(h.camera.isDragging, true);
+});
+
+test('director exits from its displayed pose and teleport starts fresh instead of resuming a shot', () => {
+  const h = cameraHarness();
+  h.camera.update(1 / 60, 0);
+  h.camera.activePresetId = 'torontoDirector';
+  h.camera.director = { displayed: true };
+  h.camera.currentPos.set(20, 4, 90); h.camera.currentLookAt.set(0, 3, 105);
+  h.camera.camera.fov = 76;
+  h.camera.setCameraPreset('chase');
+  h.camera.update(1 / 60, 1);
+  close(h.camera.currentPos.x, 20); close(h.camera.currentPos.z, 90);
+  close(h.camera.camera.fov, 76);
+  h.camera.activePresetId = 'torontoDirector';
+  let resets = 0; h.camera.onDiscontinuity = () => resets++;
+  h.camera.resetForTeleport();
+  assert.equal(h.camera.followRig.ready, false);
+  assert.equal(h.camera._resumeDisplayed, false);
+  assert.equal(resets, 1);
+  close(h.camera.orbitYawOffset, 0);
+});
+
+test('actual Toronto flyover slabs expose their soffits independently of the ground below', () => {
+  let checked = 0;
+  const scratch = [];
+  for (const run of CITY.DECK_RUNS) {
+    if (run.name !== 'Gardiner Expressway' || run.rank !== 6) continue;
+    for (const p of run.pts) {
+      if (p.h < 7) continue;
+      const layers = CITY.cameraSurfaceLayersAt(p.x, p.z, scratch);
+      const slab = layers.find((level) => Math.abs(level.top - p.h - .03) < .1);
+      if (!slab) continue;
+      nearSlab(slab.bottom, p.h - 1.25);
+      assert.ok(slab.bottom > 5, 'the road below remains a separate vertical region');
+      checked++;
+      if (checked === 8) return;
+    }
+  }
+  assert.ok(checked >= 4, `${checked} actual Gardiner sections checked`);
+  function nearSlab(actual, expected) { assert.ok(Math.abs(actual - expected) < .1, `${actual} versus ${expected}`); }
 });

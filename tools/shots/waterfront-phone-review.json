@@ -1,0 +1,74 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "sugar-beach-street-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [957, 1.8, 552], \"look\": [938, 1.3, 510], \"fov\": 60};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-park-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-815, 1.8, 681], \"look\": [-835, 1.2, 657], \"fov\": 60};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "rees-wavedeck-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-707, 2.3, 580], \"look\": [-739, 0.8, 572], \"fov\": 60};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "terminal-clock",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-210, 3, 550],look:[-208, 27, 628],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "redpath-slip",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[966, 3, 540],look:[825, 12, 545],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "powerplant-stack",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-290, 3, 755],look:[-315, 20, 706],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "music-garden-pavilion-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1287, 2.2, 590], look: [-1287, 1.8, 564], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "centre-deck-walk-nameboard-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandArrivals,E=C.ISLAND_ARRIVAL_ESTIMATES;const d=r.layout.docks.centre;const x=d.deckAnchor[0],z=d.deckAnchor[1];a.selectMode('person');a.teleportTo(x,z,0);const g=a.controllerManager.getGroundHeight(x,z,'person');if(!(Math.abs(g-E.deckTop)<0.05))throw Error('centre walker ground '+g+' != deck '+E.deckTop);const s=C.islandArrivalSurfaceAt(x,z);if(!s||s.dockId!=='centre')throw Error('centre surface sampler mismatch');const f=d.boardFacing;a.cameraSystem.cinema=()=>({pos:[x+f[0]*7,E.deckTop+1.55,z+f[1]*7],look:[x,E.deckTop+1.85,z],fov:50});return {dock:'centre',teleportGround:g,deckTop:E.deckTop,boardFacing:f};})()",
+    "wait": 4000
+  },
+  {
+    "name": "sherbourne-unfinished-arch-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1238, 2.4, 538], look: [1244, 4.6, 516], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "bathurst-from-slip-east-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1455, 6, 738], look: [-1524, 22, 748], fov: 58 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "ferry-terminal-street-midday",
+    "time": "midday",
+    "js": "(()=>{const C=window.CITY,f=C.terminalFrame(),a=C.FERRY_BOOTH_ANCHOR;const p=f.localToWorld(a.u+(3),a.v-1.1-(6.5));const l=f.localToWorld(a.u,a.v-1.1);const app=window.__CITY_APP;const c={pos:[p[0],1.7,p[1]],look:[l[0],1.7,l[1]],fov:58};app.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  }
+]

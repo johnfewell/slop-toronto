@@ -1,0 +1,20 @@
+[
+  {
+    "name": "music-garden-pavilion-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1287, 2.2, 590], look: [-1287, 1.8, 564], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "music-garden-rooms-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1240, 32, 620], look: [-1370, 0, 575], fov: 54 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "music-garden-walker-gigue-steps-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; const C = window.CITY; const t = C.waterfrontMusicGardenSurfaceAt ? C.waterfrontMusicGardenSurfaceAt(-1308.4, 594.2) : null; const h = t ? t.h : 1.4; a.cameraSystem.cinema = () => ({ pos: [-1308.4, h + 1.7, 594.2], look: [-1316, 0.3, 601], fov: 65 }); })()",
+    "wait": 5000
+  }
+]

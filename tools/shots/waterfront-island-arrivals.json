@@ -1,0 +1,74 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "ward-arrival-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [1325, 1.8, 2035], \"look\": [1325, 1.6, 2006], \"fov\": 62};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ward-arrival-aerial-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [1352, 36, 2042], \"look\": [1320, 0, 2005], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "centre-arrival-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-565, 1.8, 2518], \"look\": [-544, 1.5, 2495], \"fov\": 62};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "centre-arrival-aerial-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-520, 42, 2520], \"look\": [-545, 0, 2495], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "hanlans-arrival-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-1219, 1.8, 1682], \"look\": [-1207, 1.5, 1660], \"fov\": 62};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "hanlans-arrival-aerial-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [-1232, 36, 1636], \"look\": [-1207, 0, 1659], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "islands-arrivals-overview-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={\"pos\": [540, 220, 2000], \"look\": [330, 0, 2050], \"fov\": 55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "ward-deck-walk-nameboard-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandArrivals,E=C.ISLAND_ARRIVAL_ESTIMATES;const d=r.layout.docks.ward;const x=d.deckAnchor[0],z=d.deckAnchor[1];a.selectMode('person');a.teleportTo(x,z,0);const g=a.controllerManager.getGroundHeight(x,z,'person');if(!(Math.abs(g-E.deckTop)<0.05))throw Error('ward walker ground '+g+' != deck '+E.deckTop);const s=C.islandArrivalSurfaceAt(x,z);if(!s||s.dockId!=='ward')throw Error('ward surface sampler mismatch');const f=d.boardFacing;a.cameraSystem.cinema=()=>({pos:[x+f[0]*7,E.deckTop+1.55,z+f[1]*7],look:[x,E.deckTop+1.85,z],fov:50});return {dock:'ward',teleportGround:g,deckTop:E.deckTop,boardFacing:f};})()",
+    "wait": 4000
+  },
+  {
+    "name": "centre-deck-walk-nameboard-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandArrivals,E=C.ISLAND_ARRIVAL_ESTIMATES;const d=r.layout.docks.centre;const x=d.deckAnchor[0],z=d.deckAnchor[1];a.selectMode('person');a.teleportTo(x,z,0);const g=a.controllerManager.getGroundHeight(x,z,'person');if(!(Math.abs(g-E.deckTop)<0.05))throw Error('centre walker ground '+g+' != deck '+E.deckTop);const s=C.islandArrivalSurfaceAt(x,z);if(!s||s.dockId!=='centre')throw Error('centre surface sampler mismatch');const f=d.boardFacing;a.cameraSystem.cinema=()=>({pos:[x+f[0]*7,E.deckTop+1.55,z+f[1]*7],look:[x,E.deckTop+1.85,z],fov:50});return {dock:'centre',teleportGround:g,deckTop:E.deckTop,boardFacing:f};})()",
+    "wait": 4000
+  },
+  {
+    "name": "hanlans-deck-walk-nameboard-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandArrivals,E=C.ISLAND_ARRIVAL_ESTIMATES;const d=r.layout.docks.hanlans;const x=d.deckAnchor[0],z=d.deckAnchor[1];a.selectMode('person');a.teleportTo(x,z,0);const g=a.controllerManager.getGroundHeight(x,z,'person');if(!(Math.abs(g-E.deckTop)<0.05))throw Error('hanlans walker ground '+g+' != deck '+E.deckTop);const s=C.islandArrivalSurfaceAt(x,z);if(!s||s.dockId!=='hanlans')throw Error('hanlans surface sampler mismatch');const f=d.boardFacing;a.cameraSystem.cinema=()=>({pos:[x+f[0]*7,E.deckTop+1.55,z+f[1]*7],look:[x,E.deckTop+1.85,z],fov:50});return {dock:'hanlans',teleportGround:g,deckTop:E.deckTop,boardFacing:f};})()",
+    "wait": 4000
+  },
+  {
+    "name": "arrivals-check-enabled",
+    "time": "midday",
+    "wait": 2000,
+    "js": "(()=>{const C=window.CITY;const r=C.waterfrontIslandArrivals;if(!C.waterfrontIslandArrivalsEnabled||!r)throw Error('island arrivals disabled');const s=r.stats;const W=(x,z)=>!!C.waterAt(x,z);if(s.docks!==3)throw Error('expected 3 docks, got '+s.docks);if(s.piers!==3)throw Error('expected 3 decks, got '+s.piers);if(s.nameBoards!==3)throw Error('name boards incomplete');if(!s.connectorsRendered||s.connectorsRendered<6)throw Error('missing real connectors '+s.connectorsRendered);for(const d of Object.values(r.layout.docks)){const a=d.deckAnchor;if(W(a[0],a[1]))throw Error(d.id+' deck anchor is water');const surf=C.islandArrivalSurfaceAt(a[0],a[1]);if(!surf||surf.h!==C.ISLAND_ARRIVAL_ESTIMATES.deckTop)throw Error(d.id+' surface mismatch');}const before=C.waterfrontIslandArrivalsEnabled;C.waterfrontIslandArrivalsEnabled=false;const g=C.islandArrivalSurfaceAt(r.layout.docks.centre.deckAnchor[0],r.layout.docks.centre.deckAnchor[1]);C.waterfrontIslandArrivalsEnabled=before;if(g!==null)throw Error('surface not gated when disabled');console.log('[arrivals-check] '+JSON.stringify({docks:s.docks,piers:s.piers,connectors:s.connectorsRendered,wood:s.woodConnectors,atlas:s.nameAtlas,triangles:s.triangles}));})()"
+  }
+]

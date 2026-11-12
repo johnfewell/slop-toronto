@@ -1,0 +1,51 @@
+[
+  {
+    "name": "unplaced-dodem-bear",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(async()=>{if(!CITY.buildBiidaasigeDodemAnimal)(0,eval)(await(await fetch('/js/biidaasige-dodem.js')).text());const a=window.__CITY_APP,T=CITY.THREE; if(window.__dodemPreview){a.scene.remove(window.__dodemPreview);} const r=CITY.buildBiidaasigeDodemAnimal(\"bear\"),g=new T.Group(); const m=new(T.MeshStandardNodeMaterial||T.MeshStandardMaterial)({color:0xc8c8c2,roughness:1});const b=new T.Mesh(new T.BoxGeometry(8,.15,8),m);b.position.y=-.075;g.add(b);g.add(r.group);g.position.set(2550,15,650);g.name='UNPLACED_DODEM_FACTORY_PREVIEW';a.scene.add(g);window.__dodemPreview=g;a.teleportTo(2550,665,0);const c={pos:[2553.7,17.8,655.3],look:[2550,16,650],fov:37};a.cameraSystem.cinema=()=>c;console.log('UNPLACED factory source SHA d997df36eab9 \"bear\"',JSON.stringify({dimensions:r.dimensions,drawCalls:r.drawCalls,triangles:r.triangles,appearance:r.appearanceConfidence}));})();"
+  },
+  {
+    "name": "unplaced-dodem-beaver",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(async()=>{if(!CITY.buildBiidaasigeDodemAnimal)(0,eval)(await(await fetch('/js/biidaasige-dodem.js')).text());const a=window.__CITY_APP,T=CITY.THREE; if(window.__dodemPreview){a.scene.remove(window.__dodemPreview);} const r=CITY.buildBiidaasigeDodemAnimal(\"beaver\"),g=new T.Group(); const m=new(T.MeshStandardNodeMaterial||T.MeshStandardMaterial)({color:0xc8c8c2,roughness:1});const b=new T.Mesh(new T.BoxGeometry(8,.15,8),m);b.position.y=-.075;g.add(b);g.add(r.group);g.position.set(2550,15,650);g.name='UNPLACED_DODEM_FACTORY_PREVIEW';a.scene.add(g);window.__dodemPreview=g;a.teleportTo(2550,665,0);const c={pos:[2553.7,17.8,655.3],look:[2550,16,650],fov:37};a.cameraSystem.cinema=()=>c;console.log('UNPLACED factory source SHA d997df36eab9 \"beaver\"',JSON.stringify({dimensions:r.dimensions,drawCalls:r.drawCalls,triangles:r.triangles,appearance:r.appearanceConfidence}));})();"
+  },
+  {
+    "name": "unplaced-dodem-eagle",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(async()=>{if(!CITY.buildBiidaasigeDodemAnimal)(0,eval)(await(await fetch('/js/biidaasige-dodem.js')).text());const a=window.__CITY_APP,T=CITY.THREE; if(window.__dodemPreview){a.scene.remove(window.__dodemPreview);} const r=CITY.buildBiidaasigeDodemAnimal(\"eagle\"),g=new T.Group(); const m=new(T.MeshStandardNodeMaterial||T.MeshStandardMaterial)({color:0xc8c8c2,roughness:1});const b=new T.Mesh(new T.BoxGeometry(8,.15,8),m);b.position.y=-.075;g.add(b);g.add(r.group);g.position.set(2550,15,650);g.name='UNPLACED_DODEM_FACTORY_PREVIEW';a.scene.add(g);window.__dodemPreview=g;a.teleportTo(2550,665,0);const c={pos:[2553.7,17.8,655.3],look:[2550,16,650],fov:37};a.cameraSystem.cinema=()=>c;console.log('UNPLACED factory source SHA d997df36eab9 \"eagle\"',JSON.stringify({dimensions:r.dimensions,drawCalls:r.drawCalls,triangles:r.triangles,appearance:r.appearanceConfidence}));})();"
+  },
+  {
+    "name": "unplaced-dodem-turtle",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(async()=>{if(!CITY.buildBiidaasigeDodemAnimal)(0,eval)(await(await fetch('/js/biidaasige-dodem.js')).text());const a=window.__CITY_APP,T=CITY.THREE; if(window.__dodemPreview){a.scene.remove(window.__dodemPreview);} const r=CITY.buildBiidaasigeDodemAnimal(\"turtle\"),g=new T.Group(); const m=new(T.MeshStandardNodeMaterial||T.MeshStandardMaterial)({color:0xc8c8c2,roughness:1});const b=new T.Mesh(new T.BoxGeometry(8,.15,8),m);b.position.y=-.075;g.add(b);g.add(r.group);g.position.set(2550,15,650);g.name='UNPLACED_DODEM_FACTORY_PREVIEW';a.scene.add(g);window.__dodemPreview=g;a.teleportTo(2550,665,0);const c={pos:[2553.7,17.8,655.3],look:[2550,16,650],fov:37};a.cameraSystem.cinema=()=>c;console.log('UNPLACED factory source SHA d997df36eab9 \"turtle\"',JSON.stringify({dimensions:r.dimensions,drawCalls:r.drawCalls,triangles:r.triangles,appearance:r.appearanceConfidence}));})();"
+  },
+  {
+    "name": "unplaced-dodem-otter",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(async()=>{if(!CITY.buildBiidaasigeDodemAnimal)(0,eval)(await(await fetch('/js/biidaasige-dodem.js')).text());const a=window.__CITY_APP,T=CITY.THREE; if(window.__dodemPreview){a.scene.remove(window.__dodemPreview);} const r=CITY.buildBiidaasigeDodemAnimal(\"otter\"),g=new T.Group(); const m=new(T.MeshStandardNodeMaterial||T.MeshStandardMaterial)({color:0xc8c8c2,roughness:1});const b=new T.Mesh(new T.BoxGeometry(8,.15,8),m);b.position.y=-.075;g.add(b);g.add(r.group);g.position.set(2550,15,650);g.name='UNPLACED_DODEM_FACTORY_PREVIEW';a.scene.add(g);window.__dodemPreview=g;a.teleportTo(2550,665,0);const c={pos:[2553.7,17.8,655.3],look:[2550,16,650],fov:37};a.cameraSystem.cinema=()=>c;console.log('UNPLACED factory source SHA d997df36eab9 \"otter\"',JSON.stringify({dimensions:r.dimensions,drawCalls:r.drawCalls,triangles:r.triangles,appearance:r.appearanceConfidence}));})();"
+  },
+  {
+    "name": "unplaced-dodem-wolf",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(async()=>{if(!CITY.buildBiidaasigeDodemAnimal)(0,eval)(await(await fetch('/js/biidaasige-dodem.js')).text());const a=window.__CITY_APP,T=CITY.THREE; if(window.__dodemPreview){a.scene.remove(window.__dodemPreview);} const r=CITY.buildBiidaasigeDodemAnimal(\"wolf\"),g=new T.Group(); const m=new(T.MeshStandardNodeMaterial||T.MeshStandardMaterial)({color:0xc8c8c2,roughness:1});const b=new T.Mesh(new T.BoxGeometry(8,.15,8),m);b.position.y=-.075;g.add(b);g.add(r.group);g.position.set(2550,15,650);g.name='UNPLACED_DODEM_FACTORY_PREVIEW';a.scene.add(g);window.__dodemPreview=g;a.teleportTo(2550,665,0);const c={pos:[2553.7,17.8,655.3],look:[2550,16,650],fov:37};a.cameraSystem.cinema=()=>c;console.log('UNPLACED factory source SHA d997df36eab9 \"wolf\"',JSON.stringify({dimensions:r.dimensions,drawCalls:r.drawCalls,triangles:r.triangles,appearance:r.appearanceConfidence}));})();"
+  },
+  {
+    "name": "unplaced-dodem-musky",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(async()=>{if(!CITY.buildBiidaasigeDodemAnimal)(0,eval)(await(await fetch('/js/biidaasige-dodem.js')).text());const a=window.__CITY_APP,T=CITY.THREE; if(window.__dodemPreview){a.scene.remove(window.__dodemPreview);} const r=CITY.buildBiidaasigeDodemAnimal(\"musky\"),g=new T.Group(); const m=new(T.MeshStandardNodeMaterial||T.MeshStandardMaterial)({color:0xc8c8c2,roughness:1});const b=new T.Mesh(new T.BoxGeometry(8,.15,8),m);b.position.y=-.075;g.add(b);g.add(r.group);g.position.set(2550,15,650);g.name='UNPLACED_DODEM_FACTORY_PREVIEW';a.scene.add(g);window.__dodemPreview=g;a.teleportTo(2550,665,0);const c={pos:[2553.7,17.8,655.3],look:[2550,16,650],fov:37};a.cameraSystem.cinema=()=>c;console.log('UNPLACED factory source SHA d997df36eab9 \"musky\"',JSON.stringify({dimensions:r.dimensions,drawCalls:r.drawCalls,triangles:r.triangles,appearance:r.appearanceConfidence}));})();"
+  }
+]

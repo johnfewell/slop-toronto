@@ -1,0 +1,125 @@
+{
+  "schema": "biidaasige-fence-source/1",
+  "bead": "st-bmyv.5",
+  "generated": "2026-11-10",
+  "owner": "bounded fence-source worker",
+  "scope": "Remaining DOG FENCES/GATES source gap: does the City's distinct line/area asset dataset (not the point layer) carry actual fence lines, gate points, material/height, or a fenced flag for the Biidaasige off-leash areas?",
+  "method": "Bounded primary-source search (<=10 min). Inspected the COTGEO_PFR_PARK_AMENITY FeatureServer (point-only) and the City mirror cot_geospatial13 FeatureServer line/area layers (Infrastructure polyline, Outdoor Recreation Area polygon, Park Amenity point). Queried Biidaasige by name, rollup, bbox and proximity; ran city-wide positive controls. No coordinates invented; no image pixels interpreted.",
+  "ownership": "NEW files only: docs/biidaasige-fence-source.md and this fixture. Captain integrates. No runtime/amenity/dog-surface/shared-file edits, no GPU/full-suite/commits/bead-close.",
+  "captainCorrectionsPreserved": [
+    "Dataset currency is NOT completeness. Absence in an asset layer does not prove a feature is absent.",
+    "City Recreation page (2026-09-09) and the first-hand blog assert the dog fences and accessible gates exist; that assertion stands.",
+    "Do not repeat the prior error of inferring absence from dataset absence."
+  ],
+  "conclusion": {
+    "answer": "No usable fence/gate geometry, material, height, width or positive fenced flag was found for the Biidaasige OLAs in the City line/area asset data. This is an honest negative, NOT proof of absence.",
+    "placement": "unplaced",
+    "fenceGeometryDerivable": false,
+    "gateGeometryDerivable": false,
+    "materialOrHeightDerivable": false,
+    "assertFencesDoNotExist": false,
+    "status": "exists per City prose; geometry not in the asset data",
+    "reasoning": "The area layer (34) confirms both OLAs as polygons but leaves FENCED_OR_BOARDED_IND null. The fence line layer (25) is a 24-feature legacy subset city-wide with no Biidaasige fence. The gate point layer (52) is large (4917 city-wide) but has zero Biidaasige gates. No material/height/width is published for the park."
+  },
+  "services": [
+    {
+      "id": "cotgeo-pfr-park-amenity",
+      "what": "COTGEO_PFR_PARK_AMENITY FeatureServer (point service)",
+      "url": "https://services3.arcgis.com/b9WvedVPoizGfvfD/arcgis/rest/services/COTGEO_PFR_PARK_AMENITY/FeatureServer",
+      "layers": ["0 Park Amenity Point (esriGeometryPoint)"],
+      "result": "Point-only. No line or area layers. Not the line/area dataset."
+    },
+    {
+      "id": "cot-geospatial13",
+      "what": "City mirror cot_geospatial13 FeatureServer (line & area layers)",
+      "url": "https://gis.toronto.ca/arcgis/rest/services/cot_geospatial13/FeatureServer",
+      "relevantLayers": [
+        { "id": 25, "name": "Infrastructure", "geometry": "esriGeometryPolyline", "assetTypes": ["Bridge", "Fence", "Pathway", "Recreational Trail", "Retaining Structure", "Stairs"], "fields": ["SURFACE_MATERIAL", "Shape__Length"] },
+        { "id": 28, "name": "Infrastructure -", "geometry": "esriGeometryPolyline" },
+        { "id": 29, "name": "Infrastructure +", "geometry": "esriGeometryPolyline" },
+        { "id": 34, "name": "Outdoor Recreation Area", "geometry": "esriGeometryPolygon", "fields": ["FENCED_OR_BOARDED_IND", "PLAYGROUND_SURF_MAT_TYPE", "LIGHTING_IND"], "assetTypesInclude": ["Off Leash Area", "Outdoor Fitness Equipment Area", "Playground"] },
+        { "id": 22, "name": "Park Amenity", "geometry": "esriGeometryPoint", "assetTypesInclude": ["Gate"] },
+        { "id": 52, "name": "PFR Park Amenity", "geometry": "esriGeometryPoint", "assetTypesInclude": ["Gate"] }
+      ],
+      "otherServicesScanned": ["cot_geospatial2", "cot_geospatial3", "cot_geospatial10", "cot_geospatial11", "cot_geospatial12", "cot_geospatial16", "cot_geospatial17", "cot_geospatial18", "cot_geospatial19", "cot_geospatial20"],
+      "otherServicesResult": "No dedicated Fence/Gate layer found."
+    }
+  ],
+  "findings": {
+    "outdoorRecreationArea": {
+      "layer": 34,
+      "query": "ASSET_NAME LIKE '%BIIDAASIGE%'",
+      "count": 2,
+      "features": [
+        {
+          "assetName": "BIIDAASIGE PARK - Off Leash Area (West)",
+          "assetType": "Off Leash Area",
+          "created": "2026-04-13T14:34:59Z",
+          "fencedOrBoardedInd": null,
+          "cityPolygonAreaM2": 229,
+          "cityPolygonSpanM": [30, 18],
+          "osmMappedAreaM2": 540,
+          "publishedAreaM2": 800,
+          "osmRef": "way/1419966624"
+        },
+        {
+          "assetName": "BIIDAASIGE PARK - Off Leash Area (East)",
+          "assetType": "Off Leash Area",
+          "created": "2026-04-24T14:53:52Z",
+          "fencedOrBoardedInd": null,
+          "cityPolygonAreaM2": 492,
+          "cityPolygonSpanM": [38, 37],
+          "osmMappedAreaM2": 787,
+          "publishedAreaM2": 1200,
+          "osmRef": "way/1418542004"
+        }
+      ],
+      "notes": [
+        "FENCED_OR_BOARDED_IND is null (not populated), not 'No' — cannot be read as unfenced.",
+        "City polygon is smaller than both OSM ring and published area, so it is a partial/representative footprint, not the whole OLA boundary.",
+        "OSM rings dogs-west-800 / dogs-east-1200 remain the authoritative whole boundaries.",
+        "No 'Outdoor Fitness Equipment Area' polygon exists at Biidaasige."
+      ]
+    },
+    "infrastructureFenceLines": {
+      "layer": 25,
+      "query": "ASSET_TYPE='Fence'",
+      "countCityWide": 24,
+      "cityWideParks": ["WEXFORD PARK", "SCARDEN PARK", "ROUNDHOUSE PARK", "GERRARD - CARLAW PARKETTE", "ALEXANDRA PARK", "26 ERNEST AVE - Proposed Park", "RIVERDALE PARK WEST", "JOYCE TRIMMER PARK", "TRCA LANDS (51)", "FARLINGER RAVINE", "TREVERTON PARK", "CHATSWORTH RAVINE", "LINKWOOD LANE PARK", "CHARLES SAURIOL CONSERVATION AREA", "45 DALHOUSIE ST PARK"],
+      "parkBboxCount": 1,
+      "parkBboxFeature": {
+        "assetName": "TRCA LANDS ( 51) - Fence (  2)",
+        "rollupTo": "TRCA LANDS ( 51)",
+        "note": "At lat 43.651-43.653, north of the park; not the OLA."
+      },
+      "biidaasigeFenceCount": 0,
+      "caveat": "Only 24 fences city-wide — a partial/legacy inventory. Absence at Biidaasige is NOT evidence of no fence."
+    },
+    "gatePoints": {
+      "layers": [22, 52],
+      "query": "ASSET_TYPE='Gate'",
+      "countCityWide": 4917,
+      "parkBboxCount": 8,
+      "parkBboxFeatures": [
+        "CHERRY BEACH CLARKE BEACH PARK - Gate (1..4)",
+        "CHERRY BEACH SPORTS FIELDS - Gate (1..3)",
+        "JENNIFER KATERYNA KOVAL'S'KYJ PARK - Gate"
+      ],
+      "biidaasigeGateCount": 0,
+      "caveat": "Gate inventory is large and current, but no Biidaasige gate is recorded. No gate geometry/material/width is published for the park."
+    }
+  },
+  "priorPassContext": {
+    "osm": "OSM fence/gate queries already negative for a usable OLA enclosure (not repeated). OLA whole boundaries exist: dogs-east-1200 (way/1418542004), dogs-west-800 (way/1419966624).",
+    "ortho2025": "Captain viewed dedicated dog-east/west ortho exports: pre-opening construction with turf/apron, no installed fence/usable gate. Cannot place a 2026 fence from a 2025 image.",
+    "cityRecreation": "City Recreation page (2026-09-09) explicitly states both OLAs are fenced with accessible gates.",
+    "dogSurfaceWorker": "A separate dog-surface worker is correcting apron/turf in a new module; not touched here."
+  },
+  "whatWouldChangeTheAnswer": [
+    "A populated FENCED_OR_BOARDED_IND = Yes on the layer-34 OLA polygons.",
+    "A Fence line feature (layer 25) or Gate point (layer 52) with ROLLUP_TO = BIIDAASIGE PARK.",
+    "A City construction/as-built or capital record with fence spec (material/height) and gate locations.",
+    "A current (2026) photo with GPS EXIF showing the installed fence and gate."
+  ],
+  "licence": "City of Toronto open data (ArcGIS feature services). No image pixels ship. Raw query caches private under $WATERFRONT_RESEARCH/biidaasige/fence-primary/."
+}

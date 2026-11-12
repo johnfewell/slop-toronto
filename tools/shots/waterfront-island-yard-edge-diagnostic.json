@@ -1,0 +1,14 @@
+[
+  {
+    "name": "island-ojibway-street",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={\"pos\": [1173.7, 1.8, 2350.6], \"look\": [1162.4550000000002, 0.15, 2334.8050000000003], \"fov\": 64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 3500
+  },
+  {
+    "name": "island-yard-edge-diagnostic",
+    "time": "midday",
+    "wait": 500,
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,T=C.THREE,r=new T.Raycaster(),out=[];a.scene.updateMatrixWorld(true);for(const p of [[.35,-.5],[-.35,-.5],[.2,-.2],[-.2,-.2],[.5,-.1],[-.5,-.1]]){r.setFromCamera(new T.Vector2(...p),a.cameraSystem.camera);const hits=r.intersectObject(a.scene.getObjectByName('CityGround'),true);const h=hits[0];if(h)out.push({ndc:p,mesh:h.object.name,xyz:h.point.toArray(),yard:C.islandYardMaskSample(h.point.x,h.point.z),road:C.islandRoadMaskSample(h.point.x,h.point.z)});}console.log('[yard-edge] '+JSON.stringify(out));})()"
+  }
+]

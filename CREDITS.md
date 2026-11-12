@@ -184,6 +184,18 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   surfaces in the ROM model. https://polyhaven.com/
 - **Street props** (hydrant, mailbox, bike ring, transit shelter, litter & recycling bin: `assets/props/`) by John
   Fewell, simplified for the city (meshoptimizer, textures cut to 512–1024 px).
+- **HTO Park Adirondack chair** (`assets/props/waterfront-hto-adirondack.glb`): "Cape – Adirondack Chair" by
+  **Innerscene** (original model), <https://www.innerscene.com/tools/library/3d-parts/cape-adirondack-chair-0356dfce>,
+  released **CC0 1.0** (public domain dedication, <https://creativecommons.org/publicdomain/zero/1.0/>). Modified for
+  this project: world transforms baked and 25 part meshes merged to one, uniformly scaled to the published 1.06 m
+  height, centred with base at y=0 and front +z, teak textures stripped to a white paintable material, welded and
+  meshopt-simplified from 4,700 to 2,132 triangles. Used as the default HTO Park beach chair; see
+  `assets/props/waterfront-hto-adirondack.PROVENANCE.md`.
+- **Toronto Island stored dinghies** (`assets/models/waterfront-dinghies/boat-row-large-white.glb`): `boat-row-large` from
+  **Kenney**'s "Watercraft Kit 2.1" (<https://kenney.nl/assets/watercraft-kit>), released **CC0 1.0**
+  (<https://creativecommons.org/publicdomain/zero/1.0/>). Modified for this project by `tools/prepare-waterfront-dinghies.mjs`:
+  paddles removed, the palette texture replaced by a flat white material (no pack texture ships), geometry unchanged and
+  scaled per hull to the 2024 City orthophoto footprints; see `assets/models/waterfront-dinghies/PROVENANCE.md`.
 - **Parking pay station** (`assets/props/parking-meter.glb`): John Fewell's Meshy source and his
   2026-10-27 Roncesvalles photographs, rebuilt as clean geometry and baked by `tools/blender/bake_props.py`.
   Height is John's requested six feet; the solar orientation and front payment panel were corrected against his photos.
@@ -275,3 +287,5 @@ Public art: City of Toronto Open Data, [Public Art](https://open.toronto.ca/data
 Heritage properties: City of Toronto Open Data, [Heritage Register](https://open.toronto.ca/dataset/heritage-register/), Shapefile "Heritage Register Data" (HRAPQ32026, 2026-09-01), a dated 2026-10-29 snapshot under the Open Government Licence – Toronto. City Planning cautions that the dataset is not intended for legal purposes without reference to Council decision documents and City by-laws; cards say so. No facade photographs are included. Resource IDs, dates and SHA-256 hashes are kept in `tools/data/public-art-20261029.json` and `tools/data/heritage-register-20261029.json`.
 
 Parked cars: where the curbs may hold one comes from City of Toronto Open Data, [Traffic and Parking By-Law Schedules](https://open.toronto.ca/dataset/traffic-and-parking-by-law-schedules/) (Municipal Code Chapter 950: no parking, no stopping, no standing, restricted-period parking and the reserved curbs) and [On-Street Permit Parking Area Maps](https://open.toronto.ca/dataset/on-street-permit-parking-area-maps/), dated 2026-10-30 snapshots under the Open Government Licence – Toronto, with the Toronto Parking Authority pay station points above for paid parking. The by-law records are resolved onto the game's streets by rule; this is not a statement of where anyone may legally park. Resource IDs, dates and SHA-256 hashes are kept in `tools/data/parking-bylaws-20261030.json` and `tools/data/permit-parking-20261030.json`. The cars are the traffic's own procedural bodies. See [parked cars](docs/parked-cars.md).
+
+Biidaasige Park references: City of Toronto current park information, 2025 aerial imagery and 2026 dog-turf asset polygons (989013 / 989014), plus OpenStreetMap contributors (ODbL 1.0) for mapped paths, footprints and amenities. Snowy Owl Play Theatre: Monstrum; Reaching Raccoon: Earthscape; Fire Hall 30 restoration: ERA Architects; The Drum: Tawâw Architecture Collective. The Dodem sculptures are credited by the City's 2026 Port Lands boards to APE Richter / Christian Huba, in consultation with MCFN and MinoKamik Collective. The game's procedural approximations are original geometry; the makers' production models and copyrighted reference photographs are not included. The seven Dodem models use reviewed photo-derived positions with 3–4 m uncertainty, not surveyed locations. See [park evidence and remaining work](docs/biidaasige-park.md) and [Dodem references](docs/biidaasige-dodem-source.md).

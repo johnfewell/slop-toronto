@@ -1,0 +1,16 @@
+[
+  {
+    "name": "inverted-timber",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP,p=CITY.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(p.x+12,p.z+17,0);const c={pos:[p.x+12,4.5,p.z+17],look:[p.x,2.7,p.z],fov:60};a.cameraSystem.cinema=()=>c;console.log('timber-source',JSON.stringify(p));})();"
+  },
+  {
+    "name": "woodchip-island-overhead",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP,p=CITY.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(p.x+25,p.z+30,0);const c={pos:[p.x+8,40,p.z+10],look:[p.x,.24,p.z],fov:52};a.cameraSystem.cinema=()=>c;})();"
+  }
+]

@@ -6,12 +6,14 @@ const vm = require('node:vm');
 
 const read = (path) => readFileSync(join(__dirname, '..', path), 'utf8');
 const context = vm.createContext({ window: { CITY: {} } });
-for (const path of ['js/toronto-geodata.js', 'js/city-config.js']) vm.runInContext(read(path), context);
+for (const path of ['js/toronto-geodata.js', 'js/city-config.js', 'js/biidaasige-map-anchors.js', 'js/biidaasige-park.js']) vm.runInContext(read(path), context);
 const { TELEPORT_LOCATIONS, LANDMARK_SITES, CITY_BOUNDS, GEO, blockAt, nearestRoads, isOnLand, waterAt } = context.window.CITY;
+// Park destinations are registered by successful assembly in production. Exercise its actual pure arrival resolver.
+TELEPORT_LOCATIONS.biidaasige = context.window.CITY.biidaasigeParkArrival();
 const buttons = [...read('explore.html').matchAll(/data-teleport="([^"]+)"/g)].map((match) => match[1]);
 const inCity = (p) => p.x > CITY_BOUNDS.minX && p.x < CITY_BOUNDS.maxX && p.z > CITY_BOUNDS.minZ && p.z < CITY_BOUNDS.maxZ;
 
-test('every teleport button has a destination on a real roadway inside the city', () => {
+test('every teleport button has a destination on dry ground inside the city', () => {
   assert.ok(buttons.length >= 9, 'the Places menu lists the landmarks');
   for (const name of buttons) {
     const point = TELEPORT_LOCATIONS[name];
@@ -20,7 +22,7 @@ test('every teleport button has a destination on a real roadway inside the city'
     assert.ok(inCity(point), `${name} is inside the detailed city`);
     assert.ok(isOnLand(point.x, point.z), `${name} lands on dry ground`);
     // the Humber Bay Arch Bridge arrival is on the Martin Goodman Trail, a park path outside the street network
-    if (name === 'humberArch') continue;
+    if (name === 'humberArch' || name === 'biidaasige') continue;
     assert.equal(blockAt(point.x, point.z), null, `${name} lands outside building blocks`);
     const nearby = nearestRoads(point.x, point.z, 20);
     assert.ok(nearby.some(({ road, dist }) => road.name === point.road && dist < road.w / 2), `${name} lands within ${point.road}'s width`);
@@ -122,4 +124,12 @@ this.teleportTo = teleportTo;`, environment);
   transitCancels = false;
   assert.equal(environment.teleportTo(100, 200), null, 'a ride that cannot be left keeps the rider aboard');
   assert.deepEqual(calls, [['cancelTransit']]);
+});
+
+test('Biidaasige arrival faces the source-interpreted Owl from dry park ground', () => {
+  const p=TELEPORT_LOCATIONS.biidaasige, a=context.window.CITY.biidaasigeMapAnchor('snowy-owl');
+  assert.equal(a.errorM,3);
+  assert.ok(Math.hypot(a.x-p.x,a.z-p.z)>14);
+  assert.ok(((a.x-p.x)*Math.sin(p.heading)+(a.z-p.z)*Math.cos(p.heading))/Math.hypot(a.x-p.x,a.z-p.z)>.999);
+  for(const [dx,dz] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]])assert.equal(waterAt(p.x+dx,p.z+dz),null,'arrival has dry clearance');
 });

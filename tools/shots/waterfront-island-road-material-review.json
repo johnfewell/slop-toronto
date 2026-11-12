@@ -1,0 +1,32 @@
+[
+  {
+    "name": "island-oneida-street",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={\"pos\": [1116.4, 1.8, 2405.3], \"look\": [1103.79, 0.15, 2388.0099999999998], \"fov\": 64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 3500
+  },
+  {
+    "name": "island-oneida-paving",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={\"pos\": [1116.4, 1.1, 2405.3], \"look\": [1113.49, 0.15, 2401.31], \"fov\": 64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 3500
+  },
+  {
+    "name": "island-ojibway-street",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={\"pos\": [1173.7, 1.8, 2350.6], \"look\": [1162.4550000000002, 0.15, 2334.8050000000003], \"fov\": 64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 3500
+  },
+  {
+    "name": "island-ojibway-paving",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={\"pos\": [1173.7, 1.1, 2350.6], \"look\": [1171.105, 0.15, 2346.955], \"fov\": 64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 3500
+  },
+  {
+    "name": "island-road-material-check",
+    "time": "midday",
+    "wait": 500,
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY;let hits=[];a.scene.traverse(o=>{if(o.isMesh&&o.material?.userData?.islandLaneRoadMaterial)hits.push(o.name)});if(!hits.length)throw Error('Island road material not bound to actual scene');const l=C.islandRoadMaterialLayout();if(!l.supported)throw Error('Unsupported road layout');console.log('[island-road-material] '+JSON.stringify({meshes:hits,layout:l}));})()"
+  }
+]

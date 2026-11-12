@@ -1477,15 +1477,20 @@ function createRenderedFacadeMaterial(opts = {}) {
     footprintLocal = false, // (the ?massing=1 cell meshes, js/massing-cells.js: paint from the building table, instead of createFacadeBoxes)
     // the Distillery District's (buildings.js VICTORIAN): segmental-arched heads with a brick arch ring over stone sills
     // and sash bars; paint.w >= 4 is its limestone (ashlar courses, square windows, the round iron tie plates)
-    victorian = false
-  }) => ({ windowWidth, floorHeight, windowRatioX, windowRatioY, litProbability, warmth, seed, cornerPier, footprintLocal, victorian }));
+    victorian = false,
+    proceduralEntrances = 1,
+    slabBands = 1,
+    groundFloorBars = 1, // opt out only for source-backed cottage facades
+    windowFrameTint = null,
+    windowCasing = 0 // metres of painted casing outside the window opening
+  }) => ({ windowWidth, floorHeight, windowRatioX, windowRatioY, litProbability, warmth, seed, cornerPier, footprintLocal, victorian, groundFloorBars, windowFrameTint, windowCasing, proceduralEntrances, slabBands }));
   const footprintLocal = P[0].footprintLocal;
   // (victorian picks the shader's own masks, so it can't vary per vertex: a merged footprint material is all one or the
   // other, and buildings.js FOOTPRINT_MATERIALS gives the Victorian style its own)
   const victorian = P[0].victorian;
   if (P.some((p) => p.victorian !== victorian)) throw new Error('rendered facade: a merged style mixes victorian and plain styles');
-  const cacheKey = P.map(({ windowWidth, floorHeight, windowRatioX, windowRatioY, litProbability, warmth, seed, cornerPier }) =>
-    `${windowWidth}_${floorHeight}_${windowRatioX}_${windowRatioY}_${litProbability}_${warmth}_${seed}_${cornerPier}_${footprintLocal}_${victorian}`).join('|');
+  const cacheKey = P.map(({ windowWidth, floorHeight, windowRatioX, windowRatioY, litProbability, warmth, seed, cornerPier, groundFloorBars, windowFrameTint, windowCasing, proceduralEntrances, slabBands }) =>
+    `${windowWidth}_${floorHeight}_${windowRatioX}_${windowRatioY}_${litProbability}_${warmth}_${seed}_${cornerPier}_${footprintLocal}_${victorian}_${groundFloorBars}_${windowFrameTint}_${windowCasing}_${proceduralEntrances}_${slabBands}`).join('|');
   if (_renderedCache.has(cacheKey)) return _renderedCache.get(cacheKey);
 
   const mat = new THREE.MeshStandardNodeMaterial({ metalness: 0.0, roughness: 0.85 });
@@ -1530,11 +1535,12 @@ function createRenderedFacadeMaterial(opts = {}) {
   // mrdoob/slop-newyork (bead st-sz0); the entrance's trim is the building's paint, a shade darker
   const storefront = createStorefront(facade, uSeed, uFloorHeight);
   const entrance = createBuildingEntrance(facade, paint.mul(0.8));
+  entrance.mask = entrance.mask.mul(styled('proceduralEntrances'));
   // tinted glass: bronze, blue-green reflective, near-black
   const cGlass = mix(mix(color(0x3b2d22), color(0x24413f), step(0.36, glassStyle)), color(0x161b20), step(0.74, glassStyle));
   // floor-slab bands: white trim on most buildings, a darker shade of the paint on the rest
   const bandCol = mix(color(0xf0ece4), paint.mul(0.72), step(0.55, fract(tone.mul(5.3))));
-  const hasBands = step(0.35, fract(tone.mul(3.1))).mul(float(1.0).sub(isBrick)); // (no slab bands on brick)
+  const hasBands = step(0.35, fract(tone.mul(3.1))).mul(float(1.0).sub(isBrick)).mul(styled('slabBands')); // (no slab bands on brick)
 
   // (victorian) the window's own frame, unclamped (0..1 across the opening), and in it: the segmental arch head (the
   // opening's top rises ~0.4 m from the jambs to the crown; square on the limestone), the brick arch ring above it, a
@@ -1561,7 +1567,7 @@ function createRenderedFacadeMaterial(opts = {}) {
     // aluminium frames: a mullion & a transom (sliders); the storefronts draw their own
     const frames = clamp(max(lineAA(winUV.x.sub(0.5), 0.02), lineAA(winUV.y.sub(0.68), 0.02)), 0.0, 1.0);
     // burglary bars on the ground-floor windows of the residential walls
-    const bars = lineAA(fract(winUV.x.mul(7.0)).sub(0.5), 0.07).mul(floor0).mul(float(1.0).sub(isGroundFloor)).mul(float(1.0).sub(isBrick));
+    const bars = lineAA(fract(winUV.x.mul(7.0)).sub(0.5), 0.07).mul(floor0).mul(float(1.0).sub(isGroundFloor)).mul(float(1.0).sub(isBrick)).mul(styled('groundFloorBars'));
     if (victorian) {
       const v = victorianWindow(1.0);
       const sash = clamp(max(max(lineAA(winUV.x.sub(0.5), 0.022), lineAA(winUV.y.sub(0.5), 0.03)),
@@ -1573,11 +1579,17 @@ function createRenderedFacadeMaterial(opts = {}) {
       };
     }
     const opening = inX.mul(inY).mul(float(1.0).sub(isRoof)).mul(float(1.0).sub(band));
-    return { opening, band, frames, bars };
+    const casingX = float(P[0].windowCasing).div(bayWidth);
+    const casingY = float(P[0].windowCasing).div(uFloorHeight);
+    const surroundX = filteredPulse(cellUV.x, effHalfX.sub(casingX), float(1).sub(effHalfX).add(casingX), fw.x);
+    const surroundY = filteredPulse(cellUV.y, effHalfY.sub(casingY), float(1).sub(effHalfY).add(casingY), fw.y);
+    const casing = max(float(0), surroundX.mul(surroundY).mul(open).sub(opening))
+      .mul(float(1).sub(isRoof)).mul(float(1).sub(band));
+    return { opening, band, frames, bars, casing };
   };
 
   mat.colorNode = Fn(() => {
-    const { opening, band, frames, bars, voussoir, sill } = masks();
+    const { opening, band, frames, bars, voussoir, sill, casing } = masks();
     const wp = positionWorld;
     // Paint: mottled, a little chalky; rain streaks under the sills; red laterite dust up the first metre
     const mottle = noise2D(vec2(uCoord.mul(0.6), vCoord.mul(0.6))).mul(0.08).add(0.96);
@@ -1626,11 +1638,12 @@ function createRenderedFacadeMaterial(opts = {}) {
     const fresnel = pow(clamp(float(1.0).sub(abs(dot(viewDir, normalWorldGeometry))), 0.0, 1.0), 2.0);
     const inside = aptRoom.xyz.mul(0.55);
     const glass = mix(mix(inside, cGlass, 0.7), cityUniforms.uSkyHorizonColor, fresnel.mul(0.55).add(0.07));
-    const frameCol = victorian ? color(0x2f3a2d) // (the Distillery's painted sashes, dark green)
+    const frameCol = P[0].windowFrameTint !== null ? color(P[0].windowFrameTint) : victorian ? color(0x2f3a2d) // (the Distillery's painted sashes, dark green)
       : mix(color(0xb9bcbf), color(0x3a3530), step(0.5, fract(tone.mul(9.1)))); // silver or bronze aluminium
     let c = mix(wall, snowOver(roofCol, wp.xz, isRoof.mul(0.9)), isRoof); // (lying snow on the roof)
     c = mix(c, glass, opening);
     c = mix(c, frameCol, opening.mul(frames));
+    if (P[0].windowCasing > 0 && casing) c = mix(c, frameCol, casing);
     c = mix(c, color(0x2a2b2d), opening.mul(bars));
     // the entrance (residential & office fronts), then the storefront (shop walls' ground floors)
     return mix(mix(c, entrance.color, entrance.mask), storefront.color, storefront.mask);

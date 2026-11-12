@@ -1,0 +1,10 @@
+[
+  {
+    "name": "park-arrival",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6500,
+    "record": true,
+    "js": "(()=>({park:window.CITY.biidaasigeParkStats,root:!!window.__CITY_APP.scene.getObjectByName(\"BiidaasigePark\")}))()"
+  }
+]

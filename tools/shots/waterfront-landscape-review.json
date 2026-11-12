@@ -1,0 +1,50 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 1800
+  },
+  {
+    "name": "sugar-landscape-aerial",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1000, 85, 620],look:[950, 0, 490],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "sugar-rocks",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[960,3.5,529],look:[967,1.2,516],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "sugar-fountain",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[976,3,558],look:[963.8,1.1,555.7],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "sugar-north",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[935, 3, 423],look:[951, 1, 477],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "hto-landscape-aerial",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-830, 85, 775],look:[-822, 0, 615],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "hto-boardwalk",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-842, 2, 685],look:[-790, 1, 689],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "hto-berms",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-810, 3, 615],look:[-830, 1, 585],fov:60})",
+    "wait": 2500
+  }
+]

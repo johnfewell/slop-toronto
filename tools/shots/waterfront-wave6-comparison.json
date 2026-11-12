@@ -1,0 +1,38 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 1800
+  },
+  {
+    "name": "hto-west-aerial",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-990,105,715],look:[-990,0,612],fov:58})",
+    "wait": 2500
+  },
+  {
+    "name": "hto-west-path",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-959,2.2,652],look:[-988,1,609],fov:62})",
+    "wait": 2500
+  },
+  {
+    "name": "redpath-harbour",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[900, 55, 740],look:[700, 15, 550],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "island-buildings-wards-street-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1545, 2.2, 1875], look: [1610, 3.0, 2030], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-buildings-wards-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1450, 95, 1750], look: [1600, 0, 2050], fov: 48 }); })()",
+    "wait": 5000
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "qcyc-clubhouse-landward",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1222, 5, 2145], \"look\": [1255, 3.5, 2126], \"fov\": 65})",
+    "wait": 3000
+  },
+  {
+    "name": "qcyc-clubhouse-aerial",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1215, 29, 2153], \"look\": [1255, 2, 2126], \"fov\": 65})",
+    "wait": 3000
+  },
+  {
+    "name": "qcyc-clubhouse-waterfront",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1290, 4, 2120], \"look\": [1255, 3, 2126], \"fov\": 65})",
+    "wait": 3000
+  },
+  {
+    "name": "qcyc-clubhouse-runtime-check",
+    "time": "midday",
+    "wait": 500,
+    "js": "(()=>{const C=CITY,a=window.__CITY_APP,r=C.GEO.buildings.find(r=>Math.abs(r[0]-1255.6)<.01&&Math.abs(r[1]-2126.3)<.01),p=C.islandBuildingProfile(r);if(p?.appearance?.style!=='qcyc-clubhouse'||p.height!==6.5||p.appearance.waterV!==-1)throw Error('Clubhouse profile missing');let n=0;const cs=Math.cos(r[2]),sn=Math.sin(r[2]);for(const [u0,u1,v0,v1]of r[3]){const hx=(u1-u0)/2,hz=(v1-v0)/2,u=(u0+u1)/2,v=(v0+v1)/2,cx=r[0]+u*cs+v*sn,cz=r[1]-u*sn+v*cs;const c=a.controllerManager.colliders.find(c=>c.obb&&Math.hypot(c.obb.cx-cx,c.obb.cz-cz)<.02&&Math.abs(c.obb.hx-hx)<.02&&Math.abs(c.obb.hz-hz)<.02);if(!c||Math.abs(c.maxY-6.5)>.01)throw Error('Clubhouse collider changed');n++;}const batches=[];a.scene.traverse(o=>{if(o.name==='Buildings_MarinaClubhouse')batches.push({count:o.count,name:o.name});});if(batches.length!==1||batches[0].count!==2)throw Error('Clubhouse batch missing/duplicate '+JSON.stringify(batches));console.log('[clubhouse-runtime] '+JSON.stringify({profile:p,colliderParts:n,batches}));})()"
+  }
+]

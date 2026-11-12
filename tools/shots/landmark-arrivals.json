@@ -1,0 +1,33 @@
+[
+ {
+  "name": "arr-01-ontario-place",
+  "js": "(() => { const app = __CITY_APP, tg = app.tourGuide; const q = \"Ontario Place\"; const p = tg.search(q)[0]; if (p) { tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); } const e = app.controllerManager.getActiveEntity(); console.log('[ride-check] arrival ' + q + ' -> ' + (p ? p.kind + ': ' + p.name + ' @' + Math.round(p.x) + ',' + Math.round(p.z) : 'nothing') + ' | player ' + Math.round(e.position.x) + ',' + Math.round(e.position.z) + ' | ' + window.CITY.getLocationLabel(e.position.x, e.position.z)); })()",
+  "wait": 7000,
+  "time": "midday"
+ },
+ {
+  "name": "arr-02-cinesphere",
+  "js": "(() => { const app = __CITY_APP, tg = app.tourGuide; const q = \"Cinesphere\"; const p = tg.search(q)[0]; if (p) { tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); } const e = app.controllerManager.getActiveEntity(); console.log('[ride-check] arrival ' + q + ' -> ' + (p ? p.kind + ': ' + p.name + ' @' + Math.round(p.x) + ',' + Math.round(p.z) : 'nothing') + ' | player ' + Math.round(e.position.x) + ',' + Math.round(e.position.z) + ' | ' + window.CITY.getLocationLabel(e.position.x, e.position.z)); })()",
+  "wait": 7000
+ },
+ {
+  "name": "arr-03-sugar-beach",
+  "js": "(() => { const app = __CITY_APP, tg = app.tourGuide; const q = \"Sugar Beach\"; const p = tg.search(q)[0]; if (p) { tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); } const e = app.controllerManager.getActiveEntity(); console.log('[ride-check] arrival ' + q + ' -> ' + (p ? p.kind + ': ' + p.name + ' @' + Math.round(p.x) + ',' + Math.round(p.z) : 'nothing') + ' | player ' + Math.round(e.position.x) + ',' + Math.round(e.position.z) + ' | ' + window.CITY.getLocationLabel(e.position.x, e.position.z)); })()",
+  "wait": 7000
+ },
+ {
+  "name": "arr-04-canadas-sugar-beach",
+  "js": "(() => { const app = __CITY_APP, tg = app.tourGuide; const q = \"Canada's Sugar Beach\"; const p = tg.search(q)[0]; if (p) { tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); } const e = app.controllerManager.getActiveEntity(); console.log('[ride-check] arrival ' + q + ' -> ' + (p ? p.kind + ': ' + p.name + ' @' + Math.round(p.x) + ',' + Math.round(p.z) : 'nothing') + ' | player ' + Math.round(e.position.x) + ',' + Math.round(e.position.z) + ' | ' + window.CITY.getLocationLabel(e.position.x, e.position.z)); })()",
+  "wait": 7000
+ },
+ {
+  "name": "arr-05-centre-island",
+  "js": "(() => { const app = __CITY_APP, tg = app.tourGuide; const q = \"Centre Island\"; const p = tg.search(q)[0]; if (p) { tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); } const e = app.controllerManager.getActiveEntity(); console.log('[ride-check] arrival ' + q + ' -> ' + (p ? p.kind + ': ' + p.name + ' @' + Math.round(p.x) + ',' + Math.round(p.z) : 'nothing') + ' | player ' + Math.round(e.position.x) + ',' + Math.round(e.position.z) + ' | ' + window.CITY.getLocationLabel(e.position.x, e.position.z)); })()",
+  "wait": 7000
+ },
+ {
+  "name": "arr-06-kensington-market",
+  "js": "(() => { const app = __CITY_APP, tg = app.tourGuide; const q = \"Kensington Market\"; const p = tg.search(q)[0]; if (p) { tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); } const e = app.controllerManager.getActiveEntity(); console.log('[ride-check] arrival ' + q + ' -> ' + (p ? p.kind + ': ' + p.name + ' @' + Math.round(p.x) + ',' + Math.round(p.z) : 'nothing') + ' | player ' + Math.round(e.position.x) + ',' + Math.round(e.position.z) + ' | ' + window.CITY.getLocationLabel(e.position.x, e.position.z)); })()",
+  "wait": 7000
+ }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "hto-firehall-east-facade-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-842, 2.0, 636], look: [-866, 3.2, 623], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-firehall-side-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-846, 2.2, 606], look: [-868, 4.0, 626], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-firehall-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-900, 38, 660], look: [-866, 0, 622], fov: 52 }); })()",
+    "wait": 5000
+  }
+]

@@ -1,0 +1,40 @@
+[
+  {
+    "name": "new-A1",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;if(a.film.active)a.film.stop();c.cinema=null;a.selectMode('cyclist');const p=window.CITY.worldFromLatLon(43.6489,-79.3818);a.teleportTo(p.x,p.z,0);a.selectCamera('chase',true);c.setFollowRigEnabled(true);await new Promise(r=>setTimeout(r,2000));c.metrics({reset:true});a.measurements.start({label:'new-A1',warmupMs:0});await new Promise(r=>setTimeout(r,8000));const stopped=a.frameTimes({raw:true,stop:true}),camera=c.metrics({raw:true});const sources={};for(const script of document.scripts){if(!/\\/(camera-rig|cameras)\\./.test(script.src))continue;const bytes=await (await fetch(script.src)).arrayBuffer();sources[script.src]=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');}const frames=stopped;return {arm:'new-A1',enabled:c.followRigEnabled,build:document.querySelector('meta[name=city-build]')?.content,viewport:[innerWidth,innerHeight],tier:a.quality.tier,eye:c.currentPos.toArray(),fov:c.camera.fov,camera,frames,sources,refinementChanges:window.CITY.WorldCollision.changes.length,note:'Same loaded world and stationary dense Toronto subject, ABBA order; presentation differs by rig composition. Functional camera CPU comparison, not an idle GPU/frame budget claim.'};})()",
+    "record": true,
+    "wait": 100,
+    "metricsMs": 0
+  },
+  {
+    "name": "legacy-B1",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;if(a.film.active)a.film.stop();c.cinema=null;a.selectMode('cyclist');const p=window.CITY.worldFromLatLon(43.6489,-79.3818);a.teleportTo(p.x,p.z,0);a.selectCamera('chase',true);c.setFollowRigEnabled(false);await new Promise(r=>setTimeout(r,2000));c.metrics({reset:true});a.measurements.start({label:'legacy-B1',warmupMs:0});await new Promise(r=>setTimeout(r,8000));const stopped=a.frameTimes({raw:true,stop:true}),camera=c.metrics({raw:true});const sources={};for(const script of document.scripts){if(!/\\/(camera-rig|cameras)\\./.test(script.src))continue;const bytes=await (await fetch(script.src)).arrayBuffer();sources[script.src]=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');}const frames=stopped;return {arm:'legacy-B1',enabled:c.followRigEnabled,build:document.querySelector('meta[name=city-build]')?.content,viewport:[innerWidth,innerHeight],tier:a.quality.tier,eye:c.currentPos.toArray(),fov:c.camera.fov,camera,frames,sources,refinementChanges:window.CITY.WorldCollision.changes.length,note:'Same loaded world and stationary dense Toronto subject, ABBA order; presentation differs by rig composition. Functional camera CPU comparison, not an idle GPU/frame budget claim.'};})()",
+    "record": true,
+    "wait": 100,
+    "metricsMs": 0
+  },
+  {
+    "name": "legacy-B2",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;if(a.film.active)a.film.stop();c.cinema=null;a.selectMode('cyclist');const p=window.CITY.worldFromLatLon(43.6489,-79.3818);a.teleportTo(p.x,p.z,0);a.selectCamera('chase',true);c.setFollowRigEnabled(false);await new Promise(r=>setTimeout(r,2000));c.metrics({reset:true});a.measurements.start({label:'legacy-B2',warmupMs:0});await new Promise(r=>setTimeout(r,8000));const stopped=a.frameTimes({raw:true,stop:true}),camera=c.metrics({raw:true});const sources={};for(const script of document.scripts){if(!/\\/(camera-rig|cameras)\\./.test(script.src))continue;const bytes=await (await fetch(script.src)).arrayBuffer();sources[script.src]=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');}const frames=stopped;return {arm:'legacy-B2',enabled:c.followRigEnabled,build:document.querySelector('meta[name=city-build]')?.content,viewport:[innerWidth,innerHeight],tier:a.quality.tier,eye:c.currentPos.toArray(),fov:c.camera.fov,camera,frames,sources,refinementChanges:window.CITY.WorldCollision.changes.length,note:'Same loaded world and stationary dense Toronto subject, ABBA order; presentation differs by rig composition. Functional camera CPU comparison, not an idle GPU/frame budget claim.'};})()",
+    "record": true,
+    "wait": 100,
+    "metricsMs": 0
+  },
+  {
+    "name": "new-A2",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;if(a.film.active)a.film.stop();c.cinema=null;a.selectMode('cyclist');const p=window.CITY.worldFromLatLon(43.6489,-79.3818);a.teleportTo(p.x,p.z,0);a.selectCamera('chase',true);c.setFollowRigEnabled(true);await new Promise(r=>setTimeout(r,2000));c.metrics({reset:true});a.measurements.start({label:'new-A2',warmupMs:0});await new Promise(r=>setTimeout(r,8000));const stopped=a.frameTimes({raw:true,stop:true}),camera=c.metrics({raw:true});const sources={};for(const script of document.scripts){if(!/\\/(camera-rig|cameras)\\./.test(script.src))continue;const bytes=await (await fetch(script.src)).arrayBuffer();sources[script.src]=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');}const frames=stopped;return {arm:'new-A2',enabled:c.followRigEnabled,build:document.querySelector('meta[name=city-build]')?.content,viewport:[innerWidth,innerHeight],tier:a.quality.tier,eye:c.currentPos.toArray(),fov:c.camera.fov,camera,frames,sources,refinementChanges:window.CITY.WorldCollision.changes.length,note:'Same loaded world and stationary dense Toronto subject, ABBA order; presentation differs by rig composition. Functional camera CPU comparison, not an idle GPU/frame budget claim.'};})()",
+    "record": true,
+    "wait": 100,
+    "metricsMs": 0
+  },
+  {
+    "name": "ab-source-receipt",
+    "metricsMs": 1000,
+    "metricsWarmupMs": 0,
+    "wait": 100
+  }
+]

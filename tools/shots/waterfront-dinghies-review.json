@@ -1,0 +1,26 @@
+[
+  {
+    "name": "qcyc-dinghy-aerial",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1240, 18, 2190], \"look\": [1239, 0, 2173], \"fov\": 65})",
+    "wait": 3000
+  },
+  {
+    "name": "qcyc-dinghy-close",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1250, 2.2, 2178], \"look\": [1239, 0.3, 2173], \"fov\": 65})",
+    "wait": 3000
+  },
+  {
+    "name": "qcyc-dinghy-ground",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1234, 1.1, 2181], \"look\": [1238, 0.25, 2175], \"fov\": 65})",
+    "wait": 3000
+  },
+  {
+    "name": "dinghy-runtime-check",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,d=a.waterfrontDinghies;if(!d?.ready||d.hulls.length!==8||d.colliders.length!==8)throw Error('Dinghy runtime missing');for(let i=0;i<8;i++){const h=d.hulls[i],c=d.colliders[i],s=CITY.islandVergeSurfaceAt?.(h.x,h.z);if(Math.abs(h.y-c.minY)>.001||s&&Math.abs(s.h-h.y)>.001||!a.controllerManager.colliders.includes(c))throw Error('Dinghy ground/collider mismatch');}const ts=CITY.ezTreeDinghyStats;if(!ts||ts.mappedConflicts)throw Error('Mapped tree conflict '+JSON.stringify(ts));console.log('[dinghy-runtime] '+JSON.stringify({ready:d.ready,trees:ts,hulls:d.hulls}));})()",
+    "wait": 500
+  }
+]

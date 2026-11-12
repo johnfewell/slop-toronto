@@ -1,0 +1,50 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById('btn-toggle-hud'); if (b && !document.body.classList.contains('film')) { b.click(); document.body.classList.add('film'); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "bathurst-from-slip-east-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1455, 6, 738], look: [-1524, 22, 748], fov: 58 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "bathurst-south-cylinders-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1452, 9, 758], look: [-1521, 26, 748], fov: 50 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "bathurst-from-common-plaza-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1602, 2.4, 824], look: [-1533, 26, 706], fov: 58 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "bathurst-north-block-lettering-east-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1462, 18, 682], look: [-1535, 33, 680], fov: 40 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "bathurst-marine-leg-and-headhouse-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1456, 7, 706], look: [-1527, 40, 711], fov: 45 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "bathurst-aerial-northwest-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1670, 96, 590], look: [-1526, 22, 716], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "bathurst-from-the-lake-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1498, 8, 904], look: [-1526, 26, 716], fov: 55 }); })()",
+    "wait": 5000
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "terminal-harbour",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [-190, 9, 820], \"look\": [-205, 22, 675], \"fov\": 60})",
+    "wait": 3000
+  },
+  {
+    "name": "terminal-clock",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [-210, 3, 550], \"look\": [-208, 27, 628], \"fov\": 60})",
+    "wait": 3000
+  },
+  {
+    "name": "terminal-aerial",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [0, 95, 770], \"look\": [-207, 20, 675], \"fov\": 60})",
+    "wait": 3000
+  },
+  {
+    "name": "harbourfront-campus",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [-560, 130, 900], \"look\": [-330, 0, 650], \"fov\": 60})",
+    "wait": 3000
+  },
+  {
+    "name": "powerplant-street",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [-360, 6, 750], \"look\": [-315, 16, 706], \"fov\": 60})",
+    "wait": 3000
+  },
+  {
+    "name": "powerplant-aerial",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [-380, 55, 800], \"look\": [-315, 15, 706], \"fov\": 60})",
+    "wait": 3000
+  }
+]

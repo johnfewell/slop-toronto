@@ -1,0 +1,8 @@
+[
+  {
+    "name": "island-width-ground-check",
+    "time": "midday",
+    "wait": 500,
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,T=C.THREE,meshes=[];a.scene.updateMatrixWorld(true);a.scene.getObjectByName('CityGround').traverse(o=>{if(o.isMesh&&!/Water|Lake|Streams|Walls|Bridge|Flyover/.test(o.name))meshes.push(o)});const ray=new T.Raycaster(),down=new T.Vector3(0,-1,0);let count=0,maxError=0;for(const run of C.ISLAND_LANES_DATA.runs.filter(r=>[41,42].includes(r.id))){for(let i=0;i<run.points.length-1;i++){const p=run.points[i],q=run.points[i+1],dx=q[0]-p[0],dz=q[1]-p[1],len=Math.hypot(dx,dz);for(const f of [.25,.5,.75])for(const off of [-3,-2.3,-1.5,0,1.5,2.3,3]){const x=p[0]+dx*f-dz/len*off,z=p[1]+dz*f+dx/len*off;ray.set(new T.Vector3(x,2,z),down);const hit=ray.intersectObjects(meshes,false)[0];if(!hit||!hit.object.name.startsWith('StreetLevel'))continue;for(const mode of ['person','cyclist','car']){const ground=a.controllerManager.getGroundHeight(x,z,mode,hit.point.y);const e=Math.abs(ground-hit.point.y);maxError=Math.max(e,maxError);if(e>.003)throw Error('Source lane floor mismatch '+JSON.stringify({x,z,mode,rendered:hit.point.y,ground,e}));}count++;}}}if(count<30)throw Error('Too few visible native-floor samples '+count);console.log('[island-width-ground] '+JSON.stringify({count,maxError,layout:C.islandRoadMaterialLayout()}));})()"
+  }
+]

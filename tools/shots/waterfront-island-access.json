@@ -1,0 +1,62 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(async () => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } await (window.CITY.waterEdgesReady || null); })()",
+    "wait": 2500
+  },
+  {
+    "name": "manitou-beach-access-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-245,1.8,3252],look:[-241,1.2,3278],fov:62};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "wards-beach-access-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1598,1.8,2262],look:[1620,1.2,2245],fov:62};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "hanlans-beach-access-street-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-1722,1.8,3068],look:[-1750,1.2,3079],fov:62};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-beaches-overview-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[300,300,2350],look:[-120,0,2900],fov:55};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "centre-route-gap-walker-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandAccess;const x=-374.4,z=2838.3;a.selectMode(\"person\");a.teleportTo(x,z,0);const s=C.islandAccessSurfaceAt(x,z);if(!s||s.kind!==\"route-gap\"||!s.pedestrianOnly)throw Error(\"centre route-gap sampler \"+JSON.stringify(s));const g=a.controllerManager.getGroundHeight(x,z,\"person\");if(Math.abs(g-s.h)>0.08)throw Error(\"centre walker ground \"+g+\" != \"+s.h);a.cameraSystem.cinema=()=>({pos:[x+7,s.h+1.55,z+7],look:[x,s.h+1.2,z],fov:55});return {h:s.h,ground:g,kind:s.kind};})()",
+    "wait": 4000
+  },
+  {
+    "name": "hanlans-route-gap-walker-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandAccess;const x=-1612.1,z=2518.3;a.selectMode(\"person\");a.teleportTo(x,z,0);const s=C.islandAccessSurfaceAt(x,z);if(!s||s.kind!==\"route-gap\"||!s.pedestrianOnly)throw Error(\"hanlans route-gap sampler \"+JSON.stringify(s));const g=a.controllerManager.getGroundHeight(x,z,\"person\");if(Math.abs(g-s.h)>0.08)throw Error(\"hanlans walker ground \"+g+\" != \"+s.h);a.cameraSystem.cinema=()=>({pos:[x+8,s.h+1.55,z+6],look:[x,s.h+1.2,z],fov:55});return {h:s.h,ground:g,kind:s.kind};})()",
+    "wait": 4000
+  },
+  {
+    "name": "wards-final-approach-walker-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,r=C.waterfrontIslandAccess;const fa=r.layout.routes.ward.finalApproach;if(!fa||!fa.dry||fa.gapM!==44)throw Error(\"ward final approach missing/not dry \"+JSON.stringify(fa));const x=fa.from[0],z=fa.from[1];a.selectMode(\"person\");a.teleportTo(x,z,0);const s=C.islandAccessSurfaceAt(x,z);if(!s)throw Error(\"ward final mapped point has no walk surface\");const g=a.controllerManager.getGroundHeight(x,z,\"person\");if(Math.abs(g-s.h)>0.1)throw Error(\"ward endpoint ground \"+g+\" != \"+s.h);a.cameraSystem.cinema=()=>({pos:[x-10,s.h+1.7,z+12],look:[fa.to[0],s.h+0.6,fa.to[1]],fov:52});return {from:fa.from,to:fa.to,gapM:fa.gapM,dry:fa.dry,ground:g,h:s.h};})()",
+    "wait": 4500
+  },
+  {
+    "name": "hanlans-pavilion-identity-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[-1628,1.8,2545],look:[-1647,1.6,2552],fov:60};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-access-check",
+    "time": "midday",
+    "wait": 2000,
+    "js": "(()=>{const C=window.CITY,r=C.waterfrontIslandAccess;if(!C.waterfrontIslandAccessEnabled||!r)throw Error(\"island access disabled\");const s=r.stats;if(s.beaches!==4)throw Error(\"expected 4 beaches, got \"+s.beaches);if(!s.accessSpurs||s.accessSpurs<8)throw Error(\"missing access spurs \"+s.accessSpurs);if(!(s.routeGapM>1000))throw Error(\"missing route-gap walk \"+s.routeGapM);if(!s.routeBridgeSegments)throw Error(\"mapped bridge metadata lost\");if(s.routeConnected!==2)throw Error(\"expected 2 connected routes, got \"+s.routeConnected);const ward=r.layout.routes.ward;if(ward.connected)throw Error(\"Ward must be reported partial, not fully mapped\");const fa=ward.finalApproach;if(!fa||fa.kind!==\"informal-unmapped-beach-approach\"||fa.gapM!==44||!fa.dry||fa.wetM!==0)throw Error(\"Ward final approach not honest: \"+JSON.stringify(fa));for(const c of r.surfaces.corridors.slice(0,6)){const [a,b]=c.nodes;const p=C.islandAccessSurfaceAt((a[0]+b[0])/2,(a[1]+b[1])/2);if(!p||p.h!==c.y||!p.pedestrianOnly)throw Error(\"sampler mismatch on \"+c.kind);}const before=C.waterfrontIslandAccessEnabled;C.waterfrontIslandAccessEnabled=false;const off=C.islandAccessSurfaceAt(r.layout.routes.ward.finalApproach.from[0],r.layout.routes.ward.finalApproach.from[1]);C.waterfrontIslandAccessEnabled=before;if(off!==null)throw Error(\"sampler not gated\");const T=C.THREE;if(T&&T.MeshStandardNodeMaterial){const m=new T.MeshStandardNodeMaterial();C.applyWaterfrontIslandAccessGroundMask(m);if(!m.maskNode)throw Error(\"bounded lawn mask did not compose before the builder\");}console.log(\"[island-access-check] \"+JSON.stringify({beaches:s.beaches,spurs:s.accessSpurs,gapM:s.routeGapM,bridgeSegs:s.routeBridgeSegments,routes:s.routeConnected,wardGap:fa.gapM,benches:s.benches,amenities:s.amenities,signs:s.signs,buildingsAdded:s.buildingsAdded,triangles:s.triangles}));})()"
+  }
+]

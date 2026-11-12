@@ -1,0 +1,62 @@
+[
+  {
+    "name": "t00-hud-hidden",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film')})()",
+    "wait": 2500
+  },
+  {
+    "name": "terminal-aerial",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[0, 95, 770],look:[-207, 20, 675],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "terminal-clock",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-210, 3, 550],look:[-208, 27, 628],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "redpath-harbour",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[900, 55, 740],look:[700, 15, 550],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "redpath-slip",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[966, 3, 540],look:[825, 12, 545],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "garden-aerial",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-1230, 90, 690],look:[-1340, 0, 570],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "garden-pavilion",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-1200, 2, 620],look:[-1190, 2, 570],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "harbourfront-aerial",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-260, 90, 830],look:[-430, 3, 680],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "powerplant-stack",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;a.cameraSystem.cinema=()=>({pos:[-290, 3, 755],look:[-315, 20, 706],fov:60})})()",
+    "wait": 3500
+  },
+  {
+    "name": "ferry-entry-close",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,f=window.CITY.terminalFrame();const u=(f.localU[0]+f.localU[1])/2;const p=f.localToWorld(u,f.localV[0]-20),l=f.localToWorld(u,f.localV[0]-2);a.cameraSystem.cinema=()=>({pos:[p[0],2,p[1]],look:[l[0],2,l[1]],fov:65})})()",
+    "wait": 3500
+  }
+]

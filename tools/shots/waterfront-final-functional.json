@@ -1,0 +1,21 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 1800
+  },
+  {
+    "name": "ward-restored-lawn",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1750,3,2250],look:[1750,1,2160],fov:62})",
+    "wait": 2200
+  },
+  {
+    "name": "ward-unmapped-approach-walk",
+    "time": "midday",
+    "record": true,
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,T=C.THREE,r=C.ISLAND_ACCESS_DATA.routes.ward.finalApproach,m=a.controllerManager;a.selectMode('person');let y=.22,maxCorrection=0;for(let i=0;i<=180;i++){const t=i/180,x=r.from[0]+(r.to[0]-r.from[0])*t,z=r.from[1]+(r.to[1]-r.from[1])*t;y=m.getGroundHeight(x,z,'person',y);const p=new T.Vector3(x,y,z);m.resolveHorizontalCollision(p,.35);const delta=Math.hypot(p.x-x,p.z-z);maxCorrection=Math.max(maxCorrection,delta);if(delta>1)throw Error('Approach blocked at '+x+','+z+' correction '+delta);}a.teleportTo(r.to[0],r.to[1],0,y);a.cameraSystem.cinema=()=>({pos:[r.to[0]+5,y+2,r.to[1]+6],look:[r.to[0],y+1,r.to[1]-10],fov:60});return{lengthM:r.gapM,steps:181,maxCorrection,renderedPath:false,sourceGapRetained:true};})()",
+    "wait": 2500
+  }
+]

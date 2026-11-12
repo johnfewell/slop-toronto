@@ -1,0 +1,26 @@
+[
+  {
+    "name": "nottawa-source-street",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1192.833, 1.8, 2219.071], \"look\": [1195.65, 2.4, 2205.916], \"fov\": 74})",
+    "wait": 3000
+  },
+  {
+    "name": "nottawa-source-aerial",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1197.542, 22, 2176.143], \"look\": [1196.513, 2.4, 2203.204], \"fov\": 64})",
+    "wait": 3000
+  },
+  {
+    "name": "qcyc-marina-shed",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1252,2,2155],look:[1234.4,2,2166.2],fov:70})",
+    "wait": 3000
+  },
+  {
+    "name": "qcyc-outlier-height-check",
+    "time": "midday",
+    "js": "(()=>{const C=window.CITY,a=window.__CITY_APP,targets=[[1234.4,2166.2],[1212,2181.4],[1215.2,2191]];const report=[];for(const [x,z] of targets){const r=C.GEO.buildings.find(b=>Math.abs(b[0]-x)<.01&&Math.abs(b[1]-z)<.01);const p=C.islandBuildingProfile(r);if(!p||p.height>=10||p.typology==='cottage')throw Error('Marina outlier unresolved/misclassified '+x+','+z);const cs=Math.cos(r[2]),sn=Math.sin(r[2]);let n=0;for(const [u0,u1,v0,v1]of r[3]){const hx=(u1-u0)/2,hz=(v1-v0)/2;if(hx<.5||hz<.5)continue;const u=(u0+u1)/2,v=(v0+v1)/2,cx=x+u*cs+v*sn,cz=z-u*sn+v*cs;const co=a.controllerManager.colliders.find(c=>c.obb&&Math.hypot(c.obb.cx-cx,c.obb.cz-cz)<.02&&Math.abs(c.obb.hx-hx)<.02&&Math.abs(c.obb.hz-hz)<.02);if(!co||co.maxY>=10)throw Error('Tall/missing marina collider '+x+','+z);n++;}report.push({at:[x,z],nativeHeight:r[4],profile:p,colliderParts:n});}console.log('[marina-outliers] '+JSON.stringify(report));})()",
+    "wait": 500
+  }
+]

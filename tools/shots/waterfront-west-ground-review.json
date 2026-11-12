@@ -1,0 +1,33 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 1800
+  },
+  {
+    "name": "hto-west-aerial",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-990,105,715],look:[-990,0,612],fov:58})",
+    "wait": 2500
+  },
+  {
+    "name": "hto-west-path",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-959,2.2,652],look:[-988,1,609],fov:62})",
+    "wait": 2500
+  },
+  {
+    "name": "hto-west-berm-walk",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,b=C.waterfrontHtoLandscape.westBerms[3];let y=.22;for(let i=0;i<=100;i++){const t=1.1*(1-i/100),x=b.cx-b.Ux*t,z=b.cz-b.Uz*t;const h=C.htoLandscapeSurfaceAt(x,z),g=a.controllerManager.getGroundHeight(x,z,'person',y);if(h&&Math.abs(g-h.h)>.02)throw Error('HTO slope footing '+g+' '+h.h);y=g;}a.selectMode('person');a.teleportTo(b.cx,b.cz,0,y);a.cameraSystem.cinema=()=>({pos:[b.cx+5,y+2,b.cz+6],look:[b.cx,y+.8,b.cz],fov:60});return{surface:y};})()",
+    "wait": 2200
+  },
+  {
+    "name": "ward-ground-raycast",
+    "time": "midday",
+    "record": true,
+    "js": "(()=>{const a=window.__CITY_APP,T=window.CITY.THREE; a.cameraSystem.cinema=()=>({pos:[1720,70,2470],look:[1700,0,2300],fov:60});const rays=[];for(const [x,z]of[[1700,2200],[1750,2250],[1800,2200],[1800,2100],[1600,2250]]){const r=new T.Raycaster(new T.Vector3(x,80,z),new T.Vector3(0,-1,0));rays.push({x,z,hits:r.intersectObjects(a.scene.children,true).filter(h=>h.point.y<5).slice(0,12).map(h=>{const o=h.object;let p=o;const parents=[];while(p){parents.push(p.name||p.type);p=p.parent;}return{y:h.point.y,name:o.name,parents,material:Array.isArray(o.material)?o.material.map(m=>m.name):o.material?.name,userData:o.material?.userData}})});}return rays;})()",
+    "wait": 2000
+  }
+]

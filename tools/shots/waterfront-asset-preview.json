@@ -1,0 +1,8 @@
+[
+  {
+    "name": "innerscene-chair-preview",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,C=window.CITY,T=C.THREE;document.body.classList.add('film');const g=(await new C.Addons.GLTFLoader().loadAsync('./assets/props/waterfront-hto-adirondack.glb')).scene;g.position.set(0,180,0);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});a.scene.add(g);const plane=new T.Mesh(new T.BoxGeometry(5,.05,5),new T.MeshStandardMaterial({color:0xb9b9b9,roughness:1}));plane.position.set(0,179.96,0);plane.receiveShadow=true;a.scene.add(plane);a.cameraSystem.cinema=()=>({pos:[1.9,181.4,2.2],look:[0,180.5,0],fov:43});return new T.Box3().setFromObject(g).getSize(new T.Vector3()).toArray()})()",
+    "wait": 3000
+  }
+]

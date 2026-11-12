@@ -1,0 +1,68 @@
+[
+  {
+    "name": "hto-east-plaza-joints-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-809, 1.62, 588.5], look: [-809, 0.30, 594.5], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-east-berm-edge-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; const C = window.CITY; const t = C.htoLandscapeSurfaceAt ? C.htoLandscapeSurfaceAt(-805.8, 575.2) : null; const h = t ? t.h : 1.3; a.cameraSystem.cinema = () => ({ pos: [-805.8, h + 1.55, 575.2], look: [-819, 0.35, 570], fov: 64 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-east-plaza-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-930, 42, 610], look: [-810, 0, 620], fov: 58 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-east-landscape-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-650, 64, 812], look: [-900, 0, 640], fov: 55 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-west-paving-joints-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1006.5, 1.60, 572.0], look: [-1004.0, 0.30, 578.0], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-west-mound-edge-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; const C = window.CITY; const t = C.htoLandscapeSurfaceAt ? C.htoLandscapeSurfaceAt(-989, 632.8) : null; const h = t ? t.h : 1.05; a.cameraSystem.cinema = () => ({ pos: [-989, h + 1.60, 632.8], look: [-1000, 0.40, 618], fov: 66 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-west-edge-graze-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; const C = window.CITY; const t = C.htoLandscapeSurfaceAt ? C.htoLandscapeSurfaceAt(-975, 612) : null; const h = t ? t.h : 0.6; a.cameraSystem.cinema = () => ({ pos: [-975, h + 1.5, 612], look: [-1000, 0.35, 602], fov: 64 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-west-landscape-aerial-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1085, 58, 735], look: [-985, 0, 610], fov: 56 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-east-planting-canopy-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-800, 16, 610], look: [-875, 0.5, 585], fov: 60 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-west-planting-canopy-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-950, 14, 640], look: [-995, 0.5, 600], fov: 58 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-east-planting-street-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-790, 2.0, 575], look: [-870, 1.2, 575], fov: 66 }); })()",
+    "wait": 5000
+  }
+]

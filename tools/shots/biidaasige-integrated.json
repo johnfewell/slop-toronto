@@ -1,0 +1,58 @@
+[
+  {
+    "name": "owl-and-firehall",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2370,649,0);const c={pos:[2340, 8, 683],look:[2370, 4, 649],fov:60};a.cameraSystem.cinema=()=>c;console.log('park-review',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "badlands-entry",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2328,685,0);const c={pos:[2290, 6, 713],look:[2328, 1, 685],fov:60};a.cameraSystem.cinema=()=>c;console.log('park-review',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "raccoon-play",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2484,600,0);const c={pos:[2527, 5, 628],look:[2484, 3, 600],fov:60};a.cameraSystem.cinema=()=>c;console.log('park-review',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "drum",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2650,570,0);const c={pos:[2670, 9, 594],look:[2650, 2, 570],fov:60};a.cameraSystem.cinema=()=>c;console.log('park-review',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "atlas",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2010,804,0);const c={pos:[2067, 15, 858],look:[2010, 16, 804],fov:60};a.cameraSystem.cinema=()=>c;console.log('park-review',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "park-east-overview",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2500,635,0);const c={pos:[2600, 130, 880],look:[2500, 0, 635],fov:60};a.cameraSystem.cinema=()=>c;console.log('park-review',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "park-west-overview",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(1880,800,0);const c={pos:[1800, 120, 1020],look:[1880, 0, 800],fov:60};a.cameraSystem.cinema=()=>c;console.log('park-review',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "cableway-and-swings",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2260.241523807383,703.4079228501499,0);const c={pos:[2262.241523807383,7,706.4079228501499],look:[2240.241523807383,1,683.4079228501499],fov:65};a.cameraSystem.cinema=()=>c;})();"
+  }
+]

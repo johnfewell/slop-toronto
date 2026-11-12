@@ -48,6 +48,10 @@ volumetric clouds ([why](docs/clouds-alpha7.md#webgl2-backend)).
 No build step for development: `npm run dev` (or `node tools/dev-server.mjs`) and open
 `http://127.0.0.1:5530/` (landing page) or `/explore.html` (the city).
 
+Biidaasige Park: [open the live park arrival](http://localhost:5530/explore.html?map=detail#park=biidaasige&mode=walk)
+or choose **Sights → Biidaasige Park**. The play structures, seven photo-registered Dodem animals and mapped infrastructure
+are being checked in the live build; [source coverage and remaining work](docs/biidaasige-park.md) stays explicit.
+
 The dev server sends `Cache-Control: no-store` and automatically reloads open tabs when app HTML, JS or CSS changes.
 The city saves its safe player location on reload. Use this server rather than Python's generic file server; the
 latter does not disable caching or notify already-open tabs. A tab opened before the dev server change needs one
@@ -57,6 +61,9 @@ Passenger travel: [streetcar controls and implementation notes](docs/streetcar-r
 [subway controls and implementation notes](docs/subway-riding.md), and the full
 [streetcar](docs/streetcar-riding-spec.md) and [subway](docs/subway-riding-spec.md) designs. The latest engine integration is recorded in
 [the upstream sync notes](docs/upstream-sync.md).
+
+Camera movement: [interactive cycling/driving follow and the optional CN Tower two-shot](docs/camera-rig.md),
+including the legacy comparison toggle, collision contract and repeatable checks.
 
 Developer diagnostics: [bounded frame measurements and owned-resource accounting](docs/adoption-measurements.md),
 including the `gpu2` capture recipe and the distinction between functional captures and an idle performance baseline.

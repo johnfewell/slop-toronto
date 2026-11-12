@@ -1,0 +1,666 @@
+{
+ "schema": "biidaasige-dodem-registration/1",
+ "bead": "st-bmyv.4",
+ "generated": "2026-11-11",
+ "owner": "bounded Dodem photo-registration worker",
+ "claim": "Register the Captain-matched MVVA finished-site photograph to the 2025 City orthophoto and the existing city world frame with an 8-DOF ground homography, then project all seven Dodem body/head pixels: the original four on the first island (fit-only) and three additional animals on the adjacent three-animal island (source-aerial-validated). The 2025 ortho is used only for ground registration; it shows a construction ladder at the north neck, not animals. No aerial object is used to identify an animal. Positions are provisional and not auto-placed.",
+ "inputs": {
+  "photoControls": "tools/fixtures/biidaasige-dodem-photo-controls.json",
+  "photoExtra": "tools/fixtures/biidaasige-dodem-photo-extra.json",
+  "islandFirst": "tools/fixtures/biidaasige-woodchip-island.json",
+  "islandThreeAnimal": "tools/fixtures/biidaasige-dodem-three-island.json",
+  "projection": "js/toronto-geodata.js",
+  "sourcePhoto": "$WATERFRONT_RESEARCH/biidaasige/dog-fence-photos/mvva-badlands-cableway.jpg",
+  "orientedPhoto": "$WATERFRONT_RESEARCH/biidaasige/captain/dodem-mvva-oriented.png",
+  "orientedPhotoDimensions": [
+   1076,
+   1000
+  ],
+  "sourceDimensions": [
+   4800,
+   3600
+  ],
+  "privatePixelsNote": "Private photo/ortho pixels stay outside the repo; only source facts and control coordinate pairs are recorded."
+ },
+ "projection": {
+  "lat0": 43.6453,
+  "lon0": -79.3806,
+  "kx": 80682.4717990044,
+  "ky": 111105.31871811183,
+  "theta": -0.28949997923178367,
+  "ox": 0,
+  "oz": 0
+ },
+ "method": {
+  "homography": "8-DOF projective: orthoPixel = H * orientedPhotoPixel (least squares, normal equations)",
+  "chain": "oriented photo pixel -> ortho image pixel -> EPSG:3857 Mercator -> WGS84 -> existing world (x, z)",
+  "orthoPixelToMercator": "mx = xmin + (px/W)*(xmax-xmin); my = ymax - (py/H)*(ymax-ymin)",
+  "mercatorToWgs84": "lon = mx/R*180/pi; lat = (2*atan(exp(my/R)) - pi/2)*180/pi; R=6378137",
+  "world": "js/city-config.js worldFromLatLon (lat0/lon0/kx/ky/theta/ox/oz from js/toronto-geodata.js)",
+  "cropTransform": "original 4800x3600 -> oriented 1076x1000: oriented = Rot(+148deg) * (original - inputCenter) * scale + outputCenter",
+  "note": "Eight point pairs supply 16 scalar constraints for the homography’s eight unknowns, so this is an overdetermined least-squares fit. In-sample residuals are not independent evidence; leave-one-out and the held-out round bench are the real tests."
+ },
+ "cropTransform": {
+  "inputCenter": [
+   3750,
+   2225
+  ],
+  "outputCenter": [
+   538,
+   500
+  ],
+  "rotationClockwiseDeg": 148,
+  "scaleFormula": "1000/(abs(sin(148deg))*2000+abs(cos(148deg))*1450)",
+  "scale": 0.436775011483,
+  "outputSize": [
+   1076,
+   1000
+  ],
+  "note": "Exact recorded crop/rotate/fit raster transform; half-pixel rounding bounded below .1m. +repage resets ImageMagick virtual page before pixel reads."
+ },
+ "homography": {
+  "h": [
+   0.455903353739,
+   -0.110959171595,
+   1041.21781953,
+   0.103670361886,
+   0.328304080614,
+   974.073641384,
+   0.000054118108714,
+   -0.0000644797637889
+  ],
+  "order": [
+   "h11",
+   "h12",
+   "h13",
+   "h21",
+   "h22",
+   "h23",
+   "h31",
+   "h32"
+  ],
+  "groundOnly": true
+ },
+ "fit": {
+  "controls": 8,
+  "residuals": [
+   {
+    "id": "north-gate-left",
+    "predictedOrthoPixel": [
+     1280.97,
+     1040.54
+    ],
+    "errorM": 0.75
+   },
+   {
+    "id": "north-gate-right",
+    "predictedOrthoPixel": [
+     1304.74,
+     1041.13
+    ],
+    "errorM": 0.59
+   },
+   {
+    "id": "round-bench-center",
+    "predictedOrthoPixel": [
+     1169.37,
+     1151.72
+    ],
+    "errorM": 0.35
+   },
+   {
+    "id": "south-bulb",
+    "predictedOrthoPixel": [
+     1144.26,
+     1310.79
+    ],
+    "errorM": 0.23
+   },
+   {
+    "id": "southeast-bulb",
+    "predictedOrthoPixel": [
+     1306.54,
+     1284.98
+    ],
+    "errorM": 0.1
+   },
+   {
+    "id": "south-inner-notch",
+    "predictedOrthoPixel": [
+     1230.19,
+     1268.57
+    ],
+    "errorM": 1.04
+   },
+   {
+    "id": "east-waist",
+    "predictedOrthoPixel": [
+     1291.47,
+     1179.89
+    ],
+    "errorM": 0.65
+   },
+   {
+    "id": "west-waist",
+    "predictedOrthoPixel": [
+     1156.21,
+     1191.55
+    ],
+    "errorM": 0.65
+   }
+  ],
+  "rmsM": 0.61,
+  "maxResidualM": 1.04,
+  "leaveOneOut": [
+   {
+    "id": "north-gate-left",
+    "predictedOrthoPixel": [
+     1279.87,
+     1047.23
+    ],
+    "errorM": 1.37
+   },
+   {
+    "id": "north-gate-right",
+    "predictedOrthoPixel": [
+     1305.24,
+     1034.26
+    ],
+    "errorM": 1.22
+   },
+   {
+    "id": "round-bench-center",
+    "predictedOrthoPixel": [
+     1168.95,
+     1156.53
+    ],
+    "errorM": 0.79
+   },
+   {
+    "id": "south-bulb",
+    "predictedOrthoPixel": [
+     1152.48,
+     1295.85
+    ],
+    "errorM": 1.8
+   },
+   {
+    "id": "southeast-bulb",
+    "predictedOrthoPixel": [
+     1305.31,
+     1280.93
+    ],
+    "errorM": 0.45
+   },
+   {
+    "id": "south-inner-notch",
+    "predictedOrthoPixel": [
+     1229.01,
+     1271.31
+    ],
+    "errorM": 1.31
+   },
+   {
+    "id": "east-waist",
+    "predictedOrthoPixel": [
+     1293.18,
+     1176.03
+    ],
+    "errorM": 1.01
+   },
+   {
+    "id": "west-waist",
+    "predictedOrthoPixel": [
+     1157.11,
+     1186.71
+    ],
+    "errorM": 1.1
+   }
+  ],
+  "leaveOneOutMaxM": 1.8,
+  "heldoutRoundBench": {
+   "predictedOrthoPixel": [
+    1168.95,
+    1156.53
+   ],
+   "errorM": 0.79,
+   "id": "round-bench-center"
+  },
+  "gate": {
+   "rmsLimitM": 3,
+   "heldoutLimitM": 5,
+   "rmsPass": true,
+   "heldoutPass": true,
+   "fitPass": true
+  },
+  "quality": "PASS",
+  "caveat": "Eight point pairs give 16 scalar constraints for 8 DOF, so the homography is an overdetermined least-squares fit and the low in-sample RMS is expected. The meaningful checks are LOO (max 1.80 m) and the held-out round bench (0.79 m)."
+ },
+ "islands": [
+  {
+   "featureId": "inverted-oak-woodchip-island",
+   "role": "first island (original 4 animals)",
+   "ringPoints": 58,
+   "traceErrorM": 0.6,
+   "placementUncertaintyM": 3,
+   "note": "Visible pale-curbed woodchip island containing six inverted oak trunks; material confirmed by City2026 installed Dodem photograph. Boundary traced from aerial. This does not identify individual animal points. Northeast construction edge less certain; whole trace carries3m positional uncertainty."
+  },
+  {
+   "featureId": "dodem-three-animal-island",
+   "role": "adjacent three-animal island (extra 3 animals)",
+   "ringPoints": 65,
+   "traceErrorM": 0.6,
+   "placementUncertaintyM": 3,
+   "note": "Visible pale-curbed woodchip island containing turtle, musky and eagle, independently matched in MVVA finished-site overhead photograph. Island traces actual2025curb; sourcephoto identifies animals, not construction objects. Positionuncertainty3m, notsurvey."
+  }
+ ],
+ "animals": [
+  {
+   "id": "dodem-beaver",
+   "kind": "beaver",
+   "sourceSet": "original4",
+   "photoBodyPixel": [
+    503,
+    293
+   ],
+   "photoHeadPixel": [
+    521,
+    297
+   ],
+   "orientedBodyPixel": [
+    503,
+    293
+   ],
+   "orientedHeadPixel": [
+    521,
+    297
+   ],
+   "bodyOrthoPixel": [
+    1227.8,
+    1113.14
+   ],
+   "headOrthoPixel": [
+    1234.62,
+    1115.5
+   ],
+   "bodyWorld": [
+    2300.8,
+    659.2
+   ],
+   "headWorld": [
+    2301.3,
+    659.6
+   ],
+   "bodyLat": 43.6455251,
+   "bodyLon": -79.3509374,
+   "headingDegFromPlusZ": 54.4,
+   "bearingDegFromNorth": 125.6,
+   "headingUncertaintyDeg": null,
+   "positionUncertaintyM": 3,
+   "islandFeatureId": "inverted-oak-woodchip-island",
+   "insideIslandRing": true,
+   "validation": "fit-only",
+   "provisional": true,
+   "autoPlace": false,
+   "note": "Body/foot location from the MVVA finished-site photo via the ground homography. Fit-only: no independent aerial validation. Height parallax and photo interpretation give at least 3 m uncertainty; not surveyed."
+  },
+  {
+   "id": "dodem-otter",
+   "kind": "otter",
+   "sourceSet": "original4",
+   "photoBodyPixel": [
+    557,
+    284
+   ],
+   "photoHeadPixel": [
+    579,
+    272
+   ],
+   "orientedBodyPixel": [
+    557,
+    284
+   ],
+   "orientedHeadPixel": [
+    579,
+    272
+   ],
+   "bodyOrthoPixel": [
+    1248.87,
+    1111.9
+   ],
+   "headOrthoPixel": [
+    1257.65,
+    1108.11
+   ],
+   "bodyWorld": [
+    2302.7,
+    659.7
+   ],
+   "headWorld": [
+    2303.6,
+    659.6
+   ],
+   "bodyLat": 43.6455261,
+   "bodyLon": -79.3509133,
+   "headingDegFromPlusZ": 96.7,
+   "bearingDegFromNorth": 83.3,
+   "headingUncertaintyDeg": null,
+   "positionUncertaintyM": 3,
+   "islandFeatureId": "inverted-oak-woodchip-island",
+   "insideIslandRing": true,
+   "validation": "fit-only",
+   "provisional": true,
+   "autoPlace": false,
+   "note": "Body/foot location from the MVVA finished-site photo via the ground homography. Fit-only: no independent aerial validation. Height parallax and photo interpretation give at least 3 m uncertainty; not surveyed."
+  },
+  {
+   "id": "dodem-wolf",
+   "kind": "wolf",
+   "sourceSet": "original4",
+   "photoBodyPixel": [
+    364,
+    665
+   ],
+   "photoHeadPixel": [
+    372,
+    647
+   ],
+   "orientedBodyPixel": [
+    364,
+    665
+   ],
+   "orientedHeadPixel": [
+    372,
+    647
+   ],
+   "bodyOrthoPixel": [
+    1160.27,
+    1259.32
+   ],
+   "headOrthoPixel": [
+    1164.15,
+    1252.08
+   ],
+   "bodyWorld": [
+    2291,
+    670.3
+   ],
+   "headWorld": [
+    2291.5,
+    669.8
+   ],
+   "bodyLat": 43.6454042,
+   "bodyLon": -79.3510145,
+   "headingDegFromPlusZ": 135.2,
+   "bearingDegFromNorth": 44.8,
+   "headingUncertaintyDeg": null,
+   "positionUncertaintyM": 3,
+   "islandFeatureId": "inverted-oak-woodchip-island",
+   "insideIslandRing": true,
+   "validation": "fit-only",
+   "provisional": true,
+   "autoPlace": false,
+   "note": "Body/foot location from the MVVA finished-site photo via the ground homography. Fit-only: no independent aerial validation. Height parallax and photo interpretation give at least 3 m uncertainty; not surveyed."
+  },
+  {
+   "id": "dodem-bear",
+   "kind": "bear",
+   "sourceSet": "original4",
+   "photoBodyPixel": [
+    699,
+    641
+   ],
+   "photoHeadPixel": [
+    695,
+    652
+   ],
+   "orientedBodyPixel": [
+    699,
+    641
+   ],
+   "orientedHeadPixel": [
+    695,
+    652
+   ],
+   "bodyOrthoPixel": [
+    1293.3,
+    1261.4
+   ],
+   "headOrthoPixel": [
+    1291.44,
+    1265.78
+   ],
+   "bodyWorld": [
+    2302.7,
+    674
+   ],
+   "headWorld": [
+    2302.4,
+    674.4
+   ],
+   "bodyLat": 43.6454025,
+   "bodyLon": -79.3508625,
+   "headingDegFromPlusZ": -39.6,
+   "bearingDegFromNorth": 219.6,
+   "headingUncertaintyDeg": null,
+   "positionUncertaintyM": 3,
+   "islandFeatureId": "inverted-oak-woodchip-island",
+   "insideIslandRing": true,
+   "validation": "fit-only",
+   "provisional": true,
+   "autoPlace": false,
+   "note": "Body/foot location from the MVVA finished-site photo via the ground homography. Fit-only: no independent aerial validation. Height parallax and photo interpretation give at least 3 m uncertainty; not surveyed."
+  },
+  {
+   "id": "dodem-turtle",
+   "kind": "turtle",
+   "sourceSet": "extra3",
+   "originalPhotoBodyPixel": [
+    2006.7,
+    2960
+   ],
+   "originalPhotoHeadPixel": [
+    2062.7,
+    2924.7
+   ],
+   "fixtureProjectedOrthoBodyPixel": [
+    1428.2924052451237,
+    958.0472132324728
+   ],
+   "fixtureProjectedOrthoHeadPixel": [
+    1423.356337466184,
+    966.981827167929
+   ],
+   "orientedBodyPixel": [
+    1013.61,
+    -175.74
+   ],
+   "orientedHeadPixel": [
+    1001.04,
+    -149.71
+   ],
+   "bodyOrthoPixel": [
+    1428.29,
+    958.05
+   ],
+   "headOrthoPixel": [
+    1423.36,
+    966.98
+   ],
+   "bodyWorld": [
+    2322.6,
+    650.9
+   ],
+   "headWorld": [
+    2321.9,
+    651.5
+   ],
+   "bodyLat": 43.6456533,
+   "bodyLon": -79.3507083,
+   "headingDegFromPlusZ": -45.6,
+   "bearingDegFromNorth": 225.6,
+   "headingUncertaintyDeg": null,
+   "positionUncertaintyM": 4,
+   "islandFeatureId": "dodem-three-animal-island",
+   "insideIslandRing": true,
+   "validation": "source-aerial-validated",
+   "provisional": true,
+   "autoPlace": false,
+   "note": "Extrapolated 15-25 m beyond the timber-island control region. Source-validated: the Captain overlaid the projected centres on the 2025 aerial photo and confirmed the turtle/musky/eagle forms within about 1 m. 4 m uncertainty remains explicit. Eagle heading is a source head-only estimate (15 deg)."
+  },
+  {
+   "id": "dodem-musky",
+   "kind": "musky",
+   "sourceSet": "extra3",
+   "originalPhotoBodyPixel": [
+    1942,
+    3095.3
+   ],
+   "originalPhotoHeadPixel": [
+    2010,
+    3093.3
+   ],
+   "fixtureProjectedOrthoBodyPixel": [
+    1426.8389495483539,
+    933.9612909917452
+   ],
+   "fixtureProjectedOrthoHeadPixel": [
+    1417.776163082093,
+    938.7283967059951
+   ],
+   "orientedBodyPixel": [
+    1006.26,
+    -240.84
+   ],
+   "orientedHeadPixel": [
+    981.53,
+    -224.36
+   ],
+   "bodyOrthoPixel": [
+    1426.84,
+    933.96
+   ],
+   "headOrthoPixel": [
+    1417.78,
+    938.73
+   ],
+   "bodyWorld": [
+    2323.1,
+    648.7
+   ],
+   "headWorld": [
+    2322.2,
+    648.9
+   ],
+   "bodyLat": 43.6456732,
+   "bodyLon": -79.35071,
+   "headingDegFromPlusZ": -78.9,
+   "bearingDegFromNorth": 258.9,
+   "headingUncertaintyDeg": null,
+   "positionUncertaintyM": 4,
+   "islandFeatureId": "dodem-three-animal-island",
+   "insideIslandRing": true,
+   "validation": "source-aerial-validated",
+   "provisional": true,
+   "autoPlace": false,
+   "note": "Extrapolated 15-25 m beyond the timber-island control region. Source-validated: the Captain overlaid the projected centres on the 2025 aerial photo and confirmed the turtle/musky/eagle forms within about 1 m. 4 m uncertainty remains explicit. Eagle heading is a source head-only estimate (15 deg)."
+  },
+  {
+   "id": "dodem-eagle",
+   "kind": "eagle",
+   "sourceSet": "extra3",
+   "originalPhotoBodyPixel": [
+    2436.7,
+    3243.3
+   ],
+   "originalPhotoHeadPixel": [
+    2463.3,
+    3223.3
+   ],
+   "fixtureProjectedOrthoBodyPixel": [
+    1347.650490529743,
+    944.9943323060033
+   ],
+   "fixtureProjectedOrthoHeadPixel": [
+    1345.4411162742915,
+    949.746987408826
+   ],
+   "orientedBodyPixel": [
+    788.76,
+    -181.16
+   ],
+   "orientedHeadPixel": [
+    783.54,
+    -167.59
+   ],
+   "bodyOrthoPixel": [
+    1347.65,
+    944.99
+   ],
+   "headOrthoPixel": [
+    1345.44,
+    949.75
+   ],
+   "bodyWorld": [
+    2315.8,
+    647.6
+   ],
+   "headWorld": [
+    2315.5,
+    648
+   ],
+   "bodyLat": 43.6456641,
+   "bodyLon": -79.3508004,
+   "headingDegFromPlusZ": -41.6,
+   "bearingDegFromNorth": 221.6,
+   "headingUncertaintyDeg": 15,
+   "positionUncertaintyM": 4,
+   "islandFeatureId": "dodem-three-animal-island",
+   "insideIslandRing": true,
+   "validation": "source-aerial-validated",
+   "provisional": true,
+   "autoPlace": false,
+   "note": "Extrapolated 15-25 m beyond the timber-island control region. Source-validated: the Captain overlaid the projected centres on the 2025 aerial photo and confirmed the turtle/musky/eagle forms within about 1 m. 4 m uncertainty remains explicit. Eagle heading is a source head-only estimate (15 deg)."
+  }
+ ],
+ "policy": {
+  "autoPlace": false,
+  "captainReviewRequired": true,
+  "positionUncertaintyM": {
+   "original4": 3,
+   "extra3": 4
+  },
+  "heightParallaxNote": "Animal body pixels can parallax by up to ~2.4 m of height; the 3 m / 4 m floors cover that and photo interpretation. Do not present these as surveyed.",
+  "identificationNote": "Identities come from the current MVVA finished-site photo only. The 2025 ortho north-neck construction ladder is not an animal and was not used for identification.",
+  "validationNote": "original4 are fit-only (no independent aerial validation). extra3 are source-aerial-validated: the Captain overlaid the projected centres on the 2025 aerial within about 1 m.",
+  "registrationNote": "Distinctive curbs give a valid built-site match between the finished photo and the 2025 ortho.",
+  "headingNote": "The eagle heading is a source head-only estimate with 15 deg uncertainty; other headings have no stated uncertainty."
+ },
+ "sources": [
+  {
+   "id": "photo-controls",
+   "path": "tools/fixtures/biidaasige-dodem-photo-controls.json",
+   "note": "read-only; Captain ground-control pairs and original 4 animal pixels"
+  },
+  {
+   "id": "photo-extra",
+   "path": "tools/fixtures/biidaasige-dodem-photo-extra.json",
+   "note": "read-only; original 4800x3600 pixels, crop affine, extra 3 animals"
+  },
+  {
+   "id": "island-first",
+   "path": "tools/fixtures/biidaasige-woodchip-island.json",
+   "note": "read-only; first-island ortho extent and ring"
+  },
+  {
+   "id": "island-three",
+   "path": "tools/fixtures/biidaasige-dodem-three-island.json",
+   "note": "read-only; three-animal-island ortho extent and ring"
+  },
+  {
+   "id": "projection",
+   "path": "js/toronto-geodata.js",
+   "note": "read-only; city frame projection"
+  }
+ ]
+}

@@ -1,0 +1,22 @@
+{
+  "status": "captain-source-reviewed-2026-11-10",
+  "dataCellsHash": "f7578de9e5ebcf8a52ac3a84c8133e7cbef520a07ec5bc83828417484ea96402",
+  "acceptedPatches": [
+    1,
+    2,
+    6,
+    7,
+    10,
+    13,
+    15,
+    16
+  ],
+  "expectedCells": 263,
+  "sourceReview": "City2024ortho actual extent near-native4096px, primary2026Oneida/Ojibway photos and Ontario2023DSM/DTM. Representative visual trial only; other16patches withheld as ambiguous. No species or exact plant-shape claim.",
+  "sourceOrthoExtent3857": {
+    "xmin": -8834441.771695673,
+    "ymin": 5407866.053267989,
+    "xmax": -8834031.358034227,
+    "ymax": 5408276.466929435
+  }
+}

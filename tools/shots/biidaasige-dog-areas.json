@@ -1,0 +1,4 @@
+[
+ {"name":"dog-east","mode":"person","time":"midday","wait":6000,"js":"(()=>{const a=window.__CITY_APP,p=CITY.biidaasigeParkWorld('dogs-east-1200');a.teleportTo(p.x+40,p.z+35,0);const c={pos:[p.x+45,15,p.z+45],look:[p.x,.3,p.z],fov:65};a.cameraSystem.cinema=()=>c;console.log('dog-review',JSON.stringify(CITY.biidaasigeDogSurfaces?.stats||{sourceCorrection:false}));})();"},
+ {"name":"dog-west","mode":"person","time":"midday","wait":6000,"js":"(()=>{const a=window.__CITY_APP,p=CITY.biidaasigeParkWorld('dogs-west-800');a.teleportTo(p.x+35,p.z+30,0);const c={pos:[p.x+40,13,p.z+40],look:[p.x,.3,p.z],fov:65};a.cameraSystem.cinema=()=>c;})();"}
+]

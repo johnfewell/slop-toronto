@@ -123,8 +123,8 @@ page.on('console', (m) => {
   if (process.env.CAPTURE_PROGRESS && (m.type() === 'error' || m.text().startsWith('[ride-check]'))) console.log(`[${m.type()}] ${m.text()}`);
 });
 page.on('pageerror', (e) => {
-  log.push(`[pageerror] ${e.message}`);
-  if (process.env.CAPTURE_PROGRESS) console.log(`[pageerror] ${e.message}`);
+  log.push(`[pageerror] ${e.stack || e.message}`);
+  if (process.env.CAPTURE_PROGRESS) console.log(`[pageerror] ${e.stack || e.message}`);
 });
 const served = new Map(), receipts = [];
 page.on('response', (r) => {

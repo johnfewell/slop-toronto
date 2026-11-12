@@ -1,0 +1,5 @@
+[
+ {"name":"biidaasige-east-aerial","mode":"pedestrian","time":"midday","wait":12000,"js":"(()=>{const a=window.__CITY_APP;a.teleportTo(2570,650,0);const c={pos:[2690,155,980],look:[2550,0,620],fov:60};a.cameraSystem.cinema=()=>c;})();"},
+ {"name":"biidaasige-east-street","mode":"pedestrian","time":"midday","wait":8000,"js":"(()=>{const a=window.__CITY_APP;a.teleportTo(2600,650,0);const c={pos:[2600,2.2,650],look:[2700,3,610],fov:65};a.cameraSystem.cinema=()=>c;})();"},
+ {"name":"biidaasige-west-aerial","mode":"pedestrian","time":"golden","wait":8000,"js":"(()=>{const a=window.__CITY_APP;a.teleportTo(2240,760,0);const c={pos:[2100,160,1060],look:[2220,0,760],fov:60};a.cameraSystem.cinema=()=>c;})();"}
+]

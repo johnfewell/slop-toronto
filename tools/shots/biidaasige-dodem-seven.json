@@ -1,0 +1,44 @@
+[
+  {
+    "name": "dodem-seven-overhead",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP,portrait=innerWidth/innerHeight<.7; a.teleportTo(2310,654,0);const c={\"pos\": [2307, 40, 658], \"look\": [2307, 0.3, 658], \"fov\": 58};if(portrait){c.fov=76;c.pos[1]=65;}a.cameraSystem.cinema=()=>c;console.log('source-dodem-coverage',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "dodem-pair-and-oaks",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP,portrait=innerWidth/innerHeight<.7; a.teleportTo(2310,654,0);const c={\"pos\": [2311, 3.1, 654], \"look\": [2298, 1.7, 667], \"fov\": 58};if(portrait){c.fov=76;}a.cameraSystem.cinema=()=>c;console.log('source-dodem-coverage',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "dodem-bear-and-wolf",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP,portrait=innerWidth/innerHeight<.7; a.teleportTo(2310,654,0);const c={\"pos\": [2285, 2.7, 676], \"look\": [2298, 1.4, 670], \"fov\": 58};if(portrait){c.fov=76;}a.cameraSystem.cinema=()=>c;console.log('source-dodem-coverage',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "dodem-three-island",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP,portrait=innerWidth/innerHeight<.7; a.teleportTo(2310,654,0);const c={\"pos\": [2330, 3.3, 653], \"look\": [2320, 0.7, 649], \"fov\": 58};if(portrait){c.fov=76;}a.cameraSystem.cinema=()=>c;console.log('source-dodem-coverage',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "dodem-musky-face",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP,portrait=innerWidth/innerHeight<.7; a.teleportTo(2310,654,0);const c={\"pos\": [2319.2, 1.4, 649.5], \"look\": [2323.1, 0.48, 648.7], \"fov\": 58};if(portrait){c.fov=76;}a.cameraSystem.cinema=()=>c;console.log('source-dodem-coverage',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  },
+  {
+    "name": "dodem-turtle-face",
+    "mode": "person",
+    "time": "midday",
+    "wait": 6000,
+    "js": "(()=>{const a=window.__CITY_APP,portrait=innerWidth/innerHeight<.7; a.teleportTo(2310,654,0);const c={\"pos\": [2320, 1.8, 654], \"look\": [2322.6, 0.5, 650.9], \"fov\": 58};if(portrait){c.fov=76;}a.cameraSystem.cinema=()=>c;console.log('source-dodem-coverage',JSON.stringify(CITY.biidaasigeParkStats));})();"
+  }
+]

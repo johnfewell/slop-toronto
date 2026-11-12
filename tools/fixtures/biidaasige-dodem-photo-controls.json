@@ -1,0 +1,166 @@
+{
+  "schema": "biidaasige-dodem-photo-controls/1",
+  "bead": "st-bmyv.4",
+  "captainViewed": "2026-11-11",
+  "sourcePhoto": "$WATERFRONT_RESEARCH/biidaasige/dog-fence-photos/mvva-badlands-cableway.jpg",
+  "sourcePhotoDimensions": [
+    4800,
+    3600
+  ],
+  "orientedPrivatePhoto": "$WATERFRONT_RESEARCH/biidaasige/captain/dodem-mvva-oriented.png",
+  "orientedPhotoDimensions": [
+    1076,
+    1000
+  ],
+  "derivation": "ImageMagick crop2000x1450+2750+1500, +repage, rotate148degrees, resize1200x1000, +repage. ActualMVVAfinishedsitephotograph privately viewed. No pixels ship.",
+  "sourceOrthoFixture": "tools/fixtures/biidaasige-woodchip-island.json",
+  "controls": [
+    {
+      "id": "north-gate-left",
+      "photoPixel": [
+        627,
+        93
+      ],
+      "orthoPixel": [
+        1282.5,
+        1032.5
+      ],
+      "note": "Captain matched same ground curb location between actual2025ortho and MVVAfinishedsitephoto; smooth-curve points have1\u20132m interpretation error. Roundbenchcenter carries0.5m height/parallax error."
+    },
+    {
+      "id": "north-gate-right",
+      "photoPixel": [
+        690,
+        87
+      ],
+      "orthoPixel": [
+        1305.4166666666667,
+        1047.5
+      ],
+      "note": "Captain matched same ground curb location between actual2025ortho and MVVAfinishedsitephoto; smooth-curve points have1\u20132m interpretation error. Roundbenchcenter carries0.5m height/parallax error."
+    },
+    {
+      "id": "round-bench-center",
+      "photoPixel": [
+        363,
+        404
+      ],
+      "orthoPixel": [
+        1169.5833333333333,
+        1147.9166666666667
+      ],
+      "note": "Captain matched same ground curb location between actual2025ortho and MVVAfinishedsitephoto; smooth-curve points have1\u20132m interpretation error. Roundbenchcenter carries0.5m height/parallax error."
+    },
+    {
+      "id": "south-bulb",
+      "photoPixel": [
+        336,
+        789
+      ],
+      "orthoPixel": [
+        1142.9166666666667,
+        1312.9166666666667
+      ],
+      "note": "Captain matched same ground curb location between actual2025ortho and MVVAfinishedsitephoto; smooth-curve points have1\u20132m interpretation error. Roundbenchcenter carries0.5m height/parallax error."
+    },
+    {
+      "id": "southeast-bulb",
+      "photoPixel": [
+        737,
+        695
+      ],
+      "orthoPixel": [
+        1305.8333333333335,
+        1285.8333333333335
+      ],
+      "note": "Captain matched same ground curb location between actual2025ortho and MVVAfinishedsitephoto; smooth-curve points have1\u20132m interpretation error. Roundbenchcenter carries0.5m height/parallax error."
+    },
+    {
+      "id": "south-inner-notch",
+      "photoPixel": [
+        540,
+        672
+      ],
+      "orthoPixel": [
+        1237.0833333333335,
+        1259.5833333333335
+      ],
+      "note": "Captain matched same ground curb location between actual2025ortho and MVVAfinishedsitephoto; smooth-curve points have1\u20132m interpretation error. Roundbenchcenter carries0.5m height/parallax error."
+    },
+    {
+      "id": "east-waist",
+      "photoPixel": [
+        680,
+        442
+      ],
+      "orthoPixel": [
+        1286.25,
+        1184.5833333333333
+      ],
+      "note": "Captain matched same ground curb location between actual2025ortho and MVVAfinishedsitephoto; smooth-curve points have1\u20132m interpretation error. Roundbenchcenter carries0.5m height/parallax error."
+    },
+    {
+      "id": "west-waist",
+      "photoPixel": [
+        339,
+        504
+      ],
+      "orthoPixel": [
+        1154.1666666666667,
+        1198.3333333333333
+      ],
+      "note": "Captain matched same ground curb location between actual2025ortho and MVVAfinishedsitephoto; smooth-curve points have1\u20132m interpretation error. Roundbenchcenter carries0.5m height/parallax error."
+    }
+  ],
+  "animals": [
+    {
+      "id": "dodem-beaver",
+      "kind": "beaver",
+      "photoPixel": [
+        503,
+        293
+      ],
+      "headPixel": [
+        521,
+        297
+      ]
+    },
+    {
+      "id": "dodem-otter",
+      "kind": "otter",
+      "photoPixel": [
+        557,
+        284
+      ],
+      "headPixel": [
+        579,
+        272
+      ]
+    },
+    {
+      "id": "dodem-wolf",
+      "kind": "wolf",
+      "photoPixel": [
+        364,
+        665
+      ],
+      "headPixel": [
+        372,
+        647
+      ]
+    },
+    {
+      "id": "dodem-bear",
+      "kind": "bear",
+      "photoPixel": [
+        699,
+        641
+      ],
+      "headPixel": [
+        695,
+        652
+      ]
+    }
+  ],
+  "policy": "Fit ground homography, inspect residuals+leaveoneout+heldoutbench control. Animalbodypixelsmayparallaxdueheightupto2.4m; sourcepositionuncertaintyatleast3m, not surveyed. Do not assume2025constructionladderisotter/beaver; currentphotoidentities only, homography via stablecurbs. No runtimebeforecaptainreview."
+}

@@ -105,6 +105,57 @@
         './js/ontario-place-pods.js',
         './js/landmarks.js',
         './js/humber-arch-bridge.js',
+        './js/waterfront-details.js',
+        './js/waterfront-beach-ground.js',
+        './js/waterfront-public-realm.js',
+        './js/waterfront-landmarks.js',
+        './js/waterfront-music-garden.js',
+        './js/waterfront-harbourfront.js',
+        './js/waterfront-main-building.js',
+        './js/waterfront-concert-stage.js',
+        './js/biidaasige-park-data.js',
+        './js/biidaasige-map-anchors.js',
+        './js/biidaasige-path-network-data.js',
+        './js/biidaasige-play-landmarks.js',
+        './js/biidaasige-play-infrastructure.js',
+        './js/biidaasige-play-pads.js',
+        './js/biidaasige-adventure-play.js',
+        './js/biidaasige-amenities.js',
+        './js/biidaasige-dog-surfaces.js',
+        './js/biidaasige-woodchip-island.js',
+        './js/biidaasige-dodem-three-island.js',
+        './js/biidaasige-dodem.js',
+        './js/biidaasige-dodem-placements.js',
+        './js/biidaasige-lighting.js',
+        './js/biidaasige-heritage.js',
+        './js/biidaasige-paths.js',
+        './js/biidaasige-river-access.js',
+        './js/biidaasige-ground-mask.js',
+        './js/biidaasige-park.js',
+        './js/waterfront-ferries.js',
+        './js/waterfront-island-arrivals-data.js',
+        './js/waterfront-island-arrivals.js',
+        './js/waterfront-sherbourne.js',
+        './js/waterfront-bathurst.js',
+        './js/waterfront-beach-landscape.js',
+        './js/waterfront-hto-landscape.js',
+        './js/waterfront-hto-firehall.js',
+        './js/waterfront-island-access-data.js',
+        './js/waterfront-island-access.js',
+        './js/waterfront-island-buildings-data.js',
+        './js/waterfront-island-buildings.js',
+        './js/waterfront-island-cottage-footprint-data.js',
+        './js/waterfront-island-cottage-footprint.js',
+        './js/waterfront-island-lanes-data.js',
+        './js/waterfront-island-lanes.js',
+        './js/waterfront-island-road-materials.js',
+        './js/waterfront-island-residential-canopy-data.js',
+        './js/waterfront-island-residential-canopy.js',
+        './js/waterfront-island-yard-materials.js',
+        './js/waterfront-island-garden-cover-data.js',
+        './js/waterfront-island-garden-cover.js',
+        './js/waterfront-dinghies-data.js',
+        './js/waterfront-dinghies.js',
         './js/storefront-signs.js',
         './js/mapped-poles.js',
         './js/street-details.js',
@@ -142,6 +193,7 @@
         './js/controllers.js',
         './js/touch-controls.js',
         './js/gamepad-controls.js',
+        './js/camera-rig.js',
         './js/cameras.js',
         './js/streetcar-ride.js',
         './js/subway-service.js',
@@ -178,7 +230,7 @@
     // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by
     // js/geodata-loader.js while three.js loads
     const cityGeo = (() => {
-      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=db15e398f378' : './data/toronto-geodata.bin?v=29bc2e17e738');
+      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=9e2737f7c428' : './data/toronto-geodata.bin?v=0e6ba6a96a38');
       return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
     for (const src of cityAppScripts) {
@@ -524,6 +576,7 @@
     <button id="tp-unionStation" class="pop-item tp-btn" data-teleport="unionStation" type="button"><span class="pop-name">Union Station</span><span class="pop-sub">Front St · Financial District</span></button>
     <button id="tp-cityHall" class="pop-item tp-btn" data-teleport="cityHall" type="button"><span class="pop-name">City Hall &amp; Nathan Phillips Square</span><span class="pop-sub">Queen St W · Downtown</span></button>
     <button id="tp-harbourfront" class="pop-item tp-btn" data-teleport="harbourfront" type="button"><span class="pop-name">Harbourfront Centre</span><span class="pop-sub">Queens Quay W · Harbourfront</span></button>
+    <button id="tp-biidaasige" class="pop-item tp-btn" data-teleport="biidaasige" type="button"><span class="pop-name">Biidaasige Park</span><span class="pop-sub">Snowy Owl Theatre · Port Lands</span></button>
     <button id="tp-distillery" class="pop-item tp-btn" data-teleport="distillery" type="button"><span class="pop-name">Distillery District</span><span class="pop-sub">Mill St · Corktown</span></button>
     <button id="tp-rom" class="pop-item tp-btn" data-teleport="rom" type="button"><span class="pop-name">Royal Ontario Museum</span><span class="pop-sub">Bloor St W · Yorkville</span></button>
     <button id="tp-legislature" class="pop-item tp-btn" data-teleport="legislature" type="button"><span class="pop-name">Queen's Park</span><span class="pop-sub">University Ave · Discovery District</span></button>
@@ -638,6 +691,7 @@
     <button id="cam-chase" class="pop-item cam-btn active" data-camera="chase" type="button"><span class="pop-name">3rd-Person Chase</span><kbd>5</kbd></button>
     <button id="cam-action" class="pop-item cam-btn" data-camera="action" type="button"><span class="pop-name">Low-Angle Action</span><kbd>6</kbd></button>
     <button id="cam-pov" class="pop-item cam-btn" data-camera="pov" type="button"><span class="pop-name">First-Person / Cockpit</span><kbd>7</kbd></button>
+    <button id="cam-torontoDirector" class="pop-item cam-btn" data-camera="torontoDirector" type="button"><span class="pop-name">CN Tower Two-Shot</span></button>
     <div class="pop-title">Scenic</div>
     <button id="cam-trail" class="pop-item cam-btn" data-camera="trail" type="button"><span class="pop-name">Martin Goodman Trail</span><kbd>8</kbd></button>
     <button id="cam-islands" class="pop-item cam-btn" data-camera="islands" type="button"><span class="pop-name">Skyline from the Islands</span><kbd>9</kbd></button>

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "island-oneida-street",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={\"pos\": [1116.4, 1.8, 2405.3], \"look\": [1103.79, 0.15, 2388.0099999999998], \"fov\": 64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 3500
+  },
+  {
+    "name": "island-ojibway-street",
+    "time": "midday",
+    "js": "(()=>{document.body.classList.add('film');const a=window.__CITY_APP;const c={\"pos\": [1173.7, 1.8, 2350.6], \"look\": [1162.4550000000002, 0.15, 2334.8050000000003], \"fov\": 64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 3500
+  },
+  {
+    "name": "garden-patch-7",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1094.691907514451,1.8,2375.5526011560696],look:[1088.9,.65,2379.8],fov:70})",
+    "wait": 3000
+  },
+  {
+    "name": "garden-patch-13",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1118.740576543262,1.8,2273.1507038702357],look:[1124.9,.65,2268.8],fov:70})",
+    "wait": 3000
+  },
+  {
+    "name": "garden-source-runtime-check",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,g=a.islandGardenCover;if(!g||g.layout.cells!==263)throw Error('Missing reviewed garden cover '+JSON.stringify(g?.layout));if(!g.group.parent)throw Error('Garden not in scene');g.update({x:1088.9,z:2379.8});if(!g.group.visible)throw Error('Garden hidden at island coordinates');g.update({x:9000,z:9000});if(g.group.visible)throw Error('Garden never culls');g.update(a.cameraSystem.camera.position);console.log('[island-garden-cover] '+JSON.stringify(g.layout));})()",
+    "wait": 500
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "nottawa-source-street",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1192.833, 1.8, 2219.071], \"look\": [1195.65, 2.4, 2205.916], \"fov\": 74})",
+    "wait": 3000
+  },
+  {
+    "name": "nottawa-source-aerial",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [1197.542, 22, 2176.143], \"look\": [1196.513, 2.4, 2203.204], \"fov\": 64})",
+    "wait": 3000
+  },
+  {
+    "name": "nottawa-source-collider-check",
+    "time": "midday",
+    "js": "(()=>{const C=window.CITY,a=window.__CITY_APP,T=C.THREE;const row=C.GEO.buildings.find(r=>Math.abs(r[0]-1194.7)<.01&&Math.abs(r[1]-2202.9)<.01);const f=C.islandCottageFootprintProfile(row);if(!f)throw Error('Pilot footprint not active');const p=f.parts[0],cs=Math.cos(row[2]),sn=Math.sin(row[2]),u=(p[0]+p[1])/2,v=(p[2]+p[3])/2,x=row[0]+u*cs+v*sn,z=row[1]-u*sn+v*cs;const co=a.controllerManager.colliders.find(c=>c.obb&&Math.hypot(c.obb.cx-x,c.obb.cz-z)<.01&&Math.abs(c.obb.hx-(p[1]-p[0])/2)<.01);if(!co)throw Error('Expanded physical collider missing');const mesh=a.scene.getObjectByName('Buildings_IslandCottages'),m=new T.Matrix4(),pos=new T.Vector3(),q=new T.Quaternion(),scale=new T.Vector3();let idx=-1;for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,m);m.decompose(pos,q,scale);if(Math.hypot(pos.x-x,pos.z-z)<.01){idx=i;break;}}if(idx<0||Math.abs(scale.x-2*co.obb.hx)>.002||Math.abs(scale.z-2*co.obb.hz)>.002)throw Error('Rendered wall and collider disagree');const tu=9,tv=0,tx=row[0]+tu*cs+tv*sn,tz=row[1]-tu*sn+tv*cs;const hit=C.WorldCollision.contact(C.WorldCollision.circleShape(tx,tz,.3),co);if(!hit)throw Error('Expanded region still walk-through');if(!a.controllerManager.nearColliders(tx,tz,2).includes(co))throw Error('Expanded wall missing from shared movement/camera broadphase');console.log('[cottage-footprint-verified] '+JSON.stringify({source:f.sourceID,parts:f.parts,meshInstance:idx,rendered:[scale.x,scale.z],collider:[co.obb.hx*2,co.obb.hz*2],expandedContact:hit,areas:f.areas}));})()",
+    "wait": 500
+  }
+]

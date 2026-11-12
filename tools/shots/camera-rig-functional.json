@@ -1,0 +1,44 @@
+[
+  {
+    "name": "cyclist-dense-chase",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;a.film.start(30);c.cinema=null;document.body.classList.add('film');a.selectMode('cyclist');const p=window.CITY.worldFromLatLon(43.6489,-79.3818);a.teleportTo(p.x,p.z,0);a.selectCamera('chase',true);for(let i=0;i<30;i++){await new Promise(requestAnimationFrame);await a.film.step(1);}const r=c.collision.radius(c.camera);if(c.collision.sweep(c.currentPos,c.currentPos,r)<1)throw Error('camera sphere overlap');return {preset:c.activePresetId,eye:c.currentPos.toArray(),look:c.currentLookAt.toArray(),fov:c.camera.fov,radius:r,metrics:c.metrics()};})()",
+    "record": true,
+    "wait": 100
+  },
+  {
+    "name": "car-dense-chase",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;a.film.start(30);c.cinema=null;document.body.classList.add('film');a.selectMode('car');const p=window.CITY.worldFromLatLon(43.6489,-79.3818);a.teleportTo(p.x,p.z,0);a.selectCamera('chase',true);for(let i=0;i<30;i++){await new Promise(requestAnimationFrame);await a.film.step(1);}return {preset:c.activePresetId,eye:c.currentPos.toArray(),look:c.currentLookAt.toArray(),fov:c.camera.fov,metrics:c.metrics()};})()",
+    "record": true,
+    "wait": 100
+  },
+  {
+    "name": "director-start",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;a.film.start(30);c.cinema=null;document.body.classList.add('film');a.selectMode('cyclist');const attempts=[];for(const [x,z] of [[-500,650],[-400,650],[-650,650],[-300,700],[-800,650]]){const arrival=a.teleportTo(x,z,0);if(!arrival){attempts.push({x,z,reason:'arrival unavailable'});continue;}a.selectCamera('chase',true);for(let i=0;i<2;i++){await new Promise(requestAnimationFrame);await a.film.step(1);}const probe=new window.CITY.TorontoCameraDirector(c),okay=probe.prepare(a.controllerManager.getActiveEntity());const hit=c.collision.lastHit;attempts.push({x,z,arrival,okay,reason:probe.reason,hit:hit?{minX:hit.minX,maxX:hit.maxX,minZ:hit.minZ,maxZ:hit.maxZ,minY:hit.minY,maxY:hit.maxY,kind:hit.kind}:null});if(!okay)continue;a.selectCamera('torontoDirector',true);await new Promise(requestAnimationFrame);await a.film.step(1);if(c.activePresetId!=='torontoDirector')throw Error('validated director rejected '+JSON.stringify(c.lastDirectorReport));return {preset:c.activePresetId,time:c.director.time,eye:c.currentPos.toArray(),look:c.currentLookAt.toArray(),fov:c.camera.fov,report:c.director.report,attempts};}throw Error('no clear authored waterfront candidate '+JSON.stringify(attempts));})()",
+    "record": true,
+    "wait": 100
+  },
+  {
+    "name": "director-middle",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;for(let i=0;i<149;i++){await new Promise(requestAnimationFrame);await a.film.step(1);}if(c.activePresetId!=='torontoDirector')throw Error('director lost '+JSON.stringify(c.lastDirectorReport));if(Math.abs(c.director.time-5)>.05)throw Error('wrong director time '+c.director.time);return {eye:c.currentPos.toArray(),fov:c.camera.fov,time:c.director.time,report:c.director.report};})()",
+    "record": true,
+    "wait": 100
+  },
+  {
+    "name": "director-end",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem;for(let i=0;i<150;i++){await new Promise(requestAnimationFrame);await a.film.step(1);}if(c.activePresetId!=='torontoDirector')throw Error('director lost '+JSON.stringify(c.lastDirectorReport));if(Math.abs(c.director.time-10)>.05)throw Error('wrong director time '+c.director.time);return {eye:c.currentPos.toArray(),fov:c.camera.fov,time:c.director.time,report:c.director.report};})()",
+    "record": true,
+    "wait": 100
+  },
+  {
+    "name": "director-exit",
+    "time": "midday",
+    "js": "(async()=>{const a=window.__CITY_APP,c=a.cameraSystem,before=c.currentPos.clone(),lens=c.camera.fov;a.selectCamera('chase');await a.film.step(1);if(c.currentPos.distanceTo(before)>.001||Math.abs(c.camera.fov-lens)>.001)throw Error('director exit jumped');for(let i=0;i<20;i++){await new Promise(requestAnimationFrame);await a.film.step(1);}return {preset:c.activePresetId,eye:c.currentPos.toArray(),fov:c.camera.fov};})()",
+    "record": true,
+    "wait": 100
+  }
+]

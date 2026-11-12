@@ -1,0 +1,218 @@
+{
+ "note": "Reviewed source snapshot for the three source-unmatched tall rows at the Queen City Yacht Club marina (st-sb3r.33). This is a trimmed, hand-checked copy of the captain-local primary caches (OpenStreetMap current data and the City of Toronto 3D Massing 2025 attributes). It exists so the focused regression runs from the repo with no network and no local cache. Coordinates are OSM lon/lat; massing fields are the City record's own attributes.",
+ "sources": {
+  "osmBuildings": {
+   "file": "b.json",
+   "sha256": "10696221e8015fba442942184dbbe6b91cf2f29426230994a7036e843611310b",
+   "timestamp_osm_base": "2026-11-10T12:45:01Z",
+   "query": "way[\"building\"](43.605,-79.405,43.6345,-79.338);out geom tags;"
+  },
+  "osmMarina": {
+   "file": "m.json",
+   "sha256": "748681d658341f56cdb385d034b0e95464b93c6433dc3a65632a2f0be53754f8",
+   "timestamp_osm_base": "2026-11-10T18:18:28Z",
+   "query": "way[\"leisure\"=\"marina\"](43.605,-79.405,43.6345,-79.338);out geom tags;"
+  },
+  "osmResidential": {
+   "file": "r.json",
+   "sha256": "86a0f1c66c2033f16a20c7b68d9aebfbc0eaad54ec941fd38f5674ca06b5fa5b",
+   "timestamp_osm_base": "2026-11-10T12:45:58Z",
+   "query": "way[\"landuse\"=\"residential\"](43.605,-79.405,43.6345,-79.338);out geom tags;"
+  },
+  "cityMassing": {
+   "file": "massing.json",
+   "sha256": "7d9242661f8caf28b1feb325c187bc8ecc412bd4cdbb02f2ef08780825aa2077",
+   "edition": "3DMassingShapefile_2025_WGS84",
+   "source": "City of Toronto 3D Massing 2025 (OGL – Toronto)"
+  }
+ },
+ "projection": {
+  "lat0": 43.6453,
+  "lon0": -79.3806,
+  "kx": 80682.4717990044,
+  "ky": 111105.31871811183,
+  "theta": -0.28949997923178367,
+  "ox": 0,
+  "oz": 0
+ },
+ "marinaWay": {
+  "type": "way",
+  "id": 193043084,
+  "tags": {
+   "leisure": "marina",
+   "name": "Queen City Yacht Club",
+   "operator": "Queen City Yacht Club",
+   "power_supply": "yes",
+   "sanitary_dump_station": "yes",
+   "seamark:harbour:category": "marina",
+   "seamark:type": "harbour",
+   "vhf": "68",
+   "website": "https://qcyc.ca/about-us/visitors",
+   "wikidata": "Q7270272",
+   "wikipedia": "en:Queen City Yacht Club"
+  },
+  "ring": [
+   [-79.3590711, 43.6298647],
+   [-79.3591695, 43.6299168],
+   [-79.3590331, 43.6300429],
+   [-79.3584062, 43.6304203],
+   [-79.3583802, 43.6304361],
+   [-79.358124, 43.6302869],
+   [-79.3578716, 43.6301399],
+   [-79.3579384, 43.6300697],
+   [-79.3577106, 43.6298996],
+   [-79.3572824, 43.6295799],
+   [-79.3572137, 43.6293836],
+   [-79.3573512, 43.6288819],
+   [-79.3573664, 43.6287966],
+   [-79.3575077, 43.6288785],
+   [-79.3575426, 43.6288987],
+   [-79.3575928, 43.6289456],
+   [-79.3575354, 43.6290008],
+   [-79.357549, 43.6290136],
+   [-79.3575626, 43.6290202],
+   [-79.3585725, 43.6295761],
+   [-79.3590453, 43.6298506],
+   [-79.3590711, 43.6298647]
+  ]
+ },
+ "rows": [
+  {
+   "row": 32501,
+   "center": [1234.4, 2166.2],
+   "yaw": 0.551,
+   "parts": [[-6.3, 6.3, -2.8, 2.8]],
+   "nativeHeight": 31.9,
+   "nativeKind": 2,
+   "nativeRoof": 0,
+   "nativeFp": "[0.551,[[-6.3,6.3,-2.8,2.8]]]",
+   "massingId": "to-3dmassing-2025:354314",
+   "buildingFid": 354314,
+   "buildingOsm": "osm:way/795796083",
+   "massingParts": [
+    {
+     "max": 31.9,
+     "avg": 3.3,
+     "min": 16.1,
+     "ground": 75.9,
+     "src": "Lidar-Derived",
+     "fid": 354314
+    }
+   ]
+  },
+  {
+   "row": 32502,
+   "center": [1212, 2181.4],
+   "yaw": 0.608,
+   "parts": [[-5.6, 5.6, -3.1, 3.1]],
+   "nativeHeight": 28.7,
+   "nativeKind": 2,
+   "nativeRoof": 0,
+   "nativeFp": "[0.608,[[-5.6,5.6,-3.1,3.1]]]",
+   "massingId": "to-3dmassing-2025:354315",
+   "buildingFid": 354315,
+   "buildingOsm": null,
+   "massingParts": [
+    {
+     "max": 28.7,
+     "avg": 2.8,
+     "min": 9.8,
+     "ground": 75.7,
+     "src": "Lidar-Derived",
+     "fid": 354315
+    }
+   ]
+  },
+  {
+   "row": 32503,
+   "center": [1215.2, 2191],
+   "yaw": -0.953,
+   "parts": [[-5.4, 5.4, -3.1, 3.1]],
+   "nativeHeight": 28.5,
+   "nativeKind": 2,
+   "nativeRoof": 0,
+   "nativeFp": "[-0.953,[[-5.4,5.4,-3.1,3.1]]]",
+   "massingId": "to-3dmassing-2025:354316",
+   "buildingFid": 354316,
+   "buildingOsm": null,
+   "massingParts": [
+    {
+     "max": 28.5,
+     "avg": 2.9,
+     "min": 0.4,
+     "ground": 75.7,
+     "src": "Lidar-Derived",
+     "fid": 354316
+    }
+   ]
+  }
+ ],
+ "nearbyOsmBuildings": [
+  {
+   "id": 193043051,
+   "tags": { "building": "yes" },
+   "center": [1270.2, 2183.2],
+   "ring": [
+    [-79.3577743, 43.6296656],
+    [-79.3579056, 43.6297399],
+    [-79.3578078, 43.6298306],
+    [-79.3576765, 43.6297563],
+    [-79.3577743, 43.6296656]
+   ]
+  },
+  {
+   "id": 487167570,
+   "tags": {
+    "addr:city": "Toronto",
+    "addr:housenumber": "1",
+    "addr:street": "Seneca Avenue",
+    "building": "yes",
+    "opendata:type": "100001"
+   },
+   "center": [1202.3, 2165.1],
+   "ring": [
+    [-79.358771, 43.6297114],
+    [-79.3586515, 43.6298152],
+    [-79.3584867, 43.6297158],
+    [-79.3586062, 43.6296121],
+    [-79.358771, 43.6297114]
+   ]
+  },
+  {
+   "id": 487167571,
+   "tags": {
+    "addr:city": "Toronto",
+    "addr:housenumber": "2",
+    "addr:street": "Seneca Avenue",
+    "building": "yes",
+    "club": "yes",
+    "name": "Learn to Sail building",
+    "opendata:type": "115001"
+   },
+   "center": [1193.1, 2149.7],
+   "ring": [
+    [-79.3589156, 43.6297971],
+    [-79.3588828, 43.6298261],
+    [-79.3589071, 43.6298405],
+    [-79.3588204, 43.6299172],
+    [-79.3587181, 43.6298567],
+    [-79.3587429, 43.6298348],
+    [-79.3586964, 43.6298073],
+    [-79.3587911, 43.6297234],
+    [-79.3589156, 43.6297971]
+   ]
+  },
+  {
+   "id": 795796083,
+   "tags": { "building": "yes" },
+   "center": [1233.6, 2168.3],
+   "ring": [
+    [-79.3582959, 43.6297188],
+    [-79.3583476, 43.6297525],
+    [-79.3582431, 43.6298371],
+    [-79.3581914, 43.6298035],
+    [-79.3582959, 43.6297188]
+   ]
+  }
+ ]
+}

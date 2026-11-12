@@ -10,7 +10,7 @@
 
 const { THREE } = window.CITY;
 const { mergeGeometries } = window.CITY.Addons;
-const { Fn, float, color, uv, attribute, fract, smoothstep, mix, abs, positionWorld, normalWorldGeometry } = window.CITY.TSL;
+const { Fn, float, color, uv, attribute, fract, floor, smoothstep, mix, abs, select, positionWorld, normalWorldGeometry, fwidth } = window.CITY.TSL;
 const { GEO, CITY_BOUNDS, nearestRoads } = window.CITY;
 const { createRenderedFacadeMaterial, createCurtainWallMaterial, createFacadeBoxes, WALL_KINDS } = window.CITY;
 
@@ -340,7 +340,21 @@ const linear = (hex) => {
  * pitched at `pitch`; pushes flat-shaded triangles (+ the eave soffit) into the accumulator with per-vertex colour.
  * uv = (metres along the eave, metres up the slope).
  */
-function pushHipRoof(A, cx, cz, ang, u0, u1, v0, v1, y, pitch, eave, rgb) {
+// Close the thin roof edge between the upper surface and the underside. Without this fascia,
+// a four-centimetre daylight slit remains visible behind the overhang even with correct soffit winding.
+function pushRoofEdgeFascia(A, corners, rgb) {
+  for (let i = 0; i < 4; i++) {
+    const a = corners[i], b = corners[(i + 1) % 4];
+    const ad = [a[0], a[1] - 0.04, a[2]], bd = [b[0], b[1] - 0.04, b[2]];
+    const dx = b[0] - a[0], dz = b[2] - a[2], L = Math.hypot(dx, dz);
+    for (const p of [a, b, bd, a, bd, ad]) {
+      A.pos.push(...p); A.nor.push(dz / L, 0, -dx / L); A.uv.push(0, 0);
+      A.col.push(rgb[0] * 0.8, rgb[1] * 0.8, rgb[2] * 0.8);
+    }
+  }
+}
+
+function pushHipRoof(A, cx, cz, ang, u0, u1, v0, v1, y, pitch, eave, rgb, closeSoffit = false) {
   u0 -= eave; u1 += eave; v0 -= eave; v1 += eave;
   const W = u1 - u0, D = v1 - v0;
   const alongU = W >= D;
@@ -380,12 +394,13 @@ function pushHipRoof(A, cx, cz, ang, u0, u1, v0, v1, y, pitch, eave, rgb) {
   }
   // soffit under the eaves
   const s = [c00, c01, c11, c10].map((p) => [p[0], p[1] - 0.04, p[2]]);
-  for (const i of [0, 1, 2, 0, 2, 3]) {
+  for (const i of (closeSoffit ? [0, 2, 1, 0, 3, 2] : [0, 1, 2, 0, 2, 3])) {
     A.pos.push(s[i][0], s[i][1], s[i][2]);
     A.nor.push(0, -1, 0);
     A.uv.push(0, 0);
     A.col.push(rgb[0] * 0.6, rgb[1] * 0.6, rgb[2] * 0.6);
   }
+  if (closeSoffit) pushRoofEdgeFascia(A, [c00, c10, c11, c01], rgb);
 }
 // Mono-pitch sheet roof (huts, sheds, shop extensions): a thin sloped plane falling along local v
 function pushShedRoof(A, cx, cz, ang, u0, u1, v0, v1, y, rgb) {
@@ -409,6 +424,161 @@ function pushShedRoof(A, cx, cz, ang, u0, u1, v0, v1, y, rgb) {
     A.uv.push(0, 0);
     A.col.push(rgb[0] * 0.5, rgb[1] * 0.5, rgb[2] * 0.5);
   }
+}
+
+// Shared cottage facade metrics. These are the SAME numbers the cottage facade material uses
+// (createIslandCottageMaterial → createRenderedFacadeMaterial → facadeCell), so the custom door geometry and the
+// shader's reserved, window-free doorway bay can never drift apart if the spacing changes again.
+const ISLAND_COTTAGE_BAY_PITCH = 2.5;    // m: the facade's bay pitch = createIslandCottageMaterial windowWidth
+const ISLAND_COTTAGE_CORNER_PIER = 0.35; // m: the facade's corner pier = createIslandCottageMaterial cornerPier
+const ISLAND_COTTAGE_DOOR_CASING = 1.35; // m: the painted door casing span (fits the reserved bay)
+// The cottage box tone is held just above 0: facadeCell's chosen = min(floor(tone·bays), bays−1) has NO lower clamp, so a
+// decoded tone that Float32-rounds below 0 (raw tone ≲3e-5 at a high box index) gives chosen = −1 and the mask reserves
+// no bay. Keeping the cottage tone ≥ 0.02 keeps chosen ≥ 0, so the door always has a real reserved bay to sit in.
+const ISLAND_COTTAGE_TONE_MIN = 0.02;
+
+// The exact bay facadeCell reserves for the entrance, so the custom door lands where the shader has already removed the
+// window instead of over one. facadeCell (js/tsl-materials.js): pier = min(cornerPier, wallWidth·0.2);
+// bays = max(round((wallWidth − 2·pier) / pitch), 1); bayWidth = (wallWidth − 2·pier) / bays;
+// chosen = min(floor(tone · bays), bays − 1). `center` is the metre offset of that bay's middle along the wall in the
+// facade's OWN, UNFLIPPED sense: the suppression mask computes bayIdx from s = along·wallWidth (facadeCell line 619–621,
+// the cornerPier branch) — NOT from the flipped wallS the drawn procedural entrance uses. The cottage suppresses that
+// drawn entrance (proceduralEntrances: 0), so the mask is the only thing the door must match. `shaderTone` must be the
+// effective tone the shader decodes (islandCottageShaderTone), not the raw tone.
+function islandCottageDoorBay(wallWidth, shaderTone) {
+  const W = Math.fround(wallWidth); // the box attribute is Float32 (createFacadeBoxes)
+  const pier = Math.min(ISLAND_COTTAGE_CORNER_PIER, W * 0.2);
+  const inner = Math.max(W - 2 * pier, 0);
+  const bays = Math.max(Math.floor(inner / ISLAND_COTTAGE_BAY_PITCH + 0.5), 1);
+  const bayWidth = inner / bays;
+  const chosen = Math.min(Math.floor(shaderTone * bays), bays - 1);
+  return { bays, bayWidth, chosen, center: pier + (chosen + 0.5) * bayWidth };
+}
+
+// createFacadeBoxes packs each box's tone into a Float32 box.w = (i·29 mod 1000) + 0.1 + 0.8·tone (line 1684), and
+// facadeCell decodes it as (fract(box.w) − 0.1) / 0.8. Because the packed value's integer part reaches 999, the Float32
+// rounding of its fraction is not exact: the shader's EFFECTIVE tone drifts from the raw tone by up to a few 1e-5 and,
+// right on a bay boundary, picks the ADJACENT bay. This reproduces the shader's Float32 encode/decode for a box's
+// instance index, so the custom door matches the bay the shader actually reserves (index = the largest part's position
+// in the cottageBoxes array).
+function islandCottageShaderTone(tone, index) {
+  const packed = Math.fround(((index * 29) % 1000) + 0.1 + 0.8 * tone);
+  const frac = Math.fround(packed - Math.floor(packed));
+  return Math.fround(Math.fround(frac - 0.1) / 0.8);
+}
+
+// The cottage walls stop at a documented one/one-and-a-half-storey eave (about 3–4.4 m for an estimated 6.5 m total);
+// the roof takes the rest of the profile's TOTAL height. Explicit OSM height/levels are totals too, so the same rule
+// keeps their apex at the source height rather than stacking a second roof-height on top.
+function islandCottageEaveHeight(totalH, w, d, estimated) {
+  const half = Math.max(1.2, Math.min(w, d) / 2);
+  const eaveTarget = totalH - half * Math.tan(30 * Math.PI / 180);
+  const eaveMax = estimated ? Math.min(4.4, totalH - 1.2) : totalH - 1.1;
+  return Math.max(2.4, Math.min(eaveTarget, eaveMax, totalH - 0.6));
+}
+
+// Cottage facade relief: white corner boards/eave fascia and a shallow painted door with casing.
+// No porch or parcel extension is inferred from the mapped solid footprint.
+function islandCottageTrim(out, cx, cz, ang, u0, u1, v0, v1, h, front, y0, shaderTone) {
+  const cs = Math.cos(ang), sn = Math.sin(ang);
+  const pt = (u, v, y) => [cx + u * cs + v * sn, y, cz - u * sn + v * cs];
+  const box = (u, v, y, w, d, hh, tint) => { const [x, , z] = pt(u, v, y); out.push({ x, y, z, w, d, h: hh, ry: ang, color: tint }); };
+  const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2, wU = u1 - u0, wV = v1 - v0;
+  // Corner boards (white painted, as in the Ward's Island photographs)
+  for (const [u, v] of [[u0 + 0.02, v0 + 0.02], [u1 - 0.02, v0 + 0.02], [u1 - 0.02, v1 - 0.02], [u0 + 0.02, v1 - 0.02]]) {
+    box(u, v, y0 + h / 2, 0.14, 0.14, h);
+  }
+  // Broad white eave fascia along every wall
+  const fy = y0 + h - 0.09;
+  box(u0 + 0.05, vc, fy, 0.10, wV + 0.06, 0.18);
+  box(u1 - 0.05, vc, fy, 0.10, wV + 0.06, 0.18);
+  box(uc, v0 + 0.05, fy, wU + 0.06, 0.10, 0.18);
+  box(uc, v1 - 0.05, fy, wU + 0.06, 0.10, 0.18);
+  // Shallow front entry: casing, painted leaf and upper glazing, in the EXACT bay the shader reserves for the entrance.
+  // The ±u walls vary along v, the ±v walls along u (facadeCell's alongZ). The reserved bay comes from the UNFLIPPED
+  // s = along·wallWidth of facadeCell's suppression mask, so the door centre is simply the wall's min corner plus that
+  // centre — no flip. (facadeCell's flipped wallS only positions the DRAWN procedural entrance/storefront, which the
+  // cottage suppresses with proceduralEntrances: 0.)
+  const uWall = front < 2;                      // front 0/1 are ±u walls (their width is v0..v1), 2/3 are ±v (u0..u1)
+  const W = uWall ? wV : wU;                    // the wall width the facade material actually lays its bays across
+  const { bayWidth, center } = islandCottageDoorBay(W, shaderTone);
+  const varAt = (uWall ? v0 : u0) + center;     // the door's centre on the wall's varying axis
+  const outU = front === 0 ? -1 : front === 1 ? 1 : 0;
+  const outV = front === 2 ? -1 : front === 3 ? 1 : 0;
+  const dU = uWall ? (front === 0 ? u0 : u1) : varAt; // door's fixed u (on ±u walls) or its place along u (on ±v walls)
+  const dV = uWall ? varAt : (front === 2 ? v0 : v1);
+  // Fit the reserved bay: a narrow wall clamps the casing so the entry never spills past the shader's opening.
+  const casing = Math.min(ISLAND_COTTAGE_DOOR_CASING, bayWidth);
+  const leaf = casing * (1.05 / 1.35), glass = casing * (0.65 / 1.35);
+  const doorH = Math.min(2.1, Math.max(1.7, h - 0.35));
+  const put = (delta, w, d, y, hh, tint) => box(dU + outU * delta, dV + outV * delta, y, w, d, hh, tint);
+  put(0.03, uWall ? 0.06 : casing, uWall ? casing : 0.06, y0 + doorH / 2, doorH); // door casing
+  // The door leaf and its upper glazing sit just in front of the casing plane. The foundation stays mapped;
+  // centimetres of facade relief keep the entry visible instead of burying it in the solid building box.
+  put(0.072, uWall ? 0.02 : leaf, uWall ? leaf : 0.02, y0 + (doorH - 0.12) / 2, doorH - 0.12, 0x355a58);
+  put(0.087, uWall ? 0.012 : glass, uWall ? glass : 0.012, y0 + doorH * 0.70, 0.65, 0x26393e);
+  // No invented porch extension: the mapped solid carries only a shallow door and casing.
+
+}
+
+// Gable roof over a rectangle (island cottages): a ridge along the longer axis, two slopes, and the two gable end
+// triangles drawn in the wall colour (`endRgb`) so the ends read as siding, not shingle. `eave` overhangs all round.
+function pushGableRoof(A, cx, cz, ang, u0, u1, v0, v1, y, pitch, eave, rgb, endRgb) {
+  u0 -= eave; u1 += eave; v0 -= eave; v1 += eave;
+  const W = u1 - u0, D = v1 - v0;
+  const alongU = W >= D; // ridge runs along u when the block is wider than deep
+  const half = (alongU ? D : W) / 2;
+  const rise = half * Math.tan(pitch);
+  const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
+  const cs = Math.cos(ang), sn = Math.sin(ang);
+  const P = (u, v, h) => [cx + u * cs + v * sn, y + h, cz - u * sn + v * cs];
+  const r0 = alongU ? P(u0, vc, rise) : P(uc, v0, rise);
+  const r1 = alongU ? P(u1, vc, rise) : P(uc, v1, rise);
+  const c00 = P(u0, v0, 0), c10 = P(u1, v0, 0), c11 = P(u1, v1, 0), c01 = P(u0, v1, 0);
+  // Raw triangle: the winding (and so the normal) is explicit. Gable ends are vertical, so they must not be "flipped
+  // upward" like a slope: that is what left the first pass with missing/inward end triangles and an open roof.
+  const triRaw = (a, b, c, col) => {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const l = Math.hypot(nx, ny, nz) || 1;
+    nx /= l; ny /= l; nz /= l;
+    for (const p of [a, b, c]) {
+      A.pos.push(p[0], p[1], p[2]);
+      A.nor.push(nx, ny, nz);
+      A.uv.push(p[0] * -nz + p[2] * nx, (p[1] - y) / Math.max(0.2, Math.sin(pitch)));
+      A.col.push(col[0], col[1], col[2]);
+    }
+  };
+  // Roof slopes: keep the normal upward (swapping b/c if the numeric winding came out downward).
+  const tri = (a, b, c, col) => {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const ny = uz * vx - ux * vz;
+    if (ny < 0) [b, c] = [c, b];
+    triRaw(a, b, c, col);
+  };
+  const end = endRgb || [rgb[0] * 0.92, rgb[1] * 0.92, rgb[2] * 0.92];
+  if (alongU) {
+    tri(c00, c10, r1, rgb); tri(c00, r1, r0, rgb); // -v slope
+    tri(c11, c01, r0, rgb); tri(c11, r0, r1, rgb); // +v slope
+    triRaw(c00, c01, r0, end);                     // -u gable end (outward)
+    triRaw(c11, c10, r1, end);                     // +u gable end (outward)
+  } else {
+    tri(c10, c11, r1, rgb); tri(c10, r1, r0, rgb);
+    tri(c01, c00, r0, rgb); tri(c01, r0, r1, rgb);
+    triRaw(c10, c00, r0, end);                     // -v gable end (outward)
+    triRaw(c01, c11, r1, end);                     // +v gable end (outward)
+  }
+  // soffit under the eaves (darker, as pushHipRoof does)
+  const s = [c00, c01, c11, c10].map((p) => [p[0], p[1] - 0.04, p[2]]);
+  for (const i of [0, 2, 1, 0, 3, 2]) {
+    A.pos.push(s[i][0], s[i][1], s[i][2]);
+    A.nor.push(0, -1, 0);
+    A.uv.push(0, 0);
+    A.col.push(rgb[0] * 0.6, rgb[1] * 0.6, rgb[2] * 0.6);
+  }
+  pushRoofEdgeFascia(A, [c00, c10, c11, c01], rgb);
 }
 
 // Monitor roof (the Distillery's long warehouses): a hipped roof with a raised monitor along its ridge, low glazed walls
@@ -599,6 +769,261 @@ function inDistillery(x, z) {
 }
 // --- end Toronto layer ---
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Toronto Islands cottages (st-sb3r.18): the confirmed Ward's/Algonquin cottages are wood-frame, clad in horizontal
+// clapboard, with a front entry/porch and a gable or hipped roof. The native renderer drew every island row through
+// the city's brick house path, so the community read as orange/brown brick boxes. This scoped extension (only for
+// `islandBuildingProfile(...).typology === 'cottage'`) gives those rows a small punched-window clapboard facade, white
+// casing/fascia, a shallow front door and a gable (or hipped) roof. It never runs for service buildings, the airport,
+// the lighthouse or any row without a confirmed source match; those keep the native material paths unchanged.
+//
+// Approximation note: the clapboard shader, the siding palette, the white trim and the entry are documented
+// island cottage TYPOLOGY (public Ward's Island cottage photographs), not per-house measurements. Where OSM tags a
+// roof:shape the source subtype is used; no per-house colour is claimed as measured.
+const ISLAND_COTTAGE_PAINT = [0xd9d4c4, 0xb9bdb8, 0x8f9a92, 0xa7b6bd, 0xd8c793, 0xc9c2b2, 0x9aa7a0, 0xcdd2cc];
+const ISLAND_COTTAGE_TRIM = 0xece7dc; // white painted casing and fascia (the photographs' broad white trim)
+const ISLAND_COTTAGE_CLAPBOARD = 0.22; // m: one course of horizontal clapboard
+
+// The cottage facade: the rendered facade's windows/door/lighting, but with small punched cottage windows, a low
+// storey, corner boards and a horizontal clapboard shading term over the whole wall (the siding course shadow).
+function createIslandCottageMaterial() {
+  const mat = createRenderedFacadeMaterial({
+    // Sparse punched cottage windows, photo-informed (Oneida Ave/Algonquin cottages: tall single openings with
+    // substantial clapboard wall between, not a near-continuous window bank). facadeCell treats windowWidth as the
+    // BAY PITCH (bays = round(wallWidth / windowWidth)), and the opening is windowRatioX × bayWidth, so a wider ~2.5 m
+    // bay with the reciprocal ratio keeps the ~1.12 m opening the first pass had. ratioY × floorHeight keeps the tall
+    // ~1.5 m opening. This is documented generic cottage typology, not per-house counts/layout.
+    windowWidth: ISLAND_COTTAGE_BAY_PITCH, floorHeight: 2.9, windowRatioX: 0.45, windowRatioY: 0.52,
+    litProbability: 0.32, warmth: 0.72, seed: 151.0, cornerPier: ISLAND_COTTAGE_CORNER_PIER,
+    groundFloorBars: 0, windowFrameTint: ISLAND_COTTAGE_TRIM, windowCasing: 0.10,
+    proceduralEntrances: 0, slabBands: 0
+  });
+  const wall = mat.colorNode; // createRenderedFacadeMaterial already returns an evaluated color node.
+  // Clapboard courses: a soft shadow at the bottom of each 0.22 m board. Fade it with the actual screen-space derivative
+  // of the course coordinate (not a fixed strength), so distant cottages do not shimmer or turn into stripe noise.
+  const course = fract(positionWorld.y.div(ISLAND_COTTAGE_CLAPBOARD));
+  const seam = smoothstep(0.0, 0.04, course).mul(float(1.0).sub(smoothstep(0.04, 0.16, course)));
+  const coursePx = fwidth(positionWorld.y.div(ISLAND_COTTAGE_CLAPBOARD));
+  const fade = float(1.0).sub(smoothstep(0.35, 0.9, coursePx));
+  mat.colorNode = wall.mul(float(1.0).sub(seam.mul(0.16).mul(fade)));
+  return mat;
+}
+
+// --- Reviewed QCYC marina structures (st-sb3r.34) -------------------------------------------------------------------
+// Three reviewed island rows (`islandBuildingProfile(...).appearance`) at the Queen City Yacht Club marina. The primary
+// sources (the captain's 2024 City orthophoto review and the official 2019 renovation gallery) show:
+//   * 32501: a small low shed with WHITE paneled plywood/timber walls, DARK NAVY doors/shutters/trim, low eaves, a
+//     shallow overhang and a dark pitched roof.
+//   * 32502 / 32503: pale low storage under leafless canopy; function and roof uncertain, so a neutral flat-envelope
+//     storage treatment (no invented brick or home windows).
+// These are representative typology colours and forms, not per-row measurements; door counts/positions are
+// approximations. The total height stays the profile's (4 m) envelope, so the eaves and roof never stack above the
+// collider. Cost: one facade draw for the shed walls, one for the storage walls, one instanced trim draw and the roof
+// tiles batch into the existing hipped-roofs mesh — no per-door mesh, same group for culling and shadows.
+const MARINA_SHED_STYLE = 'qcyc-shed';
+const MARINA_STORAGE_STYLE = 'qcyc-storage';
+const MARINA_CLUBHOUSE_STYLE = 'qcyc-clubhouse';
+const MARINA_SHED_BLUE = 0x1b2a44; // dark navy doors/shutters/trim
+const MARINA_SHED_WALL = 0xf2f0ea; // white paneled plywood/timber
+const MARINA_SHED_ROOF = 0x3a3d42; // dark pitched roof
+const MARINA_SHED_EAVES = 2.45;    // m: eave height for a ~2 m door plus a short header (low eaves)
+const MARINA_SHED_OVERHANG = 0.32; // m: shallow roof overhang past the walls
+// The gallery shows solid navy storage doors/shutters, not home windows. A zero ratio makes facadeCell's opening
+// zero-width (halfWin = 0.5), so both marina walls are plain panel; doors are the shallow trim relief below.
+const MARINA_PANEL_WINDOW_RATIO_X = 0;
+const MARINA_PANEL_WINDOW_RATIO_Y = 0;
+const MARINA_TRIM_RELIEF = 0.012; // m: thin panel outer face just outside the wall (visual relief only)
+
+// The shed's wall height: low eaves, always below the profile total so the pitched roof occupies the rest of the
+// envelope (never stacked above the collider).
+function marinaShedEaveHeight(total) {
+  return Math.min(total - 0.45, MARINA_SHED_EAVES);
+}
+
+// The shed facade: paint-free rendered facade with panel seams on the wall (vertical plywood joints) and painted
+// openings. Windows are sparse and blue-framed; the trim colour is the paint so the door/glazing read navy.
+function createMarinaShedMaterial() {
+  const mat = createRenderedFacadeMaterial({
+    // Solid painted panel: no windows (the primary photo shows navy storage doors, not home glazing). The panel seams
+    // and the navy doors carry the detail.
+    windowWidth: 2.2, floorHeight: 2.6, windowRatioX: MARINA_PANEL_WINDOW_RATIO_X, windowRatioY: MARINA_PANEL_WINDOW_RATIO_Y,
+    litProbability: 0, warmth: 0, seed: 211.0, cornerPier: 0.25,
+    groundFloorBars: 0, windowFrameTint: MARINA_SHED_BLUE, windowCasing: 0,
+    proceduralEntrances: 0, slabBands: 0
+  });
+  const wall = mat.colorNode;
+  // Panel seams: a soft vertical shadow along the panel pitch (4 ft plywood ~1.22 m), measured ALONG the wall face
+  // (the horizontal tangent of the wall normal), so a rotated building keeps the true pitch instead of a diagonal
+  // world-x+z drift. Faded by the screen-space derivative so distant sheds do not shimmer; no seams on the roof/soffit.
+  const panel = 1.22;
+  const n = normalWorldGeometry;
+  const along = positionWorld.x.mul(n.z.negate()).add(positionWorld.z.mul(n.x));
+  const panelCoord = along.div(panel);
+  const seamU = fract(panelCoord);
+  const seam = smoothstep(0.0, 0.03, seamU).mul(float(1.0).sub(smoothstep(0.03, 0.10, seamU)));
+  const seamPx = fwidth(panelCoord);
+  const fade = float(1.0).sub(smoothstep(0.3, 0.8, seamPx)).mul(float(1.0).sub(abs(n.y)));
+  mat.colorNode = wall.mul(float(1.0).sub(seam.mul(0.12).mul(fade)));
+  return mat;
+}
+
+// The storage facade: a plain neutral wall (no windows, no brick) for the two uncertain pads.
+function createMarinaStorageMaterial() {
+  // Plain neutral panel with NO windows (the uncertain pads are not given invented home glazing).
+  return createRenderedFacadeMaterial({
+    windowWidth: 3.0, floorHeight: 3.0, windowRatioX: MARINA_PANEL_WINDOW_RATIO_X, windowRatioY: MARINA_PANEL_WINDOW_RATIO_Y,
+    litProbability: 0, warmth: 0, seed: 233.0, cornerPier: 0.15,
+    groundFloorBars: 0, windowFrameTint: 0xdad5c8, windowCasing: 0,
+    proceduralEntrances: 0, slabBands: 0
+  });
+}
+
+// --- Reviewed QCYC clubhouse (st-sb3r.39) ---------------------------------------------------------------------------
+// Row 32139 / OSM Way 43805118, `Queen City Yacht Club clubhouse`. The official club homepage hero shows a white
+// two-storey envelope with a dark grey pitched/hip roof, a waterfront balcony/terrace and repeated bays. The image's
+// acquisition date is unknown, so this is a representative appearance, not a survey: the balcony/roof/bay layout is
+// photo-informed and the water side is resolved from the mapped marina geometry (never the photo's orientation).
+// Footprint, collider and the 6.5 m OSM-levels height are unchanged; the roof rises from the low eave to that total so
+// eaves + roof never stack above the collider, and the balcony is a shallow decorative ledge (not a walkable surface).
+const MARINA_CLUBHOUSE_WALL = 0xf4f2ec;    // white cladding
+const MARINA_CLUBHOUSE_TRIM = 0xe8e5dc;    // off-white trim (the balcony railing/ledges read light, not black)
+const MARINA_CLUBHOUSE_ROOF = 0x4a4d52;    // dark grey roof
+// The building is TWO storeys in a 6.5 m total (OSM building:levels=2): two window bands below a low eave, and a shallow
+// pitched roof occupying only the remainder. A 2026-11-10 captain review corrected the first draft (a 3.25 m eave left
+// one storey + a huge roof). These are representative, approximation-labelled proportions, not measured.
+const MARINA_CLUBHOUSE_FLOOR = 2.55;        // m: storey height -> two bands (2 x 2.55 = 5.10 m to the eave)
+const MARINA_CLUBHOUSE_EAVES = 5.15;        // m: wall head (two storeys), leaving ~1.3 m of roof under the 6.5 m total
+const MARINA_CLUBHOUSE_ROOF_RISE = 1.15;    // m: representative pitched-roof rise above the eave (clamped to the total)
+const MARINA_CLUBHOUSE_OVERHANG = 0.35;     // m: roof overhang past the walls
+const MARINA_CLUBHOUSE_BALCONY_DEPTH = 0.85; // m: shallow decorative ledge, PROJECTING past the wall (not inside it)
+const MARINA_CLUBHOUSE_POST_PITCH = 1.9;    // m: representative railing-post spacing (not a surveyed count)
+
+// The clubhouse wall height: the two-storey eave, but never above the profile total minus a thin roof so the roof can
+// close within the envelope. For a 6.5 m row this is 5.15 m (roof ~1.35 m); a shorter building clamps to total - 0.35.
+function marinaClubhouseWallHeight(total) {
+  return Math.min(total - 0.35, MARINA_CLUBHOUSE_EAVES);
+}
+
+// The white clubhouse facade: two storeys of regularly spaced bays, painted trim, no brick; the balcony/railing reads
+// as the trim. Detail stays in the facade shader and the shallow ledge, so there is no per-window mesh.
+function createMarinaClubhouseMaterial() {
+  const mat = createRenderedFacadeMaterial({
+    // floorHeight = the storey height, so the facade lays exactly two window bands below the ~5.15 m eave. windowRatioX
+    // 0.62 gives a representative ~1.18 m opening (wide-glazing rhythm), not a narrow slot.
+    windowWidth: 1.9, floorHeight: MARINA_CLUBHOUSE_FLOOR, windowRatioX: 0.62, windowRatioY: 0.52,
+    litProbability: 0.18, warmth: 0.35, seed: 241.0, cornerPier: 0.35,
+    groundFloorBars: 0, windowFrameTint: MARINA_CLUBHOUSE_TRIM, windowCasing: 0.06,
+    proceduralEntrances: 0, slabBands: 0
+  });
+  const wall = mat.colorNode;
+  // Horizontal siding seams (thin painted boards): measured along the wall's vertical, faded by the screen-space
+  // derivative so the clubhouse does not shimmer at distance and shows no seams on the roof/soffit.
+  const board = 0.24;
+  const coord = positionWorld.y.div(board);
+  const seamU = fract(coord);
+  const seam = smoothstep(0.0, 0.12, seamU).mul(float(1.0).sub(smoothstep(0.12, 0.4, seamU)));
+  const seamPx = fwidth(coord);
+  const fade = float(1.0).sub(smoothstep(0.35, 0.85, seamPx));
+  mat.colorNode = wall.mul(float(1.0).sub(seam.mul(0.05).mul(fade)));
+  return mat;
+}
+
+// The clubhouse's water-facing side is a SOURCE/CAPTAIN-VERIFIED fact recorded in the reviewed profile
+// (`islandProfile.appearance.waterV`, st-sb3r.39): the captain's baseline GPU shows the QCYC basin on the row's local
+// -v, and the native wing (parts[1] v -8.5..-3.5) protrudes toward the water. There is deliberately NO runtime water
+// detector here: the profile is already gated by the committed footprint fingerprint and the exact projection, so a
+// different frame or a moved/reshaped row receives no profile and therefore no balcony. Do not generalise this to other
+// buildings.
+
+// The exposed waterfront segments of the clubhouse's L plan: for the water side, walk every u breakpoint of the native
+// parts, take the OUTERMOST v at each sample (min v for waterV -1, max for +1), and merge adjacent equal-v runs. A
+// balcony rail only lives on these exposed runs, so it never sits buried inside the overlapping/opaque wing.
+// Returns [{u0, u1, v}] where v is the outermost water-side edge of the union over [u0,u1].
+function clubhouseFrontageSegments(parts, waterV) {
+  if (!waterV) return [];
+  const us = Array.from(new Set(parts.flatMap((p) => [p[0], p[1]]))).sort((a, b) => a - b);
+  const frontage = (u) => parts
+    .filter((p) => u >= Math.min(p[0], p[1]) && u <= Math.max(p[0], p[1]))
+    .map((p) => (waterV < 0 ? p[2] : p[3]))
+    .reduce((best, v) => (waterV < 0 ? Math.min(best, v) : Math.max(best, v)), waterV < 0 ? Infinity : -Infinity);
+  const segs = [];
+  for (let i = 0; i < us.length - 1; i++) {
+    const a = us[i], b = us[i + 1];
+    if (b - a < 1e-6) continue;
+    const v = frontage((a + b) / 2); // the outermost water-side v over this interval
+    if (!Number.isFinite(v)) continue;
+    const last = segs[segs.length - 1];
+    if (last && Math.abs(last.v - v) < 1e-3 && Math.abs(last.u1 - a) < 1e-3) last.u1 = b; // merge a continuous run
+    else segs.push({ u0: a, u1: b, v });
+  }
+  return segs;
+}
+
+// The clubhouse silhouette detail: a projecting balcony ledge and railing along the EXPOSED water-facing frontage (never
+// inside another part), plus a capped pitched roof over every part. The walls rise to the two-storey eave and the roof
+// closes within the 6.5 m profile total, so eaves + roof never stack above the collider. The ledge/railing PROJECT past
+// the wall (not inside the mapped footprint, not walkable): the collider stays the native mapped footprint. `trim`
+// boxes join the instanced trim draw; roof triangles join the shared hipped-roofs batch — no new draw.
+function marinaClubhouseDetail(trim, parts, cx, cz, ang, total, waterV, roofTiles, y0) {
+  const cs = Math.cos(ang), sn = Math.sin(ang);
+  const wallH = marinaClubhouseWallHeight(total);
+  const roofRise = Math.max(0, total - wallH);
+  const push = (u, v, y, w, d, hh, tint) => trim.push({ x: cx + u * cs + v * sn, y, z: cz - u * sn + v * cs, w, d, h: hh, ry: ang, color: tint });
+  // One capped hip roof per part, on the same two-storey eave, so the L plan reads as one stepped mass, not a single
+  // roof over the main block with an unroofed wing. Pitch is clamped so each part's apex stays within the profile total.
+  if (roofRise > 0.35) {
+    for (const [u0, u1, v0, v1] of parts) {
+      const half = Math.max(1.2, Math.min(u1 - u0, v1 - v0) / 2) + MARINA_CLUBHOUSE_OVERHANG;
+      const pitch = Math.atan2(roofRise, half);
+      pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + wallH, pitch, MARINA_CLUBHOUSE_OVERHANG, linear(MARINA_CLUBHOUSE_ROOF));
+    }
+  }
+  // Projecting balcony on the exposed water-side frontage ONLY. Posts are pitched at a representative ~1.9 m; the ledge
+  // and rails read in the off-white trim, not black metal.
+  const segs = clubhouseFrontageSegments(parts, waterV);
+  if (!segs.length) return;
+  const LE = 0.12; // m: the railing's own thickness, just outside the ledge edge
+  const depth = MARINA_CLUBHOUSE_BALCONY_DEPTH;
+  const floorH = Math.max(MARINA_CLUBHOUSE_FLOOR, wallH * 0.52); // the second storey's floor (the terrace level)
+  const railH = 1.02; // m: representative guard height, below the eave
+  const dir = waterV < 0 ? -1 : 1;
+  for (const { u0, u1, v } of segs) {
+    const W = u1 - u0;
+    if (W < 0.5) continue;
+    const ledgeV = v + dir * depth / 2;             // ledge centre, outside the wall
+    const railV = v + dir * (depth + LE / 2);       // rail face, just outside the ledge edge
+    push((u0 + u1) / 2, ledgeV, y0 + floorH, W, depth, 0.12, MARINA_CLUBHOUSE_TRIM);
+    push((u0 + u1) / 2, railV, y0 + floorH + railH, W, LE, 0.06, MARINA_CLUBHOUSE_TRIM);
+    const n = Math.max(1, Math.round(W / MARINA_CLUBHOUSE_POST_PITCH)); // ~1.9 m post pitch, scaled to the run length
+    const POST = 0.05, INSET = POST / 2 + 0.02; // keep end posts off the shared segment breakpoint (in the next part)
+    for (let k = 0; k <= n; k++) {
+      const u = u0 + INSET + (W - 2 * INSET) * (k / n);
+      push(u, railV, y0 + floorH + railH / 2, POST, LE, railH, MARINA_CLUBHOUSE_TRIM);
+    }
+  }
+}
+
+// Shed trim: navy door leaves on the long ±v walls (a representative pair, not a surveyed count) plus a navy shutter on
+// one gable end. All shallow relief inside the mapped footprint; the trim draw is instanced.
+function marinaShedTrim(out, cx, cz, ang, u0, u1, v0, v1, h, y0) {
+  const cs = Math.cos(ang), sn = Math.sin(ang);
+  const pt = (u, v, y) => [cx + u * cs + v * sn, y, cz - u * sn + v * cs];
+  const box = (u, v, y, w, d, hh, tint) => { const [x, , z] = pt(u, v, y); out.push({ x, y, z, w, d, h: hh, ry: ang, color: tint }); };
+  const uc = (u0 + u1) / 2, wU = u1 - u0, wV = v1 - v0;
+  const doorW = 1.15, doorH = Math.min(2.05, h - 0.35);
+  const R = MARINA_TRIM_RELIEF;
+  // Thin door leaves whose outer face sits just proud of the opaque wall (a 12 mm visual relief; it does not extend the
+  // footprint or imply a walkable/opening platform).
+  for (const uu of [u0 + wU * 0.32, u0 + wU * 0.68]) {
+    box(uu, v1 + R / 2, y0 + doorH / 2, doorW, R, doorH, MARINA_SHED_BLUE);
+    // a slim white stile between the doors reads as a panel split, a hair proud of the leaf
+    box(uu, v1 + R + 0.004, y0 + doorH * 0.5, 0.05, 0.008, doorH * 0.96, MARINA_SHED_WALL);
+  }
+  // A navy shutter on the +u gable end, outer face just proud of the wall
+  const shutH = Math.min(1.6, h - 0.4), shutW = Math.min(1.1, wV * 0.5);
+  box(u1 + R / 2, (v0 + v1) / 2, y0 + shutH / 2, R, shutW, shutH, MARINA_SHED_BLUE);
+}
+
 function buildCityBlocks(scene) {
   const group = new THREE.Group();
   group.name = 'CityBuildings';
@@ -630,8 +1055,14 @@ function buildCityBlocks(scene) {
   const massingStats = massing && { buildings: 0, records: massing.records, rejected: massing.rejected, courtyards: 0, partyWalls: 0, onPodium: 0, boxesReplaced: 0, ms: 0 };
   const roofTiles = { pos: [], nor: [], uv: [], col: [] };
   const roofSheets = { pos: [], nor: [], uv: [], col: [] };
+  const cottageBoxes = []; // (island cottages: their own clapboard facade material, one draw)
+  const cottageTrim = [];  // (island cottages: white corner boards, fascia and inset entry, one instanced draw)
+  const marinaShedBoxes = []; // (reviewed QCYC shed: white paneled walls, one draw)
+  const marinaClubhouseBoxes = []; // (reviewed QCYC clubhouse: white two-storey walls, one draw)
+  const marinaStorageBoxes = []; // (reviewed QCYC storage pads: neutral walls, one draw)
+  const marinaTrim = []; // (reviewed QCYC shed: navy doors/shutters, one instanced draw)
 
-  const stats = { buildings: 0, boxes: 0, hip: 0, sheet: 0, glass: 0, storefronts: 0, strip: 0, signed: 0, victorian: 0, stone: 0, monitor: 0, monitorTris: 0, chimneys: 0 };
+  const stats = { buildings: 0, boxes: 0, hip: 0, sheet: 0, glass: 0, storefronts: 0, strip: 0, signed: 0, victorian: 0, stone: 0, monitor: 0, monitorTris: 0, chimneys: 0, cottages: 0, marinaShed: 0, marinaStorage: 0, marinaClubhouse: 0 };
   const retail = storefrontSelection();
   const signWalls = signedWalls();
   const facades = new Map(); // building row -> { mat, floorHeight, front } for the signed buildings
@@ -641,11 +1072,51 @@ function buildCityBlocks(scene) {
   const baseOf = PILOT && PILOT.buildingBase ? PILOT.buildingBase : () => 0;
   for (let bi = 0; bi < GEO.buildings.length; bi++) {
     const b = GEO.buildings[bi];
-    const [cx, cz, ang, parts, h0, kind, roof, cseed, , name] = b;
+    // Replacement builders run before CityBuildings and opt in only when their
+    // mapped footprint exists in the active frame.
+    if (window.CITY.waterfrontLandmarkExcludesBuilding?.(bi)) continue;
+    if (window.CITY.waterfrontHarbourfrontExcludesBuilding?.(bi)) continue;
+    if (window.CITY.waterfrontMainBuildingExcludesBuilding?.(bi)) continue;
+    if (window.CITY.waterfrontConcertStageExcludesBuilding?.(bi)) continue;
+    if (window.CITY.biidaasigeParkExcludesBuilding?.(bi)) continue;
+    if (window.CITY.waterfrontBathurst?.stats.meshes > 0 && window.CITY.waterfrontBathurstExcludesBuilding?.(bi)) continue;
+    if (window.CITY.waterfrontFerriesEnabled && b[9] === 'Jack Layton Ferry Terminal') continue;
+    if (window.CITY.htoFirehallReplacesBuilding?.(b)) continue;
+    const [cx, cz, ang, parts, sourceHeight, sourceKind, sourceRoof, cseed, , name] = b;
+    // Source-matched island profiles correct urban defaults while retaining the
+    // native footprint, renderer batching and source row identity.
+    const islandProfile = window.CITY.islandBuildingProfile?.(b, bi);
+    const h0 = islandProfile?.height ?? sourceHeight;
+    const kind = islandProfile?.kind ?? sourceKind;
+    const roof = islandProfile?.roof ?? sourceRoof;
     const fixH = nearAny(DISTILLERY.height, cx, cz, 2); // (Toronto layer: a massing height that is a chimney's)
     const h = fixH && inDistillery(cx, cz) ? fixH[2] : h0;
     const y0 = baseOf(cx, cz);
     const foot = massing ? massing.rows.get(bi) : null;
+    // Scoped island cottage extension: only confirmed source-matched cottages, only on their box path (the ?massing=1
+    // polygon path keeps the native footprint material untouched).
+    const cottage = !!(islandProfile && islandProfile.typology === 'cottage' && !foot && !inDistillery(cx, cz));
+    // Reviewed QCYC marina structures (st-sb3r.34): only the three source-reviewed rows carry an `appearance` from
+    // `islandBuildingProfile`; the material approach is scoped exactly to those rows' appearance style, never a general
+    // service/island rule. `shed` is the photo-informed white paneled shed; `storage` is the two uncertain neutral pads.
+    const marinaStyle = !foot && !inDistillery(cx, cz) && islandProfile?.appearance ? islandProfile.appearance.style : null;
+    const marinaShed = marinaStyle === MARINA_SHED_STYLE;
+    const marinaStorage = marinaStyle === MARINA_STORAGE_STYLE;
+    const marinaClubhouse = marinaStyle === MARINA_CLUBHOUSE_STYLE;
+    const roofType = islandProfile?.roofType || (cottage ? 'gable' : null);
+    // The source-correct effective footprint for the bounded pilot cottage (js/waterfront-island-cottage-footprint.js),
+    // or the native parts for every other row. This is resolved from the ORIGINAL committed row `b` (its nativeFp is the
+    // identity guard), and the SAME parts drive the walls, roof, trim and the OBB collider below. A guarded null keeps
+    // the native box, so this is a no-op everywhere else and on a cropped/mismatched frame.
+    const partsEff = (cottage && window.CITY.islandCottageFootprintParts?.(b, bi)) || parts;
+    // Reviewed QCYC clubhouse (st-sb3r.39): the marina's water-facing side, resolved from mapped geometry rather than the
+    // photo's orientation. The mapped marina polygon (OSM Way 193043084) is in COMMITTED_DATA.marinas; the runway that
+    // touches the clubhouse's own footprint tells the landward (airport) side, so water = the other side of the ridge.
+    // CAPTAIN baseline GPU (2026-11-10): the water side is the clubhouse's local -v, the wing's v-negative face; the
+    // landward side is +v. If the footprint sample cannot find the water side, no balcony is drawn (fail closed: never a
+    // balcony on the landward face).
+    // The water side comes from the already-validated reviewed profile, never from geometry at runtime (st-sb3r.39).
+    const clubhouseWaterV = marinaStyle === MARINA_CLUBHOUSE_STYLE ? (islandProfile.appearance.waterV | 0) : 0;
     const rnd = mulberry32((cseed * 7919) ^ Math.round(cx * 13 + cz * 7));
     const cs = Math.cos(ang), sn = Math.sin(ang);
     // which wall looks onto the street: the nearest road, seen in the building's frame
@@ -676,10 +1147,13 @@ function buildCityBlocks(scene) {
       const street = nearestRoads(fx, fz, 22).find((r) => r.road.name === near[0].road.name);
       if (street && retail.onStrip(fx, fz, street.road.name)) { shopFront = true; stats.strip++; }
     }
+    if (cottage) shopFront = false; // (the cottage extension gives it a native entrance, not a city storefront)
     if (shopFront) stats.storefronts++;
     const faces = [WALL_KINDS.rear, WALL_KINDS.rear, WALL_KINDS.rear, WALL_KINDS.rear];
     faces[front] = shopFront ? WALL_KINDS.shop : WALL_KINDS.entry;
     if (signed) { for (const w of signed) faces[w] = WALL_KINDS.shop; stats.signed++; }
+    // (an island cottage always gets the native entrance on its road/walk-facing wall, never a city storefront)
+    if (cottage) { shopFront = false; faces[front] = WALL_KINDS.entry; }
     // (Toronto layer: brick or render by kind, colours from the Commons palette)
     let brick = mat < 2 && rnd() < (BRICK_SHARE[kind] || 0);
     let paintHex = kind === 4 ? weighted(RAW_BLOCK, rnd()) : kind === 5 ? 0x9b9890 : brick ? weighted(TORONTO_MASONRY, rnd())
@@ -689,10 +1163,17 @@ function buildCityBlocks(scene) {
     const stone = victorian && !!nearAny(DISTILLERY.stone, cx, cz);
     if (victorian) { mat = VICTORIAN; brick = true; paintHex = weighted(stone ? DISTILLERY.limestone : DISTILLERY.brick, rnd()); }
     else if (nearAny(DISTILLERY.brickTowers, cx, cz) && inDistillery(cx, cz)) { mat = 1; brick = true; paintHex = weighted(DISTILLERY.brick, rnd()); }
+    // (the island cottages: clapboard siding, never the city's brick; a small documented typology palette, not a
+    // per-house colour claim. The facade material is the dedicated cottage style below.)
+    if (cottage) { mat = 0; brick = false; paintHex = ISLAND_COTTAGE_PAINT[Math.floor(rnd() * ISLAND_COTTAGE_PAINT.length)]; }
+    // (the reviewed QCYC rows: their own material path below, never the city's brick/render; keep paint neutral)
+    if (marinaShed) { brick = false; paintHex = islandProfile.appearance.wall; }
+    else if (marinaStorage) { brick = false; paintHex = islandProfile.appearance.wall; }
+    else if (marinaClubhouse) { brick = false; paintHex = islandProfile.appearance.wall; }
     // (paint.w: the glass style in the fraction, + 2 on brick, + 4 on the Distillery's limestone)
     const paint = [...linear(paintHex), (kind === 5 ? 0.95 : rnd()) + (brick ? 2 : 0) + (stone ? 2 : 0)];
     if (signed) facades.set(bi, { mat, floorHeight: FLOOR_HEIGHTS[mat], front });
-    const tone = rnd();
+    const tone = cottage ? Math.max(rnd(), ISLAND_COTTAGE_TONE_MIN) : rnd();
     let topY = 0;
     // ?massing=1: the polygon instead of the boxes; the pitched & sheet roofs stay on the boxes' rectangles over it (a
     // flat cap under them closes whatever the rectangles leave open), its collider is the polygon itself
@@ -728,18 +1209,74 @@ function buildCityBlocks(scene) {
       massingStats.boxesReplaced += parts.filter(([u0, u1, v0, v1]) => u1 - u0 >= 1 && v1 - v0 >= 1).length;
       massingStats.ms += performance.now() - tf;
     }
-    for (const [u0, u1, v0, v1] of parts) {
+    // The profile `height` is the TOTAL building height. A cottage's walls stop at the eaves; the roof occupies the
+    // rest of that total instead of stacking another 2–4 m on top (the first GPU pass's oversized, floating roofs).
+    let cottageWallH = h;
+    if (cottage) {
+      let mp = partsEff[0];
+      for (const p of partsEff) if ((p[1] - p[0]) * (p[3] - p[2]) > (mp[1] - mp[0]) * (mp[3] - mp[2])) mp = p;
+      const estimated = islandProfile?.heightSource === 'conservative island estimate';
+      cottageWallH = islandCottageEaveHeight(h, mp[1] - mp[0], mp[3] - mp[2], estimated);
+      // The shader decodes each box's tone from its Float32 box.w, whose integer part depends on the box's instance
+      // index (createFacadeBoxes). The door must match the bay of the LARGEST part's box, so reproduce that box's
+      // effective tone: its index is the boxes already emitted plus the valid parts before it (the parts loop skips
+      // parts under 1 m, exactly as the box emission does below).
+      const mpIdx = partsEff.indexOf(mp);
+      let boxesBefore = 0;
+      for (let k = 0; k < mpIdx; k++) { const [a0, a1, b0, b1] = partsEff[k]; if (a1 - a0 >= 1 && b1 - b0 >= 1) boxesBefore++; }
+      const shaderTone = islandCottageShaderTone(tone, cottageBoxes.length + boxesBefore);
+      islandCottageTrim(cottageTrim, cx, cz, ang, mp[0], mp[1], mp[2], mp[3], cottageWallH, front, y0, shaderTone);
+      stats.cottages = (stats.cottages || 0) + 1;
+    }
+    // Reviewed QCYC shed: the profile total is the envelope; the walls stop at the low eaves and the pitched roof
+    // occupies the rest, so eaves + roof never stack above the 4 m collider total.
+    let marinaShedWallH = h;
+    if (marinaShed) {
+      let mp = partsEff[0];
+      for (const p of partsEff) if ((p[1] - p[0]) * (p[3] - p[2]) > (mp[1] - mp[0]) * (mp[3] - mp[2])) mp = p;
+      marinaShedWallH = marinaShedEaveHeight(h);
+      marinaShedTrim(marinaTrim, cx, cz, ang, mp[0], mp[1], mp[2], mp[3], marinaShedWallH, y0);
+      stats.marinaShed++;
+    }
+    if (marinaStorage) stats.marinaStorage++;
+    // Reviewed QCYC clubhouse: keep the 6.5 m envelope; two storeys stop at the representative eave and a capped hip
+    // roof over EVERY part occupies the rest. Its water-facing wall carries the projecting balcony/railing (never the
+    // landward face; the side is the reviewed profile's `waterV`, not a runtime guess).
+    let marinaClubhouseWallH = h;
+    if (marinaClubhouse) {
+      marinaClubhouseWallH = marinaClubhouseWallHeight(h);
+      marinaClubhouseDetail(marinaTrim, partsEff, cx, cz, ang, h, clubhouseWaterV, roofTiles, y0);
+      stats.marinaClubhouse = (stats.marinaClubhouse || 0) + 1;
+    }
+    for (const [u0, u1, v0, v1] of partsEff) {
       const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
       const w = u1 - u0, d = v1 - v0;
       if (w < 1 || d < 1) continue;
       const x = cx + uc * cs + vc * sn;
       const z = cz - uc * sn + vc * cs;
       if (!foot) {
-        buckets[mat].push({ x, y: y0 + h / 2, z, w, h, d, ry: ang, faces, tone, paint });
+        if (cottage) cottageBoxes.push({ x, y: y0 + cottageWallH / 2, z, w, h: cottageWallH, d, ry: ang, faces, tone, paint });
+        else if (marinaShed) marinaShedBoxes.push({ x, y: y0 + marinaShedWallH / 2, z, w, h: marinaShedWallH, d, ry: ang, faces, tone, paint });
+        else if (marinaStorage) marinaStorageBoxes.push({ x, y: y0 + h / 2, z, w, h, d, ry: ang, faces, tone, paint });
+        else if (marinaClubhouse) marinaClubhouseBoxes.push({ x, y: y0 + marinaClubhouseWallH / 2, z, w, h: marinaClubhouseWallH, d, ry: ang, faces, tone, paint });
+        else buckets[mat].push({ x, y: y0 + h / 2, z, w, h, d, ry: ang, faces, tone, paint });
         stats.boxes++;
       }
-      topY = h;
-      if (victorian) {
+      topY = cottage ? cottageWallH : marinaShed ? marinaShedWallH : marinaClubhouse ? marinaClubhouseWallH : h;
+      if (marinaShed) {
+        // Dark pitched roof with closed gable ends, base on the low eave and apex at the profile total. The shallow
+        // overhang is a roof detail; the collider below stays the mapped footprint and the total envelope.
+        const rgb = linear(MARINA_SHED_ROOF);
+        const half = Math.max(1.2, Math.min(w, d) / 2);
+        const pitch = Math.atan2(Math.max(0.5, h - marinaShedWallH), half + MARINA_SHED_OVERHANG);
+        pushGableRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + marinaShedWallH, pitch, MARINA_SHED_OVERHANG, rgb, linear(MARINA_SHED_WALL));
+        stats.hip++;
+      } else if (marinaClubhouse) {
+        // The hip roof is pushed once by marinaClubhouseDetail (above), over the largest part only, so a second part does
+        // not stack a duplicate roof. Nothing to push here.
+      } else if (marinaStorage) {
+        // Native flat envelope: the box top is the roof; no invented pitched roof for the uncertain pads.
+      } else if (victorian) {
         if (h <= DISTILLERY.pitchedUpTo) {
           const M = DISTILLERY.monitor;
           const pitch = Math.min((32 + rnd() * 6) * Math.PI / 180, Math.atan(DISTILLERY.maxRise / (Math.min(w, d) / 2 + 0.35)));
@@ -750,6 +1287,15 @@ function buildCityBlocks(scene) {
           } else pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + h, pitch, 0.35, slate);
           stats.hip++;
         }
+      } else if (cottage && roof !== 0 && roof !== 2) {
+        // Source-supported varied silhouette. The roof base sits on the eave and rises only to the profile's TOTAL
+        // height, so gable ends are sealed against the wall and the roof cannot float above the box.
+        const rgb = linear(weighted(ROOF_PAINT, rnd()));
+        const half = Math.max(1.2, Math.min(w, d) / 2);
+        const pitch = Math.atan2(Math.max(0.5, h - cottageWallH), half + 0.45);
+        if (roofType === 'gable') pushGableRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + cottageWallH, pitch, 0.45, rgb, linear(paintHex));
+        else pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + cottageWallH, pitch, 0.45, rgb, true);
+        stats.hip++;
       } else if (roof === 1 && kind !== 3) {
         pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + h, (24 + rnd() * 8) * Math.PI / 180, 0.6, linear(weighted(ROOF_PAINT, rnd())));
         stats.hip++;
@@ -770,7 +1316,7 @@ function buildCityBlocks(scene) {
 
     // Close-up detail for the quadtree: overhead water tank (on flat roofs; on a stand in the yard beside a hipped
     // house), split-AC condensers on the side walls, a satellite dish
-    const [u0, u1, v0, v1] = parts[0];
+    const [u0, u1, v0, v1] = partsEff[0];
     const local = (u, v) => [cx + u * cs + v * sn, cz - u * sn + v * cs];
     const detail = { cx, cz, tanks: [], acs: [], dishes: [], fireEscapes: [], ry: ang };
     // --- Fire escapes (js/fire-escapes.js, mrdoob's 8c17250): on the older brick walk-ups and main-street blocks of
@@ -841,6 +1387,9 @@ function buildCityBlocks(scene) {
         detail.dishes.push({ x: dx, y: y0 + topY + (roof === 1 ? 0.2 : 0), z: dz, ry: rnd() * Math.PI * 2 });
       }
     }
+    // The reviewed clubhouse uses only source-supported exterior detail. Consume the generic random
+    // draws above so other buildings remain stable, then omit unsourced rooftop/wall accessories here.
+    if (marinaClubhouse) { detail.acs.length = 0; detail.dishes.length = 0; detail.fireEscapes.length = 0; }
     if (detail.tanks.length || detail.acs.length || detail.dishes.length || detail.fireEscapes.length) {
       quadtree.insert(detail);
       allBlocks.push(detail);
@@ -890,6 +1439,52 @@ function buildCityBlocks(scene) {
     inst.name = `Buildings_${i}`;
     group.add(inst);
   });
+  // The island cottages: one clapboard facade draw, plus one instanced white-trim draw (corner boards, fascia, entry)
+  if (cottageBoxes.length) {
+    const inst = createFacadeBoxes(createIslandCottageMaterial(), cottageBoxes);
+    inst.castShadow = true;
+    inst.receiveShadow = true;
+    inst.name = 'Buildings_IslandCottages';
+    group.add(inst);
+  }
+  // Reviewed QCYC marina structures: one paneled-shed draw, one neutral-storage draw, and their navy trim joins the
+  // existing instanced trim draw (no per-door mesh). Same group, so culling and shadows are unchanged.
+  if (marinaShedBoxes.length) {
+    const inst = createFacadeBoxes(createMarinaShedMaterial(), marinaShedBoxes);
+    inst.castShadow = true;
+    inst.receiveShadow = true;
+    inst.name = 'Buildings_MarinaShed';
+    group.add(inst);
+  }
+  if (marinaStorageBoxes.length) {
+    const inst = createFacadeBoxes(createMarinaStorageMaterial(), marinaStorageBoxes);
+    inst.castShadow = true;
+    inst.receiveShadow = true;
+    inst.name = 'Buildings_MarinaStorage';
+    group.add(inst);
+  }
+  if (marinaClubhouseBoxes.length) {
+    const inst = createFacadeBoxes(createMarinaClubhouseMaterial(), marinaClubhouseBoxes);
+    inst.castShadow = true;
+    inst.receiveShadow = true;
+    inst.name = 'Buildings_MarinaClubhouse';
+    group.add(inst);
+  }
+  if (marinaTrim.length) cottageTrim.push(...marinaTrim);
+  if (cottageTrim.length) {
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    const trimMat = new THREE.MeshStandardNodeMaterial({ color: 0xffffff, roughness: 0.62, metalness: 0.0 });
+    const inst = new THREE.InstancedMesh(geo, trimMat, cottageTrim.length);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pos = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    cottageTrim.forEach((t, i) => {
+      q.setFromAxisAngle(up, t.ry);
+      inst.setMatrixAt(i, m4.compose(pos.set(t.x, t.y, t.z), q, sc.set(t.w, t.h, t.d)));
+      inst.setColorAt(i, new THREE.Color(t.color ?? ISLAND_COTTAGE_TRIM));
+    });
+    inst.castShadow = inst.receiveShadow = true;
+    inst.name = 'IslandCottageTrim';
+    group.add(inst);
+  }
   for (const [A, ribbed, name] of [[roofTiles, false, 'HippedRoofs'], [roofSheets, true, 'SheetRoofs']]) {
     if (!A.pos.length) continue;
     // split into ~1 km strips so the frustum can skip what's behind
@@ -904,7 +1499,7 @@ function buildCityBlocks(scene) {
     group.add(m);
   }
   if (window.CITY.DEBUG_ROADS !== false) {
-    console.info(`[buildings] ${stats.buildings} buildings, ${stats.boxes} boxes, ${stats.hip} hipped & ${stats.sheet} sheet roofs, ${stats.glass} in curtain wall, ${stats.victorian} in the Distillery's brick (${stats.stone} limestone, ${stats.monitor} monitor roofs, ${stats.chimneys} chimneys); ${stats.storefronts} storefronts (${stats.strip} on retail strips, ${stats.signed} signed)`);
+    console.info(`[buildings] ${stats.buildings} buildings, ${stats.boxes} boxes, ${stats.hip} hipped & ${stats.sheet} sheet roofs, ${stats.glass} in curtain wall, ${stats.victorian} in the Distillery's brick (${stats.stone} limestone, ${stats.monitor} monitor roofs, ${stats.chimneys} chimneys); ${stats.storefronts} storefronts (${stats.strip} on retail strips, ${stats.signed} signed); ${stats.cottages} island cottages`);
   }
 
   // ===================================================================================================================
@@ -1047,5 +1642,19 @@ function buildCityBlocks(scene) {
   };
 }
 
-Object.assign(window.CITY, { CityQuadtree, buildCityBlocks, storefrontSelection, signedWalls });
+Object.assign(window.CITY, {
+  CityQuadtree, buildCityBlocks, storefrontSelection, signedWalls,
+  // (pure geometry helpers, exported for the focused island-cottage geometry tests)
+  pushGableRoof, islandCottageTrim, islandCottageEaveHeight, islandCottageDoorBay, islandCottageShaderTone,
+  ISLAND_COTTAGE_BAY_PITCH, ISLAND_COTTAGE_CORNER_PIER, ISLAND_COTTAGE_DOOR_CASING, ISLAND_COTTAGE_TONE_MIN,
+  // (pure geometry helpers for the focused marina-appearance tests, st-sb3r.34)
+  marinaShedTrim, marinaShedEaveHeight, createMarinaShedMaterial, createMarinaStorageMaterial,
+  MARINA_SHED_STYLE, MARINA_STORAGE_STYLE,
+  MARINA_SHED_EAVES, MARINA_SHED_OVERHANG, MARINA_SHED_BLUE, MARINA_SHED_WALL, MARINA_SHED_ROOF,
+  MARINA_PANEL_WINDOW_RATIO_X, MARINA_PANEL_WINDOW_RATIO_Y, MARINA_TRIM_RELIEF,
+  // (pure geometry helpers for the focused QCYC clubhouse tests, st-sb3r.39)
+  createMarinaClubhouseMaterial, marinaClubhouseDetail, marinaClubhouseWallHeight, clubhouseFrontageSegments,
+  MARINA_CLUBHOUSE_STYLE, MARINA_CLUBHOUSE_EAVES, MARINA_CLUBHOUSE_ROOF_RISE, MARINA_CLUBHOUSE_BALCONY_DEPTH,
+  MARINA_CLUBHOUSE_POST_PITCH, MARINA_CLUBHOUSE_WALL, MARINA_CLUBHOUSE_TRIM, MARINA_CLUBHOUSE_ROOF
+});
 })();

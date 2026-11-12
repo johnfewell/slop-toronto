@@ -1,0 +1,144 @@
+{
+  "schema": "biidaasige-fitness-source/1",
+  "bead": "st-bmyv.5",
+  "generated": "2026-11-10",
+  "owner": "bounded fitness-source worker",
+  "scope": "Remaining FITNESS location source gap: does a current City of Toronto asset/geodata layer contain an outdoor fitness equipment record (point or footprint) for Biidaasige Park?",
+  "method": "Bounded primary-source search (<=15 min). Queried City Open Data CKAN (Parks and Recreation Facilities) and the official City Park Amenity Point ArcGIS feature layer (AGOL + gis.toronto.ca mirror), plus an independent UofT outdoor-fitness study layer. Checked local design/wayfinding/map text and recent press. No coordinates invented; no image pixels interpreted by the model.",
+  "ownership": "NEW files only: docs/biidaasige-fitness-source.md and this fixture. Captain integrates. No runtime/shared-file edits, no commits, no GPU, no bead close.",
+  "conclusion": {
+    "answer": "NO current municipal asset record of outdoor fitness equipment at Biidaasige Park.",
+    "placement": "unplaced",
+    "coordinateDerivable": false,
+    "footprintDerivable": false,
+    "machineCountDerivable": false,
+    "vendorKnown": false,
+    "reasoning": "The City's own Park Amenity Point layer records 493 Outdoor Fitness Equipment units city-wide (33 created in 2026, newest 2026-09-25) but zero at Biidaasige Park, which has 45 other amenity rows. The City Open Data Parks and Recreation Facilities dataset (refreshed 2026-11-01) lists Biidaasige amenities as 'Dog Off-Leash Area, Playground, Washroom' with no Fitness Equipment. An independent UofT study layer has zero fitness points within 3 km. The Recreation page's 'west of Cableway Canyon' is the only existence claim and gives direction only.",
+    "possibleExplanationsUnproven": [
+      "Equipment not yet installed at inventory time",
+      "Installed but not yet asset-registered",
+      "Recreation page is forward-looking/aspirational"
+    ],
+    "doNotPickOne": true
+  },
+  "sources": [
+    {
+      "id": "city-open-data-parks-rec",
+      "what": "City of Toronto Open Data — Parks and Recreation Facilities",
+      "url": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/parks-and-recreation-facilities",
+      "datastoreDump": "https://ckan0.cf.opendata.inter.prod-toronto.ca/datastore/dump/e8cd0f4d-4910-42a0-81f9-cf8c2218753a",
+      "metadataModified": "2026-11-03",
+      "lastRefreshed": "2026-11-01",
+      "refreshRate": "Monthly",
+      "licence": "City of Toronto Open Data Licence",
+      "result": "Biidaasige Park row present (ASSET_ID 988832, LOCATIONID 3853, 51 COMMISSIONERS ST) with AMENITIES = 'Dog Off-Leash Area, Playground, Washroom' — NO Fitness Equipment. City-wide 101 park rows carry the 'Fitness Equipment' amenity value, so the field is populated and meaningful.",
+      "biidaasigeRow": {
+        "_id": 1056,
+        "LOCATIONID": 3853,
+        "ASSET_ID": 988832,
+        "ASSET_NAME": "BIIDAASIGE PARK",
+        "TYPE": "Park",
+        "AMENITIES": "Dog Off-Leash Area, Playground, Washroom",
+        "ADDRESS": "51 COMMISSIONERS ST",
+        "geometry": { "type": "Point", "coordinates": [-79.3556437988402, 43.6434987638808] },
+        "note": "Park-level point, not an equipment point."
+      }
+    },
+    {
+      "id": "city-park-amenity-point",
+      "what": "City of Toronto — Park Amenity Point (official ArcGIS feature layer)",
+      "url": "https://services3.arcgis.com/b9WvedVPoizGfvfD/arcgis/rest/services/COTGEO_PFR_PARK_AMENITY/FeatureServer/0",
+      "cityMirror": "https://gis.toronto.ca/arcgis/rest/services/cot_geospatial13/FeatureServer/20 (Park Amenity Point); /52 (PFR Park Amenity)",
+      "serviceDescription": "This layer contains park amenities with small footprints, including: Art/Sculpture, Bake Oven, Bottle Filling Station, Commemorative Tree, Drinking Fountain, Flagpole/flag, Frisbee Golf Basket, Life-Saving Station, Life Guard Tower, Outdoor Chess Table, Outdoor Fitness Equipment, Outdoor Shower, ...",
+      "licence": "City of Toronto open data",
+      "positiveControl": {
+        "query": "ASSET_TYPE LIKE '%Fitness%'",
+        "countCityWide": 493,
+        "sample": [
+          "SALLY BIRD PARK - Outdoor Fitness Equipment (2) @ -79.40659925920346,43.66288373155981",
+          "JULIUS DEUTSCH PARK - Outdoor Fitness Equipment (5) @ -79.39707492183045,43.65662820478867",
+          "HUMBER ARBORETUM - Outdoor Fitness Equipment (2) @ -79.62253549919309,43.73254122313393"
+        ]
+      },
+      "currencyControl": {
+        "query": "ASSET_TYPE LIKE '%Fitness%' AND CREATION_DATE >= DATE '2026-01-01'",
+        "countCreated2026": 33,
+        "newest": "GRAND AVENUE PARK - Outdoor Fitness Equipment (1) created 2026-09-25T17:21:47Z",
+        "note": "Layer is actively updated with new installations, so absence at Biidaasige is not staleness."
+      },
+      "biidaasigeQuery": {
+        "query": "ASSET_NAME LIKE 'BIIDAASIGE%'",
+        "count": 45,
+        "types": ["Bench", "Picnic Table", "Drinking Fountain"],
+        "created": "2026-04-28",
+        "lastModified": "2026-05-19",
+        "fitnessRows": 0,
+        "sample": [
+          "BIIDAASIGE PARK - Bench (16) @ -79.3499207639985,43.645571502075306",
+          "BIIDAASIGE PARK - Picnic Table (8) @ -79.34843953084524,43.646523449674504",
+          "BIIDAASIGE PARK - Drinking Water Source (Badlands) @ -79.35056386757626,43.645312619100245"
+        ]
+      },
+      "proximityQuery": {
+        "center": [-79.3556, 43.6435],
+        "radiusM": 1500,
+        "totalAmenityRows": 1046,
+        "fitnessRows": 0
+      },
+      "nameVariantQuery": {
+        "query": "fitness rows matching BIIDAASIGE|PORT LANDS|VILLIERS|CHERRY|SHIP CHANNEL|DON",
+        "result": "Only DONALDA PARK and KENNEDY - MARGDON PARKETTE (substring false positives). No Port Lands / Biidaasige fitness record under any naming variant."
+      }
+    },
+    {
+      "id": "uoft-outdoor-fitness-study",
+      "what": "Independent UofT study — Senior Accessibility to Outdoor Fitness Equipment in Toronto",
+      "url": "https://services1.arcgis.com/9NvE8jKNWWlDGsUJ/arcgis/rest/services/JS_Senior_Accessibility_to_Outdoor_Fitness_Equipment_in_Toronto_WFL1/FeatureServer/0",
+      "countCityWide": 95,
+      "within3kmOfPark": 0,
+      "result": "Independent corroboration of the City negative."
+    },
+    {
+      "id": "city-recreation-page",
+      "what": "City of Toronto Recreation page — Biidaasige Park",
+      "url": "https://www.toronto.ca/explore-enjoy/parks-recreation/places-spaces/beaches-gardens-attractions/biidaasige-park/",
+      "captainCache": "$WATERFRONT_RESEARCH/biidaasige/captain/recreation-current.html",
+      "dateModified": "2026-09-09",
+      "quote": "Outdoor Fitness Equipment — Fitness equipment is available west of Cableway Canyon.",
+      "result": "Existence + direction only. No point, no count, no machine list, no vendor."
+    },
+    {
+      "id": "local-design-wayfinding-map-text",
+      "what": "Local design/wayfinding/map text extracts",
+      "files": [
+        "inventory/design-2023.txt",
+        "inventory/wayfinding.txt",
+        "inventory/map-2025.txt",
+        "inventory/page1-words.tsv"
+      ],
+      "result": "No fitness|exercise|gym|workout match in any file. The 2026 wayfinding map draws no fitness icon."
+    },
+    {
+      "id": "press",
+      "what": "Recent press",
+      "urls": [
+        "https://www.cp24.com/photos/2026/07/27/this-freshly-expanded-toronto-park-has-a-zipline-and-a-massive-restored-300-tonne-crane/",
+        "https://www.toronto.com/things-to-do/biidaasige-park-ookwemin-minising-toronto/article_ac14107f-a16e-52d0-8590-ded936db0242.html",
+        "https://www.waterfrontoronto.ca/news/torontos-largest-park-in-a-generation-just-got-bigger"
+      ],
+      "result": "No fitness/exercise mention."
+    }
+  ],
+  "priorPassContext": {
+    "osm": "ZERO leisure=fitness_station / sport=fitness / leisure=fitness_equipment in park bbox (Overpass 2026-11-10T23:38:28Z, ODbL). See tools/fixtures/biidaasige-remaining-source-review.json.",
+    "wayfindingMap": "2026 north-up map draws no fitness icon; registration fixture outdoor-fitness status = unplaced.",
+    "liangmartin": "First-hand article confirms 'a outdoor fitness center' in prose but six photos contain no gym; captain personally viewed all six. Dead end, not repeated."
+  },
+  "whatWouldChangeTheAnswer": [
+    "A City Park Amenity Point row for Biidaasige with ASSET_TYPE = Outdoor Fitness Equipment (exact per-unit point).",
+    "A City capital/procurement record naming a fitness vendor and installation date for the park.",
+    "A current photo with GPS EXIF showing the machines.",
+    "A vendor case study (Earthscape / WholeTrees / etc.) naming Biidaasige with a plan or photo."
+  ],
+  "licence": "City of Toronto open data; OSM ODbL (prior pass). No image pixels ship. Raw query caches private under $WATERFRONT_RESEARCH/biidaasige/fitness-primary/."
+}

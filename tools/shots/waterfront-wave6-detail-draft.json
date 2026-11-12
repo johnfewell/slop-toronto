@@ -1,0 +1,50 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 1800
+  },
+  {
+    "name": "island-cottages-wards-third-street-fronts-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1484, 1.7, 1868], look: [1584, 2.4, 1976], fov: 68 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-cottages-wards-lakeshore-fronts-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1640, 1.7, 2070], look: [1588, 2.3, 2140], fov: 66 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "redpath-west-sign-face-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [636, 16, 520], look: [741, 21, 513], fov: 46 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "redpath-east-slip-sugar-beach-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [955, 2.4, 520], look: [770, 16, 545], fov: 58 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-west-mound-edge-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; const C = window.CITY; const t = C.htoLandscapeSurfaceAt ? C.htoLandscapeSurfaceAt(-989, 632.8) : null; const h = t ? t.h : 1.05; a.cameraSystem.cinema = () => ({ pos: [-989, h + 1.60, 632.8], look: [-1000, 0.40, 618], fov: 66 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-west-edge-graze-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; const C = window.CITY; const t = C.htoLandscapeSurfaceAt ? C.htoLandscapeSurfaceAt(-975, 612) : null; const h = t ? t.h : 0.6; a.cameraSystem.cinema = () => ({ pos: [-975, h + 1.5, 612], look: [-1000, 0.35, 602], fov: 64 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "hto-east-plaza-joints-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-809, 1.62, 588.5], look: [-809, 0.30, 594.5], fov: 62 }); })()",
+    "wait": 5000
+  }
+]

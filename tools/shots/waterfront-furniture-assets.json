@@ -1,0 +1,50 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 2500
+  },
+  {
+    "name": "sugar-chairs-eye-level",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[924, 1.55, 472],look:[912, 0.55, 464],fov:55})",
+    "wait": 3000
+  },
+  {
+    "name": "sugar-chairs-three-quarter",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[926, 3.2, 478],look:[915, 0.4, 464],fov:50})",
+    "wait": 3000
+  },
+  {
+    "name": "sugar-chairs-silhouette",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[935, 1.4, 468],look:[912, 0.7, 464],fov:45})",
+    "wait": 3000
+  },
+  {
+    "name": "sugar-chairs-aerial",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[985, 22, 545],look:[930, 0.3, 520],fov:55})",
+    "wait": 3000
+  },
+  {
+    "name": "hto-chairs-eye-level",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-812, 1.55, 690],look:[-812, 0.55, 670],fov:55})",
+    "wait": 3000
+  },
+  {
+    "name": "hto-chairs-three-quarter",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-800, 3.2, 692],look:[-812, 0.4, 672],fov:50})",
+    "wait": 3000
+  },
+  {
+    "name": "hto-chairs-aerial",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-775, 20, 720],look:[-812, 0.3, 668],fov:55})",
+    "wait": 3000
+  }
+]

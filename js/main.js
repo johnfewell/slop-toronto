@@ -130,6 +130,23 @@ async function initApp() {
   const { colliders: landmarkColliders } = buildLandmarks(scene);
   // the Humber Bay Arch Bridge, the Martin Goodman Trail over the Humber's mouth (humber-arch-bridge.js)
   if (window.CITY.buildTrailBridges) pushAll(landmarkColliders, window.CITY.buildTrailBridges(scene).colliders);
+  // Distinctive waterfront beach furniture, anchored to the mapped park outlines.
+  const waterfrontDetails = window.CITY.createWaterfrontDetails?.(THREE, scene);
+  if (waterfrontDetails) pushAll(landmarkColliders, waterfrontDetails.colliders);
+  const waterfrontPublicRealm = window.CITY.createWaterfrontPublicRealm?.(THREE, scene);
+  if (waterfrontPublicRealm) pushAll(landmarkColliders, waterfrontPublicRealm.colliders);
+  for (const build of [window.CITY.createWaterfrontBeachGround, window.CITY.createWaterfrontLandmarks, window.CITY.createWaterfrontMusicGarden,
+    window.CITY.createWaterfrontHarbourfront, window.CITY.createWaterfrontMainBuilding, window.CITY.createWaterfrontConcertStage, window.CITY.createWaterfrontFerries, window.CITY.createWaterfrontIslandArrivals, window.CITY.createWaterfrontSherbourne, window.CITY.createWaterfrontBathurst, window.CITY.createWaterfrontBeachLandscape, window.CITY.createWaterfrontHtoLandscape, window.CITY.createWaterfrontHtoFirehall, window.CITY.createWaterfrontIslandAccess]) {
+    const waterfront = build?.(THREE, scene);
+    if (waterfront) pushAll(landmarkColliders, waterfront.colliders);
+  }
+  const biidaasigePark = window.CITY.createBiidaasigePark?.(THREE, scene);
+  if (biidaasigePark) {
+    pushAll(landmarkColliders, biidaasigePark.colliders);
+    const masked=window.CITY.maskBiidaasigeParkGround?.(scene,biidaasigePark.river,biidaasigePark.dogSurfaces,biidaasigePark.woodchipIsland,biidaasigePark.threeIsland) || 0;
+    window.CITY.maskBiidaasigePlayIslandPaths?.(biidaasigePark.paths?.group,[biidaasigePark.woodchipIsland,biidaasigePark.threeIsland]);
+    if(window.CITY.biidaasigeParkStats)window.CITY.biidaasigeParkStats.nativeGroundMaterialsMasked=masked;
+  }
   markInit('landmarks');
   // ?massing=1: every building from the City's 3D Massing polygons instead of its boxes (docs/massing-buildings.md;
   // js/massing-data.js and data/toronto-massing.bin are fetched only then, so normal play never loads them)
@@ -175,8 +192,33 @@ async function initApp() {
     streetDetails.treePositions.length = 0;
     pushAll(streetDetails.treePositions, clear);
   }
+  if (biidaasigePark) {
+    const kept = streetDetails.treePositions.filter(t => !window.CITY.biidaasigeParkClearAt?.(t.x, t.z));
+    streetDetails.treePositions.length = 0;
+    pushAll(streetDetails.treePositions, kept);
+    // This park opened in 2025–26: source photos show young planting, not mature woodland.
+    // Only generated park trees change scale; the separate City street-tree inventory stays measured.
+    for (const tree of streetDetails.treePositions) if (window.CITY.biidaasigeParkInside?.(tree.x,tree.z)) {
+      tree.scale *= window.CITY.BIIDAASIGE_PARK_CONFIG.youngTreeScale;
+    }
+  }
   markInit('streetDetails');
   // Trees: the City's street trees & the parkland ones in John's EZ-Tree models (ez-trees.js), else mrdoob's
+  // Replace invented garden scatter with the source-located movement groves.
+  // The separate City street-tree inventory remains in the shared tree builder.
+  if (window.CITY.waterfrontMusicGardenEnabled && window.CITY.waterfrontMusicGardenTreeSites) {
+    const kept = streetDetails.treePositions.filter(t => !window.CITY.gardenFootprintAt?.(t.x, t.z));
+    streetDetails.treePositions.length = 0;
+    pushAll(streetDetails.treePositions, kept);
+    pushAll(streetDetails.treePositions, window.CITY.waterfrontMusicGardenTreeSites);
+  }
+  // HTO's designed paved courts replace generic park scatter, while the separate
+  // mapped City inventory and trees on the grass berms remain.
+  if (window.CITY.waterfrontHtoLandscapeEnabled) {
+    const kept = streetDetails.treePositions.filter(t => !window.CITY.htoLandscapePavedAt?.(t.x, t.z));
+    streetDetails.treePositions.length = 0;
+    pushAll(streetDetails.treePositions, kept);
+  }
   const treeMode = new URLSearchParams(location.search).get('trees'); // ?trees=slop: mrdoob's trees (comparison)
   if (window.CITY.clearParkSignTrees) window.CITY.clearParkSignTrees(streetDetails.treePositions); // (park-signs.js)
   if (treeMode === 'slop' || !(await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees(allColliders);
@@ -192,6 +234,20 @@ async function initApp() {
   const streetProps = await window.CITY.buildStreetProps(scene, allColliders);
   for (const c of streetProps.colliders || []) (c.openData ? allColliders : propColliders).push(c);
   const wayfindingMaps=window.CITY.buildWayfindingMaps?.(streetProps.group);
+  if (biidaasigePark && window.CITY.buildBiidaasigeAmenities) {
+    const renderedSites = (window.CITY.benchStats?.placed > 0 ? window.CITY.benchStats.sites : [])
+      .map(s => ({ x:s.x, z:s.z, kind:'bench' }));
+    const amenities = window.CITY.buildBiidaasigeAmenities(scene, null, { renderedSites, skipDogAreaIds: (biidaasigePark.dogSurfaces?.sites || []).map(s=>s.id) });
+    if (amenities) pushAll(allColliders, amenities.colliders);
+  }
+
+  if (biidaasigePark && window.CITY.buildBiidaasigeLighting) {
+    const renderedSites = (streetProps.colliders || []).filter(c => c.kind === 'wayfinding')
+      .map(c => ({x:(c.minX+c.maxX)/2,z:(c.minZ+c.maxZ)/2,kind:'wayfinding'}));
+    const parkLighting=window.CITY.buildBiidaasigeLighting(scene,null,{renderedSites});
+    if(parkLighting)pushAll(propColliders,parkLighting.colliders);
+  }
+
   // the flexi-posts on the cycle tracks' separators, and the separators' & posts' colliders (cycling.js)
   if (window.CITY.buildBikePosts) pushAll(propColliders, (window.CITY.buildBikePosts(scene)?.colliders || []));
   pushAll(propColliders, (streetDetails.colliders || []));
@@ -300,6 +356,16 @@ async function initApp() {
   // plants and the shrub layer, round the viewer
   const parkCover = (window.CITY.buildParkCover && window.CITY.buildParkCover(scene)) || null;
   if (parkCover) markInit('parkCover');
+  // Source-reviewed representative garden cover; ?islandGardens=0 disables the bounded layer.
+  const islandGardenCover = new URLSearchParams(location.search).get('islandGardens') !== '0'
+    ? await window.CITY.buildIslandGardenCover?.(scene, { THREE }) : null;
+  if (islandGardenCover) markInit('islandGardenCover');
+  const waterfrontDinghies = window.CITY.waterfrontDinghiesEnabled?.() === true
+    ? await window.CITY.buildWaterfrontDinghies?.(THREE, scene) : null;
+  if (waterfrontDinghies?.ready) {
+    pushAll(allColliders, waterfrontDinghies.colliders);
+    markInit('waterfrontDinghies');
+  }
 
   // 4. Initialize Third-Person Controllers (Person, Car, Cyclist, Helicopter) & Multi-Camera System
   const controllerManager = new ThirdPersonControllerManager(scene, allColliders);
@@ -342,6 +408,18 @@ async function initApp() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) savePlayerState(); });
   // --- end restored visits
   const cameraSystem = new CameraSystem(renderer.domElement, controllerManager);
+  cameraSystem.onPresetFallback = (reason) => {
+    updateCameraUI();
+    toast(reason === 'two-shot requires a cyclist or car'
+      ? 'Choose cycling or driving for the CN Tower two-shot.'
+      : 'The CN Tower two-shot needs a clear nearby view. Try the waterfront near HTO Park.', 4500);
+  };
+  // One resolved camera pose feeds the scene, water and cloud passes. Discontinuous
+  // arrivals invalidate the existing cloud history rather than carrying the old view.
+  cameraSystem.onDiscontinuity = () => {
+    skyClouds?.resetHistory();
+    window.__CITY_APP?.measurements?.markDiscontinuity('camera');
+  };
   const touchControls = new TouchControls(controllerManager);
   // Riding a streetcar: [E] at a stop boards the car standing there, [E] at a stop gets off (streetcar-ride.js)
   rideSession = window.CITY.createTransitRideSession({ controllerManager, cameraSystem,
@@ -367,7 +445,7 @@ async function initApp() {
   // (scene-culling.js). The cycle tracks' flexi-posts and the CaféTO patios set their own cull distances for it; left
   // out of this list, each drew every post and patio in the city in every frame (~430k triangles, st-z51b). The TTC
   // pylons keep their reach (no cull distance) and are cut into kilometre cells the view frustum skips
-  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios', 'TtcPylons']
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios', 'TtcPylons', 'WaterfrontDetails', 'WaterfrontBeachGround', 'WaterfrontPublicRealm', 'WaterfrontLandmarks', 'WaterfrontMusicGarden', 'WaterfrontHarbourfront', 'WaterfrontMainBuilding', 'WaterfrontConcertStage', 'BiidaasigePark', 'BiidaasigeAmenities', 'BiidaasigeLighting', 'WaterfrontFerries', 'WaterfrontIslandArrivals', 'WaterfrontSherbourne', 'WaterfrontBathurst', 'WaterfrontBeachLandscape', 'WaterfrontHtoLandscape', 'WaterfrontHtoFirehall', 'WaterfrontIslandAccess', 'WaterfrontDinghies']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   // ?massing=1: the polygon cells, built in a worker since `blocks` (their near tier gives the shadow stand-ins)
@@ -1161,6 +1239,11 @@ async function initApp() {
     const params = new URLSearchParams(location.hash.slice(1));
     const mode = { walk: 'person', drive: 'car', cycle: 'cyclist', fly: 'helicopter' }[params.get('mode')];
     if (mode) selectMode(mode);
+    if (params.get('park') === 'biidaasige') {
+      const loc = window.CITY.TELEPORT_LOCATIONS.biidaasige;
+      if (loc) teleportTo(loc.x, loc.z, loc.heading);
+      return;
+    }
     const place = params.get('place');
     const dest = params.get('to');
     if (params.has('locate')) tourGuide.requestLocation();
@@ -1263,6 +1346,8 @@ async function initApp() {
     subway, // Toronto layer
     multiplayer,
     controllerManager,
+    islandGardenCover,
+    waterfrontDinghies,
     touchControls,
     gamepadControls,
     cameraSystem,
@@ -1530,6 +1615,10 @@ async function initApp() {
       cameraSystem.update(dt, elapsed);
       if (!document.hidden && now >= nextPlayerSave) { savePlayerState(); nextPlayerSave = now + 5000; }
     }
+    // If even the bounded escape search found no near-plane clearance (for example
+    // a new proxy encloses the rider), keep the last verified image. Movement still
+    // advances above so the player can leave; never render a known overlapping eye.
+    if (cameraSystem.cameraPoseValid === false) { measurements?.markDiscontinuity('camera'); return; }
     cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
     if (cityBlocks.updateLights) cityBlocks.updateLights(cameraSystem.camera);
     if (streetDetails.update) streetDetails.update(cameraSystem.camera);
@@ -1543,6 +1632,7 @@ async function initApp() {
     }
     lakeWater.update(elapsed);
     if (waterEdges) waterEdges.update(cameraSystem.camera.position); if (parkCover) parkCover.update(cameraSystem.camera);
+    islandGardenCover?.update(cameraSystem.camera.position);
     if (skyClouds) skyClouds.update(holding ? 0 : dt);
     precipitation.update(subwayRide.inside || (rideSession.active && cameraSystem.activePresetId === 'pov'));
     if (!holding) {

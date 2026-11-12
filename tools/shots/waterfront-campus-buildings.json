@@ -1,0 +1,20 @@
+[
+  {
+    "name": "stage-waterfront",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [-450, 4, 770], \"look\": [-451, 8, 710], \"fov\": 60})",
+    "wait": 3000
+  },
+  {
+    "name": "stage-aerial",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [-510, 48, 775], \"look\": [-451, 5, 710], \"fov\": 60})",
+    "wait": 3000
+  },
+  {
+    "name": "main-east",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-340,4,585],look:[-370,7,620],fov:60})",
+    "wait": 3000
+  }
+]

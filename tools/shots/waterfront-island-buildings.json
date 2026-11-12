@@ -1,0 +1,20 @@
+[
+  {
+    "name": "island-buildings-wards-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1450, 95, 1750], look: [1600, 0, 2050], fov: 48 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-buildings-wards-street-golden",
+    "time": "golden",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [1545, 2.2, 1875], look: [1610, 3.0, 2030], fov: 62 }); })()",
+    "wait": 5000
+  },
+  {
+    "name": "island-buildings-algonquin-aerial-midday",
+    "time": "midday",
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [760, 82, 1940], look: [1010, 0, 2190], fov: 52 }); })()",
+    "wait": 5000
+  }
+]

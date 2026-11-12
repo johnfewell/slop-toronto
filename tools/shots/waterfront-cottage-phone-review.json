@@ -1,0 +1,20 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 1500
+  },
+  {
+    "name": "cottage-verified-front-0",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\":[1655.49,2,1902.06],\"look\":[1646.72,2.4,1910.25],\"fov\":64})",
+    "wait": 2500
+  },
+  {
+    "name": "cottage-verified-front-1",
+    "time": "golden",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\":[1495.89,2,2183.82],\"look\":[1489.68,2.4,2173.12],\"fov\":64})",
+    "wait": 2500
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 1500
+  },
+  {
+    "name": "sugar-mound-walk",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,f=C.waterfrontBeachLandscape.layout.features.find(f=>f.kind==='mound'&&f.built);let y=.22;for(let i=0;i<=100;i++){const t=1.1*(1-i/100),x=f.x-Math.cos(f.yaw)*f.radiusX*t,z=f.z+Math.sin(f.yaw)*f.radiusX*t;const h=C.waterfrontBeachLandscapeHeightAt(x,z),g=a.controllerManager.getGroundHeight(x,z,'person',y);if(h!=null&&Math.abs(g-h)>.02)throw Error('Sugar slope footing '+g+' '+h);y=g;}a.selectMode('person');a.teleportTo(f.x,f.z,0,y);a.cameraSystem.cinema=()=>({pos:[f.x+5,y+2.1,f.z+6],look:[f.x,y+.8,f.z],fov:60});return{surface:y};})()",
+    "wait": 2200
+  },
+  {
+    "name": "hto-berm-walk",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,b=C.waterfrontHtoLandscape.berms[0];let y=.22;for(let i=0;i<=100;i++){const t=1.1*(1-i/100),x=b.cx-b.Ux*t,z=b.cz-b.Uz*t;const h=C.htoLandscapeSurfaceAt(x,z),g=a.controllerManager.getGroundHeight(x,z,'person',y);if(h&&Math.abs(g-h.h)>.02)throw Error('HTO slope footing '+g+' '+h.h);y=g;}a.selectMode('person');a.teleportTo(b.cx,b.cz,0,y);a.cameraSystem.cinema=()=>({pos:[b.cx+5,y+2,b.cz+6],look:[b.cx,y+.8,b.cz],fov:60});return{surface:y};})()",
+    "wait": 2200
+  },
+  {
+    "name": "hto-boardwalk-walk",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY;let p=null;for(let x=-850;x<-800&&!p;x+=.5)for(let z=675;z<695;z+=.5){const q=C.htoLandscapeSurfaceAt(x,z);if(q?.kind==='boardwalk'){p={x,z,h:q.h};break;}}if(!p)throw Error('no boardwalk');a.selectMode('person');a.teleportTo(p.x,p.z,0,p.h);const g=a.controllerManager.getGroundHeight(p.x,p.z,'person',p.h);if(Math.abs(g-p.h)>.01)throw Error('boardwalk curb override '+g+' != '+p.h);a.cameraSystem.cinema=()=>({pos:[p.x-4,p.h+2,p.z+3],look:[p.x+12,p.h+1,p.z],fov:60});return p;})()",
+    "wait": 2200
+  },
+  {
+    "name": "centre-beach-route-walk",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,cs=C.waterfrontIslandAccess.surfaces.corridors.filter(c=>c.dockId==='centre');if(!cs.length)throw Error('missing route surfaces');let last=null;for(const c of cs)for(let i=0;i+1<c.nodes.length;i++){const x=(c.nodes[i][0]+c.nodes[i+1][0])/2,z=(c.nodes[i][1]+c.nodes[i+1][1])/2;const h=C.islandAccessSurfaceAt(x,z),g=a.controllerManager.getGroundHeight(x,z,'person',c.y);if(!h||Math.abs(g-h.h)>.025)throw Error('route footing '+g+' '+JSON.stringify(h));last={x,z,h:g};}a.selectMode('person');a.teleportTo(last.x,last.z,0,last.h);a.cameraSystem.cinema=()=>({pos:[last.x+4,last.h+2,last.z+5],look:[last.x,last.h+1,last.z-10],fov:60});return{segments:cs.length,...last};})()",
+    "wait": 2200
+  },
+  {
+    "name": "hanlans-beach-route-walk",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,cs=C.waterfrontIslandAccess.surfaces.corridors.filter(c=>c.dockId==='hanlans');if(!cs.length)throw Error('missing route surfaces');let last=null;for(const c of cs)for(let i=0;i+1<c.nodes.length;i++){const x=(c.nodes[i][0]+c.nodes[i+1][0])/2,z=(c.nodes[i][1]+c.nodes[i+1][1])/2;const h=C.islandAccessSurfaceAt(x,z),g=a.controllerManager.getGroundHeight(x,z,'person',c.y);if(!h||Math.abs(g-h.h)>.025)throw Error('route footing '+g+' '+JSON.stringify(h));last={x,z,h:g};}a.selectMode('person');a.teleportTo(last.x,last.z,0,last.h);a.cameraSystem.cinema=()=>({pos:[last.x+4,last.h+2,last.z+5],look:[last.x,last.h+1,last.z-10],fov:60});return{segments:cs.length,...last};})()",
+    "wait": 2200
+  },
+  {
+    "name": "ward-beach-route-walk",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP,C=window.CITY,cs=C.waterfrontIslandAccess.surfaces.corridors.filter(c=>c.dockId==='ward');if(!cs.length)throw Error('missing route surfaces');let last=null;for(const c of cs)for(let i=0;i+1<c.nodes.length;i++){const x=(c.nodes[i][0]+c.nodes[i+1][0])/2,z=(c.nodes[i][1]+c.nodes[i+1][1])/2;const h=C.islandAccessSurfaceAt(x,z),g=a.controllerManager.getGroundHeight(x,z,'person',c.y);if(!h||Math.abs(g-h.h)>.025)throw Error('route footing '+g+' '+JSON.stringify(h));last={x,z,h:g};}a.selectMode('person');a.teleportTo(last.x,last.z,0,last.h);a.cameraSystem.cinema=()=>({pos:[last.x+4,last.h+2,last.z+5],look:[last.x,last.h+1,last.z-10],fov:60});return{segments:cs.length,...last};})()",
+    "wait": 2200
+  }
+]

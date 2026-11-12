@@ -1,0 +1,102 @@
+{
+  "_scope": "st-bmyv.4/.5 remaining source review",
+  "_generated": "2026-11-10",
+  "_method": "Bounded source discovery (<=15 min). Overpass POST query (fitness_station / sport=fitness / fitness_equipment / barrier=fence|wall / barrier=gate) over park bbox 43.638,-79.362,43.652,-79.340, timestamp 2026-11-10T23:38:28Z, ODbL. Plus one first-hand personal photo article (liangmartin.com). No coordinates invented; no image pixels interpreted by the model.",
+  "_ownership": "NEW file only. Captain integrates. No implementation, no shared-file edits, no commits, no GPU, no bead close.",
+  "overpass": {
+    "queryFile": "remaining-source/fitness-fence.ql",
+    "rawFile": "remaining-source/fitness-fence.json",
+    "endpoint": "https://overpass-api.de/api/interpreter",
+    "timestamp": "2026-11-10T23:38:28Z",
+    "licence": "ODbL (OpenStreetMap contributors)",
+    "totalElements": 74,
+    "inParkElements": 41,
+    "outsideParkElements": 33
+  },
+  "fitness": {
+    "osmResult": "ZERO leisure=fitness_station, sport=fitness, or leisure=fitness_equipment elements anywhere in the bbox. The outdoor fitness centre is NOT mapped in OSM.",
+    "officialStatus": "City Recreation page (modified 2026-09-09) lists 'Outdoor Fitness Equipment — Fitness equipment is available west of Cableway Canyon.' Existence + direction only; no point.",
+    "corroboration": "liangmartin.com first-hand article (2025-07-30) independently confirms 'a outdoor fitness center' for adults.",
+    "placement": "unplaced",
+    "directionHint": "west of Cableway Canyon",
+    "canyonReference": "Cableway Canyon = the two playground=zipwire lines: cableway-20 (way/1552431730, centre 43.645411,-79.3513439) and cableway-40 (way/1552431733, centre 43.645159,-79.3515595). 'West of' therefore means roughly lon < -79.3516, lat ~43.645, i.e. the corridor between the west dog area and the cableways.",
+    "honestUnknown": "No mapped point, no mapped equipment node, no photo with GPS. Do not fabricate a coordinate. Captain may place an estimate from the orthophoto + wayfinding map only."
+  },
+  "dogAreas": {
+    "east": {
+      "ref": "way/1418542004",
+      "publishedAreaM2": 1200,
+      "mappedRingAreaM2": 790,
+      "centre": [43.6461866, -79.3495271],
+      "osmFenceOrGateWithin120m": "NONE",
+      "note": "No barrier=fence/wall/gate mapped within 120 m of the east off-leash area. The enclosure fencing is not in OSM."
+    },
+    "west": {
+      "ref": "way/1419966624",
+      "publishedAreaM2": 800,
+      "mappedRingAreaM2": 540,
+      "centre": [43.6450412, -79.3522426],
+      "osmFenceOrGateWithin120m": "two short generic barrier=fence ways only",
+      "nearbyFences": [
+        { "ref": "way/878097152", "tags": { "barrier": "fence" }, "points": 2, "distanceM": 72, "geometry": [[43.6456461, -79.3522718], [43.6457304, -79.35234]] },
+        { "ref": "way/878097153", "tags": { "barrier": "fence" }, "points": 3, "distanceM": 77, "geometry": [[43.6456657, -79.3524924], [43.6457304, -79.35234], [43.6458011, -79.3521822]] }
+      ],
+      "note": "Two short generic fence segments form a small V/L at ~43.6457,-79.3523, just NORTH of the west dog-area ring. They are NOT tagged as a dog-park enclosure and are not proven to be the off-leash fence. Honest status: possible partial fence, unverified."
+    },
+    "articleCorroboration": "liangmartin.com: 'The two addition of open leash areas are also useful for fencing off dog areas' — confirms two fenced off-leash areas exist, matching the two OSM polygons. Fencing is real but not mapped as OSM barrier geometry."
+  },
+  "gates": {
+    "inParkGateNodes": 13,
+    "note": "13 barrier=gate nodes fall inside the park bbox. NONE is tagged as a dog-park gate or an off-leash entrance. They are generic gates (several with motorcar/motorcycle/access tags) along roads/paths. The task's warning is confirmed: the earlier '9 gates' were outside the park; these 13 in-park gates are generic and cannot be assigned to the dog areas without proof.",
+    "inParkGateList": [
+      { "ref": "node/9981624577", "lat": 43.6483391, "lon": -79.3586103, "tags": { "barrier": "gate" } },
+      { "ref": "node/11124977175", "lat": 43.6412937, "lon": -79.3550913, "tags": { "barrier": "gate" } },
+      { "ref": "node/4611765315", "lat": 43.6413208, "lon": -79.3550596, "tags": { "barrier": "gate" } },
+      { "ref": "node/11124977177", "lat": 43.6413618, "lon": -79.3548316, "tags": { "barrier": "gate" } },
+      { "ref": "node/3100449404", "lat": 43.647777, "lon": -79.3547444, "tags": { "barrier": "gate", "motorcar": "yes", "motorcycle": "yes" } },
+      { "ref": "node/11124977176", "lat": 43.6417095, "lon": -79.3539998, "tags": { "barrier": "gate" } },
+      { "ref": "node/12309216448", "lat": 43.6405999, "lon": -79.3539804, "tags": { "barrier": "gate" } },
+      { "ref": "node/3485504672", "lat": 43.6492554, "lon": -79.3539686, "tags": { "access": "private", "barrier": "gate" } },
+      { "ref": "node/10032117226", "lat": 43.6459572, "lon": -79.3532831, "tags": { "barrier": "gate" } },
+      { "ref": "node/13152344460", "lat": 43.6420317, "lon": -79.3532321, "tags": { "barrier": "gate" } },
+      { "ref": "node/10227953629", "lat": 43.6414348, "lon": -79.3525985, "tags": { "barrier": "gate" } },
+      { "ref": "node/12109623695", "lat": 43.6480549, "lon": -79.351512, "tags": { "barrier": "gate" } },
+      { "ref": "node/11959604834", "lat": 43.6420854, "lon": -79.3507643, "tags": { "barrier": "gate" } }
+    ]
+  },
+  "fencesAndWalls": {
+    "inParkCount": 28,
+    "note": "28 barrier=fence/wall ways inside the park bbox (chain-link, railing, stone/concrete walls, area walls). These are general park/road/path barriers, not dog-area enclosures. Full geometry is in remaining-source/fitness-fence.json.",
+    "types": {
+      "chain_link": ["way/23973351", "way/75609480", "way/1322643296", "way/1322643299"],
+      "railing": ["way/1352429141", "way/1352429142", "way/1352429158", "way/1352429159", "way/1352972085"],
+      "wall": ["way/946020279", "way/946020280", "way/1352429118", "way/1352429120", "way/1352429133", "way/1352429134", "way/1352429149", "way/1352429150"],
+      "generic_fence": ["way/878097152", "way/878097153", "way/899582079", "way/899582080", "way/1201342021", "way/1330056247", "way/1353464824", "way/1353464825", "way/1483076668", "way/1483076669", "way/1545116134"]
+    }
+  },
+  "dodem": {
+    "status": "unchanged — no new individual source appearance found for the 6 non-eagle animals",
+    "known": "Only the eagle has a primary City photo (captain/dodem-eagle.jpg). The maker owl photo (captain/owl-front.jpg) shows a seated wolf-like carving to the left of the owl (partial wolf evidence).",
+    "newEvidence": "The liangmartin.com article does NOT name or photograph the Dodem animal sculptures individually. No new appearance source for bear/beaver/turtle/otter/wolf/musky beyond what is already in tools/fixtures/biidaasige/dodem-source-evidence.json.",
+    "honestUnknown": "6 of 7 animals remain approximate carved-wood interpretations, not verified as-built. Do not upgrade confidence without a new primary photo."
+  },
+  "mockBeaverDam": {
+    "status": "unchanged — unverified",
+    "note": "City names a mock beaver dam play area. Two OSM playground=sandpit polygons (way/1552431731, way/1552431732) are nearby but NOT proven to be the dam. No new source resolves this. Stays unplaced."
+  },
+  "photos": {
+    "indexFile": "remaining-source/photo-index.json",
+    "dir": "remaining-source/photos/",
+    "count": 6,
+    "source": "liangmartin.com personal primary photographs, 2025-07-30",
+    "licence": "All rights reserved (personal blog) — private captain reference only, do NOT commit",
+    "modelViewedImages": false
+  },
+  "netNewFindings": [
+    "Fitness centre is definitively NOT in OSM (zero fitness tags in bbox) — confirms it must stay unplaced pending captain ortho/map estimate.",
+    "Dog-area fencing is NOT mapped as OSM barrier geometry; only two short generic fence ways sit ~72-77 m north of the WEST dog area, unproven as the enclosure. East dog area has no mapped fence/gate within 120 m.",
+    "13 in-park barrier=gate nodes exist but none is a dog-park gate — the earlier '9 outside-park gates' were correctly excluded; these 13 are generic and unassignable.",
+    "First-hand 2025-07-30 photo article independently corroborates: outdoor fitness centre, swing structures, a cable structure, and two fenced off-leash areas — but gives no coordinates.",
+    "No new individual appearance source for the 6 non-eagle Dodem animals; no new source for the mock beaver dam."
+  ]
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "powerplant-street",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [-360, 6, 750], \"look\": [-315, 16, 706], \"fov\": 60})",
+    "wait": 3000
+  },
+  {
+    "name": "powerplant-aerial",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({\"pos\": [-380, 55, 800], \"look\": [-315, 15, 706], \"fov\": 60})",
+    "wait": 3000
+  }
+]

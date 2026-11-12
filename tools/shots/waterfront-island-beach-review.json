@@ -1,0 +1,50 @@
+[
+  {
+    "name": "t00-hide",
+    "time": "midday",
+    "js": "document.body.classList.add('film')",
+    "wait": 1800
+  },
+  {
+    "name": "manitou-beach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-300, 80, 3430],look:[-400, 0, 3260],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "wards-beach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1720, 70, 2470],look:[1700, 0, 2300],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "hanlans-beach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-1920, 70, 3100],look:[-1720, 0, 3100],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "gibraltar-beach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-1300, 65, 3580],look:[-1300, 0, 3400],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "wards-final-approach",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1495, 2.4, 2285],look:[1540, 1, 2290],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "hto-firehall",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-820, 20, 668],look:[-868, 4, 625],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "sugar-rocks",
+    "time": "midday",
+    "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[960, 3.5, 529],look:[967, 1.2, 516],fov:60})",
+    "wait": 2500
+  }
+]

@@ -9,6 +9,7 @@ const CAMERA_PRESETS = [
   { id: 'chase',       name: '3rd-Person Chase',            short: 'Chase',       category: 'follow', fov: 56 },
   { id: 'action',      name: 'Low-Angle Action',            short: 'Action',      category: 'follow', fov: 60 },
   { id: 'pov',         name: 'First-Person / Cockpit',      short: 'POV / Dash',  category: 'follow', fov: 68 },
+  { id: 'torontoDirector', name: 'CN Tower Two-Shot',       short: 'CN Two-Shot', category: 'director', fov: 25 },
   { id: 'trail',       name: 'Martin Goodman Trail',        short: 'Trail',       category: 'scenic', fov: 50 },
   { id: 'islands',     name: 'Skyline from the Islands',    short: 'Islands',     category: 'scenic', fov: 46 },
   { id: 'cnTower',     name: 'CN Tower',                    short: 'CN Tower',    category: 'scenic', fov: 54 },
@@ -50,7 +51,7 @@ class CameraSystem {
 
     this.activePresetId = 'chase';
     this.orbitYawOffset = 0.0;
-    this.orbitPitchOffset = 0.09;
+    this.orbitPitchOffset = -0.2;
     this.zoomMultiplier = 1.0;
     this.isDragging = false;
     this.userOrbitTimer = 0;
@@ -71,6 +72,13 @@ class CameraSystem {
     this.smoothedSpeed = 0;
     this._desiredPos = new THREE.Vector3();
     this._desiredLook = new THREE.Vector3();
+    this.collision = new window.CITY.CameraCollision(controllerManager);
+    this.followRig = new window.CITY.FollowCameraRig(this.collision);
+    this.followRigEnabled = !/[?&]cameraRig=legacy(?:&|$)/.test(window.location?.search || '');
+    this.onDiscontinuity = null;
+    this.director = null;
+    this._cameraMetrics = /[?&](?:cameraMetrics|metrics)=1(?:&|$)/.test(window.location?.search || '') ? { camera: new Float64Array(4096), query: new Float64Array(4096), time: new Float64Array(4096), replacements: new Uint32Array(4096), validations: new Uint32Array(4096), count: 0, total: 0 } : null;
+    this.collision.enabledMetrics = !!this._cameraMetrics;
 
     this.bindPointerControls();
   }
@@ -89,7 +97,7 @@ class CameraSystem {
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, type: e.pointerType });
       canvas.setPointerCapture(e.pointerId);
       this.isDragging = true;
-      this.userOrbitTimer = 4.0;
+      this.noteLookInput();
     });
 
     canvas.addEventListener('pointermove', (e) => {
@@ -110,9 +118,9 @@ class CameraSystem {
         }
       } else {
         this.orbitYawOffset -= dx * 0.0065;
-        this.orbitPitchOffset = Math.max(-0.32, Math.min(0.68, this.orbitPitchOffset + dy * 0.005));
+        this.orbitPitchOffset = Math.max(-0.8, Math.min(0.3, this.orbitPitchOffset - dy * 0.005));
       }
-      this.userOrbitTimer = 4.0;
+      this.noteLookInput();
     });
 
     const releasePointer = (id) => {
@@ -142,8 +150,19 @@ class CameraSystem {
   setCameraPreset(presetId, snapImmediately = false) {
     const preset = CAMERA_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
+    const previous = this.activePresetId;
+    if (previous === 'torontoDirector' && preset.id !== previous) {
+      if (this.director?.displayed) {
+        this.followRig.resume(this, this.followOverride || this.controllerManager.getActiveEntity());
+        // First frame after the cut retains the pose actually displayed by the director.
+        this._resumeDisplayed = true;
+      }
+      this.director = null;
+    }
+    if (preset.id === 'torontoDirector' && previous !== preset.id) this.director = new window.CITY.TorontoCameraDirector(this);
+    if (preset.id === 'chase' && previous !== 'chase' && previous !== 'torontoDirector') this.followRig.reset();
     this.activePresetId = preset.id;
-    this.camera.fov = preset.fov;
+    if (preset.id !== 'torontoDirector' && !(previous === 'torontoDirector' && preset.id === 'chase')) this.camera.fov = preset.fov;
     this.camera.updateProjectionMatrix();
     if (snapImmediately) {
       this.initialized = false;
@@ -158,14 +177,39 @@ class CameraSystem {
     if (this.activePresetId !== 'chase') zoom = 0;
     if (!lookX && !lookY && !zoom) return;
     this.orbitYawOffset -= lookX * 2.0 * dt;
-    this.orbitPitchOffset = Math.max(-0.32, Math.min(0.68, this.orbitPitchOffset + lookY * 1.25 * dt));
+    this.orbitPitchOffset = Math.max(-0.8, Math.min(0.3, this.orbitPitchOffset - lookY * 1.25 * dt));
     this.zoomMultiplier = Math.max(0.45, Math.min(2.4, this.zoomMultiplier + zoom * 0.9 * dt));
-    this.userOrbitTimer = 4.0;
+    this.noteLookInput();
+  }
+
+  noteLookInput() {
+    const entity = this.followOverride || this.controllerManager.getActiveEntity();
+    this.userOrbitTimer = this.followRigEnabled && this.activePresetId === 'chase' && (entity.type === 'car' || entity.type === 'cyclist') ? 0 : 4;
+    this.followRig.idle = 0;
+  }
+
+  setFollowRigEnabled(enabled) {
+    this.followRigEnabled = !!enabled;
+    this.followRig.reset();
+    this.initialized = false;
+    this.onDiscontinuity?.('camera-ab');
+    return this.followRigEnabled;
+  }
+
+  metrics({ reset = false, raw = false } = {}) {
+    const m = this._cameraMetrics;
+    if (!m) return { enabled: false };
+    const count = Math.min(m.count, m.camera.length);
+    const percentile = (buffer, p) => { const values = Array.from(buffer.subarray(0, count)).sort((a, b) => a - b); return values[Math.max(0, Math.ceil(p * count) - 1)] ?? null; };
+    const result = { enabled: true, samples: count, total: m.total, cameraP95Ms: percentile(m.camera, .95), cameraP99Ms: percentile(m.camera, .99), queryP95Ms: percentile(m.query, .95), queryP99Ms: percentile(m.query, .99), queries: this.collision.queries, candidates: this.collision.candidates };
+    if (raw) result.raw = { performanceNowMs: Array.from(m.time.subarray(0, count)), cameraMs: Array.from(m.camera.subarray(0, count)), queryMs: Array.from(m.query.subarray(0, count)), proxyReplacementCount: Array.from(m.replacements.subarray(0, count)), directorValidationCount: Array.from(m.validations.subarray(0, count)) };
+    if (reset) { m.count = 0; m.total = 0; this.collision.queries = 0; this.collision.candidates = 0; }
+    return result;
   }
 
   resetOrbit() {
     this.orbitYawOffset = 0;
-    this.orbitPitchOffset = 0.09;
+    this.orbitPitchOffset = -0.2;
     this.zoomMultiplier = 1;
     this.userOrbitTimer = 0;
   }
@@ -180,7 +224,12 @@ class CameraSystem {
     this.followOffset.set(0, 0, 0);
     this.followLookOffset.set(0, 0, 0);
     this.followBaseY = 0;
+    this.activePresetId = 'chase';
     this.setCameraPreset('chase', true);
+    this.followRig.reset();
+    this.director = null;
+    this._resumeDisplayed = false;
+    this.onDiscontinuity?.('teleport');
   }
 
   getActivePreset() {
@@ -193,6 +242,21 @@ class CameraSystem {
   }
 
   update(dt, elapsed) {
+    const started = this._cameraMetrics ? performance.now() : 0, queryStart = this.collision.queryMs;
+    this.cameraPoseValid = true;
+    try { this._updateCamera(dt, elapsed); }
+    finally {
+      if (this._cameraMetrics) {
+        const m = this._cameraMetrics, index = m.count++ % m.camera.length;
+        m.camera[index] = performance.now() - started; m.query[index] = this.collision.queryMs - queryStart; m.total++;
+        m.time[index] = started; m.replacements[index] = window.CITY.WorldCollision?.changes.length || 0;
+        m.validations[index] = this.director?.validationCount || 0;
+      }
+    }
+  }
+
+  _updateCamera(dt, elapsed) {
+    dt = Math.max(0, Math.min(Number.isFinite(dt) ? dt : 0, .05));
     if (this.cinema) {
       const shot = this.cinema(elapsed);
       if (shot) {
@@ -209,6 +273,24 @@ class CameraSystem {
       }
     }
     const entity = this.followOverride || this.controllerManager.getActiveEntity();
+    if (this._resumeDisplayed) { this._resumeDisplayed = false; return; }
+    if (this.activePresetId === 'torontoDirector') {
+      if (this.director?.update(dt, elapsed, entity)) return;
+      // Validation chooses the safe chase fallback before this frame is displayed.
+      this.lastDirectorReport = this.director?.report;
+      this.setCameraPreset('chase');
+      this._resumeDisplayed = false;
+      this.onPresetFallback?.(this.lastDirectorReport?.reason);
+    }
+    if (this.activePresetId === 'chase' && this.followRigEnabled && (entity.type === 'car' || entity.type === 'cyclist')) {
+      if (this.userOrbitTimer > 0) this.userOrbitTimer = Math.max(0, this.userOrbitTimer - dt);
+      if (!this.followRig.update(entity, this, dt)) { this.cameraPoseValid = false; return; }
+      this.camera.updateProjectionMatrix();
+      this.camera.position.copy(this.currentPos);
+      if (this.camera.up) this.camera.up.set(0, 1, 0);
+      this.camera.lookAt(this.currentLookAt);
+      return;
+    }
     const desiredPos = this._desiredPos;
     const desiredLook = this._desiredLook;
 
@@ -231,8 +313,8 @@ class CameraSystem {
     switch (this.activePresetId) {
       case 'chase': {
         const dist = entity.chaseDistance * this.zoomMultiplier * (1 + Math.min(0.25, this.smoothedSpeed * 0.01));
-        const height = entity.chaseHeight * this.zoomMultiplier + Math.sin(this.orbitPitchOffset) * dist * 0.85;
-        const horizDist = Math.cos(this.orbitPitchOffset) * dist + speedLag;
+        const height = entity.chaseHeight * this.zoomMultiplier + Math.sin(-this.orbitPitchOffset - .11) * dist * 0.85;
+        const horizDist = Math.cos(-this.orbitPitchOffset - .11) * dist + speedLag;
 
         desiredPos.set(
           entity.position.x - Math.sin(totalYaw) * horizDist,
@@ -281,7 +363,7 @@ class CameraSystem {
           desiredPos.copy(entity.seatEye);
           desiredLook.set(
             entity.seatEye.x + Math.sin(yaw) * 40.0,
-            entity.seatEye.y + Math.sin(-this.orbitPitchOffset) * 18.0 + entity.seatLookY,
+            entity.seatEye.y + Math.sin(this.orbitPitchOffset + .11) * 18.0 + entity.seatLookY,
             entity.seatEye.z + Math.cos(yaw) * 40.0
           );
           break;
@@ -306,7 +388,7 @@ class CameraSystem {
         );
         desiredLook.set(
           entity.position.x + Math.sin(totalYaw) * 40.0,
-          entity.position.y + eyeY + Math.sin(-this.orbitPitchOffset) * 18.0 + 1.5,
+          entity.position.y + eyeY + Math.sin(this.orbitPitchOffset + .11) * 18.0 + 1.5,
           entity.position.z + Math.cos(totalYaw) * 40.0
         );
         break;

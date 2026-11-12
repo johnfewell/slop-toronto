@@ -1,0 +1,74 @@
+[
+  {
+    "name": "island-lanes-wards-third-street-along-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1475.78,1.8,1855.92],look:[1579.46,1.4,1952.35],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-wards-fifth-street-along-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1438.35,1.8,1922.19],look:[1534.41,1.4,2018.05],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-wards-lakeshore-along-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1715.13,1.8,1971.29],look:[1587.66,1.4,2155.86],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-algonquin-oneida-along-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1133.81,1.8,2426.96],look:[1065.02,1.4,2334.98],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-algonquin-ojibway-along-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1195.36,1.8,2378.64],look:[1129.33,1.4,2287.84],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-wards-cibola-along-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1394.64,1.8,2242.51],look:[1385.11,1.4,2149.3],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-cibola-algonquin-bridge-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[154.05,1.8,3095.87],look:[294.87,1.4,3010.11],fov:64};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-aerial-overview-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1150,145,2100],look:[1420,0,2180],fov:48};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-lanes-producer-check",
+    "time": "midday",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,L=C.islandLanesLayout&&C.islandLanesLayout();if(!L||L.skipped)throw Error('island lane gate not active: '+JSON.stringify(L&&L.skipped));const s=L.stats;if(s.unmarked<20)throw Error('too few photo-evidenced unmarked runs: '+s.unmarked);if(!s.serviceUnmarked||!s.livingStreetUnmarked)throw Error('both photographed families must resolve: '+JSON.stringify(s));for(const name of ['Oneida Avenue','Ojibway Avenue','Cibola Avenue','Third Street','Fifth Street']){const r=L.runs.find(r=>r.names.includes(name));if(!r)throw Error('missing photographed row '+name);const p=r.points[Math.floor(r.points.length/2)];if(!C.islandLaneCentreLineSuppressed(p[0],p[1]))throw Error('gate false on '+name);}const svc=C.ISLAND_LANES_DATA.runs.find(r=>r.names.includes('Island Service Road'));if(svc&&svc.unmarked)throw Error('unphotographed service lane marked unmarked');if(C.createWaterfrontIslandLanes||C.islandLaneSurfaceAt)throw Error('rejected overlay API still present');const wood=s.woodKeptUnresolved;if(!wood||!wood.some(w=>w.names.includes('Algonquin Bridge Road')&&w.wood===1))throw Error('wood bridge record lost');console.log('[island-lanes-producer-check] '+JSON.stringify({runs:s.runs,unmarked:s.unmarked,unmarkedM:s.unmarkedM,serviceUnmarked:s.serviceUnmarked,livingStreetUnmarked:s.livingStreetUnmarked,status:C.ISLAND_LANES_PHOTO_STATUS}));return {runs:s.runs,unmarked:s.unmarked,serviceUnmarked:s.serviceUnmarked,livingStreetUnmarked:s.livingStreetUnmarked};})()"
+  },
+  {
+    "name": "island-verge-third-street-closeup-midday",
+    "time": "midday",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1490,1.25,1875],look:[1525,0.35,1910],fov:58};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-verge-cibola-closeup-golden",
+    "time": "golden",
+    "js": "(()=>{const a=window.__CITY_APP;const c={pos:[1394.6,1.25,2242.5],look:[1385.1,0.35,2149.3],fov:58};a.cameraSystem.cinema=()=>c;})()",
+    "wait": 5000
+  },
+  {
+    "name": "island-verge-producer-check",
+    "time": "midday",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY;const st=C.islandVergeRampStats&&C.islandVergeRampStats();if(!st||st.triangles<100)throw Error('flush verge ramp sampler empty: '+JSON.stringify(st));if(typeof C.islandVergeSurfaceAt!=='function')throw Error('islandVergeSurfaceAt missing');if(C.islandVergeSurfaceAt(1000,600))throw Error('mainland must not be a verge ramp');if(C.islandVergeSurfaceAt(0,0))throw Error('off-island must not be a verge ramp');const runs=C.ISLAND_LANES_DATA.runs.filter(r=>r.unmarked===1);let found=[];for(const name of ['Third Street','Cibola Avenue','Ojibway Avenue']){const r=runs.find(r=>r.names.includes(name));if(!r)continue;const p=r.points[Math.floor(r.points.length/2)];let ramp=null;for(let k=0;k<16;k++){const x=p[0]+Math.cos(k*Math.PI/8)*3.5,z=p[1]+Math.sin(k*Math.PI/8)*3.5;const s=C.islandVergeSurfaceAt(x,z);if(s&&s.kind==='ramp'&&s.h>0&&s.h<C.CITY_BOUNDS.sidewalkHeight){ramp=s;break;}}if(!ramp)throw Error('no flush ramp within 3.5 m of '+name);found.push({name,h:+ramp.h.toFixed(3),id:ramp.id});}if(found.length<2)throw Error('too few ramps resolved: '+JSON.stringify(found));console.log('[island-verge-producer-check] '+JSON.stringify({triangles:st.triangles,cells:st.cells,ramps:found}));return {triangles:st.triangles,cells:st.cells,ramps:found};})()"
+  }
+]

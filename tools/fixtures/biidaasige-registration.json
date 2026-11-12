@@ -1,0 +1,558 @@
+{
+  "schema": "biidaasige-registration/1",
+  "generatedFor": [
+    "st-bmyv.2",
+    "st-bmyv.8"
+  ],
+  "owner": "identity/georegistration worker (bounded)",
+  "claim": "Register CURRENT 2026 City wayfinding map pixel coordinates onto WGS84 / the city world projection using STABLE OSM control points only, then read approximate map anchors for the named features from Captain-verified map pixels. The map is a stylised relief diagram, not an orthophoto: every map-derived anchor is approximate. No coordinate is invented from prose; every anchor names the pixel it was read at and the source that made it readable.",
+  "map": {
+    "source": "City of Toronto, Biidaasige Park wayfinding map, September 2026",
+    "url": "https://www.toronto.ca/wp-content/uploads/2026/09/978c-Biidaasige-Park-map.pdf",
+    "savedAs": "$WATERFRONT_RESEARCH/biidaasige/captain/map-2026.png",
+    "pixels": [
+      2319,
+      3000
+    ],
+    "orientation": "NORTH-UP (Lake Shore top, Ship Channel bottom). The August 2025 PDF is SOUTH-UP and MUST NOT be used with these pixels.",
+    "isDiagram": true,
+    "mapTextSource": "City of Toronto; copyright September 2026, printed City wayfinding map.",
+    "approxErrorNote": "Map relief/labels are placed for legibility, not surveyed. Registered feature anchors carry an explicit approximate source error; they are NOT control-grade. Do not report them as precise.",
+    "pixelOrigin": "upper-left; (0,0) is the top-left of the derived 2319x3000 PNG"
+  },
+  "projection": {
+    "comment": "The city world frame the anchors are expressed in is js/city-config.js worldFromLatLon (detail/eglinton share it). lat0/lon0/kx/ky/theta come from data/toronto-geodata.bin frame.projection (see tools/audit-biidaasige-ground.mjs).",
+    "lat0": 43.6453,
+    "lon0": -79.3806,
+    "kx": 80682.4717990044,
+    "ky": 111105.31871811183,
+    "theta": -0.28949997923178367
+  },
+  "controls": [
+    {
+      "name": "firehall_body",
+      "px": [
+        1309,
+        1752
+      ],
+      "lat": 43.6458536,
+      "lon": -79.349925,
+      "kind": "building-body-centroid",
+      "osmRef": "way/494886782 (Old Fire Hall 30)",
+      "note": "Captain read the Fire Hall BODY at (1309,1752); registered to the CURRENT OSM building centroid."
+    },
+    {
+      "name": "cherry_south_bridge",
+      "px": [
+        825,
+        1903
+      ],
+      "lat": 43.6439147,
+      "lon": -79.3522052,
+      "kind": "road-crossing-centre",
+      "osmRef": "way/1157772737 (Cherry Street South Bridge)",
+      "note": "Captain read the road-crossing CENTRE; the map exaggerates the bridge structure, so the OSM road centroid is the matching feature."
+    },
+    {
+      "name": "commissioners_bridge",
+      "px": [
+        1895,
+        1660
+      ],
+      "lat": 43.6480605,
+      "lon": -79.3463004,
+      "kind": "road-crossing-centre",
+      "osmRef": "way/1211500112 (Commissioners Street Bridge)"
+    },
+    {
+      "name": "cherry_commissioners_jct",
+      "px": [
+        741,
+        1677
+      ],
+      "lat": 43.6448066,
+      "lon": -79.3536348,
+      "kind": "road-junction",
+      "osmRef": "derived: Cherry Street x Commissioners Street way intersection (Overpass 2026-11-10)"
+    },
+    {
+      "name": "polson_cherry_jct",
+      "px": [
+        931,
+        2182
+      ],
+      "lat": 43.6430687,
+      "lon": -79.3505691,
+      "kind": "road-junction",
+      "osmRef": "derived: Polson Street x Cherry Street way intersection (Overpass 2026-11-10)"
+    }
+  ],
+  "controlPolicy": {
+    "note": "Only STABLE control points are fitted: Fire Hall body, two bridge road-crossings, two road junctions. The unnamed OSM west-playground AREA CENTROID is NOT a control and is NOT the Owl \u2014 fitting on it would assume the very identity this registration must test.",
+    "excludedAsControl": [
+      {
+        "name": "west_playground_area_centroid",
+        "why": "Unknown identity: this is the OSM way/1418127159 area centroid, not proven to be the Owl. Using it as a control would beg the Owl identity question."
+      },
+      {
+        "name": "snowy_owl_graphic",
+        "why": "Feature being resolved, not a control; fitting on it then reporting it 'resolved' is circular."
+      }
+    ]
+  },
+  "fit": {
+    "model": "affine: world = A * [px, py, 1] (least squares, dense normal equations); separate coefficients per axis",
+    "px": [
+      0.5797966178114304,
+      0.1480171685448422,
+      1387.6879786810507
+    ],
+    "pz": [
+      -0.1483491375533429,
+      0.5568546505379385,
+      -142.9556215833552
+    ],
+    "scaleUPx": 0.598474380937392,
+    "scaleVPx": 0.5761911002521315,
+    "bearingU": -14.352028510913717,
+    "bearingV": 75.11445250835831,
+    "orthogonality": 89.47,
+    "rms": 10.9,
+    "maxResidual": 18.8,
+    "residuals": [
+      {
+        "name": "firehall_body",
+        "m": 18.8
+      },
+      {
+        "name": "cherry_south_bridge",
+        "m": 8.2
+      },
+      {
+        "name": "commissioners_bridge",
+        "m": 8.8
+      },
+      {
+        "name": "cherry_commissioners_jct",
+        "m": 8.3
+      },
+      {
+        "name": "polson_cherry_jct",
+        "m": 4.8
+      }
+    ],
+    "leaveOneOut": [
+      {
+        "name": "firehall_body",
+        "m": 25.0
+      },
+      {
+        "name": "cherry_south_bridge",
+        "m": 11.9
+      },
+      {
+        "name": "commissioners_bridge",
+        "m": 53.7
+      },
+      {
+        "name": "cherry_commissioners_jct",
+        "m": 32.3
+      },
+      {
+        "name": "polson_cherry_jct",
+        "m": 34.7
+      }
+    ],
+    "interpretation": "Unmodified 5-control RMS is 10.9 m (max 18.8 m). Leave-one-out spreads to ~54 m, which is expected for a 5-point affine over a ~300 m span; it bounds the lever-arm sensitivity of the far control. This is a ~15-25 m APPROXIMATE registration, not survey grade. NEVER prune controls to force a low RMS and never select only the points that agree.",
+    "outsideControls": [
+      {
+        "name": "atlas_crane (OSM node/9521067431)",
+        "px": [
+          608,
+          1855
+        ],
+        "lat": 43.6435284,
+        "lon": -79.3538817,
+        "holdoutErrorM": 6.5,
+        "note": "Independent held-out OSM point; 6.5 m registration error confirms the fit is sane. The map illustration draws the crane jib above its foot, so the foot pixel is the registered point."
+      }
+    ]
+  },
+  "features": [
+    {
+      "id": "snowy-owl",
+      "name": "Snowy Owl Play Theatre",
+      "phase": "2025",
+      "px": [
+        1231,
+        1758
+      ],
+      "pxBasis": "Captain read the Owl graphic BASE centre (NOT the head, NOT a fixture centre)",
+      "world": [
+        2361.6,
+        653.4
+      ],
+      "lat": 43.645732,
+      "lon": -79.3502356,
+      "approxErrorM": 20,
+      "positionConfidence": "medium-map-registered",
+      "occupancy": "unverified-within-approx-anchor",
+      "status": "map-registered-candidate",
+      "resolution": "The Owl theatre is drawn WEST of the Fire Hall on the NORTH-UP 2026 map, ~46.8 m west of the Fire Hall body. It sits INSIDE the OSM unnamed west playground (way/1418127159), whose centroid is a generic area point, not the Owl. Maker/published pin 43.6462889,-79.3496804 is ~76 m from this registered point and lies to the NORTH-EAST, so the pin is an approximate maker location, NOT the structure footprint.",
+      "witnessFalseControl": {
+        "name": "west_playground_centroid",
+        "holdoutErrorM": 80.6,
+        "why": "Distance from the registered Owl base to the OSM area centroid; shows the area centroid is NOT the Owl (the very false identity this registration rejects)."
+      },
+      "evidence": [
+        "2026 City map (north-up) Owl graphic west of Fire Hall",
+        "OSM way/1418127159 unnamed west playground polygon",
+        "Monstrum public MyMaps pin (approximate)",
+        "Captain photo review of maker images (identity only; no measured footprint)"
+      ]
+    },
+    {
+      "id": "old-fire-hall",
+      "name": "Old Fire Hall 30",
+      "phase": "2025",
+      "px": [
+        1309,
+        1752
+      ],
+      "pxBasis": "Captain read the Fire Hall body centroid (also the control)",
+      "world": [
+        2389.5,
+        647.6
+      ],
+      "lat": 43.6458536,
+      "lon": -79.349925,
+      "approxErrorM": 0,
+      "positionConfidence": "high-osm-control",
+      "status": "control-and-verified",
+      "resolution": "Old Fire Hall 30 is a real park building and this registration control. Current OSM way/494886782 carries it at 43.6458536,-79.349925 (world 2389.5, 647.6). The committed native 3D-massing row at world (2384, 622) is the SAME building at its pre-relocation position: the current building is displaced ~26 m from the native row (mostly +z/south), consistent with the Captain's 'relocated ~24 m' note. Identity confirmed; the native row needs a position update, not suppression.",
+      "nativeMassingRow": {
+        "x": 2384,
+        "z": 622,
+        "h": 8.4,
+        "deltaToOsm": [
+          5.5,
+          25.6
+        ],
+        "deltaM": 26.2
+      }
+    },
+    {
+      "id": "the-drum",
+      "name": "The Drum",
+      "phase": "2026",
+      "px": [
+        1732,
+        1742
+      ],
+      "pxBasis": "Captain read the small grey ring centre east of the Fire Hall",
+      "world": [
+        2649.7,
+        570.1
+      ],
+      "lat": 43.6471902,
+      "lon": -79.3471077,
+      "approxErrorM": 15,
+      "positionConfidence": "medium-map-registered",
+      "status": "map-registered-candidate",
+      "resolution": "The Drum (architect Tawar, circular annulus on V-posts) is drawn EAST of the Fire Hall. Registered from the map ring centre; a nearby 'The Drum' label text is NOT the structure. Built-form identity confirmed by Captain's /captain/drum-built.png photo; position is map-approximate ~15 m.",
+      "evidence": [
+        "2026 City map ring icon east of Fire Hall",
+        "Captain built-form photo drum-built.png",
+        "Tawar project page"
+      ]
+    },
+    {
+      "id": "badlands-scramble",
+      "name": "Badlands Scramble",
+      "phase": "2025",
+      "px": [
+        1165,
+        1802
+      ],
+      "pxBasis": "Captain read the Badlands map marker; ALSO has OSM polygon (way/1418541993) for an independent check",
+      "world": [
+        2329.9,
+        687.7
+      ],
+      "lat": 43.6453546,
+      "lon": -79.3504914,
+      "approxErrorM": 20,
+      "positionConfidence": "medium-map-registered",
+      "status": "map-registered-candidate",
+      "resolution": "Badlands is a laid area, so its OSM polygon exists; the map marker is approximate. Use the OSM polygon centroid for extent-critical work; use this anchor only as a check. Marker is SOUTH-WEST of the Owl base, as Captain described (Badlands south-west of Owl)."
+    },
+    {
+      "id": "cableway-canyon",
+      "name": "Cableway Canyon",
+      "phase": "2025",
+      "px": [
+        1057,
+        1742
+      ],
+      "pxBasis": "Captain read Cableway Canyon map label vicinity (feature is 20/40 m cableways, a wide low feature)",
+      "world": [
+        2258.4,
+        670.3
+      ],
+      "lat": 43.6453209,
+      "lon": -79.3514022,
+      "approxErrorM": 25,
+      "positionConfidence": "low-map-registered",
+      "status": "map-registered-candidate",
+      "resolution": "Cableway Canyon is a linear/slope feature (20 m + 40 m cableways) west of the Owl; the map shows it as a zone, so a single anchor is only a centre reference with ~25 m error. Living City text places Outdoor Fitness 'west of Cableway Canyon' but publishes no point; fitness therefore remains UNPLACED until an orthophoto/photo, NOT anchored from this label."
+    },
+    {
+      "id": "swing-hill",
+      "name": "Swing Hill",
+      "phase": "2025",
+      "px": [
+        1183,
+        1742
+      ],
+      "pxBasis": "Captain read Swing Hill map label vicinity",
+      "world": [
+        2331.4,
+        651.6
+      ],
+      "lat": 43.6456698,
+      "lon": -79.3506006,
+      "approxErrorM": 20,
+      "positionConfidence": "low-map-registered",
+      "status": "map-registered-candidate",
+      "resolution": "Swing Hill is a small play feature north-west of the Owl base in the west play cluster; map zone only, so the anchor is approximate and should be treated as a cluster reference, not a surveyed point."
+    },
+    {
+      "id": "raccoon-picnic-terrace",
+      "name": "Raccoon Picnic Terrace",
+      "phase": "2025",
+      "px": [
+        1497,
+        1740
+      ],
+      "pxBasis": "Captain read the picnic-terrace marker EAST of the Fire Hall (NOT the Raccoon structure itself)",
+      "world": [
+        2513.2,
+        603.9
+      ],
+      "lat": 43.6465482,
+      "lon": -79.3486103,
+      "approxErrorM": 20,
+      "positionConfidence": "medium-map-registered",
+      "status": "map-registered-candidate",
+      "resolution": "This pixel is the PICNIC TERRACE marker, not the Reaching Raccoon structure. The Raccoon structure has its own OSM polygon (way/1418796674) and is NOT placed from this marker. Recorded to prevent the terrace marker being mistaken for the Raccoon."
+    },
+    {
+      "id": "canoe-cove-east-launch",
+      "name": "Canoe Cove east launch",
+      "phase": "2026",
+      "px": [
+        527,
+        1783
+      ],
+      "pxBasis": "Captain read the east Canoe Cove launch label",
+      "world": [
+        1957.2,
+        771.7
+      ],
+      "lat": 43.6436718,
+      "lon": -79.3546214,
+      "approxErrorM": 25,
+      "positionConfidence": "low-map-registered",
+      "status": "map-registered-candidate",
+      "resolution": "Canoe Cove is mapped as a point (OSM node/10893913022) but the launch/landing labels are map-approximate, not surveyed paddling-course extents. The course extent is not published; do not infer it from these anchors."
+    },
+    {
+      "id": "canoe-cove-west-landing",
+      "name": "Canoe Cove west landing",
+      "phase": "2026",
+      "px": [
+        250,
+        1784
+      ],
+      "pxBasis": "Captain read the west Canoe Cove landing label",
+      "world": [
+        1796.7,
+        813.4
+      ],
+      "lat": 43.6429002,
+      "lon": -79.35638,
+      "approxErrorM": 25,
+      "positionConfidence": "low-map-registered",
+      "status": "map-registered-candidate",
+      "resolution": "West landing on the cove; map-approximate, same caveat as the east launch."
+    },
+    {
+      "id": "west-promontory",
+      "name": "West Promontory",
+      "phase": "2026",
+      "px": [
+        60,
+        1742
+      ],
+      "pxBasis": "Captain read the west Promontory label (western edge of the map)",
+      "world": [
+        1680.3,
+        818.2
+      ],
+      "lat": 43.6425598,
+      "lon": -79.3577454,
+      "approxErrorM": 30,
+      "positionConfidence": "low-map-registered",
+      "status": "map-registered-candidate",
+      "resolution": "The ~9 m western promontory (MVVA) is a landform, drawn at the map's western edge. The anchor is a coarse centre with ~30 m error. This is a terrain feature, not a structure; a walkable relief mesh is a separate future build decision, not derivable from this point."
+    },
+    {
+      "id": "atlas-crane",
+      "name": "Atlas Crane",
+      "phase": "2026",
+      "px": [
+        608,
+        1855
+      ],
+      "pxBasis": "Captain read the mapped crane FOOT base (NOT the illustrated jib top)",
+      "world": [
+        2014.8,
+        799.8
+      ],
+      "lat": 43.6435776,
+      "lon": -79.3538376,
+      "approxErrorM": 10,
+      "positionConfidence": "high-osm-holdout",
+      "status": "verified-osm-holdout",
+      "resolution": "Atlas Crane is an OSM node (9521067431) at 43.6435284,-79.3538817. Registered from the map foot, it lands 6.5 m from the OSM node, confirming the registration and showing the jib illustration is displaced but the foot is faithful. Use the OSM node for the crane."
+    },
+    {
+      "id": "outdoor-fitness",
+      "name": "Outdoor Fitness Equipment",
+      "phase": "2025",
+      "px": null,
+      "world": null,
+      "lat": null,
+      "lon": null,
+      "approxErrorM": null,
+      "positionConfidence": "none",
+      "status": "unplaced",
+      "resolution": "City Recreation page (2026-09-09) states fitness equipment is west of Cableway Canyon but publishes no point. It is NOT pictured as its own icon on the 2026 map. Left UNPLACED; do not derive a coordinate from the cableway label."
+    }
+  ],
+  "buildingsPolicy": {
+    "note": "Do NOT blanket-suppress the 9 native in-park 3D-massing rows. Each row needs its own source identity and a 2026 photo before any change.",
+    "identified": [
+      {
+        "nativeRow": [
+          2384,
+          622
+        ],
+        "identity": "Old Fire Hall 30",
+        "osm": "way/494886782 @ 43.6458536,-79.349925",
+        "action": "reposition to current OSM; identity confirmed; native location is the pre-relocation position (~26 m south displacement)"
+      }
+    ],
+    "unidentifiedCandidates": [
+      {
+        "nativeRow": [
+          2678,
+          630
+        ],
+        "h": 26.1,
+        "status": "identity-unverified",
+        "note": "Largest in-park massing row (26.1 m). NOT proven an old warehouse and NOT proven a greenfield render error. Requires a current 2025/2026 photo and a City 3D-Massing/permit record before any decision. Its height alone proves nothing."
+      },
+      {
+        "nativeRow": [
+          2848,
+          624
+        ],
+        "h": 12.6,
+        "status": "identity-unverified"
+      },
+      {
+        "nativeRow": [
+          2887,
+          756
+        ],
+        "h": 12.1,
+        "status": "identity-unverified"
+      },
+      {
+        "nativeRow": [
+          1781,
+          758
+        ],
+        "h": 11.3,
+        "status": "identity-unverified"
+      },
+      {
+        "nativeRow": [
+          2189,
+          885
+        ],
+        "h": 10.4,
+        "status": "identity-unverified"
+      },
+      {
+        "nativeRow": [
+          2487,
+          687
+        ],
+        "h": 4.3,
+        "status": "identity-unverified"
+      },
+      {
+        "nativeRow": [
+          1998,
+          782
+        ],
+        "h": 3.1,
+        "status": "near-atlas-crane",
+        "note": "Near the Atlas Crane foot (OSM node 2014.8,799.8 \u2014 ~18 m). Plausibly crane equipment/base, not a shed; verify before any action."
+      },
+      {
+        "nativeRow": [
+          2422,
+          608
+        ],
+        "h": 3.6,
+        "status": "identity-unverified",
+        "note": "Sits right where the Owl maker pin projects (world 2422.2,606.9), but the registered Owl base is ~46 m west. Do not equate this low row with the Owl theatre without a photo."
+      }
+    ]
+  },
+  "sources": [
+    {
+      "what": "2026 City wayfinding map (north-up)",
+      "url": "https://www.toronto.ca/wp-content/uploads/2026/09/978c-Biidaasige-Park-map.pdf",
+      "used": "map pixels + labels"
+    },
+    {
+      "what": "OpenStreetMap (Overpass 2026-11-10, ODbL)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "used": "control points, Atlas crane node, badlands/raccoon polygons, west playground polygon"
+    },
+    {
+      "what": "Monstrum Snowy Owl maker page + public MyMaps pin",
+      "url": "https://monstrum.dk/en/playground/snowy-owl-play-theatre",
+      "used": "theatre identity; pin is approximate"
+    },
+    {
+      "what": "Tawar \u2014 The Drum",
+      "url": "https://www.tawarc.com/all-projects/the-drum-at-biidaasige-park",
+      "used": "built-form identity"
+    },
+    {
+      "what": "Waterfront Toronto 2026 western expansion",
+      "url": "https://www.waterfrontoronto.ca/news/torontos-largest-park-in-a-generation-just-got-bigger",
+      "used": "phase/coverage context"
+    },
+    {
+      "what": "MVVA Port Lands flood protection",
+      "url": "https://www.mvvainc.com/projects/port-lands-flood-protection2",
+      "used": "~9 m promontory context"
+    }
+  ]
+}

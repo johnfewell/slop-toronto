@@ -1,0 +1,20 @@
+[
+  {
+    "name": "ward-ground-baseline",
+    "time": "midday",
+    "js": "document.body.classList.add('film');window.__CITY_APP.cameraSystem.cinema=()=>({pos:[1720, 70, 2470],look:[1700, 0, 2300],fov:60})",
+    "wait": 2500
+  },
+  {
+    "name": "ward-ground-no-mask",
+    "time": "midday",
+    "js": "(()=>{const mats=new Set();window.__CITY_APP.scene.traverse(o=>{for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m?.userData.waterfrontIslandAccessMask)mats.add(m)});window.__wardLawn=[...mats];for(const m of mats){m.maskNode=null;m.needsUpdate=true;}return{materials:mats.size};})()",
+    "wait": 6000
+  },
+  {
+    "name": "ward-ground-flat-green",
+    "time": "midday",
+    "js": "(()=>{for(const m of window.__wardLawn){m.colorNode=window.CITY.TSL.color(0x224c20);m.needsUpdate=true;}})()",
+    "wait": 6000
+  }
+]
