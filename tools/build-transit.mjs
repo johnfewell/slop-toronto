@@ -7,21 +7,28 @@
 // - the scheduled speed through the city (stop to stop, dwell included) for spacing the vehicles at the start;
 // - stops: position & name, shared between patterns.
 // - subway patterns retain representative stop departure times for simulated passenger journeys.
-// usage: node tools/build-transit.mjs [gtfs feed dir] [out.js]     (default ~/.cache/slop-toronto/gtfs/feed)
+// usage: node tools/build-transit.mjs [gtfs feed dir] [out.js]     (default: the edition pinned in
+//   data/shared-toronto-data-pin.json when TORONTO_DATA_CACHE is set, else ~/.cache/slop-toronto/gtfs/feed; tools/ttc-feed.mjs)
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
 import vm from 'node:vm';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { resolveTtcFeed } from './ttc-feed.mjs';
 
 const outIdx = process.argv.indexOf('--out');
 const feedIdx = process.argv.indexOf('--feed');
 const nonFlagArgs = process.argv.slice(2).filter((a, i, arr) => !a.startsWith('--') && (i === 0 || !arr[i - 1].startsWith('--')));
-const FEED = (feedIdx >= 0 && process.argv[feedIdx + 1]) || nonFlagArgs[0] || path.join(process.env.HOME, '.cache/slop-toronto/gtfs/feed');
+const FEED_AT = (() => { // (tools/ttc-feed.mjs: the pinned edition, and a stop with the way out when it is not that)
+  try { return resolveTtcFeed((feedIdx >= 0 && process.argv[feedIdx + 1]) || nonFlagArgs[0] || null); }
+  catch (e) { console.error(`[transit] ${e.message}`); process.exit(1); }
+})();
+const FEED = FEED_AT.feed;
 const OUT = (outIdx >= 0 && process.argv[outIdx + 1]) || nonFlagArgs[1] || fileURLToPath(new URL('../js/toronto-transit.js', import.meta.url));
 const SOURCE = (() => { try { return JSON.parse(fs.readFileSync(path.join(FEED, '../SOURCE.json'), 'utf8')); } catch { return {}; } })();
 const log = (...a) => console.log('[transit]', ...a);
+log(`feed: ${FEED} (${FEED_AT.from}${FEED_AT.edition ? ` edition ${FEED_AT.edition}` : ''})`);
 
 // The world frame the city was built in (js/toronto-geodata.js GEO.frame: projection & the detailed area)
 const geoIdx = process.argv.indexOf('--geo');

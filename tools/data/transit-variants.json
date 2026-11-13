@@ -7,6 +7,12 @@
       "same": true,
       "maxStray": 90,
       "note": "94A Wellesley west to Ossington Station: the 8-trip and 60-trip Wednesday shapes call at the same stops and differ only in the loop into Ossington Station (85 m at most, beside Ossington Station at Bus Bay 4). Reviewed 2026-10-28 against GTFS 2026-09-30: one stopping pattern."
+    },
+    {
+      "pattern": "ttc:11:0:3:be1473e435",
+      "same": true,
+      "maxStray": 25,
+      "note": "11 Bayview south to Davisville Station (Eglinton frame): GTFS S1000544 adds a second Wednesday shape (shp-11-52, 60 trips) beside the one S1000542 had (shp-11-53, 58 trips). Both call at the same 14 stops; more than 150 m from Davisville Station they stay within 11 m of each other, and within 150 m of it they differ by 21 m at most, in the line into the station (Bus Bay 5). Reviewed 2026-11-12 against GTFS S1000544 (2026-11-04): one stopping pattern."
     }
   ],
   "aliases": {}

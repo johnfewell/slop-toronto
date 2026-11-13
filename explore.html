@@ -59,7 +59,7 @@
         './js/toronto-public-art.js',
         './js/toronto-cafeto.js',
         './js/toronto-storefronts.js',
-        './js/toronto-patios.js',
+        eglinton ? './js/frames/eglinton/toronto-patios.js' : './js/toronto-patios.js',
         './js/toronto-tennis.js',
         './js/toronto-rinks.js',
         './js/high-park-features-data.js',
@@ -90,6 +90,10 @@
         './js/high-park-woods-data.js',
         './js/toronto-island-woods-data.js',
         './js/park-woods.js',
+        // the lidar-only trees (docs/lidar-trees.md), only with ?lidarTrees=1: their runtime, and on a desktop their data:
+        // the detail map's one file here, the Eglinton map's cells fetched below (cityLidarCells)
+        // (as above) on the detail map they were baked for; a default visit loads neither
+        ...(params.get('lidarTrees') === '1' ? [...(desktop && !eglinton ? ['./js/lidar-trees-data.js'] : []), './js/lidar-trees.js'] : []),
         './js/actor-models.js',
         './js/vehicle-lights.js',
         './js/pedestrians.js',
@@ -224,15 +228,21 @@
         './js/mp-protocol.js',
         './js/multiplayer.js',
         './js/main.js'
-      ], { cityMap: map }); // (cityAppScripts.cityMap: which city data the page fetches below)
+      ], { cityMap: map, cityDesktop: desktop, cityLidarCells: params.get('lidarTrees') === '1' && desktop && eglinton }); // (cityAppScripts.cityMap: which city data the page fetches below; .cityDesktop: the test above, for js/lidar-trees.js's message; .cityLidarCells: fetch the Eglinton map's lidar tree cells)
     })();
     // The city database (window.CITY.GEO), the mapped poles (POLES) and the parked cars (PARKED_CARS): data/toronto-geodata.bin
     // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by
     // js/geodata-loader.js while three.js loads
     const cityGeo = (() => {
-      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=9e2737f7c428' : './data/toronto-geodata.bin?v=0e6ba6a96a38');
+      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=9e2737f7c428' : './data/toronto-geodata.bin?v=b3cd5aae9d4c');
       return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
+    // The Eglinton map's lidar-only trees (docs/lidar-trees.md), ?lidarTrees=1 on a desktop only: their index by its hash
+    // (tools/build-lidar-trees.mjs --frame eglinton sets it), then every cell, while three.js loads; awaited with the
+    // geodata below, so js/lidar-trees.js has them all before the tree field is built. A default visit fetches nothing
+    const cityLidarCells = cityAppScripts.cityLidarCells
+      ? import('./js/lidar-trees-cells.js').then((m) => m.loadCells('./data/frames/eglinton/lidar-trees/', 'index.json?v=8fc28eb0c1b5'))
+      : null;
     for (const src of cityAppScripts) {
       const preload = document.createElement('link');
       preload.rel = 'preload';
@@ -888,6 +898,7 @@
       : null;
 
     Object.assign(window.CITY, await cityGeo); // { GEO, POLES, PARKED_CARS }
+    if (cityLidarCells) window.CITY.LIDAR_TREES_CELLS = await cityLidarCells; // (the index and its cells, or { error })
 
     for (const src of cityAppScripts) {
       const s = document.createElement('script');

@@ -1910,6 +1910,9 @@ const TREE_WIND = vec2(0.975, -0.221);
  * pass (alpha-tested in the shadow maps: dappled shadows). Wind: gusts rolling across the city sway the crowns
  * (shadows follow), branches bob and leaves flutter.
  */
+// A bare whole-crown card's twig haze (createTreeMaterial): the share of its fallen leaves' cells that stay, as twigs, and
+// their colour (the bark's dark furrow brown)
+const TWIG_HAZE = 0.14, TWIG_COLOUR = 0x3a3029;
 function createTreeMaterial(leafAtlas) {
   // The alpha test is given as nodes (alphaTestNode on the scene pass, maskShadowNode in the shadow maps) rather than
   // `alphaTest`: the shadow passes copy each caster's `alphaTest` onto one shared shadow material, and every switch
@@ -1953,12 +1956,14 @@ function createTreeMaterial(leafAtlas) {
 
   // Seasons: a leaf falls when its key passes uLeaf. The key mixes leaf.g (a random per leaf in the atlas, but its mips
   // blur toward 0.5 on a far crown) with a hash of 8-texel cells of the atlas (never filtered: a fine dither from afar),
-  // and a little per tree. A bare crown keeps a sparse haze of fine twigs where a third of its leaves were, grey-brown:
-  // from afar a leafless tree is not empty. At uLeaf 1 nothing falls.
+  // and a little per tree. A bare crown keeps a sparse haze of fine twigs where some of its leaves were, dark bark brown
+  // and matte: from afar a leafless tree is not empty, but it is see-through. (It kept a third, lit like leaves, until
+  // 2026-11: from the woods' card distance on, ~130 m, winter crowns then read as solid grey-white, frosted, beside the
+  // bare meshes nearer: docs/lidar-trees.md, Winter.) At uLeaf 1 nothing falls.
   const cell = floor(uv().mul(128.0));
   const cellKey = fract(sin(dot(cell, vec2(12.9898, 78.233))).mul(43758.5453));
   const fallen = leafStays(leaf.g.mul(0.4).add(cellKey.mul(0.4)).add(rnd.mul(0.2))).not().and(isLeaf.greaterThan(0.5));
-  const twigHaze = fract(cellKey.mul(7.13).add(rnd.mul(3.1))).lessThan(0.33);
+  const twigHaze = fract(cellKey.mul(7.13).add(rnd.mul(3.1))).lessThan(TWIG_HAZE);
 
   // Coverage: leaf cards from the atlas; bark is opaque from outside (its back faces are dropped)
   const alpha = mix(float(frontFacing), leaf.a, isLeaf).mul(fallen.and(twigHaze.not()).select(0.0, 1.0));
@@ -1974,7 +1979,7 @@ function createTreeMaterial(leafAtlas) {
     const cool = smoothstep(0.38, 0.0, leaf.g).mul(0.45);
     const leafCol = mix(mix(base, base.mul(vec3(1.25, 1.08, 0.5)), warm), base.mul(vec3(0.8, 0.92, 1.05)), cool);
     // (the season: autumn colour, spring green; a fallen leaf's place shows the twigs' grey-brown)
-    const seasonCol = select(fallen, color(0x4f453d), autumnLeaf(leafCol, rnd, leaf.g));
+    const seasonCol = select(fallen, color(TWIG_COLOUR), autumnLeaf(leafCol, rnd, leaf.g));
     const foliage = mix(seasonCol, color(0x4a3b2c), leaf.b).mul(crownAO.mul(0.45).add(0.55));
 
     // Bark (uv in metres): furrowed grey-brown ridges, or the London plane's olive bark flaking to cream & tan
@@ -1989,7 +1994,7 @@ function createTreeMaterial(leafAtlas) {
     return vec4(mix(bark, foliage, isLeaf), alpha);
   })();
 
-  mat.roughnessNode = mix(float(0.93), float(0.72).sub(leaf.r.mul(0.1)), isLeaf);
+  mat.roughnessNode = mix(float(0.93), float(0.72).sub(leaf.r.mul(0.1)), isLeaf.mul(fallen.select(0.0, 1.0))); // (the twigs matte as bark)
 
   // Card normals are crown-shell normals on both faces: no back-face flip
   mat.normalNode = normalViewGeometry;
@@ -3496,5 +3501,5 @@ function createRenderedWallMaterial() {
   return mat;
 }
 
-Object.assign(window.CITY, { lodDither, filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, setFootprintTable, footprintVertex, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
+Object.assign(window.CITY, { lodDither, filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, setFootprintTable, footprintVertex, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, TREE_CARD_TWIGS: { haze: TWIG_HAZE, colour: TWIG_COLOUR }, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
 })();

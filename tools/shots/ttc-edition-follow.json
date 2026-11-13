@@ -1,0 +1,57 @@
+[
+ {
+  "name": "c00-on-track",
+  "mode": "person",
+  "wait": 1500,
+  "record": true,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY;\nconst segs = []; for (const r of C.GEO.rails || []) { if (r[0] !== 0) continue; const f = r[4]; for (let i = 2; i < f.length; i += 2) segs.push([f[i - 2], f[i - 1], f[i], f[i + 1]]); }\nconst d2 = (x, z, s) => { const dx = s[2] - s[0], dz = s[3] - s[1], L = dx * dx + dz * dz; const u = L ? Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L)) : 0; return Math.hypot(x - s[0] - u * dx, z - s[1] - u * dz); };\nconst by = {};\nfor (const t of app.streetcars.routes) { const k = t.pattern.route + ' d' + t.pattern.dir + ' ' + t.sign.join(' / '); const b = by[k] || (by[k] = { pieces: 0, lengthM: 0, maxOffTrackM: 0, offTrackOver3M: 0, streets: [] }); b.pieces++; b.lengthM += Math.round(t.len);\n  t.pts.forEach((p, i) => { let d = Infinity; for (const s of segs) { const q = d2(p.x, p.z, s); if (q < d) d = q; } b.maxOffTrackM = Math.max(b.maxOffTrackM, Math.round(d * 10) / 10); if (d > 3) b.offTrackOver3M += 4;\n    if (i % 75 === 0) { const r = (C.nearestRoads ? C.nearestRoads(p.x, p.z, 25) : [])[0]; const n = r ? r.road.name : '-'; if (b.streets[b.streets.length - 1] !== n) b.streets.push(n); } }); }\nconst all = Object.values(by); console.log('[ttc-shot] c00-on-track: ' + all.length + ' route patterns, ' + all.reduce((s, b) => s + b.offTrackOver3M, 0) + ' m of their paths more than 3 m from a tram track');\nreturn { hour: window.CITY.TRANSIT.hour, subwayHeadway: app.subway && app.subway.headway ? app.subway.headway() : null, routes: by }; })()"
+ },
+ {
+  "name": "f501-broadview-gerrard",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6658, -79.3495);\nlet best = null, bd = 1e9, at = null; for (const c of app.streetcars.cars) { if (!c.route || c.route.route !== '501') continue; const s = app.streetcars.sample(c.track, c.s, {}); const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; at = s; } }\nif (!best) { console.log('[ttc-shot] f501-broadview-gerrard: no 501 car'); return; }\nconst s0 = at; const r = (C.nearestRoads ? C.nearestRoads(s0.x, s0.z, 25) : [])[0];\nconsole.log('[ttc-shot] f501-broadview-gerrard: 501 near Broadview and Gerrard; the nearest 501 car is ' + Math.round(bd) + ' m from the place, on ' + (r ? r.road.name : '?') + ', sign ' + best.route.sign.join(' / '));\napp.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = app.streetcars.sample(best.track, best.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 45 + rx * 14, (m.y || 0) + 16, m.z + fz * 45 + rz * 14], look: [m.x, (m.y || 0) + 1.5, m.z], fov: 55 }; }; })()"
+ },
+ {
+  "name": "f504-queen-bathurst",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.648, -79.404);\nlet best = null, bd = 1e9, at = null; for (const c of app.streetcars.cars) { if (!c.route || c.route.route !== '504') continue; const s = app.streetcars.sample(c.track, c.s, {}); const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; at = s; } }\nif (!best) { console.log('[ttc-shot] f504-queen-bathurst: no 504 car'); return; }\nconst s0 = at; const r = (C.nearestRoads ? C.nearestRoads(s0.x, s0.z, 25) : [])[0];\nconsole.log('[ttc-shot] f504-queen-bathurst: 504 near Queen and Bathurst; the nearest 504 car is ' + Math.round(bd) + ' m from the place, on ' + (r ? r.road.name : '?') + ', sign ' + best.route.sign.join(' / '));\napp.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = app.streetcars.sample(best.track, best.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 45 + rx * 14, (m.y || 0) + 16, m.z + fz * 45 + rz * 14], look: [m.x, (m.y || 0) + 1.5, m.z], fov: 55 }; }; })()"
+ },
+ {
+  "name": "f504-king-portland",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6445, -79.399);\nlet best = null, bd = 1e9, at = null; for (const c of app.streetcars.cars) { if (!c.route || c.route.route !== '504') continue; const s = app.streetcars.sample(c.track, c.s, {}); const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; at = s; } }\nif (!best) { console.log('[ttc-shot] f504-king-portland: no 504 car'); return; }\nconst s0 = at; const r = (C.nearestRoads ? C.nearestRoads(s0.x, s0.z, 25) : [])[0];\nconsole.log('[ttc-shot] f504-king-portland: 504 near King and Portland; the nearest 504 car is ' + Math.round(bd) + ' m from the place, on ' + (r ? r.road.name : '?') + ', sign ' + best.route.sign.join(' / '));\napp.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = app.streetcars.sample(best.track, best.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 45 + rx * 14, (m.y || 0) + 16, m.z + fz * 45 + rz * 14], look: [m.x, (m.y || 0) + 1.5, m.z], fov: 55 }; }; })()"
+ },
+ {
+  "name": "f505-dundas-spadina",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6528, -79.398);\nlet best = null, bd = 1e9, at = null; for (const c of app.streetcars.cars) { if (!c.route || c.route.route !== '505') continue; const s = app.streetcars.sample(c.track, c.s, {}); const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; at = s; } }\nif (!best) { console.log('[ttc-shot] f505-dundas-spadina: no 505 car'); return; }\nconst s0 = at; const r = (C.nearestRoads ? C.nearestRoads(s0.x, s0.z, 25) : [])[0];\nconsole.log('[ttc-shot] f505-dundas-spadina: 505 near Dundas and Spadina; the nearest 505 car is ' + Math.round(bd) + ' m from the place, on ' + (r ? r.road.name : '?') + ', sign ' + best.route.sign.join(' / '));\napp.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = app.streetcars.sample(best.track, best.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 45 + rx * 14, (m.y || 0) + 16, m.z + fz * 45 + rz * 14], look: [m.x, (m.y || 0) + 1.5, m.z], fov: 55 }; }; })()"
+ },
+ {
+  "name": "f510-spadina-college",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6578, -79.4005);\nlet best = null, bd = 1e9, at = null; for (const c of app.streetcars.cars) { if (!c.route || c.route.route !== '510') continue; const s = app.streetcars.sample(c.track, c.s, {}); const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; at = s; } }\nif (!best) { console.log('[ttc-shot] f510-spadina-college: no 510 car'); return; }\nconst s0 = at; const r = (C.nearestRoads ? C.nearestRoads(s0.x, s0.z, 25) : [])[0];\nconsole.log('[ttc-shot] f510-spadina-college: 510 near Spadina and College; the nearest 510 car is ' + Math.round(bd) + ' m from the place, on ' + (r ? r.road.name : '?') + ', sign ' + best.route.sign.join(' / '));\napp.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = app.streetcars.sample(best.track, best.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 45 + rx * 14, (m.y || 0) + 16, m.z + fz * 45 + rz * 14], look: [m.x, (m.y || 0) + 1.5, m.z], fov: 55 }; }; })()"
+ },
+ {
+  "name": "f509-queens-quay",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.638, -79.396);\nlet best = null, bd = 1e9, at = null; for (const c of app.streetcars.cars) { if (!c.route || c.route.route !== '509') continue; const s = app.streetcars.sample(c.track, c.s, {}); const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; at = s; } }\nif (!best) { console.log('[ttc-shot] f509-queens-quay: no 509 car'); return; }\nconst s0 = at; const r = (C.nearestRoads ? C.nearestRoads(s0.x, s0.z, 25) : [])[0];\nconsole.log('[ttc-shot] f509-queens-quay: 509 near Queens Quay and Bathurst; the nearest 509 car is ' + Math.round(bd) + ' m from the place, on ' + (r ? r.road.name : '?') + ', sign ' + best.route.sign.join(' / '));\napp.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = app.streetcars.sample(best.track, best.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 45 + rx * 14, (m.y || 0) + 16, m.z + fz * 45 + rz * 14], look: [m.x, (m.y || 0) + 1.5, m.z], fov: 55 }; }; })()"
+ },
+ {
+  "name": "f511-bathurst",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6458, -79.4035);\nlet best = null, bd = 1e9, at = null; for (const c of app.streetcars.cars) { if (!c.route || c.route.route !== '511') continue; const s = app.streetcars.sample(c.track, c.s, {}); const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; at = s; } }\nif (!best) { console.log('[ttc-shot] f511-bathurst: no 511 car'); return; }\nconst s0 = at; const r = (C.nearestRoads ? C.nearestRoads(s0.x, s0.z, 25) : [])[0];\nconsole.log('[ttc-shot] f511-bathurst: 511 near Bathurst and Adelaide; the nearest 511 car is ' + Math.round(bd) + ' m from the place, on ' + (r ? r.road.name : '?') + ', sign ' + best.route.sign.join(' / '));\napp.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = app.streetcars.sample(best.track, best.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 45 + rx * 14, (m.y || 0) + 16, m.z + fz * 45 + rz * 14], look: [m.x, (m.y || 0) + 1.5, m.z], fov: 55 }; }; })()"
+ },
+ {
+  "name": "s01-rosedale-line1",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(()=>{const app=window.__CITY_APP,C=window.CITY;if(!document.body.classList.contains('hud-minimized'))document.getElementById('btn-toggle-hud').click();app.teleportTo(1560.7,-2722.9,0);const cut=(x,z)=>C.cutAt?C.cutAt(x,z):0;const cam={pos:[1588,cut(1588,-2710.4)+1.6,-2710.4],look:[1641,cut(1641,-2686)+5.2,-2686],fov:56};app.cameraSystem.cinema=()=>cam;})()"
+ }
+]

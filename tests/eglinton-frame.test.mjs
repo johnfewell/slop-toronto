@@ -22,10 +22,11 @@ const listFor = (search, { touch = false, memory, on } = {}) => {
   return vm.runInContext(src, vm.createContext({ URLSearchParams, location: { search }, navigator, matchMedia }));
 };
 const scriptsFor = (search, device) => [...listFor(search, device)];
+// (toronto-patios.js: that map's prebuilt CaféTO layout, tools/build-patios.mjs --frame eglinton, st-3cbb)
 const FRAME_FILES = ['toronto-sidewalks.js', 'toronto-subway.js', 'toronto-subway-topology.js', 'toronto-traffic-data.js',
-  'toronto-transit.js', 'toronto-signal-plan.js'];
+  'toronto-transit.js', 'toronto-signal-plan.js', 'toronto-patios.js'];
 
-test('a default visit loads no file of the Eglinton frame; ?map=eglinton swaps in exactly its six scripts', () => {
+test('a default visit loads no file of the Eglinton frame; ?map=eglinton swaps in exactly its seven scripts', () => {
   // (today's map: ?map=detail anywhere, and a phone's default visit)
   const today = scriptsFor('?map=detail'), other = scriptsFor('', { touch: true }), egl = scriptsFor('?map=eglinton');
   assert.ok(!today.some((s) => s.includes('/frames/')), 'today\'s scripts only');

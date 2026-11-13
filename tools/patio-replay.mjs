@@ -7,19 +7,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { loadPatioWorld } from './cafeto-world.mjs';
+import { loadPatioWorld, PATIO_FRAMES } from './cafeto-world.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 /** The node world with the runtime's helpers: { CITY, records } */
-export function loadReplayWorld(root = ROOT) {
-  const { CITY, records } = loadPatioWorld(root);
+export function loadReplayWorld(root = ROOT, frame = PATIO_FRAMES.detail) {
+  const { CITY, records } = loadPatioWorld(root, frame);
   const context = vm.createContext({ window: { CITY }, location: { search: '' }, URLSearchParams, console: { ...console, info() {}, warn() {} } });
   CITY.CITY_BOUNDS ||= { sidewalkHeight: 0.22 };
   for (const file of ['js/world-collision.js', 'js/bike-share-stations.js', 'js/bike-share.js', 'js/cafeto-patios.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   }
-  return { CITY, records };
+  return { CITY, records, frame };
 }
 
 /** patioSites with the recorded runtime inputs ({ furniture, colliders }): { sites (rows), rejected, blockers, reasons } */
@@ -44,7 +44,8 @@ export function patioDerivedInputs(world, root = ROOT) {
   const { CITY, records } = world;
   if (!CITY.mappedPoleSites) {
     const context = vm.createContext({ window: { CITY }, console: { ...console, info() {}, warn() {} } });
-    for (const file of ['js/toronto-poles.js', 'js/mapped-poles.js']) {
+    // (another frame's poles came with its binary, as the page's do)
+    for (const file of [...(world.frame?.bin ? [] : ['js/toronto-poles.js']), 'js/mapped-poles.js']) {
       vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
     }
   }

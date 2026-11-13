@@ -1,0 +1,34 @@
+{
+  "what": "The shared Toronto data repo datasets this city bakes from (docs/lidar-trees.md, docs/transit-data.md). No paths: set TORONTO_DATA_CACHE to rebuild.",
+  "datasets": {
+    "trees/2": {
+      "manifestCommit": "41f1789654e3162e4121c709113bc0eaa7882499",
+      "manifestGenerated": "2026-11-12T17:31:10Z",
+      "tilesDigest": "0bc51280c214478c2ae3a76c0aa59e408304fa8e87df75673971f4905a0e1a17",
+      "indexSha256": "6a5091fbcbe1a83e77f3e04bda61c31d7f4d3d6248864d878222cf77f91abf03",
+      "bakedInto": [
+        "js/lidar-trees-data.js"
+      ],
+      "dataSha256": "c659fbc824033dfc706d39774262ec38ded8a650344f27eaca8af1d82d27d51d",
+      "eglinton": {
+        "bakedInto": [
+          "data/frames/eglinton/lidar-trees/"
+        ],
+        "indexSha256": "8fc28eb0c1b5b9ef063c7aa1581b38e87cd7955e1d65a7bc869b27ce4b5b058a",
+        "cells": 128,
+        "trees": 288989
+      }
+    },
+    "ttc-gtfs-static": {
+      "edition": "S1000544",
+      "zipSha256": "a2c8d495bf7b06fe0687183d6d7e606e19555e43bf41a007d97d482e527b23a1",
+      "publisherModified": "2026-11-04T19:51:45",
+      "feedStartDate": "20261101",
+      "feedEndDate": "20261219",
+      "bakedInto": [
+        "js/toronto-transit.js",
+        "js/frames/eglinton/toronto-transit.js"
+      ]
+    }
+  }
+}

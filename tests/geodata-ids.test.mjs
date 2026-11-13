@@ -156,6 +156,7 @@ function buildTransit(shapes, variants) {
     fs.mkdirSync(path.join(dir, 'tools/data'), { recursive: true });
     fs.mkdirSync(path.join(dir, 'js'));
     fs.copyFileSync(path.join(root, 'tools/build-transit.mjs'), path.join(dir, 'tools/build-transit.mjs'));
+    fs.copyFileSync(path.join(root, 'tools/ttc-feed.mjs'), path.join(dir, 'tools/ttc-feed.mjs')); // (its feed resolver)
     fs.symlinkSync(path.join(root, 'js/toronto-geodata.js'), path.join(dir, 'js/toronto-geodata.js'));
     fs.writeFileSync(path.join(dir, 'tools/data/transit-variants.json'), JSON.stringify({ version: 1, variants: [], reviewed: [], aliases: {}, ...variants }));
     writeFeed(path.join(dir, 'feed'), shapes);

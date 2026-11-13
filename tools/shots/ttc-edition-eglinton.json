@@ -1,0 +1,21 @@
+[
+ {
+  "name": "e01-st-clair-bathurst",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.683, -79.425), b = C.worldFromLatLon(43.6845, -79.416);\napp.teleportTo(b.x, b.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 70, a.z], look: [b.x, 0, b.z], fov: 50 });\nsetTimeout(() => { const by = {}; for (const c of app.streetcars.cars) { const s = c.sections[2]; if (Math.hypot(s.x - b.x, s.z - b.z) > 400) continue; const k = c.route ? c.route.sign.join(' / ') : 'none'; by[k] = (by[k] || 0) + 1; }\nconsole.log('[ttc-shot] e01-st-clair-bathurst: 512 St Clair at Bathurst; streetcars within 400 m: ' + JSON.stringify(by)); }, 8000); })()"
+ },
+ {
+  "name": "e02-queen-broadview",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY, a = C.worldFromLatLon(43.656, -79.354), b = C.worldFromLatLon(43.661, -79.347);\napp.teleportTo(b.x, b.z, 0); app.cameraSystem.cinema = () => ({ pos: [a.x, 90, a.z], look: [b.x, 0, b.z], fov: 50 });\nsetTimeout(() => { const by = {}; for (const c of app.streetcars.cars) { const s = c.sections[2]; if (Math.hypot(s.x - b.x, s.z - b.z) > 400) continue; const k = c.route ? c.route.sign.join(' / ') : 'none'; by[k] = (by[k] || 0) + 1; }\nconsole.log('[ttc-shot] e02-queen-broadview: 501 at Queen & Broadview on the Eglinton map; streetcars within 400 m: ' + JSON.stringify(by)); }, 8000); })()"
+ },
+ {
+  "name": "e03-service",
+  "mode": "person",
+  "wait": 1000,
+  "record": true,
+  "js": "(() => { const app = window.__CITY_APP, T = window.CITY.TRANSIT; const sc = app.streetcars.simulate(3600); console.log('[ttc-shot] service at ' + T.hour + ':00'); return { hour: T.hour, streetcars: sc }; })()"
+ }
+]

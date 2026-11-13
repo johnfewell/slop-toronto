@@ -758,6 +758,9 @@ function buildStreetDetails(scene) {
       n++;
     }
   }
+  // Toronto, ?lidarTrees=1: the lidar's trees in place of the invented park & yard trees above (lidar-trees.js,
+  // docs/lidar-trees.md), before the parkettes' and the wooded parks' own
+  if (window.CITY.lidarTrees) window.CITY.lidarTrees.replaceTrees(treePositions, SW_Y);
   // Toronto: the small parks' trees, each in its ring of mulch (city-grid.js lays the parkettes' lawns & beds); drawn
   // out to the yard trees' distance (tier 2), not the parks' (they're small trees in small parks, and frame time)
   for (const t of window.CITY.parketteTrees || []) treePositions.push({ x: t.x, y: SW_Y, z: t.z, scale: 0.6 + t.s * 0.3, species: broadleaf(t.r), tier: 2 });

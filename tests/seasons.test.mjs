@@ -357,3 +357,14 @@ test('the site day picks the rinks\' ice and the CaféTO season: a rink in Janua
     assert.ok(pos(f) > 0 && pos('seasons.js') < pos(f) && pos('live-sky.js') < pos('seasons.js'), `seasons.js before ${f}`);
   }
 });
+
+test('a bare far crown card keeps a thin, dark, matte twig haze, not a third of its crown lit like leaves', async () => {
+  // (a third, grey-brown 0x4f453d with the leaves' sheen, read as solid frosted crowns from the woods' card distance
+  // on in winter: docs/lidar-trees.md, Winter)
+  const { C, buildAll } = await seasonShaders();
+  const { haze, colour } = C.TREE_CARD_TWIGS;
+  assert.ok(haze > 0 && haze <= 0.2, `haze ${haze}`);
+  const lum = ((colour >> 16) & 255) * 0.2126 + ((colour >> 8) & 255) * 0.7152 + (colour & 255) * 0.0722;
+  assert.ok(lum < 0x45, `twig colour ${colour.toString(16)} is bark-dark`);
+  buildAll({ uLeaf: 0, uAutumn: 1, uSpring: 0, uDormant: 1, uSnow: 0 });
+});

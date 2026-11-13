@@ -1,0 +1,21 @@
+[
+ {
+  "name": "c00-on-track",
+  "mode": "person",
+  "wait": 1500,
+  "record": true,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY;\nconst segs = []; for (const r of C.GEO.rails || []) { if (r[0] !== 0) continue; const f = r[4]; for (let i = 2; i < f.length; i += 2) segs.push([f[i - 2], f[i - 1], f[i], f[i + 1]]); }\nconst d2 = (x, z, s) => { const dx = s[2] - s[0], dz = s[3] - s[1], L = dx * dx + dz * dz; const u = L ? Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L)) : 0; return Math.hypot(x - s[0] - u * dx, z - s[1] - u * dz); };\nconst by = {};\nfor (const t of app.streetcars.routes) { const k = t.pattern.route + ' d' + t.pattern.dir + ' ' + t.sign.join(' / '); const b = by[k] || (by[k] = { pieces: 0, lengthM: 0, maxOffTrackM: 0, offTrackOver3M: 0, streets: [] }); b.pieces++; b.lengthM += Math.round(t.len);\n  t.pts.forEach((p, i) => { let d = Infinity; for (const s of segs) { const q = d2(p.x, p.z, s); if (q < d) d = q; } b.maxOffTrackM = Math.max(b.maxOffTrackM, Math.round(d * 10) / 10); if (d > 3) b.offTrackOver3M += 4;\n    if (i % 75 === 0) { const r = (C.nearestRoads ? C.nearestRoads(p.x, p.z, 25) : [])[0]; const n = r ? r.road.name : '-'; if (b.streets[b.streets.length - 1] !== n) b.streets.push(n); } }); }\nconst all = Object.values(by); console.log('[ttc-shot] c00-on-track: ' + all.length + ' route patterns, ' + all.reduce((s, b) => s + b.offTrackOver3M, 0) + ' m of their paths more than 3 m from a tram track');\nreturn { hour: window.CITY.TRANSIT.hour, subwayHeadway: app.subway && app.subway.headway ? app.subway.headway() : null, routes: by }; })()"
+ },
+ {
+  "name": "f512-st-clair-bathurst",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6845, -79.416);\nlet best = null, bd = 1e9, at = null; for (const c of app.streetcars.cars) { if (!c.route || c.route.route !== '512') continue; const s = app.streetcars.sample(c.track, c.s, {}); const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; at = s; } }\nif (!best) { console.log('[ttc-shot] f512-st-clair-bathurst: no 512 car'); return; }\nconst s0 = at; const r = (C.nearestRoads ? C.nearestRoads(s0.x, s0.z, 25) : [])[0];\nconsole.log('[ttc-shot] f512-st-clair-bathurst: 512 near St Clair and Bathurst; the nearest 512 car is ' + Math.round(bd) + ' m from the place, on ' + (r ? r.road.name : '?') + ', sign ' + best.route.sign.join(' / '));\napp.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = app.streetcars.sample(best.track, best.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 45 + rx * 14, (m.y || 0) + 16, m.z + fz * 45 + rz * 14], look: [m.x, (m.y || 0) + 1.5, m.z], fov: 55 }; }; })()"
+ },
+ {
+  "name": "f512-gunns",
+  "mode": "person",
+  "wait": 8000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6719, -79.4718);\nlet best = null, bd = 1e9, at = null; for (const c of app.streetcars.cars) { if (!c.route || c.route.route !== '512') continue; const s = app.streetcars.sample(c.track, c.s, {}); const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; at = s; } }\nif (!best) { console.log('[ttc-shot] f512-gunns: no 512 car'); return; }\nconst s0 = at; const r = (C.nearestRoads ? C.nearestRoads(s0.x, s0.z, 25) : [])[0];\nconsole.log('[ttc-shot] f512-gunns: 512 near the west end (Gunns Loop); the nearest 512 car is ' + Math.round(bd) + ' m from the place, on ' + (r ? r.road.name : '?') + ', sign ' + best.route.sign.join(' / '));\napp.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = app.streetcars.sample(best.track, best.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 45 + rx * 14, (m.y || 0) + 16, m.z + fz * 45 + rz * 14], look: [m.x, (m.y || 0) + 1.5, m.z], fov: 55 }; }; })()"
+ }
+]

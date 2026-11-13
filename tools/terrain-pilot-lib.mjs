@@ -14,9 +14,12 @@ export const ROOT = fileURLToPath(new URL('..', import.meta.url));
 export const DTM_DIR = process.env.DON_VALLEY_DTM || path.join(os.homedir(), '.cache/slop-toronto/raw/ontario-dtm-gta2023');
 
 /** The city (window.CITY) as the browser has it before the runtime: the geodata, the subway, `extra` scripts, city-config.js */
-export function loadCity(extra = []) {
-  const ctx = vm.createContext({ window: { CITY: {} }, console: { info() {}, warn() {}, log() {} } });
-  for (const f of ['js/toronto-geodata.js', 'js/toronto-subway.js', ...extra, 'js/city-config.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx);
+export function loadCity(extra = [], { geo = null, frame = null } = {}) {
+  // (another map's frame, e.g. `frame: 'eglinton'` with its decoded geodata as `geo`: each file it keeps its own of under
+  // js/frames/<frame>/, as explore.html swaps them, replaces the detail frame's)
+  const ctx = vm.createContext({ window: { CITY: geo ? { GEO: geo } : {} }, console: { info() {}, warn() {}, log() {} } });
+  const own = (f) => { const g = frame && path.join('js/frames', frame, path.basename(f)); return g && fs.existsSync(path.join(ROOT, g)) ? g : f; };
+  for (const f of [...(geo ? [] : ['js/toronto-geodata.js']), 'js/toronto-subway.js', ...extra, 'js/city-config.js']) vm.runInContext(fs.readFileSync(path.join(ROOT, own(f)), 'utf8'), ctx);
   return ctx.window.CITY;
 }
 
@@ -31,6 +34,24 @@ export function utm17(lat, lon) {
   const E = 500000 + k0 * Nn * (A + ((1 - T + Cc) * A ** 3) / 6 + ((5 - 18 * T + T * T + 72 * Cc - 58 * ep2) * A ** 5) / 120);
   const N = k0 * (M + Nn * tp * ((A * A) / 2 + ((5 - T + 9 * Cc + 4 * Cc * Cc) * A ** 4) / 24 + ((61 - 58 * T + T * T + 600 * Cc - 330 * ep2) * A ** 6) / 720));
   return [E, N];
+}
+
+// UTM zone 17N back to lat/lon: the inverse of utm17, the same ellipsoid and no datum shift. Right for data on the
+// lidar's grid whose world positions must sit on the City's layers (their lon/lat behave as NAD83(CSRS); the shared
+// Toronto data repo measured this). Snyder's footpoint-latitude series, millimetres over the city.
+export function utm17ToLatLon(E, N) {
+  const a = 6378137, f = 1 / 298.257222101, k0 = 0.9996, e2 = f * (2 - f), ep2 = e2 / (1 - e2), lon0 = (-81 * Math.PI) / 180;
+  const M = N / k0, mu = M / (a * (1 - e2 / 4 - (3 * e2 ** 2) / 64 - (5 * e2 ** 3) / 256));
+  const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+  const p1 = mu + ((3 * e1) / 2 - (27 * e1 ** 3) / 32) * Math.sin(2 * mu) + ((21 * e1 ** 2) / 16 - (55 * e1 ** 4) / 32) * Math.sin(4 * mu)
+    + ((151 * e1 ** 3) / 96) * Math.sin(6 * mu) + ((1097 * e1 ** 4) / 512) * Math.sin(8 * mu);
+  const sp = Math.sin(p1), cp = Math.cos(p1), tp = Math.tan(p1);
+  const C1 = ep2 * cp * cp, T1 = tp * tp, N1 = a / Math.sqrt(1 - e2 * sp * sp), R1 = (a * (1 - e2)) / (1 - e2 * sp * sp) ** 1.5;
+  const D = (E - 500000) / (N1 * k0);
+  const lat = p1 - ((N1 * tp) / R1) * ((D * D) / 2 - ((5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * ep2) * D ** 4) / 24
+    + ((61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * ep2 - 3 * C1 * C1) * D ** 6) / 720);
+  const lon = lon0 + (D - ((1 + 2 * T1 + C1) * D ** 3) / 6 + ((5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * D ** 5) / 120) / cp;
+  return [(lat * 180) / Math.PI, (lon * 180) / Math.PI];
 }
 
 /**

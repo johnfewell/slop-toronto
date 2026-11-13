@@ -193,9 +193,19 @@ radius round building boxes, and others change with the poles and the placed fur
 layout itself, on the GPU runner like any capture, and the generator records it:
 
 ```
-gpu2 <name> -- env CAPTURE_TAG=patios CAPTURE_QUERY='?patios=layout' node tools/capture.mjs tools/shots/patio-layout.json
+gpu2 <name> -- env CAPTURE_TAG=patios CAPTURE_QUERY='?patios=layout&map=detail' node tools/capture.mjs tools/shots/patio-layout.json
 node tools/build-patios.mjs <review dir>/patios-patio-layout.json
+gpu2 <name> -- env CAPTURE_TAG=patios-egl CAPTURE_QUERY='?patios=layout&map=eglinton' node tools/capture.mjs tools/shots/patio-layout.json
+node tools/build-patios.mjs <review dir>/patios-egl-patio-layout.json --frame eglinton
 ```
+
+**Each map has its own layout (`st-3cbb`).** The Eglinton map (the default on desktops, `?map=eglinton`) has its own
+sidewalk pieces, building colliders and Bike Share near the cafés, so its fingerprint never matched the detail map's,
+and it laid the patios out at startup (about 350 ms on the mini). `--frame eglinton` writes that map's pair,
+`js/frames/eglinton/toronto-patios.js` (which `explore.html` loads in place of `js/toronto-patios.js` on that map) and
+`tools/data/frames/eglinton/patio-inputs.json`; node replays it on the frame's own scripts and binary
+(`tools/cafeto-world.mjs` `PATIO_FRAMES`). The two maps place the same 199 cafés; two sidewalk cafés on the Danforth sit
+about 2 cm apart between them. Re-record **both** whenever an input changes.
 
 The desktop and phone tiers record the same layout. The generator writes two files, the same bytes from the same record:
 
@@ -228,7 +238,10 @@ The desktop and phone tiers record the same layout. The generator writes two fil
    fingerprint is an order-free hash of every number to 0.1 mm. If it differs from the shipped one, for example because
    a code change moved a pole or a collider, the page warns and lays the patios out at startup as before, so the city
    stays right. `tools/shots/cafeto-patios.json`'s stats shot fails on it, and on a page that did not use the prebuilt
-   layout. The check takes 19–21 ms of that on the mini, about 7 ms on an M-series laptop.
+   layout. So does the first shot of `tools/shots/check.json`, the quick list every ship runs on desktop (the Eglinton
+   map) and phone (the detail map), so a code change that moves a building or prop collider near a café can no longer
+   ship with only a console warning (PR #142's waterfront and park colliders did). The check takes 19–21 ms of that on
+   the mini, about 7 ms on an M-series laptop.
 
 `?patios=check` also lays the patios out at startup and compares the result with the prebuilt layout
 (`CITY.patioStats.check`); the stats shot then requires it to be identical. `?patios=layout` uses the runtime layout and

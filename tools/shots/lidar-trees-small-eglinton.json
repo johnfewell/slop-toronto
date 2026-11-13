@@ -1,0 +1,39 @@
+[
+ {
+  "name": "t00-setup",
+  "time": "golden",
+  "mode": "person",
+  "x": -830.1,
+  "z": -5469.4,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000,
+  "metricsMs": 0
+ },
+ {
+  "name": "fh-aerial",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const A = window.__CITY_APP; const P = [-760, 60, -5250], L = [-900, 0, -5600]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 55 }); return { pos: P, look: L }; })()",
+  "wait": 6000,
+  "time": "golden"
+ },
+ {
+  "name": "tris-fh-aerial",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls, frameCalls: i.render.calls }; } let trees = null, inst = 0, meshes = 0; a.scene.traverse((o) => { if (o.name === \"Trees\" && !trees) trees = o; }); if (trees) trees.traverse((o) => { if (o.isInstancedMesh && o.visible && o.count) { inst += o.count; meshes++; } }); return { ...best, rafSamples: 12, treeInstancesDrawn: inst, treeMeshes: meshes, lidarTrees: window.CITY.lidarTrees ? window.CITY.lidarTrees.stats : null }; })()"
+ },
+ {
+  "name": "fh-street",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-830.1, g(-830.1, -5469.4) + 1.7, -5469.4], L = [-830.1, g(-830.1, -5389.4) + 4, -5389.4]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 62 }); return { pos: P, look: L }; })()",
+  "wait": 6000,
+  "time": "golden"
+ },
+ {
+  "name": "tris-fh-street",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls, frameCalls: i.render.calls }; } let trees = null, inst = 0, meshes = 0; a.scene.traverse((o) => { if (o.name === \"Trees\" && !trees) trees = o; }); if (trees) trees.traverse((o) => { if (o.isInstancedMesh && o.visible && o.count) { inst += o.count; meshes++; } }); return { ...best, rafSamples: 12, treeInstancesDrawn: inst, treeMeshes: meshes, lidarTrees: window.CITY.lidarTrees ? window.CITY.lidarTrees.stats : null }; })()"
+ }
+]

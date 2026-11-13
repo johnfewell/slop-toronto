@@ -1702,6 +1702,19 @@ function htoLandscapeSurfaceAt(x, z) {
 
 function boardwalkContains(bw, x, z) {
   if (!bw || !bw.planks.length) return null;
+  // (the planks' box first, each plank's reach round its centre: most callers ask about points far from the boardwalk,
+  // e.g. js/lidar-trees.js's 289,000 trees on the Eglinton map, 2.8 s of start-up scanning every plank. Built once: the
+  // planks never change after the build)
+  if (!bw.reachBox) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const pl of bw.planks) {
+      const r = Math.hypot(0.28, pl.len / 2 + 0.15);
+      x0 = Math.min(x0, pl.x - r); x1 = Math.max(x1, pl.x + r); z0 = Math.min(z0, pl.z - r); z1 = Math.max(z1, pl.z + r);
+    }
+    bw.reachBox = { x0, x1, z0, z1 };
+  }
+  const B = bw.reachBox;
+  if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) return null;
   let best = null;
   for (const pl of bw.planks) {
     const tx = Math.cos(pl.ry), tz = -Math.sin(pl.ry);

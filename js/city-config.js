@@ -359,6 +359,36 @@ function blockAt(x, z) {
   }
   return null;
 }
+/**
+ * True when (x, z) lies within `pad` m of a building box as buildings.js draws it (GEO.buildings: [cx, cz, angle,
+ * parts [u0, u1, v0, v1]]; the boxes can be bigger than the true footprint). Indexed in 32 m cells the first time it
+ * is asked. (street-details.js keeps its own coarser 4 m occupancy grid for the trees it invents.)
+ */
+let BUILDING_BOX_GRID = null;
+const BUILDING_BOX_CELL = 32;
+function buildingBoxAt(x, z, pad = 0) {
+  if (!BUILDING_BOX_GRID) {
+    BUILDING_BOX_GRID = new Map();
+    for (const [cx, cz, ang, parts] of GEO.buildings || []) {
+      const cs = Math.cos(ang), sn = Math.sin(ang);
+      for (const [u0, u1, v0, v1] of parts) {
+        const box = [cx, cz, cs, sn, u0, u1, v0, v1];
+        const r = Math.hypot(Math.max(Math.abs(u0), Math.abs(u1)), Math.max(Math.abs(v0), Math.abs(v1))) + 8;
+        for (let i = Math.floor((cx - r) / BUILDING_BOX_CELL); i <= Math.floor((cx + r) / BUILDING_BOX_CELL); i++) {
+          for (let j = Math.floor((cz - r) / BUILDING_BOX_CELL); j <= Math.floor((cz + r) / BUILDING_BOX_CELL); j++) {
+            const k = i * 100000 + j;
+            (BUILDING_BOX_GRID.get(k) || BUILDING_BOX_GRID.set(k, []).get(k)).push(box);
+          }
+        }
+      }
+    }
+  }
+  for (const [cx, cz, cs, sn, u0, u1, v0, v1] of BUILDING_BOX_GRID.get(Math.floor(x / BUILDING_BOX_CELL) * 100000 + Math.floor(z / BUILDING_BOX_CELL)) || []) {
+    const dx = x - cx, dz = z - cz, u = dx * cs - dz * sn, v = dx * sn + dz * cs;
+    if (u >= u0 - pad && u <= u1 + pad && v >= v0 - pad && v <= v1 + pad) return true;
+  }
+  return false;
+}
 // A block's outline in bands of z (bandPoly), made the first time a point near its curb asks: the same crossing test
 // as pointInPoly over the few edges in the point's band (a long block's outline has hundreds)
 const BLOCK_BANDS = new WeakMap();
@@ -1736,6 +1766,7 @@ Object.assign(window.CITY, {
   subtractConvexXZ,
   nearestRoads,
   blockAt,
+  buildingBoxAt,
   blocksInRect,
   districtAt,
   terrainHeightAt,

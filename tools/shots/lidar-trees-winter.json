@@ -1,0 +1,41 @@
+[
+ {
+  "name": "t00-setup",
+  "mode": "person",
+  "x": -2487,
+  "z": -1007,
+  "heading": 3.6,
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();",
+  "wait": 6000
+ },
+ {
+  "name": "island-near",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-1100, 60, 2400], look: [-1400, 0, 2700], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "island-far",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-650, 190, 2050], look: [-1350, 0, 2780], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "highpark-above",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6120, 70, -2230], look: [-6280, 10, -2400], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "highpark-far",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-6000, 90, -2050], look: [-6400, 0, -2500], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "park-aerial",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, a = window.__CITY_APP, p = C.worldFromLatLon(43.6476, -79.4137), q = C.worldFromLatLon(43.6463, -79.4152); a.cameraSystem.cinema = () => ({ pos: [p.x, 60, p.z], look: [q.x, 0, q.z], fov: 55 }); })()",
+  "wait": 5000
+ },
+ {
+  "name": "res-aerial",
+  "js": "(() => { const b = document.getElementById(\"btn-toggle-hud\"); if (b && !document.body.classList.contains(\"film\")) { b.click(); document.body.classList.add(\"film\"); } })();(() => { const C = window.CITY, A = window.__CITY_APP, g = (x, z) => (C.cutAt ? C.cutAt(x, z) : 0) + (C.blockAt(x, z) ? 0.22 : 0); const P = [-5664.11, 60, -1509.12], L = [-5705.58, 0, -1407.26]; A.cameraSystem.cinema = () => ({ pos: P, look: L, fov: 55 }); return { pos: P, look: L }; })()",
+  "wait": 5000
+ }
+]

@@ -693,3 +693,21 @@ test('plan tree positions are stable across the detail and Eglinton frames; unsu
   assert.equal(U.waterfrontHtoLandscapePlanTreesEnabled, false);
   assert.equal(U.htoLandscapePlanTreeSites().length, 0);
 });
+
+test('the boardwalk test answers the same with its reach box: every plank\'s ends and edges in, points beyond the box out', () => {
+  const C = city();
+  const out = C.createWaterfrontHtoLandscape(THREE, new THREE.Scene());
+  const bw = out.boardwalk;
+  for (const pl of bw.planks) {
+    const nx = Math.sin(pl.ry), nz = Math.cos(pl.ry), tx = Math.cos(pl.ry), tz = -Math.sin(pl.ry), h = pl.len / 2 + 0.1;
+    for (const [a, c] of [[h, 0.25], [-h, -0.25], [0, 0]]) {
+      const x = pl.x + nx * a + tx * c, z = pl.z + nz * a + tz * c;
+      assert.equal(C.htoLandscapeKeepoutAt(x, z), true, `on plank ${pl.along}`);
+    }
+  }
+  const B = bw.reachBox;
+  assert.ok(B && B.x1 > B.x0 && B.z1 > B.z0, 'the box is built on first use');
+  for (const [x, z] of [[B.x0 - 0.5, (B.z0 + B.z1) / 2], [B.x1 + 0.5, (B.z0 + B.z1) / 2], [(B.x0 + B.x1) / 2, B.z0 - 0.5], [(B.x0 + B.x1) / 2, B.z1 + 0.5]]) {
+    assert.equal(C.htoLandscapeFootprintAt(x, z, 0) && !out.berms.concat(out.westBerms).some((b) => b.contains?.(x, z, 0)), false);
+  }
+});

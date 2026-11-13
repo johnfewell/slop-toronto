@@ -173,6 +173,17 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   `tools/build-park-woods.mjs --park toronto-island`) from 23 tiles of each model,
   `tools/fetch-don-valley-dtm.mjs --region toronto-island` and the same with `--product dsm` (retrieved 2026-11-04).
   The raw tiles are not in this repository. Contains information licensed under the Open Government Licence – Ontario.
+  The lidar-only trees (`js/lidar-trees-data.js` for the detail map and `data/frames/eglinton/lidar-trees/` for the
+  Eglinton map, drawn with `?lidarTrees=1`, see
+  [docs/lidar-trees.md](docs/lidar-trees.md)) come from the same project's 1 m Digital Surface Model over its Digital
+  Terrain Model, through the shared Toronto data repo's `trees/2` dataset (pinned in `data/shared-toronto-data-pin.json`);
+  only the trees' positions, heights and crown widths are shipped. Contains information licensed under the Open
+  Government Licence – Ontario.
+- **City of Toronto Open Data, the masks of the lidar-only trees**, under the Open Government Licence – Toronto
+  (https://open.toronto.ca/open-data-licence/): `trees/2` keeps its trees off the City's 3D Massing building parts,
+  Waterbodies and Rivers, Edge of Roadway (its bridge, ramp and highway polygons masked from the canopy), the Regional
+  Municipal Boundary, and matches them against the Street Tree Data, Centreline and Green Spaces. None of those layers'
+  geometry is shipped with the trees. Contains information licensed under the Open Government Licence – Toronto.
 - **Wikimedia Commons photos** of Toronto's buildings: the facade base colours (`tools/data/commons_palette.json`) were
   measured from 384 freely licensed photos (CC0, public domain, CC BY, CC BY-SA). The photos are not in this
   repository; each is credited with its author, licence and link in

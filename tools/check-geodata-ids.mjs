@@ -10,10 +10,11 @@ import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { faceOf, FACE_SIDES } from './geo-ids.mjs';
+import { resolveTtcFeed } from './ttc-feed.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DATA = process.env.GEO_DATA;
-const FEED = process.argv[2] || path.join(os.homedir(), '.cache/slop-toronto/gtfs/feed');
+const FEED = (() => { try { return resolveTtcFeed(process.argv[2] || null).feed; } catch (e) { console.error(`[ids] ${e.message}`); process.exit(1); } })(); // (tools/ttc-feed.mjs: the pinned shared edition, else ~/.cache/slop-toronto/gtfs)
 const SEED = +(process.argv[3] || 20261028);
 if (!DATA) throw new Error('usage: GEO_DATA=<dir> node tools/check-geodata-ids.mjs [gtfs feed dir] [seed]');
 const log = (...a) => console.log('[ids]', ...a);
