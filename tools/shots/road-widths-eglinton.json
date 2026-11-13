@@ -1,0 +1,44 @@
+[
+ {
+  "name": "e01-port-lands",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2070, 674, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2020, 60, 744], look: [2070, 0, 674], fov: 55 });\n})()"
+ },
+ {
+  "name": "e02-gardiner-jameson",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-4445, 152, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-4505, 50, 212], look: [-4445, 0, 152], fov: 55 });\n})()"
+ },
+ {
+  "name": "e03-dvp-north",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(3438, -4651, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [3378, 55, -4591], look: [3438, 0, -4651], fov: 55 });\n})()"
+ },
+ {
+  "name": "e04-bayview-bloor-ramp",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2756, -3740, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2696, 50, -3680], look: [2756, 0, -3740], fov: 55 });\n})()"
+ },
+ {
+  "name": "e05-allen-road",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-2539, -7135, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-2599, 50, -7075], look: [-2539, 0, -7135], fov: 55 });\n})()"
+ },
+ {
+  "name": "e06-village-station-road",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(4265, -6103, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [4205, 45, -6043], look: [4265, 0, -6103], fov: 55 });\n})()"
+ },
+ {
+  "name": "e07-brickworks-lane",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-5879, -5218, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-5919, 35, -5178], look: [-5879, 0, -5218], fov: 55 });\n})()"
+ }
+]

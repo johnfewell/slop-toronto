@@ -10,6 +10,8 @@
 //   signal), a laneway or driveway's mouth, the crossings, the TTC's stops
 // - it is clear of the traffic: off the game's traffic lanes (a lane's centre keeps 1.5 m from it, as the CaféTO
 //   platforms do), the streetcar tracks (1.8 m from a track's centre), the bikeways, and the CaféTO curb platforms
+// - it is not on a surveyed carriageway seen to have no street parking (deps.noParkingAt: the Port Lands streets of
+//   tools/fixtures/road-surfaces.json whose chain says `parking: "none"`, docs/road-widths.md)
 // - beside a curbside cycle track on the streets in FLOATING_STREETS (the Danforth, Bloor), the stall floats beyond it,
 //   against its separator, as the City built them; where the track is routed out round a CaféTO platform (cycling.js)
 //   it takes that parking lane, so no stall stands there. Every other cycle track keeps its curb clear
@@ -156,7 +158,7 @@ function parkingStalls(deps) {
   const R = { ...RULES, ...(deps.rules || {}) };
   const { roads, blockAt, lanes = [], hydrants = [], stops = [], crossings = [], junctions = [], driveways = [],
     railDist = () => Infinity, bikewayAt = () => false, trackAt = () => false, bikeShareAt = null, patios = [], payStations = [], parking = null,
-    inFrame = () => true, heightAt = () => 0, nearestRoad = null } = deps;
+    inFrame = () => true, heightAt = () => 0, nearestRoad = null, noParkingAt = () => false } = deps;
   const laneAt = segmentGrid(lanes);
   const nearHydrant = pointGrid(hydrants);
   const nearStop = pointGrid(stops, 32);
@@ -209,7 +211,7 @@ function parkingStalls(deps) {
     return false;
   };
   const rejected = { curb: 0, lane: 0, streetcar: 0, bikeway: 0, junction: 0, laneway: 0, driveway: 0, hydrant: 0, crossing: 0,
-    stop: 0, patio: 0, bikeShare: 0, bylaw: 0, reserved: 0, arterial: 0, overlap: 0, grade: 0 };
+    stop: 0, patio: 0, bikeShare: 0, bylaw: 0, reserved: 0, arterial: 0, overlap: 0, grade: 0, surveyed: 0 };
   const cats = {};
   let floating = 0;
 
@@ -255,6 +257,7 @@ function parkingStalls(deps) {
   });
   // whether (x, z) on `road`, its curb's outward normal (nx, nz), may hold a parked car: { cat, permit } or { why }
   function legality(road, key, x, z, nx, nz) {
+    if (noParkingAt(x, z)) return { why: 'surveyed' };
     const law = bylawAt(key, x, z, nx, nz);
     if (law?.deny) return { why: law.deny.kind === 2 ? 'reserved' : 'bylaw' };
     const permit = permitAt(x, z);

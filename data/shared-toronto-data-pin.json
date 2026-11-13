@@ -9,14 +9,14 @@
       "bakedInto": [
         "js/lidar-trees-data.js"
       ],
-      "dataSha256": "c659fbc824033dfc706d39774262ec38ded8a650344f27eaca8af1d82d27d51d",
+      "dataSha256": "0bc2ffbf3b40a4709ee2bf08a20e75e11c38e2ff5d05e32b3c95835a4a06ffa7",
       "eglinton": {
         "bakedInto": [
           "data/frames/eglinton/lidar-trees/"
         ],
-        "indexSha256": "8fc28eb0c1b5b9ef063c7aa1581b38e87cd7955e1d65a7bc869b27ce4b5b058a",
+        "indexSha256": "9bd2fec7e50132adda0372239e9e2614c0ce88bda8d22b74102124b6c3f4c650",
         "cells": 128,
-        "trees": 288989
+        "trees": 288921
       }
     },
     "ttc-gtfs-static": {

@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { toWorld, rdp, log, osmRoads } from './geo-base.mjs';
 import { DETAIL } from './geo-roads.mjs';
-import { blocks } from './geo-blocks.mjs';
+import { blocks, surveyedRings, roadCover } from './geo-blocks.mjs';
 
 const RAW = process.env.PROPS_DATA || path.join(process.env.HOME, '.cache/slop-toronto/raw');
 const FILE = path.join(RAW, 'cycling-network-4326.geojson');
@@ -181,6 +181,41 @@ function resample(pts, step) {
 const lineLen = (pts) => pts.reduce((a, p, i) => (i ? a + Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0), 0);
 
 const STEP = 2;
+// ---------------------------------------------------------------------------------------------------------------------
+// The surveyed Port Lands carriageways (tools/fixtures/road-surfaces.json): measured kerb to kerb for the traffic, their
+// cycle tracks kerbed outside. A City bikeway along one (an on-street band at its kerb, a trail line the City draws
+// down its edge) is drawn instead on the cycleway OpenStreetMap maps beside the kerb (docs/road-widths.md). So is an
+// on-street band along a road drawn at its own width (its width is its traffic lanes')
+// ---------------------------------------------------------------------------------------------------------------------
+const surveyedBox = surveyedRings.map((r) => {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+  return { r, x0, x1, z0, z1 };
+});
+function onSurveyed(x, z) {
+  for (const { r, x0, x1, z0, z1 } of surveyedBox) {
+    if (x < x0 || x > x1 || z < z0 || z > z1) continue;
+    let inside = false;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const [xi, zi] = r[i], [xj, zj] = r[j];
+      if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+    }
+    if (inside) return true;
+  }
+  return false;
+}
+// (the same for a road drawn at its own width, tools/geo-blocks.mjs: lanes and a kerb allowance, no room for a track)
+const openGrid = new Map();
+for (const r of roadCover) for (const [x, z] of r.open) { const k = Math.floor(x / 20) * 100003 + Math.floor(z / 20); (openGrid.get(k) || openGrid.set(k, []).get(k)).push([x, z, r.w / 2]); }
+function onWidened(x, z) {
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    for (const [ox, oz, h] of openGrid.get((Math.floor(x / 20) + i) * 100003 + Math.floor(z / 20) + j) || []) if (Math.hypot(ox - x, oz - z) < h) return true;
+  }
+  return false;
+}
+const moved = []; // [x, z, red] where a City bikeway on a surveyed carriageway was dropped
+export const cyclingSurveyed = { bandM: 0, trailM: 0, osmM: 0, osmWays: [] };
+
 const bands = []; // [kind, flags, flat x, z ...]: the curb line in the direction bikes ride; flags: 1 the curb is on the
 // riders' left (else their right), 2 a crossing (through a junction, no curb), 4 contra-flow (against the traffic)
 const trails = []; // [width, surface (0 asphalt, 1 the Martin Goodman's red), level (1 on a curb island, 0 across a
@@ -197,6 +232,19 @@ function emitBand(kind, flags, pts) {
 // One side of a City line: its curb, sampled, cleaned and broken at the junctions; `sign` +1 the line's right side
 function curbSide(S, sign, kind, withLine, isContra, label = '') {
   const d = S.map((p) => curbAt(p.x, p.z, -p.dz * sign, p.dx * sign));
+  // (a kerb of a surveyed carriageway: its bikeway is the cycleway beside it, not a band in the road; sharrows stay)
+  if ((surveyedBox.length || openGrid.size) && kind !== K.sharrow) {
+    d.forEach((v, i) => {
+      if (v === null) return;
+      const p = S[i], nx = -p.dz * sign, nz = p.dx * sign;
+      // (1 m into the road from the curb island's edge: the islands are traced on a 1 m raster)
+      const x = p.x + nx * (v - 1), z = p.z + nz * (v - 1);
+      if (!onSurveyed(x, z) && !onWidened(x, z)) return;
+      moved.push([p.x + nx * v, p.z + nz * v, 0]);
+      cyclingSurveyed.bandM += STEP;
+      d[i] = null;
+    });
+  }
   if (process.env.CYCLE_DEBUG && label && new RegExp(process.env.CYCLE_DEBUG).test(label)) log(`  ${label} side ${sign}: ${d.map((v) => (v === null ? '-' : v.toFixed(1))).join(' ')}`);
   // outliers (driveways, lay-bys, bulb-outs, a corner's radius): off the median of their neighbours by over 1.2 m
   const clean = d.map((v, i) => {
@@ -257,11 +305,14 @@ function curbSide(S, sign, kind, withLine, isContra, label = '') {
 // A trail in pieces: where it runs over the curb islands (parks, the waterfront's promenades) and where it crosses a
 // road between them (up to 30 m). A trail the City draws down a street's centre line (a boulevard trail beside Bayview
 // Ave, the Island's car-free avenues the street level carries as roads) leaves that stretch to the street.
-function trailPieces(pts, w, surface) {
+function trailPieces(pts, w, surface, osm = false) {
   const S = resample(pts, 2);
   const runs = [];
   for (let i = 0; i < S.length; i++) {
-    const on = blockAt(S[i].x, S[i].z) ? 1 : 0;
+    // (2: on a surveyed carriageway, left out: the cycleway beside it is drawn instead)
+    const sv = !osm && surveyedBox.length && onSurveyed(S[i].x, S[i].z);
+    if (sv) { moved.push([S[i].x, S[i].z, surface]); cyclingSurveyed.trailM += 2; }
+    const on = sv ? 2 : blockAt(S[i].x, S[i].z) ? 1 : 0;
     const r = runs[runs.length - 1];
     if (r && r.on === on) r.i1 = i; else runs.push({ on, i0: i, i1: i });
   }
@@ -276,6 +327,7 @@ function trailPieces(pts, w, surface) {
     return [(a.x + b.x) / 2, (a.z + b.z) / 2];
   };
   runs.forEach((r, k) => {
+    if (r.on === 2) return;
     if (!r.on) {
       const len = (r.i1 - r.i0 + 2) * 2;
       if (len > 30 || k === 0 || k === runs.length - 1) return;
@@ -359,6 +411,48 @@ for (const f of features) {
       }
     }
   }
+}
+// OpenStreetMap's cycleways beside the surveyed carriageways, where a City bikeway along them was left out: the pieces
+// within 9 m of where it was, off the carriageway, and not where a City trail is drawn already
+if (moved.length) {
+  const MG = new Map(), key = (x, z) => Math.floor(x / 10) * 100003 + Math.floor(z / 10);
+  for (const m of moved) { const k = key(m[0], m[1]); (MG.get(k) || MG.set(k, []).get(k)).push(m); }
+  const near = (x, z, r, list, grid) => {
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+      for (const m of grid.get((Math.floor(x / 10) + i) * 100003 + Math.floor(z / 10) + j) || []) if (Math.hypot(m[0] - x, m[1] - z) < r) return m;
+    }
+    return null;
+  };
+  const TG = new Map();
+  for (const t of trails) {
+    const f = t[3], pts = [];
+    for (let i = 0; i + 1 < f.length; i += 2) pts.push([f[i], f[i + 1]]);
+    // (every metre along it, its half width with it: a cycleway alongside a drawn City trail is that trail)
+    for (const p of pts.length > 1 ? resample(pts, 1) : []) { const k = key(p.x, p.z); (TG.get(k) || TG.set(k, []).get(k)).push([p.x, p.z]); }
+  }
+  for (const e of osmRoads.elements) {
+    const t = e.tags || {};
+    if (t.highway !== 'cycleway' || /crossing/.test(t.cycleway || '') || t.tunnel === 'yes' || !e.geometry) continue;
+    const S = resample(e.geometry.map((g) => toWorld(g.lon, g.lat)), 2);
+    let run = [], red = 0;
+    const flush = () => {
+      if (run.length >= 3) {
+        const tagged = parseFloat(t.width);
+        const w = tagged > 0 && tagged < 6 ? tagged : t.oneway === 'yes' ? 2.0 : 3.0;
+        const pts = run.map((p) => [p.x, p.z]);
+        cyclingSurveyed.osmM += lineLen(pts);
+        if (!cyclingSurveyed.osmWays.includes(e.id)) cyclingSurveyed.osmWays.push(e.id);
+        trailPieces(pts, w, red > run.length / 2 ? 1 : 0, true);
+      }
+      run = []; red = 0;
+    };
+    for (const p of S) {
+      const m = near(p.x, p.z, 9, moved, MG);
+      if (m && !onSurveyed(p.x, p.z) && !onWidened(p.x, p.z) && !near(p.x, p.z, 3.5, null, TG)) { run.push(p); if (m[2]) red++; } else flush();
+    }
+    flush();
+  }
+  log(`cycling beside the surveyed and widened carriageways: ${Math.round(cyclingSurveyed.bandM)} m of City band and ${Math.round(cyclingSurveyed.trailM)} m of City trail left out; ${Math.round(cyclingSurveyed.osmM)} m of ${cyclingSurveyed.osmWays.length} OSM cycleways drawn instead`);
 }
 log(`cycling network (City of Toronto) in the detailed city: ${Object.entries(km).map(([k, v]) => `${k} ${v.toFixed(1)} km`).join(', ')}`);
 log(`cycling: ${bands.length} on-street band pieces (${bands.filter((b) => b[1] & 2).length} through junctions), sides from OSM ${sideStats.osm}, by rule ${sideStats.fallback}; ${trails.length} trail pieces (${trails.filter((t) => !t[2]).length} road crossings); ${mapLines.length} map lines`);

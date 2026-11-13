@@ -72,6 +72,17 @@ test('a narrow two-way street has no room beside its lanes; a one-way street wit
   assert.ok(south(oneWay).length > 30 && north(oneWay).length > 30, 'a 3.9 m one-way lane leaves both curbs (Euclid, Palmerston)');
 });
 
+test('a surveyed carriageway seen to have no street parking holds no stall; the curbs beyond it keep theirs', () => {
+  const noParkingAt = (x) => x > -60 && x < 60; // (one stretch of the street surveyed)
+  const out = L.parkingStalls(street({ extra: { noParkingAt } }));
+  const plain = L.parkingStalls(street());
+  assert.ok(out.stalls.length > 0 && out.stalls.every((s) => !noParkingAt(s.x)), 'nothing on the surveyed stretch');
+  assert.ok(out.rejected.surveyed > 0 && plain.rejected.surveyed === 0);
+  for (const side of [south(out), north(out)]) {
+    assert.ok(side.some((s) => s.x < -60) && side.some((s) => s.x > 60), 'the curbs either side of it are still parked');
+  }
+});
+
 test('3 m from a hydrant, clear of crossings by the direction of travel, and of a CaféTO platform', () => {
   const hydrants = [{ x: 0, z: 6.7 }];
   const h = L.parkingStalls(street({ extra: { hydrants } }));
@@ -216,6 +227,19 @@ test('decoding parked cars never touches Math.sin & co, which may differ by an u
   const codec = src.slice(src.indexOf('const KINDS = '), src.indexOf('const { THREE, BODY_SPECS'));
   assert.ok(codec.includes('function decodeParkedCars'));
   assert.doesNotMatch(codec, /Math\.(sin|cos|tan|asin|acos|atan2?|exp|log\d*|pow|hypot|cbrt)\b/);
+});
+
+test('on the real city: no stall on the surveyed Port Lands streets seen to have no parking; Ookwemin keeps its kerbs', () => {
+  const { stalls, deps } = city();
+  const fixture = JSON.parse(read('tools/fixtures/road-surfaces.json'));
+  for (const c of fixture.chains) assert.ok(['none', 'kerbside'].includes(c.parking) && c.parkingSeen, `${c.id}: parking stated and what was seen`);
+  assert.ok(stalls.every((s) => !deps.noParkingAt(s.x, s.z)), 'a stall on a no-parking surveyed surface');
+  // the test sees a surveyed carriageway: a point on Cherry Street's north stretch, half way along its first way
+  const cherry = fixture.surfaces.find((s) => s.id === 'cherry-north/1013210801').ring;
+  const mid = (i) => (cherry[i][0] + cherry[cherry.length - 1 - i][0]) / 2, midLat = (i) => (cherry[i][1] + cherry[cherry.length - 1 - i][1]) / 2;
+  const k = Math.floor(cherry.length / 4), p = city().world.CITY.worldFromLatLon(midLat(k), mid(k));
+  assert.ok(deps.noParkingAt(p.x, p.z), 'the middle of Cherry Street is a no-parking surface');
+  assert.ok(stalls.filter((s) => s.road === 'Ookwemin Street').length > 30, 'Ookwemin Street (parked along both kerbs) keeps its stalls');
 });
 
 test('on the real city: clear of the lanes, tracks, bikeways, hydrants and patios, and of each other', () => {

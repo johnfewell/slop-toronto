@@ -1,6 +1,6 @@
 // city-grid.js fixed sidewalk band on a concave curb island (st-sb3r.17 / st-sb3r.16 follow-up).
 //
-// Ward's Island Park (GEO block 2893) is one large concave island with no City sidewalk polygons. city-grid's fallback
+// Ward's Island Park (GEO block 2880) is one large concave island with no City sidewalk polygons. city-grid's fallback
 // band was an ExtrudeGeometry of the island outline with its inward offset (prop) as a hole. For this island the offset
 // self-intersects, so THREE's hole triangulation flooded the whole park with the walkway at SW_TOP — the GPU saw
 // Walkways at 0.22 over Lawns at 0.218. The fix builds the band as per-edge quads when the annulus is not a simple,
@@ -29,7 +29,7 @@ const city = (() => {
   return ctx.window.CITY;
 })();
 
-const BLOCK = 2893;
+const BLOCK = 2880;
 const SW = city.GEO.frame.sidewalk;               // the fixed band width (4.6 m)
 const SW_TOP = city.GEO.frame.sidewalkHeight ?? 0.22; // CITY_BOUNDS.sidewalkHeight (0.22 m: the walk top)
 const pts = (() => {
@@ -68,7 +68,7 @@ function oldExtrudedBand() {
   return g;
 }
 
-test('the real Ward\'s Island Park block (2893) is the concave case: its inward offset self-intersects', () => {
+test('the real Ward\'s Island Park block (2880) is the concave case: its inward offset self-intersects', () => {
   assert.ok(inner && prop, 'both offsets exist');
   assert.equal(prop.length, inner.length);
   assert.equal(city.ringSelfIntersects(prop), true, 'the prop outline crosses itself');

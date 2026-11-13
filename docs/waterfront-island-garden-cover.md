@@ -97,7 +97,7 @@ garden?.update(camera.position);
 The candidate grid is sampled only where **all** hold, checked at **every** sub-sample of a 1 m cell footprint (not just
 its centre):
 
-- inside the **three accepted source-validated yard blocks 2914 / 2916 / 2918** (`js/waterfront-island-yard-materials.js`
+- inside the **three accepted source-validated yard blocks 2901 / 2903 / 2905** (`js/waterfront-island-yard-materials.js`
   `islandYardCoverageAt`), and
 - within **12 m** of the mapped **Oneida or Ojibway** centre line, and
 - **outside** every actual OSM building polygon AND every **rendered** building footprint plus **1 m**, and
@@ -228,3 +228,5 @@ Desktop `wave7-garden-natural` and default-enabled phone `wave7-garden-phone` ea
 closeups and lane views inspected. Phone used 412×915 CSS pixels, DPR 2.625, low quality. Final full suite:
 **1,089 pass, 0 fail, 3 skip (1,092 total)**; focused garden 17/17. No performance budget is inferred from these captures.
 Known `/live/vehicles`404 remains unrelated. No devserver restart, commit, push or deployment.
+
+_Block ids are each curb island's place in the geodata build's list, so they change whenever the islands are rebuilt. The ids here are those after the road-width rebuild (`st-d9i6`, docs/road-widths.md); the same islands were numbered 13 higher before it._

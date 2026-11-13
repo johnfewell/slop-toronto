@@ -1,0 +1,44 @@
+[
+ {
+  "name": "r02b-commissioners-park-edge",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2417, 590, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2423.9, 20, 557.0], look: [2417.9, 0, 595.6], fov: 55 });\n})()"
+ },
+ {
+  "name": "r07b-commissioners-walk-park-side",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2418, 595, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2417.8, 1.7, 595.1], look: [2460.2, 1.2, 579.0], fov: 60 });\n})()"
+ },
+ {
+  "name": "s01-dvp-median",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2490, -2368, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2450, 25, -2328], look: [2490, 0, -2368], fov: 55 });\n})()"
+ },
+ {
+  "name": "s02-lakeshore-west-median",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-371, 455, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-401, 12, 485], look: [-371, 0, 455], fov: 60 });\n})()"
+ },
+ {
+  "name": "s03-lakeshore-cherry",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(1990, 165, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [1960, 18, 195], look: [1990, 0, 165], fov: 60 });\n})()"
+ },
+ {
+  "name": "s04-gardiner-strachan",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-4749, -120, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-4789, 25, -80], look: [-4749, 0, -120], fov: 55 });\n})()"
+ },
+ {
+  "name": "s05-cherry-taper",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2258, 946, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2228, 20, 976], look: [2258, 0, 946], fov: 60 });\n})()"
+ }
+]

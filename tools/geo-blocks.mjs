@@ -1,7 +1,8 @@
 // Part 4: Abuja's blocks ("curb islands") from the street network, by rasterising every at-grade carriageway at its
 // width over the land of the detailed city (minus lakes & reservoirs), then labelling what's left. Each block: its curb
 // outline, axis-aligned lot rects inside its property line (the curb less the sidewalk / verge), metadata.
-import { Raster, rdpRing, ringArea, log, load, toWorld } from './geo-base.mjs';
+import { Raster, rdpRing, ringArea, log, load, toWorld, osmRoads } from './geo-base.mjs';
+import { loadRoadSurfaces, retireCityRoadway, surfaceNear, widthProfile, cycleTrackIndex, trackClearance } from './road-surfaces.mjs';
 import { DETAIL, rasterRoads } from './geo-roads.mjs';
 import { waterRings, islandRings, lake } from './geo-land.mjs';
 
@@ -16,13 +17,92 @@ if (lake) R.fillRing(lake.ring, 0);
 for (const ring of islandRings) R.fillRing(ring, 1);
 for (const ring of waterRings) if (!lake || ring !== lake.ring) R.fillRing(ring, 0);
 const W = R.w, H = R.h, D = R.d;
-// Toronto: the City's own road surface (city_roadway.json, tools/fetch-roadway.mjs) is the roadway; the OSM centre lines
-// only carve a thin connector (2 m either side, inside any real street) where the City maps no surface
+// Toronto: the City's own road surface (city_roadway.json, tools/fetch-roadway.mjs) is the roadway, with the surveyed
+// surfaces of tools/fixtures/road-surfaces.json where the City's layer is out of date (docs/road-widths.md). Where a
+// surface is mapped under or beside a centre line, the OSM centre line only carves a thin connector (2 m either side,
+// inside the real street). Where none is, the road is drawn at its own width (geo-roads.mjs: lanes × 3.5 m plus a kerb
+// allowance, or its width tag), tapering to the connector over TAPER metres where it runs into a mapped surface.
 let cityRoadway = null;
 try { cityRoadway = process.env.NO_CITY_ROADWAY ? null : load('city_roadway.json').polygons; } catch { cityRoadway = null; }
-const CONNECTOR = 2.0;
-for (const s0 of rasterRoads) {
-  const s = cityRoadway ? { ...s0, r: Math.min(s0.r, CONNECTOR) } : s0;
+export const CONNECTOR = 2.0;
+export const COVER_TOL = 1.5; // m beyond the road's own half width: the City layers sit ~1 m off OSM (NAD83(CSRS) vs WGS84)
+export const TAPER = 8; // m
+export const SAMPLE = 1; // m between the coverage samples along a road
+export const KEEP_CONNECTOR = new Set(['service', 'living_street']);
+let surveyed = { surfaces: [], retire: [], ground: [] };
+if (cityRoadway) {
+  surveyed = loadRoadSurfaces();
+  // (a retired polygon outside this frame's extract is not there to retire)
+  const here = surveyed.retire.filter((r) => cityRoadway.some(([kind, ring]) => kind === r.kind && ring.some(([lon, lat]) =>
+    Math.abs(lon - r.point[0]) < 0.01 && Math.abs(lat - r.point[1]) < 0.01)));
+  cityRoadway = retireCityRoadway(cityRoadway, here);
+  surveyed.retire = here;
+}
+const surfaceRings = cityRoadway ? [...cityRoadway.map(([, ring]) => ring), ...surveyed.surfaces.filter((s) => s.roadway).map((s) => s.ring)]
+  .map((ring) => ring.map(([lon, lat]) => toWorld(lon, lat))) : [];
+// the surveyed roadway, and the ground strips cut out of City polygons (filled back to ground, the surveyed roadway
+// over them again): in world metres
+const surveyedRings = cityRoadway ? surveyed.surfaces.filter((s) => s.roadway).map((s) => s.ring.map(([lon, lat]) => toWorld(lon, lat))) : [];
+const groundRings = cityRoadway ? surveyed.ground.map((g) => g.ring.map(([lon, lat]) => toWorld(lon, lat))) : [];
+// the mapped surface on its own raster, to tell where a centre line has one
+const covered = new Raster(DETAIL.x0, DETAIL.z0, DETAIL.x1, DETAIL.z1, RES);
+for (const ring of surfaceRings) covered.fillRing(ring, 1);
+for (const ring of groundRings) covered.fillRing(ring, 0);
+for (const ring of surveyedRings) covered.fillRing(ring, 1);
+export const roadCover = []; // per run: what the coverage test found (tools/report-road-widths.mjs)
+// the mapped cycle tracks beside the roads: a road drawn at its own width stops at a track's near edge (never narrower
+// than the connector), so the widening never covers a track OpenStreetMap maps beside it
+const tracks = cycleTrackIndex(cityRoadway ? osmRoads.elements.filter((e) => e.geometry && e.tags).map((e) => ({ tags: e.tags, pts: e.geometry.map((g) => toWorld(g.lon, g.lat)) })) : []);
+export const trackCapped = []; // [x, z, own half width, capped half width] where a track held the road back
+const stamps = [];
+{
+  const runs = new Map();
+  for (const s of rasterRoads) {
+    if (!runs.has(s.run)) runs.set(s.run, []);
+    runs.get(s.run).push(s);
+  }
+  for (const segs of runs.values()) {
+    const own = segs[0].r;
+    if (!cityRoadway) { for (const s of segs) stamps.push(s); continue; }
+    const thin = Math.min(own, CONNECTOR);
+    // decks keep the connector: the ground under a flyover is not its carriageway. So do service roads and living
+    // streets, whose widths here are defaults, not measurements: service roads are mostly private drives, yards and
+    // parking lots, and Toronto's living streets include the Island's car-free lanes, 3-4 m wide, not 7.4
+    if (segs[0].deck || own <= CONNECTOR || KEEP_CONNECTOR.has(segs[0].cls)) { for (const s of segs) stamps.push({ ...s, r: thin }); continue; }
+    const reach = own + COVER_TOL;
+    const samples = []; // [x, z, along, segment index]
+    let along = 0;
+    segs.forEach((s, si) => {
+      const L = Math.hypot(s.x1 - s.x0, s.z1 - s.z0);
+      const n = Math.max(1, Math.ceil(L / SAMPLE));
+      for (let k = si ? 1 : 0; k <= n; k++) samples.push([s.x0 + ((s.x1 - s.x0) * k) / n, s.z0 + ((s.z1 - s.z0) * k) / n, along + (L * k) / n, si]);
+      along += L;
+    });
+    // (a sample off the raster is never drawn: it counts as covered)
+    const open = samples.map(([x, z]) => onRaster(covered, x, z) && !surfaceNear(covered, x, z, reach));
+    if (!open.some(Boolean)) { for (const s of segs) stamps.push({ ...s, r: thin }); continue; }
+    const rad = widthProfile(samples, open, own, thin, TAPER);
+    for (let i = 0; i < samples.length; i++) {
+      if (rad[i] <= thin) continue;
+      const s = segs[samples[i][3]], L = Math.hypot(s.x1 - s.x0, s.z1 - s.z0) || 1;
+      const clear = trackClearance(tracks, samples[i][0], samples[i][1], (s.x1 - s.x0) / L, (s.z1 - s.z0) / L);
+      if (clear < rad[i]) { trackCapped.push([samples[i][0], samples[i][1], rad[i], Math.max(thin, clear)]); rad[i] = Math.max(thin, clear); }
+    }
+    const widened = new Set();
+    for (let i = 0; i + 1 < samples.length; i++) {
+      const r = Math.max(rad[i], rad[i + 1]);
+      if (r <= thin) continue;
+      widened.add(samples[i + 1][3]);
+      stamps.push({ x0: samples[i][0], z0: samples[i][1], x1: samples[i + 1][0], z1: samples[i + 1][1], r });
+    }
+    for (const [si, s] of segs.entries()) if (!widened.has(si)) stamps.push({ ...s, r: thin });
+    let openLen = 0;
+    for (let i = 0; i + 1 < samples.length; i++) if (open[i] && open[i + 1]) openLen += samples[i + 1][2] - samples[i][2];
+    roadCover.push({ run: segs[0].run, name: segs[0].name, cls: segs[0].cls, w: own * 2, reach, length: along, openLength: openLen,
+      open: samples.filter((_, i) => open[i]).map(([x, z]) => [x, z]) });
+  }
+}
+for (const s of stamps) {
   const ix0 = Math.max(0, Math.floor((Math.min(s.x0, s.x1) - s.r - R.x0) / RES));
   const ix1 = Math.min(W - 1, Math.ceil((Math.max(s.x0, s.x1) + s.r - R.x0) / RES));
   const iz0 = Math.max(0, Math.floor((Math.min(s.z0, s.z1) - s.r - R.z0) / RES));
@@ -45,13 +125,22 @@ for (const s0 of rasterRoads) {
   }
 }
 if (cityRoadway) {
-  for (const [, ring] of cityRoadway) R.fillRing(ring.map(([lon, lat]) => toWorld(lon, lat)), 0);
-  log(`City road surface: ${cityRoadway.length} polygons drawn as roadway`);
+  for (const ring of surfaceRings) R.fillRing(ring, 0);
+  for (const ring of groundRings) R.fillRing(ring, 1);
+  for (const ring of surveyedRings) R.fillRing(ring, 0);
+  const openKm = roadCover.reduce((a, c) => a + c.openLength, 0) / 1000;
+  log(`City road surface: ${cityRoadway.length} polygons drawn as roadway (${surveyed.retire.length} out-of-date ones retired), ` +
+    `${surveyed.surfaces.filter((s) => s.roadway).length} surveyed surfaces, ${groundRings.length} ground strips, ${trackCapped.length} widened samples held back by a cycle track (of ${tracks.segments} track segments); ${openKm.toFixed(1)} km of road with no mapped surface drawn at its own width`);
 }
 // the raster's rim: no block runs off the detailed area (they'd have no streets on that side)
 for (let i = 0; i < W; i++) { D[i] = 0; D[(H - 1) * W + i] = 0; }
 for (let j = 0; j < H; j++) { D[j * W] = 0; D[j * W + W - 1] = 0; }
 log(`block raster ${W} x ${H} (${(W * H / 1e6).toFixed(0)}M cells), ${rasterRoads.length} roadway pieces stamped`);
+
+function onRaster({ res, x0, z0, w, h }, x, z) {
+  const i = Math.floor((x - x0) / res), j = Math.floor((z - z0) / res);
+  return i > 0 && j > 0 && i < w - 1 && j < h - 1;
+}
 
 // --- Label curb islands (4-connected) --------------------------------------------------------------------------------
 const lab = new Int32Array(W * H);
@@ -227,9 +316,17 @@ function lotRects(c, maxRects = 8) {
 // A median: a long thin island between the two carriageways of a dual road (its mean width, 2·area / perimeter, under 9 m)
 const blocks = [];
 let small = 0;
+// the specks dropped (land islands under 40 m², drawn as roadway): their cells' centre and area (tools/report-road-widths.mjs)
+export const specks = [];
 for (const c of comps) {
   const area = c.n * RES * RES;
-  if (area < 40) { small++; continue; }
+  if (area < 40) {
+    small++;
+    let sx = 0, sz = 0;
+    for (let j = c.j0; j <= c.j1; j++) for (let i = c.i0; i <= c.i1; i++) if (lab[j * W + i] === c.id) { sx += i; sz += j; }
+    specks.push({ x: R.x0 + (sx / c.n + 0.5) * RES, z: R.z0 + (sz / c.n + 0.5) * RES, area, w: (c.i1 - c.i0 + 1) * RES, h: (c.j1 - c.j0 + 1) * RES });
+    continue;
+  }
   let poly = traceComponent(c);
   poly = rdpRing(poly, 0.5);
   if (poly.length < 3) continue;
@@ -256,4 +353,4 @@ for (const c of comps) {
 }
 log(`${blocks.length} blocks (${blocks.filter((b) => b.rect).length} rectangular, ${blocks.filter((b) => b.median).length} medians); ${small} specks dropped`);
 
-export { blocks, R as blockRaster, lab as blockLabels };
+export { blocks, R as blockRaster, lab as blockLabels, covered as surfaceRaster, surfaceNear, surveyedRings };

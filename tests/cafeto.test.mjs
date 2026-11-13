@@ -203,8 +203,9 @@ test('on the real city: every placed patio keeps its footprint rules and clears 
   const out = CITY.patioSites(records, deps);
   const kinds = (k) => out.sites.filter((s) => s.kind === k).length;
   // (the counts are this snapshot's; a rule or data change must update them knowingly: 71 sidewalk patios until the
-  // City's piled trees were spread along their frontage, st-unco, one of them onto R57-5639455's spot on Bloor)
-  assert.deepEqual({ sidewalk: kinds('sidewalk'), curb: kinds('curb') }, { sidewalk: 70, curb: 128 });
+  // City's piled trees were spread along their frontage, st-unco, one of them onto R57-5639455's spot on Bloor; 71
+  // again since the road-width rule, st-d9i6, redrew Harbour Square's islands beside R57-5517291 on Bremner Boulevard)
+  assert.deepEqual({ sidewalk: kinds('sidewalk'), curb: kinds('curb') }, { sidewalk: 71, curb: 128 });
   assert.equal(Object.values(out.rejected).reduce((a, b) => a + b, 0) + out.sites.length, records.length);
   const corners = (s) => [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]].map(([a, b]) => [s.cx + s.tx * a * s.length / 2 + s.nx * b * s.depth / 2, s.cz + s.tz * a * s.length / 2 + s.nz * b * s.depth / 2]);
   for (const s of out.sites) {

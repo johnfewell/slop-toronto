@@ -1,0 +1,74 @@
+[
+ {
+  "name": "r01-cherry-commissioners",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2070, 674, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2020, 60, 744], look: [2070, 0, 674], fov: 55 });\n})()"
+ },
+ {
+  "name": "r02-commissioners-park",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2489, 572, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2429, 50, 632], look: [2489, 0, 572], fov: 55 });\n})()"
+ },
+ {
+  "name": "r03-cherry-north-bridge",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(1991, 381, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2041, 45, 441], look: [1991, 0, 381], fov: 55 });\n})()"
+ },
+ {
+  "name": "r04-cherry-south-bridge",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2155, 796, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2095, 45, 846], look: [2155, 0, 796], fov: 55 });\n})()"
+ },
+ {
+  "name": "r05-don-roadway",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2822, 316, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2762, 55, 376], look: [2822, 0, 316], fov: 55 });\n})()"
+ },
+ {
+  "name": "r06-lakeshore-east-cherry",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2003, 154, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [1958, 9, 199], look: [2003, 0, 154], fov: 65 });\n})()"
+ },
+ {
+  "name": "r07-commissioners-walk",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2417, 573, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2417, 1.7, 573], look: [2514, 1.4, 549], fov: 60 });\n})()"
+ },
+ {
+  "name": "r08-lakeshore-jarvis",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(773, 201, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [728, 9, 246], look: [773, 0, 201], fov: 65 });\n})()"
+ },
+ {
+  "name": "r09-gardiner-jameson",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-4445, 152, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-4505, 50, 212], look: [-4445, 0, 152], fov: 55 });\n})()"
+ },
+ {
+  "name": "r10-dvp-eastern",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2521, -823, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2461, 55, -763], look: [2521, 0, -823], fov: 55 });\n})()"
+ },
+ {
+  "name": "r11-humber-interchange",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-7496, -898, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-7556, 70, -828], look: [-7496, 0, -898], fov: 55 });\n})()"
+ },
+ {
+  "name": "r12-harbour-square",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-983, 290, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-1033, 45, 340], look: [-983, 0, 290], fov: 55 });\n})()"
+ }
+]

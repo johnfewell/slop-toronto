@@ -16,6 +16,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { loadReplayWorld } from './patio-replay.mjs';
 import { packGeodata } from './pack-geodata.mjs';
+import { FIXTURE as ROAD_SURFACES } from './road-surfaces.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 export const PARKED_JS = 'js/toronto-parked-cars.js';
@@ -34,6 +35,25 @@ export function loadParkingWorld(root = ROOT) {
   // the bikeways as the page builds them: routed round the prebuilt CaféTO platforms in their place (cycling.js)
   CITY.routeRoundPatios(CITY.patioRows(CITY.PATIOS));
   return world;
+}
+
+/** The surveyed carriageways seen to have no street parking (tools/fixtures/road-surfaces.json, `parking: "none"`), in
+ *  world x/z: (x, z) -> whether it lies on one */
+export function surveyedNoParking(CITY, file = ROAD_SURFACES) {
+  const polys = JSON.parse(fs.readFileSync(file, 'utf8')).surfaces.filter((s) => s.parking === 'none').map((s) => {
+    const ring = s.ring.map(([lon, lat]) => { const p = CITY.worldFromLatLon(lat, lon); return [p.x, p.z]; });
+    const xs = ring.map((p) => p[0]), zs = ring.map((p) => p[1]);
+    return { ring, x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+  });
+  const inside = (r, x, z) => {
+    let hit = false;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const [xi, zi] = r[i], [xj, zj] = r[j];
+      if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) hit = !hit;
+    }
+    return hit;
+  };
+  return (x, z) => polys.some((p) => x >= p.x0 && x <= p.x1 && z >= p.z0 && z <= p.z1 && inside(p.ring, x, z));
 }
 
 /** parkingStalls' inputs from the city (the same in the build and the tests) */
@@ -65,7 +85,7 @@ export function parkingDeps(CITY) {
     bikewayAt: (x, z) => CITY.routedBikewayIntrusion(x, z, 0.05) > 0, trackAt: (x, z) => CITY.routedBikewayIntrusion(x, z, 0.05, true) > 0,
     bikeShareAt: CITY.bikeShareAt, patios,
     payStations: (CITY.PARKING_METERS?.records || []).map((r) => ({ x: r.x, z: r.z, zone: r.zone })), parking: CITY.PARKING,
-    inFrame: (x, z) => CITY.isOnLand(x, z, 10), heightAt: (x, z) => CITY.cutAt(x, z),
+    inFrame: (x, z) => CITY.isOnLand(x, z, 10), heightAt: (x, z) => CITY.cutAt(x, z), noParkingAt: surveyedNoParking(CITY),
     nearestRoad: (x, z) => CITY.nearestRoads(x, z, 30).filter((r) => !r.road.raised)[0]?.road.name || null
   };
 }

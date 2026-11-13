@@ -9,6 +9,7 @@
 //   the decks & ramps themselves (city-grid.js builds them), and every road for the maps & labels
 import fs from 'node:fs';
 import { toWorld, rdp, log, load, osmRoads } from './geo-base.mjs';
+import { loadRoadSurfaces, bridgeWidths } from './road-surfaces.mjs';
 
 // Detailed city (world frame, metres): the Humber to Cherry Beach, the lake to Bloor
 export const FRAMES = {
@@ -61,6 +62,7 @@ const CLASS = {
   tertiary_link: [1, 1, 2, 0.6], service: [0, 1, 1, 0.6]
 };
 const LANE_W = 3.5;
+const BRIDGE_W = bridgeWidths(loadRoadSurfaces());
 const DECK_H = 7.5; // deck height per layer (m): 5.5 m clearance + structure
 const RAMP_GRADE = 0.055;
 
@@ -89,6 +91,8 @@ for (const e of osmRoads.elements) {
   lanes = Math.round(lanes);
   let w = num(t.width);
   if (!w || w < 3 || w > 40) w = cls === 'service' ? 5.0 : lanes * LANE_W + kerb;
+  // a road bridge whose deck was measured (tools/fixtures/road-surfaces.json): its carriageway's own width
+  if (BRIDGE_W.has(e.id)) w = BRIDGE_W.get(e.id);
   const pts = e.geometry.map((g) => toWorld(g.lon, g.lat));
   const bridge = !!t.bridge && t.bridge !== 'no';
   const tunnel = !!t.tunnel && t.tunnel !== 'no' && t.tunnel !== 'culvert';
@@ -547,11 +551,13 @@ for (const w of ways) {
 log(`${groundRuns.length} at-grade runs, ${decks.length} raised runs (decks & ramps)`);
 
 // Roadway capsules the block raster cuts out of the land (geo-blocks.mjs): every carriageway, and the ground under the
-// flyovers & their ramps too (no curb island, plot or building may stand under a deck)
+// flyovers & their ramps too (no curb island, plot or building may stand under a deck). `run` numbers the run each
+// piece belongs to (its pieces follow one another along the way), `deck` marks a raised run.
 export const rasterRoads = [];
-for (const r of [...groundRuns, ...decks]) {
+for (const [run, r] of [...groundRuns, ...decks].entries()) {
   for (let i = 0; i + 1 < r.pts.length; i++) {
-    rasterRoads.push({ x0: r.pts[i][0], z0: r.pts[i][1], x1: r.pts[i + 1][0], z1: r.pts[i + 1][1], r: r.way.w / 2, rank: r.way.rank });
+    rasterRoads.push({ x0: r.pts[i][0], z0: r.pts[i][1], x1: r.pts[i + 1][0], z1: r.pts[i + 1][1], r: r.way.w / 2, rank: r.way.rank,
+      run, deck: r.kind === 'deck', cls: r.way.cls, name: r.way.name });
   }
 }
 

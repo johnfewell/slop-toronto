@@ -207,7 +207,7 @@ const pinFor = (frameEntry) => {
     ...(same && prev.eglinton ? { eglinton: prev.eglinton } : {})
   };
   Object.assign(t2, frameEntry);
-  const pin = { what: 'The shared Toronto data repo datasets this city bakes from (docs/lidar-trees.md). No paths: set TORONTO_DATA_CACHE to rebuild.', datasets: { ...(old?.datasets || {}), 'trees/2': t2 } }; // (the pin's other datasets, e.g. the TTC schedule's, kept)
+  const pin = { what: old?.what || 'The shared Toronto data repo datasets this city bakes from (docs/lidar-trees.md). No paths: set TORONTO_DATA_CACHE to rebuild.', datasets: { ...(old?.datasets || {}), 'trees/2': t2 } }; // (the pin's other datasets, e.g. the TTC schedule's, kept)
   fs.mkdirSync(path.dirname(PIN), { recursive: true });
   fs.writeFileSync(PIN, `${JSON.stringify(pin, null, 2)}\n`);
 };
@@ -266,7 +266,7 @@ if (FRAME === 'detail') {
   // (the page asks for the index by its hash, as it does the geodata: only when writing the shipped folder)
   if (OUT === path.resolve(ROOT, DEFAULT_OUT)) {
     const html = path.join(ROOT, 'explore.html'), src = fs.readFileSync(html, 'utf8');
-    const next = src.replace(/(data\/frames\/eglinton\/lidar-trees\/index\.json\?v=)[0-9a-f]+/, `$1${indexSha256.slice(0, 12)}`);
+    const next = src.replace(/(data\/frames\/eglinton\/lidar-trees\/(?:', ')?index\.json\?v=)[0-9a-f]+/, `$1${indexSha256.slice(0, 12)}`);
     if (next !== src) fs.writeFileSync(html, next);
   }
   pinFor({ eglinton: { bakedInto: [`${DEFAULT_OUT}/`], indexSha256, cells: list.length, trees: kept.length } });

@@ -108,7 +108,7 @@ rows are `null`; lighthouse ways are absent from the records; explicit levels wi
 ## Ward's Island Park ground (st-sb3r.17)
 
 GPU raycasts on the ward view hit **Walkways at 0.22 m** over **Lawns at 0.218 m** across the park (e.g. 1750,2250),
-so the park was not a missing lawn or a masked sand strip: the fixed sidewalk band covered it. Cause: block 2893 is a
+so the park was not a missing lawn or a masked sand strip: the fixed sidewalk band covered it. Cause: block 2880 is a
 large concave island with no City sidewalk pieces, so `city-grid.js` built its fallback band as an `ExtrudeGeometry`
 of the island outline with the inward offset (`prop`, `SW = 4.6 m`) as a *hole*. For this outline the offset
 self-intersects (`ringSelfIntersects(prop) === true`), so THREE's hole triangulation filled the whole island with the
@@ -123,7 +123,7 @@ Minimal guarded fix in `js/city-grid.js`:
 - Simple islands keep the original extruded annulus; no blanket grass overlay, no hard-coded Ward coordinates, no
   change to park paths, curbs or unrelated blocks.
 
-`tests/city-grid-concave-walk-band.test.mjs` uses the committed block 2893 outline and proves the old extrusion
+`tests/city-grid-concave-walk-band.test.mjs` uses the committed block 2880 outline and proves the old extrusion
 covers four park points while the new band leaves them as lawn and still covers every band edge midpoint; a simple
 rectangular island still takes the original path.
 
@@ -321,3 +321,5 @@ desktop/phone captures.
 The photo-informed 2.5 m nominal window bay retains roughly 1.1 m openings and gives them wider clapboard separation. This is a generic cottage typology, not a surveyed window count. The shallow physical door now occupies the same unflipped bay that the facade shader suppresses, including the Float32 packed-tone decode; it no longer covers a window while leaving a different bay blank.
 
 Captain verification: 18 focused geometry tests passed; `wave7-door-review` desktop and `wave7-door-phone` 412×915/low each completed four Mac mini captures. The close front-0 image and Oneida street were inspected, and the phone close view confirms no window above/behind the door. The subsequent integration checkpoint full suite passed 1,014 tests with zero failures and three skips (1,017 total), log `$WATERFRONT_RESEARCH/wave7-cottage-full-tests.log`. These are functional/visual results, not an idle-host performance benchmark. House-specific colors, roof forms and garden layouts remain estimates.
+
+_Block ids are each curb island's place in the geodata build's list, so they change whenever the islands are rebuilt. The ids here are those after the road-width rebuild (`st-d9i6`, docs/road-widths.md); the same islands were numbered 13 higher before it._

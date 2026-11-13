@@ -137,6 +137,18 @@ Layout takes about 16 s in node. The streets the brief asked about:
 Rejections, counted stall by stall: in the curb island 211,696; in a lane 160,579; by-law 109,745; arterial 18,659;
 junction 11,574; bikeway 11,408; hydrant 3,445; stop 2,963; reserved 2,395; crossing 409; patio 371; streetcar 844.
 
+## The surveyed Port Lands streets (`st-d9i6`)
+
+The rebuilt Cherry and Commissioners Streets have no street parking. Along every surveyed way, the City's 2025
+orthophoto shows no lay-by and no car parked at the kerb. Each chain in `tools/fixtures/road-surfaces.json` says what
+was seen (`parking`, `parkingSeen`), and `parkingDeps` turns the surfaces marked `"none"` into `noParkingAt`. A stall
+whose kerb-side point lies on one is rejected as `surveyed`. Ookwemin Street (old Cherry), where cars stand along both
+kerbs, is marked `"kerbside"` and keeps its 47 stalls.
+
+The effect, checked stall by stall and car by car against the build before it: 34 stalls and 28 cars go, all on
+surveyed Cherry Street between Lake Shore and Polson. No other street's stalls or cars changed, and none was added.
+The surveyed Commissioners stretch held no stall before either: the lanes and the kerb islands left no room.
+
 ## Floating parking beside the cycle tracks (`st-74e`)
 
 On the Danforth and Bloor the parking lane sits outside the cycle track: curb, track, separator with posts, parked

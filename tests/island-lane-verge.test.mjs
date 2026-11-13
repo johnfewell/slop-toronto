@@ -158,14 +158,14 @@ test('the verge gate is source-scoped: only the photo-evidenced rows, and a mism
 
   // A mismatched projection draws nothing.
   const wrong = makeCity({ projectionScale: 1.01 });
-  const inner = wrong.offsetPolygonInward(blockPoly(2902), 0.25);
+  const inner = wrong.offsetPolygonInward(blockPoly(2889), 0.25);
   assert.equal(wrong.islandVergeFlags(inner), null);
   assert.equal(wrong.islandVergeSurfaceAt(0, 0), null);
 });
 
 test('the producer replaces the former band and kerb on flagged edges (no overlay, no native slab side)', () => {
-  const { poly, inner, prop, flags } = blockParts(2894); // all edges flagged
-  assert.ok(flags && flags.every(Boolean), 'block 2894 is entirely source-confirmed');
+  const { poly, inner, prop, flags } = blockParts(2881); // all edges flagged
+  assert.ok(flags && flags.every(Boolean), 'block 2881 is entirely source-confirmed');
   const keep = new Uint8Array(inner.length); // nothing kept: every edge is the ramp
   assert.equal(city.walkBandGeometryXZEdges(inner, prop, 0.03, SW_TOP, keep), null, 'no concrete band on flagged edges');
   assert.equal(city.kerbRingGeometryXZEdges(poly, inner, 0.0, 0.18, keep), null, 'no stone kerb on flagged edges');
@@ -181,8 +181,8 @@ test('the producer replaces the former band and kerb on flagged edges (no overla
 
 // --- exact surface sampler vs the WHOLE built CityGround ------------------------------------------------------
 test('the exact sampler matches the whole built CityGround topmost surface on a mixed block, corners included', () => {
-  const { poly, inner, prop, flags } = blockParts(2902);
-  assert.ok(flags && flags.some(Boolean) && flags.some((v) => !v), 'block 2902 has mixed flagged edges');
+  const { poly, inner, prop, flags } = blockParts(2889);
+  assert.ok(flags && flags.some(Boolean) && flags.some((v) => !v), 'block 2889 has mixed flagged edges');
   const geo = city.rampGeometryXZ(poly, prop, flags, { roadY: 0, walkY: SW_TOP, kerbY: 0.18 });
   const ray = groundRaycaster();
   let checked = 0;
@@ -201,8 +201,8 @@ test('the exact sampler matches the whole built CityGround topmost surface on a 
 });
 
 test('the exact sampler matches the whole built CityGround on an all-flagged block, both outline windings', () => {
-  const { poly, inner, prop, flags } = blockParts(2894);
-  assert.ok(flags && flags.every(Boolean), 'block 2894 is entirely source-confirmed');
+  const { poly, inner, prop, flags } = blockParts(2881);
+  assert.ok(flags && flags.every(Boolean), 'block 2881 is entirely source-confirmed');
   const geo = city.rampGeometryXZ(poly, prop, flags, { roadY: 0, walkY: SW_TOP, kerbY: 0.18 });
   const ray = groundRaycaster();
   let checked = 0;
@@ -225,9 +225,9 @@ test('the exact sampler matches the whole built CityGround on an all-flagged blo
   assert.ok(rampTop && yardTop, 'both the ramp and the yard are rendered');
   assert.equal(rampTop.name, yardTop.name, `ramp material ${rampTop.name} matches the yard ${yardTop.name}`);
 
-  // The opposite outline winding: reverse block 2894 before the build, then the producer's own sampler must match the
+  // The opposite outline winding: reverse block 2881 before the build, then the producer's own sampler must match the
   // whole-ground raycast of its reversed-winding ramp.
-  const rev = makeCity({ reverseBlock: 2894 });
+  const rev = makeCity({ reverseBlock: 2881 });
   const revScene = new THREE.Scene();
   {
     const warn = console.warn, error = console.error;
@@ -236,7 +236,7 @@ test('the exact sampler matches the whole built CityGround on an all-flagged blo
   }
   const revGround = revScene.getObjectByName('CityGround');
   revGround.updateMatrixWorld(true);
-  const rflat = rev.GEO.blocks[2894][0];
+  const rflat = rev.GEO.blocks[2881][0];
   const rpoly = [];
   for (let i = 0; i + 1 < rflat.length; i += 2) rpoly.push({ x: rflat[i], z: rflat[i + 1] });
   const rinner = rev.offsetPolygonInward(rpoly, 0.25);
@@ -269,7 +269,7 @@ test('buildCityGrid fills the exact verge sampler from the rendered ramp triangl
   assert.ok(stats.triangles > 100, `${stats.triangles} ramp triangles`);
   assert.ok(stats.cells > 0, `${stats.cells} spatial cells`);
   // A point on a Third Street verge resolves to a ramp height between the road and the yard.
-  const { poly, inner, prop, flags } = blockParts(2894);
+  const { poly, inner, prop, flags } = blockParts(2881);
   const i = flags.findIndex(Boolean);
   const [x, z] = rampPoint(poly, prop, i, 0.5, 0.5);
   const s = city.islandVergeSurfaceAt(x, z);
@@ -279,18 +279,18 @@ test('buildCityGrid fills the exact verge sampler from the rendered ramp triangl
 
 // --- City sidewalk refinement: confirmed lane edges the City does not map still get the flush verge -----------------
 test('a City-sidewalk block keeps the walk only where the City maps it; the lane edge still flushes', () => {
-  // The captain's Third Street left edge: block 2887 holds City sidewalk pieces on its far side, but none along the
+  // The captain's Third Street left edge: block 2874 holds City sidewalk pieces on its far side, but none along the
   // Third Street lane. Before this refinement the whole block was excluded from the verge (the narrow whole-block gate),
   // so the left kerb and concrete band stayed. The per-edge City-walk test keeps those mapped edges and re-claims only
   // the lane edge.
   const cityWalks = city.sidewalkPieces(city.SIDEWALKS, city.GEO.blocks);
-  assert.ok(cityWalks && cityWalks.get(2887)?.length >= 1, 'block 2887 has mapped City sidewalks somewhere');
+  assert.ok(cityWalks && cityWalks.get(2874)?.length >= 1, 'block 2874 has mapped City sidewalks somewhere');
   // The pure per-edge test: a point just inside a mapped City walk edge is covered, the Third Street lane edge is not.
-  const flat = city.GEO.blocks[2887][0];
+  const flat = city.GEO.blocks[2874][0];
   const poly = [];
   for (let i = 0; i + 1 < flat.length; i += 2) poly.push({ x: flat[i], z: flat[i + 1] });
   const inner = city.offsetPolygonInward(poly, 0.25);
-  const pieces = cityWalks.get(2887);
+  const pieces = cityWalks.get(2874);
   let covered = 0, notCovered = 0;
   for (let i = 0; i < inner.length; i++) {
     let any = false;
@@ -369,15 +369,15 @@ function topAt(ground, x, z) {
 test('a retained edge away from the City walk is still yard material at the walking floor, not a new sidewalk', () => {
   const { built, ground } = builtWithBuildings();
   const cityWalks = built.sidewalkPieces(built.SIDEWALKS, built.GEO.blocks);
-  const pieces = cityWalks.get(2887);
-  assert.ok(pieces && pieces.length, 'block 2887 has City walk pieces');
-  const flat = built.GEO.blocks[2887][0];
+  const pieces = cityWalks.get(2874);
+  assert.ok(pieces && pieces.length, 'block 2874 has City walk pieces');
+  const flat = built.GEO.blocks[2874][0];
   const poly = [];
   for (let i = 0; i + 1 < flat.length; i += 2) poly.push({ x: flat[i], z: flat[i + 1] });
   const inner = built.offsetPolygonInward(poly, 0.25);
   const prop = built.offsetPolygonInward(poly, SW);
   const flags = built.islandVergeFlags(inner);
-  assert.ok(flags, 'block 2887 has source-confirmed verge edges');
+  assert.ok(flags, 'block 2874 has source-confirmed verge edges');
   // Pick a retained (unflagged) edge whose band does not overlap a City walk piece (a test-point choice, not the
   // assertion: the assertion below is on the built mesh).
   let edge = -1;
@@ -391,7 +391,7 @@ test('a retained edge away from the City walk is still yard material at the walk
   const z = ((inner[edge].z + inner[i2].z) / 2 + (prop[edge].z + prop[i2].z) / 2) / 2;
   const hit = topAt(ground, x, z);
   assert.ok(hit, `rendered ground at ${x.toFixed(1)},${z.toFixed(1)}`);
-  // Block 2887 is a mapped residential plot block: its retained band is the plot yard, never the concrete walk band.
+  // Block 2874 is a mapped residential plot block: its retained band is the plot yard, never the concrete walk band.
   assert.equal(hit.name, 'Yards', `retained band is the plot yard, not a new sidewalk (${hit.name})`);
   assert.ok(Math.abs(hit.y - SW_TOP) < 1e-6, `retained band stays at the walking floor (${hit.y})`);
 });
@@ -430,7 +430,7 @@ test('every surveyed City walk piece is still the topmost surface and no ramp cr
 
 test('the known Oneida left-side yard is plot material, not the inherited concrete', () => {
   const { ground } = builtWithBuildings();
-  // Block 2918 is Oneida Avenue's left side (the captain's broad concrete yard). Its 26 validated cottage profiles are
+  // Block 2905 is Oneida Avenue's left side (the captain's broad concrete yard). Its 26 validated cottage profiles are
   // the evidence; the one unmatched inherited tall row must not pave it. Assert the actual built mesh at the block.
   const hit = topAt(ground, 1038, 2369);
   assert.ok(hit, 'the Oneida left-side yard is rendered');

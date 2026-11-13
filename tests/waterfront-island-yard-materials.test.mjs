@@ -6,7 +6,7 @@
 // not a legacy script). They prove, on the PURE CPU side:
 //   - the two photographed corridors bind to the correct per-way OSM ways, and only those two;
 //   - the classifier claims EXACTLY the three source-validated cottage blocks (>= 3 matched, residential majority) that
-//     border Oneida/Ojibway, and EXCLUDES the weak park block 2917 (1 match) and the park/wild block 2908;
+//     border Oneida/Ojibway, and EXCLUDES the weak park block 2904 (1 match) and the park/wild block 2895;
 //   - the effect is the narrow intersection of eligible native blocks with the bounded 12 m corridor envelope: the lane
 //     centre (roadway) and the park block are 0, the far block interior is 0, and the replaced area is a bounded strip,
 //     not a whole block of grass;
@@ -93,7 +93,7 @@ test('the classifier claims exactly the three source-validated cottage blocks bo
   const C = city();
   const elig = C.islandYardEligibleBlocks();
   assert.ok(Array.isArray(elig), 'eligibility resolves');
-  assert.deepEqual(Array.from(elig, (e) => e.id), [2914, 2916, 2918]);
+  assert.deepEqual(Array.from(elig, (e) => e.id), [2901, 2903, 2905]);
   for (const e of elig) {
     // source-validated residential/cottage majority (aligns with js/city-grid.js .24 classification)
     assert.ok(e.matchedN >= 3, `block ${e.id} has >= 3 matched profiles (${e.matchedN})`);
@@ -103,8 +103,8 @@ test('the classifier claims exactly the three source-validated cottage blocks bo
     assert.ok(e.distanceM <= 12, `block ${e.id} is inside the envelope (${e.distanceM.toFixed(2)} m)`);
   }
   const ids = Array.from(elig, (e) => e.id);
-  assert.ok(!ids.includes(2917), 'the weak park block 2917 (1 match, 41% park) is excluded');
-  assert.ok(!ids.includes(2908), 'the park/wild block 2908 (0 residential) is excluded');
+  assert.ok(!ids.includes(2904), 'the weak park block 2904 (1 match, 41% park) is excluded');
+  assert.ok(!ids.includes(2895), 'the park/wild block 2895 (0 residential) is excluded');
 });
 
 test('with CITY.BLOCKS present (the browser city-config path) the same three blocks are eligible', () => {
@@ -127,7 +127,7 @@ test('with CITY.BLOCKS present (the browser city-config path) the same three blo
   });
   const C2 = city();
   C2.BLOCKS = BLOCKS;
-  assert.deepEqual(Array.from(C2.islandYardEligibleBlocks(), (e) => e.id), [2914, 2916, 2918]);
+  assert.deepEqual(Array.from(C2.islandYardEligibleBlocks(), (e) => e.id), [2901, 2903, 2905]);
   assert.equal(C2.islandYardMaterialLayout().counts.replacedAreaM2, C.islandYardMaterialLayout().counts.replacedAreaM2);
 });
 
@@ -232,7 +232,7 @@ test('the effect is the narrow block x corridor-envelope intersection, not whole
     assert.equal(C.islandYardCoverageAt(c.x, c.z), 0, `block ${e.id} centre is off-corridor`);
   }
   // the park block near the lane and the mainland are never covered
-  assert.equal(C.islandYardCoverageAt(centroid(blockPoly(GEO, 2908)).x, centroid(blockPoly(GEO, 2908)).z), 0);
+  assert.equal(C.islandYardCoverageAt(centroid(blockPoly(GEO, 2895)).x, centroid(blockPoly(GEO, 2895)).z), 0);
   assert.equal(C.islandYardCoverageAt(-2000, 0), 0);
   assert.equal(C.islandYardCoverageAt(0, 0), 0);
 });
@@ -346,7 +346,7 @@ test('applyIslandYardMaterial composes with the real TSL, records its applicatio
   assert.equal(out, mat);
   assert.ok(mat.userData && mat.userData.islandYardMaterial, 'hook recorded its application');
   assert.equal(mat.userData.islandYardMaterial.source, C.ISLAND_YARD_MATERIALS_STATUS);
-  assert.deepEqual(Array.from(mat.userData.islandYardMaterial.blocks), [2914, 2916, 2918]);
+  assert.deepEqual(Array.from(mat.userData.islandYardMaterial.blocks), [2901, 2903, 2905]);
   assert.ok(mat.userData.islandYardMaterialInfo.supported);
   assert.ok(mat.colorNode && typeof mat.colorNode === 'object');
   assert.ok(mat.roughnessNode && typeof mat.roughnessNode === 'object');

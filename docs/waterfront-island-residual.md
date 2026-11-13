@@ -13,17 +13,17 @@ Both are diagnosed from the committed source data and the built scene, not from 
 ## 1. Third Street left edge: the City-sidewalk blanket exclusion
 
 The pure verge gate (`islandVergeEdgeMaterial`, js/waterfront-island-lanes.js) is already correct on Third Street. The
-left side of the lane is the north edge of **block 2887** (its long edge runs 62.3 m at x≈1500, z≈1869, ~0.36 m from the
+left side of the lane is the north edge of **block 2874** (its long edge runs 62.3 m at x≈1500, z≈1869, ~0.36 m from the
 Third Street OSM way centre line). The gate flags it, along with 52 of the block's 134 edges.
 
 The exclusion was in the producer: `js/city-grid.js` did `!hasCityWalk ? islandVergeFlags(inner) : null`, i.e. any block
-with **any** City sidewalk lost the whole verge. Block 2887 does have City sidewalk pieces — but on its far side (its two
+with **any** City sidewalk lost the whole verge. Block 2874 does have City sidewalk pieces — but on its far side (its two
 pieces are 116 m from Third Street, bbox x 1382–1494, z 1960–2034). So the correct lane edge was excluded for a sidewalk
 that is nowhere near it.
 
 **Fix (per-edge, not whole-block).** The producer now masks only the flagged edges whose ramp footprint **overlaps a City
 walk piece**, using an exact polygon/quad test (`cityWalkOverlapsEdge`: vertex-in-polygon plus edge crossings, with a bbox
-reject), not a sample guess. Block 2887 keeps its City walks on the edges the City maps and flushes the Third Street edge
+reject), not a sample guess. Block 2874 keeps its City walks on the edges the City maps and flushes the Third Street edge
 the City does not map (45 of 134 edges remain ramps).
 
 **Material preservation.** On such a mixed block, the former `if (walks)` branch laid new concrete band on every retained
@@ -34,7 +34,7 @@ kept only on retained edges. A small `slabSides(..., keep)` masks the face on fl
 
 ## 2. Oneida left side: inherited tall rows paving a cottage yard
 
-Block **2918** (Oneida Avenue's left side) has 26 validated island-building profiles, all cottages, and one unmatched
+Block **2905** (Oneida Avenue's left side) has 26 validated island-building profiles, all cottages, and one unmatched
 inherited row whose stale geodata height is 31.5 m. `isPaved` in `js/city-grid.js` used the raw native height when a row
 did not match a profile, so that single inherited row paved the whole yard (the captain's broad concrete yard).
 
@@ -42,7 +42,7 @@ did not match a profile, so that single inherited row paved the whole yard (the 
 row; it now also counts `matchedN`, `matchedArea`, `matchedTop` and `matchedResidentialN` from the **validated** profiles
 only (a reshaped/missing record or a wrong frame is a no-op). A block is treated as residential when at least three
 validated profiles are cottages/houses and they are the clear majority; then **only the matched heights** decide paving,
-so a genuinely tall matched building still paves. Block 2918 becomes a plot yard; block 2916 (all cottages) stays a plot
+so a genuinely tall matched building still paves. Block 2905 becomes a plot yard; block 2903 (all cottages) stays a plot
 yard. No new source lookup, no second weaker index.
 
 ## 3. Bounded scope and honest limits
@@ -68,10 +68,10 @@ node --test tests/city-grid-concave-walk-band.test.mjs
 
 `tests/island-lane-verge.test.mjs` adds built-scene assertions (not copies of the builder's classifier):
 
-- a retained edge of block 2887 away from any City walk is still `Yards` at the walking floor (not a new sidewalk);
+- a retained edge of block 2874 away from any City walk is still `Yards` at the walking floor (not a new sidewalk);
 - every surveyed City walk piece in a refined island block is still the topmost `Walkways` surface, and the exact ramp
   sampler reports no ramp under it;
-- the known Oneida left-side yard (block 2918) is `Yards` at the walking floor, not the inherited concrete.
+- the known Oneida left-side yard (block 2905) is `Yards` at the walking floor, not the inherited concrete.
 
 The ground check still passes: on the built detail frame every `islandVergeSurfaceAt` sample matches a raycast of the
 whole `CityGround` to ~4e-16, so the ramp sampler and the walker's ground hook are unchanged for the accepted geometry.
@@ -83,8 +83,8 @@ Same cameras as the accepted wave6 final set:
   `island-lanes-algonquin-oneida-along-midday`, plus the aerial overview and the producer checks.
 - `tools/shots/waterfront-island-verge-phone.json`: the 412×915 phone views and the movement check.
 
-Diagnostic coordinates: Third Street left edge ≈ (1513, 1873) is block 2887's plot yard (previously kerb/walk); the Oneida
-left yard ≈ (1038, 2369) is block 2918's plot yard (previously paved/forecourt). `CITY.islandVergeRampStats()` and
+Diagnostic coordinates: Third Street left edge ≈ (1513, 1873) is block 2874's plot yard (previously kerb/walk); the Oneida
+left yard ≈ (1038, 2369) is block 2905's plot yard (previously paved/forecourt). `CITY.islandVergeRampStats()` and
 `CITY.islandVergeSurfaceAt(x, z)` remain the contracts; `CITY.cityWalkOverlapsEdge(poly, prop, i, walks)` is exported for
 tests.
 
@@ -99,3 +99,5 @@ These are functional and visual results on a shared host, not performance budget
 
 Exact lane widths, planting/garden boundaries, property entrances and per-house facade details
 remain approximations. No commit or deployment was requested or performed.
+
+_Block ids are each curb island's place in the geodata build's list, so they change whenever the islands are rebuilt. The ids here are those after the road-width rebuild (`st-d9i6`, docs/road-widths.md); the same islands were numbered 13 higher before it._

@@ -1,0 +1,8 @@
+[
+ {
+  "name": "p01-cherry-commissioners-phone",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2070, 674, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2020, 60, 744], look: [2070, 0, 674], fov: 55 });\n})()"
+ }
+]

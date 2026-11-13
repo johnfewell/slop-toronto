@@ -36,9 +36,9 @@ artifact of the shared plot material, not a surveyed path.
 3. it **borders a photographed corridor**: its outline comes within the bounded corridor envelope of the actual Oneida or
    Ojibway centre line.
 
-**Classifier counts** (binary geodata, `data/toronto-geodata.bin`; see §7). Eligible: **3 blocks — 2914, 2916, 2918**
+**Classifier counts** (binary geodata, `data/toronto-geodata.bin`; see §7). Eligible: **3 blocks — 2901, 2903, 2905**
 (matched profiles 24/24/26, of which 23/24/26 residential; all matched heights 6.5 m; nearest corridor distances ≈ 1.7–1.8
-m). Excluded near the lanes: **2908** (park/wild, 0 residential) and **2917** (a single matched profile, 41 % park). The
+m). Excluded near the lanes: **2895** (park/wild, 0 residential) and **2904** (a single matched profile, 41 % park). The
 other twelve source-matched residential blocks on the islands do not border Oneida/Ojibway and are untouched.
 
 **Honest limits.** The lawn/earth typology and the 12 m envelope are **source-informed approximations, not a survey**. No
@@ -58,7 +58,7 @@ coverage(x, z) = insideEligibleBlockOrEdgeSupport(x, z) · clamp01(0.5 + (12 m �
 
 - the **lane centre is roadway** (a different material/geometry): coverage is 0 there, so the street paving and the mapped
   sidewalks/paths stay exactly native;
-- the **far block interior** (centroid) and every **non-eligible block** (including the park block 2908) are 0;
+- the **far block interior** (centroid) and every **non-eligible block** (including the park block 2895) are 0;
 - off the corridor the yard keeps the original plot material.
 
 The raster support covers a bounded strip: **≈ 9,520 m²** across the three blocks (whose combined area is ≈ 46,349 m²), i.e.
@@ -146,8 +146,8 @@ The focused suite (14 tests, all passing) proves, on the real generated lane dat
 profiles and the committed **binary** geodata:
 
 - the two corridors bind to the correct per-way Oneida/Ojibway OSM ways, and only those two;
-- the classifier claims **exactly blocks 2914, 2916, 2918** (each ≥ 3 matched, residential majority, cottage height,
-  bordering a corridor within the envelope) and excludes the weak park block **2917** and the park/wild block **2908** —
+- the classifier claims **exactly blocks 2901, 2903, 2905** (each ≥ 3 matched, residential majority, cottage height,
+  bordering a corridor within the envelope) and excludes the weak park block **2904** and the park/wild block **2895** —
   identical whether the module derives the blocks from the binary `GEO.blocks` or reads the browser's `CITY.BLOCKS`;
 - the effect is the **intersection**: the lane centre (roadway) is 0, the eligible yard beside the lane is ~1, the far
   block interior and the park block and the mainland are 0;
@@ -186,3 +186,5 @@ Build `caaf38d94c91` passed `wave7-yard-final` desktop/high/detail (eight checks
   per-fragment line tests.
 - **Procedural approximation.** The block identities, the source-matched residential/cottage majority and the corridor
   binding are grounded in evidence; the exact garden composition is not surveyed.
+
+_Block ids are each curb island's place in the geodata build's list, so they change whenever the islands are rebuilt. The ids here are those after the road-width rebuild (`st-d9i6`, docs/road-widths.md); the same islands were numbered 13 higher before it._

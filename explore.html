@@ -234,14 +234,14 @@
     // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by
     // js/geodata-loader.js while three.js loads
     const cityGeo = (() => {
-      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=9e2737f7c428' : './data/toronto-geodata.bin?v=b3cd5aae9d4c');
+      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=66ecef0667ca' : './data/toronto-geodata.bin?v=1feb141e8234');
       return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
     // The Eglinton map's lidar-only trees (docs/lidar-trees.md), ?lidarTrees=1 on a desktop only: their index by its hash
     // (tools/build-lidar-trees.mjs --frame eglinton sets it), then every cell, while three.js loads; awaited with the
     // geodata below, so js/lidar-trees.js has them all before the tree field is built. A default visit fetches nothing
     const cityLidarCells = cityAppScripts.cityLidarCells
-      ? import('./js/lidar-trees-cells.js').then((m) => m.loadCells('./data/frames/eglinton/lidar-trees/', 'index.json?v=8fc28eb0c1b5'))
+      ? import('./js/lidar-trees-cells.js').then((m) => m.loadCells('./data/frames/eglinton/lidar-trees/', 'index.json?v=9bd2fec7e501'))
       : null;
     for (const src of cityAppScripts) {
       const preload = document.createElement('link');

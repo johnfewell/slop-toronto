@@ -103,7 +103,7 @@ painted across the full visible width.
 ## 5. What does **not** work as a measurement source
 
 - **City physical-sidewalk polygons** (`js/toronto-sidewalks.js`): they do cover the Algonquin blocks (islands
-  2908/2914/2916/2917/2918/2920 each have pieces), but they are the **walk surface**, not the lane footprint. They do not
+  2895/2901/2903/2904/2905/2907 each have pieces), but they are the **walk surface**, not the lane footprint. They do not
   bound the lane and are not used here.
 - **One ground photo**: a single perspective view cannot give metres. Correctly excluded.
 
@@ -161,3 +161,5 @@ edit those files. Full-footprint reconciliation (B) stays open future work.
   alignment to the City footprint stays unresolved and must be stated in any data/doc provenance.
 - No runtime/geodata/data/loader/camera/test file was edited; no commit, push or deploy; no laptop GPU. The widths are a
   bounded visual refinement; the exact City-footprint relocation (B) remains open.
+
+_Block ids are each curb island's place in the geodata build's list, so they change whenever the islands are rebuilt. The ids here are those after the road-width rebuild (`st-d9i6`, docs/road-widths.md); the same islands were numbered 13 higher before it._

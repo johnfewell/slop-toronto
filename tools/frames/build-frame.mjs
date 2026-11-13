@@ -66,6 +66,11 @@ function step(name, outputs, cmd, args, env = {}) {
   if (r.status !== 0) {
     report.failed = [...new Set([...(report.failed || []), name])];
     save();
+  } else if (report.failed?.includes(name)) {
+    // (a step that failed on an earlier run and has now been rerun clean)
+    report.failed = report.failed.filter((n) => n !== name);
+    if (!report.failed.length) delete report.failed;
+    save();
   }
   return r.status === 0;
 }
