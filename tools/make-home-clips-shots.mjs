@@ -86,7 +86,7 @@ for (const [rideName, cam] of Object.entries(RIDE_CAMS)) add({
     const trails = (C.GEO.cycling && C.GEO.cycling.trails) || [];
     let best = null;
     for (const [w, surface, level, flat] of trails) {
-      if (!surface) continue;
+      if (surface !== 1) continue; // (the red trail only)
       const P = [];
       for (let i = 0; i < flat.length; i += 2) P.push({ x: flat[i], z: flat[i + 1] });
       let len = 0;

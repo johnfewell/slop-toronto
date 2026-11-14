@@ -149,7 +149,7 @@ test('the fixture: sources, datum, stations, surfaces, bridges and retired polyg
   for (const u of fixture.unsurveyed) assert.ok(u.street && u.reason);
   for (const g of fixture.ground) {
     assert.ok(g.id && g.street && Number.isInteger(g.objectId) && g.reason && sources.has(g.source), `ground ${g.id}: stated`);
-    assert.ok(chainWays.has(g.way) && g.side === 'right' && g.to > g.from && g.depth > 0 && g.depth <= 20, `ground ${g.id}: on a surveyed way`);
+    assert.ok(Number.isInteger(g.way) && g.side === 'right' && g.to > g.from && g.depth > 0 && g.depth <= 20, `ground ${g.id}: along an OSM way`);
     assert.ok(g.edge.length >= 2 && g.edge.every(([at, off]) => at >= g.from - 10 && at <= g.to && off > 0), `ground ${g.id}: kerb measured along it`);
     assert.ok(g.ring.length >= 4 && lonLatArea(g.ring) > 0.8 * (g.to - g.from) * g.depth, `ground ${g.id}: ring of its length and depth`);
   }
@@ -274,11 +274,55 @@ test('the committed city: no on-street bikeway in a surveyed carriageway; its cy
   };
   // (a cross-section of Commissioners at 1412502193@40: centre 2416.0, 587.8, the park to the south, +z)
   const hits = across(2416.0, 587.8, 0.239, 0.971);
-  assert.ok(hits.some((o) => o > 5) && hits.some((o) => o < -5), `tracks both sides of Commissioners: ${hits.map((o) => o.toFixed(1))}`);
   for (const o of hits) assert.ok(blocks.some((bl) => flatIn(bl[0], 2416.0 + 0.239 * o, 587.8 + 0.971 * o)), `the track at ${o.toFixed(1)} m is on the ground`);
+  // (both outside Biidaasige Park's outline, so drawn as street tracks: the park's own paths show only on its lawn)
+  assert.ok(hits.some((o) => o > 5) && hits.some((o) => o < -5), `tracks both sides of Commissioners: ${hits.map((o) => o.toFixed(1))}`);
   // the Waterfront Recreational Trail on Cherry's west side at Polson is on the ground (not under the road) at 2232, 884
   assert.ok(blocks.some((bl) => flatIn(bl[0], 2232, 884)));
   assert.ok(near > 20, `${near} band points checked in the Port Lands`);
+});
+
+test('the committed city: each path in Biidaasige Park is drawn once, by the park\'s own network', () => {
+  const { cycling } = geo();
+  const c = { window: { CITY: {} } };
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'js/biidaasige-path-network-data.js'), 'utf8'), c);
+  const N = c.window.CITY.BIIDAASIGE_PATH_NETWORK;
+  // the ways the park draws (js/biidaasige-paths.js pathSpecs)
+  const drawn = N.ways.filter((w) => !w.bridge && w.highway !== 'steps' && !['private', 'no'].includes(w.tags?.access) && !w.tags?.construction && !w.tags?.proposed);
+  const ring = N.park.polygon.map(([lat, lon]) => toWorld(lon, lat)).flat();
+  // (the park's paths lie on its lawn: they show inside its outline, under the curb islands' surface outside it)
+  const segs = [];
+  for (const w of drawn) {
+    const P = w.polyline.map(([lat, lon]) => toWorld(lon, lat));
+    for (let i = 0; i + 1 < P.length; i++) if (flatIn(ring, ...P[i]) || flatIn(ring, ...P[i + 1])) segs.push([...P[i], ...P[i + 1]]);
+  }
+  let inside = 0, twice = 0;
+  for (const t of cycling.trails) {
+    if (!t[2]) continue;
+    const f = Array.isArray(t[3]) ? t[3] : t.slice(3);
+    for (let i = 0; i + 3 < f.length; i += 2) {
+      const L = Math.hypot(f[i + 2] - f[i], f[i + 3] - f[i + 1]);
+      if (L < 0.5) continue;
+      const tx = (f[i + 2] - f[i]) / L, tz = (f[i + 3] - f[i + 1]) / L;
+      for (let s = 0; s < L; s += 1) {
+        const x = f[i] + tx * s, z = f[i + 1] + tz * s;
+        if (!flatIn(ring, x, z)) continue;
+        inside++;
+        // within 2.5 m of a park path, running along it
+        if (segs.some(([ax, az, bx, bz]) => {
+          const SL = Math.hypot(bx - ax, bz - az); if (SL < 0.05) return false;
+          const ux = (bx - ax) / SL, uz = (bz - az) / SL;
+          if (Math.abs(ux * tx + uz * tz) < 0.7) return false;
+          const u = (x - ax) * ux + (z - az) * uz;
+          return u >= 0 && u <= SL && Math.abs((x - ax) * uz - (z - az) * ux) <= 2.5;
+        })) twice++;
+      }
+    }
+  }
+  assert.equal(twice, 0, `${twice} m of street track drawn along a park path in the park`);
+  // (inside the park only the OSM tracks the park does not draw: none of the City's trails)
+  assert.ok(inside < 200, `${inside} m of street track inside the park`);
+  assert.ok(drawn.length > 90);
 });
 
 test('the committed city: a road with no mapped surface is drawn at its own width, not as a 4 m strip', () => {

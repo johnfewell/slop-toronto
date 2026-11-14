@@ -1602,7 +1602,7 @@ for (const [key, id] of Object.entries(TELEPORT_TARGETS)) {
   let heading = Math.atan2(CN[0] - a.x, CN[1] - a.z);
   let best = null;
   for (const [, surface, , flat] of (GEO.cycling && GEO.cycling.trails) || []) {
-    if (!surface) continue;
+    if (surface !== 1) continue; // (1: the Martin Goodman's red; 2 and 3 are the Port Lands' tracks)
     for (let i = 2; i < flat.length; i += 2) {
       const ax = flat[i - 2], az = flat[i - 1], dx = flat[i] - ax, dz = flat[i + 1] - az, L = Math.hypot(dx, dz);
       if (L < 1) continue;

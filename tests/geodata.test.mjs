@@ -39,6 +39,8 @@ test('geodata builds with default paths in a checkout containing spaces and non-
     // the mapped poles (tools/build-poles.mjs, from their own download) and the parked cars (tools/build-parked-cars.mjs)
     // are packed into the binary as they are committed
     for (const rel of ['js/toronto-poles.js', 'js/toronto-parked-cars.js']) fs.copyFileSync(path.join(root, rel), path.join(dir, rel));
+    // Biidaasige Park's own path network, whose paths the cycling build leaves to the park (tools/geo-cycling.mjs)
+    fs.copyFileSync(path.join(root, 'js/biidaasige-path-network-data.js'), path.join(dir, 'js/biidaasige-path-network-data.js'));
     const env = { ...process.env };
     delete env.GEO_DATA;
     const result = spawnSync(process.execPath, ['--max-old-space-size=8192', path.join(dir, 'tools/build-geodata.mjs')], {

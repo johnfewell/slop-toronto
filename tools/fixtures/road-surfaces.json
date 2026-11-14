@@ -3270,6 +3270,38 @@
     [-79.3438944, 43.6488655],
     [-79.3439182, 43.6488607]
    ]
+  },
+  {
+   "id": "commissioners-merge-south-corner",
+   "street": "Commissioners Street",
+   "way": 1418441607,
+   "side": "right",
+   "from": 0,
+   "to": 9,
+   "edge": [
+    [2, 3.3],
+    [8, 3.5]
+   ],
+   "depth": 9,
+   "objectId": 56694,
+   "source": "city-ortho-2025",
+   "reason": "The last corner of City polygon 56694's old Commissioners tail, where the eastbound lane merges: along the merge link (way 1418441607, not a surveyed carriageway) the 2025 orthophoto shows the kerb at +3.3 m (2 m along) and +3.5 m (8 m), then grass, the cycle track (+6.75 to +9 m), grass and the sidewalk (+10.75 to +12.5 m). That strip, from the kerb 9 m out, between 0 and 9 m along the link, is ground; at 11 m the link is in the next junction's asphalt.",
+   "ring": [
+    [-79.3435178, 43.649088],
+    [-79.3434947, 43.6490945],
+    [-79.3434712, 43.6491004],
+    [-79.3434478, 43.6491063],
+    [-79.3434244, 43.6491122],
+    [-79.3434121, 43.6491169],
+    [-79.3433973, 43.6491292],
+    [-79.3433083, 43.6490803],
+    [-79.343345, 43.6490522],
+    [-79.3433843, 43.6490366],
+    [-79.3434077, 43.6490307],
+    [-79.3434311, 43.6490248],
+    [-79.3434545, 43.6490189],
+    [-79.3434777, 43.6490124]
+   ]
   }
  ]
 }

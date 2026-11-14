@@ -25,7 +25,7 @@
 
 import { unpackGeo } from './geodata-loader.js';
 
-export const MASSING_URL = './data/toronto-massing.bin?v=e59f15cbc81a'; // (tools/build-massing.mjs sets the hash)
+export const MASSING_URL = './data/toronto-massing.bin?v=f4d31700c366'; // (tools/build-massing.mjs sets the hash)
 export const MASSING_SCHEMA = 2;
 
 /** FNV-1a over GEO.buildings' count and each row's centre and height (decimetres): the rows a sidecar was built for */

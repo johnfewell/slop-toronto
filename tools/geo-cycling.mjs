@@ -8,6 +8,8 @@
 // - map: every segment (signed routes too) for the minimap & the map, by kind
 // CYCLE_DEBUG=1 logs the segments whose side was decided by rule; CYCLE_DEBUG=<regex of a street> its curb samples.
 import fs from 'node:fs';
+import vm from 'node:vm';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { toWorld, rdp, log, osmRoads } from './geo-base.mjs';
 import { DETAIL } from './geo-roads.mjs';
@@ -213,12 +215,70 @@ function onWidened(x, z) {
   }
   return false;
 }
+// ---------------------------------------------------------------------------------------------------------------------
+// Biidaasige Park's own path network (js/biidaasige-path-network-data.js, drawn by js/biidaasige-paths.js in the park's
+// materials, on the park's lawn): inside the park's outline a path is drawn once, by it. There a City trail is left out
+// (the network carries every path in the park), an OSM way of the network (by way id) is not drawn as a track, and any
+// track stops within PARK_MEET of a park path's centre line, so the two meet end to end. Outside the outline the park
+// layer's paths lie under the curb islands' surface, so the street layer draws there. docs/port-lands-tracks.md
+// ---------------------------------------------------------------------------------------------------------------------
+export const PARK_MEET = 1.5; // m from a park path's centre line where an OSM track stops (where the two meet; a track
+// beside a park sidewalk, its own path a few metres off, runs on)
+const parkNet = (() => {
+  const file = fileURLToPath(new URL('../js/biidaasige-path-network-data.js', import.meta.url));
+  const c = vm.createContext({ window: { CITY: {} } });
+  vm.runInContext(fs.readFileSync(file, 'utf8'), c);
+  // (the ways js/biidaasige-paths.js pathSpecs draws: not its bridges or steps, which it leaves unplaced, nor private,
+  // under construction or proposed ones)
+  const drawn = c.window.CITY.BIIDAASIGE_PATH_NETWORK.ways.filter((w) => !w.bridge && w.highway !== 'steps'
+    && !['private', 'no'].includes(w.tags?.access) && !w.tags?.construction && !w.tags?.proposed);
+  const ids = new Set(drawn.map((w) => Number(String(w.id).split('/')[1])));
+  const ring = (c.window.CITY.BIIDAASIGE_PATH_NETWORK.park?.polygon || []).map(([lat, lon]) => toWorld(lon, lat));
+  const segs = [];
+  for (const w of drawn) {
+    const P = w.polyline.map(([lat, lon]) => toWorld(lon, lat));
+    for (let i = 0; i + 1 < P.length; i++) {
+      const [ax, az] = P[i], [bx, bz] = P[i + 1], L = Math.hypot(bx - ax, bz - az);
+      if (L > 0.05) segs.push({ ax, az, tx: (bx - ax) / L, tz: (bz - az) / L, L, id: w.id });
+    }
+  }
+  return { ids, segs, ring };
+})();
+/** Whether (x, z) is inside Biidaasige Park (its outline in the path network's data): the park draws every path there */
+function inPark(x, z) {
+  const r = parkNet.ring;
+  let inside = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const [xi, zi] = r[i], [xj, zj] = r[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
+/** Whether (x, z) is within PARK_MEET of a path the park draws, whatever its direction (where a track meets one) */
+function nearParkPath(x, z) {
+  for (const g of parkGrid.get(Math.floor(x / 20) * 100003 + Math.floor(z / 20)) || []) {
+    const t = Math.max(0, Math.min(g.L, (x - g.ax) * g.tx + (z - g.az) * g.tz));
+    if (Math.hypot(g.ax + g.tx * t - x, g.az + g.tz * t - z) <= PARK_MEET) return true;
+  }
+  return false;
+}
+const parkGrid = new Map();
+for (const g of parkNet.segs) {
+  for (let i = Math.floor((Math.min(g.ax, g.ax + g.tx * g.L) - PARK_MEET) / 20); i <= Math.floor((Math.max(g.ax, g.ax + g.tx * g.L) + PARK_MEET) / 20); i++) {
+    for (let j = Math.floor((Math.min(g.az, g.az + g.tz * g.L) - PARK_MEET) / 20); j <= Math.floor((Math.max(g.az, g.az + g.tz * g.L) + PARK_MEET) / 20); j++) {
+      const k = i * 100003 + j;
+      (parkGrid.get(k) || parkGrid.set(k, []).get(k)).push(g);
+    }
+  }
+}
+export const cyclingPark = { ownedWays: [], trailM: 0 };
+
 const moved = []; // [x, z, red] where a City bikeway on a surveyed carriageway was dropped
 export const cyclingSurveyed = { bandM: 0, trailM: 0, osmM: 0, osmWays: [] };
 
 const bands = []; // [kind, flags, flat x, z ...]: the curb line in the direction bikes ride; flags: 1 the curb is on the
 // riders' left (else their right), 2 a crossing (through a junction, no curb), 4 contra-flow (against the traffic)
-const trails = []; // [width, surface (0 asphalt, 1 the Martin Goodman's red), level (1 on a curb island, 0 across a
+const trails = []; // [width, surface (0 asphalt, 1 the Martin Goodman's red, 2 the park paths' asphalt, 3 their concrete), level (1 on a curb island, 0 across a
 // road), flat x, z ...]
 const mapLines = []; // [kind, flat x, z ...]
 const km = {};
@@ -310,6 +370,9 @@ function trailPieces(pts, w, surface, osm = false) {
   const runs = [];
   for (let i = 0; i < S.length; i++) {
     // (2: on a surveyed carriageway, left out: the cycleway beside it is drawn instead)
+    // (a City trail along one of the park's own paths: the park draws it)
+    // (inside the park a City trail is the park's: its network carries every path there)
+    if (!osm && inPark(S[i].x, S[i].z)) { runs.push({ on: 2, i0: i, i1: i }); cyclingPark.trailM += 2; continue; }
     const sv = !osm && surveyedBox.length && onSurveyed(S[i].x, S[i].z);
     if (sv) { moved.push([S[i].x, S[i].z, surface]); cyclingSurveyed.trailM += 2; }
     const on = sv ? 2 : blockAt(S[i].x, S[i].z) ? 1 : 0;
@@ -433,6 +496,7 @@ if (moved.length) {
   for (const e of osmRoads.elements) {
     const t = e.tags || {};
     if (t.highway !== 'cycleway' || /crossing/.test(t.cycleway || '') || t.tunnel === 'yes' || !e.geometry) continue;
+    const owned = parkNet.ids.has(e.id);
     const S = resample(e.geometry.map((g) => toWorld(g.lon, g.lat)), 2);
     let run = [], red = 0;
     const flush = () => {
@@ -442,16 +506,25 @@ if (moved.length) {
         const pts = run.map((p) => [p.x, p.z]);
         cyclingSurveyed.osmM += lineLen(pts);
         if (!cyclingSurveyed.osmWays.includes(e.id)) cyclingSurveyed.osmWays.push(e.id);
-        trailPieces(pts, w, red > run.length / 2 ? 1 : 0, true);
+        // (its surface as mapped, in the park paths' materials: 2 asphalt, 3 concrete; the Martin Goodman's red stays)
+        const surf = red > run.length / 2 ? 1 : /concrete|paving|sett/.test(t.surface || '') ? 3 : 2;
+        trailPieces(pts, w, surf, true);
       }
       run = []; red = 0;
     };
     for (const p of S) {
+      // (inside the park, a way of its own network is the park's, and any track stops where it meets a park path)
+      if (parkNet.ring.length && inPark(p.x, p.z) && (owned || nearParkPath(p.x, p.z))) {
+        if (owned && !cyclingPark.ownedWays.includes(e.id)) cyclingPark.ownedWays.push(e.id);
+        flush();
+        continue;
+      }
       const m = near(p.x, p.z, 9, moved, MG);
       if (m && !onSurveyed(p.x, p.z) && !onWidened(p.x, p.z) && !near(p.x, p.z, 3.5, null, TG)) { run.push(p); if (m[2]) red++; } else flush();
     }
     flush();
   }
+  log(`cycling: ${cyclingPark.ownedWays.length} OSM cycleways left to Biidaasige Park's own paths, ${Math.round(cyclingPark.trailM)} m of City trail along them left out`);
   log(`cycling beside the surveyed and widened carriageways: ${Math.round(cyclingSurveyed.bandM)} m of City band and ${Math.round(cyclingSurveyed.trailM)} m of City trail left out; ${Math.round(cyclingSurveyed.osmM)} m of ${cyclingSurveyed.osmWays.length} OSM cycleways drawn instead`);
 }
 log(`cycling network (City of Toronto) in the detailed city: ${Object.entries(km).map(([k, v]) => `${k} ${v.toFixed(1)} km`).join(', ')}`);

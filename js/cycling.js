@@ -313,6 +313,11 @@ function routeRoundPatios(sites) {
 const GREEN = new THREE.Color(0x2e9a52); // Toronto's conflict-zone green
 const TRAIL_RED = new THREE.Color(0x70281f); // the Martin Goodman Trail's red-brown asphalt
 const TRAIL_GREY = new THREE.Color(0x353534); // the other trails' asphalt
+// the cycle tracks drawn from OSM beside the Port Lands' measured streets, in Biidaasige Park's path materials
+// (js/biidaasige-paths.js: its asphalt and its concrete), so they read as the park's paths do (docs/port-lands-tracks.md)
+const TRACK_ASPHALT = new THREE.Color(0x6d6f72);
+const TRACK_CONCRETE = new THREE.Color(0xb9b3a8);
+const TRAIL_COLOURS = [TRAIL_GREY, TRAIL_RED, TRACK_ASPHALT, TRACK_CONCRETE];
 
 // Pavement symbols in their own frame: x to the riders' right, y ahead (m before stretching along the lane), as
 // polylines; a circle is a closed polygon
@@ -425,8 +430,8 @@ function bikePaint({ strip, ribbon, symbolStrip, WHITE, YELLOW }) {
         }
         return Math.sign(o) * 0.3;
       };
-      ribbon(P, P.map((p) => onIsland(p, -w / 2)), P.map((p) => onIsland(p, w / 2)), surface ? TRAIL_RED : TRAIL_GREY, 1, 2);
-      if (surface) ribbon(P, -0.06, 0.06, YELLOW, 5, 0.5);
+      ribbon(P, P.map((p) => onIsland(p, -w / 2)), P.map((p) => onIsland(p, w / 2)), TRAIL_COLOURS[surface] || TRAIL_GREY, 1, 2);
+      if (surface === 1) ribbon(P, -0.06, 0.06, YELLOW, 5, 0.5);
       trailKm += P.len / 1000;
     } else {
       ribbon(P, -w / 2, -w / 2 + 0.42, WHITE, 0.9, 0.5);

@@ -234,7 +234,7 @@
     // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by
     // js/geodata-loader.js while three.js loads
     const cityGeo = (() => {
-      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=66ecef0667ca' : './data/toronto-geodata.bin?v=1feb141e8234');
+      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=d37761828da1' : './data/toronto-geodata.bin?v=4729d90e6b04');
       return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
     // The Eglinton map's lidar-only trees (docs/lidar-trees.md), ?lidarTrees=1 on a desktop only: their index by its hash
