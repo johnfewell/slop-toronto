@@ -301,14 +301,15 @@ test('degenerate and grazing outlines (28c0af7 fixtures) never give NaN or a pus
 // buildings.js buildCityBlocks with stand-in materials (no GPU): the default build is untouched, and with the loaded
 // sidecar (window.CITY.MASSING, as main.js sets it under ?massing=1) its rows become polygon meshes with every
 // attribute the facade shaders read, and polygon colliders
-function buildBlocks(massing) {
+function buildBlocks(massing, opts = {}) {
   const anyNode = new Proxy(function () {}, { get: (t, k) => (k === Symbol.toPrimitive ? () => 0 : anyNode), apply: () => anyNode });
   class MeshStandardNodeMaterial extends CORE.MeshStandardMaterial {}
   const win = { CITY: { THREE: { ...CORE, MeshStandardNodeMaterial }, Addons: { mergeGeometries: () => new CORE.BufferGeometry() }, DEBUG_ROADS: false, MassingCells: MC } };
   win.CITY.TSL = Object.fromEntries(['Fn', 'float', 'color', 'uv', 'attribute', 'fract', 'smoothstep', 'mix', 'abs'].map((n) => [n, anyNode]));
-  const c = vm.createContext({ window: win, Math, JSON, Object, Array, Number, Map, Set, Float32Array, Float64Array, Int16Array, Int32Array, Uint8Array, Uint16Array, Uint32Array, WeakMap, Infinity, NaN, console, performance, Promise, URLSearchParams });
+  const c = vm.createContext({ window: win, Math, JSON, Object, Array, Number, Map, Set, Float32Array, Float64Array, Int16Array, Int32Array, Uint8Array, Uint16Array, Uint32Array, WeakMap, Infinity, NaN, console, performance, Promise, URLSearchParams, ...(opts.location ? { location: opts.location } : {}) });
   for (const f of ['js/toronto-geodata.js', 'js/city-config.js']) vm.runInContext(read(f), c);
   if (massing) win.CITY.MASSING = massing;
+  if (opts.prototypes) win.CITY.BuildingPrototypes = opts.prototypes;
   const made = [];
   Object.assign(win.CITY, {
     WALL_KINDS, setFootprintTable: (data, width, yUnit) => { win.CITY.footprintTable = { data, width, yUnit }; },
@@ -366,4 +367,70 @@ test('buildCityBlocks: default unchanged without the data; with it, every record
   assert.equal(poly.out.updateMassingTiers({ position: { x: -1401, y: 1.7, z: -1500 } }), false, 'a metre on: nothing changes');
   // (the city-wide cost in node, for st-2nl.3: printed, not asserted)
   console.log(`# buildCityBlocks: boxes ${plain.ms.toFixed(0)} ms; polygons ${poly.ms.toFixed(0)} ms on the main thread, + cells ${(poly.cellsMs - poly.ms).toFixed(0)} ms: ${JSON.stringify(poly.stats)}`);
+});
+
+test('near cells draw only the quarters in view (st-ndw9.22): the camera turned away leaves a mesh out, a plain position sees all', { timeout: 120000 }, async () => {
+  const poly = await buildBlocks(loaded);
+  const near = () => poly.out.group.children.filter((o) => /^MassingBuildings_/.test(o.name) && o.userData.massingTier === 0 && o.visible)
+    .reduce((s, m) => s + (m.geometry.drawRange.count === Infinity ? m.geometry.index.count : m.geometry.drawRange.count) / 3, 0);
+  const meshesNear = () => poly.out.group.children.filter((o) => /^MassingBuildings_/.test(o.name) && o.userData.massingTier === 0 && o.visible).length;
+  const camera = (yawDeg) => {
+    const c = new CORE.PerspectiveCamera(60, 16 / 9, 0.35, 20000);
+    c.position.set(-1400, 1.7, -1500);
+    const a = yawDeg * Math.PI / 180;
+    c.lookAt(-1400 + Math.cos(a) * 100, 5, -1500 + Math.sin(a) * 100);
+    c.updateMatrixWorld(true);
+    return c;
+  };
+  poly.out.updateMassingTiers({ position: { x: -1400, y: 1.7, z: -1500 } });
+  const all = near(), allMeshes = meshesNear();
+  assert.ok(all > 50000, `${all} triangles in the near cells`);
+  const seen = [0, 90, 180, 270].map((yaw) => { poly.out.updateMassingTiers(camera(yaw)); return near(); });
+  console.log(`# near tier at Kensington: ${all} triangles in ${allMeshes} meshes; looking east/south/west/north: ${seen.join(' / ')}`);
+  for (const n of seen) assert.ok(n <= all);
+  assert.ok(Math.min(...seen) < all * 0.8, `looking away leaves at least a fifth out: ${seen.join()} of ${all}`);
+  // every quarter whose triangles a camera sees is drawn: the same camera drawn again changes nothing
+  poly.out.updateMassingTiers(camera(0));
+  assert.equal(near(), seen[0]);
+  // and a plain position draws everything again
+  poly.out.updateMassingTiers({ position: { x: -1400, y: 1.7, z: -1500 } });
+  assert.equal(near(), all);
+  // the mid and far tiers' cells are left out the same way: every massing mesh together, a position against cameras turned each way
+  const every = () => poly.out.group.children.filter((o) => /^MassingBuildings_/.test(o.name) && o.visible)
+    .reduce((s, m) => s + (m.geometry.drawRange.count === Infinity ? m.geometry.index.count : m.geometry.drawRange.count) / 3, 0);
+  poly.out.updateMassingTiers({ position: { x: -1400, y: 1.7, z: -1500 } });
+  const everything = every();
+  const turned = [0, 90, 180, 270].map((yaw) => { poly.out.updateMassingTiers(camera(yaw)); return every(); });
+  console.log(`# every tier at Kensington: ${everything} triangles; looking east/south/west/north: ${turned.join(' / ')}`);
+  for (const n of turned) assert.ok(n < everything, `a camera sees less than a position: ${n} of ${everything}`);
+  assert.ok(Math.min(...turned) < everything * 0.8);
+  poly.out.updateMassingTiers({ position: { x: -1400, y: 1.7, z: -1500 } });
+  assert.equal(every(), everything, 'and back');
+});
+
+test('?massing=1&presets=debug paints every polygon building its preset colour, with no new material or draw', { timeout: 120000 }, async () => {
+  const { PROTOTYPES } = await import('../js/building-prototypes.js');
+  const { PRESETS } = await unpackGeo(fs.readFileSync(new URL('../data/toronto-building-presets.bin', import.meta.url)));
+  const byId = Object.fromEntries(PROTOTYPES.map((p) => [p.id, p]));
+  const dbgMassing = massingRows(M, GEO);
+  for (const r of dbgMassing.rows.values()) r.preset = PRESETS.ids[PRESETS.preset[r.index]];
+  const plain = await buildBlocks(loaded);
+  const dbg = await buildBlocks(dbgMassing, { location: { search: '?massing=1&presets=debug' }, prototypes: { byId } });
+  // no new material, and no more building draws than the normal build
+  assert.equal(dbg.made.length, plain.made.length, 'same number of facade materials');
+  assert.equal(dbg.made.filter((o) => o.footprintLocal).length, plain.made.filter((o) => o.footprintLocal).length);
+  assert.ok(dbg.stats.meshes <= plain.stats.meshes, `meshes ${dbg.stats.meshes} <= ${plain.stats.meshes}`);
+  // every table row is its preset's debug colour, flat (paint.w -1 marks the debug roof; st-ndw9.16)
+  const expected = [...new Set(PRESETS.preset)].map((p) => { const c = new CORE.Color(byId[PRESETS.ids[p]].color); return [c.r, c.g, c.b]; });
+  const match = (r, g, b) => expected.some(([R, G, B]) => Math.abs(r - R) < 1e-4 && Math.abs(g - G) < 1e-4 && Math.abs(b - B) < 1e-4);
+  const data = dbg.table.data, n = dbgMassing.rows.size;
+  let painted = 0;
+  for (let b = 0; b < n; b++) {
+    const o = (2 * b + 1) * 4;
+    assert.equal(data[o + 3], -1, `building ${b}: the debug roof mark (paint.w -1)`);
+    assert.ok(match(data[o], data[o + 1], data[o + 2]), `building ${b}: a preset debug colour`);
+    painted++;
+  }
+  assert.equal(painted, n);
+  assert.ok(n > 35000, `${n} polygon buildings painted`);
 });

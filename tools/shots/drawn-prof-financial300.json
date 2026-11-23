@@ -1,0 +1,14 @@
+[
+ {
+  "name": "m-financial300",
+  "time": "midday",
+  "wait": 2000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "name": "p-financial300",
+  "time": "midday",
+  "wait": 12000,
+  "js": "(() => {})()"
+ }
+]

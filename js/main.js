@@ -39,6 +39,26 @@ const { CityMapSystem } = window.CITY;
 const { setupSceneCulling, updateSceneCulling } = window.CITY;
 
 async function initApp() {
+  // The drawn buildings (below, at 'massingData'): which pages want the sidecar and the presets files is known now, so their
+  // download starts now, beside everything else the page builds, and is waiting when the buildings are made (js/massing-data.js
+  // fetchData). Only the pages that load them; a phone, a low tier, ?map=detail and ?presets=0 fetch nothing more than before
+  const galleryPage = new URLSearchParams(location.search).get('gallery') === 'presets';
+  // The drawn buildings are on by default on the bigger desktop map (st-ndw9.21, John 2026-11-17: "just launch things"): the
+  // sidecar and the presets files hold the downtown frame's buildings and the bigger map's geodata finds them again by row
+  // (js/massing-data.js frameRow), so inside that frame the buildings are drawn and everywhere else they stay on their
+  // boxes. ?presets=0 (or off) is the old look; a phone, a low tier and ?map=detail keep today's page (?massing=1 asks for it)
+  const loader = typeof cityAppScripts !== 'undefined' ? cityAppScripts : null;
+  const presetsArg = new URLSearchParams(location.search).get('presets');
+  const drawnByDefault = !!loader && loader.cityMap === 'eglinton' && loader.cityDesktop === true && presetsArg !== '0' && presetsArg !== 'off';
+  if (new URLSearchParams(location.search).get('massing') === '1' || galleryPage || drawnByDefault) {
+    window.CITY.EARLY_FETCH = new Map();
+    Promise.all([import('./massing-data.js'), import('./building-presets.js'), import('./building-presets-debug.js')]).then(([md, bp, bd]) => {
+      const want = [md.MASSING_URL];
+      if (presetsArg === null || presetsArg === 'draw' || presetsArg === '1' || presetsArg === 'debug' || galleryPage) want.push(bp.PRESETS_URL);
+      if (presetsArg === null || presetsArg === 'draw' || galleryPage) want.push(bd.DEBUG_URL);
+      for (const u of want) window.CITY.EARLY_FETCH.set(u, fetch(u));
+    }).catch(() => {});
+  }
   // Live sky (live-sky.js, docs/live-sky.md): the mode the city opens in, and Pearson's latest reading, asked for now so
   // it arrives while the city builds (never waited on: 4 s at most, and the sky starts without it)
   const LIVE = window.CITY.LIVE_SKY;
@@ -82,6 +102,9 @@ async function initApp() {
     renderer.lighting = new ClusteredLighting(...QUALITY.clusterGrid);
   }
   container.appendChild(renderer.domElement);
+  // ?hud=0: the interface hidden (css/style.css body.ui-hidden), for captures that should show the city, not the
+  // controls. The same rule film mode uses; it changes nothing else, and the debug legend is hidden with it.
+  if (new URLSearchParams(location.search).get('hud') === '0') document.body.classList.add('ui-hidden');
 
   // Appends a list one item at a time: the colliders and trees grow with the map, and spreading hundreds of thousands
   // of them into push() overflows the call stack (st-6m6l)
@@ -150,8 +173,18 @@ async function initApp() {
   markInit('landmarks');
   // ?massing=1: every building from the City's 3D Massing polygons instead of its boxes (docs/massing-buildings.md;
   // js/massing-data.js and data/toronto-massing.bin are fetched only then, so normal play never loads them)
-  if (new URLSearchParams(location.search).get('massing') === '1') {
+  // (?gallery=presets, the internal page that stands every building preset in a row, js/building-gallery.js, runs on
+  // the polygon buildings and the drawn presets, so it implies both)
+  if (new URLSearchParams(location.search).get('massing') === '1' || galleryPage || drawnByDefault) {
     try {
+      // (the drawing's modules start loading now, beside the sidecar's download, not one round trip after another; they are only
+      // asked for again below, which finds them already fetched. Only when the presets are to be drawn: ?presets=1 and debug need fewer)
+      if (presetsArg === null || presetsArg === 'draw' || galleryPage) {
+        import('./building-prototypes.js').catch(() => {});
+        import('./building-presets.js').catch(() => {});
+        import('./building-presets-debug.js').catch(() => {});
+        import('./building-draw.js').catch(() => {});
+      }
       // (js/massing-cells.js: the compact cell meshes buildings.js has built off the main thread, st-2nl.3)
       const [{ loadMassing }, cells] = await Promise.all([import('./massing-data.js'), import('./massing-cells.js')]);
       window.CITY.MassingCells = cells;
@@ -159,6 +192,59 @@ async function initApp() {
       window.CITY.MASSING = M;
       console.info(`[massing] data/toronto-massing.bin: ${M.bytes} bytes, ${M.records} records, decoded in ${M.decodeMs.toFixed(1)} ms, ` +
         `rows in ${M.expandMs.toFixed(1)} ms${M.error ? '; ' + M.error : ''}`);
+      // ?massing=1&presets=1 or &presets=debug: attach every polygon record its prototype preset (js/building-presets.js,
+      // js/building-prototypes.js). Only the flag fetches either module or the file; ?massing=1 alone never does.
+      // (st-ndw9.19: ?massing=1 with no presets parameter is ?presets=draw; ?presets=0 or off is the old massing look, with
+      // none of the presets files fetched. Every other value keeps its meaning: 1, debug, draw; the gallery implies draw)
+      const presetsParam = new URLSearchParams(location.search).get('presets');
+      const presetsOff = presetsParam === '0' || presetsParam === 'off';
+      const presetsByDefault = presetsParam === null && !galleryPage;
+      let presetsFlag = presetsOff && !galleryPage ? null : (presetsParam || (galleryPage ? 'draw' : null));
+      if (presetsByDefault) presetsFlag = 'draw';
+      // (the sidecar and the presets files are built for the downtown frame, which both the detail map and the bigger map
+      // hold (js/massing-data.js frameRow); a sidecar refused for any other geodata means the presets did nothing: say so, once,
+      // when the page was asked for them. The default page and ?massing=1 alone keep the buildings' own warning and nothing else)
+      if (presetsFlag && M.error && !presetsByDefault) {
+        const need = `The building presets need ?map=detail or the bigger map (the massing and presets data are built for the downtown frame of those two): ${M.error}`;
+        console.warn(`[presets] ${need}`);
+        if (presetsFlag === 'debug') window.CITY.__PRESETS_NEED_DETAIL = need;
+      }
+      if (presetsFlag && !M.error) {
+        try {
+          const [proto, { loadBuildingPresets, loadBuildingDrawFacts }] = await Promise.all([import('./building-prototypes.js'), import('./building-presets.js')]);
+          window.CITY.BuildingPrototypes = proto;
+          const p = await loadBuildingPresets(window.CITY.MASSING, window.CITY.GEO);
+          window.CITY.BUILDING_PRESETS = p;
+          if (p.error) console.warn(`[presets] ${p.error}; the presets are skipped`);
+          else console.info(`[presets] ${p.bytes} bytes, ${p.ids.length} presets, ${p.attached} records${presetsFlag === 'debug' ? ', debug colours' : ''}`);
+          // ?presets=draw (and the gallery): the house presets with drawing parameters are drawn (js/building-draw.js), from
+          // each record's group and dwelling count (the debug file's groups: no file of its own). Nothing else loads these.
+          if (presetsFlag === 'draw' && !p.error) {
+            // (the debug module holds the groups file's name and hash, which tools/build-building-presets.mjs keeps current)
+            const { DEBUG_URL } = await import('./building-presets-debug.js');
+            const [draw, facts] = await Promise.all([import('./building-draw.js'), loadBuildingDrawFacts(window.CITY.MASSING, window.CITY.GEO, p, DEBUG_URL)]);
+            if (facts.error) console.warn(`[presets] ${facts.error}; the house presets are not drawn`);
+            else {
+              // (js/buildings.js reads the address for presets=draw; with no presets parameter this says so instead of rewriting it)
+              if (presetsByDefault) window.CITY.PRESETS_DRAW_BY_DEFAULT = true;
+              window.CITY.BuildingDraw = draw;
+              window.CITY.BUILDING_DRAW_FACTS = facts.facts;
+              console.info(`[presets] draw: ${facts.bytes} bytes of groups, ${facts.facts.size} records, presets drawn: ${draw.DRAWN_PRESETS.join(', ')}`);
+              if (galleryPage) {
+                const gallery = await import('./building-gallery.js');
+                const drawn = new Set(draw.DRAWN_PRESETS);
+                window.CITY.BUILDING_GALLERY = gallery.galleryLayout(proto.PROTOTYPES.map((x) => x.id), facts.counts, drawn, gallery.makeGalleryLot(draw.syntheticLot));
+                window.CITY.__GALLERY = gallery;
+              }
+            }
+          }
+          // ?presets=debug mounts the legend and identify panel (js/building-presets-debug.js) after the camera exists;
+          // the module and its own file are fetched only then, never for ?presets=1 or the default page
+          window.CITY.__PRESETS_DEBUG = presetsFlag === 'debug' && !p.error;
+        } catch (err) {
+          console.warn('[presets] could not load the presets; they are skipped', err);
+        }
+      }
     } catch (err) {
       console.warn('[massing] could not load the polygons; the buildings stay on their boxes', err);
     }
@@ -166,6 +252,9 @@ async function initApp() {
   }
   const cityBlocks = buildCityBlocks(scene);
   markInit('blocks');
+  // Schoolyard fences along school-grounds boundaries (on for desktops; ?schoolFences=0 turns it off;
+  // js/school-fences.js + js/school-fences-data.js, loaded by explore.html on a desktop only). Nothing is built or fetched otherwise
+  const schoolFences = await window.CITY.buildSchoolFences?.(scene);
   const uploadedTextures = []; // (the phone tiers drop their CPU copies once on screen, see below)
   // Source-keyed storefront signs over their shops' fascias (storefront-signs.js; js/toronto-storefronts.js)
   const storefrontSigns = window.CITY.buildStorefrontSigns ? window.CITY.buildStorefrontSigns(scene, { facadeOf: cityBlocks.facadeOf })
@@ -290,6 +379,11 @@ async function initApp() {
     // (?massing=1: the polygon buildings too, in place of the turned boxes they replace)
     obstacles: allColliders.filter((c) => (c.obb || c.circle || c.massing) && c.kind !== 'pole' && !(c.minY > 2)),
     detours: new URLSearchParams(location.search).get('peddetours') !== '0',
+    // people who do not walk through each other & wait for the light as a group (pedestrian-crowd.js, st-iqsg);
+    // ?pedcrowd=0: as before, for A/B; ?pedoverlap=1: counts the pairs of walkers whose bodies overlap (window.__pedOverlap)
+    crowd: new URLSearchParams(location.search).get('pedcrowd') !== '0',
+    overlapDebug: new URLSearchParams(location.search).get('pedoverlap') === '1',
+    fullCrowd: new URLSearchParams(location.search).get('pedfull') === '1',
     // the City's sidewalks the walking lines follow where an island has them (st-2t9, sidewalk-polygons.js): the
     // pieces city-grid.js laid, tested by point. ?pedwalks=0: the fixed lanes everywhere, as before, for A/B
     walks: new URLSearchParams(location.search).get('pedwalks') !== '0' && window.CITY.sidewalkWalkIndex
@@ -408,6 +502,25 @@ async function initApp() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) savePlayerState(); });
   // --- end restored visits
   const cameraSystem = new CameraSystem(renderer.domElement, controllerManager);
+  // ?massing=1&presets=debug: the legend and identify panel (js/building-presets-debug.js and its own file are fetched
+  // only here). ?presets=1 and the default page never load either.
+  if (window.CITY.__PRESETS_NEED_DETAIL) { // (?presets=debug on a map with no presets data: the legend's place says why)
+    const note = document.createElement('div');
+    note.className = 'hud hud-preset-debug panel';
+    note.id = 'preset-needs-detail';
+    note.textContent = window.CITY.__PRESETS_NEED_DETAIL.split(':')[0] + '.';
+    document.body.appendChild(note);
+  }
+  if (window.CITY.__PRESETS_DEBUG) {
+    import('./building-presets-debug.js')
+      .then((m) => m.mountBuildingPresetsDebug({ cameraSystem, massing: window.CITY.MASSING, geo: window.CITY.GEO, presets: window.CITY.BUILDING_PRESETS }))
+      .catch((err) => console.warn('[presets] the debug view is unavailable', err));
+  }
+  // ?gallery=presets: the ground and the row labels (js/building-gallery.js, fetched only by the flag)
+  if (window.CITY.__GALLERY && window.CITY.BUILDING_GALLERY) {
+    const names = Object.fromEntries(window.CITY.BuildingPrototypes.PROTOTYPES.map((p) => [p.id, p.name]));
+    window.CITY.__GALLERY.mountGallery({ THREE, scene, cameraSystem, layout: window.CITY.BUILDING_GALLERY, names });
+  }
   cameraSystem.onPresetFallback = (reason) => {
     updateCameraUI();
     toast(reason === 'two-shot requires a cyclist or car'
@@ -445,7 +558,7 @@ async function initApp() {
   // (scene-culling.js). The cycle tracks' flexi-posts and the CaféTO patios set their own cull distances for it; left
   // out of this list, each drew every post and patio in the city in every frame (~430k triangles, st-z51b). The TTC
   // pylons keep their reach (no cull distance) and are cut into kilometre cells the view frustum skips
-  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios', 'TtcPylons', 'WaterfrontDetails', 'WaterfrontBeachGround', 'WaterfrontPublicRealm', 'WaterfrontLandmarks', 'WaterfrontMusicGarden', 'WaterfrontHarbourfront', 'WaterfrontMainBuilding', 'WaterfrontConcertStage', 'BiidaasigePark', 'BiidaasigeAmenities', 'BiidaasigeLighting', 'WaterfrontFerries', 'WaterfrontIslandArrivals', 'WaterfrontSherbourne', 'WaterfrontBathurst', 'WaterfrontBeachLandscape', 'WaterfrontHtoLandscape', 'WaterfrontHtoFirehall', 'WaterfrontIslandAccess', 'WaterfrontDinghies']
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios', 'TtcPylons', 'WaterfrontDetails', 'WaterfrontBeachGround', 'WaterfrontPublicRealm', 'WaterfrontLandmarks', 'WaterfrontMusicGarden', 'WaterfrontHarbourfront', 'WaterfrontMainBuilding', 'WaterfrontConcertStage', 'BiidaasigePark', 'BiidaasigeAmenities', 'BiidaasigeLighting', 'WaterfrontFerries', 'WaterfrontIslandArrivals', 'WaterfrontSherbourne', 'WaterfrontBathurst', 'WaterfrontBeachLandscape', 'WaterfrontHtoLandscape', 'WaterfrontHtoFirehall', 'WaterfrontIslandAccess', 'WaterfrontDinghies', 'SchoolFences']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   // ?massing=1: the polygon cells, built in a worker since `blocks` (their near tier gives the shadow stand-ins)
@@ -548,7 +661,8 @@ async function initApp() {
     gradeReflections = null;
   }
   const colorGrade = createPostProcessing(renderer, skyClouds ? skyClouds.composite(gradeInput) : gradeInput, gradeReflections, {
-    bloom: QUALITY.bloom
+    bloom: QUALITY.bloom,
+    bloomScale: QUALITY.bloomScale
   });
   const { bloomPass } = colorGrade;
   // the live sky's rain & snow (precipitation.js): nothing is built until a reading calls for it
@@ -620,7 +734,7 @@ async function initApp() {
   const controlHints = {
     person: [[['W', 'S'], 'Walk'], [['A', 'D'], 'Turn'], [['Shift'], 'Sprint'], [['Space'], 'Jump'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
     car: [[['W', 'S'], 'Drive / Reverse'], [['A', 'D'], 'Steer'], [['Shift'], 'Floor it'], [['Space'], 'Handbrake'], [['B'], 'Horn'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
-    cyclist: [[['W', 'S'], 'Pedal / Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['B'], 'Bell'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
+    cyclist: [[['W', 'S'], 'Pedal / Brake'], [['Space'], 'Brake'], [['A', 'D'], 'Lean & Turn'], [['Shift'], 'Sprint'], [['B'], 'Bell'], [['R'], 'Back to the road'], [['Drag'], 'Orbit']],
     helicopter: [[['W', 'S'], 'Pitch'], [['A', 'D'], 'Yaw'], [['Space', 'E'], 'Ascend'], [['Q', 'C'], 'Descend'], [['Shift'], 'Boost']],
     streetcar: [[['E'], 'Get off / Request stop'], [['V'], 'Seat / Chase'], [['Drag'], 'Look around']],
     subway: [[['E'], 'Get off at arrival'], [['V'], 'Seat / Exterior on viaduct'], [['Drag'], 'Look around']],
@@ -1274,6 +1388,11 @@ async function initApp() {
   }
   selectMode(restoredPlayer ? controllerManager.activeMode : 'cyclist');
   if (!restoredPlayer && startAt) controllerManager.teleportActiveTo(startAt.x, startAt.z, startAt.heading);
+  if (window.CITY.BUILDING_GALLERY) { // (?gallery=presets: on foot in front of the first row)
+    const at = window.CITY.BUILDING_GALLERY.start;
+    selectMode('person');
+    controllerManager.teleportActiveTo(at.x, at.z, at.heading);
+  }
   selectCamera('chase', true);
   // Live by default: Toronto's time & weather (?time=<preset> and automated captures open on a preset, live-sky.js)
   selectTime(liveStart.mode === 'live' ? 'live' : liveStart.preset);

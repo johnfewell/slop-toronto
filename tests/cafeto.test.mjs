@@ -264,13 +264,15 @@ const sharedReplayWorld = (frame = PATIO_FRAMES.detail) => replayWorlds.get(fram
 
 test('explore.html loads each map\'s own prebuilt patio layout', () => {
   const html = read('explore.html');
-  assert.match(html, /eglinton \? '\.\/js\/frames\/eglinton\/toronto-patios\.js' : '\.\/js\/toronto-patios\.js',/);
+  assert.match(html, /drawn \? '\.\/js\/frames\/eglinton\/toronto-patios-drawn\.js' : eglinton \? '\.\/js\/frames\/eglinton\/toronto-patios\.js' : '\.\/js\/toronto-patios\.js',/);
+  // the drawn variant is for the pages main.js draws the buildings on (drawnByDefault, ?massing=1) and no other
+  assert.match(html, /const drawn = eglinton && \(params\.get\('massing'\) === '1' \|\| \(desktop && presets !== '0' && presets !== 'off'\)\);/);
   for (const frame of Object.values(PATIO_FRAMES)) assert.ok(fs.existsSync(new URL(`../${patioFiles(frame).js}`, import.meta.url)), frame.name);
 });
 
 for (const frame of Object.values(PATIO_FRAMES)) {
   const files = patioFiles(frame), P = loadPATIOS(files.js), rec = JSON.parse(read(files.inputs));
-  const map = frame.bin ? `the ${frame.name} map's` : 'the';
+  const map = frame.bin ? `the ${frame.name}${frame.variant ? ' (drawn buildings)' : ''} map's` : 'the';
 
   test(`${map} prebuilt patio layout is the runtime algorithm's: node replays js/patio-layout.js on the committed data to the same sites, counts and reasons`, () => {
     const world = sharedReplayWorld(frame);

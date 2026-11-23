@@ -1,0 +1,8 @@
+[
+ {
+  "name": "load",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-6665, -5865, 0); app.cameraSystem.cinema = () => ({ pos: [-6665, 1.7, -5865], look: [-6665.4, 1.2, -5873.5], fov: 62 }); })()"
+ }
+]

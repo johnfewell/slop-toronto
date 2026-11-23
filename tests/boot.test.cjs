@@ -65,8 +65,10 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   // imported, not listed)
   // (High Park's terrain pilot loads by default; the Don Valley's data only with ?donvalley=1: see the next tests)
   // (and the lidar-only trees' data only with ?lidarTrees=1: see its test below)
+  // (and the schoolyard fences, on by default for a desktop: see their test below)
   assert.equal(links.length, preloadScript[1].match(/'\.\/js\/[\w-]+\.js'/g).filter((s) => !s.includes('geodata-loader') && !s.includes('/don-valley-data') && !s.includes('/lidar-trees')).length);
   assert.ok(!links.includes('./js/lidar-trees-data.js') && !links.includes('./js/lidar-trees.js'), 'a default visit loads none of the lidar trees');
+  assert.ok(links.includes('./js/school-fences-data.js') && links.includes('./js/school-fences.js'), 'a desktop\'s default visit loads the school fences');
   assert.ok(links.includes('./js/high-park-data.js') && links.includes('./js/don-valley.js'), 'High Park\'s terrain is on by default');
   assert.ok(!links.includes('./js/don-valley-data.js'), 'the Don Valley pilot is not loaded without its flag');
   // (the wooded parks' data, High Park's and Toronto Island's, just before their runtime)
@@ -142,4 +144,17 @@ test('?lidarTrees=1 loads the lidar trees\' runtime, and on a desktop its data: 
     assert.equal(loaderFor(q, phone).cityLidarCells, false, `${q}${phone ? ' (phone)' : ''}`);
   }
   assert.equal(loaderFor('', true).cityDesktop, false);
+});
+
+test('the fences\' data then their runtime load on every desktop; ?schoolFences=0, a phone and a low tier load neither', () => {
+  for (const q of ['', '?map=detail', '?map=eglinton', '?lidarTrees=1', '?schoolFences=1', '?massing=1']) {
+    const l = pilotList(q);
+    assert.equal(l.indexOf('./js/school-fences-data.js') + 1, l.indexOf('./js/school-fences.js'), `a desktop visit loads both (${q || 'default'})`);
+    assert.ok(l.indexOf('./js/school-fences.js') > l.indexOf('./js/city-config.js') && l.indexOf('./js/school-fences.js') < l.indexOf('./js/main.js'), q);
+  }
+  // the off switch, a phone, or a low/medium tier: neither file
+  for (const [q, phone] of [['?schoolFences=0', false], ['?schoolFences=0&map=detail', false], ['', true], ['?map=detail', true], ['?schoolFences=1', true], ['?quality=low', false], ['?map=detail&quality=low', false], ['?map=eglinton&quality=medium', false]]) {
+    const l = pilotList(q, phone);
+    assert.ok(!l.includes('./js/school-fences-data.js') && !l.includes('./js/school-fences.js'), `${q || 'default'}${phone ? ' (phone)' : ''}`);
+  }
 });

@@ -1,0 +1,26 @@
+[
+ {
+  "name": "m-cabbagetown",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "name": "g-cabbagetown",
+  "record": true,
+  "wait": 300,
+  "js": "(async () => { const a = window.__CITY_APP; a.gpuTimes(); await new Promise((r) => setTimeout(r, 4000)); const t = a.gpuTimes(); const i = a.renderer.info.render; return { gpu: t, calls: i.drawCalls, tris: i.triangles }; })()"
+ },
+ {
+  "name": "m-financial300",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "name": "g-financial300",
+  "record": true,
+  "wait": 300,
+  "js": "(async () => { const a = window.__CITY_APP; a.gpuTimes(); await new Promise((r) => setTimeout(r, 4000)); const t = a.gpuTimes(); const i = a.renderer.info.render; return { gpu: t, calls: i.drawCalls, tris: i.triangles }; })()"
+ }
+]

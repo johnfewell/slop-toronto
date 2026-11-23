@@ -1,0 +1,16 @@
+[
+ {
+  "name": "slab-tower-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2597, 3306.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2597, 88.8, 3306.6], look: [-2597, 17.4, 3229.1], fov: 62 }); })()"
+ },
+ {
+  "name": "church-gothic-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2446, 3188, 0); app.cameraSystem.cinema = () => ({ pos: [-2446, 1.7, 3188], look: [-2446, 4.5, 3155], fov: 62 }); })()"
+ }
+]

@@ -1,0 +1,134 @@
+[
+ {
+  "name": "bike-cab-00",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(1800.0, -1601.0, 0); })();(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1800.0, 1.7, -1601.0], look: [1760.0, 5.0, -1602.3], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-01",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1780.0, 1.7, -1601.7], look: [1740.0, 5.0, -1603.0], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-02",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1760.0, 1.7, -1602.3], look: [1720.0, 5.0, -1603.7], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-03",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1740.0, 1.7, -1603.0], look: [1700.1, 5.0, -1604.3], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-04",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1720.0, 1.7, -1603.7], look: [1680.1, 5.0, -1605.0], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-05",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1700.1, 1.7, -1604.3], look: [1660.1, 5.0, -1605.7], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-06",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1680.1, 1.7, -1605.0], look: [1640.1, 5.0, -1606.3], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-07",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1660.1, 1.7, -1605.7], look: [1620.1, 5.0, -1607.0], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-08",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1640.1, 1.7, -1606.3], look: [1600.1, 5.0, -1607.7], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-09",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1620.1, 1.7, -1607.0], look: [1580.1, 5.0, -1608.3], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-cab-10",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [1600.1, 1.7, -1607.7], look: [1560.1, 5.0, -1609.0], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-00",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); })();(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1346.6, 5.0, -712.9], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-01",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1366.6, 1.7, -713.2], look: [-1326.6, 5.0, -712.5], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-02",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1346.6, 1.7, -712.9], look: [-1306.6, 5.0, -712.1], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-03",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1326.6, 1.7, -712.5], look: [-1286.6, 5.0, -711.7], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-04",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1306.6, 1.7, -712.1], look: [-1266.6, 5.0, -711.4], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-05",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1286.6, 1.7, -711.7], look: [-1246.6, 5.0, -711.0], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-06",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1266.6, 1.7, -711.4], look: [-1226.6, 5.0, -710.6], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-07",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1246.6, 1.7, -711.0], look: [-1206.6, 5.0, -710.2], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-08",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1226.6, 1.7, -710.6], look: [-1186.6, 5.0, -709.9], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-09",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1206.6, 1.7, -710.2], look: [-1166.6, 5.0, -709.5], fov: 65 }); })()"
+ },
+ {
+  "name": "bike-qw-10",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.cameraSystem.cinema = () => ({ pos: [-1186.6, 1.7, -709.9], look: [-1146.6, 5.0, -709.1], fov: 65 }); })()"
+ }
+]

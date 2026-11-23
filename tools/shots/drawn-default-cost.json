@@ -1,0 +1,68 @@
+[
+ {
+  "name": "m-cabbagetown",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "record": true,
+  "wait": 500,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()",
+  "name": "c-cabbagetown"
+ },
+ {
+  "name": "m-queenwest",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()"
+ },
+ {
+  "record": true,
+  "wait": 500,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()",
+  "name": "c-queenwest"
+ },
+ {
+  "name": "m-financial300",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "record": true,
+  "wait": 500,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()",
+  "name": "c-financial300"
+ },
+ {
+  "name": "m-stjames",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; const p = C.worldFromLatLon(43.6678, -79.3748); app.teleportTo(p.x, p.z, 0); app.cameraSystem.cinema = () => ({ pos: [p.x - 120, 110, p.z + 160], look: [p.x, 30, p.z], fov: 60 }); })()"
+ },
+ {
+  "record": true,
+  "wait": 500,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()",
+  "name": "c-stjames"
+ },
+ {
+  "name": "m-outside",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; const p = C.worldFromLatLon(43.7064, -79.3985); app.teleportTo(p.x, p.z, 0); app.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [p.x + 40, 6, p.z - 60], fov: 62 }); })()"
+ },
+ {
+  "record": true,
+  "wait": 500,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()",
+  "name": "c-outside"
+ },
+ {
+  "name": "bytes",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const e = performance.getEntriesByType(\"resource\"); let t = 0, b = 0, d = 0; for (const x of e) { t += x.transferSize || 0; b += x.encodedBodySize || 0; d += x.decodedBodySize || 0; } return { requests: e.length, transferSize: t, encodedBodySize: b, decodedBodySize: d, names: e.map((x) => x.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort() }; })()"
+ }
+]

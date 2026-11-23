@@ -1,0 +1,9 @@
+[
+ {
+  "name": "bytes",
+  "record": true,
+  "wait": 9000,
+  "metricsMs": 0,
+  "js": "(() => { const e = performance.getEntriesByType(\"resource\"); let t = 0, b = 0, d = 0; for (const x of e) { t += x.transferSize || 0; b += x.encodedBodySize || 0; d += x.decodedBodySize || 0; } return { requests: e.length, transferSize: t, encodedBodySize: b, decodedBodySize: d, names: e.map((x) => x.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort() }; })()"
+ }
+]

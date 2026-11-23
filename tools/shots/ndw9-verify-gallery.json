@@ -1,0 +1,9 @@
+[
+ {
+  "name": "victorian-detached-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2955.6, 3516, 0); app.cameraSystem.cinema = () => ({ pos: [-2955.6, 1.7, 3516], look: [-2955.6, 4.2, 3495], fov: 60 }); })()"
+ }
+]

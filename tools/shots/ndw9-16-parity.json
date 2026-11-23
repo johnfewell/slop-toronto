@@ -1,0 +1,4 @@
+[
+  {"name":"parity-view","time":"midday","wait":9000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.6487,-79.3816);A.teleportTo(w.x,w.z,Math.PI*0.25);})()"}
+]

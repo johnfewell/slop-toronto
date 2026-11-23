@@ -1,0 +1,219 @@
+[
+ {
+  "name": "edwardian-row-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5360.6, -2959.5, 0); app.cameraSystem.cinema = () => ({ pos: [-5360.6, 1.7, -2959.5], look: [-5339.5, 4.5, -2959], fov: 60 }); })()"
+ },
+ {
+  "name": "edwardian-row-p1-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5436.6, -2961.1, 0); app.cameraSystem.cinema = () => ({ pos: [-5436.6, 150, -2961.1], look: [-5339.5, 0, -2959], fov: 60 }); })()"
+ },
+ {
+  "name": "edwardian-row-p2-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2569.7, -1601.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2569.7, 1.7, -1601.8], look: [-2591, 4.5, -1601.8], fov: 60 }); })()"
+ },
+ {
+  "name": "edwardian-row-p2-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2493.7, -1601.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2493.7, 150, -1601.8], look: [-2591, 0, -1601.8], fov: 60 }); })()"
+ },
+ {
+  "name": "edwardian-semi-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(3536.2, -1676.5, 0); app.cameraSystem.cinema = () => ({ pos: [3536.2, 1.7, -1676.5], look: [3536.4, 4.5, -1697.6], fov: 60 }); })()"
+ },
+ {
+  "name": "edwardian-semi-p1-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(3535.4, -1600.5, 0); app.cameraSystem.cinema = () => ({ pos: [3535.4, 150, -1600.5], look: [3536.4, 0, -1697.6], fov: 60 }); })()"
+ },
+ {
+  "name": "edwardian-semi-p2-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3958.3, -2916.3, 0); app.cameraSystem.cinema = () => ({ pos: [-3958.3, 1.7, -2916.3], look: [-3979.9, 4.5, -2916.6], fov: 60 }); })()"
+ },
+ {
+  "name": "edwardian-detached-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7770.5, -2469.6, 0); app.cameraSystem.cinema = () => ({ pos: [-7770.5, 1.7, -2469.6], look: [-7749.1, 4.5, -2469.8], fov: 60 }); })()"
+ },
+ {
+  "name": "edwardian-detached-p1-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7846.5, -2468.6, 0); app.cameraSystem.cinema = () => ({ pos: [-7846.5, 150, -2468.6], look: [-7749.1, 0, -2469.8], fov: 60 }); })()"
+ },
+ {
+  "name": "edwardian-detached-p2-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(3362.1, -2311.1, 0); app.cameraSystem.cinema = () => ({ pos: [3362.1, 1.7, -2311.1], look: [3364.3, 4.5, -2330.9], fov: 60 }); })()"
+ },
+ {
+  "name": "victorian-row-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2028.3, -2178.8, 0); app.cameraSystem.cinema = () => ({ pos: [2028.3, 1.7, -2178.8], look: [2028.1, 4.5, -2199], fov: 60 }); })()"
+ },
+ {
+  "name": "victorian-row-p1-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2028.7, -2102.8, 0); app.cameraSystem.cinema = () => ({ pos: [2028.7, 150, -2102.8], look: [2028.1, 0, -2199], fov: 60 }); })()"
+ },
+ {
+  "name": "victorian-semi-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1904, -1557.2, 0); app.cameraSystem.cinema = () => ({ pos: [1904, 1.7, -1557.2], look: [1883.2, 4.5, -1557], fov: 60 }); })()"
+ },
+ {
+  "name": "victorian-semi-p1-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1980, -1558, 0); app.cameraSystem.cinema = () => ({ pos: [1980, 150, -1558], look: [1883.2, 0, -1557], fov: 60 }); })()"
+ },
+ {
+  "name": "victorian-detached-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3377.3, -1862.2, 0); app.cameraSystem.cinema = () => ({ pos: [-3377.3, 1.7, -1862.2], look: [-3377.3, 4.5, -1845.4], fov: 60 }); })()"
+ },
+ {
+  "name": "victorian-detached-p2-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2922.9, -2603.6, 0); app.cameraSystem.cinema = () => ({ pos: [2922.9, 1.7, -2603.6], look: [2923.1, 4.5, -2625.7], fov: 60 }); })()"
+ },
+ {
+  "name": "interwar-semi-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7672, -2953.1, 0); app.cameraSystem.cinema = () => ({ pos: [-7672, 1.7, -2953.1], look: [-7692.4, 4.5, -2952.8], fov: 60 }); })()"
+ },
+ {
+  "name": "shops-queen-augusta-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()"
+ },
+ {
+  "name": "shops-queen-augusta-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1446.6, -714.4, 0); app.cameraSystem.cinema = () => ({ pos: [-1446.6, 150, -714.4], look: [-1370.6, 0, -713.3], fov: 60 }); })()"
+ },
+ {
+  "name": "shops-college-clinton-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2241.7, -1821.2, 0); app.cameraSystem.cinema = () => ({ pos: [-2241.7, 1.7, -1821.2], look: [-2242, 6, -1806.6], fov: 65 }); })()"
+ },
+ {
+  "name": "shops-college-clinton-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2240.6, -1881.2, 0); app.cameraSystem.cinema = () => ({ pos: [-2240.6, 150, -1881.2], look: [-2242, 0, -1806.6], fov: 60 }); })()"
+ },
+ {
+  "name": "shops-roncesvalles-fermanagh-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5237, -1684.5, 0); app.cameraSystem.cinema = () => ({ pos: [-5237, 1.7, -1684.5], look: [-5237.6, 6, -1662.4], fov: 65 }); })()"
+ },
+ {
+  "name": "shops-roncesvalles-fermanagh-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5235.5, -1744.5, 0); app.cameraSystem.cinema = () => ({ pos: [-5235.5, 150, -1744.5], look: [-5237.6, 0, -1662.4], fov: 60 }); })()"
+ },
+ {
+  "name": "main-street-shop-early-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1256.9, -1267.9, 0); app.cameraSystem.cinema = () => ({ pos: [-1256.9, 1.7, -1267.9], look: [-1279.8, 6, -1267.9], fov: 65 }); })()"
+ },
+ {
+  "name": "main-street-shop-early-p1-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1196.9, -1267.9, 0); app.cameraSystem.cinema = () => ({ pos: [-1196.9, 150, -1267.9], look: [-1279.8, 0, -1267.9], fov: 60 }); })()"
+ },
+ {
+  "name": "main-street-shop-early-p2-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1578.6, -1756.1, 0); app.cameraSystem.cinema = () => ({ pos: [1578.6, 1.7, -1756.1], look: [1554.9, 6, -1756.1], fov: 65 }); })()"
+ },
+ {
+  "name": "main-street-shop-early-p2-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1638.6, -1756, 0); app.cameraSystem.cinema = () => ({ pos: [1638.6, 150, -1756], look: [1554.9, 0, -1756.1], fov: 60 }); })()"
+ },
+ {
+  "name": "main-street-shop-later-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1537.8, -1505, 0); app.cameraSystem.cinema = () => ({ pos: [1537.8, 1.7, -1505], look: [1538.3, 6, -1530.8], fov: 65 }); })()"
+ },
+ {
+  "name": "main-street-shop-later-p1-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1536.6, -1445, 0); app.cameraSystem.cinema = () => ({ pos: [1536.6, 150, -1445], look: [1538.3, 0, -1530.8], fov: 60 }); })()"
+ },
+ {
+  "name": "main-street-shop-later-p2-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4090.1, -2792.5, 0); app.cameraSystem.cinema = () => ({ pos: [-4090.1, 1.7, -2792.5], look: [-4073.8, 6, -2792.2], fov: 65 }); })()"
+ },
+ {
+  "name": "main-street-shop-later-p2-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4150.1, -2793.5, 0); app.cameraSystem.cinema = () => ({ pos: [-4150.1, 150, -2793.5], look: [-4073.8, 0, -2792.2], fov: 60 }); })()"
+ }
+]

@@ -237,6 +237,69 @@ function blendLivePreset(date, look) {
   return p;
 }
 
+// The sun's two shadow cascades only draw the casters up to `shadow.camera.far` (300 m at street level, up to 720 m from the
+// air) beyond the highest corner of the view, along the sun ray: SunLightShadow puts each cascade camera's near plane there,
+// and anything nearer the sun is clipped from the shadow map. The upper part of a very tall tower then drops out of its own
+// shadow whenever the player looks away from it, or stands more than a few hundred metres off (st-iq0v.4; mrdoob's
+// Slop New York e17cde4 does the same for Manhattan). After each cascade fit the cameras are moved back toward the sun by
+// the distance a ceiling-high caster is from the ground along the sun ray, and their far planes grown to match.
+// The height of the tallest thing that casts: the CN Tower's mast tip. The game's data (window.CITY.GEO.landmarks.cnTower.h)
+// gives 553 m and js/landmarks.js builds its lathe up to y = 553 on the sidewalk (CITY_BOUNDS.sidewalkHeight, 0.22 m), so
+// 554 m up in the world; the next tallest, First Canadian Place, is 287.4 m. tests/lighting-shadow.test.mjs checks it
+// against the data.
+const TALLEST_CASTER_TOP = 554;
+// The sine of the sun's elevation the shift stops growing at (about 14.5 deg, a shift of 2216 m). A lower sun (golden is
+// 10 deg, twilight 2 deg) gets that same shift rather than the 3.2 km (10 deg) or 16 km (2 deg) the whole tower would need,
+// which would drag the far city into the shadow pass; so at golden the shadow of the upper tower stays partly short
+const SUN_SHIFT_MIN_SIN = 0.25;
+const SUN_CASCADE_SHIFT_PROBLEM = 'tall-tower shadow lift unavailable, shadows keep the stock caster ceiling';
+function sunCascadeShift(sinElevation) {
+  return Math.ceil(TALLEST_CASTER_TOP / Math.max(SUN_SHIFT_MIN_SIN, sinElevation));
+}
+// Wraps `shadow.updateMatrices` (a SunLightShadow). The wrapper runs on cascade cameras the original has just rebuilt from
+// scratch (position, far, matrices), so the shift never accumulates from frame to frame. The shadow cameras' internals it
+// needs are checked first and any miss (or an error) leaves the stock behaviour, with one console warning.
+function liftSunCascadeCeiling(shadow) {
+  let warned = false;
+  const giveUp = (why) => {
+    if (!warned) { warned = true; console.warn('[lighting] ' + SUN_CASCADE_SHIFT_PROBLEM + ': ' + why); }
+  };
+  if (!shadow || typeof shadow.updateMatrices !== 'function') { giveUp('no SunLightShadow'); return false; }
+  const orig = shadow.updateMatrices;
+  let off = false;
+  shadow.updateMatrices = function (light, viewCamera) {
+    orig.call(this, light, viewCamera);
+    if (off || viewCamera === undefined) return;
+    try {
+      if (typeof this.getCamera !== 'function' || typeof this.getViewportCount !== 'function' || typeof this._updateMatrix !== 'function'
+        || !Array.isArray(this._matrices) || !Array.isArray(this._frustums) || !Array.isArray(this._viewports)) {
+        throw new Error('missing SunLightShadow internals');
+      }
+      const count = this.getViewportCount();
+      const cams = [];
+      for (let i = 0; i < count; i++) {
+        const cam = this.getCamera(i);
+        if (!cam || typeof cam.translateZ !== 'function' || !this._matrices[i] || !this._frustums[i] || !this._viewports[i]) throw new Error('missing cascade ' + i);
+        cams.push(cam);
+      }
+      // a camera's local +Z is toward the sun: its y is the sine of the sun's elevation
+      const extra = sunCascadeShift(cams[0].matrixWorld.elements[9]);
+      for (let i = 0; i < count; i++) {
+        const cam = cams[i];
+        cam.translateZ(extra);
+        cam.far += extra;
+        cam.updateProjectionMatrix();
+        cam.updateMatrixWorld();
+        this._updateMatrix(cam, this._matrices[i], this._frustums[i], this._viewports[i]);
+      }
+    } catch (err) {
+      off = true;
+      giveUp(err && err.message);
+    }
+  };
+  return true;
+}
+
 class LightingSystem {
   constructor(scene, renderer = null) {
     this.scene = scene;
@@ -319,6 +382,8 @@ class LightingSystem {
     // Suppress shadow acne along the surface normal in world units
     // so short casters like cars, curbs, tree trunks, and pedestrians keep crisp contact shadows
     this.sunLight.shadow.normalBias = 0.05;
+    // (SunLightShadow's caster ceiling only reaches shadow.camera.far past the view: raised for the tallest towers)
+    liftSunCascadeCeiling(this.sunLight.shadow);
     this.scene.add(this.sunLight);
 
     // Subtle Hemisphere Sky + Warm Terracotta/Limestone Ground Bounce Fill
@@ -450,5 +515,5 @@ class LightingSystem {
 
 // (the hour of each time of day: traffic.js reads the City's volumes at it)
 const SUN_HOURS = { ...Object.fromEntries(Object.entries(SUN).map(([k, v]) => [k, v.h])), twilight: SUN.sunset.h, midnight: SUN.night.h };
-Object.assign(window.CITY, { LightingSystem, SUN_HOURS, SCENE_DATE, blendLivePreset });
+Object.assign(window.CITY, { LightingSystem, liftSunCascadeCeiling, sunCascadeShift, TALLEST_CASTER_TOP, SUN_HOURS, SCENE_DATE, blendLivePreset });
 })();

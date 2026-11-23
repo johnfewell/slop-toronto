@@ -1,0 +1,26 @@
+[
+ {
+  "name": "m-cabbagetown",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "name": "x-cabbagetown",
+  "record": true,
+  "wait": 300,
+  "js": "(async () => { const A = window.__CITY_APP, scene = A.scene, sun = A.lightingSystem.sunLight;\n const meas = async (n = 100) => { const ts = []; for (let i = 0; i < n + 15; i++) { await new Promise((r) => requestAnimationFrame(r)); ts.push(performance.now()); } const d = []; for (let i = 16; i < ts.length; i++) d.push(ts[i] - ts[i - 1]); d.sort((a, b) => a - b); return +d[d.length >> 1].toFixed(2); };\n const R = {}; R.base = await meas();\n sun.castShadow = false; R.noSunShadow = await meas(); sun.castShadow = true;\n const prox = scene.getObjectByName('ShadowProxies'); if (prox) { prox.visible = false; R.noStandIns = await meas(); prox.visible = true; }\n const mass = [], was = []; scene.traverse((o) => { if (/^MassingBuildings_/.test(o.name) && o.visible) { mass.push(o); was.push(o.castShadow); } });\n mass.forEach((o) => { o.visible = false; }); R.massingMeshesHidden = await meas(); mass.forEach((o) => { o.visible = true; });\n const bld = scene.getObjectByName('CityBuildings'); if (bld) { bld.visible = false; R.allBuildingsHidden = await meas(); bld.visible = true; }\n R.base2 = await meas(); R.massingVisible = mass.length; return R; })()"
+ },
+ {
+  "name": "m-financial300",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "name": "x-financial300",
+  "record": true,
+  "wait": 300,
+  "js": "(async () => { const A = window.__CITY_APP, scene = A.scene, sun = A.lightingSystem.sunLight;\n const meas = async (n = 100) => { const ts = []; for (let i = 0; i < n + 15; i++) { await new Promise((r) => requestAnimationFrame(r)); ts.push(performance.now()); } const d = []; for (let i = 16; i < ts.length; i++) d.push(ts[i] - ts[i - 1]); d.sort((a, b) => a - b); return +d[d.length >> 1].toFixed(2); };\n const R = {}; R.base = await meas();\n sun.castShadow = false; R.noSunShadow = await meas(); sun.castShadow = true;\n const prox = scene.getObjectByName('ShadowProxies'); if (prox) { prox.visible = false; R.noStandIns = await meas(); prox.visible = true; }\n const mass = [], was = []; scene.traverse((o) => { if (/^MassingBuildings_/.test(o.name) && o.visible) { mass.push(o); was.push(o.castShadow); } });\n mass.forEach((o) => { o.visible = false; }); R.massingMeshesHidden = await meas(); mass.forEach((o) => { o.visible = true; });\n const bld = scene.getObjectByName('CityBuildings'); if (bld) { bld.visible = false; R.allBuildingsHidden = await meas(); bld.visible = true; }\n R.base2 = await meas(); R.massingVisible = mass.length; return R; })()"
+ }
+]

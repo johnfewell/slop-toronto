@@ -34,7 +34,7 @@ function createPostProcessing(renderer, sceneColor, reflections, options = {}) {
   const bloomPass = options.bloom === false ? null : bloom(bloomInput, 0.24, 0.40, 1.20);
   if (bloomPass) {
     bloomPass.smoothWidth.value = 0.30;
-    bloomPass.setResolutionScale(0.5);
+    bloomPass.setResolutionScale(options.bloomScale ?? 0.5);
   }
 
   const outputNode = Fn(() => {

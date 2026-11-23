@@ -60,6 +60,10 @@ const { HEADLIGHTS, createVehicleHeadlight, placeVehicleHeadlight } = window.CIT
 // Walking surface for the player's pedestrian (its rig samples it around its feet)
 // The player's walker or parked bike further than this from the camera is not posed (poseCharacters)
 const POSE_RANGE = 320;
+// The take-off crouch's length (mrdoob's 536a907), and how far above the ground the walker counts as airborne (a
+// walk down a slope or a curb's step off trails the ground by v * slope / 18 m, well under it: see updatePerson)
+const JUMP_LEAD_TIME = 0.085;
+const AIRBORNE_HEIGHT = 0.3;
 const personGround = (controllers, x, z) => controllers.getGroundHeight(x, z, 'person', controllers.entities ? controllers.entities.person.position.y : null);
 
 // --- Driving
@@ -67,11 +71,15 @@ const personGround = (controllers, x, z) => controllers.getGroundHeight(x, z, 'p
 // little extra coasting resistance, kept apart from braking; boost adds power, and letting it go lets the momentum
 // decay instead of clamping it. (Backward input is scaled to 0.6, giving 4.5 m/s² braking.)
 const BICYCLE_DRIVE = {
-  speed: 12.8, boostSpeed: 19, reverseSpeed: 4.5, acceleration: 9, boostAcceleration: 13.5,
-  rolling: 0.08, drag: 0.004, coast: 0.2, brake: 7.5
+  speed: 12.8, boostSpeed: 19, reverseSpeed: 4.5, acceleration: 6.5, boostAcceleration: 13.5,
+  powerSpeed: 10.5, // Above 38 km/h, rider power limits acceleration.
+  rolling: 0.1, drag: 0.004, coast: 0.45, brake: 10.5
 };
 
 function driveSpeed(speed, throttle, boost, dt, drive) {
+  // Turning can project tiny sideways motion back into speed after braking to zero.
+  // Treat a crawl as stopped when changing direction, so this cannot hold the brakes forever.
+  if (speed * throttle < 0 && Math.abs(speed) < 0.05) speed = 0;
   const braking = speed * throttle < 0;
   const magnitude = Math.abs(speed);
   const deceleration = drive.rolling + (!throttle ? drive.coast : braking ? Math.abs(throttle) * drive.brake : 0);
@@ -79,7 +87,8 @@ function driveSpeed(speed, throttle, boost, dt, drive) {
   const coasting = Math.max(0, magnitude - deceleration * dt) / (1 + drive.drag * magnitude * dt);
   if (!throttle || braking) return Math.sign(speed) * coasting;
   const limit = throttle < 0 ? drive.reverseSpeed : boost ? drive.boostSpeed : drive.speed;
-  const acceleration = boost ? drive.boostAcceleration : drive.acceleration;
+  let acceleration = boost ? drive.boostAcceleration : drive.acceleration;
+  if (drive.powerSpeed) acceleration *= drive.powerSpeed / Math.max(drive.powerSpeed, magnitude);
   return Math.sign(throttle) * Math.min(Math.max(limit, coasting), coasting + Math.abs(throttle) * acceleration * dt);
 }
 
@@ -399,6 +408,12 @@ class ThirdPersonControllerManager {
     ent.speed = 0;
     if (this.activeMode === 'person') {
       ent.verticalVel = 0;
+      ent.jumping = false;
+      ent.jumpPrep = 0;
+      if (ent.shadow) {
+        ent.shadow.position.y = 0.02;
+        ent.shadow.scale.set(1, 1, 1);
+      }
       ent.rig.reset(ent.position.x, ent.position.z, ent.heading, personGround, this);
       ent.crowd.begin();
       ent.crowd.add(ent.rig, 0);
@@ -415,6 +430,7 @@ class ThirdPersonControllerManager {
       if (ent.carState) ent.carState.value.x = ent.carState.value.w = 0;
     } else if (this.activeMode === 'cyclist') {
       ent.leanAngle = ent.leanPivot.rotation.z = 0;
+      ent._brakeHold = 0;
     } else if (heli) {
       ent.verticalSpeed = ent.pitchAngle = ent.rollAngle = 0;
       ent.tiltPivot.rotation.x = ent.tiltPivot.rotation.z = 0;
@@ -586,12 +602,15 @@ class ThirdPersonControllerManager {
       type: 'person',
       label: 'Pedestrian',
       mesh: root,
+      shadow: pedShadow,
       crowd,
       rig,
       position: new THREE.Vector3(SPAWN.x - Math.cos(SPAWN.heading) * 2.4, 0.0, SPAWN.z + Math.sin(SPAWN.heading) * 2.4),
       heading: SPAWN.heading,
       speed: 0,
       verticalVel: 0,
+      jumping: false,
+      jumpPrep: 0,
       cameraTargetOffset: new THREE.Vector3(0, 1.55, 0),
       chaseDistance: 4.3,
       chaseHeight: 1.95
@@ -1238,8 +1257,19 @@ class ThirdPersonControllerManager {
     const p = this.entities.person;
     if (this.activeMode === 'person' || !far(p)) {
       p._charHidden = false;
-      const air = p.position.y - this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
-      p.rig.update(dt, p.position.x, p.position.z, p.heading, personGround, this, air > 0.02 ? air : 0);
+      const groundY = this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
+      const air = p.position.y - groundY;
+      // (mrdoob's 536a907) the rig's air: positive while airborne, negative (-1..0) through the take-off crouch, else 0.
+      // Beyond 0.3 m above the ground counts as airborne too (a walk down a slope or curb never gets there: updatePerson).
+      // (The 0.085 and 0.3 are JUMP_LEAD_TIME and AIRBORNE_HEIGHT, written out: a test loads this method alone)
+      const jumpAir = p.jumping ? Math.max(0.006, air) : p.jumpPrep > 0 ? -(1 - p.jumpPrep / 0.085) : air > 0.3 ? air : 0;
+      if (p.shadow) {
+        // the blob shadow stays on the ground (the mesh rides the body) and shrinks with height
+        p.shadow.position.y = groundY - p.position.y + 0.02;
+        const sScale = Math.max(0.45, 1 - Math.max(0, jumpAir) * 0.35);
+        p.shadow.scale.set(sScale, sScale, 1);
+      }
+      p.rig.update(dt, p.position.x, p.position.z, p.heading, personGround, this, jumpAir);
       p.crowd.begin();
       p.crowd.add(p.rig, 0);
       p.crowd.end();
@@ -1295,12 +1325,14 @@ class ThirdPersonControllerManager {
     if (this.suspended) {
       // aboard a streetcar (streetcar-ride.js): the player rides along, hidden, without moving itself
       this.entities[this.activeMode].speed = 0;
+      this.landPerson();
     } else if (this.activeMode === 'person') {
       this.updatePerson(dt, elapsed);
     } else {
       // The walker waits where it was left (New York's paced back & forth along a street between z -340 & 340, which
       // turned a start far from the origin, Sugar Beach's, round & walked it away)
       this.entities.person.speed = 0;
+      this.landPerson();
     }
 
     if (this.suspended) {
@@ -1338,7 +1370,19 @@ class ThirdPersonControllerManager {
     this.poseCharacters(dt, focusPos);
   }
 
+  // A walker that is not being driven (left behind by a mode change, or riding a streetcar) is not mid-jump: clear the
+  // jump state, and put one left in the air back on the ground
+  landPerson() {
+    const p = this.entities.person;
+    if (!p.jumping && !(p.jumpPrep > 0)) return;
+    p.jumping = false;
+    p.jumpPrep = 0;
+    p.verticalVel = 0;
+    if (!this.suspended) p.position.y = this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
+  }
+
   updatePerson(dt) {
+    if (!(dt > 0)) return;
     const p = this.entities.person;
     const maxWalk = this.keys.boost ? 8.2 : 4.4;
     const turnRate = 2.6;
@@ -1352,18 +1396,63 @@ class ThirdPersonControllerManager {
 
     p.speed += (targetSpeed - p.speed) * Math.min(1, dt * 10);
 
+    const prevX = p.position.x;
+    const prevZ = p.position.z;
+    const sinH = Math.sin(p.heading);
+    const cosH = Math.cos(p.heading);
     this.moveBody(p, 'person', dt);
+    // Prevent phantom speed buildup when blocked head-on by a building or shoreline boundary (as the bicycle does):
+    // the speed follows the forward distance actually covered
+    const nextX = prevX + sinH * p.speed * dt;
+    const nextZ = prevZ + cosH * p.speed * dt;
+    if (Math.abs(p.position.x - nextX) > 1e-6 || Math.abs(p.position.z - nextZ) > 1e-6) {
+      const actualFwd = ((p.position.x - prevX) * sinH + (p.position.z - prevZ) * cosH) / dt;
+      if (p.speed > 0 && actualFwd < p.speed) p.speed = Math.max(0, actualFwd);
+      else if (p.speed < 0 && actualFwd > p.speed) p.speed = Math.min(0, actualFwd);
+    }
 
     const groundY = this.getGroundHeight(p.position.x, p.position.z, 'person', p.position.y);
-    if (this.interiorSpace) { p.position.y = groundY; p.verticalVel = 0; return; }
-    if (this.keys.up && p.position.y <= groundY + 0.02) {
-      p.verticalVel = 5.2;
+    if (this.interiorSpace) {
+      p.position.y = groundY; p.verticalVel = 0; p.jumping = false; p.jumpPrep = 0;
+      return;
     }
-    p.verticalVel -= 14.5 * dt;
-    p.position.y += p.verticalVel * dt;
-    if (p.position.y < groundY) {
-      p.position.y = groundY;
+    // Jump (mrdoob's 536a907): a short crouch, then take-off. Grounded is "within AIRBORNE_HEIGHT of the ground", so a
+    // jump can start while walking down a slope, where the body trails the ground a little
+    if (this.keys.up && !p.jumping && !(p.jumpPrep > 0) && p.position.y <= groundY + AIRBORNE_HEIGHT) {
+      p.jumpPrep = JUMP_LEAD_TIME;
+    }
+    if (p.jumpPrep > 0) {
+      p.jumpPrep = Math.max(0, p.jumpPrep - dt);
+      this.settleToGround(p, groundY, dt);
+      if (p.jumpPrep === 0) {
+        p.verticalVel = 5.2;
+        p.jumping = true;
+      }
+    }
+    if (p.jumping || p.position.y > groundY + AIRBORNE_HEIGHT) {
+      if (!p.jumping) { // walked off an edge: falling counts as airborne
+        p.jumping = true;
+        p.jumpPrep = 0;
+      }
+      p.verticalVel -= 14.5 * dt;
+      p.position.y += p.verticalVel * dt;
+      if (p.position.y <= groundY) {
+        p.position.y = groundY;
+        p.verticalVel = 0;
+        p.jumping = false;
+      }
+    } else if (!(p.jumpPrep > 0)) {
+      // Slopes, curbs and steps down stay grounded: the body eases down onto the ground (a step up, a deck, snaps)
+      this.settleToGround(p, groundY, dt);
       p.verticalVel = 0;
+    }
+  }
+
+  settleToGround(p, groundY, dt) {
+    if (p.position.y < groundY) p.position.y = groundY;
+    else {
+      p.position.y += (groundY - p.position.y) * (1 - Math.exp(-dt * 18));
+      if (p.position.y - groundY < 1e-3) p.position.y = groundY;
     }
   }
 
@@ -1500,13 +1589,29 @@ class ThirdPersonControllerManager {
   }
 
   updateCyclist(dt) {
+    if (dt <= 0) return;
     const b = this.entities.cyclist;
 
+    const handbrake = b.speed > 0 ? +this.keys.up : 0;
     let throttle = 0;
-    if (this.keys.forward) throttle = this.keys.forward;
-    else if (this.keys.backward) throttle = -0.6 * this.keys.backward;
+    if (handbrake) throttle = -handbrake;
+    else if (this.keys.forward) throttle = +this.keys.forward;
+    else if (this.keys.backward) throttle = b.speed > 0 ? -this.keys.backward : -0.6 * this.keys.backward;
 
-    b.speed = driveSpeed(b.speed, throttle, this.keys.boost, dt, BICYCLE_DRIVE);
+    // Pause briefly at zero after braking from forward travel so holding S stops cleanly before backing up
+    if (b.speed > 0 && throttle < 0) {
+      b.speed = driveSpeed(b.speed, throttle, this.keys.boost, dt, BICYCLE_DRIVE);
+      if (b.speed < 0.05) {
+        b.speed = 0;
+        if (!handbrake) b._brakeHold = 0.25;
+      }
+    } else if (!handbrake && b._brakeHold > 0 && throttle < 0) {
+      b._brakeHold = Math.max(0, b._brakeHold - dt);
+      b.speed = 0;
+    } else {
+      b._brakeHold = 0;
+      b.speed = driveSpeed(b.speed, throttle, this.keys.boost, dt, BICYCLE_DRIVE);
+    }
 
     let turnInput = 0;
     if (this.keys.left) turnInput = this.keys.left;
@@ -1517,7 +1622,20 @@ class ThirdPersonControllerManager {
       b.heading += turnInput * 2.15 * dirSign * dt;
     }
 
+    const prevX = b.position.x;
+    const prevZ = b.position.z;
+    const sinH = Math.sin(b.heading);
+    const cosH = Math.cos(b.heading);
     this.moveBody(b, 'cyclist', dt);
+    // Prevent phantom speed buildup when blocked head-on by a building or shoreline boundary
+    // (moveBody has already resolved the contacts and clamped the bike to the world)
+    const nextX = prevX + sinH * b.speed * dt;
+    const nextZ = prevZ + cosH * b.speed * dt;
+    if (Math.abs(b.position.x - nextX) > 1e-6 || Math.abs(b.position.z - nextZ) > 1e-6) {
+      const actualFwd = ((b.position.x - prevX) * sinH + (b.position.z - prevZ) * cosH) / dt;
+      if (b.speed > 0 && actualFwd < b.speed) b.speed = Math.max(0, actualFwd);
+      else if (b.speed < 0 && actualFwd > b.speed) b.speed = Math.min(0, actualFwd);
+    }
     // a curb's step up or down eases over a few frames (a deck's or a teleport's jump doesn't)
     const ground = this.getGroundHeight(b.position.x, b.position.z, 'cyclist', b.position.y);
     const dy = ground - b.position.y;

@@ -1,0 +1,3 @@
+[
+  {"name":"gallery","time":"midday","wait":14000,"js":"(()=>{const g=window.CITY.BUILDING_GALLERY;if(!g)throw new Error('no gallery');const n=window.CITY.BuildingPrototypes.PROTOTYPES.length;const drawn=window.CITY.BuildingDraw.DRAWN_PRESETS.length;console.log('[gallery-check] presets '+n+' drawn '+drawn);})()"}
+]

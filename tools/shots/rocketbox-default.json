@@ -1,0 +1,12 @@
+[
+  {
+    "name": "rb-default",
+    "mode": "person",
+    "time": "midday",
+    "x": -79,
+    "z": 43,
+    "js": "new Promise((resolve) => setTimeout(() => resolve(window.CITY.rocketbox ? window.CITY.rocketbox.report() : { missing: true }), 6000))",
+    "wait": 1000,
+    "record": true
+  }
+]

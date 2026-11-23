@@ -1,0 +1,20 @@
+[
+ {
+  "name": "stride-flee",
+  "mode": "car",
+  "time": "midday",
+  "x": 174.5,
+  "z": -359.7,
+  "heading": -1.5662,
+  "js": "Promise.all([window.__gaitHelper.setupDive({ x: 174.5, z: -359.7, heading: -1.5662 }), window.__rbSideDive(9)])",
+  "wait": 200,
+  "record": true,
+  "screencastMs": 8000
+ },
+ {
+  "name": "stride-flee-log",
+  "js": "new Promise((r) => setTimeout(() => r({ summary: window.__rbStrideSummary(), log: window.__rbStrideLog, dive: window.__gaitHelper.diveLog }), 2000))",
+  "wait": 100,
+  "record": true
+ }
+]

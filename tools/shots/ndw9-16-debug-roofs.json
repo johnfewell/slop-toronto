@@ -1,0 +1,8 @@
+[
+  {"name":"roofs-cabbagetown","time":"midday","wait":6000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.6666,-79.3665);A.cameraSystem.cinema=()=>({pos:[w.x,400,w.z],look:[w.x,0,w.z],fov:42});})()"},
+  {"name":"roofs-kensington","time":"midday","wait":4000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.6545,-79.4020);A.cameraSystem.cinema=()=>({pos:[w.x,400,w.z],look:[w.x,0,w.z],fov:42});})()"},
+  {"name":"roofs-financial","time":"midday","wait":4000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.6487,-79.3816);A.cameraSystem.cinema=()=>({pos:[w.x,400,w.z],look:[w.x,0,w.z],fov:42});})()"}
+]

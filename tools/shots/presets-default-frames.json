@@ -1,0 +1,23 @@
+[
+ {
+  "name": "houses",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1252, -1290, 0); app.cameraSystem.cinema = () => ({ pos: [-1252, 1.7, -1290], look: [-1256, 6, -1420], fov: 60 }); })()"
+ },
+ {
+  "name": "mainstreet",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()"
+ },
+ {
+  "name": "downtown300",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ }
+]

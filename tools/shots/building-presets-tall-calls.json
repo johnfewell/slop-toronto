@@ -1,0 +1,93 @@
+[
+ {
+  "name": "at-stjames-town-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1376.5, -2393.4, 0); app.cameraSystem.cinema = () => ({ pos: [1376.5, 1.7, -2393.4], look: [1333, 15, -2405], fov: 72 }); })()"
+ },
+ {
+  "name": "calls-stjames-town-ground0",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "at-fd-ground2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(60, -340, 0); app.cameraSystem.cinema = () => ({ pos: [60, 1.7, -340], look: [60, 65, -420], fov: 72 }); })()"
+ },
+ {
+  "name": "calls-fd-ground2",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "at-cityplace-ground1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1430, 172, 0); app.cameraSystem.cinema = () => ({ pos: [-1430, 1.7, 172], look: [-1370, 20, 172], fov: 72 }); })()"
+ },
+ {
+  "name": "calls-cityplace-ground1",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "at-stjames-cathedral-ground1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(658.5, -375.7, 0); app.cameraSystem.cinema = () => ({ pos: [658.5, 1.7, -375.7], look: [676, 12.5, -406], fov: 72 }); })()"
+ },
+ {
+  "name": "calls-stjames-cathedral-ground1",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "at-annex-walkup-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1204.8, -2955, 0); app.cameraSystem.cinema = () => ({ pos: [-1204.8, 1.7, -2955], look: [-1212, 4, -2982], fov: 62 }); })()"
+ },
+ {
+  "name": "calls-annex-walkup-ground0",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "at-kiever-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1458, -1393, 0); app.cameraSystem.cinema = () => ({ pos: [-1458, 1.7, -1393], look: [-1458, 4, -1421], fov: 62 }); })()"
+ },
+ {
+  "name": "calls-kiever-ground0",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "meshes",
+  "record": true,
+  "wait": 300,
+  "metricsMs": 0,
+  "js": "(() => { const by = {}; window.__CITY_APP.scene.traverse((o) => { if (o.isMesh && /^Massing/.test(o.name)) by[o.name] = (by[o.name] || 0) + 1; }); return by; })()"
+ }
+]

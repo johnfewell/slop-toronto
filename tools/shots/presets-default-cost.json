@@ -1,0 +1,75 @@
+[
+ {
+  "name": "m-walk",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000,
+  "hold": "KeyW",
+  "camera": "pov",
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; const r = C.nearestRoads(1785, -1868, 200)[0]; app.teleportTo(r.px, r.pz, Math.atan2(r.dx, r.dz)); app.cameraSystem.cinema = null; console.log(\"[walk] road \" + r.road.name + \" at \" + r.px.toFixed(1) + \",\" + r.pz.toFixed(1) + \" heading \" + Math.atan2(r.dx, r.dz).toFixed(2)); })()"
+ },
+ {
+  "name": "c-walk",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "m-houses",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1252, -1290, 0); app.cameraSystem.cinema = () => ({ pos: [-1252, 1.7, -1290], look: [-1256, 6, -1420], fov: 60 }); })()",
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ },
+ {
+  "name": "c-houses",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "m-mainstreet",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()",
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ },
+ {
+  "name": "c-mainstreet",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "m-downtown300",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()",
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ },
+ {
+  "name": "c-downtown300",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "bytes",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "(() => { const e = performance.getEntriesByType(\"resource\"); let t = 0, b = 0, d = 0; for (const x of e) { t += x.transferSize || 0; b += x.encodedBodySize || 0; d += x.decodedBodySize || 0; } return { requests: e.length, transferSize: t, encodedBodySize: b, decodedBodySize: d, names: e.map((x) => x.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort() }; })()"
+ }
+]

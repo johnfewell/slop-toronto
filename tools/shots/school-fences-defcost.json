@@ -1,0 +1,62 @@
+[
+ {
+  "name": "oscar-face-midday",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-6665.25, g(-6665.25,-5865.5)+1.7, -5865.5], look:[-6665.4, g(-6665.4,-5873.5)+1.2, -5873.5], fov:62}); })()",
+  "metricsMs": 4000,
+  "metricsWarmupMs": 1000
+ },
+ {
+  "name": "calls-oscar-face-midday",
+  "record": true,
+  "wait": 300,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "oscar-above90-midday",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-6665.4, g(-6665.4,-5873.5)+90, -5821.3], look:[-6665.4, g(-6665.4,-5873.5), -5873.5], fov:55}); })()",
+  "metricsMs": 4000,
+  "metricsWarmupMs": 1000
+ },
+ {
+  "name": "calls-oscar-above90-midday",
+  "record": true,
+  "wait": 300,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "delasalle-face-midday",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-164.4, g(-164.4,-4484.6)+1.7, -4484.6], look:[-164.4, g(-164.4,-4476.6)+1.2, -4476.6], fov:62}); })()",
+  "metricsMs": 4000,
+  "metricsWarmupMs": 1000
+ },
+ {
+  "name": "calls-delasalle-face-midday",
+  "record": true,
+  "wait": 300,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ },
+ {
+  "name": "delasalle-above90-midday",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-164.4, g(-164.4,-4476.6)+90, -4424.400000000001], look:[-164.4, g(-164.4,-4476.6), -4476.6], fov:55}); })()",
+  "metricsMs": 4000,
+  "metricsWarmupMs": 1000
+ },
+ {
+  "name": "calls-delasalle-above90-midday",
+  "record": true,
+  "wait": 300,
+  "metricsMs": 0,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()"
+ }
+]

@@ -1,0 +1,14 @@
+[
+ {
+  "name": "m-cabbagetown",
+  "time": "midday",
+  "wait": 2000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "name": "p-cabbagetown",
+  "time": "midday",
+  "wait": 12000,
+  "js": "(() => {})()"
+ }
+]

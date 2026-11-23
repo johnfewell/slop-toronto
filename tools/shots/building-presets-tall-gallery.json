@@ -1,0 +1,464 @@
+[
+ {
+  "name": "walk-up-apartment-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2810, 3363.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2810, 1.7, 3363.6], look: [-2810, 4.5, 3334.6], fov: 62 }); })()"
+ },
+ {
+  "name": "walk-up-apartment-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2736, 3360.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2736, 1.7, 3360.6], look: [-2756, 5, 3334.6], fov: 68 }); })()"
+ },
+ {
+  "name": "walk-up-apartment-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2723, 3382.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2723, 40, 3382.6], look: [-2723, 0, 3334.6], fov: 62 }); })()"
+ },
+ {
+  "name": "walk-up-apartment-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2778, 3358.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2778, 1.7, 3358.6], look: [-2810, 5, 3334.6], fov: 66 }); })()"
+ },
+ {
+  "name": "mid-rise-block-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2804, 3311.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2804, 1.7, 3311.6], look: [-2804, 4.5, 3278.6], fov: 62 }); })()"
+ },
+ {
+  "name": "mid-rise-block-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2722, 3308.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2722, 1.7, 3308.6], look: [-2742, 5, 3278.6], fov: 68 }); })()"
+ },
+ {
+  "name": "mid-rise-block-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2705, 3330.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2705, 40, 3330.6], look: [-2705, 0, 3278.6], fov: 62 }); })()"
+ },
+ {
+  "name": "mid-rise-block-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2770, 3302.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2770, 1.7, 3302.6], look: [-2804, 5, 3278.6], fov: 66 }); })()"
+ },
+ {
+  "name": "slab-tower-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2768, 3256.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2768, 1.7, 3256.6], look: [-2768, 26.1, 3229.1], fov: 75 }); })()"
+ },
+ {
+  "name": "slab-tower-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2638, 3253.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2638, 1.7, 3253.6], look: [-2658, 23.2, 3229.1], fov: 78 }); })()"
+ },
+ {
+  "name": "slab-tower-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2597, 3306.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2597, 88.8, 3306.6], look: [-2597, 17.4, 3229.1], fov: 62 }); })()"
+ },
+ {
+  "name": "slab-tower-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2722, 3253.1, 0); app.cameraSystem.cinema = () => ({ pos: [-2722, 1.7, 3253.1], look: [-2768, 23.2, 3229.1], fov: 78 }); })()"
+ },
+ {
+  "name": "glass-tower-podium-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2792, 3217.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2792, 1.7, 3217.6], look: [-2792, 40.5, 3181.6], fov: 75 }); })()"
+ },
+ {
+  "name": "glass-tower-podium-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2694, 3214.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2694, 1.7, 3214.6], look: [-2714, 36, 3181.6], fov: 78 }); })()"
+ },
+ {
+  "name": "glass-tower-podium-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2669, 3267.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2669, 124, 3267.6], look: [-2669, 27, 3181.6], fov: 62 }); })()"
+ },
+ {
+  "name": "glass-tower-podium-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2761, 3205.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2761, 1.7, 3205.6], look: [-2792, 36, 3181.6], fov: 78 }); })()"
+ },
+ {
+  "name": "low-masonry-block-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2817.5, 3156.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2817.5, 1.7, 3156.6], look: [-2817.5, 4.5, 3129.1], fov: 62 }); })()"
+ },
+ {
+  "name": "low-masonry-block-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2753.5, 3153.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2753.5, 1.7, 3153.6], look: [-2773.5, 5, 3129.1], fov: 68 }); })()"
+ },
+ {
+  "name": "low-masonry-block-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2745.5, 3175.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2745.5, 40, 3175.6], look: [-2745.5, 0, 3129.1], fov: 62 }); })()"
+ },
+ {
+  "name": "low-masonry-block-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2788, 3153.1, 0); app.cameraSystem.cinema = () => ({ pos: [-2788, 1.7, 3153.1], look: [-2817.5, 5, 3129.1], fov: 66 }); })()"
+ },
+ {
+  "name": "dark-curtain-wall-tower-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2413, 3520, 0); app.cameraSystem.cinema = () => ({ pos: [-2413, 1.7, 3520], look: [-2413, 45, 3482], fov: 75 }); })()"
+ },
+ {
+  "name": "dark-curtain-wall-tower-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2307, 3517, 0); app.cameraSystem.cinema = () => ({ pos: [-2307, 1.7, 3517], look: [-2327, 40, 3482], fov: 78 }); })()"
+ },
+ {
+  "name": "dark-curtain-wall-tower-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2278, 3570, 0); app.cameraSystem.cinema = () => ({ pos: [-2278, 135, 3570], look: [-2278, 30, 3482], fov: 62 }); })()"
+ },
+ {
+  "name": "dark-curtain-wall-tower-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2381, 3506, 0); app.cameraSystem.cinema = () => ({ pos: [-2381, 1.7, 3506], look: [-2413, 40, 3482], fov: 78 }); })()"
+ },
+ {
+  "name": "contemporary-glass-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2429.5, 3460, 0); app.cameraSystem.cinema = () => ({ pos: [-2429.5, 1.7, 3460], look: [-2429.5, 15.8, 3420], fov: 75 }); })()"
+ },
+ {
+  "name": "contemporary-glass-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2345.5, 3457, 0); app.cameraSystem.cinema = () => ({ pos: [-2345.5, 1.7, 3457], look: [-2365.5, 14, 3420], fov: 78 }); })()"
+ },
+ {
+  "name": "contemporary-glass-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2327.5, 3510, 0); app.cameraSystem.cinema = () => ({ pos: [-2327.5, 63.5, 3510], look: [-2327.5, 10.5, 3420], fov: 62 }); })()"
+ },
+ {
+  "name": "contemporary-glass-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2400.5, 3444, 0); app.cameraSystem.cinema = () => ({ pos: [-2400.5, 1.7, 3444], look: [-2429.5, 14, 3420], fov: 78 }); })()"
+ },
+ {
+  "name": "plain-low-block-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2440, 3297, 0); app.cameraSystem.cinema = () => ({ pos: [-2440, 1.7, 3297], look: [-2440, 4.5, 3267], fov: 62 }); })()"
+ },
+ {
+  "name": "plain-low-block-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2370, 3294, 0); app.cameraSystem.cinema = () => ({ pos: [-2370, 1.7, 3294], look: [-2390, 5, 3267], fov: 68 }); })()"
+ },
+ {
+  "name": "plain-low-block-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2359, 3316, 0); app.cameraSystem.cinema = () => ({ pos: [-2359, 40, 3316], look: [-2359, 0, 3267], fov: 62 }); })()"
+ },
+ {
+  "name": "plain-low-block-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2409, 3291, 0); app.cameraSystem.cinema = () => ({ pos: [-2409, 1.7, 3291], look: [-2440, 5, 3267], fov: 66 }); })()"
+ },
+ {
+  "name": "tower-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2407, 3248, 0); app.cameraSystem.cinema = () => ({ pos: [-2407, 1.7, 3248], look: [-2407, 31.5, 3212], fov: 75 }); })()"
+ },
+ {
+  "name": "tower-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2293, 3245, 0); app.cameraSystem.cinema = () => ({ pos: [-2293, 1.7, 3245], look: [-2313, 28, 3212], fov: 78 }); })()"
+ },
+ {
+  "name": "tower-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2260, 3298, 0); app.cameraSystem.cinema = () => ({ pos: [-2260, 102, 3298], look: [-2260, 21, 3212], fov: 62 }); })()"
+ },
+ {
+  "name": "tower-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2375, 3236, 0); app.cameraSystem.cinema = () => ({ pos: [-2375, 1.7, 3236], look: [-2407, 28, 3212], fov: 78 }); })()"
+ },
+ {
+  "name": "church-gothic-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2444.5, 3188, 0); app.cameraSystem.cinema = () => ({ pos: [-2444.5, 1.7, 3188], look: [-2444.5, 4.5, 3154.5], fov: 62 }); })()"
+ },
+ {
+  "name": "church-gothic-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2386.5, 3185, 0); app.cameraSystem.cinema = () => ({ pos: [-2386.5, 1.7, 3185], look: [-2400.5, 5, 3154.5], fov: 68 }); })()"
+ },
+ {
+  "name": "church-gothic-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2372.5, 3206, 0); app.cameraSystem.cinema = () => ({ pos: [-2372.5, 40, 3206], look: [-2372.5, 0, 3154.5], fov: 62 }); })()"
+ },
+ {
+  "name": "church-gothic-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2425, 3178.5, 0); app.cameraSystem.cinema = () => ({ pos: [-2425, 1.7, 3178.5], look: [-2444.5, 5, 3154.5], fov: 66 }); })()"
+ },
+ {
+  "name": "church-chapel-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2452, 3129, 0); app.cameraSystem.cinema = () => ({ pos: [-2452, 1.7, 3129], look: [-2452, 4.5, 3104], fov: 62 }); })()"
+ },
+ {
+  "name": "church-chapel-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2404, 3126, 0); app.cameraSystem.cinema = () => ({ pos: [-2404, 1.7, 3126], look: [-2418, 5, 3104], fov: 68 }); })()"
+ },
+ {
+  "name": "church-chapel-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2395, 3147, 0); app.cameraSystem.cinema = () => ({ pos: [-2395, 40, 3147], look: [-2395, 0, 3104], fov: 62 }); })()"
+ },
+ {
+  "name": "church-chapel-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2435, 3128, 0); app.cameraSystem.cinema = () => ({ pos: [-2435, 1.7, 3128], look: [-2452, 5, 3104], fov: 66 }); })()"
+ },
+ {
+  "name": "church-modern-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2431, 3087, 0); app.cameraSystem.cinema = () => ({ pos: [-2431, 1.7, 3087], look: [-2431, 4.5, 3056], fov: 62 }); })()"
+ },
+ {
+  "name": "church-modern-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2355, 3084, 0); app.cameraSystem.cinema = () => ({ pos: [-2355, 1.7, 3084], look: [-2369, 5, 3056], fov: 68 }); })()"
+ },
+ {
+  "name": "church-modern-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2332, 3105, 0); app.cameraSystem.cinema = () => ({ pos: [-2332, 40, 3105], look: [-2332, 0, 3056], fov: 62 }); })()"
+ },
+ {
+  "name": "church-modern-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2407, 3080, 0); app.cameraSystem.cinema = () => ({ pos: [-2407, 1.7, 3080], look: [-2431, 5, 3056], fov: 66 }); })()"
+ },
+ {
+  "name": "mosque-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2106, 3516, 0); app.cameraSystem.cinema = () => ({ pos: [-2106, 1.7, 3516], look: [-2106, 4.5, 3484], fov: 62 }); })()"
+ },
+ {
+  "name": "mosque-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2030, 3513, 0); app.cameraSystem.cinema = () => ({ pos: [-2030, 1.7, 3513], look: [-2044, 5, 3484], fov: 68 }); })()"
+ },
+ {
+  "name": "mosque-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2007, 3534, 0); app.cameraSystem.cinema = () => ({ pos: [-2007, 40, 3534], look: [-2007, 0, 3484], fov: 62 }); })()"
+ },
+ {
+  "name": "mosque-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2082, 3508, 0); app.cameraSystem.cinema = () => ({ pos: [-2082, 1.7, 3508], look: [-2106, 5, 3484], fov: 66 }); })()"
+ },
+ {
+  "name": "synagogue-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2118, 3460, 0); app.cameraSystem.cinema = () => ({ pos: [-2118, 1.7, 3460], look: [-2118, 4.5, 3431], fov: 62 }); })()"
+ },
+ {
+  "name": "synagogue-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2058, 3457, 0); app.cameraSystem.cinema = () => ({ pos: [-2058, 1.7, 3457], look: [-2072, 5, 3431], fov: 68 }); })()"
+ },
+ {
+  "name": "synagogue-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2043, 3478, 0); app.cameraSystem.cinema = () => ({ pos: [-2043, 40, 3478], look: [-2043, 0, 3431], fov: 62 }); })()"
+ },
+ {
+  "name": "synagogue-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2098, 3455, 0); app.cameraSystem.cinema = () => ({ pos: [-2098, 1.7, 3455], look: [-2118, 5, 3431], fov: 66 }); })()"
+ },
+ {
+  "name": "temple-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2112, 3410, 0); app.cameraSystem.cinema = () => ({ pos: [-2112, 1.7, 3410], look: [-2112, 4.5, 3381], fov: 62 }); })()"
+ },
+ {
+  "name": "temple-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2044, 3407, 0); app.cameraSystem.cinema = () => ({ pos: [-2044, 1.7, 3407], look: [-2058, 5, 3381], fov: 68 }); })()"
+ },
+ {
+  "name": "temple-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2025, 3428, 0); app.cameraSystem.cinema = () => ({ pos: [-2025, 40, 3428], look: [-2025, 0, 3381], fov: 62 }); })()"
+ },
+ {
+  "name": "temple-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2090, 3405, 0); app.cameraSystem.cinema = () => ({ pos: [-2090, 1.7, 3405], look: [-2112, 5, 3381], fov: 66 }); })()"
+ },
+ {
+  "name": "church-gothic-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2447, 3165, 0); app.cameraSystem.cinema = () => ({ pos: [-2447, 2, 3165], look: [-2468.5, 6, 3154.5], fov: 70 }); })()"
+ },
+ {
+  "name": "church-chapel-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2452, 3109.4, 0); app.cameraSystem.cinema = () => ({ pos: [-2452, 2, 3109.4], look: [-2471, 6, 3104], fov: 70 }); })()"
+ },
+ {
+  "name": "church-modern-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2438, 3065, 0); app.cameraSystem.cinema = () => ({ pos: [-2438, 2, 3065], look: [-2464, 6, 3056], fov: 70 }); })()"
+ },
+ {
+  "name": "mosque-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2113, 3493.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2113, 2, 3493.6], look: [-2139, 6, 3484], fov: 70 }); })()"
+ },
+ {
+  "name": "synagogue-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2121, 3438.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2121, 2, 3438.8], look: [-2143, 6, 3431], fov: 70 }); })()"
+ },
+ {
+  "name": "temple-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2117, 3388.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2117, 2, 3388.8], look: [-2141, 6, 3381], fov: 70 }); })()"
+ }
+]

@@ -4,9 +4,10 @@
 # (docs/massing-buildings.md "Matched idle baseline" says what to check); it never stops anything there.
 #
 # Three arms, served from two builds in this checkout:
-#   main   dist-main/ (MAIN_REF, default origin/main) with ?massing=1: the pilot's 17-float format, 1 km x 5 styles
-#   cells  dist/ (this branch) with ?massing=1: the compact cells, tiers and worker build
-#   boxes  dist/ without the flag: the default city's boxes (what default-on, st-2nl.7, would replace)
+#   main   dist-main/ (MAIN_REF, default origin/main) with ?massing=1&presets=0 (the old look since st-ndw9.19): the pilot's 17-float format, 1 km x 5 styles
+#   cells  dist/ (this branch) with ?massing=1&presets=0: the compact cells, tiers and worker build
+#   boxes  dist/ with ?presets=0: the city's boxes (the default desktop page draws the downtown outlines since st-ndw9.21, so
+#          ?presets=0 is the old look)
 # Both tiers: high (1600x900 desktop, ?quality=high) and low (412x915 touch, ?quality=low, DPR 1), the protocol's
 # settings (?autoscale=0&transit=timetable&film&cloudSpeed=0, CAPTURE_SEED=6711, 2 s warm-up + 8 s windows,
 # CAPTURE_IDLE_CHECK=1, the long-task init script). Order: a warm-up run of main and cells per tier, then REPS rounds,
@@ -63,9 +64,9 @@ echo "# massing baseline $(date -u +%FT%TZ): $REV, dist $(sed -n 's/.*"build": "
 COMMON="CAPTURE_PORT=$PORT CAPTURE_CDN_CACHE=1 CAPTURE_NAVIGATION_TIMEOUT_MS=180000 CAPTURE_METRICS_MS=8000 CAPTURE_METRICS_WARMUP_MS=2000 CAPTURE_IDLE_CHECK=1 CAPTURE_SEED=6711 CAPTURE_PROGRESS=1 CAPTURE_INIT_SCRIPT=tools/capture-longtasks.js"
 BASEQ='autoscale=0&transit=timetable&film&cloudSpeed=0'
 run() { # <arm> <tier> <tag>
-  local arm=$1 tier=$2 tag=$3 root=dist flag='&massing=1' size
+  local arm=$1 tier=$2 tag=$3 root=dist flag='&massing=1&presets=0' size
   [ "$arm" = main ] && root=dist-main
-  [ "$arm" = boxes ] && flag=''
+  [ "$arm" = boxes ] && flag='&presets=0'
   if [ "$tier" = high ]; then size='CAPTURE_VIEWPORT=1600x900'; else size='CAPTURE_VIEWPORT=412x915 CAPTURE_DPR=1 CAPTURE_MOBILE=1'; fi
   for attempt in "$tag" "${tag}b"; do
     echo "run $attempt $arm $tier start $(date -u +%FT%TZ)" >> "$ORDER"

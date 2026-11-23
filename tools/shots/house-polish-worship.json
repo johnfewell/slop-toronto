@@ -1,0 +1,163 @@
+[
+ {
+  "name": "stjames-cathedral-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(641, -345.4, 0); app.cameraSystem.cinema = () => ({ pos: [641, 6, -345.4], look: [676, 12.5, -406], fov: 72 }); })()"
+ },
+ {
+  "name": "stjames-cathedral-ground1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(658.5, -375.7, 0); app.cameraSystem.cinema = () => ({ pos: [658.5, 1.7, -375.7], look: [676, 12.5, -406], fov: 72 }); })()"
+ },
+ {
+  "name": "stjames-cathedral-high2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(601, -276.1, 0); app.cameraSystem.cinema = () => ({ pos: [601, 150, -276.1], look: [676, 0, -406], fov: 55 }); })()"
+ },
+ {
+  "name": "stmichaels-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(575, -892, 0); app.cameraSystem.cinema = () => ({ pos: [575, 4, -892], look: [575, 14, -952], fov: 72 }); })()"
+ },
+ {
+  "name": "stmichaels-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(575, -802, 0); app.cameraSystem.cinema = () => ({ pos: [575, 150, -802], look: [575, 0, -952], fov: 55 }); })()"
+ },
+ {
+  "name": "metropolitan-united-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(532.6, -785.6, 0); app.cameraSystem.cinema = () => ({ pos: [532.6, 4, -785.6], look: [575, 11, -828], fov: 72 }); })()"
+ },
+ {
+  "name": "metropolitan-united-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(468.9, -721.9, 0); app.cameraSystem.cinema = () => ({ pos: [468.9, 150, -721.9], look: [575, 0, -828], fov: 55 }); })()"
+ },
+ {
+  "name": "knox-spadina-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1117, -2299.7, 0); app.cameraSystem.cinema = () => ({ pos: [-1117, 3, -2299.7], look: [-1142, 7, -2343], fov: 62 }); })()"
+ },
+ {
+  "name": "knox-spadina-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1142, -2193, 0); app.cameraSystem.cinema = () => ({ pos: [-1142, 150, -2193], look: [-1142, 0, -2343], fov: 55 }); })()"
+ },
+ {
+  "name": "kiever-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1458, -1393, 0); app.cameraSystem.cinema = () => ({ pos: [-1458, 1.7, -1393], look: [-1458, 4, -1421], fov: 62 }); })()"
+ },
+ {
+  "name": "kiever-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1458, -1301, 0); app.cameraSystem.cinema = () => ({ pos: [-1458, 120, -1301], look: [-1458, 0, -1421], fov: 55 }); })()"
+ },
+ {
+  "name": "anshei-minsk-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1172, -1381, 0); app.cameraSystem.cinema = () => ({ pos: [-1172, 1.7, -1381], look: [-1172, 4, -1409], fov: 62 }); })()"
+ },
+ {
+  "name": "anshei-minsk-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1172, -1289, 0); app.cameraSystem.cinema = () => ({ pos: [-1172, 120, -1289], look: [-1172, 0, -1409], fov: 55 }); })()"
+ },
+ {
+  "name": "jami-mosque-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5496.6, -2551.6, 0); app.cameraSystem.cinema = () => ({ pos: [-5496.6, 2, -2551.6], look: [-5458, 5, -2562], fov: 62 }); })()"
+ },
+ {
+  "name": "jami-mosque-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5458, -2442, 0); app.cameraSystem.cinema = () => ({ pos: [-5458, 120, -2442], look: [-5458, 0, -2562], fov: 55 }); })()"
+ },
+ {
+  "name": "ching-kwok-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1779.3, -1136.1, 0); app.cameraSystem.cinema = () => ({ pos: [-1779.3, 1.7, -1136.1], look: [-1771, 4.5, -1167], fov: 62 }); })()"
+ },
+ {
+  "name": "ching-kwok-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1771, -1047, 0); app.cameraSystem.cinema = () => ({ pos: [-1771, 120, -1047], look: [-1771, 0, -1167], fov: 55 }); })()"
+ },
+ {
+  "name": "hindu-temple-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4791, -1462, 0); app.cameraSystem.cinema = () => ({ pos: [-4791, 1.7, -1462], look: [-4791, 4.5, -1494], fov: 62 }); })()"
+ },
+ {
+  "name": "hindu-temple-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4791, -1374, 0); app.cameraSystem.cinema = () => ({ pos: [-4791, 120, -1374], look: [-4791, 0, -1494], fov: 55 }); })()"
+ },
+ {
+  "name": "chapel-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-912, -2845, 0); app.cameraSystem.cinema = () => ({ pos: [-912, 1.7, -2845], look: [-897, 4, -2871], fov: 62 }); })()"
+ },
+ {
+  "name": "chapel-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-897, -2751, 0); app.cameraSystem.cinema = () => ({ pos: [-897, 120, -2751], look: [-897, 0, -2871], fov: 55 }); })()"
+ },
+ {
+  "name": "modern-church-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(30, -2406, 0); app.cameraSystem.cinema = () => ({ pos: [30, 1.7, -2406], look: [30, 5, -2441], fov: 62 }); })()"
+ },
+ {
+  "name": "modern-church-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(30, -2321, 0); app.cameraSystem.cinema = () => ({ pos: [30, 120, -2321], look: [30, 0, -2441], fov: 55 }); })()"
+ }
+]

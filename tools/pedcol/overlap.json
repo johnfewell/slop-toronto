@@ -1,0 +1,10 @@
+[
+ {
+  "name": "overlap",
+  "js": "(async () => { const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; const px = r.px + nx * off, pz = r.pz + nz * off; window.__CITY_APP.teleportTo(px, pz, Math.atan2(r.dx, r.dz)); await __pcSleep(6000); __pcHold({ x: px, y: 9, z: pz, lx: px + r.dx * 30, ly: 0, lz: pz + r.dz * 30 }); await __pcSleep(8000); return __pcOverlapRun(60000); })()",
+  "wait": 100,
+  "record": true,
+  "mode": "person",
+  "time": "midday"
+ }
+]

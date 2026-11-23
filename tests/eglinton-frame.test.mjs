@@ -27,8 +27,10 @@ const FRAME_FILES = ['toronto-sidewalks.js', 'toronto-subway.js', 'toronto-subwa
   'toronto-transit.js', 'toronto-signal-plan.js', 'toronto-patios.js'];
 
 test('a default visit loads no file of the Eglinton frame; ?map=eglinton swaps in exactly its seven scripts', () => {
-  // (today's map: ?map=detail anywhere, and a phone's default visit)
-  const today = scriptsFor('?map=detail'), other = scriptsFor('', { touch: true }), egl = scriptsFor('?map=eglinton');
+  // (today's map: ?map=detail anywhere, and a phone's default visit; the schoolyard fences' two scripts are on for a desktop by
+  // default since 2026-11-17, so these two are compared with ?schoolFences=0, which is how a phone's list reads)
+  const today = scriptsFor('?map=detail&schoolFences=0'), other = scriptsFor('', { touch: true }), egl = scriptsFor('?map=eglinton&schoolFences=0&presets=0'); // (?presets=0: the boxes' page, whose colliders are the boxes')
+  assert.deepEqual(scriptsFor('?map=detail').filter((s) => !s.includes('/school-fences')), today, 'a desktop\'s fences are those two scripts and nothing else');
   assert.ok(!today.some((s) => s.includes('/frames/')), 'today\'s scripts only');
   assert.deepEqual(other, today, 'a phone\'s default visit is today\'s map');
   assert.deepEqual(scriptsFor('?map=other', { touch: true }), today, 'any other value is the device\'s default');
@@ -36,6 +38,26 @@ test('a default visit loads no file of the Eglinton frame; ?map=eglinton swaps i
   const swapped = egl.filter((s, i) => s !== today[i]);
   assert.deepEqual(swapped.sort(), FRAME_FILES.map((f) => `./js/frames/eglinton/${f}`).sort());
   for (const f of FRAME_FILES) assert.ok(fs.existsSync(new URL(`../js/frames/eglinton/${f}`, import.meta.url)), f);
+});
+
+test('the pages that draw the buildings from their polygons load the drawn-buildings patio layout, the others the boxes\' (st-ndw9.23)', () => {
+  const BOXES = './js/frames/eglinton/toronto-patios.js', DRAWN = './js/frames/eglinton/toronto-patios-drawn.js';
+  const patios = (search, device) => scriptsFor(search, device).filter((s) => s.includes('toronto-patios'));
+  // a desktop on the bigger map draws them by default (main.js drawnByDefault): the same test, here
+  assert.deepEqual(patios('?schoolFences=0'), [DRAWN], 'the default desktop page');
+  assert.deepEqual(patios('?map=eglinton'), [DRAWN]);
+  assert.deepEqual(patios('?presets=0'), [BOXES]);
+  assert.deepEqual(patios('?presets=off'), [BOXES]);
+  assert.deepEqual(patios('?presets=draw'), [DRAWN]);
+  assert.deepEqual(patios('?massing=1&presets=0'), [DRAWN], '?massing=1 has the polygons\' colliders either way');
+  // not a desktop: the bigger map only by ?map=eglinton, and then no drawn buildings unless ?massing=1 asks
+  assert.deepEqual(patios('', { touch: true }), ['./js/toronto-patios.js'], 'a phone: today\'s map');
+  assert.deepEqual(patios('?map=eglinton', { touch: true }), [BOXES]);
+  assert.deepEqual(patios('?map=eglinton&massing=1', { touch: true }), [DRAWN]);
+  assert.deepEqual(patios('?map=detail'), ['./js/toronto-patios.js'], 'the detail map keeps its own');
+  assert.deepEqual(patios('?map=detail&massing=1'), ['./js/toronto-patios.js']);
+  // main.js's own test of the same page
+  assert.match(read('js/main.js').toString(), /const drawnByDefault = !!loader && loader\.cityMap === 'eglinton' && loader\.cityDesktop === true && presetsArg !== '0' && presetsArg !== 'off';/);
 });
 
 test('the page asks for the Eglinton binary by its hash, and only under ?map=eglinton', () => {

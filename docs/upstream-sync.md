@@ -8,6 +8,10 @@ transit, signals, quality tiers and custom powertrain.
 This is a selective port, not a wholesale merge of New York's files. The source revision is a review checkpoint;
 it does not mean every upstream change has been applied verbatim.
 
+Review checkpoint, updated 2026-11-16: reviewed through
+[`2813185`](https://github.com/mrdoob/slop-newyork/commit/2813185) (the 2026-11-10 tip). The sentence above is the
+2026-10-26 integration's own; the November 2026 sections at the end of this file cover the 15 commits since.
+
 ## Imported in this integration
 
 | Improvement | Upstream commits | Toronto adaptation |
@@ -579,3 +583,166 @@ adapter). The clouds move to alpha.7 with the takram fork release 8. The pin liv
 (`explore.html`, the three preview tools, `vendor/clouds/release.json`), and `tests/threejs-pin.test.cjs` also checks
 npm, the lockfile and `vendor/three/` against it. The `renderGroup` uniforms above stay. What the 34 commits change for
 Toronto, and the verification, are in [clouds-alpha7](clouds-alpha7.md#renderer).
+
+# Culling thresholds and render settings, instance matrices — 2026-11-16
+
+Beads `st-iq0v.5` (upstream `c8a904d`, "Optimize GPU frame time, shadow cascades, and instanced culling") and
+`st-iq0v.6` (upstream `21f71bd`, "Bind instance matrices as vertex attributes instead of storage buffers"). Both are
+numbers, so each was measured on the Mac mini (Apple M4, headless Chromium 156, 1600x900, uncapped, midday) as three
+alternating A B pairs in one sitting, one setting at a time, in five views (King and Bay, the Huron St house street, High
+Park, an aerial over downtown, and an uncapped High Park walk). A difference inside the A-to-A spread, or under 0.1 ms,
+is "no measurable change". The per-run numbers are in the bead notes of `st-iq0v.5` and `st-iq0v.6`.
+
+| Upstream | Taken | Measured |
+| --- | --- | --- |
+| `c8a904d` instanced batches split into cells from 64 instances / 40,000 triangles to 32 / 8,000 | No | Draw calls +7 to +12 percent, triangles -3 to -4 percent. Frame time 0.1 to 0.4 ms lower at King and Bay (inside the noise), the house street, High Park and the walk, and 0.2 ms higher over downtown (outside it, in both sittings). A trade of the aerial view for the street views, which the keep rule (no view may lose) rejects. |
+| `c8a904d` batch radius that qualifies, 1,500 m to 800 m | No | Draw calls, triangles and frame time identical to the baseline in every view. |
+| `c8a904d` shadow stand-ins for merged meshes from 20,000 to 8,000 triangles | No | Triangles -0.3 to -1.2 percent, frame time unchanged (0.0 to 0.1 ms). |
+| `c8a904d` shadow stand-in source radius, 600 m to 350 m | No | Measured on top of `fix/tall-tower-shadows-iq0v` (PR #168). Frame time unchanged, draw calls +0.5 to +3 percent. The CN Tower pod's shadow on the Union platforms is still drawn at all four headings (steep and straight down). |
+| `c8a904d` bloom resolution 0.5 to 0.35 | Medium tier only | Medium: 0.17 to 0.23 ms (1 to 2 percent) faster at King and Bay, the house street and High Park, no measurable change over downtown and on the walk. The lit windows' glow is a touch tighter; not noticeable without flipping between the frames. Low tier (a phone-sized viewport): no measurable change, so it keeps 0.5. High keeps 0.5. New tier key `bloomScale` in `js/quality.js`. |
+| `c8a904d` fixed 2,048 shadow tile, Firefox without multisampling, cheaper curbs and shadow far plane | No | Toronto keeps its own shadow tiers; the curb and far-plane edits were not in the brief. |
+| `21f71bd` drop the storage-buffer swap of instance matrices | No (`st-iq0v.6`) | Without the swap Chromium rejects the tree impostor and tree material pipelines (9 vertex buffers, 8 allowed). Uploads per frame did not fall (+4 to +6 percent). |
+
+A follow-up, not done: the swap saves one vertex buffer slot per instanced mesh, and the tree impostor and tree node
+material pipelines sit at the limit without it. If those two materials gave up one vertex buffer, the swap could go.
+This was read from the error text and the pipeline layouts, not tried.
+
+# Slop New York port, November 2026: pedestrian gait, bicycle braking, faded-out shader detail, tall-tower shadows
+
+Bead `st-iq0v`, spec [upstream-port-2026-11-spec.md](upstream-port-2026-11-spec.md). The plan reviewed the 15 upstream
+commits from `e35c06c` (2026-10-29) to [`2813185`](https://github.com/mrdoob/slop-newyork/commit/2813185)
+(2026-11-10), plus the older `13dd142` that Toronto never took. The culling thresholds and instance matrices are in
+the section above; the four ports that shipped are below. Measurements were taken on the Mac mini (Apple M4, headless
+Chromium) while other jobs shared it, so each is relative evidence and not a budget. "Read" below means read from the
+code or the three.js source and not run.
+
+## Pedestrian gait, jump and landing (PR #163, merge `594e38c`, bead `st-iq0v.1`)
+
+| Upstream | Taken | Toronto adaptation and result |
+| --- | --- | --- |
+| [`13dd142`](https://github.com/mrdoob/slop-newyork/commit/13dd142) cleaner walk, idle weight shift, turning at corners; [`63df441`](https://github.com/mrdoob/slop-newyork/commit/63df441) foot events (`touchDown`, `liftOff`, `stanceFoot`, `swingFoot`) and one two-bone limb solver; [`536a907`](https://github.com/mrdoob/slop-newyork/commit/536a907) jump crouch, airborne pose, landing | Yes | `PersonRig` in `js/pedestrians.js` is upstream's at `536a907`, from its section header to the end of the class, pasted in as a classic script (no `import`/`export`), plus Toronto's two ragdoll hooks `jointAt` and `blendFrom`, pasted back unchanged at the end of the class. Toronto's own palette, the rest of the crowd class and the material code were already upstream's from the October port and were not touched. The bone layout is the same on both sides (15 bones, 31 floats each), so the crowd shader needed no change. |
+| Knock-down ragdoll and the getting-up blend | Left as Toronto's | Unchanged on purpose: `PersonRagdoll` and the knock-down code in `js/traffic.js` were not edited. Getting up already calls `rig.reset(...)` every frame before `blendFrom`, so the new rig starts from both feet under the body, with its lean and turn zeroed. A test runs that hand-off two ways (standing still, and reset every frame as `traffic.js` does) and requires finite poses and less than 0.6 m of movement at any joint per frame. |
+| Hidden and far people | Kept | `update(..., updatePose, ...)` still skips the pose solve for a person who is not drawn. Upstream's new gait reads `thighSplit`, which only the pose solve wrote, so a hidden person's gait would have drifted from a drawn one by up to 0.15 m at one arm joint. A new `solveSplit()` works out `thighSplit` from the leg joints alone, so a hidden person's gait state and a person who is always posed are now identical frame by frame (a test runs every mode both ways). |
+| Jump crouch, airborne flag, landing shadow, speed that stops building against a wall (player on foot, `js/controllers.js`) | Yes, by hand | `JUMP_LEAD_TIME` 0.085 s and `AIRBORNE_HEIGHT` 0.3 m. Toronto keeps its own take-off (5.2 m/s, gravity 14.5). The blob shadow stays on the ground and shrinks with height. The blocked-speed clamp sits after `moveBody`, so Toronto's contact resolution runs first. A jump may start within 0.3 m of the ground (upstream: 0.02 m) so that a jump works while walking down a slope. Upstream's idle walker pacing was not ported (Toronto's idle player stands where left). |
+| Footstep sounds (`js/audio-sources.js`) | No change needed | Upstream's diff between the two revisions has no lines about the rig's foot fields. Footsteps still read the phase and the planted foot, checked in a test. |
+
+Tests: `tests/pedestrian-rig.test.mjs` (upstream's six `PersonRig` cases, run unchanged on the real three.js maths, plus
+Toronto's own: `jointAt` and `blendFrom`, the getting-up hand-off, hidden people, a cyclist), a fingerprint test
+(`tests/pedestrian-gait-fingerprint.test.mjs` with `tests/fixtures/pedestrian-gait-fingerprint.json`: 16 rigs, 600
+frames each, 1e-6 allowed, and `PED_FP_STRICT=1` demands identical bits, which held after every change), and six more
+cases in `tests/controllers.test.cjs` (jump timeline, shadow, curb versus a 3 m ledge, a 20 percent slope at running
+speed at three frame rates never counts as airborne, a wall push builds no speed, teleport reset).
+
+Cost, two ways:
+
+- CPU benchmark (`tools/benchmark-pedestrians.mjs`, 340 people, its sandbox): the new rig started at about +57 percent
+  over the old class with every person posed and about +64 percent with one in five posed, against a 15 percent limit.
+  After the fingerprint-checked arithmetic work (shared easing factors, no zero terms, trig reuse, one pelvis rotation
+  per frame) the five-run mean was 2.45 to 2.51 ms posed and 1.83 to 1.91 ms with one in five posed, against 1.90 and
+  1.19 ms for the old class: about 18 percent less than the start for "all posed" and about 5 percent less for "one
+  in five", still roughly +55 percent over the old class in that sandbox. The sandbox makes every `Math` call slow, so
+  its absolute milliseconds are about 6.5 times what a browser sees (in a normal global context: 0.42 and 0.185 ms old,
+  0.52 and 0.29 ms new). The benchmark's own exactness check, which stopped at frame 1 on the unmodified port, passes
+  unmodified.
+- Frame time in the game (King and Bay on foot, uncapped, three alternating pairs, desktop and a phone preset): no
+  measurable change. The 95th percentile differences were inside the spread between two runs of the same build on both
+  tiers. The medians differed by +0.3 ms on desktop and -0.9 ms on the phone preset, in opposite directions, so they are
+  not a signal. The scene has only 9 to 15 people within 40 m, the desktop run looks paced to the display, and the count
+  of people actually posed is not exposed, so a dense crowd was not tested.
+
+Not checked: the look of the gait in play. Every number above is from tests and timings. The clips the spec asked John
+to watch are his gate.
+
+## Bicycle braking (PR #159, merge `b57f09e`, bead `st-iq0v.2`)
+
+| Upstream | Taken | Toronto adaptation and result |
+| --- | --- | --- |
+| [`df5a3b9`](https://github.com/mrdoob/slop-newyork/commit/df5a3b9) Space brakes, S brakes then holds at zero for 0.25 s, speed stops building when blocked, new drive numbers, freewheel sound, "Space: Brake" hint | Yes | In `js/controllers.js`: `BICYCLE_DRIVE` acceleration 9 to 6.5, new `powerSpeed` 10.5, rolling 0.08 to 0.1, coast 0.2 to 0.45, brake 7.5 to 10.5; Toronto's `boostSpeed` 19 and `boostAcceleration` 13.5 are kept, and the power limit applies to whichever acceleration is in use. The 0.25 s hold lives in `teleportActiveTo` because every mode entry goes through it. The audio change is in `js/audio-sources.js` and the hint in `js/main.js`. |
+| Blocked-speed correction | Yes, placed after Toronto's own collision step | Upstream integrates, resolves the collision and clamps the speed to the real forward distance. Toronto moves through `moveBody`, which substeps, resolves contacts and then clamps to the world. The correction sits after `moveBody`, so a bike stopped by a building, a shoreline or the world edge clamps the same way. A pinned bike still creeps one contact skin-width about every other frame, so its speed peaks at 0.108 m/s against upstream's test limit of 0.05 m/s; the ported test asserts less than 0.15 m/s. |
+| Car | Not touched | `driveCar`, its powertrain and its handbrake are unchanged. `driveSpeed` has a regression test with six inputs checked against the old values for a drive with no `powerSpeed`. |
+
+Tests: 1457 to 1459 on the branch, none failing. Not done: no capture and no listen to the freewheel sound; the
+new numbers change how the bike feels and are John's call (four numbers to change back).
+
+## Faded-out shader detail (PR #167, merge `636fde4`, bead `st-iq0v.3`)
+
+| Upstream | Taken | Toronto adaptation and result |
+| --- | --- | --- |
+| [`f3635e7`](https://github.com/mrdoob/slop-newyork/commit/f3635e7) room raycast only behind glazing | Yes | `apartmentInteriorBehind` and the drape-footprint helper, used by the curtain wall, the pre-war facade and also Toronto's rendered facade material (upstream has two facade materials, Toronto three). The branch condition is coverage plus its own `fwidth`, not coverage alone (below). |
+| [`91dc313`](https://github.com/mrdoob/slop-newyork/commit/91dc313) road detail branches on its own fade | Yes | A `fadedDetail` helper applied layer by layer to Toronto's road (micro aggregate, fine grain, oily stains, chips, oil drips, micro roughness, the grit layers; potholes only in a cell that has one). Toronto's `wearLite` and `wearFull` switches are kept. The Times Square neon tint branch, which the spec left out, was ported after all because the road emissive still has the tint (`tsDist`); it is branched on `tsDist > 0`. |
+| [`95e455c`](https://github.com/mrdoob/slop-newyork/commit/95e455c) sidewalk and curb | Mostly | Grit, mottle, aggregate, broom finish, grain, pores, curb speckle and grain. Left out: the gum (Toronto's `sidewalkGum` already branches) and the crack (Toronto's line smoothing takes a pixel size, not a derivative of the wander). |
+
+The derivative fix. Branching on `coverage > 0` alone changed the picture: one-pixel lines, in the wrong colour, along
+the top and bottom rows and some sides of window openings. In the night Cabbagetown view 0.052 percent of pixels
+differed by more than 8 levels (largest difference 71) against a noise floor of 0.0003 to 0.0005 percent; three more
+shots showed the same. Hoisting the derivatives above the branch alone did not cure it; skipping did. Branching on
+`coverage + fwidth(coverage) > 0` brought every shot back to the floor (0.0003 to 0.0009 percent). The cause is a guess,
+not shown: a pixel whose neighbour in its 2x2 block is glazed but which fails `coverage > 0` itself. The emitted WGSL was
+not read. A test (`tests/faded-detail-shaders.test.mjs`, 4 tests) reads the source and requires the helpers to exist,
+the derivative inputs to be variables before each branch and every facade, road, sidewalk and curb layer to be branched.
+
+Result: 57 stills per arm on desktop (`?quality=high`) and phone tier (`?quality=low`) from `upstream-take-now.json`,
+`sidewalks.json` and `toronto-sidewalks.json`, against main with two control builds to set the noise floor. Road and
+sidewalk showed no edge difference above the floor; the remaining differences were a moving car, people and tree
+speckle. Frame time, six views, three alternating pairs each: lower by 0.12 to 0.29 ms with display sync on (outside the
+spread between two runs of main in all six) and 0.23 to 0.43 ms with sync off (inside that spread in five of six). The
+frame intervals are quantised to the display, so this is a few fewer missed frames, not a figure in GPU milliseconds.
+The GPU timestamp totals were too noisy to use (spread of two runs of the same build 14 to 125 ms), so no per-pass
+number is reported. Upstream's 0.6 ms median (M1, interior only) is not reproduced as such. Not checked: summer, winter
+and live-season dates (no tree or ground code changed), and motion.
+
+## Tall towers keep their shadows (PR #168, merge `857814a`, beads `st-iq0v.4.1` and `st-iq0v.4.2`)
+
+First a check, as the spec asked. Frames and a direct reading of the sun's two cascade cameras showed the fault: at
+midday standing 285 m from the CN Tower, the ground where its 450 m level should shade was sunlit looking away from the
+tower and shaded looking toward it. At low sun the shadow of the CN Tower (553 m) or First Canadian Place (287.4 m in
+the data) was lost beyond roughly 500 to 900 m from the tower.
+
+| Upstream | Taken | Toronto adaptation and result |
+| --- | --- | --- |
+| [`e17cde4`](https://github.com/mrdoob/slop-newyork/commit/e17cde4) push each shadow cascade camera back along the sun by the tallest height divided by the sun's height | Yes | `liftSunCascadeCeiling` in `js/lighting.js` wraps the sun shadow's `updateMatrices`. After the stock method has refitted both cascade cameras, each moves back toward the sun by `ceil(554 / max(0.25, sine of the sun's elevation))` m and its `far` grows by the same amount. The ceiling is 554 m (the CN Tower's 553 m plus the 0.22 m sidewalk it stands on; nothing mapped is taller) in place of upstream's 550. The shift is made on the freshly fitted cameras each frame, so it is independent of Toronto's quality scaling of the shadow range and cannot accumulate (tested over 100 updates). If any internal three.js name it needs is missing, the lift switches itself off with one console warning and the stock behaviour remains. |
+
+The 0.25 cap. The sine is clamped at 0.25 (a sun 14.5 degrees up), which is upstream's clamp, so the longest shift is
+2,216 m and the cascades reach about 2.5 km along the sun ray from the viewer at street level. What that leaves
+uncovered at golden hour (9.95 degrees up): measured, the CN Tower's shadow is whole out to 2,565 m from its base
+when facing the tower and not when facing away, and at 3,078 m it is not drawn at all. Computed from the clamp, about
+the top 120 m of the tower (above roughly the 435 m level) throws a shadow 2.5 to 3.2 km out, over the lake, and is
+still cut. At twilight (2 degrees) only the lowest 85 m or so can be drawn within that reach, and its 15.8 km shadow
+is far outside the mapped area anyway. Covering golden would need a clamp of 0.173; this was not done, and John has the
+choice (0.2 is a middle option).
+
+Result. The page's cascade cameras now include the whole CN Tower at every midday and 12-degree viewpoint measured
+(100 percent, against 26 to 100 percent before at midday looking away and 0 percent at low sun), and the whole of First
+Canadian Place everywhere measured. On the same patch of ground (the Union Station platforms, 38 degree sun) the CN
+pod's shadow showed at three of four headings before (two of four looking nearly straight down) and at all four after. Ordinary shadows: 16 main-against-branch shot
+pairs with traffic and people hidden; the branch was at or below the noise floor in 14, and the two above it were
+cloud edges (Richmond) and a small spot at the vanishing point (Queen West, not cropped). No acne, banding or
+detached shadows in the sheets viewed. Tests: `tests/lighting-shadow.test.mjs`, 6 tests on the real three.js
+`SunLightShadow`; 5,845 relevant cases with 0 clipped with the lift and 1,466 clipped without it.
+
+Cost, only with a low sun: at golden the shadow pass went from 307 to 425 draw calls (+38 percent) and 0.86 to 1.08
+million triangles (+26 percent) at King and Bay, and 442 to 612 and 1.06 to 1.33 million from the air; at midday it is
+unchanged (+0.5 percent triangles at street level). Frame time at golden, three alternating pairs: +0.26 ms at street
+level (+1.5 percent; the spread between two runs of main is 0.04 ms) and +0.60 ms from the air (every pair positive, two
+of them about the spread of main). The mini paces the frame near 60 Hz even in the uncapped mode, so the render-submission
+CPU time is the more sensitive figure (+0.24 and +0.62 ms). GPU pass times were too noisy to use.
+
+## Culling thresholds, render settings and instance matrices
+
+See [the section above](#culling-thresholds-and-render-settings-instance-matrices--2026-11-16): bloom at 0.35 on the
+medium tier only is taken; the rest of `c8a904d` and the storage-buffer swap of `21f71bd` are not.
+
+## Not taken (spec section 9, and what the reports left out)
+
+| Upstream change | Why not |
+| --- | --- |
+| Storefront sign and spotlight heights (`6b191ee`) | Toronto does not have the affected code. |
+| three.js r187 (`16d6782`) | Toronto is already on it. |
+| One loading bar (`737b769`), no traffic dots on the minimap (`343a0f9`) | New York page choices. |
+| OpenStreetMap importer (`196578b`), porting guide (`2813185`) | Toronto builds from City data. |
+| Upstream's idle walker pacing (z between -340 and 340) | Toronto's idle player waits where it was left. |
+| Upstream's `resolveHorizontalCollision(entity)` signature change and `prevX`/`prevZ` fields | Toronto's `moveBody` already takes the entity and `update()` already sets them. |
+| Upstream's rig material rewrite, `SKIN_COLORS` list and header comment (inside `536a907`) | Toronto already had the material work from the October port and keeps its seven-tone skin palette. |
+| Upstream's 8 non-rig cases in `tests/pedestrians.test.cjs` | Matched by title to tests Toronto already has in `tests/pedestrian-crowd.test.mjs` and `tests/traffic-performance.test.cjs`; the bodies were not diffed. |
+| The gum and crack layers of the sidewalk shader (inside `95e455c`) | See above. |
+| Fixed 2,048 shadow tile, Firefox without multisampling, cheaper curbs and shadow far plane (inside `c8a904d`) | Toronto keeps its own shadow tiers; the curb and far-plane edits were not in the brief. |

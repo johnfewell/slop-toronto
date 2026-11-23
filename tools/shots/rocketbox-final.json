@@ -1,0 +1,18 @@
+[
+ {
+  "name": "busy",
+  "mode": "person",
+  "x": 130,
+  "z": -345,
+  "js": "window.__rbFilm(); window.__rbWait(8000).then(() => window.__rbFace(130, -345)).then(() => window.__rbPose(null)).then((pose) => ({ pose, count: window.__rbCount(13), ...window.__rbSeason() }))",
+  "wait": 500,
+  "record": true,
+  "screencastMs": 12000
+ },
+ {
+  "name": "busy-log",
+  "js": "new Promise((r) => setTimeout(() => r(window.__rbCountLog), 1500))",
+  "wait": 100,
+  "record": true
+ }
+]

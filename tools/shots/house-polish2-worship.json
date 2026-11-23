@@ -1,0 +1,44 @@
+[
+ {
+  "name": "jami-mosque-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5496.6, -2551.6, 0); app.cameraSystem.cinema = () => ({ pos: [-5496.6, 2, -2551.6], look: [-5458, 5, -2562], fov: 62 }); })()"
+ },
+ {
+  "name": "jami-mosque-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5458, -2442, 0); app.cameraSystem.cinema = () => ({ pos: [-5458, 120, -2442], look: [-5458, 0, -2562], fov: 55 }); })()"
+ },
+ {
+  "name": "ching-kwok-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1779.3, -1136.1, 0); app.cameraSystem.cinema = () => ({ pos: [-1779.3, 1.7, -1136.1], look: [-1771, 4.5, -1167], fov: 62 }); })()"
+ },
+ {
+  "name": "ching-kwok-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1771, -1047, 0); app.cameraSystem.cinema = () => ({ pos: [-1771, 120, -1047], look: [-1771, 0, -1167], fov: 55 }); })()"
+ },
+ {
+  "name": "hindu-temple-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4791, -1462, 0); app.cameraSystem.cinema = () => ({ pos: [-4791, 1.7, -1462], look: [-4791, 4.5, -1494], fov: 62 }); })()"
+ },
+ {
+  "name": "hindu-temple-high1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4791, -1374, 0); app.cameraSystem.cinema = () => ({ pos: [-4791, 120, -1374], look: [-4791, 0, -1494], fov: 55 }); })()"
+ }
+]

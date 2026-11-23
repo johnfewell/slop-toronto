@@ -274,8 +274,8 @@ function buildRinks(scene,staticColliders=[]) {
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(board.position,3));g.setAttribute('color',new THREE.Float32BufferAttribute(board.color,3));
     g.computeVertexNormals();g.computeBoundingSphere();
     boards=new THREE.Mesh(g,new THREE.MeshStandardNodeMaterial({vertexColors:true,roughness:.7}));boards.name='RinkBoards';boards.receiveShadow=true;
-    // (phones drop small casters: the same rule as the kerbs, quality.js)
-    boards.castShadow=C.QUALITY?.kerbShadows!==false;group.add(boards);
+    // (phones drop small casters, quality.js; the desktop's kerbs no longer cast, the rink boards still do)
+    boards.castShadow=C.QUALITY?.tier==='high'||C.QUALITY?.kerbShadows!==false;group.add(boards);
   }
   C.rinkStats={season,forced,sceneDate:{month:sceneDate.month,day:sceneDate.day,source:sceneDate.source||'scene'},sourceCount:records.length,placed:sites.length,rejected:layout.rejected,
     sites:sites.map(({id,assetId,name,parentName,type,y,surface,boards:b,overlap})=>({id,assetId,name,parentName,type,y,surface,boards:b,overlap})),

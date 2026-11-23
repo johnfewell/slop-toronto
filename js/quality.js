@@ -29,23 +29,32 @@ const TIERS = {
     aa: 'smaa',
     ssr: true, // screen-space reflections (half res): also the scene pass's normal & metal/rough targets
     bloom: true,
+    bloomScale: 0.5, // the bloom's render resolution, as a share of the frame (medium: 0.35, 1-2% faster at King & Bay, the house street & High Park on the M4 mini; st-iq0v.5)
     clouds: 'medium', // the clouds library's quality preset, or null: the sky dome's painted clouds
     // the clouds' render resolution: 0.75 (the medium tier's) since st-z51b. On the M4 mini it saves 0.4-0.8 ms where
     // the sky is in view (Skyline 20.0 -> 19.2 ms); 0.5 saved only 0.2-0.3 ms more and visibly softened the cumulus
     cloudScale: 0.75,
-    shadowTile: 3072, // sun shadow map per cascade (2 cascades side by side), 2048 where the device allows less
+    // sun shadow map per cascade (2 cascades side by side): 2048 since st-aeg2 (from 3072: 1-2 ms a frame at the street
+    // places on the M4 mini, no stair-stepping seen at golden hour); lighting.js lowers it further where the device allows less
+    shadowTile: 2048,
     shadowFar: 1, // x the sun shadow distance (300 m at street level)
+    kerbShadows: false, // city-grid.js: the kerbs cast no sun shadow on desktop either since st-aeg2 (1-2.5 ms a frame; the phone tiers had it already)
     // ez-trees.js: full mesh, decimated mesh (from street level: treeMidStreet) & its shadows within (m)
     treeNear: 55, treeMid: 320, treeMidStreet: 180, treeMidShadow: 65,
+    // ez-trees.js: the full tree meshes cast their sun shadow within this (m), a lighter shape beyond (0: always the mesh)
+    treeCastLite: 20,
     // ez-trees.js: the High Park pilot's woods trees hand over from the mid mesh to their baked impostor here (m;
     // tree-impostors.js, docs/park-cover.md)
     treeImpMid: 45,
     treeFar: 1, // x the trees' furthest distances (3 km in the parks, 600 m for pines)
     // buildings.js ?massing=1 (js/massing-cells.js): a 500 m cell draws its buildings' full outlines within the first
     // distance (m, x dist), simplified ones within the second, their boxes beyond
-    massingLimits: [600, 1600],
+    massingLimits: [250, 1200], // (st-ndw9.21: was [600, 1600]; with the drawn presets the near tier of nine cells was 0.6 M triangles at street level, past 250 m its bays and porches are a few pixels)
     cull: 1, // x the small props' cull distances (scene-culling.js)
     cars: 200, buses: 12, peds: 340, // (12 buses: mostly private cars, mrdoob's a1866b7)
+    // rocketbox-pedestrians.js: walkers within rocketboxNear m are drawn as Rocketbox avatars, at most rocketboxMax at once
+    // (?rocketboxNear=, ?rocketboxMax= override; ?rocketbox=0 leaves them out). Conservative numbers for the phone tiers
+    rocketboxNear: 35, rocketboxMax: 24,
     // parked-cars.js: the cars parked at the curbs (at most; data/toronto-geodata.bin holds ~10.8k), the full model
     // within parkedNear m (casting shadows if parkedShadows), the ~250-triangle stand-in out to parkedFar m (x Q.dist)
     parkedCars: 12000, parkedNear: 70, parkedFar: 260, parkedShadows: true,
@@ -76,19 +85,21 @@ const TIERS = {
     audio: { motors: 8, sirens: 2, events: 8, hrtf: true }
   },
   medium: {
-    scale: 1, aa: 'msaa', ssr: false, bloom: true, clouds: 'medium', cloudScale: 0.75,
+    scale: 1, aa: 'msaa', ssr: false, bloom: true, bloomScale: 0.35, clouds: 'medium', cloudScale: 0.75,
     shadowTile: 2048, shadowFar: 0.75,
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85, treeImpMid: 40, massingLimits: [450, 1300],
+    rocketboxNear: 30, rocketboxMax: 14,
     cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, subway: 1, farCity: 0.6, lightPool: 0.6,
     parkedCars: 7000, parkedNear: 50, parkedFar: 200, parkedShadows: true,
     signRes: 1, lean: true, surfaceWear: 1, storefronts: 2, poleWires: false, tramSpans: true,
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
-    scale: 1, aa: 'fxaa', ssr: false, bloom: true, clouds: 'low', cloudScale: 0.5,
+    scale: 1, aa: 'fxaa', ssr: false, bloom: true, bloomScale: 0.5, clouds: 'low', cloudScale: 0.5, // (0.35 measured no faster on this tier: st-iq0v.5)
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7, treeImpMid: 35,
     massingLimits: [300, 1000], // (the full outlines only close by on a phone)
+    rocketboxNear: 25, rocketboxMax: 8,
     cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
     // (parked cars: about half, the full model only close by and no shadows from them)
     parkedCars: 5000, parkedNear: 30, parkedFar: 140, parkedShadows: false,

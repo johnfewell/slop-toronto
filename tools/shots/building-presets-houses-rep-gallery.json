@@ -1,0 +1,9 @@
+[
+ {
+  "name": "victorian-semi-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2944.5, 3324.1, 0); app.cameraSystem.cinema = () => ({ pos: [-2944.5, 1.7, 3324.1], look: [-2944.5, 4.2, 3303.1], fov: 60 }); })()"
+ }
+]

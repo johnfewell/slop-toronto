@@ -1,0 +1,50 @@
+[
+ {
+  "name": "n1-above150",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-4150, -3000, 0); app.cameraSystem.cinema = () => ({ pos: [-4150, 150, -2940], look: [-4150, 0, -3000], fov: 60 }); })()"
+ },
+ {
+  "name": "n1-street",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-4150, -2955, 0); app.cameraSystem.cinema = () => ({ pos: [-4150, 1.7, -2955], look: [-4150, 8, -3090], fov: 66 }); })()"
+ },
+ {
+  "name": "n2-above150",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(1500, -3000, 0); app.cameraSystem.cinema = () => ({ pos: [1500, 150, -2940], look: [1500, 0, -3000], fov: 60 }); })()"
+ },
+ {
+  "name": "n2-street",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(1500, -2955, 0); app.cameraSystem.cinema = () => ({ pos: [1500, 1.7, -2955], look: [1500, 8, -3090], fov: 66 }); })()"
+ },
+ {
+  "name": "e1-above150",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(3690, -216, 0); app.cameraSystem.cinema = () => ({ pos: [3630, 150, -216], look: [3690, 0, -216], fov: 60 }); })()"
+ },
+ {
+  "name": "e1-street",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(3645, -216, 0); app.cameraSystem.cinema = () => ({ pos: [3645, 1.7, -216], look: [3780, 8, -216], fov: 66 }); })()"
+ },
+ {
+  "name": "e2-above150",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(3690, -2822, 0); app.cameraSystem.cinema = () => ({ pos: [3630, 150, -2822], look: [3690, 0, -2822], fov: 60 }); })()"
+ },
+ {
+  "name": "e2-street",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(3645, -2822, 0); app.cameraSystem.cinema = () => ({ pos: [3645, 1.7, -2822], look: [3780, 8, -2822], fov: 66 }); })()"
+ }
+]

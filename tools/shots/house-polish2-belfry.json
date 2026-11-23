@@ -1,0 +1,44 @@
+[
+ {
+  "name": "belfry0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2449.9, 3180, 0); app.cameraSystem.cinema = () => ({ pos: [-2449.9, 1.7, 3180], look: [-2453.5, 15, 3154], fov: 75 }); })()"
+ },
+ {
+  "name": "belfry1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2444.5, 3180, 0); app.cameraSystem.cinema = () => ({ pos: [-2444.5, 1.7, 3180], look: [-2444.5, 15, 3154], fov: 75 }); })()"
+ },
+ {
+  "name": "belfry2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2439.1, 3180, 0); app.cameraSystem.cinema = () => ({ pos: [-2439.1, 1.7, 3180], look: [-2435.5, 15, 3154], fov: 75 }); })()"
+ },
+ {
+  "name": "belfry-far0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2444.5, 3202, 0); app.cameraSystem.cinema = () => ({ pos: [-2444.5, 5, 3202], look: [-2447.5, 13, 3158], fov: 48 }); })()"
+ },
+ {
+  "name": "belfry-far1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2430.5, 3198, 0); app.cameraSystem.cinema = () => ({ pos: [-2430.5, 5, 3198], look: [-2448.5, 13, 3158], fov: 45 }); })()"
+ },
+ {
+  "name": "belfry-far2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2458.5, 3198, 0); app.cameraSystem.cinema = () => ({ pos: [-2458.5, 5, 3198], look: [-2442.5, 13, 3158], fov: 45 }); })()"
+ }
+]

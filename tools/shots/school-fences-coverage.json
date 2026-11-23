@@ -1,0 +1,110 @@
+[
+ {
+  "name": "oscar-face-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-6665.25, g(-6665.25,-5865.50)+1.7, -5865.50], look:[-6665.40, g(-6665.40,-5873.50)+1.2, -5873.50], fov:62}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "oscar-above-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-6665.02, g(-6665.40,-5873.50)+35, -5853.30], look:[-6665.40, g(-6665.40,-5873.50), -5873.50], fov:55}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "marketlane-face-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[1339.12, g(1339.12,-103.20)+1.7, -103.20], look:[1338.90, g(1338.90,-123.20)+1.2, -123.20], fov:62}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "marketlane-above-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[1339.13, g(1338.90,-123.20)+35, -103.00], look:[1338.90, g(1338.90,-123.20), -123.20], fov:55}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "givins-shaw-face-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-2878.50, g(-2878.50,-914.94)+1.7, -914.94], look:[-2870.50, g(-2870.50,-914.80)+1.2, -914.80], fov:62}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "givins-shaw-above-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-2890.70, g(-2870.50,-914.80)+35, -915.15], look:[-2870.50, g(-2870.50,-914.80), -914.80], fov:55}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "stnicholas-face-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-4948.90, g(-4948.90,-5612.70)+1.7, -5612.70], look:[-4948.90, g(-4948.90,-5620.70)+1.2, -5620.70], fov:62}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "stnicholas-above-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-4948.90, g(-4948.90,-5620.70)+35, -5600.50], look:[-4948.90, g(-4948.90,-5620.70), -5620.70], fov:55}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "delasalle-face-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-164.40, g(-164.40,-4484.60)+1.7, -4484.60], look:[-164.40, g(-164.40,-4476.60)+1.2, -4476.60], fov:62}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "delasalle-above-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-164.40, g(-164.40,-4476.60)+35, -4496.80], look:[-164.40, g(-164.40,-4476.60), -4476.60], fov:55}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "rockcliffe-face-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7416.24, g(-7416.24,-5628.45)+1.7, -5628.45], look:[-7420.20, g(-7420.20,-5621.50)+1.2, -5621.50], fov:62}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "rockcliffe-above-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7410.21, g(-7420.20,-5621.50)+35, -5639.06], look:[-7420.20, g(-7420.20,-5621.50), -5621.50], fov:55}); })()",
+  "wait": 5000
+ },
+ {
+  "name": "pius-face-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7841.297591013563, g(-7844.2,-3057.1)+1.7, -3064.5549327344684], look:[-7844.2, g(-7844.2,-3057.1)+1.2, -3057.1], fov:62}); })()",
+  "wait": 6000
+ },
+ {
+  "name": "pius-above35-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7836.943977533907, g(-7844.2,-3057.1)+35, -3075.737331836171], look:[-7844.2, g(-7844.2,-3057.1)+0, -3057.1], fov:55}); })()",
+  "wait": 6000
+ },
+ {
+  "name": "pius-above90-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7826.059943834767, g(-7861.466666666667,-3012.75)+90, -3103.6933295904273], look:[-7861.466666666667, g(-7861.466666666667,-3012.75)+0, -3012.75], fov:55}); })()",
+  "wait": 6000
+ },
+ {
+  "name": "york-face-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-5933.923343804564, g(-5937.8,-6963.8)+1.7, -6956.802033385163], look:[-5937.8, g(-5937.8,-6963.8)+1.2, -6963.8], fov:62}); })()",
+  "wait": 6000
+ },
+ {
+  "name": "york-above35-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-5928.108359511409, g(-5937.8,-6963.8)+35, -6946.305083462906], look:[-5937.8, g(-5937.8,-6963.8)+0, -6963.8], fov:55}); })()",
+  "wait": 6000
+ },
+ {
+  "name": "york-above90-cov",
+  "time": "midday",
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-5913.570898778521, g(-5984.557894736842,-7048.2052631578945)+90, -6920.062708657265], look:[-5984.557894736842, g(-5984.557894736842,-7048.2052631578945)+0, -7048.2052631578945], fov:55}); })()",
+  "wait": 6000
+ }
+]

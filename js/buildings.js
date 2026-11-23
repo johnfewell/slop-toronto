@@ -94,6 +94,19 @@ function buildMassingCellsOffThread(input) {
 // scale), with a hysteresis band either side. ?massingTier=near|mid|far holds every cell in one tier (A/B captures)
 const MASSING_LIMITS = [600, 1600];
 const MASSING_BAND = 40;
+const MASSING_SPLIT_TRIS = 3000; // (a near mesh with more triangles than this draws only the quarters of its cells in view: up to MASSING_SPLIT_MESHES index runs, st-ndw9.22)
+const MASSING_SPLIT_MESHES = 4;
+const ROOF_CELL = 500, ROOF_NEAR = 250, ROOF_FAR = 1200, ROOF_BAND = 40; // (m: the drawn roofs' cells, and the distance within which a cell's roof has its small parts)
+const TALL_MESHES = 6; // (the towers' roofs: draw calls at most, one a run of the cells in view, st-ndw9.22)
+function boundsOfPositions(a) { // [x0, y0, z0, x1, y1, z1] of a flat list of x, y, z
+  let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+  for (let i = 0; i + 2 < a.length; i += 3) {
+    const x = a[i], y = a[i + 1], z = a[i + 2];
+    if (x < x0) x0 = x; if (y < y0) y0 = y; if (z < z0) z0 = z; if (x > x1) x1 = x; if (y > y1) y1 = y; if (z > z1) z1 = z;
+  }
+  return [x0, y0, z0, x1, y1, z1];
+}
+const morton = (a, b) => { let m = 0; for (let k = 0; k < 8; k++) m |= (((a >> k) & 1) << (2 * k)) | (((b >> k) & 1) << (2 * k + 1)); return m; };
 
 /**
  * The built cells -> meshes in `group`: per block, style and tier one mesh (and a second one sharing its buffers, for
@@ -133,7 +146,24 @@ function addMassingCells(group, built, materials, stats) {
       twin.setAttribute('normal', geo.attributes.normal);
       twin.setIndex(geo.index);
       twin.boundingSphere = geo.boundingSphere;
-      const pair = [geo, twin].map((g, k) => {
+      // (the box of the vertices too, from the worker's own pass: scene-culling.js's far band asks every static mesh for its
+      // geometry's box, and computing it here walks all 4.8 M vertices again, +0.6 s of load; snorm units are raw / SNORM)
+      if (T.box) {
+        geo.boundingBox = new THREE.Box3(new THREE.Vector3(T.box[0] / MC.SNORM, T.box[1] / MC.SNORM, T.box[2] / MC.SNORM), new THREE.Vector3(T.box[3] / MC.SNORM, T.box[4] / MC.SNORM, T.box[5] / MC.SNORM));
+        twin.boundingBox = geo.boundingBox;
+      }
+      const split = t === 0 && T.quarters && T.index.length / 3 > MASSING_SPLIT_TRIS;
+      const twins = [geo, twin];
+      while (split && twins.length < MASSING_SPLIT_MESHES) {
+        const x = new THREE.BufferGeometry();
+        x.setAttribute('position', geo.attributes.position);
+        x.setAttribute('normal', geo.attributes.normal);
+        x.setIndex(geo.index);
+        x.boundingSphere = geo.boundingSphere;
+        x.boundingBox = geo.boundingBox;
+        twins.push(x);
+      }
+      const pair = twins.map((g, k) => {
         const m = new THREE.Mesh(g, materials[b.style]);
         m.name = `MassingBuildings_${b.style}`;
         m.position.set(b.ox, 0, b.oz);
@@ -142,7 +172,12 @@ function addMassingCells(group, built, materials, stats) {
         m.receiveShadow = true;
         // (the near meshes cast through scene-culling.js's position-only stand-ins, as upstream c4ab18f)
         m.castShadow = t === 0 && k === 0;
-        if (m.castShadow) m.userData.shadowStandIn = true;
+        if (m.castShadow) {
+          // (a stand-in for the shadow cascades: the near tier's outlines simplified at 1.25 m (the mid tier's), without the walls a neighbour covers whole
+          // and without the near-only parts (bays, porches, piers): the silhouette a shadow needs, from the worker, st-ndw9.22)
+          if (T.standIn) m.userData.shadowStandIn = { worldCells: T.standIn.cells };
+          else m.userData.shadowStandIn = true;
+        }
         m.userData.massingTier = t;
         m.visible = t === 0 && k === 0;
         const key = materials[b.style];
@@ -151,7 +186,7 @@ function addMassingCells(group, built, materials, stats) {
         meshes++;
         return m;
       });
-      entries.push({ subs, t, ranges: T.ranges, pair, drawn: null });
+      entries.push({ subs, t, ranges: T.ranges, quarters: split ? T.quarters : null, vis: null, pair, drawn: null });
     });
   }
   const tierStats = out.stats.tiers;
@@ -177,6 +212,63 @@ function addMassingCells(group, built, materials, stats) {
   const Q = window.CITY.QUALITY || {};
   const counts = [0, 0, 0];
   stats.cellTiers = counts;
+  // The cells in view (st-ndw9.22): a mesh drew its tier's whole 500 m cells that a block's sphere reached, though most of them were
+  // behind the camera. Now each cell (the near tier: each 250 m quarter of a cell) whose box is outside the view frustum is left out
+  // of the mesh's index runs. A mesh draws at most as many runs as it has meshes (the near ones four, the others two); with more,
+  // the smallest unseen stretch that joins two runs is drawn too (MC.quarterRuns).
+  const _v0 = new THREE.Vector3(), _v1 = new THREE.Vector3(), _inv = new THREE.Matrix4();
+  const frustum = new THREE.Frustum(), viewProj = new THREE.Matrix4(), qbox = new THREE.Box3();
+  let frustumReady = false, frustumOk = false; // (a plain position, not a camera, sees everything)
+  const QSLOT = MC.TIER_ORDER.map((_, s) => MC.TIER_ORDER.indexOf(s)); // (slot -> position round the cell: k & 1 = x, k >> 1 = z)
+  function cellBox(cell, q) { // (q: a quarter 0..3 of the cell, or -1 for the whole cell)
+    let x0 = cell.sx * MC.SUB, z0 = cell.sz * MC.SUB, w = MC.SUB;
+    if (q >= 0) { const k = QSLOT[q]; x0 += (k & 1) * MC.QUARTER; z0 += (k >> 1) * MC.QUARTER; w = MC.QUARTER; }
+    return qbox.set(_v0.set(x0 - 6, -6, z0 - 6), _v1.set(x0 + w + 6, cell.maxY + 6, z0 + w + 6));
+  }
+  const scratch = { seen: new Array(16), spare: [] };
+  function applyEntry(e, camera) {
+    let packed = 0, any = false;
+    for (let s = 0; s < 4; s++) {
+      const t = e.subs[s] >= 0 ? cells[e.subs[s]].tier : -1;
+      packed = packed * 4 + t + 1;
+      if (t === e.t) any = true;
+    }
+    let runs = null, vis = 0;
+    if (any) {
+      if (!frustumReady) {
+        frustumReady = true;
+        frustumOk = !!(camera.updateWorldMatrix && camera.projectionMatrix);
+        if (frustumOk) {
+          camera.updateWorldMatrix(true, false);
+          viewProj.multiplyMatrices(camera.projectionMatrix, _inv.copy(camera.matrixWorld).invert());
+          frustum.setFromProjectionMatrix(viewProj, camera.coordinateSystem, camera.reversedDepth); // (as scene-culling.js: the WebGPU camera's depth range)
+        }
+      }
+      if (frustumOk) {
+        // (the cells (or quarters) of this entry's tier that have triangles: seen ones, and the unseen that may be drawn too to join runs)
+        const per = e.quarters ? 4 : 1, table = e.quarters || e.ranges, n = 4 * per, seen = scratch.seen, spare = scratch.spare;
+        seen.length = n; seen.fill(false); spare.length = 0;
+        for (let s = 0; s < 4; s++) {
+          if (e.subs[s] < 0 || cells[e.subs[s]].tier !== e.t) continue;
+          for (let q = 0; q < per; q++) {
+            const i = s * per + q;
+            if (!(table[i * 2 + 1] > 0)) continue;
+            if (frustum.intersectsBox(cellBox(cells[e.subs[s]], e.quarters ? q : -1))) seen[i] = true; else spare.push(i);
+          }
+        }
+        runs = MC.quarterRuns(table, seen, spare, e.pair.length);
+        for (let i = 0; i < n; i++) if (seen[i]) vis |= 1 << i;
+      }
+    }
+    const key = (runs && frustumOk ? vis + 1 : 0) * 256 + packed; // (a view that sees none of the tier's cells is not the position that sees all)
+    if (e.drawn === key) return;
+    e.drawn = key;
+    if (!runs) runs = MC.tierRuns(e.ranges, e.subs.map((i) => (i >= 0 ? cells[i].tier : -1)), e.t);
+    e.pair.forEach((m, k) => {
+      m.visible = k < runs.length;
+      if (m.visible) m.geometry.setDrawRange(runs[k][0], runs[k][1]);
+    });
+  }
   function update(camera) {
     const p = camera.position || camera;
     const limits = (Q.massingLimits || MASSING_LIMITS).map((d) => d * (Q.dist ?? 1));
@@ -185,18 +277,17 @@ function addMassingCells(group, built, materials, stats) {
       const t = hold >= 0 ? hold : MC.nextTier(c.tier, MC.cellDistance(c, p.x, p.y, p.z), limits, MASSING_BAND);
       if (t !== c.tier) { c.tier = t; changed = true; }
     }
-    if (!changed) return false;
-    counts.fill(0);
-    for (const c of cells) counts[c.tier]++;
-    for (const e of entries) {
-      const runs = MC.tierRuns(e.ranges, e.subs.map((i) => (i >= 0 ? cells[i].tier : -1)), e.t);
-      e.pair.forEach((m, k) => {
-        m.visible = k < runs.length;
-        if (m.visible) m.geometry.setDrawRange(runs[k][0], runs[k][1]);
-      });
+    if (changed) {
+      counts.fill(0);
+      for (const c of cells) counts[c.tier]++;
     }
-    return true;
+    frustumReady = false;
+    for (const e of entries) applyEntry(e, camera); // (every frame: the view turns)
+    return changed;
   }
+  // (what the near meshes draw now, for the captures: window.CITY.massingStats.nearRuns())
+  stats.nearRuns = () => entries.filter((e) => e.quarters).map((e) => ({ key: e.drawn, tiers: e.subs.map((i) => (i >= 0 ? cells[i].tier : -1)),
+    runs: e.pair.filter((m) => m.visible).map((m) => [m.geometry.drawRange.start / 3, m.geometry.drawRange.count === Infinity ? -1 : m.geometry.drawRange.count / 3]) }));
   return { update, cells };
 }
 
@@ -696,6 +787,41 @@ function storefrontSelection(pois = GEO.pois || []) {
   };
   return { own, onStrip: (x, z, street) => count(x, z, street, 30) >= 2 };
 }
+// The building's street-facing wall (0 = -u, 1 = +u, 2 = -v, 3 = +v): the nearest road seen in the building's frame;
+// a signed building fronts the street its sign is on. Pure (given `nearestRoads`), so the preset assignment
+// (tools/build-building-presets.mjs) can call the very same function and get the same front. `near` is the roads
+// within 90 m, which the shop-front rule also needs.
+function buildingFront(cx, cz, ang, signed, nearestRoads) {
+  let front = 3; // +z
+  const near = nearestRoads(cx, cz, 90);
+  if (near.length) {
+    const toRoadX = near[0].px - cx, toRoadZ = near[0].pz - cz;
+    const lu = toRoadX * Math.cos(ang) - toRoadZ * Math.sin(ang); // world -> the building's frame
+    const lv = toRoadX * Math.sin(ang) + toRoadZ * Math.cos(ang);
+    front = Math.abs(lu) > Math.abs(lv) ? (lu < 0 ? 0 : 1) : (lv < 0 ? 2 : 3);
+  }
+  if (signed && !signed.has(front)) front = [...signed][0];
+  return { front, near };
+}
+// The shop-front rule buildCityBlocks draws with, as a pure function the preset assignment calls too, so a building's
+// preset uses the same test the drawing does. A street front is a shop front if the building carries a source-keyed
+// sign, holds a mapped shop / restaurant / bank / market / clinic of its own (not a shed, works or church), or its
+// street-facing wall fronts a retail strip (two or more mapped retail places on the same street within 30 m). Returns
+// { shopFront, strip }; `strip` is true when the retail-strip branch matched, so the caller can count it.
+function shopFrontRule({ signed, own, kind, front, parts, cx, cz, ang, near, retail, nearestRoads }) {
+  if (signed || (own && kind !== 4 && kind !== 5 && kind !== 6)) return { shopFront: true, strip: false };
+  if (kind <= 2 && near.length) {
+    // the front wall's middle, and whether it is on the street (not set back behind a yard or forecourt)
+    const pu0 = Math.min(...parts.map((p) => p[0])), pu1 = Math.max(...parts.map((p) => p[1]));
+    const pv0 = Math.min(...parts.map((p) => p[2])), pv1 = Math.max(...parts.map((p) => p[3]));
+    const fu = front === 0 ? pu0 : front === 1 ? pu1 : (pu0 + pu1) / 2, fv = front === 2 ? pv0 : front === 3 ? pv1 : (pv0 + pv1) / 2;
+    const cs = Math.cos(ang), sn = Math.sin(ang);
+    const fx = cx + fu * cs + fv * sn, fz = cz - fu * sn + fv * cs;
+    const street = nearestRoads(fx, fz, 22).find((r) => r.road.name === near[0].road.name);
+    if (street && retail.onStrip(fx, fz, street.road.name)) return { shopFront: true, strip: true };
+  }
+  return { shopFront: false, strip: false };
+}
 // The source-keyed signs by building row: the walls (createFacadeBoxes order: -u, +u, -v, +v) that carry one. A record
 // whose row no longer holds the building it was compiled for (after another frame's rows are matched up by centre:
 // js/storefront-signs.js rebindStorefrontRows) is ignored (js/storefront-signs.js skips it too)
@@ -1024,6 +1150,26 @@ function marinaShedTrim(out, cx, cz, ang, u0, u1, v0, v1, h, y0) {
   box(u1 + R / 2, (v0 + v1) / 2, y0 + shutH / 2, R, shutW, shutH, MARINA_SHED_BLUE);
 }
 
+// geometry.computeBoundingBox() and computeBoundingSphere() for a plain float3 position attribute, over the array: the same min and max, the
+// centre as the box's, the radius the root of the largest squared distance to it, as three.js does (tests/massing-bigger-map.test.mjs)
+function fastBounds(g) {
+  const pos = g.attributes.position, a = pos.array, n = pos.count;
+  if (!(a instanceof Float32Array) || pos.itemSize !== 3 || pos.normalized || !n) { g.computeBoundingBox(); g.computeBoundingSphere(); return; }
+  let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+  for (let i = 0, k = 0; i < n; i++, k += 3) {
+    const x = a[k], y = a[k + 1], z = a[k + 2];
+    if (x < x0) x0 = x; if (y < y0) y0 = y; if (z < z0) z0 = z; if (x > x1) x1 = x; if (y > y1) y1 = y; if (z > z1) z1 = z;
+  }
+  g.boundingBox = new THREE.Box3(new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x1, y1, z1));
+  const cx = (x0 + x1) * 0.5, cy = (y0 + y1) * 0.5, cz = (z0 + z1) * 0.5;
+  let r2 = 0;
+  for (let i = 0, k = 0; i < n; i++, k += 3) {
+    const dx = cx - a[k], dy = cy - a[k + 1], dz = cz - a[k + 2], d = dx * dx + dy * dy + dz * dz;
+    if (d > r2) r2 = d;
+  }
+  g.boundingSphere = new THREE.Sphere(new THREE.Vector3(cx, cy, cz), Math.sqrt(r2));
+}
+
 function buildCityBlocks(scene) {
   const group = new THREE.Group();
   group.name = 'CityBuildings';
@@ -1050,11 +1196,42 @@ function buildCityBlocks(scene) {
   // ?massing=1: the polygon buildings (js/massing-cells.js builds their cell meshes, in their own footprintLocal
   // materials, made only then)
   const massing = massingFootprints();
+  // ?massing=1&presets=debug: paint every polygon building its preset's debug colour (js/building-prototypes.js),
+  // reusing the per-building paint the building table already carries. Nothing else draws differently.
+  const presetDebug = !!massing && typeof location !== 'undefined' && new URLSearchParams(location.search).get('presets') === 'debug';
+  // ?massing=1&presets=draw (and the ?gallery=presets page): the house presets that have drawing parameters are drawn
+  // (js/building-draw.js, loaded by main.js only then): their walls through the same cell meshes with a facade style of
+  // their own, their roof, gables and dormers into the hipped roofs' batch, their bays and porches as small near-tier
+  // records. Every other building, and every house the rule cannot fit, keeps today's look. No material, mesh or draw.
+  const urlFlag = (k) => (massing && typeof location !== 'undefined' ? new URLSearchParams(location.search).get(k) ?? (k === 'presets' && window.CITY.PRESETS_DRAW_BY_DEFAULT ? 'draw' : null) : null); // (only ?massing=1 reads the flags; main.js says the presets are drawn when the address has no presets parameter)
+  const gallery = !!massing && urlFlag('gallery') === 'presets' && !!window.CITY.BUILDING_GALLERY;
+  const presetDraw = !!massing && !!window.CITY.BuildingDraw && !!window.CITY.BuildingPrototypes && (urlFlag('presets') === 'draw' || gallery);
+  const drawFacts = presetDraw ? window.CITY.BUILDING_DRAW_FACTS || null : null;
+  const drawStats = presetDraw ? { drawn: 0, extras: 0, roofTris: 0, fallback: {}, byPreset: {}, parts: { bays: 0, porches: 0, dormers: 0, gables: 0, bargeboards: 0, wings: 0, vestibules: 0, stoops: 0, garages: 0, pictureWindows: 0, timbered: 0, crossGables: 0, parapets: 0, cornices: 0, balconyBands: 0, penthouses: 0, crowns: 0, towers: 0, spires: 0, domes: 0, minarets: 0 }, viaRoad: 0 } : null;
+  if (gallery) { // (the synthetic lots join the rows the loop reads: the very same path draws them)
+    for (const lot of window.CITY.BUILDING_GALLERY.lots) {
+      lot.row = GEO.buildings.length;
+      GEO.buildings.push(lot.building);
+      massing.rows.set(lot.row, lot.foot);
+    }
+  }
+  const galleryRect = gallery ? window.CITY.BUILDING_GALLERY.rect : null;
+  const realRows = gallery ? GEO.buildings.length - window.CITY.BUILDING_GALLERY.lots.length : GEO.buildings.length;
   const footRecords = [];
   const footSeeds = materials.map(() => 0); // (each style's records numbered as before, for their seeds)
   const massingStats = massing && { buildings: 0, records: massing.records, rejected: massing.rejected, courtyards: 0, partyWalls: 0, onPodium: 0, boxesReplaced: 0, ms: 0 };
   const roofTiles = { pos: [], nor: [], uv: [], col: [] };
   const roofSheets = { pos: [], nor: [], uv: [], col: [] };
+  // The drawn roofs (st-ndw9.21): one full roof and one far roof per 500 m cell, the near one drawn within ROOF_NEAR of the camera and the
+  // far one beyond (no dormers, bargeboards, attic windows, timbering, bay roofs: js/building-draw.js pushRoof's lod). They replaced one mesh
+  // of 1.3 M triangles over the whole city that the frustum could never skip and that no distance thinned
+  const roofCells = new Map();
+  const roofCellOf = (x, z) => {
+    const sx = Math.floor(x / ROOF_CELL), sz = Math.floor(z / ROOF_CELL), k = sx + ',' + sz;
+    let c = roofCells.get(k);
+    if (!c) roofCells.set(k, c = { sx, sz, tier: 0, near: { pos: [], nor: [], uv: [], col: [] }, far: { pos: [], nor: [], uv: [], col: [] }, tall: { pos: [], nor: [], uv: [], col: [] }, nearMesh: null, farMesh: null, tallMesh: null });
+    return c;
+  };
   const cottageBoxes = []; // (island cottages: their own clapboard facade material, one draw)
   const cottageTrim = [];  // (island cottages: white corner boards, fascia and inset entry, one instanced draw)
   const marinaShedBoxes = []; // (reviewed QCYC shed: white paneled walls, one draw)
@@ -1070,6 +1247,40 @@ function buildCityBlocks(scene) {
   // down to the lowest is the pilot's. Everywhere else every building stands at y 0)
   const PILOT = window.CITY.DON_VALLEY || null;
   const baseOf = PILOT && PILOT.buildingBase ? PILOT.buildingBase : () => 0;
+  // ?presets=draw: one front line per joined run (js/building-draw.js snapFronts). A first pass plans every drawn house of a group
+  // with no shift (the same inputs as the loop below: buildingFront, shopFrontRule, footprintEdges are pure), the runs' median front
+  // lines come out of it, and the loop plans each house again with its shift. Only the house presets; the shops keep their outline.
+  let frontShifts = null;
+  const frontMemo = new Map(); // (row -> { bf, shp }: the pre-pass's buildingFront and shopFrontRule, pure, so the loop below reuses them: two road searches a house less)
+  if (presetDraw && drawFacts) {
+    const first = [];
+    for (const [bi, foot] of massing.rows) {
+      if (!foot.preset || bi >= realRows) continue;
+      const Dp = window.CITY.BuildingPrototypes.byId[foot.preset]?.draw;
+      if (!Dp || Dp.kind === 'shop' || Dp.kind === 'block' || Dp.kind === 'worship') continue; // (the houses' fronts only)
+      const facts = drawFacts.get(foot.index);
+      if (!facts) continue;
+      const bb = GEO.buildings[bi];
+      if (window.CITY.islandBuildingProfile?.(bb, bi)) continue;
+      const [bcx, bcz, bang, bparts, bh, bkind] = bb;
+      const sg = signWalls.get(bi);
+      const bf = buildingFront(bcx, bcz, bang, sg, nearestRoads);
+      const shp0 = shopFrontRule({ signed: sg, own: retail.own.has(bi), kind: bkind, front: bf.front, parts: bparts, cx: bcx, cz: bcz, ang: bang, near: bf.near, retail, nearestRoads });
+      frontMemo.set(bi, { bf, shp: shp0 });
+      const shp = shp0;
+      const fk = (shp.shopFront || (sg && sg.has(bf.front))) ? WALL_KINDS.shop : WALL_KINDS.entry;
+      const fe = footprintEdges(foot.rings[0], foot.covered, foot.hidden, foot.street, fk, shp.shopFront, Math.min(foot.base, bh - 0.5), bh);
+      const plan = window.CITY.BuildingDraw.planHouse({
+        preset: foot.preset, id: foot.id, groupId: facts.groupId, dwellings: facts.dwellings, ring: foot.rings[0], edges: fe.edges, covered: foot.covered, y0: 0, lin: linear,
+        roadDist: (x, z) => { const r = nearestRoads(x, z, 40)[0]; return r ? r.dist : Infinity; },
+        nearRoad: bf.near.length ? { x: bf.near[0].px, z: bf.near[0].pz } : null, frameOnly: true
+      });
+      if (plan.ok && plan.frame) first.push({ id: foot.id, groupId: facts.groupId, A: plan.frame.A, t: plan.frame.t, u0: plan.frame.u0, u1: plan.frame.u1, z1: plan.frame.z1, edge: plan.frame.edge });
+    }
+    const snap = window.CITY.BuildingDraw.snapFronts(first);
+    frontShifts = snap.shifts;
+    drawStats.snap = { runs: snap.runs, snapped: snap.snapped, steps: snap.steps };
+  }
   for (let bi = 0; bi < GEO.buildings.length; bi++) {
     const b = GEO.buildings[bi];
     // Replacement builders run before CityBuildings and opt in only when their
@@ -1082,6 +1293,7 @@ function buildCityBlocks(scene) {
     if (window.CITY.waterfrontBathurst?.stats.meshes > 0 && window.CITY.waterfrontBathurstExcludesBuilding?.(bi)) continue;
     if (window.CITY.waterfrontFerriesEnabled && b[9] === 'Jack Layton Ferry Terminal') continue;
     if (window.CITY.htoFirehallReplacesBuilding?.(b)) continue;
+    if (galleryRect && bi < realRows && b[0] > galleryRect.x0 && b[0] < galleryRect.x1 && b[1] > galleryRect.z0 && b[1] < galleryRect.z1) continue; // (the gallery stands on cleared ground)
     const [cx, cz, ang, parts, sourceHeight, sourceKind, sourceRoof, cseed, , name] = b;
     // Source-matched island profiles correct urban defaults while retaining the
     // native footprint, renderer batching and source row identity.
@@ -1119,18 +1331,12 @@ function buildCityBlocks(scene) {
     const clubhouseWaterV = marinaStyle === MARINA_CLUBHOUSE_STYLE ? (islandProfile.appearance.waterV | 0) : 0;
     const rnd = mulberry32((cseed * 7919) ^ Math.round(cx * 13 + cz * 7));
     const cs = Math.cos(ang), sn = Math.sin(ang);
-    // which wall looks onto the street: the nearest road, seen in the building's frame
-    let front = 3; // +z
-    const near = nearestRoads(cx, cz, 90);
-    if (near.length) {
-      const toRoadX = near[0].px - cx, toRoadZ = near[0].pz - cz;
-      const lu = toRoadX * cs - toRoadZ * sn; // world -> the building's frame
-      const lv = toRoadX * sn + toRoadZ * cs;
-      front = Math.abs(lu) > Math.abs(lv) ? (lu < 0 ? 0 : 1) : (lv < 0 ? 2 : 3);
-    }
-    // (a signed building fronts the street its sign is on: its rear, for the fire escapes, is the other side)
+    // which wall looks onto the street: the nearest road seen in the building's frame; a signed building fronts the
+    // street its sign is on (its rear, for the fire escapes, is the other side). buildingFront is pure, so the preset
+    // assignment (tools/build-building-presets.mjs) calls the same function and gets the same front.
     const signed = signWalls.get(bi);
-    if (signed && !signed.has(front)) front = [...signed][0];
+    const memo = frontMemo.get(bi);
+    const { front, near } = memo ? memo.bf : buildingFront(cx, cz, ang, signed, nearestRoads);
     // material & paint
     let mat = 0;
     if (kind === 3) mat = 2 + Math.floor(rnd() * 3);
@@ -1138,15 +1344,9 @@ function buildCityBlocks(scene) {
     // (Toronto layer: storefronts on selected buildings only, storefrontSelection above. The draw that used to pick
     // a quarter of the low-rise as shops is still made, so every building keeps its colours)
     if (kind === 1) rnd();
-    let shopFront = !!signed || (retail.own.has(bi) && kind !== 4 && kind !== 5 && kind !== 6); // (not sheds, works or churches)
-    if (!shopFront && kind <= 2 && near.length) {
-      // the front wall's middle, and whether it is on the street (not set back behind a yard or forecourt)
-      const [pu0, pu1, pv0, pv1] = [0, 1, 2, 3].map((k) => (k % 2 ? Math.max : Math.min)(...parts.map((p) => p[k])));
-      const fu = front === 0 ? pu0 : front === 1 ? pu1 : (pu0 + pu1) / 2, fv = front === 2 ? pv0 : front === 3 ? pv1 : (pv0 + pv1) / 2;
-      const fx = cx + fu * cs + fv * sn, fz = cz - fu * sn + fv * cs;
-      const street = nearestRoads(fx, fz, 22).find((r) => r.road.name === near[0].road.name);
-      if (street && retail.onStrip(fx, fz, street.road.name)) { shopFront = true; stats.strip++; }
-    }
+    const shop = memo ? memo.shp : shopFrontRule({ signed, own: retail.own.has(bi), kind, front, parts, cx, cz, ang, near, retail, nearestRoads });
+    let shopFront = shop.shopFront || (gallery && !!foot && bi >= realRows && /^main-street-shop/.test(foot.preset || '')); // (the gallery's shop lots stand with a shop front, as the page gives a retail street's)
+    if (shop.strip) stats.strip++;
     if (cottage) shopFront = false; // (the cottage extension gives it a native entrance, not a city storefront)
     if (shopFront) stats.storefronts++;
     const faces = [WALL_KINDS.rear, WALL_KINDS.rear, WALL_KINDS.rear, WALL_KINDS.rear];
@@ -1175,28 +1375,85 @@ function buildCityBlocks(scene) {
     if (signed) facades.set(bi, { mat, floorHeight: FLOOR_HEIGHTS[mat], front });
     const tone = cottage ? Math.max(rnd(), ISLAND_COTTAGE_TONE_MIN) : rnd();
     let topY = 0;
+    // ?presets=debug: the darker preset colour this building's pitched roof and shed roofs take (null otherwise)
+    let debugRoofRgb = null;
     // ?massing=1: the polygon instead of the boxes; the pitched & sheet roofs stay on the boxes' rectangles over it (a
     // flat cap under them closes whatever the rectangles leave open), its collider is the polygon itself
     let edges = null;
+    let drawPlan = null; // (?presets=draw: this house's plan, js/building-draw.js; null keeps today's look)
     if (foot) {
       const tf = performance.now();
       const fr = footprintEdges(foot.rings[0], foot.covered, foot.hidden, foot.street, faces[front], shopFront, Math.min(foot.base, h - 0.5), h);
       edges = fr.edges;
+      if (presetDraw && !victorian && foot.preset && window.CITY.BuildingPrototypes.byId[foot.preset]?.draw) {
+        const facts = foot.drawFacts || (drawFacts && drawFacts.get(foot.index)) || null;
+        const plan = window.CITY.BuildingDraw.planHouse({
+          preset: foot.preset, id: foot.id, groupId: facts && facts.groupId, dwellings: facts ? facts.dwellings : 1,
+          ring: foot.rings[0], edges: fr.edges, covered: foot.covered, y0, lin: linear,
+          h, style: FOOTPRINT_STYLE[mat][0], variant: FOOTPRINT_STYLE[mat][1], holes: foot.rings.length - 1, frontShift: frontShifts ? frontShifts.get(foot.id) : undefined,
+          index: foot.index, base: Math.min(foot.base, h - 0.5), group: facts && facts.group,
+          roadDist: (x, z) => { const r = nearestRoads(x, z, 40)[0]; return r ? r.dist : Infinity; },
+          nearRoad: near.length ? { x: near[0].px, z: near[0].pz } : null
+        });
+        const bp = drawStats.byPreset[foot.preset] || (drawStats.byPreset[foot.preset] = { drawn: 0, fallback: 0 });
+        // (a plan with a number that is not finite never reaches the cell builder: the building keeps today's look and is counted)
+        if (plan.ok && !(Number.isFinite(plan.eaveH) && plan.records.every((r) => [r.base, r.h, r.capY].every(Number.isFinite)))) { plan.ok = false; plan.reason = 'bad-plan'; console.warn(`[presets] a bad plan for ${foot.id} (${foot.preset}): eave ${plan.eaveH}`); }
+        if (plan.ok) {
+          drawPlan = plan; bp.drawn++; drawStats.drawn++;
+          if (plan.stats.viaRoad) drawStats.viaRoad++;
+          for (const k of Object.keys(drawStats.parts)) drawStats.parts[k] += plan.stats[k] || 0;
+        } else { bp.fallback++; drawStats.fallback[plan.reason] = (drawStats.fallback[plan.reason] || 0) + 1; }
+      }
       const pitched = victorian ? h <= DISTILLERY.pitchedUpTo : (roof === 1 && kind !== 3) || roof === 2;
       const boxes = [];
       for (const [u0, u1, v0, v1] of parts) {
         const uc = (u0 + u1) / 2, vc = (v0 + v1) / 2;
         if (u1 - u0 >= 1 && v1 - v0 >= 1) boxes.push([cx + uc * cs + vc * sn, cz - uc * sn + vc * cs, u1 - u0, v1 - v0, ang]);
       }
-      const [style, variant] = FOOTPRINT_STYLE[mat];
+      const [style0, variant0] = FOOTPRINT_STYLE[mat];
+      let style = style0, variant = variant0;
+      // ?presets=debug: the per-building paint, set to the preset's debug colour (flat). A glass building (its own
+      // curtain-wall material, which does not read paint) is drawn with the rendered facade so it takes the colour
+      // too; its windows are the rendered facade's. No material, draw call or vertex attribute is added.
+      let recPaint = paint;
+      if (presetDebug && foot.preset) {
+        const proto = window.CITY.BuildingPrototypes && window.CITY.BuildingPrototypes.byId[foot.preset];
+        // (paint.w = -1 marks a debug building for the footprint material's roof rule, tsl-materials.js: its cap takes
+        // the preset colour too, a little darker; the pitched roofs below take the same)
+        if (proto) { if (style === 2) { style = 0; variant = 0; } recPaint = [...linear(proto.color), -1]; debugRoofRgb = linear(proto.color).map((v) => v * 0.62); }
+      }
+      let recRings = foot.rings, recKinds = fr.kinds, recH = y0 + h, recCap = y0 + (pitched ? h - 0.05 : h) - (bi % 5) * 0.012;
+      let recCover = foot.rings[0].map((_, i) => (foot.covered.has(i) ? foot.covered.get(i) : NaN));
+      if (drawPlan) {
+        // a drawn house: its outline with the front edge cut into door and window stretches, whole storeys to the eave in a
+        // facade style of its own, its brick; the roof and the parts come below
+        // (a shop keeps its outline, wall kinds and paint: the page's shop fronts stay as they are)
+        style = drawPlan.material || 0; variant = drawPlan.variant; if (drawPlan.brickHex != null) recPaint = [...linear(drawPlan.brickHex), drawPlan.glass + (drawPlan.brick ? 2 : 0)];
+        recRings = drawPlan.keep ? foot.rings : [drawPlan.ring, ...foot.rings.slice(1)]; recKinds = drawPlan.kinds;
+        recCover = drawPlan.cover;
+        recH = y0 + drawPlan.eaveH; recCap = recH - 0.05 - (bi % 5) * 0.012;
+      }
       footRecords.push({
         // (its material: the rendered or the curtain-wall facades, which merge their styles; variant: its style there)
-        cx, cz, style, variant, rings: foot.rings, base: y0 + Math.min(foot.base, h - 0.5), h: y0 + h, kinds: fr.kinds,
-        cover: foot.rings[0].map((_, i) => (foot.covered.has(i) ? foot.covered.get(i) : NaN)),
+        cx, cz, style, variant, rings: recRings, base: y0 + Math.min(foot.base, h - 0.5), h: recH, kinds: recKinds, cover: recCover,
         // (overlapping records of one height: their roofs a little apart, not flickering)
-        capY: y0 + (pitched ? h - 0.05 : h) - (bi % 5) * 0.012, tone, seed: footSeeds[mat]++ * 29, paint,
+        capY: recCap, tone, seed: footSeeds[mat]++ * 29, paint: recPaint,
         boxes, faces // (the far tier: the boxes this polygon replaces)
       });
+      if (drawPlan) {
+        // the bays, porch slab and piers: small records of their own, in the near tier only
+        for (const r of drawPlan.records) {
+          footRecords.push({
+            // (the house's own centre: the part goes in the house's cell)
+            cx, cz, style: 0, variant: r.variant, rings: r.rings, base: r.base, h: r.h, kinds: r.kinds,
+            capY: r.capY, tone: 0.5, seed: 0, paint: [...linear(r.hex), r.glass + (r.brick ? 2 : 0)], boxes: [], nearOnly: r.nearOnly !== false, cover: r.cover
+          });
+          drawStats.extras++;
+        }
+        const rc = roofCellOf(cx, cz);
+        if (drawPlan.lodRoof) { drawStats.roofTris += drawPlan.pushRoof(rc.near); drawPlan.pushRoof(rc.far, true); }
+        else drawStats.roofTris += drawPlan.pushRoof(rc.tall); // (towers, shops, places of worship: one roof, drawn at any distance the cell is in view)
+      }
       const outer = foot.rings[0];
       let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
       for (const [x, z] of outer) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
@@ -1296,11 +1553,18 @@ function buildCityBlocks(scene) {
         if (roofType === 'gable') pushGableRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + cottageWallH, pitch, 0.45, rgb, linear(paintHex));
         else pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + cottageWallH, pitch, 0.45, rgb, true);
         stats.hip++;
+      } else if (drawPlan) {
+        // a drawn house has its own roof (js/building-draw.js), pushed once with its record above
       } else if (roof === 1 && kind !== 3) {
-        pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + h, (24 + rnd() * 8) * Math.PI / 180, 0.6, linear(weighted(ROOF_PAINT, rnd())));
+        // (the random draw is taken whatever the colour, so a debug building does not move any other building's roofs)
+        // (the pitch is drawn before the colour, as before: the two share one random sequence, so their order is the look)
+        const roofPitch = (24 + rnd() * 8) * Math.PI / 180;
+        const roofPaint = weighted(ROOF_PAINT, rnd());
+        pushHipRoof(roofTiles, cx, cz, ang, u0, u1, v0, v1, y0 + h, roofPitch, 0.6, debugRoofRgb || linear(roofPaint));
         stats.hip++;
       } else if (roof === 2) {
-        pushShedRoof(roofSheets, cx, cz, ang, u0, u1, v0, v1, y0 + h, linear(weighted(SHEET_PAINT, rnd())));
+        const sheetPaint = weighted(SHEET_PAINT, rnd());
+        pushShedRoof(roofSheets, cx, cz, ang, u0, u1, v0, v1, y0 + h, debugRoofRgb || linear(sheetPaint));
         stats.sheet++;
       }
       if (foot) continue;
@@ -1403,7 +1667,11 @@ function buildCityBlocks(scene) {
     const tm = performance.now();
     // three footprint materials, each drawing all its styles (tsl-materials.js footprintStyled): a block is two draws a
     // tier (three at the Distillery), not six
-    const footMaterials = FOOTPRINT_MATERIALS.map((ids) => ids.map((i) => facadeStyles[i])).map((list) => {
+    // (the drawn presets' facade styles join the first material's list: tall narrow Victorian windows, wide Edwardian pairs)
+    const drawStyles = presetDraw ? window.CITY.BuildingPrototypes.FACADE_VARIANTS.map((o) => [createRenderedFacadeMaterial, o]) : [];
+    // (and the towers' curtain-wall styles join the curtain-wall material's list, after the page's three: the same material and draws)
+    const drawCurtain = presetDraw ? window.CITY.BuildingPrototypes.CURTAIN_VARIANTS.map((o) => [createCurtainWallMaterial, o]) : [];
+    const footMaterials = FOOTPRINT_MATERIALS.map((ids, m) => ids.map((i) => facadeStyles[i]).concat(m === 0 ? drawStyles : m === 2 ? drawCurtain : [])).map((list) => {
       if (list.some(([create]) => create !== list[0][0])) throw new Error('massing: a footprint material mixes facade kinds');
       return list[0][0]({ footprintLocal: true, styles: list.map(([, opts]) => opts) });
     });
@@ -1496,8 +1764,128 @@ function buildCityBlocks(scene) {
     const m = new THREE.Mesh(g, createRoofMaterial(ribbed));
     m.castShadow = m.receiveShadow = true;
     m.name = name;
+    // (the roofs' bounds from one pass over the arrays: the drawn presets make this one mesh 3.8 M vertices, and scene-culling.js and the
+    // CPU-copy release each asked three.js for its box and sphere, walking every vertex through getX: +0.5 s of load. The same numbers)
+    fastBounds(g);
     group.add(m);
   }
+  // the cells' roofs: near and far meshes of one material, the far one standing in for the near one in the shadow cascades (the silhouette
+  // is all a shadow needs: the same planes, without what stands on them)
+  const roofList = [...roofCells.values()];
+  let tallView = null; // (each frame: the towers' roof cells in view)
+  if (roofList.length) {
+    const mat = createRoofMaterial(false);
+    const mk = (A, name) => {
+      if (!A.pos.length) return null;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(A.pos, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(A.nor, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(A.uv, 2));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(A.col, 3));
+      fastBounds(g);
+      const m = new THREE.Mesh(g, mat);
+      m.name = name;
+      m.receiveShadow = true;
+      group.add(m);
+      return m;
+    };
+    const MCs = window.CITY.MassingCells;
+    for (const c of roofList) {
+      c.nearMesh = mk(c.near, 'HippedRoofsNear');
+      // (the far roof's shadow stand-in, st-ndw9.22: its slopes and gable ends without the soffits and fascia boards, as world-space
+      // triangles of this 500 m cell, handed to scene-culling.js as they are)
+      c.farStand = c.far.pos.length && MCs?.roofShadowStandIn ? { worldCells: [{ sx: c.sx, sz: c.sz, pos: MCs.roofShadowStandIn(c.far.pos, c.far.nor) }] } : null;
+      c.farMesh = mk(c.far, 'HippedRoofsFar');
+      // the towers', shops' and worship roofs (st-ndw9.22): a cell wholly inside the detail frame goes into the one mesh below (cells back to back, so
+      // each frame draws the runs of the cells in view); one that reaches over the frame's edge stays a mesh of its own, as scene-culling.js cuts them
+      c.tallBox = c.tall.pos.length ? boundsOfPositions(c.tall.pos) : null;
+      const core = window.CITY.FAR_BAND && window.CITY.FAR_BAND.core;
+      c.tallMerged = !!c.tallBox && (!core || (c.tallBox[0] >= core.x0 && c.tallBox[3] <= core.x1 && c.tallBox[2] >= core.z0 && c.tallBox[5] <= core.z1));
+      if (c.tallBox && !c.tallMerged) {
+        c.tallMesh = mk(c.tall, 'HippedRoofsTall');
+        c.tallMesh.castShadow = true; c.tallMesh.userData.roofCell = true; // (scene-culling.js cuts these cells together again as one family: the towers' roofs stay one mesh, 0.6 M triangles; one mesh a cell was measured and was worse downtown, +0.8 ms and +90 draws)
+        c.tall = null;
+      }
+      c.near = c.far = null; // (the arrays are in the geometries now; the towers' are merged below)
+      if (c.nearMesh) { c.nearMesh.castShadow = true; if (c.farMesh) c.nearMesh.userData.shadowStandIn = c.farStand || c.farMesh.geometry; }
+      if (c.farMesh) { c.farMesh.castShadow = false; c.farMesh.visible = false; }
+    }
+    // the towers' roofs in one mesh, the cells (Morton order: neighbours near each other) back to back, with the shadow stand-in the mesh itself;
+    // a frame draws the runs of the cells whose box meets the camera's frustum, as the massing cells do (at most TALL_MESHES runs, one draw each)
+    const tall = roofList.filter((c) => c.tallMerged).sort((p, q) => morton(p.sx + 128, p.sz + 128) - morton(q.sx + 128, q.sz + 128));
+    if (tall.length) {
+      let V = 0;
+      for (const c of tall) V += c.tall.pos.length / 3;
+      const P = new Float32Array(V * 3), N = new Float32Array(V * 3), U = new Float32Array(V * 2), C = new Float32Array(V * 3);
+      const cellsT = [];
+      let at = 0;
+      const box = new THREE.Box3(), box2 = new THREE.Box3(), _t0 = new THREE.Vector3(), _t1 = new THREE.Vector3(); // (the cells' own bounds, not their padded boxes: scene-culling.js asks whether the mesh lies inside the detail frame)
+      for (const c of tall) {
+        const n = c.tall.pos.length / 3;
+        P.set(c.tall.pos, at * 3); N.set(c.tall.nor, at * 3); U.set(c.tall.uv, at * 2); C.set(c.tall.col, at * 3);
+        cellsT.push({ start: at, count: n, box: new THREE.Box3(new THREE.Vector3(c.tallBox[0] - 1, c.tallBox[1] - 1, c.tallBox[2] - 1), new THREE.Vector3(c.tallBox[3] + 1, c.tallBox[4] + 1, c.tallBox[5] + 1)) });
+        box.union(box2.set(_t0.set(c.tallBox[0], c.tallBox[1], c.tallBox[2]), _t1.set(c.tallBox[3], c.tallBox[4], c.tallBox[5])));
+        at += n;
+        c.tall = null;
+      }
+      const meshesT = [];
+      for (let k = 0; k < TALL_MESHES; k++) {
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', k ? meshesT[0].geometry.attributes.position : new THREE.BufferAttribute(P, 3));
+        g.setAttribute('normal', k ? meshesT[0].geometry.attributes.normal : new THREE.BufferAttribute(N, 3));
+        g.setAttribute('uv', k ? meshesT[0].geometry.attributes.uv : new THREE.BufferAttribute(U, 2));
+        g.setAttribute('color', k ? meshesT[0].geometry.attributes.color : new THREE.BufferAttribute(C, 3));
+        g.boundingBox = box.clone();
+        g.boundingSphere = box.getBoundingSphere(new THREE.Sphere());
+        const m = new THREE.Mesh(g, mat);
+        m.name = 'HippedRoofsTall';
+        m.receiveShadow = true;
+        m.castShadow = k === 0; // (scene-culling.js gives the first one its cell stand-ins in the cascades, and then it casts no more)
+        m.userData.tallRoofs = k;
+        if (k) { m.visible = false; m.userData.sharesPipelineWith = meshesT[0]; }
+        group.add(m);
+        meshesT.push(m);
+      }
+      const frustumT = new THREE.Frustum(), viewT = new THREE.Matrix4(), invT = new THREE.Matrix4(), wanted = new Array(cellsT.length);
+      let lastKey = null;
+      tallView = (camera) => {
+        // (only once the first mesh has been given over to its stand-ins, and for a camera: else every cell is drawn, as the warm-up wants)
+        if (meshesT[0].castShadow || !(camera.updateWorldMatrix && camera.projectionMatrix)) return;
+        camera.updateWorldMatrix(true, false);
+        viewT.multiplyMatrices(camera.projectionMatrix, invT.copy(camera.matrixWorld).invert());
+        frustumT.setFromProjectionMatrix(viewT, camera.coordinateSystem, camera.reversedDepth);
+        for (let i = 0; i < cellsT.length; i++) wanted[i] = frustumT.intersectsBox(cellsT[i].box);
+        const runs = window.CITY.MassingCells.cellRuns(cellsT, wanted, TALL_MESHES);
+        const key = runs.map((r) => r[0] + ':' + r[1]).join();
+        if (key === lastKey) return;
+        lastKey = key;
+        meshesT.forEach((m, k) => {
+          m.visible = k < runs.length;
+          if (m.visible) m.geometry.setDrawRange(runs[k][0], runs[k][1]);
+        });
+      };
+      stats.tallRoofs = { cells: cellsT.length, triangles: V / 3 };
+    }
+    window.CITY.roofCellStats = { cells: roofList.length, meshes: roofList.filter((c) => c.nearMesh).length + roofList.filter((c) => c.farMesh).length };
+  }
+  // each frame from the warm-up on: a cell's roof is the full one within ROOF_NEAR of the camera (a band either side so a camera standing on the limit
+  // never flips it), the far one beyond
+  const roofTiers = (camera) => {
+    const p = camera.position || camera;
+    if (tallView) tallView(camera);
+    for (const c of roofList) {
+      const x0 = c.sx * ROOF_CELL, z0 = c.sz * ROOF_CELL;
+      const dx = Math.max(x0 - p.x, 0, p.x - (x0 + ROOF_CELL)), dz = Math.max(z0 - p.z, 0, p.z - (z0 + ROOF_CELL)), dy = Math.max(0, p.y - 40);
+      const d = Math.hypot(dx, dy, dz);
+      // (0: the full roof; 1: the far roof; 2: no house roofs, the cap under them and the massing cells' far tier stand in: the same distance
+      // as the massing cells' mid limit)
+      const t = c.tier === 0 ? (d > ROOF_NEAR + ROOF_BAND ? 1 : 0) : c.tier === 1 ? (d < ROOF_NEAR - ROOF_BAND ? 0 : d > ROOF_FAR + ROOF_BAND ? 2 : 1) : (d < ROOF_FAR - ROOF_BAND ? 1 : 2);
+      if (t === c.tier) continue;
+      c.tier = t;
+      if (c.nearMesh) c.nearMesh.visible = t === 0;
+      if (c.farMesh) c.farMesh.visible = t === 1;
+    }
+  };
   if (window.CITY.DEBUG_ROADS !== false) {
     console.info(`[buildings] ${stats.buildings} buildings, ${stats.boxes} boxes, ${stats.hip} hipped & ${stats.sheet} sheet roofs, ${stats.glass} in curtain wall, ${stats.victorian} in the Distillery's brick (${stats.stone} limestone, ${stats.monitor} monitor roofs, ${stats.chimneys} chimneys); ${stats.storefronts} storefronts (${stats.strip} on retail strips, ${stats.signed} signed); ${stats.cottages} island cottages`);
   }
@@ -1635,15 +2023,20 @@ function buildCityBlocks(scene) {
   update(0, 0, true);
 
   scene.add(group);
+  if (drawStats) {
+    window.CITY.presetDrawStats = drawStats;
+    console.info(`[presets] drawn: ${drawStats.drawn} records (${Object.entries(drawStats.byPreset).map(([k, v]) => `${k} ${v.drawn} of ${v.drawn + v.fallback}`).join(', ')}), ` +
+      `${drawStats.extras} bay, porch and pier records, ${drawStats.roofTris} roof triangles; kept today's look: ${JSON.stringify(drawStats.fallback)}`);
+  }
   window.CITY.storefrontBuildingStats = { storefronts: stats.storefronts, strip: stats.strip, signed: stats.signed };
   return {
     group, colliders, quadtree, allBlocks, update, getActiveBlockCount: () => activeCount, facadeOf: (row) => facades.get(row) || null,
-    massingReady, updateMassingTiers: (camera) => massingTiers && massingTiers.update(camera)
+    massingReady, updateMassingTiers: (camera) => { roofTiers(camera); return massingTiers && massingTiers.update(camera); }
   };
 }
 
 Object.assign(window.CITY, {
-  CityQuadtree, buildCityBlocks, storefrontSelection, signedWalls,
+  CityQuadtree, buildCityBlocks, fastBounds, storefrontSelection, signedWalls, shopFrontRule, buildingFront, footprintEdges,
   // (pure geometry helpers, exported for the focused island-cottage geometry tests)
   pushGableRoof, islandCottageTrim, islandCottageEaveHeight, islandCottageDoorBay, islandCottageShaderTone,
   ISLAND_COTTAGE_BAY_PITCH, ISLAND_COTTAGE_CORNER_PIER, ISLAND_COTTAGE_DOOR_CASING, ISLAND_COTTAGE_TONE_MIN,

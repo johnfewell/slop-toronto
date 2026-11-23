@@ -168,11 +168,149 @@ test('encode/decode city-wide: corners on the grid, edges exact, every vertex it
   console.log(`# encode/decode: ${checked} vertices`);
 });
 
+test('the near tier\'s quarters: 16 runs that tile the index buffer, each holding only its own quarter\'s buildings (st-ndw9.22)', () => {
+  let quartersWithTriangles = 0;
+  for (const b of city.blocks) {
+    const T = b.tiers[0];
+    assert.ok(T.quarters instanceof Uint32Array && T.quarters.length === 32);
+    assert.equal(b.tiers[1].quarters, null);
+    let at = 0;
+    for (let i = 0; i < 16; i++) { assert.equal(T.quarters[i * 2], at); at += T.quarters[i * 2 + 1]; }
+    assert.equal(at, T.index.length, 'the quarters cover the index buffer');
+    for (let s = 0; s < 4; s++) {
+      const cellCount = T.quarters[s * 8 + 1] + T.quarters[s * 8 + 3] + T.quarters[s * 8 + 5] + T.quarters[s * 8 + 7];
+      assert.equal(T.quarters[s * 8], T.ranges[s * 2], 'a cell\'s quarters start where it does');
+      assert.equal(cellCount, T.ranges[s * 2 + 1], 'and add up to it');
+    }
+    const owner = new Int32Array(T.position.length / 4);
+    for (let v = 0; v < owner.length; v++) owner[v] = MC.decodeVertex(b, 0, v, city.table, city.yUnit).building;
+    for (let i = 0; i < 16; i++) {
+      const [start, count] = [T.quarters[i * 2], T.quarters[i * 2 + 1]];
+      if (count) quartersWithTriangles++;
+      for (let k = start; k < start + count; k++) {
+        const r = recs[city.order[owner[T.index[k]]]];
+        const sx = Math.floor(r.cx / MC.SUB) - b.bx * 2, sz = Math.floor(r.cz / MC.SUB) - b.bz * 2;
+        const qx = Math.floor(r.cx / MC.QUARTER) - Math.floor(r.cx / MC.SUB) * 2, qz = Math.floor(r.cz / MC.QUARTER) - Math.floor(r.cz / MC.SUB) * 2;
+        assert.equal(MC.TIER_ORDER[sx + 2 * sz] * 4 + MC.TIER_ORDER[qx + 2 * qz], i);
+      }
+    }
+  }
+  assert.ok(quartersWithTriangles > 4);
+});
+
+test('the near tier\'s shadow stand-in: world-space triangles per 500 m tier cell, never near-only parts, fewer than the near tier (st-ndw9.22)', () => {
+  let tris = 0, near = 0;
+  const maxH = Math.max(...recs.map((r) => Math.max(r.h, r.capY ?? r.h)));
+  for (const b of city.blocks) {
+    const T = b.tiers[0];
+    near += T.index.length / 3;
+    assert.ok(Array.isArray(T.standIn.cells));
+    assert.equal(b.tiers[1].standIn, null);
+    for (const c of T.standIn.cells) {
+      assert.ok(c.pos instanceof Float32Array && c.pos.length > 0 && c.pos.length % 9 === 0);
+      assert.ok(Math.floor(b.ox / MC.BLOCK) * 2 <= c.sx && c.sx <= Math.floor(b.ox / MC.BLOCK) * 2 + 1, 'the cell is one of the block\'s');
+      let mx = 0, mz = 0;
+      for (let k = 0; k < c.pos.length; k += 3) {
+        mx += c.pos[k]; mz += c.pos[k + 2];
+        assert.ok(c.pos[k + 1] >= -1e-3 && c.pos[k + 1] <= maxH + city.yUnit);
+      }
+      mx /= c.pos.length / 3; mz /= c.pos.length / 3;
+      // (the mean of a cell's corners is in the cell, give or take the odd building over its edge)
+      assert.ok(mx > c.sx * MC.SUB - 100 && mx < (c.sx + 1) * MC.SUB + 100 && mz > c.sz * MC.SUB - 100 && mz < (c.sz + 1) * MC.SUB + 100, `cell ${c.sx}, ${c.sz}: mean ${mx}, ${mz}`);
+      tris += c.pos.length / 9;
+    }
+  }
+  assert.ok(tris > 0 && tris <= near, `${tris} stand-in triangles against ${near} near`);
+});
+
+test('quarterRuns: the quarters in view as at most maxRuns index runs, joining over unseen quarters only when it must (st-ndw9.22)', () => {
+  // 16 quarters of 3 triangles each, back to back (some empty)
+  const q = new Uint32Array(32);
+  let at = 0;
+  for (let i = 0; i < 16; i++) { const c = i % 5 === 4 ? 0 : 3 * (1 + (i % 3)); q[i * 2] = at; q[i * 2 + 1] = c; at += c; }
+  const covered = (runs) => { const s = new Set(); for (const [a, n] of runs) for (let k = a; k < a + n; k++) s.add(k); return s; };
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  for (let trial = 0; trial < 400; trial++) {
+    const seen = Array.from({ length: 16 }, (_, i) => q[i * 2 + 1] > 0 && rnd() < 0.5);
+    const want = seen.slice();
+    const spare = [];
+    for (let i = 0; i < 16; i++) if (q[i * 2 + 1] > 0 && !seen[i] && rnd() < 0.9) spare.push(i);
+    const maxRuns = 1 + Math.floor(rnd() * 4);
+    const runs = MC.quarterRuns(q, seen, spare, maxRuns);
+    const got = covered(runs);
+    for (let i = 0; i < 16; i++) {
+      for (let k = q[i * 2]; k < q[i * 2] + q[i * 2 + 1]; k++) {
+        if (want[i]) assert.ok(got.has(k), 'a quarter in view is drawn');
+        else if (!spare.includes(i)) assert.ok(!got.has(k), 'one that is neither in view nor a spare is never drawn');
+      }
+    }
+    // runs are separate, in order, and never overlap
+    for (let k = 1; k < runs.length; k++) assert.ok(runs[k][0] > runs[k - 1][0] + runs[k - 1][1] - 1);
+  }
+  const none = MC.quarterRuns(q, new Array(16).fill(false), [], 2);
+  assert.deepEqual(none, []);
+  // two seen quarters far apart, one mesh: the quarters between are drawn (the spare ones), not the empty ones' triangles
+  const seen = new Array(16).fill(false); seen[0] = true; seen[3] = true;
+  const joined = MC.quarterRuns(q, seen, [1, 2], 1);
+  assert.equal(joined.length, 1);
+  assert.equal(joined[0][0], 0);
+  assert.equal(joined[0][1], q[6] + q[7]);
+});
+
+test('roofShadowStandIn: the slopes, ridge and gable ends stay, the soffit and the fascia boards go (st-ndw9.22)', async () => {
+  const K = await import('../js/building-draw-kit.js');
+  const mk = () => ({ pos: [], nor: [], uv: [], col: [] });
+  const F = K.makeFrame([0, 0], [10, 0]);
+  const cases = [
+    ['gable', (W) => K.gableRoof(W, F, { u0: 0, u1: 6, v0: 0, v1: 9, y: 6, pitch: 0.7, eL: 0.3, eR: 0.3, eF: 0.3, eB: 0.3, rgb: [0.4, 0.2, 0.1], endRgb: [0.5, 0.5, 0.5] })],
+    ['hip', (W) => K.hipRoof(W, F, { u0: 0, u1: 7, v0: 0, v1: 9, y: 6, pitch: 0.6, eL: 0.3, eR: 0.3, eF: 0.3, eB: 0.3, rgb: [0.4, 0.2, 0.1] })]
+  ];
+  for (const [name, draw] of cases) {
+    const A = mk();
+    draw(K.writer(A));
+    const kept = MC.roofShadowStandIn(A.pos, A.nor);
+    assert.equal(kept.length % 9, 0);
+    assert.ok(kept.length < A.pos.length, `${name}: some triangles dropped`);
+    assert.ok(kept.length >= A.pos.length * 0.3, `${name}: and the roof kept`);
+    // the kept triangles are the originals, in order
+    const keptSet = new Set(); for (let t = 0; t < kept.length; t += 9) keptSet.add(Array.from(kept.subarray(t, t + 9), (v) => v.toFixed(4)).join());
+    let miss = 0; for (let t = 0; t < A.pos.length; t += 9) if (!keptSet.has(Array.from(A.pos.slice(t, t + 9), (v) => Math.fround(v).toFixed(4)).join())) miss++;
+    assert.equal(miss + keptSet.size, A.pos.length / 9);
+    // the highest point, and the footprint's extent, are the same
+    const ext = (a) => { let ymax = -Infinity, x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (let i = 0; i < a.length; i += 3) { ymax = Math.max(ymax, a[i + 1]); x0 = Math.min(x0, a[i]); x1 = Math.max(x1, a[i]); z0 = Math.min(z0, a[i + 2]); z1 = Math.max(z1, a[i + 2]); } return [ymax, x0, x1, z0, z1].map((v) => +v.toFixed(3)); };
+    assert.deepEqual(ext(kept), ext(A.pos), `${name}: ridge height and extent`);
+    // nothing facing down is kept
+    for (let t = 0; t < A.pos.length; t += 9) if (A.nor[t + 1] < -0.3) assert.ok(!keptSet.has(Array.from(A.pos.slice(t, t + 9), (v) => Math.fround(v).toFixed(4)).join()));
+  }
+});
+
+test('cellRuns: the wanted cells as at most maxRuns runs, joined over the fewest unwanted triangles (st-ndw9.22)', () => {
+  const sizes = [30, 0, 60, 15, 45, 90, 30, 60];
+  const cells = []; let at = 0;
+  for (const n of sizes) { cells.push({ start: at, count: n }); at += n; }
+  const runs = MC.cellRuns(cells, [true, true, false, true, true, false, false, true], 9);
+  assert.deepEqual(runs, [[0, 30], [90, 60], [270, 60]]);
+  assert.deepEqual(MC.cellRuns(cells, [true, true, false, true, true, false, false, true], 2), [[0, 150], [270, 60]], 'the 60 between the first two runs is the smallest gap');
+  assert.deepEqual(MC.cellRuns(cells, [true, true, false, true, true, false, false, true], 1), [[0, 330]]);
+  assert.deepEqual(MC.cellRuns(cells, new Array(8).fill(false), 3), []);
+  assert.deepEqual(MC.cellRuns(cells, new Array(8).fill(true), 1), [[0, at]]);
+  // never fewer triangles than the wanted ones, whatever maxRuns
+  let seed = 3; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  for (let trial = 0; trial < 200; trial++) {
+    const w = sizes.map(() => rnd() < 0.5), k = 1 + Math.floor(rnd() * 4);
+    const r = MC.cellRuns(cells, w, k);
+    assert.ok(r.length <= k);
+    const got = new Set(); for (const [a, n] of r) for (let t = a; t < a + n; t++) got.add(t);
+    cells.forEach((c, i) => { if (w[i]) for (let t = c.start; t < c.start + c.count; t++) assert.ok(got.has(t)); });
+  }
+});
+
 test('two builds are byte for byte the same', () => {
   const digest = (out) => {
     const h = createHash('sha256');
     h.update(Buffer.from(out.table.buffer)); h.update(Buffer.from(out.order.buffer));
-    for (const b of out.blocks) for (const T of b.tiers) for (const a of [T.position, T.normal, T.index, T.ranges]) h.update(Buffer.from(a.buffer, a.byteOffset, a.byteLength));
+    for (const b of out.blocks) for (const T of b.tiers) for (const a of [T.position, T.normal, T.index, T.ranges, ...(T.quarters ? [T.quarters] : []), ...(T.standIn ? T.standIn.cells.map((c) => c.pos) : [])]) h.update(Buffer.from(a.buffer, a.byteOffset, a.byteLength));
     return h.digest('hex');
   };
   assert.equal(digest(MC.buildMassingCells(MC.packInput(recs))), digest(city));

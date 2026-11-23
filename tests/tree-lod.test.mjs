@@ -191,3 +191,93 @@ test('fallback trees (trees.js) follow the view camera through scene.onBeforeRen
   render(-4000, 120, 14000, new CORE.OrthographicCamera());
   assert.equal(JSON.stringify(totals()), held);
 });
+
+// st-aeg2: the view's casters (near, mid) and the other levels draw the trees in the camera's frustum; the casters' twins draw all of
+// the trees they drew before, in the shadow cascades only
+test('ez-trees: every tree in the camera frustum draws in the view, and the shadow twins hold the casters of the all-round draw', async () => {
+  const quality = QUALITY_TIERS.high;
+  const { treeModels } = torontoTrees();
+  const { streetTrees, generated } = syntheticTrees(treeModels);
+  const before = await buildField({ source: ezSource, quality, streetTrees, treeModels, generated, search: '?treefrustum=0' });
+  const after = await buildField({ source: ezSource, quality, streetTrees, treeModels, generated });
+  const cam = new CORE.PerspectiveCamera(60, 16 / 9, 0.1, 6000);
+  const shadowCam = new CORE.OrthographicCamera(-100, 100, 100, -100, 0.1, 400);
+  const keyOf = (a, c) => `${a[c * 16 + 12].toFixed(3)},${a[c * 16 + 13].toFixed(3)},${a[c * 16 + 14].toFixed(3)}`;
+  const instancesOf = (mesh) => { const a = mesh.instanceMatrix.array, out = []; for (let c = 0; c < mesh.count; c++) out.push(keyOf(a, c)); return out; };
+  let reduced = 0;
+  for (const [x, y, z, yaw] of [[0, 2, 0, 0], [500, 2, -200, 1.2], [-1200, 2, 300, 2.5], [300, 30, 900, 4], [-2700, 2, -1700, 5.5], [-2700, 2, -1700, 2.3]]) {
+    cam.position.set(x, y, z);
+    cam.rotation.set(0, yaw, 0);
+    cam.updateMatrixWorld();
+    for (const f of [before, after]) f.scene.onBeforeRender({}, f.scene, cam, null);
+    const frustum = new CORE.Frustum().setFromProjectionMatrix(new CORE.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    const twins = after.scene.getObjectByName('TreeShadowCasters');
+    assert.ok(twins && twins.children.length > 0, 'the casters have twins');
+    for (const old of before.field.group.children) {
+      const now = after.field.group.children.find((m) => m.name === old.name);
+      assert.ok(now, `${old.name} stays`);
+      assert.ok(now.count <= old.count, `${old.name}: the view draws no more than before`);
+      reduced += old.count - now.count;
+      // every tree of this mesh whose crown touches the frustum draws in the view
+      const drawn = new Set(instancesOf(now));
+      const arr = old.instanceMatrix.array, sphere = new CORE.Sphere();
+      for (let c = 0; c < old.count; c++) {
+        sphere.center.set(arr[c * 16 + 12], arr[c * 16 + 13] + 8, arr[c * 16 + 14]);
+        sphere.radius = 12;
+        if (frustum.intersectsSphere(sphere)) assert.ok(drawn.has(keyOf(arr, c)), `${old.name}: a tree in the frustum draws`);
+      }
+      const twin = twins.children.find((m) => m.name === `${old.name}_shadow`);
+      if (old.name.endsWith('_near') || old.name.endsWith('_mid')) {
+        assert.ok(twin, `${old.name} has a twin`);
+        assert.deepEqual(instancesOf(twin).sort(), instancesOf(old).sort(), `${old.name}: the twin draws all the trees the mesh drew all round`);
+        assert.equal(now.castShadow, false);
+        assert.equal(twin.castShadow, true);
+      } else assert.equal(twin, undefined, `${old.name} casts no shadow: no twin`);
+    }
+  }
+  assert.ok(reduced > 0, 'looking away from trees, the view draws fewer of them');
+  // the view's casters draw in the view and the twins in the cascades
+  after.scene.onBeforeRender({}, after.scene, cam, null);
+  const mainMesh = after.field.group.children.find((m) => m.name.endsWith('_near') && m.count > 0);
+  const twin = after.scene.getObjectByName('TreeShadowCasters').children.find((m) => m.name === `${mainMesh.name}_shadow`);
+  assert.equal(mainMesh.visible, true);
+  assert.equal(twin.visible, false);
+  after.scene.onBeforeRender({}, after.scene, shadowCam, null);
+  assert.equal(mainMesh.visible, false);
+  assert.equal(twin.visible, true);
+});
+
+// st-aeg2.2: the near level's casters beyond QUALITY.treeCastLite cast through the decimated mesh, in the cascades only
+test('ez-trees: casters beyond treeCastLite cast through the decimated mesh, the near mesh only in the view', async () => {
+  const { treeModels } = torontoTrees();
+  const { streetTrees, generated } = syntheticTrees(treeModels);
+  const plain = await buildField({ source: ezSource, quality: QUALITY_TIERS.high, streetTrees, treeModels, generated });
+  const lite = await buildField({ source: ezSource, quality: { ...QUALITY_TIERS.high, treeCastLite: 20 }, streetTrees, treeModels, generated });
+  const cam = new CORE.PerspectiveCamera(60, 16 / 9, 0.1, 6000);
+  const shadowCam = new CORE.OrthographicCamera(-100, 100, 100, -100, 0.1, 400);
+  const dist = (mesh, c) => { const a = mesh.instanceMatrix.array; return Math.hypot(a[c * 16 + 12] - cam.position.x, a[c * 16 + 14] - cam.position.z); };
+  for (const [x, z, yaw] of [[0, 0, 0], [500, -200, 1.2], [-1200, 300, 2.5]]) {
+    cam.position.set(x, 2, z);
+    cam.rotation.set(0, yaw, 0);
+    cam.updateMatrixWorld();
+    for (const f of [plain, lite]) f.scene.onBeforeRender({}, f.scene, cam, null);
+    const all = (f, suffix) => f.field.group.children.filter((m) => m.name.endsWith(suffix));
+    // every tree the near level draws all round casts exactly once: through the near casters within 20 m, the decimated mesh beyond
+    const key = (m, c) => { const a = m.instanceMatrix.array; return `${a[c * 16 + 12].toFixed(3)},${a[c * 16 + 14].toFixed(3)}`; };
+    const wanted = new Set();
+    for (const t of plain.scene.getObjectByName('TreeShadowCasters').children.filter((m) => m.name.endsWith('_near_shadow'))) for (let c = 0; c < t.count; c++) wanted.add(key(t, c));
+    const got = new Set(), nearOnes = [];
+    for (const m of all(lite, '_cast_near')) for (let c = 0; c < m.count; c++) { got.add(key(m, c)); nearOnes.push(dist(m, c)); assert.ok(dist(m, c) < 20 + 3, 'the full mesh casts only close by'); }
+    for (const m of lite.field.group.children.filter((x) => /_cast_lite$/.test(x.name))) for (let c = 0; c < m.count; c++) { assert.ok(!got.has(key(m, c)), 'a tree casts once'); got.add(key(m, c)); assert.ok(dist(m, c) >= 20 - 3, 'the decimated mesh casts from 20 m'); }
+    assert.deepEqual([...got].sort(), [...wanted].sort(), 'the same trees cast');
+    for (const m of all(lite, '_near').filter((x) => !x.name.includes('_cast_'))) assert.equal(m.castShadow, false, 'the near mesh no longer casts');
+    assert.equal(lite.scene.getObjectByName('TreeShadowCasters').children.some((m) => m.name.endsWith('_near_shadow')), false, 'no near twins');
+  }
+  // the casters draw in the cascades only
+  lite.scene.onBeforeRender({}, lite.scene, cam, null);
+  const casters = lite.field.group.children.filter((m) => /_cast_(near|lite)$/.test(m.name));
+  assert.ok(casters.some((m) => m.count > 0) && casters.every((m) => m.castShadow === true));
+  assert.ok(casters.every((m) => m.visible === false), 'not in the view');
+  lite.scene.onBeforeRender({}, lite.scene, shadowCam, null);
+  assert.ok(casters.filter((m) => m.count > 0).every((m) => m.visible === true), 'in the cascades');
+});

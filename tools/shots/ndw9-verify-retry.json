@@ -1,0 +1,107 @@
+[
+ {
+  "name": "mosque41793-diagA",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-112.4, -1240.3, 0); app.cameraSystem.cinema = () => ({ pos: [-112.4, 60, -1240.3], look: [-77.4, 5, -1200.3], fov: 55 }); })()"
+ },
+ {
+  "name": "mosque41793-diagB",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-112.4, -1160.3, 0); app.cameraSystem.cinema = () => ({ pos: [-112.4, 60, -1160.3], look: [-77.4, 5, -1200.3], fov: 55 }); })()"
+ },
+ {
+  "name": "mosque41793-eye",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-110.4, -1214.3, 0); app.cameraSystem.cinema = () => ({ pos: [-110.4, 1.7, -1214.3], look: [-92.4, 5, -1200.3], fov: 65 }); })()"
+ },
+ {
+  "name": "mosque72783-diagA",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1505.3, -885.4, 0); app.cameraSystem.cinema = () => ({ pos: [1505.3, 60, -885.4], look: [1545.3, 5, -920.4], fov: 55 }); })()"
+ },
+ {
+  "name": "mosque72783-diagB",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1585.3, -885.4, 0); app.cameraSystem.cinema = () => ({ pos: [1585.3, 60, -885.4], look: [1545.3, 5, -920.4], fov: 55 }); })()"
+ },
+ {
+  "name": "mosque72783-eye",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1531.3, -887.4, 0); app.cameraSystem.cinema = () => ({ pos: [1531.3, 1.7, -887.4], look: [1545.3, 5, -905.4], fov: 65 }); })()"
+ },
+ {
+  "name": "modern169608-diagA",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1151, -2758.7, 0); app.cameraSystem.cinema = () => ({ pos: [1151, 60, -2758.7], look: [1186, 5, -2718.7], fov: 55 }); })()"
+ },
+ {
+  "name": "modern169608-diagB",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1151, -2678.7, 0); app.cameraSystem.cinema = () => ({ pos: [1151, 60, -2678.7], look: [1186, 5, -2718.7], fov: 55 }); })()"
+ },
+ {
+  "name": "modern169608-eye",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1153, -2732.7, 0); app.cameraSystem.cinema = () => ({ pos: [1153, 1.7, -2732.7], look: [1171, 5, -2718.7], fov: 65 }); })()"
+ },
+ {
+  "name": "modern201929-diagA",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2819, -980, 0); app.cameraSystem.cinema = () => ({ pos: [2819, 60, -980], look: [2784, 5, -1020], fov: 55 }); })()"
+ },
+ {
+  "name": "modern201929-diagB",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2819, -1060, 0); app.cameraSystem.cinema = () => ({ pos: [2819, 60, -1060], look: [2784, 5, -1020], fov: 55 }); })()"
+ },
+ {
+  "name": "modern201929-eye",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2814, -1006, 0); app.cameraSystem.cinema = () => ({ pos: [2814, 1.7, -1006], look: [2796, 5, -1020], fov: 65 }); })()"
+ },
+ {
+  "name": "modern102425-diagA",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2624.7, -1945.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2624.7, 60, -1945.8], look: [-2584.7, 5, -1980.8], fov: 55 }); })()"
+ },
+ {
+  "name": "modern102425-diagB",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2544.7, -1945.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2544.7, 60, -1945.8], look: [-2584.7, 5, -1980.8], fov: 55 }); })()"
+ },
+ {
+  "name": "modern102425-eye",
+  "mode": "person",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2598.7, -1952.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2598.7, 1.7, -1952.8], look: [-2584.7, 5, -1970.8], fov: 65 }); })()"
+ }
+]

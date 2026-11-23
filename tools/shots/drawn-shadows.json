@@ -1,0 +1,26 @@
+[
+ {
+  "name": "sh-cab-70",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(1700, -1650, 0); app.cameraSystem.cinema = () => ({ pos: [1700, 70, -1530], look: [1700, 0, -1650], fov: 60 }); })()"
+ },
+ {
+  "name": "sh-cab-street",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 65 }); })()"
+ },
+ {
+  "name": "sh-cab-150",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(1700, -1650, 0); app.cameraSystem.cinema = () => ({ pos: [1700, 150, -1515], look: [1700, 0, -1650], fov: 60 }); })()"
+ },
+ {
+  "name": "sh-qw-90",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 90, -640], look: [-1386.6, 0, -713.6], fov: 60 }); })()"
+ }
+]

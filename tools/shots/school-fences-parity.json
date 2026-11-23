@@ -1,0 +1,23 @@
+[
+ {
+  "name": "07-start-cycle-golden",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(() => { const s = window.CITY.patioStats; if (s && s.season && s.layout && s.layout !== 'prebuilt' && !new URLSearchParams(location.search).get('patios')) throw new Error('The prebuilt CaféTO patio layout is stale on this map, so the page laid the patios out at startup: rebuild it (tools/build-patios.mjs, docs/cafeto-patios.md) ' + JSON.stringify(s.fingerprint)); })()"
+ },
+ {
+  "name": "08-start-chase-midday",
+  "time": "midday"
+ },
+ {
+  "name": "09-islands-midday",
+  "camera": "islands"
+ },
+ {
+  "name": "99-requests",
+  "record": true,
+  "wait": 500,
+  "metricsMs": 0,
+  "js": "performance.getEntriesByType('resource').map(e=>({name:e.name,initiatorType:e.initiatorType,transferSize:e.transferSize,encodedBodySize:e.encodedBodySize}))"
+ }
+]

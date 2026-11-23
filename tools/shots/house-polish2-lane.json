@@ -1,0 +1,58 @@
+[
+ {
+  "name": "lane1-eye",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4624.4, -1246.5, 0); app.cameraSystem.cinema = () => ({ pos: [-4624.4, 1.7, -1246.5], look: [-4598.5, 4, -1246], fov: 62 }); })()"
+ },
+ {
+  "name": "lane1-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4619.4, -1246.4, 0); app.cameraSystem.cinema = () => ({ pos: [-4619.4, 60, -1246.4], look: [-4598.5, 0, -1246], fov: 55 }); })()"
+ },
+ {
+  "name": "lane2-eye",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5079.1, -1233.8, 0); app.cameraSystem.cinema = () => ({ pos: [-5079.1, 1.7, -1233.8], look: [-5078.7, 4, -1259.4], fov: 62 }); })()"
+ },
+ {
+  "name": "lane2-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5079, -1238.8, 0); app.cameraSystem.cinema = () => ({ pos: [-5079, 60, -1238.8], look: [-5078.7, 0, -1259.4], fov: 55 }); })()"
+ },
+ {
+  "name": "lane3-eye",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4245.2, -1568.1, 0); app.cameraSystem.cinema = () => ({ pos: [-4245.2, 1.7, -1568.1], look: [-4245.8, 4, -1593.8], fov: 62 }); })()"
+ },
+ {
+  "name": "lane3-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4245.4, -1573.1, 0); app.cameraSystem.cinema = () => ({ pos: [-4245.4, 60, -1573.1], look: [-4245.8, 0, -1593.8], fov: 55 }); })()"
+ },
+ {
+  "name": "lane4-eye",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3050.3, -1036.8, 0); app.cameraSystem.cinema = () => ({ pos: [-3050.3, 1.7, -1036.8], look: [-3049.7, 4, -1062.2], fov: 62 }); })()"
+ },
+ {
+  "name": "lane4-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3050.2, -1041.8, 0); app.cameraSystem.cinema = () => ({ pos: [-3050.2, 60, -1041.8], look: [-3049.7, 0, -1062.2], fov: 55 }); })()"
+ }
+]

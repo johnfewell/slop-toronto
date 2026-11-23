@@ -1,0 +1,142 @@
+[
+ {
+  "name": "edwardian-semi-63858-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7071.5, -1903.9, 0); app.cameraSystem.cinema = () => ({ pos: [-7071.5, 1.7, -1903.9], look: [-7059.5, 2.6, -1903.9], fov: 62 }); })()"
+ },
+ {
+  "name": "edwardian-semi-63858-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7069.5, -1895.9, 0); app.cameraSystem.cinema = () => ({ pos: [-7069.5, 1.7, -1895.9], look: [-7059.5, 2.8, -1903.9], fov: 62 }); })()"
+ },
+ {
+  "name": "edwardian-semi-63903-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7216.6, -2378.2, 0); app.cameraSystem.cinema = () => ({ pos: [-7216.6, 1.7, -2378.2], look: [-7204.6, 2.6, -2378.2], fov: 62 }); })()"
+ },
+ {
+  "name": "edwardian-semi-63903-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7214.6, -2370.2, 0); app.cameraSystem.cinema = () => ({ pos: [-7214.6, 1.7, -2370.2], look: [-7204.6, 2.8, -2378.2], fov: 62 }); })()"
+ },
+ {
+  "name": "victorian-semi-64514-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7370.9, -2505.7, 0); app.cameraSystem.cinema = () => ({ pos: [-7370.9, 1.7, -2505.7], look: [-7358.9, 2.6, -2505.7], fov: 62 }); })()"
+ },
+ {
+  "name": "victorian-semi-64514-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7368.9, -2497.7, 0); app.cameraSystem.cinema = () => ({ pos: [-7368.9, 1.7, -2497.7], look: [-7358.9, 2.8, -2505.7], fov: 62 }); })()"
+ },
+ {
+  "name": "victorian-semi-64695-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7290.4, -2410.2, 0); app.cameraSystem.cinema = () => ({ pos: [-7290.4, 1.7, -2410.2], look: [-7302.4, 2.6, -2410.2], fov: 62 }); })()"
+ },
+ {
+  "name": "victorian-semi-64695-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7292.4, -2418.2, 0); app.cameraSystem.cinema = () => ({ pos: [-7292.4, 1.7, -2418.2], look: [-7302.4, 2.8, -2410.2], fov: 62 }); })()"
+ },
+ {
+  "name": "interwar-detached-63810-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-6398.4, -2322.3, 0); app.cameraSystem.cinema = () => ({ pos: [-6398.4, 1.7, -2322.3], look: [-6387.5, 2.6, -2317.4], fov: 62 }); })()"
+ },
+ {
+  "name": "interwar-detached-63810-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-6399.8, -2314.1, 0); app.cameraSystem.cinema = () => ({ pos: [-6399.8, 1.7, -2314.1], look: [-6387.5, 2.8, -2317.4], fov: 62 }); })()"
+ },
+ {
+  "name": "interwar-detached-63813-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-6416.4, -2410.5, 0); app.cameraSystem.cinema = () => ({ pos: [-6416.4, 1.7, -2410.5], look: [-6426.7, 2.6, -2416.6], fov: 62 }); })()"
+ },
+ {
+  "name": "interwar-detached-63813-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-6414, -2418.5, 0); app.cameraSystem.cinema = () => ({ pos: [-6414, 1.7, -2418.5], look: [-6426.7, 2.8, -2416.6], fov: 62 }); })()"
+ },
+ {
+  "name": "edwardian-detached-63845-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7072.5, -2080.7, 0); app.cameraSystem.cinema = () => ({ pos: [-7072.5, 1.7, -2080.7], look: [-7060.5, 2.6, -2080.7], fov: 62 }); })()"
+ },
+ {
+  "name": "edwardian-detached-63845-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7070.5, -2072.7, 0); app.cameraSystem.cinema = () => ({ pos: [-7070.5, 1.7, -2072.7], look: [-7060.5, 2.8, -2080.7], fov: 62 }); })()"
+ },
+ {
+  "name": "edwardian-detached-63848-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7006, -2677, 0); app.cameraSystem.cinema = () => ({ pos: [-7006, 1.7, -2677], look: [-7018, 2.6, -2676.6], fov: 62 }); })()"
+ },
+ {
+  "name": "edwardian-detached-63848-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7008.2, -2684.9, 0); app.cameraSystem.cinema = () => ({ pos: [-7008.2, 1.7, -2684.9], look: [-7018, 2.8, -2676.6], fov: 62 }); })()"
+ },
+ {
+  "name": "victorian-row-79142-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5047.2, -1275.6, 0); app.cameraSystem.cinema = () => ({ pos: [-5047.2, 1.7, -1275.6], look: [-5047.4, 2.6, -1263.6], fov: 62 }); })()"
+ },
+ {
+  "name": "victorian-row-79142-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5055.2, -1273.7, 0); app.cameraSystem.cinema = () => ({ pos: [-5055.2, 1.7, -1273.7], look: [-5047.4, 2.8, -1263.6], fov: 62 }); })()"
+ },
+ {
+  "name": "victorian-row-79158-12m",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4864.5, -1673.5, 0); app.cameraSystem.cinema = () => ({ pos: [-4864.5, 1.7, -1673.5], look: [-4864.5, 2.6, -1685.5], fov: 62 }); })()"
+ },
+ {
+  "name": "victorian-row-79158-10m-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4856.5, -1675.5, 0); app.cameraSystem.cinema = () => ({ pos: [-4856.5, 1.7, -1675.5], look: [-4864.5, 2.8, -1685.5], fov: 62 }); })()"
+ }
+]

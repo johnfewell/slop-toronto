@@ -1,0 +1,93 @@
+[
+ {
+  "name": "queen-and-spadina",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1096, -729, 0); app.cameraSystem.cinema = () => ({ pos: [-1096, 500, -729], look: [-1096, 0, -727], fov: 45 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "kensington-market",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1252, -1290, 0); app.cameraSystem.cinema = () => ({ pos: [-1252, 500, -1290], look: [-1252, 0, -1288], fov: 45 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "cabbagetown",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1760, -1900, 0); app.cameraSystem.cinema = () => ({ pos: [1760, 500, -1900], look: [1760, 0, -1898], fov: 45 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "roncesvalles-howard-park",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5260, -2285, 0); app.cameraSystem.cinema = () => ({ pos: [-5260, 500, -2285], look: [-5260, 0, -2283], fov: 45 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "annex-south-edge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1044, -2810, 0); app.cameraSystem.cinema = () => ({ pos: [-1044, 500, -2810], look: [-1044, 0, -2808], fov: 45 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "financial-district",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(130, -350, 0); app.cameraSystem.cinema = () => ({ pos: [130, 500, -350], look: [130, 0, -348], fov: 45 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "regent-park",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1795, -1027, 0); app.cameraSystem.cinema = () => ({ pos: [1795, 500, -1027], look: [1795, 0, -1025], fov: 45 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "liberty-village",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3229, -67, 0); app.cameraSystem.cinema = () => ({ pos: [-3229, 500, -67], look: [-3229, 0, -65], fov: 45 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "downtown-oblique",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(0, 0, 0); app.cameraSystem.cinema = () => ({ pos: [100, 720, 900], look: [-100, 0, -500], fov: 55 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "queen-west-at-augusta",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386, -729, 0); app.cameraSystem.cinema = () => ({ pos: [-1386, 1.7, -729], look: [-1226, 5, -729], fov: 55 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "college-at-clinton",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2257.6, -1821.5, 0); app.cameraSystem.cinema = () => ({ pos: [-2257.6, 1.7, -1821.5], look: [-2417, 5, -1823], fov: 55 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "roncesvalles-at-fermanagh",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5261, -1681.6, 0); app.cameraSystem.cinema = () => ({ pos: [-5261, 1.7, -1681.6], look: [-5261, 5, -1521], fov: 55 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ },
+ {
+  "name": "cabbagetown-metcalfe",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1695, -1950, 0); app.cameraSystem.cinema = () => ({ pos: [1695, 1.7, -1950], look: [1695, 5, -1790], fov: 55 }); setTimeout(() => { const p = window.CITY.BUILDING_PRESETS; console.log(\"[presets-debug] \" + (p ? (\"attached \" + p.attached + \" of \" + p.ids.length + \" presets, error \" + p.error) : \"no presets loaded\")); console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")); }, 3500); })()"
+ }
+]

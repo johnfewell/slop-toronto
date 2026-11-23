@@ -1,0 +1,72 @@
+[
+ {
+  "name": "mosque83877-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5458.3, -2509.2, 0); app.cameraSystem.cinema = () => ({ pos: [-5458.3, 1.7, -2509.2], look: [-5458.5, 5, -2533.2], fov: 65 }); })()"
+ },
+ {
+  "name": "mosque83877-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-5458.1, -2489.2, 0); app.cameraSystem.cinema = () => ({ pos: [-5458.1, 60, -2489.2], look: [-5458.6, 6, -2552.7], fov: 55 }); })()"
+ },
+ {
+  "name": "mosque90131-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3979.3, -2842.2, 0); app.cameraSystem.cinema = () => ({ pos: [-3979.3, 1.7, -2842.2], look: [-3953.1, 5, -2842.1], fov: 65 }); })()"
+ },
+ {
+  "name": "mosque90131-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3999.3, -2842.4, 0); app.cameraSystem.cinema = () => ({ pos: [-3999.3, 60, -2842.4], look: [-3919.8, 6, -2841.8], fov: 55 }); })()"
+ },
+ {
+  "name": "mosque41793-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-116.4, -1200.2, 0); app.cameraSystem.cinema = () => ({ pos: [-116.4, 1.7, -1200.2], look: [-92.4, 5, -1200.3], fov: 65 }); })()"
+ },
+ {
+  "name": "mosque41793-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-136.4, -1200.1, 0); app.cameraSystem.cinema = () => ({ pos: [-136.4, 60, -1200.1], look: [-80.3, 6, -1200.3], fov: 55 }); })()"
+ },
+ {
+  "name": "mosque72783-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1545.4, -876.4, 0); app.cameraSystem.cinema = () => ({ pos: [1545.4, 1.7, -876.4], look: [1545.4, 5, -905.4], fov: 65 }); })()"
+ },
+ {
+  "name": "mosque72783-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1545.4, -856.4, 0); app.cameraSystem.cinema = () => ({ pos: [1545.4, 60, -856.4], look: [1545.3, 6, -952.7], fov: 55 }); })()"
+ },
+ {
+  "name": "mosque73081-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1841.5, -1195.8, 0); app.cameraSystem.cinema = () => ({ pos: [1841.5, 1.7, -1195.8], look: [1817.5, 5, -1195.7], fov: 65 }); })()"
+ },
+ {
+  "name": "mosque73081-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1861.5, -1195.9, 0); app.cameraSystem.cinema = () => ({ pos: [1861.5, 60, -1195.9], look: [1797.8, 6, -1195.6], fov: 55 }); })()"
+ }
+]

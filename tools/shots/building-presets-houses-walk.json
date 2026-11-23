@@ -1,0 +1,159 @@
+[
+ {
+  "name": "walk-start",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { { if (window.__wp) clearInterval(window.__wp); const app = window.__CITY_APP; const cm = app.controllerManager; const f = () => { const e = cm.entities[cm.activeMode]; console.log(\"[walkpos] \" + cm.activeMode + \" \" + e.position.x.toFixed(1) + \" \" + e.position.y.toFixed(2) + \" \" + e.position.z.toFixed(1)); }; f(); window.__wp = setInterval(f, 2000); } })()"
+ },
+ {
+  "name": "walk-row1-0",
+  "time": "midday",
+  "wait": 1500,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode(\"person\"); app.controllerManager.teleportActiveTo(-3006, 3507, 1.6); { if (window.__wp) clearInterval(window.__wp); const app = window.__CITY_APP; const cm = app.controllerManager; const f = () => { const e = cm.entities[cm.activeMode]; console.log(\"[walkpos] \" + cm.activeMode + \" \" + e.position.x.toFixed(1) + \" \" + e.position.y.toFixed(2) + \" \" + e.position.z.toFixed(1)); }; f(); window.__wp = setInterval(f, 2000); } })()"
+ },
+ {
+  "name": "walk-row1-a",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-row1-b",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-row2-0",
+  "time": "midday",
+  "wait": 1500,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode(\"person\"); app.controllerManager.teleportActiveTo(-3006, 3468.5, 1.6); { if (window.__wp) clearInterval(window.__wp); const app = window.__CITY_APP; const cm = app.controllerManager; const f = () => { const e = cm.entities[cm.activeMode]; console.log(\"[walkpos] \" + cm.activeMode + \" \" + e.position.x.toFixed(1) + \" \" + e.position.y.toFixed(2) + \" \" + e.position.z.toFixed(1)); }; f(); window.__wp = setInterval(f, 2000); } })()"
+ },
+ {
+  "name": "walk-row2-a",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-row2-b",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-row3-0",
+  "time": "midday",
+  "wait": 1500,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode(\"person\"); app.controllerManager.teleportActiveTo(-3006, 3429.6, 1.6); { if (window.__wp) clearInterval(window.__wp); const app = window.__CITY_APP; const cm = app.controllerManager; const f = () => { const e = cm.entities[cm.activeMode]; console.log(\"[walkpos] \" + cm.activeMode + \" \" + e.position.x.toFixed(1) + \" \" + e.position.y.toFixed(2) + \" \" + e.position.z.toFixed(1)); }; f(); window.__wp = setInterval(f, 2000); } })()"
+ },
+ {
+  "name": "walk-row3-a",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-row3-b",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-across-0-0",
+  "time": "midday",
+  "wait": 1500,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode(\"person\"); app.controllerManager.teleportActiveTo(-2989.5, 3512, 3.1); { if (window.__wp) clearInterval(window.__wp); const app = window.__CITY_APP; const cm = app.controllerManager; const f = () => { const e = cm.entities[cm.activeMode]; console.log(\"[walkpos] \" + cm.activeMode + \" \" + e.position.x.toFixed(1) + \" \" + e.position.y.toFixed(2) + \" \" + e.position.z.toFixed(1)); }; f(); window.__wp = setInterval(f, 2000); } })()"
+ },
+ {
+  "name": "walk-across-0-a",
+  "time": "midday",
+  "wait": 9000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-across-0-b",
+  "time": "midday",
+  "wait": 9500,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-across-1-0",
+  "time": "midday",
+  "wait": 1500,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode(\"person\"); app.controllerManager.teleportActiveTo(-2989, 3434.6, 3.1); { if (window.__wp) clearInterval(window.__wp); const app = window.__CITY_APP; const cm = app.controllerManager; const f = () => { const e = cm.entities[cm.activeMode]; console.log(\"[walkpos] \" + cm.activeMode + \" \" + e.position.x.toFixed(1) + \" \" + e.position.y.toFixed(2) + \" \" + e.position.z.toFixed(1)); }; f(); window.__wp = setInterval(f, 2000); } })()"
+ },
+ {
+  "name": "walk-across-1-a",
+  "time": "midday",
+  "wait": 9000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-across-1-b",
+  "time": "midday",
+  "wait": 9500,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-across-2-0",
+  "time": "midday",
+  "wait": 1500,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode(\"person\"); app.controllerManager.teleportActiveTo(-2988, 3358.1, 3.1); { if (window.__wp) clearInterval(window.__wp); const app = window.__CITY_APP; const cm = app.controllerManager; const f = () => { const e = cm.entities[cm.activeMode]; console.log(\"[walkpos] \" + cm.activeMode + \" \" + e.position.x.toFixed(1) + \" \" + e.position.y.toFixed(2) + \" \" + e.position.z.toFixed(1)); }; f(); window.__wp = setInterval(f, 2000); } })()"
+ },
+ {
+  "name": "walk-across-2-a",
+  "time": "midday",
+  "wait": 9000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-across-2-b",
+  "time": "midday",
+  "wait": 9500,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-across-3-0",
+  "time": "midday",
+  "wait": 1500,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode(\"person\"); app.controllerManager.teleportActiveTo(-2987, 3279.9, 3.1); { if (window.__wp) clearInterval(window.__wp); const app = window.__CITY_APP; const cm = app.controllerManager; const f = () => { const e = cm.entities[cm.activeMode]; console.log(\"[walkpos] \" + cm.activeMode + \" \" + e.position.x.toFixed(1) + \" \" + e.position.y.toFixed(2) + \" \" + e.position.z.toFixed(1)); }; f(); window.__wp = setInterval(f, 2000); } })()"
+ },
+ {
+  "name": "walk-across-3-a",
+  "time": "midday",
+  "wait": 9000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "walk-across-3-b",
+  "time": "midday",
+  "wait": 9500,
+  "hold": "KeyW"
+ },
+ {
+  "name": "fly-0",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.selectMode(\"helicopter\"); app.controllerManager.teleportActiveTo(-2955.6, 3580, 3.1); { if (window.__wp) clearInterval(window.__wp); const app = window.__CITY_APP; const cm = app.controllerManager; const f = () => { const e = cm.entities[cm.activeMode]; console.log(\"[walkpos] \" + cm.activeMode + \" \" + e.position.x.toFixed(1) + \" \" + e.position.y.toFixed(2) + \" \" + e.position.z.toFixed(1)); }; f(); window.__wp = setInterval(f, 2000); } })()"
+ },
+ {
+  "name": "fly-1",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "fly-2",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW"
+ },
+ {
+  "name": "fly-3",
+  "time": "midday",
+  "wait": 12000,
+  "hold": "KeyW"
+ }
+]

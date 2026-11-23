@@ -1,0 +1,4 @@
+[
+  {"name":"draw-cabbagetown","time":"midday","wait":8000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.6666,-79.3665);A.cameraSystem.cinema=()=>({pos:[w.x+70,90,w.z+70],look:[w.x,4,w.z],fov:48});})()"}
+]

@@ -1,0 +1,57 @@
+{
+ "queen-augusta": {
+  "crossing": [
+   -1385.5,
+   -736
+  ],
+  "gap": 2.3,
+  "shopsWithin90m": 13,
+  "shop": "to-3dmassing-2025:136551"
+ },
+ "college-clinton": {
+  "crossing": [
+   -2257.6,
+   -1821.5
+  ],
+  "gap": 0,
+  "shopsWithin90m": 18,
+  "shop": "to-3dmassing-2025:108007"
+ },
+ "roncesvalles-fermanagh": {
+  "crossing": [
+   -5260.9,
+   -1685.6
+  ],
+  "gap": 1,
+  "shopsWithin90m": 5,
+  "shop": "to-3dmassing-2025:83312"
+ },
+ "main-street-shop-early": [
+  {
+   "id": "to-3dmassing-2025:140215",
+   "x": -1279.8,
+   "z": -1267.9,
+   "shops": 24
+  },
+  {
+   "id": "to-3dmassing-2025:170898",
+   "x": 1554.9,
+   "z": -1756.1,
+   "shops": 24
+  }
+ ],
+ "main-street-shop-later": [
+  {
+   "id": "to-3dmassing-2025:172652",
+   "x": 1538.3,
+   "z": -1530.8,
+   "shops": 11
+  },
+  {
+   "id": "to-3dmassing-2025:84745",
+   "x": -4073.8,
+   "z": -2792.2,
+   "shops": 10
+  }
+ ]
+}

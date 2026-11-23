@@ -14,7 +14,7 @@ function crossing({ mid = null } = {}) {
   const state = { walk: false, clear: true };
   const node = mid ? null : { curb: [], walkers: [] };
   const context = {
-    clock: 0, KERB: 1.6, QUEUE_GAP: 0.62, PEDESTRIAN_DIVE_DURATION: 2.5, PED_SPAWN_DISTANCE: 60,
+    clock: 0, KERB: 1.6, QUEUE_GAP: 0.62, crowdOn: false, crowdCtx: { canTurn: () => false }, crowdStats: {}, PEDESTRIAN_DIVE_DURATION: 2.5, PED_SPAWN_DISTANCE: 60,
     nearEdges: [], walkedNodes: [], nearMidSet: new Set(), CROSS_CHANCE: { signal: 0.35, pxo: 0.3 },
     pedRoutes: { next: () => null }, atCurb() {}, markMid() {}, nearView: () => true,
     clamp: (v, lo, hi) => Math.max(lo, Math.min(hi, v)),

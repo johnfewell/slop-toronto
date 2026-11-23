@@ -20,8 +20,16 @@
 // The rings are cleaned (no repeats, under 0.02 m merged, Douglas-Peucker 0.2 m), set on the decimetre grid the file
 // stores and cleaned again, so the classification sees exactly the corners the page will.
 //
+// The bigger map (st-ndw9.21): its geodata (data/frames/eglinton/toronto-geodata.bin) is built from a bigger download, so
+// its 140,541 building rows are in another order than today's 35,266 and `row` does not fit them. Every one of today's
+// rows is in it unchanged (same fields, found by content), so the file also carries `frameRow`: each record's row in the
+// bigger map's geodata, with `frameRows` and `frameRowCheck` (the page uses whichever matches the loaded geodata). The
+// 18 rows of the bigger map that stand inside today's frame without a record here keep their boxes, as does everything
+// outside it. --bigger-bin <bin> sets that geodata (default data/frames/eglinton/toronto-geodata.bin; skipped when it
+// is missing, or with --frame); --bigger-ids <its -ids.js> cross-checks the match by durable ID when it is at hand.
+//
 // usage: node tools/build-massing.mjs [<3DMassingShapefile_2025_WGS84.shp>] [--out data/toronto-massing.bin]
-//          [--json <stats.json>]
+//          [--json <stats.json>] [--bigger-bin <bin>] [--bigger-ids <ids.js>]
 // (default shapefile: ~/.cache/slop-toronto/raw/massing2025/3DMassingShapefile_2025_WGS84.shp). Deterministic: the
 // same inputs give the same bytes (tests/geodata.test.mjs, npm run test:geodata). Sets the file's hash in
 // js/massing-data.js when it writes the committed file.
@@ -35,10 +43,11 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { openShp } from 'shapefile';
 import { packGeo } from './geo-pack.mjs';
+import { unpackGeo } from '../js/geodata-loader.js';
 import { rowCheck, MASSING_SCHEMA } from '../js/massing-data.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const { values: opt, positionals } = parseArgs({ allowPositionals: true, options: { out: { type: 'string' }, json: { type: 'string' }, geo: { type: 'string' }, ids: { type: 'string' }, frame: { type: 'string' } } });
+const { values: opt, positionals } = parseArgs({ allowPositionals: true, options: { out: { type: 'string' }, json: { type: 'string' }, geo: { type: 'string' }, ids: { type: 'string' }, frame: { type: 'string' }, 'bigger-bin': { type: 'string' }, 'bigger-ids': { type: 'string' } } });
 const COMMITTED = path.join(ROOT, 'data/toronto-massing.bin');
 const OUT = path.resolve(opt.out || COMMITTED);
 const SHP = positionals[0] || path.join(os.homedir(), '.cache/slop-toronto/raw/massing2025/3DMassingShapefile_2025_WGS84.shp');
@@ -352,6 +361,29 @@ const M = {
   skipWhy: skippedRows.map((r) => reasons.indexOf(r.skip)),
   reasons
 };
+// ---- the bigger map's rows (see the header): matched by content, in order where a plan stands at one centre twice
+const BIGGER_BIN = opt['bigger-bin'] ? path.resolve(opt['bigger-bin']) : path.join(ROOT, 'data/frames/eglinton/toronto-geodata.bin');
+if (!opt.frame && fs.existsSync(BIGGER_BIN)) {
+  const big = (await unpackGeo(fs.readFileSync(BIGGER_BIN))).GEO.buildings;
+  const keyOf = (b) => JSON.stringify(b);
+  const bigRows = new Map();
+  big.forEach((b, i) => { const k = keyOf(b); (bigRows.get(k) || bigRows.set(k, []).get(k)).push(i); });
+  const rowOfToday = new Array(GEO.buildings.length);
+  GEO.buildings.forEach((b, i) => { const hit = bigRows.get(keyOf(b)); if (!hit || !hit.length) throw new Error(`the bigger map has no row for today's row ${i} (${GEO_IDS.buildings[i]})`); rowOfToday[i] = hit.shift(); });
+  if (opt['bigger-ids']) {
+    const ids = load(path.resolve(opt['bigger-ids'])).GEO_IDS.buildings;
+    if (ids.length !== big.length) throw new Error('the bigger map ids are not row for row with its geodata');
+    rowOfToday.forEach((r, i) => { if (ids[r] !== GEO_IDS.buildings[i]) throw new Error(`row ${i}: ${GEO_IDS.buildings[i]} is ${ids[r]} in the bigger map`); });
+  }
+  const frameRow = byId.map((r) => rowOfToday[r.row]);
+  // (deltas: the records and the bigger map's rows both run in durable-ID order, so these are small)
+  M.frameName = 'eglinton';
+  M.frameRows = big.length;
+  M.frameRowCheck = rowCheck(big);
+  M.frameRowDelta = frameRow.map((r, i) => r - (i ? frameRow[i - 1] : 0));
+  stats.frameRows = big.length;
+  stats.frameRowsInFrame = big.filter((b) => b[0] >= GEO.frame.detail.x0 && b[0] <= GEO.frame.detail.x1 && b[1] >= GEO.frame.detail.z0 && b[1] <= GEO.frame.detail.z1).length;
+}
 const packed = packGeo({ MASSING: M });
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, packed.file);

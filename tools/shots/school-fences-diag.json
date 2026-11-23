@@ -1,0 +1,44 @@
+[
+ {
+  "name": "oscar-diag",
+  "time": "midday",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-6665.25, g(-6665.25,-5865.50)+1.7, -5865.50], look:[-6665.40, g(-6665.40,-5873.50)+1.2, -5873.50], fov:62}); })();(async()=>{ for(let i=0;i<8;i++) await new Promise(r=>requestAnimationFrame(r)); return window.CITY.schoolFencesProbe(-6665.25,-5865.50,150); })()"
+ },
+ {
+  "name": "marketlane-diag",
+  "time": "midday",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[1339.12, g(1339.12,-103.20)+1.7, -103.20], look:[1338.90, g(1338.90,-123.20)+1.2, -123.20], fov:62}); })();(async()=>{ for(let i=0;i<8;i++) await new Promise(r=>requestAnimationFrame(r)); return window.CITY.schoolFencesProbe(1339.12,-103.20,150); })()"
+ },
+ {
+  "name": "givins-shaw-diag",
+  "time": "midday",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-2878.50, g(-2878.50,-914.94)+1.7, -914.94], look:[-2870.50, g(-2870.50,-914.80)+1.2, -914.80], fov:62}); })();(async()=>{ for(let i=0;i<8;i++) await new Promise(r=>requestAnimationFrame(r)); return window.CITY.schoolFencesProbe(-2878.50,-914.94,150); })()"
+ },
+ {
+  "name": "stnicholas-diag",
+  "time": "midday",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-4948.90, g(-4948.90,-5612.70)+1.7, -5612.70], look:[-4948.90, g(-4948.90,-5620.70)+1.2, -5620.70], fov:62}); })();(async()=>{ for(let i=0;i<8;i++) await new Promise(r=>requestAnimationFrame(r)); return window.CITY.schoolFencesProbe(-4948.90,-5612.70,150); })()"
+ },
+ {
+  "name": "delasalle-diag",
+  "time": "midday",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-164.40, g(-164.40,-4484.60)+1.7, -4484.60], look:[-164.40, g(-164.40,-4476.60)+1.2, -4476.60], fov:62}); })();(async()=>{ for(let i=0;i<8;i++) await new Promise(r=>requestAnimationFrame(r)); return window.CITY.schoolFencesProbe(-164.40,-4484.60,150); })()"
+ },
+ {
+  "name": "rockcliffe-diag",
+  "time": "midday",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7416.24, g(-7416.24,-5628.45)+1.7, -5628.45], look:[-7420.20, g(-7420.20,-5621.50)+1.2, -5621.50], fov:62}); })();(async()=>{ for(let i=0;i<8;i++) await new Promise(r=>requestAnimationFrame(r)); return window.CITY.schoolFencesProbe(-7416.24,-5628.45,150); })()"
+ }
+]

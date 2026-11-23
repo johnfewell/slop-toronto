@@ -483,12 +483,84 @@ body.hud-minimized .toolbar > :not(#btn-toggle-hud) {
   display: none;
 }
 
-/* Film mode (js/film.js, ?film=1): the city alone, no UI at all */
+/* Film mode (js/film.js, ?film=1) and ?hud=0: the city alone, no UI at all */
 body.film > :not(#canvas-container),
 body.film::before,
-body.film::after {
+body.film::after,
+body.ui-hidden > :not(#canvas-container),
+body.ui-hidden::before,
+body.ui-hidden::after {
   display: none !important;
 }
+
+/* ------------------------------------------------------------------------------------------------------------------
+   Building-preset debug view (?massing=1&presets=debug, js/building-presets-debug.js): only the legend's swatches add
+   any colour, and the panel reuses .panel. Hidden with the HUD (body.hud-minimized) and with ?hud=0 (body.ui-hidden).
+   The panel sits at the right edge under the top bar (st-ndw9.16: at 1600x900 and 1280x720 its old centre-left place
+   overlapped the minimap and the street-name signs); its height is capped to the space below the bar and the legend
+   scrolls inside, so it never reaches the bottom-right cluster.
+   ------------------------------------------------------------------------------------------------------------------ */
+.hud-preset-debug {
+  position: fixed;
+  right: max(var(--edge), env(safe-area-inset-right));
+  top: calc(max(var(--edge), env(safe-area-inset-top)) + var(--bar-h) + 10px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(340px, 46vw);
+  max-height: calc(100vh - max(var(--edge), env(safe-area-inset-top)) - var(--bar-h) - 10px - var(--edge));
+}
+.preset-legend {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.preset-legend-head {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  list-style: none;
+}
+.preset-legend-head::-webkit-details-marker { display: none; }
+.preset-legend-head::before { content: '▾ '; color: var(--text-3); }
+.preset-legend:not([open]) .preset-legend-head::before { content: '▸ '; }
+.preset-legend-body { margin-top: 6px; }
+.preset-family { margin-top: 7px; }
+.preset-family-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+.preset-row { display: flex; align-items: center; gap: 7px; padding: 1px 0; }
+.preset-swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--glass-border);
+}
+.preset-name { color: var(--text-2); }
+.preset-count { margin-left: auto; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.preset-identify {
+  flex: none;
+  padding: 9px 11px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.preset-identify-title { display: flex; align-items: center; gap: 7px; font-weight: 700; color: var(--text); }
+.preset-identify-row { display: flex; gap: 8px; }
+.preset-identify-key { flex: none; width: 84px; color: var(--text-3); }
+.preset-identify-val { color: var(--text-2); word-break: break-word; }
 
 /* ------------------------------------------------------------------------------------------------------------------
    Top left: brand

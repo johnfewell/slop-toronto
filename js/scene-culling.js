@@ -308,17 +308,34 @@ function replaceWithChunks(mesh, cell, keyOf = null) {
 // A plain mesh's triangles cut into `cell` x `cell` m squares of the world (by each triangle's centre), one mesh per
 // square in the same material, so each scene render (the view and every shadow cascade) can skip the squares outside
 // its frustum. The same triangles, so the same pixels; the first piece compiles the pipeline the others share (main.js)
-const _t0 = new THREE.Vector3(), _t1 = new THREE.Vector3(), _t2 = new THREE.Vector3();
+const _t0 = new THREE.Vector3(), _t1 = new THREE.Vector3(), _t2 = new THREE.Vector3(), _identity = new THREE.Matrix4();
+// Vector3.fromBufferAttribute(snorm16 attribute, i).applyMatrix4(m) written out on the arrays (e = m.elements): getX's denormalize
+// (value / 32767, at least -1), then applyMatrix4's sums times its w, in the same order, so the same numbers
+function applySnorm(P, k, e, out) {
+  const x = Math.max(P[k] / 32767, -1), y = Math.max(P[k + 1] / 32767, -1), z = Math.max(P[k + 2] / 32767, -1);
+  const w = 1 / (e[3] * x + e[7] * y + e[11] * z + e[15]);
+  out.set((e[0] * x + e[4] * y + e[8] * z + e[12]) * w, (e[1] * x + e[5] * y + e[9] * z + e[13]) * w, (e[2] * x + e[6] * y + e[10] * z + e[14]) * w);
+}
+
 function splitMeshIntoCells(mesh, cell, keyOf = null) {
   const parent = mesh.parent;
   const src = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry;
   const pos = src.attributes.position;
   const byKey = new Map();
+  // (a mesh in world coordinates with plain float positions, like the city-wide batches: the centres straight from the array,
+  // the very same sums as through an identity matrix)
+  const raw = !pos.normalized && pos.itemSize === 3 && pos.array instanceof Float32Array && mesh.matrixWorld.equals(_identity) ? pos.array : null;
   for (let t = 0; t + 2 < pos.count; t += 3) {
-    _t0.fromBufferAttribute(pos, t).applyMatrix4(mesh.matrixWorld);
-    _t1.fromBufferAttribute(pos, t + 1).applyMatrix4(mesh.matrixWorld);
-    _t2.fromBufferAttribute(pos, t + 2).applyMatrix4(mesh.matrixWorld);
-    const cx = (_t0.x + _t1.x + _t2.x) / 3, cz = (_t0.z + _t1.z + _t2.z) / 3;
+    let cx, cz;
+    if (raw) {
+      const i = t * 3;
+      cx = (raw[i] + raw[i + 3] + raw[i + 6]) / 3; cz = (raw[i + 2] + raw[i + 5] + raw[i + 8]) / 3;
+    } else {
+      _t0.fromBufferAttribute(pos, t).applyMatrix4(mesh.matrixWorld);
+      _t1.fromBufferAttribute(pos, t + 1).applyMatrix4(mesh.matrixWorld);
+      _t2.fromBufferAttribute(pos, t + 2).applyMatrix4(mesh.matrixWorld);
+      cx = (_t0.x + _t1.x + _t2.x) / 3; cz = (_t0.z + _t1.z + _t2.z) / 3;
+    }
     const key = keyOf ? keyOf(cx, cz) : Math.floor(cx / cell) + ',' + Math.floor(cz / cell);
     let list = byKey.get(key);
     if (!list) byKey.set(key, (list = []));
@@ -448,6 +465,7 @@ function setupSceneCulling(scene, roots, shadow = null) {
   if (cams.length) {
     const instancedBySig = new Map(); // geometry signature + face side -> { geometry, material, cells: Map(key -> [matrices]) }
     const triCells = new Map(); // face side -> Map(key -> number[] world positions)
+    const triChunks = new Map(); // face side -> Map(key -> Float32Array[] world positions (whole runs of triangles, as they were given))
     const proxyMaterials = new Map();
     const proxyMaterial = (side) => {
       let m = proxyMaterials.get(side);
@@ -499,9 +517,31 @@ function setupSceneCulling(scene, roots, shadow = null) {
       });
     }
 
+    const standSeen = new Set(); // (a world-cell stand-in is added once, though the pieces a far band cut a mesh into each carry it)
     for (const o of sources) {
       const side = sideOf(o.material);
-      const geo = OPT_INS && o.userData.shadowStandIn?.isBufferGeometry ? o.userData.shadowStandIn : o.geometry;
+      const SI = OPT_INS ? o.userData.shadowStandIn : null;
+      if (SI && SI.worldCells) {
+        if (standSeen.has(SI)) { o.castShadow = false; stats.proxiedMeshes++; continue; }
+        standSeen.add(SI);
+      }
+      // (st-ndw9.22: a stand-in made ahead as world-space triangles per 500 m cell, { worldCells: [{ sx, sz, pos: Float32Array }] }, by the
+      // worker that built the massing cells and by the roofs: added as they are, no walk over their triangles here)
+      if (SI && SI.worldCells) {
+        let bySide = triChunks.get(side);
+        if (!bySide) triChunks.set(side, (bySide = new Map()));
+        for (const c of SI.worldCells) {
+          if (!c.pos.length) continue;
+          const key = cellKey((c.sx + 0.5) * 500, (c.sz + 0.5) * 500);
+          let list = bySide.get(key);
+          if (!list) bySide.set(key, (list = []));
+          list.push(c.pos);
+        }
+        o.castShadow = false;
+        stats.proxiedMeshes++;
+        continue;
+      }
+      const geo = SI?.isBufferGeometry ? SI : o.geometry;
       if (o.isInstancedMesh) {
         const pos = geo.attributes.position;
         if (!geo.boundingBox) geo.computeBoundingBox();
@@ -530,13 +570,46 @@ function setupSceneCulling(scene, roots, shadow = null) {
         const idx = geo.index;
         const start = geo.drawRange.start;
         const end = Math.min(idx ? idx.count : pos.count, start + geo.drawRange.count);
+        // (the massing cells' snorm16 positions, 4 million vertices with the drawn presets: the same arithmetic as the vector calls
+        // below, straight from the arrays: denormalize (value / 32767, at least -1) then applyMatrix4's sums and its w)
+        const fast = idx && idx.array && pos.normalized && pos.array instanceof Int16Array && !pos.isInterleavedBufferAttribute ? { P: pos.array, I: idx.array, n: pos.itemSize, e: o.matrixWorld.elements } : null;
+        // (a mesh in world coordinates with plain float positions and no index, like the city-wide batches: its triangles' centres straight
+        // from the array, the same sums as through an identity matrix, and each run of triangles in one cell handed over as it stands)
+        if (!idx && !pos.normalized && pos.itemSize === 3 && !pos.isInterleavedBufferAttribute && pos.array instanceof Float32Array && o.matrixWorld.equals(_identity)) {
+          const P = pos.array;
+          let chunks = triChunks.get(side);
+          if (!chunks) triChunks.set(side, (chunks = new Map()));
+          let runKey = null, runStart = 0;
+          const flush = (stop) => {
+            if (runKey === null || stop <= runStart) return;
+            let list = chunks.get(runKey);
+            if (!list) chunks.set(runKey, (list = []));
+            list.push(P.subarray(runStart * 9, stop * 9));
+          };
+          const tris = Math.floor(end / 3);
+          for (let k = Math.floor(start / 3); k < tris; k++) {
+            const i = k * 9;
+            const key = cellKey((P[i] + P[i + 3] + P[i + 6]) / 3, (P[i + 2] + P[i + 5] + P[i + 8]) / 3);
+            if (key !== runKey) { flush(k); runKey = key; runStart = k; }
+          }
+          flush(tris);
+          o.castShadow = false;
+          stats.proxiedMeshes++;
+          continue;
+        }
         for (let t = start; t + 2 < end; t += 3) {
+          if (fast) {
+            applySnorm(fast.P, fast.I[t] * fast.n, fast.e, _a);
+            applySnorm(fast.P, fast.I[t + 1] * fast.n, fast.e, _b);
+            applySnorm(fast.P, fast.I[t + 2] * fast.n, fast.e, _c);
+          } else {
           const i0 = idx ? idx.getX(t) : t;
           const i1 = idx ? idx.getX(t + 1) : t + 1;
           const i2 = idx ? idx.getX(t + 2) : t + 2;
           _a.fromBufferAttribute(pos, i0).applyMatrix4(o.matrixWorld);
           _b.fromBufferAttribute(pos, i1).applyMatrix4(o.matrixWorld);
           _c.fromBufferAttribute(pos, i2).applyMatrix4(o.matrixWorld);
+          }
           const key = cellKey((_a.x + _b.x + _c.x) / 3, (_a.z + _b.z + _c.z) / 3);
           let list = bySide.get(key);
           if (!list) bySide.set(key, (list = []));
@@ -576,14 +649,23 @@ function setupSceneCulling(scene, roots, shadow = null) {
         addProxy(mesh, tris * n);
       }
     }
-    for (const [side, bySide] of triCells) {
-      for (const list of bySide.values()) {
+    for (const side of new Set([...triCells.keys(), ...triChunks.keys()])) {
+      const bySide = triCells.get(side) || new Map(), byChunks = triChunks.get(side) || new Map();
+      for (const key of new Set([...bySide.keys(), ...byChunks.keys()])) {
+        const list = bySide.get(key) || [], chunks = byChunks.get(key) || [];
+        let total = list.length;
+        for (const c of chunks) total += c.length;
+        const all = new Float32Array(total);
+        let at = 0;
+        for (const c of chunks) { all.set(c, at); at += c.length; }
+        if (list.length) all.set(list, at);
         const g = new THREE.BufferGeometry();
-        g.setAttribute('position', new THREE.Float32BufferAttribute(list, 3));
+        g.setAttribute('position', new THREE.BufferAttribute(all, 3));
         g.computeBoundingSphere();
-        addProxy(new THREE.Mesh(g, proxyMaterial(side)), list.length / 9);
+        addProxy(new THREE.Mesh(g, proxyMaterial(side)), total / 9);
       }
     }
+    for (const SI of standSeen) SI.worldCells = []; // (the cell proxies hold the triangles now: the 40 MB of the stand-ins' own copies go)
     for (const cam of cams) cam.layers.enable(SHADOW_PROXY_LAYER);
     // ...gathered into PROXY_BUCKET squares: a cascade's render tests the ~100 buckets against its frustum and walks
     // only the stand-ins of the few it touches, instead of walking & testing all ~1,400 (in both cascades, every frame)
@@ -1009,5 +1091,5 @@ function holdsInstances() {
   return this.count > 0;
 }
 
-Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, gateEmptyInstances, SHADOW_PROXY_LAYER, releaseCpuCopies });
+Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, gateEmptyInstances, SHADOW_PROXY_LAYER, releaseCpuCopies, applySnorm }); // (applySnorm: tests/scene-culling-fast.test.mjs)
 })();

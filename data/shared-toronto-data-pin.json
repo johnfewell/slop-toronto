@@ -29,6 +29,39 @@
         "js/toronto-transit.js",
         "js/frames/eglinton/toronto-transit.js"
       ]
+    },
+    "buildings/4": {
+      "manifestCommit": "3bcde19",
+      "manifestGenerated": "2026-11-15T19:28:29Z",
+      "cellsDigest": "49bf89fa830e1d589e1b479eaaf4229da6c67a649f1d5c44fe6904b8643605b4",
+      "indexSha256": "7f9f9aafb6bbc0026615b3caaaea79a5882623207454b2a71843f13a081a547f",
+      "bakedInto": [
+        "tools/data/building-inputs.json"
+      ],
+      "dataSha256": "dc6a7e8f27a18a2ace018b94d6ceda47ba0e02d9a777fceb244a8dd8f6c4704f"
+    },
+    "neighbourhood-era/1": {
+      "manifestCommit": "ebbbfa2",
+      "manifestGenerated": "2026-11-15T14:28:51Z",
+      "indexSha256": "6c42eec58ea7c1c18eee17ce9cfa2ced0967bcad1efdb28960a409411d657b42",
+      "manifestSha256": "886c1b9ea673b483ae007cd203cb18d9618931c97e028b75bb8e486d7b1889f9",
+      "features": 158,
+      "bakedInto": [
+        "tools/data/building-inputs.json"
+      ],
+      "dataSha256": "dc6a7e8f27a18a2ace018b94d6ceda47ba0e02d9a777fceb244a8dd8f6c4704f"
+    },
+    "school-grounds/1": {
+      "manifestCommit": "c19199a",
+      "manifestGenerated": "2026-11-15T19:20:35Z",
+      "indexSha256": "14050a77382e8a01f5fe5318524d5ef2caabc45d4f2edf734fb6f6d3fae42a1e",
+      "bakedInto": [
+        "js/school-fences-data.js"
+      ],
+      "dataSha256": "a5703006db80ebc7a6988035e46a69c3a8e8f724a30765f87318e28b9a473686",
+      "schools": 192,
+      "runs": 412,
+      "metres": 72917.2
     }
   }
 }

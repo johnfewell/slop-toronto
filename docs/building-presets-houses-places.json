@@ -1,0 +1,209 @@
+{
+ "postwar-detached": [
+  {
+   "id": "to-3dmassing-2025:65681",
+   "x": -7550.1,
+   "z": -1739.6,
+   "houses": 13
+  },
+  {
+   "id": "to-3dmassing-2025:79374",
+   "x": -5805.8,
+   "z": -1879.1,
+   "houses": 9
+  }
+ ],
+ "edwardian-detached": [
+  {
+   "id": "to-3dmassing-2025:64677",
+   "x": -7749.1,
+   "z": -2469.8,
+   "houses": 28
+  },
+  {
+   "id": "to-3dmassing-2025:203311",
+   "x": 3364.3,
+   "z": -2330.9,
+   "houses": 24
+  }
+ ],
+ "interwar-detached": [
+  {
+   "id": "to-3dmassing-2025:354313",
+   "x": 1594,
+   "z": 1996.5,
+   "houses": 33
+  },
+  {
+   "id": "to-3dmassing-2025:80732",
+   "x": -5787.5,
+   "z": -2019.7,
+   "houses": 18
+  }
+ ],
+ "edwardian-row": [
+  {
+   "id": "to-3dmassing-2025:88755",
+   "x": -5339.5,
+   "z": -2959,
+   "houses": 13
+  },
+  {
+   "id": "to-3dmassing-2025:105115",
+   "x": -2591,
+   "z": -1601.8,
+   "houses": 12
+  }
+ ],
+ "interwar-semi": [
+  {
+   "id": "to-3dmassing-2025:70833",
+   "x": -7692.4,
+   "z": -2952.8,
+   "houses": 15
+  },
+  {
+   "id": "to-3dmassing-2025:207574",
+   "x": 3363.6,
+   "z": -2941,
+   "houses": 9
+  }
+ ],
+ "victorian-detached": [
+  {
+   "id": "to-3dmassing-2025:105916",
+   "x": -3377.3,
+   "z": -1845.4,
+   "houses": 23
+  },
+  {
+   "id": "to-3dmassing-2025:203352",
+   "x": 2923.1,
+   "z": -2625.7,
+   "houses": 22
+  }
+ ],
+ "edwardian-semi": [
+  {
+   "id": "to-3dmassing-2025:201538",
+   "x": 3536.4,
+   "z": -1697.6,
+   "houses": 18
+  },
+  {
+   "id": "to-3dmassing-2025:86898",
+   "x": -3979.9,
+   "z": -2916.6,
+   "houses": 15
+  }
+ ],
+ "recent-semi": [
+  {
+   "id": "to-3dmassing-2025:64011",
+   "x": -7272.2,
+   "z": -2632,
+   "houses": 6
+  },
+  {
+   "id": "to-3dmassing-2025:83528",
+   "x": -5787.4,
+   "z": -1614.6,
+   "houses": 6
+  }
+ ],
+ "recent-detached": [
+  {
+   "id": "to-3dmassing-2025:354137",
+   "x": 1129,
+   "z": 2324,
+   "houses": 15
+  },
+  {
+   "id": "to-3dmassing-2025:81909",
+   "x": -5812.7,
+   "z": -1576.9,
+   "houses": 8
+  }
+ ],
+ "modern-townhouse-row": [
+  {
+   "id": "to-3dmassing-2025:203529",
+   "x": 3480.1,
+   "z": -951.1,
+   "houses": 9
+  },
+  {
+   "id": "to-3dmassing-2025:138113",
+   "x": -1546.1,
+   "z": -2169.1,
+   "houses": 7
+  }
+ ],
+ "postwar-semi": [
+  {
+   "id": "to-3dmassing-2025:203550",
+   "x": 3447.5,
+   "z": -951.1,
+   "houses": 7
+  },
+  {
+   "id": "to-3dmassing-2025:66038",
+   "x": -7149.2,
+   "z": -2505.7,
+   "houses": 5
+  }
+ ],
+ "victorian-semi": [
+  {
+   "id": "to-3dmassing-2025:171647",
+   "x": 1883.2,
+   "z": -1557,
+   "houses": 21
+  },
+  {
+   "id": "to-3dmassing-2025:104741",
+   "x": -2592.2,
+   "z": -1736.1,
+   "houses": 20
+  }
+ ],
+ "victorian-row": [
+  {
+   "id": "to-3dmassing-2025:169423",
+   "x": 2028.1,
+   "z": -2199,
+   "houses": 25
+  },
+  {
+   "id": "to-3dmassing-2025:104563",
+   "x": -2172.2,
+   "z": -1116,
+   "houses": 22
+  }
+ ],
+ "cabbagetown:victorian-semi": {
+  "id": "to-3dmassing-2025:169693",
+  "x": 1813.4,
+  "z": -1878.5
+ },
+ "cabbagetown:victorian-row": {
+  "id": "to-3dmassing-2025:171042",
+  "x": 1815,
+  "z": -1854.6
+ },
+ "kensington:victorian-row": {
+  "id": "to-3dmassing-2025:140636",
+  "x": -1174,
+  "z": -1339.3
+ },
+ "kensington:victorian-semi": {
+  "id": "to-3dmassing-2025:140624",
+  "x": -1238.7,
+  "z": -1326.7
+ },
+ "riverdale:edwardian-detached": {
+  "id": "to-3dmassing-2025:200283",
+  "x": 3083.3,
+  "z": -2672.2
+ }
+}

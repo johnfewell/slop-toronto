@@ -1,0 +1,28 @@
+[
+ {
+  "name": "corner-high",
+  "js": "(async () => { const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz)); await __pcSleep(9000); const f = await __pcFind(6, 180000, 8); __pcView('high'); await __pcSleep(1200); return f; })()",
+  "wait": 300,
+  "record": true,
+  "mode": "person",
+  "time": "midday"
+ },
+ {
+  "name": "corner-street",
+  "js": "(async () => { __pcView('street'); await __pcSleep(800); return __pcFind(1, 100, 0); })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "corner-wide",
+  "js": "(async () => { __pcView('wide'); await __pcSleep(800); return __pcFind(1, 100, 0); })()",
+  "wait": 300,
+  "record": true
+ },
+ {
+  "name": "corner-top",
+  "js": "(async () => { __pcView('top'); await __pcSleep(800); return __pcFind(1, 100, 0); })()",
+  "wait": 300,
+  "record": true
+ }
+]

@@ -31,7 +31,9 @@ import earcut from './earcut.js';
 
 export const BLOCK = 1000;
 export const SUB = 500;
+export const QUARTER = SUB / 2; // (the near tier's finer cells, st-ndw9.22: the four quarters of a tier cell, each a run of the near index buffer, in TIER_ORDER's round-the-cell order)
 export const MID_TOLERANCE = 1.25;
+export const STANDIN_TOLERANCE = 1.25; // (m: the shadow stand-in's rings, Douglas-Peucker: the mid tier's, st-ndw9.22)
 export const SNORM = 32767;
 export const XZ_UNIT = 0.1;
 const PER_M = 10; // (decimetres per metre: multiplying by it is exact where dividing by XZ_UNIT is not)
@@ -42,7 +44,7 @@ export const BYTES_PER_VERTEX = 16;
 // the tier cells' order in a block's index buffer: (0, 0), (1, 0), (1, 1), (0, 1), round the block
 export const TIER_ORDER = [0, 1, 3, 2]; // by local sx + 2 * sz
 const REC = 10; // packed per record: cx, cz, base, h, capY, seed + tone, paint r, g, b, w
-const MAX_VARIANTS = 8;
+const MAX_VARIANTS = 16; // (st-ndw9.20: was 8; the variant takes 6 bits of the vertex word's high part either way, so 16 costs nothing in the vertex)
 const KIND_REAR = 2, KIND_LOTLINE = 3;
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
@@ -51,7 +53,8 @@ const now = () => (typeof performance !== 'undefined' ? performance.now() : Date
  * that material, 0 to 7), rings: [outer, ...holes] as [[x, z], ...] on the
  * decimetre grid, kinds: WALL_KINDS per outer edge (-1: no wall), cover?: per outer edge the roof height of the
  * neighbour against it (NaN: none), base, h, capY, tone, seed, paint: [r, g, b, w], boxes: [[x, z, w, d, ry], ...],
- * faces: the boxes' WALL_KINDS of their -u, +u, -v, +v walls }.
+ * faces: the boxes' WALL_KINDS of their -u, +u, -v, +v walls, nearOnly?: a part standing out of a house (a bay, a porch
+ * pier: js/building-draw.js) that only the near tier draws; mid and far leave it out }.
  */
 export function packInput(records) {
   const n = records.length;
@@ -61,7 +64,7 @@ export function packInput(records) {
     for (const ring of r.rings) corners += ring.length;
   }
   const out = {
-    n, rec: new Float64Array(n * REC), style: new Uint8Array(n), variant: new Uint8Array(n), ringsPer: new Uint16Array(n), boxesPer: new Uint16Array(n),
+    n, rec: new Float64Array(n * REC), style: new Uint8Array(n), variant: new Uint8Array(n), nearOnly: new Uint8Array(n), ringsPer: new Uint16Array(n), boxesPer: new Uint16Array(n),
     ringCorners: new Int32Array(rings), xz: new Int32Array(corners * 2), kinds: new Int8Array(edges), cover: new Float32Array(edges),
     box: new Float64Array(boxes * 5), faces: new Int8Array(n * 4)
   };
@@ -72,6 +75,7 @@ export function packInput(records) {
     out.rec.set([r.cx, r.cz, r.base || 0, r.h, r.capY ?? r.h, seedTone, p[0], p[1], p[2], p[3]], i * REC);
     out.style[i] = r.style || 0;
     out.variant[i] = r.variant || 0;
+    out.nearOnly[i] = r.nearOnly ? 1 : 0;
     if (!(out.variant[i] < MAX_VARIANTS)) throw new Error(`massing cells: variant ${r.variant}`);
     out.ringsPer[i] = r.rings.length;
     for (const ring of r.rings) {
@@ -90,7 +94,7 @@ export function packInput(records) {
   return out;
 }
 
-export const inputTransferables = (input) => [input.rec, input.style, input.variant, input.ringsPer, input.boxesPer, input.ringCorners, input.xz,
+export const inputTransferables = (input) => [input.rec, input.style, input.variant, input.nearOnly, input.ringsPer, input.boxesPer, input.ringCorners, input.xz,
   input.kinds, input.cover, input.box, input.faces].map((a) => a.buffer);
 
 // growable typed arrays
@@ -243,7 +247,7 @@ class TierGeometry {
     const code = this.variant * 64 + level * 16 + kind * 2 + along;
     const x = X - this.ox, z = Z - this.oz;
     if (!(Math.abs(x) <= SNORM && Math.abs(z) <= SNORM && Math.abs(dx) <= SNORM && Math.abs(dz) <= SNORM && yq <= SNORM)) {
-      throw new Error(`massing cells: a corner ${x / PER_M}, ${z / PER_M} m from its block's centre is out of range`);
+      throw new Error(`massing cells: a corner ${x / PER_M}, ${z / PER_M} m from its block's centre is out of range (y step ${yq}, edge ${dx}, ${dz}, building ${b})`);
     }
     this.pos.push4(x, yq, z, code);
     this.edge.push4(dx, dz, b & 0x7fff, b >> 15);
@@ -298,7 +302,8 @@ class TierGeometry {
 export function buildMassingCells(input, opts = {}) {
   const t0 = now();
   const tol = (opts.midTolerance ?? MID_TOLERANCE) / XZ_UNIT;
-  const { n, rec, style, variant, ringsPer, boxesPer, ringCorners, xz, kinds, cover, box, faces } = input;
+  const stol = (opts.standInTolerance ?? STANDIN_TOLERANCE) / XZ_UNIT;
+  const { n, rec, style, variant, nearOnly, ringsPer, boxesPer, ringCorners, xz, kinds, cover, box, faces } = input;
   // offsets per record
   const ring0 = new Int32Array(n + 1), corner0 = new Int32Array(n + 1), edge0 = new Int32Array(n + 1), box0 = new Int32Array(n + 1);
   let rc = 0, cc = 0;
@@ -345,10 +350,20 @@ export function buildMassingCells(input, opts = {}) {
     const oxm = g.bx * BLOCK + BLOCK / 2, ozm = g.bz * BLOCK + BLOCK / 2; // (the block's centre, m)
     const ox = oxm * PER_M, oz = ozm * PER_M;
     const T = [new TierGeometry(ox, oz), new TierGeometry(ox, oz), new TierGeometry(ox, oz)];
+    const S = [0, 1, 2, 3].map(() => new TierGeometry(ox, oz)); // (a tier cell each: the shadow stand-in: the outlines simplified at STANDIN_TOLERANCE, the walls a neighbour covers whole left out, no near-only parts: what a shadow needs of the near tier, st-ndw9.22)
     const ranges = [new Uint32Array(8), new Uint32Array(8), new Uint32Array(8)];
+    const quarters = new Uint32Array(32); // (the near tier's [start, count] per quarter: 4 tier cells x 4 quarters)
     for (let s = 0; s < 4; s++) {
       for (let t = 0; t < 3; t++) ranges[t][s * 2] = T[t].idx.n;
+      // the tier cell's records quarter by quarter (the same input order inside a quarter)
+      const byQuarter = [[], [], [], []];
       for (const i of g.subs[s]) {
+        const qx = Math.floor(rec[i * REC] / QUARTER) & 1, qz = Math.floor(rec[i * REC + 1] / QUARTER) & 1;
+        byQuarter[TIER_ORDER[qx + 2 * qz]].push(i);
+      }
+      for (let q = 0; q < 4; q++) {
+      quarters[(s * 4 + q) * 2] = T[0].idx.n;
+      for (const i of byQuarter[q]) {
         const o = i * REC, base = rec[o + 2], h = rec[o + 3], capY = rec[o + 4];
         table.set([h, rec[o + 5], base, capY, rec[o + 6], rec[o + 7], rec[o + 8], rec[o + 9]], b * 8);
         order[b] = i;
@@ -366,11 +381,17 @@ export function buildMassingCells(input, opts = {}) {
         const outer = rings[0];
         const outerKinds = Array.from(outer.map, (k) => kinds[e0 + k]);
         // near: the full rings, every wall but the hidden ones
+        const s0 = T[0].idx.n;
         T[0].walls(outer.x, outer.z, outerKinds, LEVEL.base, LEVEL.top, yq(base), yq(h), b);
         for (let r = 1; r < rings.length; r++) T[0].walls(rings[r].x, rings[r].z, rings[r].x.map(() => KIND_REAR), LEVEL.base, LEVEL.top, yq(base), yq(h), b);
         T[0].cap(rings, LEVEL.cap, yq(capY), b);
-        // mid: simplified, without the walls the neighbour covers whole
+        // (a near-only part, a bay or a porch pier, is in the near tier alone)
+        if (nearOnly && nearOnly[i]) { b++; continue; }
         const coveredFull = (k) => outerKinds[k] === KIND_LOTLINE && cover[e0 + outer.map[k]] >= h - 0.01;
+        { const sr = midRings(outer, rings.slice(1), (k) => outerKinds[k], coveredFull, stol);
+          sr.rings.forEach((r) => S[s].walls(r.x, r.z, r.kinds, LEVEL.base, LEVEL.top, yq(base), yq(h), b));
+          S[s].cap(sr.rings, LEVEL.cap, yq(capY), b); }
+        // mid: simplified, without the walls the neighbour covers whole
         const mid = midRings(outer, rings.slice(1), (k) => outerKinds[k], coveredFull, tol);
         if (mid.simplified) stats.simplified++; else stats.midKept++;
         for (let k = 0; k < outerKinds.length; k++) if (outerKinds[k] >= 0 && coveredFull(k)) stats.coveredDropped++;
@@ -389,6 +410,8 @@ export function buildMassingCells(input, opts = {}) {
           T[2].cap([r], LEVEL.top, yq(h), b);
         }
         b++;
+      }
+      quarters[(s * 4 + q) * 2 + 1] = T[0].idx.n - quarters[(s * 4 + q) * 2];
       }
       for (let t = 0; t < 3; t++) ranges[t][s * 2 + 1] = T[t].idx.n - ranges[t][s * 2];
     }
@@ -409,7 +432,23 @@ export function buildMassingCells(input, opts = {}) {
         const st = stats.tiers[t];
         st.vertices += vertices; st.triangles += idx.length / 3; st.walls += G.wallCount;
         st.bytes += position.byteLength + normal.byteLength + index.byteLength;
-        return { position, normal, index, ranges: ranges[t], sphere, walls: G.wallCount };
+        let stand = null;
+        if (t === 0) {
+          // (as world-space triangles per tier cell, what scene-culling.js bins by 500 m cell: x, z in metres, y by the city's y step)
+          stand = { cells: [] };
+          for (let s = 0; s < 4; s++) {
+            const sp = S[s].pos.a, si = S[s].idx.a, n = S[s].idx.n;
+            if (!n) continue;
+            const pos = new Float32Array(n * 3);
+            for (let k = 0; k < n; k++) {
+              const v = si[k] * 4;
+              pos[k * 3] = oxm + sp[v] * XZ_UNIT; pos[k * 3 + 1] = sp[v + 1] * yUnit; pos[k * 3 + 2] = ozm + sp[v + 2] * XZ_UNIT;
+            }
+            const q = TIER_ORDER.indexOf(s);
+            stand.cells.push({ sx: g.bx * 2 + (q & 1), sz: g.bz * 2 + (q >> 1), pos });
+          }
+        }
+        return { position, normal, index, standIn: stand, ranges: ranges[t], quarters: t === 0 ? quarters : null, sphere, box: vertices ? [x0, y0, z0, x1, y1, z1] : null, walls: G.wallCount };
       })
     });
   }
@@ -418,7 +457,7 @@ export function buildMassingCells(input, opts = {}) {
   return { blocks, table, order, tableWidth: TABLE_WIDTH, cells: [...cells.values()].sort((p, q) => p.sz - q.sz || p.sx - q.sx), yUnit, stats };
 }
 
-export const outputTransferables = (out) => [out.table.buffer, out.order.buffer, ...out.blocks.flatMap((b) => b.tiers.flatMap((t) => [t.position.buffer, t.normal.buffer, t.index.buffer, t.ranges.buffer]))];
+export const outputTransferables = (out) => [out.table.buffer, out.order.buffer, ...out.blocks.flatMap((b) => b.tiers.flatMap((t) => [t.position.buffer, t.normal.buffer, t.index.buffer, t.ranges.buffer, ...(t.quarters ? [t.quarters.buffer] : []), ...(t.standIn ? t.standIn.cells.map((c) => c.pos.buffer) : [])]))];
 
 /**
  * The tier (0 near, 1 mid, 2 far) of a cell `d` m from the camera, given its tier before (-1: none yet): it moves out
@@ -448,13 +487,88 @@ export function cellDistance(cell, px, py, pz) {
 export function tierRuns(ranges, tiers, t) {
   const runs = [];
   let open = false;
-  for (let s = 0; s < 4; s++) {
+  for (let s = 0; s < tiers.length; s++) { // (4 tier cells, or 16 quarters)
     const start = ranges[s * 2], count = ranges[s * 2 + 1];
     if (!count) continue;
     if (tiers[s] !== t) { open = false; continue; }
     const last = runs[runs.length - 1];
     if (open && last[0] + last[1] === start) last[1] += count;
     else { runs.push([start, count]); open = true; }
+  }
+  return runs;
+}
+
+/**
+ * The drawn roofs' shadow stand-in (st-ndw9.22): a far roof's triangles (flat lists of positions and the face's normal at each
+ * vertex, js/building-draw-kit.js) without what a shadow cannot show: the soffits under the eaves (facing down) and the fascia
+ * boards (upright strips under 0.6 m^2). The roof's slopes, with its ridge height, its gable ends and the walls under it stay.
+ * Returns the positions of what is kept: Float32Array, 9 numbers a triangle.
+ */
+export function roofShadowStandIn(pos, nor) {
+  const out = new Float32Array(pos.length);
+  let n = 0;
+  for (let t = 0; t + 8 < pos.length; t += 9) {
+    const ny = nor[t + 1];
+    if (ny < -0.3) continue;
+    if (ny <= 0.3) {
+      const ux = pos[t + 3] - pos[t], uy = pos[t + 4] - pos[t + 1], uz = pos[t + 5] - pos[t + 2];
+      const vx = pos[t + 6] - pos[t], vy = pos[t + 7] - pos[t + 1], vz = pos[t + 8] - pos[t + 2];
+      const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+      if (Math.hypot(cx, cy, cz) < 1.2) continue; // (twice the area)
+    }
+    for (let k = 0; k < 9; k++) out[n + k] = pos[t + k];
+    n += 9;
+  }
+  return out.slice(0, n);
+}
+
+/**
+ * The index runs a near mesh draws for the quarters of its cells that are in view (st-ndw9.22). `quarters`: the 16 quarters'
+ * [start, count] (TIER_ORDER's cell order, then each cell's quarters in the same order), `seen`: which of them are drawn
+ * (16 booleans, changed in place), `spare`: the near quarters with triangles that are not, which may be drawn as well to join
+ * two runs. At most `maxRuns` runs (one a mesh): while there are more, the smallest spare quarter that lessens them is drawn
+ * too, and if none does, every spare one is. Returns the runs [[start, count], ...].
+ */
+export function quarterRuns(quarters, seen, spare, maxRuns) {
+  const runsOf = () => tierRuns(quarters, seen.map((v) => (v ? 0 : -1)), 0);
+  let runs = runsOf();
+  while (runs.length > maxRuns) {
+    let best = -1, bestN = runs.length, bestC = Infinity;
+    for (const i of spare) {
+      if (seen[i]) continue;
+      seen[i] = true; const n = runsOf().length; seen[i] = false;
+      const c = quarters[i * 2 + 1];
+      if (n < runs.length && (n < bestN || (n === bestN && c < bestC))) { best = i; bestN = n; bestC = c; }
+    }
+    if (best < 0) break;
+    seen[best] = true; runs = runsOf();
+  }
+  if (runs.length > maxRuns) { for (const i of spare) seen[i] = true; runs = runsOf(); }
+  return runs;
+}
+
+/**
+ * The index (or vertex) runs a mesh built of cells laid back to back draws when only some of the cells are wanted (st-ndw9.22, the
+ * towers' roofs): `cells` [{ start, count }] in the order they lie, `wanted` a boolean each, `maxRuns` one a mesh. Neighbouring wanted
+ * cells make one run; while there are more runs than meshes, the two runs with the fewest unwanted triangles between them are joined
+ * (those cells are drawn as well). Returns [[start, count], ...] in order.
+ */
+export function cellRuns(cells, wanted, maxRuns) {
+  const runs = [];
+  for (let i = 0; i < cells.length; i++) {
+    if (!wanted[i] || !cells[i].count) continue;
+    const last = runs[runs.length - 1];
+    if (last && last[0] + last[1] === cells[i].start) last[1] += cells[i].count;
+    else runs.push([cells[i].start, cells[i].count]);
+  }
+  while (runs.length > maxRuns) {
+    let at = 0, least = Infinity;
+    for (let i = 0; i + 1 < runs.length; i++) {
+      const gap = runs[i + 1][0] - (runs[i][0] + runs[i][1]);
+      if (gap < least) { least = gap; at = i; }
+    }
+    runs[at][1] = runs[at + 1][0] + runs[at + 1][1] - runs[at][0];
+    runs.splice(at + 1, 1);
   }
   return runs;
 }

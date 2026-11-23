@@ -1,0 +1,19 @@
+[
+ {
+  "name": "stride-walk",
+  "mode": "person",
+  "time": "midday",
+  "x": 150,
+  "z": 0,
+  "js": "window.__rbWait(8000).then(() => window.__rbFace(150, 0)).then(() => window.__rbSide({ seconds: 10, run: false }))",
+  "wait": 300,
+  "record": true,
+  "screencastMs": 7000
+ },
+ {
+  "name": "stride-walk-log",
+  "js": "new Promise((r) => setTimeout(() => r({ summary: window.__rbStrideSummary(), log: window.__rbStrideLog }), 3500))",
+  "wait": 100,
+  "record": true
+ }
+]

@@ -1,0 +1,226 @@
+[
+ {
+  "name": "modern:86856-flat-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3947.7, -2877.4, 0); app.cameraSystem.cinema = () => ({ pos: [-3947.7, 1.7, -2877.4], look: [-3971.7, 6, -2877.4], fov: 65 }); })()"
+ },
+ {
+  "name": "modern:86856-flat-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3926.7, -2877.4, 0); app.cameraSystem.cinema = () => ({ pos: [-3926.7, 40, -2877.4], look: [-3984.8, 6, -2877.3], fov: 55 }); })()"
+ },
+ {
+  "name": "modern101022-aframe-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3291.2, -94.2, 0); app.cameraSystem.cinema = () => ({ pos: [-3291.2, 1.7, -94.2], look: [-3291.7, 6, -70.2], fov: 65 }); })()"
+ },
+ {
+  "name": "modern101022-aframe-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3290.8, -115.2, 0); app.cameraSystem.cinema = () => ({ pos: [-3290.8, 40, -115.2], look: [-3292, 6, -54], fov: 55 }); })()"
+ },
+ {
+  "name": "modern102425-mono-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2584.4, -1994.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2584.4, 1.7, -1994.8], look: [-2584.7, 6, -1970.8], fov: 65 }); })()"
+ },
+ {
+  "name": "modern102425-mono-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2584.2, -2015.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2584.2, 40, -2015.8], look: [-2584.9, 6, -1954.5], fov: 55 }); })()"
+ },
+ {
+  "name": "modern107769-aframe-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1730.6, -1082.4, 0); app.cameraSystem.cinema = () => ({ pos: [-1730.6, 1.7, -1082.4], look: [-1754.6, 6, -1082.6], fov: 65 }); })()"
+ },
+ {
+  "name": "modern107769-aframe-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1709.6, -1082.3, 0); app.cameraSystem.cinema = () => ({ pos: [-1709.6, 40, -1082.3], look: [-1769.8, 6, -1082.7], fov: 55 }); })()"
+ },
+ {
+  "name": "modern138551-flat-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-531.2, -2398.7, 0); app.cameraSystem.cinema = () => ({ pos: [-531.2, 1.7, -2398.7], look: [-531.2, 6, -2422.7], fov: 65 }); })()"
+ },
+ {
+  "name": "modern138551-flat-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-531.2, -2377.7, 0); app.cameraSystem.cinema = () => ({ pos: [-531.2, 40, -2377.7], look: [-531.3, 6, -2478], fov: 55 }); })()"
+ },
+ {
+  "name": "modern139199-flat-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(83.8, -2418.3, 0); app.cameraSystem.cinema = () => ({ pos: [83.8, 1.7, -2418.3], look: [60.6, 6, -2424.6], fov: 65 }); })()"
+ },
+ {
+  "name": "modern139199-flat-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(104, -2412.7, 0); app.cameraSystem.cinema = () => ({ pos: [104, 40, -2412.7], look: [31.9, 6, -2432.5], fov: 55 }); })()"
+ },
+ {
+  "name": "modern169608-gable-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1147, -2718.5, 0); app.cameraSystem.cinema = () => ({ pos: [1147, 1.7, -2718.5], look: [1171, 6, -2718.7], fov: 65 }); })()"
+ },
+ {
+  "name": "modern169608-gable-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1126, -2718.4, 0); app.cameraSystem.cinema = () => ({ pos: [1126, 40, -2718.4], look: [1185.9, 6, -2718.8], fov: 55 }); })()"
+ },
+ {
+  "name": "modern171709-aframe-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1769.7, -942.8, 0); app.cameraSystem.cinema = () => ({ pos: [1769.7, 1.7, -942.8], look: [1745.7, 6, -942.4], fov: 65 }); })()"
+ },
+ {
+  "name": "modern171709-aframe-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1790.6, -943.2, 0); app.cameraSystem.cinema = () => ({ pos: [1790.6, 40, -943.2], look: [1729.3, 6, -942.1], fov: 55 }); })()"
+ },
+ {
+  "name": "modern173062-aframe-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1785, -1147.8, 0); app.cameraSystem.cinema = () => ({ pos: [1785, 1.7, -1147.8], look: [1761, 6, -1147.8], fov: 65 }); })()"
+ },
+ {
+  "name": "modern173062-aframe-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1806, -1147.8, 0); app.cameraSystem.cinema = () => ({ pos: [1806, 40, -1147.8], look: [1745.6, 6, -1147.7], fov: 55 }); })()"
+ },
+ {
+  "name": "modern173073-aframe-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1819.4, -1204.1, 0); app.cameraSystem.cinema = () => ({ pos: [1819.4, 1.7, -1204.1], look: [1843.4, 6, -1204], fov: 65 }); })()"
+ },
+ {
+  "name": "modern173073-aframe-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1798.4, -1204.2, 0); app.cameraSystem.cinema = () => ({ pos: [1798.4, 40, -1204.2], look: [1862.1, 6, -1203.9], fov: 55 }); })()"
+ },
+ {
+  "name": "modern173180-aframe-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2256, -1454.6, 0); app.cameraSystem.cinema = () => ({ pos: [2256, 1.7, -1454.6], look: [2255.8, 6, -1478.6], fov: 65 }); })()"
+ },
+ {
+  "name": "modern173180-aframe-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2256.2, -1433.6, 0); app.cameraSystem.cinema = () => ({ pos: [2256.2, 40, -1433.6], look: [2255.7, 6, -1492.4], fov: 55 }); })()"
+ },
+ {
+  "name": "modern173465-flat-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(811.9, -789.4, 0); app.cameraSystem.cinema = () => ({ pos: [811.9, 1.7, -789.4], look: [812.2, 6, -813.4], fov: 65 }); })()"
+ },
+ {
+  "name": "modern173465-flat-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(811.6, -768.4, 0); app.cameraSystem.cinema = () => ({ pos: [811.6, 40, -768.4], look: [812.8, 6, -859.7], fov: 55 }); })()"
+ },
+ {
+  "name": "modern201929-mono-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2820, -1020.4, 0); app.cameraSystem.cinema = () => ({ pos: [2820, 1.7, -1020.4], look: [2796, 6, -1020], fov: 65 }); })()"
+ },
+ {
+  "name": "modern201929-mono-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2841, -1020.7, 0); app.cameraSystem.cinema = () => ({ pos: [2841, 40, -1020.7], look: [2782.2, 6, -1019.7], fov: 55 }); })()"
+ },
+ {
+  "name": "modern202541-flat-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(3442.8, -2731.6, 0); app.cameraSystem.cinema = () => ({ pos: [3442.8, 1.7, -2731.6], look: [3418.8, 6, -2732], fov: 65 }); })()"
+ },
+ {
+  "name": "modern202541-flat-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(3463.8, -2731.2, 0); app.cameraSystem.cinema = () => ({ pos: [3463.8, 40, -2731.2], look: [3298.1, 6, -2734], fov: 55 }); })()"
+ },
+ {
+  "name": "modern203273-gable-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2845, -2101.1, 0); app.cameraSystem.cinema = () => ({ pos: [2845, 1.7, -2101.1], look: [2869, 6, -2101.3], fov: 65 }); })()"
+ },
+ {
+  "name": "modern203273-gable-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2824, -2101, 0); app.cameraSystem.cinema = () => ({ pos: [2824, 40, -2101], look: [2888, 6, -2101.5], fov: 55 }); })()"
+ },
+ {
+  "name": "modern346679-aframe-door",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4284.5, -415, 0); app.cameraSystem.cinema = () => ({ pos: [-4284.5, 1.7, -415], look: [-4284.5, 6, -391], fov: 65 }); })()"
+ },
+ {
+  "name": "modern346679-aframe-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-4284.5, -436, 0); app.cameraSystem.cinema = () => ({ pos: [-4284.5, 40, -436], look: [-4284.5, 6, -377.5], fov: 55 }); })()"
+ }
+]

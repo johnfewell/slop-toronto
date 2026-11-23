@@ -1,0 +1,16 @@
+[
+ {
+  "name": "edwardian-detached-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7770.5, -2469.6, 0); app.cameraSystem.cinema = () => ({ pos: [-7770.5, 1.7, -2469.6], look: [-7749.1, 4.5, -2469.8], fov: 60 }); })()"
+ },
+ {
+  "name": "victorian-row-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2028.3, -2178.8, 0); app.cameraSystem.cinema = () => ({ pos: [2028.3, 1.7, -2178.8], look: [2028.1, 4.5, -2199], fov: 60 }); })()"
+ }
+]

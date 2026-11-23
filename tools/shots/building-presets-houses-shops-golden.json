@@ -1,0 +1,16 @@
+[
+ {
+  "name": "main-street-shop-early-p1g-street",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1256.9, -1267.9, 0); app.cameraSystem.cinema = () => ({ pos: [-1256.9, 1.7, -1267.9], look: [-1279.8, 6, -1267.9], fov: 65 }); })()"
+ },
+ {
+  "name": "main-street-shop-later-p1g-street",
+  "mode": "person",
+  "time": "golden",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1537.8, -1505, 0); app.cameraSystem.cinema = () => ({ pos: [1537.8, 1.7, -1505], look: [1538.3, 6, -1530.8], fov: 65 }); })()"
+ }
+]

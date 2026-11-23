@@ -124,6 +124,8 @@ const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
 // false for the former dropped lines, ?peddetours=0; walks: the City's sidewalks the lines follow, sidewalkWalkIndex,
 // null (?pedwalks=0) for the fixed lanes })
 function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
+  // (js/rocketbox-pedestrians.js: walkers near the camera are drawn as Rocketbox avatars; null with ?rocketbox=0)
+  const _rocketboxHook = window.CITY.rocketbox || null;
   const group = new THREE.Group();
   group.name = 'TrafficAndPedestrians';
   // --- audio: crash sounds (audio-system.js listens). Synchronous: listeners copy what they keep; normal b -> a
@@ -540,6 +542,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
   // One instanced draw per level of detail; every pedestrian has a PersonRig that plants its footsteps on the
   // sidewalk (no sliding), with their own build, height, sex, hair, clothes and gait
   const pedCrowd = new PersonCrowd(NUM_PEDS);
+  let _rocketbox = null;
   const hash = (i, salt) => {
     const v = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
     return v - Math.floor(v);
@@ -549,7 +552,12 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     const female = hash(i, 1) < 0.48;
     const hairRoll = hash(i, 2);
     peds.push({
+      id: i, // (stable: pedestrian-crowd.js ranks the right of way by it)
       placed: false,
+      // pedestrian-crowd.js: the step sideways off its track (sep, eased to sepTarget; sepHome where it comes to rest),
+      // the stopping distance for the people ahead, and its place in the group waiting at a curb
+      sep: 0, sepTarget: 0, sepHold: 0, sepHome: 0, sepLock: false, blockedFor: 0, ghostUntil: 0, crowdRoom: Infinity,
+      crowdTurn: false, pushedUntil: 0, crowdNear: false, sepRoute: null, sideAt: 0, sideOk: true, sideFor: 0, spotRoute: null, spotDepth: 0, spotX: 0, spotZ: 0, face: 0, faceNow: 0,
       crossesStreets: i % 3 === 0, // a third start at crossings (by how many cross there); everyone can use them along their route
       x: 0,
       z: 0,
@@ -605,6 +613,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     });
   }
   group.add(...pedCrowd.meshes);
+  if (_rocketboxHook) _rocketboxHook.attach(group, peds);
 
   // Add vehicle contact shadows last + pre-allocated Clustered SpotLight / PointLight pools
   group.add(carShadowInst, busShadowInst);
@@ -876,6 +885,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     }
     // (the 8 peak hours' crossings at the junctions around: 60 000 or more downtown fill the whole crowd)
     pedTarget = Math.round(clamp(NUM_PEDS * pedLevel * Math.min(1, 0.25 + peds / 80000), Math.min(NUM_PEDS, 30), NUM_PEDS));
+    if (pedestrian.fullCrowd) pedTarget = NUM_PEDS; // (?pedfull=1, debug: every walker placed, so captures have comparable crowds)
   }
   const pickWeighted = (cum) => {
     const r = Math.random() * cum[cum.length - 1];
@@ -2555,6 +2565,8 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
       p.avoidUntil = 0;
       p.resumeDir = 0;
       p.dodge = p.dodgeTarget = 0;
+      p.sep = p.sepTarget = p.sepHome = 0; p.sepHold = 0; p.sepLock = false; p.blockedFor = 0; p.ghostUntil = 0;
+      p.crowdRoom = Infinity; p.crowdTurn = false; p.sepRoute = null; p.spotRoute = null; p.spotDepth = 0; p.face = p.faceNow = 0;
       p.diveStart = -Infinity;
       p.avoidCheck = clock + Math.random() * PED_AVOID_INTERVAL;
       p.nextRoute = null;
@@ -2689,6 +2701,273 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     return Infinity;
   }
 
+
+  // ---------------------------------------------------------------------------------------------------------------
+  // People who do not walk through each other, and who wait for the light as a loose group (js/pedestrian-crowd.js,
+  // st-iqsg; ?pedcrowd=0 keeps the former behaviour, ?pedoverlap=1 counts the pairs of walkers whose bodies overlap).
+  // The walker's track stays as it was; a second sideways step (p.sep) shuffles it round the people near it, and the
+  // spot it waits in at a curb is its own sideways step and its own distance back from the curb.
+  // ---------------------------------------------------------------------------------------------------------------
+  const crowdLib = window.CITY.pedCrowd;
+  const crowdOn = pedestrian.crowd !== false && !!crowdLib;
+  const crowdDebug = !!pedestrian.overlapDebug && !!crowdLib;
+  const crowdGrid = crowdLib ? crowdLib.createGrid(NUM_PEDS) : null;
+  const CROWD_RADIUS = 330; // m round the camera that people are steered in: all of them (PED_RADIUS 320), so a group that formed far off already stands scattered when the camera gets there
+  const CROWD_CELL = crowdLib ? crowdLib.TUNE.CELL : 3;
+  const crowdStats = { shiftN: 0, shiftMax: 0, tiltN: 0, tiltSum: 0, tilt10: 0, tilt20: 0, tiltMax: 0, worst: null, walkerFrames: 0, roadFrames: 0, roadSidewalk: 0, roadCrossing: 0, roomLow: 0, roomMid: 0, roomHigh: 0, passStrict: 0, passLoose: 0, passFree: 0, late: 0, lateFar: 0, wait: 0, cross: 0, walk: 0, tight: 0, noSpot: 0, frames: 0, pairSum: 0, pairMax: 0, last: 0, steered: 0, ghosted: 0, turned: 0, spots: 0, near: 0, ms: 0 };
+  if (crowdDebug) window.__pedOverlap = crowdStats;
+  const playerProxy = { id: -1, placed: true, knock: null, x: 0, z: 0, ux: 0, uz: 1, dir: 1, v: 0, waiting: false, conversation: null, pause: 0 };
+  // The painted crossing is CROSSWALK - 0.3 = 2.2 m wide, its two walking lines 0.75 m either side of its middle: people stay
+  // within CROSS_HALF of the middle (1.1 m and a small margin) on the road
+  const CROSS_HALF = 1.25, WAIT_AREA = 2.1; // (and wait within the crossing's width plus a metre either side)
+  // where the middle of p's crossing is, as a sideways step from p's own line (null: the other line is not there)
+  function crossCentre(p) {
+    const r = p.route;
+    if (r.cs !== undefined) return r.cs;
+    r.cs = null;
+    const list = p.node ? pedRoutes.across(p.node) : pedRoutes.acrossMid(p.mid);
+    for (const q of list) {
+      if (q === r || q.node !== r.node || q.mid !== r.mid || q.side !== r.side || Math.abs(q.line + r.line) > 0.01 || q.line === r.line) continue;
+      const d = ((q.ax - r.ax) * r.uz - (q.az - r.az) * r.ux) / 2;
+      if (Math.abs(d) < 1.2) r.cs = d;
+      break;
+    }
+    return r.cs;
+  }
+  const crowdCtx = { now: 0, dt: 0, extra: null, stats: crowdStats, canSide: null, canTurn: null };
+  const spotPX = new Float64Array(24), spotPZ = new Float64Array(24);
+  const spotOut = { sep: 0, depth: 0, x: 0, z: 0, face: 0 };
+  const spotBase = { x: 0, z: 0, hx: 0, hz: 0, wx: 0, wz: 0 };
+  // May p stand `sep` m off its track? On a crosswalk's road part any step up to 0.6 m; elsewhere on the walk (the sidewalk
+  // outline, the buildings and the furniture: pedRoutes.canDodge), asked at most every 0.12 s for each side
+  crowdCtx.canSide = (p, sep) => {
+    if ((p.node || p.mid) && p.t > 2 && p.t < p.len - 2) {
+      const cs = crossCentre(p); // (the painted crossing's width, plus a little)
+      return cs === null ? Math.abs(sep) <= 0.6 : Math.abs(sep - cs) <= CROSS_HALF;
+    }
+    const key = Math.round(sep * 20);
+    if (clock < p.sideAt && p.sideFor === key) return p.sideOk;
+    p.sideAt = clock + PED_AVOID_INTERVAL;
+    p.sideFor = key;
+    p.sideOk = pedRoutes.canDodge(p, p.dodge + sep);
+    return p.sideOk;
+  };
+  crowdCtx.canTurn = (p) => !p.node && !p.mid && !!p.route?.edge;
+
+  let crowdFrame = 0, crowdDt = 0.016;
+  function crowdBegin(dt) {
+    crowdFrame++;
+    crowdDt = dt;
+    crowdCtx.now = clock;
+    crowdCtx.dt = dt;
+    crowdCtx.extra = null;
+    if (!crowdOn && !crowdDebug) return;
+    crowdGrid.begin();
+    const r2 = CROWD_RADIUS * CROWD_RADIUS;
+    for (let i = 0; i < NUM_PEDS; i++) {
+      const p = peds[i];
+      p.crowdNear = false;
+      if (!p.placed || p.knock) continue;
+      const dx = p.x - focusX, dz = p.z - focusZ;
+      if (dx * dx + dz * dz > r2) { p.crowdRoom = Infinity; continue; }
+      p.crowdNear = true;
+      crowdGrid.add(i, p.x, p.z);
+    }
+    if (!crowdOn) return;
+    if (player.active && player.mode === 'person') {
+      const sp = Math.hypot(player.vx, player.vz);
+      playerProxy.x = player.x; playerProxy.z = player.z;
+      playerProxy.ux = sp > 0.3 ? player.vx / sp : player.fx;
+      playerProxy.uz = sp > 0.3 ? player.vz / sp : player.fz;
+      playerProxy.v = sp;
+      crowdCtx.extra = playerProxy;
+      crowdPushPlayer();
+    }
+  }
+
+  // The player on foot and a walker never share a spot: the walker steps aside if it can, the player is eased out of
+  // the walker's way a little each frame (never a wall: someone walking on carries the push with them)
+  function crowdPushPlayer() {
+    const pe = player.entity, R = 0.62;
+    const cx = Math.floor(player.x / CROWD_CELL), cz = Math.floor(player.z / CROWD_CELL);
+    let px = 0, pz = 0;
+    for (let ox = -1; ox <= 1; ox++) {
+      for (let oz = -1; oz <= 1; oz++) {
+        for (let j = crowdGrid.first(cx + ox, cz + oz); j >= 0; j = crowdGrid.next[j]) {
+          const q = peds[j];
+          const dx = player.x - q.x, dz = player.z - q.z, d = Math.hypot(dx, dz);
+          if (d >= R || Math.abs(pedGround(q, q.x, q.z) - player.y) >= 1.5) continue;
+          const ax = d > 1e-3 ? dx / d : -player.fx, az = d > 1e-3 ? dz / d : -player.fz;
+          const pen = R - d;
+          // the walker's way off, across its own track
+          const lat = -ax * q.uz + az * q.ux;
+          let moved = false;
+          if (clock - q.diveStart > 1 && !q.conversation) {
+            // (dead ahead of each other: it steps to its side, the one the player is not nearer to, by its id)
+            const side = Math.abs(lat) > 0.12 ? Math.sign(lat) : (q.id & 1 ? 1 : -1);
+            const hi = crowdLib.TUNE.SEP_MAX;
+            const tgt = clamp(q.sep + side * (pen + 0.2), Math.max(-hi, q.sepHome - 0.75), Math.min(hi, q.sepHome + 0.75));
+            if (Math.abs(tgt - q.sep) > 0.01 && crowdCtx.canSide(q, tgt)) { q.sepTarget = tgt; q.sepHold = clock + 1.2; q.pushedUntil = clock + 0.6; moved = true; }
+          }
+          const share = moved ? 0.35 : 0.8;
+          px += ax * pen * share; pz += az * pen * share;
+        }
+      }
+    }
+    const m = Math.hypot(px, pz);
+    if (m > 1e-4) {
+      const k = Math.min(m, 0.1) / m;
+      pe.position.x += px * k; pe.position.z += pz * k;
+      player.x = pe.position.x; player.z = pe.position.z;
+    }
+  }
+
+  // ?pedoverlap=1: the body's tilt from vertical (pelvis to head, as drawn: the rig's lean, bank and turn included) and how
+  // many walker-frames are spent on the roadway outside any crosswalk's painted width plus a margin (the crossing's own
+  // track within 1.5 m of its middle; a sidewalk track off the curb island)
+  const _tp = new THREE.Vector3(), _th = new THREE.Vector3();
+  function crowdMeasure(p) {
+    const rig = p.rig;
+    if (!rig.placed || !rig.pose) return;
+    rig.jointAt(0, _tp);
+    rig.jointAt(2, _th);
+    const dy = _th.y - _tp.y, dh = Math.hypot(_th.x - _tp.x, _th.z - _tp.z);
+    const tilt = Math.atan2(dh, dy) * 57.29578;
+    const st = crowdStats;
+    st.tiltN++;
+    st.tiltSum += tilt;
+    if (crowdOn && Math.abs(p.sepTarget - p.sep) > 0.02) { st.shiftN++; if (tilt > st.shiftMax) st.shiftMax = tilt; }
+    if (tilt > 10) st.tilt10++;
+    if (tilt > 20) st.tilt20++;
+    if (tilt > st.tiltMax) {
+      st.tiltMax = tilt;
+      st.worst = { id: p.id, tilt, v: p.v, speed: rig.speed, sep: p.sep, sepTarget: p.sepTarget, dodge: p.dodge, yawRate: rig.yawRate, bank: rig.bank, back: rig.back, gait: rig.gait,
+        waiting: p.waiting, crossing: !!(p.node || p.mid), face: p.faceNow };
+    }
+    st.walkerFrames++;
+    const lateral = p.dodge + (crowdOn ? p.sep : 0);
+    let off = false;
+    if (p.node || p.mid) {
+      if (p.t > 2 && p.t < p.len - 2) {
+        const cs = crossCentre(p);
+        off = Math.abs(lateral - (cs === null ? 0 : cs)) > 1.5;
+      }
+    } else off = !blockAt(p.x, p.z);
+    if (off) {
+      st.roadFrames++;
+      if (!(p.node || p.mid)) st.roadSidewalk++; else st.roadCrossing++;
+    }
+  }
+
+  // Pairs of walkers within 0.4 m of each other this frame, among those within 80 m of the camera (?pedoverlap=1)
+  function crowdCountOverlaps() {
+    const r2 = 80 * 80, lim = crowdLib.TUNE.OVERLAP * crowdLib.TUNE.OVERLAP;
+    let pairs = 0, near = 0;
+    for (let i = 0; i < NUM_PEDS; i++) {
+      const p = peds[i];
+      if (!p.crowdNear) continue;
+      const fx = p.x - focusX, fz = p.z - focusZ;
+      if (fx * fx + fz * fz > r2) continue;
+      near++;
+      const cx = Math.floor(p.x / CROWD_CELL), cz = Math.floor(p.z / CROWD_CELL);
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oz = -1; oz <= 1; oz++) {
+          for (let j = crowdGrid.first(cx + ox, cz + oz); j >= 0; j = crowdGrid.next[j]) {
+            if (j <= i) continue;
+            const dx = peds[j].x - p.x, dz = peds[j].z - p.z;
+            if (dx * dx + dz * dz < lim) {
+              pairs++;
+              const q = peds[j];
+              if (p.waiting || q.waiting) crowdStats.wait++;
+              else if (p.node || p.mid || q.node || q.mid) crowdStats.cross++;
+              else crowdStats.walk++;
+            }
+          }
+        }
+      }
+    }
+    crowdStats.frames++;
+    crowdStats.pairSum += pairs;
+    crowdStats.last = pairs;
+    crowdStats.near = near;
+    if (pairs > crowdStats.pairMax) crowdStats.pairMax = pairs;
+  }
+
+  // Steer one walker this frame (not while it is dodging a vehicle or diving: that has its own rules)
+  function crowdSteer(p, i) {
+    if (!p.crowdNear || clock < p.avoidUntil || p.dodge !== 0 || p.dodgeTarget !== 0 || clock - p.diveStart < PEDESTRIAN_DIVE_DURATION) {
+      p.crowdRoom = Infinity;
+      return;
+    }
+    // (beyond 70 m of the camera, every fourth frame each, with the time since the last: nobody sees them touch)
+    const fx = p.x - focusX, fz = p.z - focusZ;
+    const far = fx * fx + fz * fz > 4900;
+    if (far && ((crowdFrame + i) & 3) !== 0) return;
+    crowdStats.steered++;
+    crowdCtx.dt = far ? crowdDt * 4 : crowdDt;
+    crowdLib.steer(p, i, peds, crowdGrid, crowdCtx);
+  }
+
+  // Where p waits at the curb: clear of the places taken there already
+  const standStrict = (x, z) => pedRoutes.canStand(x, z, false), standLoose = (x, z) => pedRoutes.canStand(x, z, true), standFree = (x, z) => pedRoutes.canStand(x, z, true, true);
+  function assignSpot(p, s) {
+    p.spotRoute = p.route;
+    const key = p.node || p.mid;
+    const stop = p.dir > 0 ? KERB : p.len - KERB;
+    const hx = p.ux * p.dir, hz = p.uz * p.dir;
+    spotBase.x = p.ax + p.ux * stop; spotBase.z = p.az + p.uz * stop;
+    spotBase.hx = hx; spotBase.hz = hz; spotBase.wx = p.uz; spotBase.wz = -p.ux;
+    let n = 0;
+    const cx = Math.floor(spotBase.x / CROWD_CELL), cz = Math.floor(spotBase.z / CROWD_CELL);
+    for (let ox = -1; ox <= 1; ox++) {
+      for (let oz = -1; oz <= 1; oz++) {
+        for (let j = crowdGrid.first(cx + ox, cz + oz); j >= 0 && n < 24; j = crowdGrid.next[j]) {
+          const q = peds[j];
+          if (q === p || q.spotRoute !== q.route || (q.node || q.mid) !== key || q.side !== p.side || q.dir !== p.dir) continue;
+          spotPX[n] = q.spotX; spotPZ[n] = q.spotZ; n++;
+        }
+      }
+    }
+    const room = Math.max(0, KERB - s);
+    crowdStats[room < 0.3 ? 'roomLow' : room < 1.0 ? 'roomMid' : 'roomHigh']++;
+    spotBase.maxDepth = Math.min(room, 1.5);
+    spotBase.dir = p.dir;
+    const cs = crossCentre(p);
+    spotBase.cs = cs === null ? 0 : cs;
+    spotBase.hw = cs === null ? 0.9 : WAIT_AREA;
+    const cornerSeed = Math.floor(spotBase.x * 2) * 31 + Math.floor(spotBase.z * 2) + p.dir;
+    const ra = hash(p.id * 0.37 + cornerSeed * 0.013, 11), rb = hash(p.id * 0.37 + cornerSeed * 0.013, 12), rc = hash(p.id, 13);
+    // the place itself must be somewhere a person can stand (the curb stop is often on the very edge of the sidewalk, so the front
+    // places are as near the curb as the island allows): clear of the buildings & furniture, else of the buildings alone
+    crowdLib.pickSpot(spotBase, spotPX, spotPZ, n, ra, rb, rc, spotOut, standStrict);
+    spotOut.pass = 'passStrict';
+    if (!spotOut.found || spotOut.gap < 0.4) {
+      spotOut.pass = 'passLoose';
+      const first = { gap: spotOut.gap, found: spotOut.found };
+      crowdLib.pickSpot(spotBase, spotPX, spotPZ, n, ra, rb, rc, spotOut, standLoose);
+      if (!spotOut.found && first.found) crowdLib.pickSpot(spotBase, spotPX, spotPZ, n, ra, rb, rc, spotOut, standStrict);
+    }
+    if (!spotOut.found) {
+      // already at the curb's edge, where the island's outline is rough: a place across the crossing, clear of the buildings
+      spotBase.hw = Math.min(spotBase.hw, 1.9);
+      crowdLib.pickSpot(spotBase, spotPX, spotPZ, n, ra, rb, rc, spotOut, standFree);
+      spotOut.pass = 'passFree';
+    }
+    const found = spotOut.found;
+    crowdStats[spotOut.pass || 'passStrict']++;
+    if (found && spotOut.gap < 0.45) crowdStats.tight++;
+    if (!found) crowdStats.noSpot++;
+    const sep = spotOut.sep, depth = Math.min(spotOut.depth, room);
+    // front first, each its own moment: 0.1 to 1.2 s after the WALK
+    p.walkDelay = 0.1 + (depth / 1.5) * 0.6 + hash(p.id, 14) * 0.5;
+    p.sepHome = sep; p.sepTarget = sep; p.sepHold = 0;
+    p.spotDepth = depth;
+    p.spotX = spotBase.x + spotBase.wx * sep - hx * depth;
+    p.spotZ = spotBase.z + spotBase.wz * sep - hz * depth;
+    p.face = spotOut.face;
+    crowdStats.spots++;
+  }
+
   function turnPed(p, dir) {
     p.walkAt = -1;
     p.dir = dir;
@@ -2801,6 +3080,10 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
 
   const walkedNodes = [];
   function walk(p, dt) {
+    if (p.crowdTurn) {
+      p.crowdTurn = false;
+      if (crowdCtx.canTurn(p) && clock >= p.avoidUntil) { turnPed(p, -p.dir); p.pause = TURN_TIME; crowdStats.turned++; }
+    }
     const avoiding = clock < p.avoidUntil;
     const diving = clock - p.diveStart < PEDESTRIAN_DIVE_DURATION;
     const dodging = p.dodge !== 0 || p.dodgeTarget !== 0;
@@ -2844,8 +3127,9 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
           const dx = q.x - p.x, dz = q.z - p.z;
           const forward = (dx * p.ux + dz * p.uz) * p.dir;
           const lateral2 = Math.max(0, dx * dx + dz * dz - forward * forward);
-          if (forward >= 0 && lateral2 < QUEUE_GAP * QUEUE_GAP) {
-            room = Math.min(room, Math.max(0, forward - Math.sqrt(QUEUE_GAP * QUEUE_GAP - lateral2)));
+          const gap = crowdOn ? 0.42 : QUEUE_GAP; // (a loose group at the curb: only someone dead ahead is in the way)
+          if (forward >= 0 && lateral2 < gap * gap) {
+            room = Math.min(room, Math.max(0, forward - Math.sqrt(gap * gap - lateral2)));
           }
         }
         if (leader && leader !== p) {
@@ -2865,6 +3149,8 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
       }
     }
     let canCross = true;
+    let stopS = KERB; // how far along the crosswalk track it waits for the light (a place in the group: KERB less its depth)
+    p.sepLock = false;
     if (p.node || p.mid) {
       // room to walk before standing: up to the curb unless p may cross, and (at a junction) up to the back of whoever
       // is ahead. Each person reacts to the WALK on their own (mrdoob's 35b0b84): walkDelay s after it comes on, however
@@ -2877,24 +3163,37 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
         if (!walk) p.walkAt = -1;
         else if (p.walkAt < 0) p.walkAt = clock + (pxo ? 0 : p.walkDelay);
         canCross = walk && (avoiding || clock >= p.walkAt) && (p.mid ? mayCrossMid(p) : mayCross(p));
+        if (crowdOn && !canCross && p.spotRoute !== p.route && p.crowdNear) assignSpot(p, s);
       }
-      room = s <= KERB + 1e-6 && !canCross ? Math.max(0, KERB - s) : Infinity;
-      if (p.node) for (const q of p.node.curb) {
+      if (crowdOn && p.spotRoute === p.route) {
+        stopS = KERB - p.spotDepth;
+        p.sepLock = !canCross && s <= KERB + 1e-6;
+      }
+      room = s <= KERB + 1e-6 && !canCross ? Math.max(0, stopS - s) : Infinity;
+      if (p.node && !crowdOn) for (const q of p.node.curb) {
         if (q === p || q.node !== p.node || q.side !== p.side || q.dir !== p.dir || Math.abs(q.line - p.line) > 0.55) continue;
         const gap = curbProgress(q) - s;
         if (gap > 0) room = Math.min(room, Math.max(0, gap - QUEUE_GAP));
       }
     }
     if (avoiding) room = Math.min(room, Math.max(0, (p.avoidT - p.t) * p.dir));
+    if (crowdOn && p.crowdRoom < room) room = p.crowdRoom;
     vMax = Math.min(vMax, Math.sqrt(2 * brake * room));
     p.v += clamp(vMax - p.v, -(avoiding ? brake : 2 * brake) * dt, (avoiding ? PED_ESCAPE_ACCEL : PED_ACCEL) * dt);
     const movement = diving ? Math.min(Math.abs(p.diveT - p.t), PED_DODGE_SPEED * dt) : Math.min(p.v * dt, room);
     if (p.v * dt > room) p.v = 0;
     let t = p.t + p.dir * movement;
-    const reachesCurb = !!(p.node || p.mid) && curbProgress(p) <= KERB + 1e-6 && (p.dir > 0 ? t : p.len - t) >= KERB - 1e-6;
+    const reachesCurb = !!(p.node || p.mid) && curbProgress(p) <= KERB + 1e-6 && (p.dir > 0 ? t : p.len - t) >= stopS - 1e-6;
     p.waiting = !diving && reachesCurb && !canCross;
+    if (crowdOn && p.waiting && p.spotRoute !== p.route) {
+      // (anyone who got to the curb without a place, however: it takes one there, never the curb stop shared with the rest)
+      crowdStats.late++;
+      if (!p.crowdNear) crowdStats.lateFar++;
+      assignSpot(p, curbProgress(p));
+      stopS = KERB - p.spotDepth;
+    }
     if (p.waiting) {
-      t = p.dir > 0 ? Math.min(t, KERB) : Math.max(t, p.len - KERB);
+      t = p.dir > 0 ? Math.min(t, stopS) : Math.max(t, p.len - stopS);
       p.v = 0;
     }
     // along a sidewalk past the end of a midblock crossing: some take it
@@ -2948,8 +3247,29 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     p.t = t;
     const dodgeStep = (diving || p.dodgeTarget ? PED_DODGE_SPEED : 1.8) * dt;
     p.dodge += clamp(p.dodgeTarget - p.dodge, -dodgeStep, dodgeStep);
-    p.x = p.ax + p.ux * t + p.uz * p.dodge;
-    p.z = p.az + p.uz * t - p.ux * p.dodge;
+    if (crowdOn) {
+      if (p.sepRoute !== p.route) {
+        // onto another track (round a corner, onto a crossing): stay where it is on the ground, as far as the new track allows
+        if (p.sepRoute) {
+          const lat = (p.x - (p.ax + p.ux * t)) * p.uz - (p.z - (p.az + p.uz * t)) * p.ux - p.dodge;
+          p.sep = Math.abs(lat) < 1.4 ? clamp(lat, -1, 1) : 0;
+        }
+        p.sepRoute = p.route;
+        if (p.spotRoute !== p.route) p.sepHome = 0;
+        p.sepTarget = p.sepHome;
+        p.sepHold = 0;
+      }
+      if ((p.node || p.mid) && !p.waiting && t > 0.8 && t < p.len - 0.8) {
+        // (stepping off the curb: into the crossing's width before the road, quickly enough)
+        const cs = crossCentre(p);
+        p.sepTarget = cs === null ? clamp(p.sepTarget, -0.6, 0.6) : clamp(p.sepTarget, cs - CROSS_HALF, cs + CROSS_HALF);
+      }
+      crowdLib.easeSep(p, dt, p.sepLock && clock >= p.pushedUntil ? crowdLib.TUNE.SEP_RATE_WAIT : (p.node || p.mid) && !p.waiting ? 1.8 : crowdLib.TUNE.SEP_RATE);
+      p.faceNow += ((p.waiting ? p.face : 0) - p.faceNow) * Math.min(1, dt * 3);
+    }
+    const lateral = crowdOn ? p.dodge + p.sep : p.dodge;
+    p.x = p.ax + p.ux * t + p.uz * lateral;
+    p.z = p.az + p.uz * t - p.ux * lateral;
     if (p.mid) {
       if (t > KERB && t < p.len - KERB) markMid(p, true);
       else if (p.waiting) markMid(p, false);
@@ -2989,7 +3309,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
         for (let dz = -1; dz <= 1 && !partner; dz++) {
           for (const q of meetingCells.get(`${ix + dx}:${iz + dz}`) || []) {
             const distance = Math.hypot(p.x - q.x, p.z - q.z);
-            if (q.conversation || p.route.block !== q.route.block || distance < 0.75 || distance > 2 || Math.random() > 0.15) continue;
+            if (q.conversation || p.route.block !== q.route.block || distance < 0.75 || distance > 2 || Math.random() > 0.15 || (_rocketboxHook && _rocketboxHook.twins(p, q))) continue; // (js/rocketbox-pedestrians.js: two of the same person do not stop to talk)
             partner = q;
             break;
           }
@@ -3297,9 +3617,12 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     const sideStep = p.dodgeTarget - p.dodge;
     const heading = diving ? p.diveHeading : partner ? Math.atan2(partner.x - p.x, partner.z - p.z)
       : Math.abs(sideStep) > 0.01 ? Math.atan2(p.uz * Math.sign(sideStep), -p.ux * Math.sign(sideStep))
-      : Math.atan2(p.ux * p.dir, p.uz * p.dir);
+      : Math.atan2(p.ux * p.dir, p.uz * p.dir) + (p.faceNow || 0);
     p.rig.update(dt, p.x, p.z, heading, pedGround, p, 0, draw, diving ? diveTime : -1);
+    if (draw && typeof crowdDebug !== 'undefined' && crowdDebug && !diving && !p.knock) crowdMeasure(p);
     if (!draw) return;
+    // (js/rocketbox-pedestrians.js: this walker may be a Rocketbox avatar, drawn there)
+    if (typeof _rocketbox !== 'undefined' && _rocketbox && _rocketbox.claim(p, Math.sqrt(distSq))) return;
     pedCrowd.add(p.rig, Math.sqrt(distSq));
   }
 
@@ -3456,7 +3779,8 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     } else {
       p.rig.update(dt, p.x, p.z, k.yaw, pedGround, p, 0, draw);
     }
-    if (draw) pedCrowd.add(p.rig, Math.hypot(p.x - focusX, p.z - focusZ));
+    if (!draw || (typeof _rocketbox !== 'undefined' && _rocketbox && _rocketbox.claim(p, Math.hypot(p.x - focusX, p.z - focusZ)))) return;
+    pedCrowd.add(p.rig, Math.hypot(p.x - focusX, p.z - focusZ));
   }
 
   function updateSparks(dt) {
@@ -3670,6 +3994,8 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
       c.waitNow = false;
     }
     pedCrowd.begin();
+    _rocketbox = _rocketboxHook ? _rocketboxHook.begin() : null;
+    crowdBegin(dt);
     for (let i = 0; i < NUM_PEDS; i++) {
       const p = peds[i];
       if (!p.placed) continue;
@@ -3678,11 +4004,14 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
         if (p.knock) renderKnocked(p, dt);
         continue;
       }
+      if (crowdOn) crowdSteer(p, i);
       walk(p, dt);
       if (!p.placed) continue;
       renderPed(p, dt);
     }
     pedCrowd.end();
+    if (crowdDebug) crowdCountOverlaps();
+    if (_rocketbox) _rocketbox.end(dt);
     for (const c of nearMids) {
       c.on = c.onNow;
       c.active = c.onNow > 0 || c.waitNow;
@@ -3705,8 +4034,15 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     setHour, // main.js: the time of day (hours) the City's volumes are read at
     pedRoutes, // (pedestrian-signals.js: the crosswalks people use)
     whyWaiting, // (tools/traffic-measure.js)
+    pedWhy(p) { // (tools/pedcol: why does this person still wait at the curb)
+      if (!p.node) return { mid: !!p.mid };
+      return { walk: walkOn(p.node, p.side), walkAt: +(p.walkAt - clock).toFixed(2), crossing: p.node.crossing[p.side], mayCross: mayCross(p), s: +curbProgress(p).toFixed(2), waiting: p.waiting, room: p.crowdRoom, v: p.v, spotDepth: p.spotDepth,
+        cars: vehicles.filter((v) => v.edge && v.claimed && (v.edge.to === p.node || v.move?.to === undefined || v.edge.from === p.node || (v.move && v.move.to && v.move.to.outSide !== undefined && v.edge.to === p.node))).slice(0, 4)
+          .map((v) => ({ speed: +v.speed.toFixed(2), yielding: v.yielding, conn: !!v.conn, s: +(v.s || 0).toFixed(1), why: whyWaiting(v), bus: !!v.bus, x: +v.x.toFixed(1), z: +v.z.toFixed(1) })) };
+    },
     placeVehicle: place, // (tools/shots/traffic-swerve.json: a car set down where a capture needs it)
     wayThrough, // streetcars.js: a vehicle inside a junction has to clear it
+    get clock() { return clock; }, // (tools/pedcol/shot-helper.js: when the lights change)
     get carTarget() { return carTarget; },
     get pedTarget() { return pedTarget; },
     setCollisionListener, // audio

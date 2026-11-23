@@ -22,7 +22,8 @@ const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
 function driveLoad(keys, speed, cyclist) {
   // Match the controller's forward priority, and distinguish propulsion from braking.
-  const throttle = unit(+keys.forward) || -unit(+keys.backward) * (cyclist ? 0.6 : 1);
+  if (cyclist && speed > 0 && unit(+keys.up) > 0) return 0;
+  const throttle = unit(+keys.forward) || -unit(+keys.backward) * (cyclist && speed <= 0 ? 0.6 : 1);
   if ((cyclist && throttle <= 0) || speed * throttle < 0) return 0;
   return Math.abs(throttle);
 }

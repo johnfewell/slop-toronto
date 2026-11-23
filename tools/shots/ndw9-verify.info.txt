@@ -1,0 +1,31 @@
+to-3dmassing-2025:63858 edwardian-semi width 10.6 sills 4 lintels 4 columns 0
+to-3dmassing-2025:63903 edwardian-semi width 10.8 sills 4 lintels 4 columns 0
+to-3dmassing-2025:64514 victorian-semi width 9.4 sills 2 lintels 2 columns 0
+to-3dmassing-2025:64695 victorian-semi width 9.2 sills 2 lintels 2 columns 0
+to-3dmassing-2025:63810 interwar-detached width 9.8 sills 7 lintels 0 columns 0
+to-3dmassing-2025:63813 interwar-detached width 6.7 sills 1 lintels 0 columns 0
+to-3dmassing-2025:63845 edwardian-detached width 10.5 sills 3 lintels 3 columns 3
+to-3dmassing-2025:63848 edwardian-detached width 7.8 sills 3 lintels 3 columns 2
+to-3dmassing-2025:79142 victorian-row width 7.4 sills 5 lintels 5 columns 0
+to-3dmassing-2025:79158 victorian-row width 7.7 sills 3 lintels 3 columns 0
+modern to-3dmassing-2025:86856 flat fill 0.69 h 17.3
+modern to-3dmassing-2025:101022 aframe fill 1.00 h 13.6
+modern to-3dmassing-2025:102425 mono fill 0.94 h 6.8
+modern to-3dmassing-2025:107769 aframe fill 0.97 h 18.9
+modern to-3dmassing-2025:138551 flat fill 0.41 h 31.2
+modern to-3dmassing-2025:139199 flat fill 0.47 h 23.9
+modern to-3dmassing-2025:169608 gable fill 0.83 h 14.6
+modern to-3dmassing-2025:171709 aframe fill 0.92 h 22.7
+modern to-3dmassing-2025:173062 aframe fill 0.73 h 13.7
+modern to-3dmassing-2025:173073 aframe fill 0.86 h 18
+modern to-3dmassing-2025:173180 aframe fill 0.86 h 13
+modern to-3dmassing-2025:173465 flat fill 0.68 h 4.1
+modern to-3dmassing-2025:201929 mono fill 0.74 h 6.7
+modern to-3dmassing-2025:202541 flat fill 0.53 h 19.2
+modern to-3dmassing-2025:203273 gable fill 0.87 h 23.4
+modern to-3dmassing-2025:346679 aframe fill 0.96 h 40.7
+mosque to-3dmassing-2025:83877 Jami Mosque door -5458.5,-2533.2 out 0.01,1.00 domes 2 portals 2
+mosque to-3dmassing-2025:90131  door -3953.1,-2842.1 out -1.00,-0.01 domes 2 portals 2
+mosque to-3dmassing-2025:141793  door -92.4,-1200.3 out -1.00,0.00 domes 2 portals 2
+mosque to-3dmassing-2025:172783  door 1545.3,-905.4 out 0.00,1.00 domes 2 portals 2
+mosque to-3dmassing-2025:173081  door 1817.5,-1195.7 out 1.00,-0.01 domes 2 portals 2

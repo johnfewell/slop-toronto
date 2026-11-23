@@ -1,0 +1,26 @@
+[
+ {
+  "name": "m-cabbagetown",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "name": "t-cabbagetown",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene; const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const by = {}; let shadowProxyTris = 0, proxies = 0;\n scene.traverse((o) => { if (!o.isMesh || !vis(o)) return; const g = o.geometry; const tri = (g.index ? g.index.count : g.attributes.position.count) / 3; const dr = g.drawRange; const n = Math.min(tri, dr.count === Infinity ? tri : dr.count / 3) * (o.isInstancedMesh ? o.count : 1);\n  const key = (o.name || o.type) + (o.castShadow ? ' [casts]' : ''); const k = by[key] || (by[key] = { meshes: 0, tris: 0, verts: 0 }); k.meshes++; k.tris += n; k.verts += (g.attributes.position.count) * (o.isInstancedMesh ? o.count : 1);\n  if (o.name === 'ShadowProxy') { proxies++; shadowProxyTris += n; } });\n const rows = Object.entries(by).sort((a, b) => b[1].tris - a[1].tris).slice(0, 25).map(([k, v]) => [k, v.meshes, Math.round(v.tris), Math.round(v.verts)]);\n return { rows, proxies, shadowProxyTris: Math.round(shadowProxyTris) }; })()"
+ },
+ {
+  "name": "m-financial300",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "name": "t-financial300",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene; const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const by = {}; let shadowProxyTris = 0, proxies = 0;\n scene.traverse((o) => { if (!o.isMesh || !vis(o)) return; const g = o.geometry; const tri = (g.index ? g.index.count : g.attributes.position.count) / 3; const dr = g.drawRange; const n = Math.min(tri, dr.count === Infinity ? tri : dr.count / 3) * (o.isInstancedMesh ? o.count : 1);\n  const key = (o.name || o.type) + (o.castShadow ? ' [casts]' : ''); const k = by[key] || (by[key] = { meshes: 0, tris: 0, verts: 0 }); k.meshes++; k.tris += n; k.verts += (g.attributes.position.count) * (o.isInstancedMesh ? o.count : 1);\n  if (o.name === 'ShadowProxy') { proxies++; shadowProxyTris += n; } });\n const rows = Object.entries(by).sort((a, b) => b[1].tris - a[1].tris).slice(0, 25).map(([k, v]) => [k, v.meshes, Math.round(v.tris), Math.round(v.verts)]);\n return { rows, proxies, shadowProxyTris: Math.round(shadowProxyTris) }; })()"
+ }
+]

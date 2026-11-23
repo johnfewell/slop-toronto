@@ -184,3 +184,59 @@ test('street-details.js opts its poles in with an open 4-sided shaft', () => {
   const R = 1.11, side = R * Math.SQRT2;
   assert.ok(Math.abs(side * 4 / Math.PI - 2) < 0.01);
 });
+
+// st-ndw9.22: a stand-in handed over as world-space triangles per 500 m cell (the massing cells' and the roofs'), and a plain float mesh in
+// world coordinates read straight from its array: the proxies hold exactly the triangles, by cell, that the vector-by-vector walk gave
+function bigMesh(n, seed = 5) {
+  // n triangles over 3 x 3 cells of 500 m, in no cell order; flat 9-number runs
+  let s = seed; const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const P = new Float32Array(n * 9);
+  for (let t = 0; t < n; t++) {
+    const cx = -750 + rnd() * 1500, cz = -750 + rnd() * 1500;
+    for (let v = 0; v < 3; v++) { P[t * 9 + v * 3] = cx + rnd() * 6; P[t * 9 + v * 3 + 1] = rnd() * 30; P[t * 9 + v * 3 + 2] = cz + rnd() * 6; }
+  }
+  const g = new CORE.BufferGeometry();
+  g.setAttribute('position', new CORE.BufferAttribute(P, 3));
+  const m = new CORE.Mesh(g, new CORE.MeshStandardMaterial());
+  m.castShadow = true;
+  m.name = 'Big';
+  return { m, P };
+}
+const proxyTris = (proxies) => proxies.flatMap((o) => { const a = o.geometry.attributes.position.array; return Array.from({ length: a.length / 9 }, (_, t) => Array.from(a.subarray(t * 9, t * 9 + 9), (v) => v.toFixed(3)).join()); }).sort();
+
+test('a world-space float mesh is binned by 500 m cell straight from its array: the same triangles in the same cells as an indexed copy through the vector walk', () => {
+  const { m, P } = bigMesh(60000);
+  const { proxies, stats } = setup([m]);
+  assert.equal(stats.proxyTriangles, 60000);
+  assert.deepEqual(proxyTris(proxies), Array.from({ length: 60000 }, (_, t) => Array.from(P.subarray(t * 9, t * 9 + 9), (v) => v.toFixed(3)).join()).sort());
+  // the same mesh given an index (the vector walk) lands in the same cells with the same triangles
+  const { m: m2 } = bigMesh(60000);
+  m2.geometry.setIndex(Array.from({ length: 60000 * 3 }, (_, i) => i));
+  const via = setup([m2]);
+  assert.deepEqual(proxyTris(via.proxies), proxyTris(proxies));
+  assert.equal(via.proxies.length, proxies.length, 'one proxy a cell and side either way');
+  const centre = (o) => { o.geometry.computeBoundingSphere(); return o.geometry.boundingSphere.center.toArray().map((v) => v.toFixed(2)).join(); };
+  assert.deepEqual(proxies.map(centre).sort(), via.proxies.map(centre).sort());
+});
+
+test('a stand-in given as world cells casts through exactly its triangles, once for every piece carrying it', () => {
+  const { m, P } = bigMesh(40000, 9);
+  // the stand-in: every second triangle, as { sx, sz, pos } per 500 m cell by the triangle's own cell
+  const cells = new Map();
+  for (let t = 0; t < 40000; t += 2) {
+    const i = t * 9, sx = Math.floor((P[i] + P[i + 3] + P[i + 6]) / 3 / 500), sz = Math.floor((P[i + 2] + P[i + 5] + P[i + 8]) / 3 / 500), k = `${sx},${sz}`;
+    if (!cells.has(k)) cells.set(k, { sx, sz, runs: [] });
+    cells.get(k).runs.push(...P.subarray(i, i + 9));
+  }
+  const worldCells = [...cells.values()].map((c) => ({ sx: c.sx, sz: c.sz, pos: Float32Array.from(c.runs) }));
+  const stand = { worldCells };
+  m.userData.shadowStandIn = stand;
+  const twin = m.clone(); // (a piece of a far band's cut: the same user data)
+  twin.userData = m.userData; twin.name = 'BigTwin';
+  const { proxies, stats, root } = setup([m, twin]);
+  void root;
+  assert.equal(stats.proxyTriangles, 20000, 'once, not once a piece');
+  const want = []; for (let t = 0; t < 40000; t += 2) want.push(Array.from(P.subarray(t * 9, t * 9 + 9), (v) => v.toFixed(3)).join());
+  assert.deepEqual(proxyTris(proxies), want.sort());
+  assert.ok(!m.castShadow && !twin.castShadow, 'the pieces themselves no longer cast');
+});

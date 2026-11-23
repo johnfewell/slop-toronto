@@ -46,9 +46,16 @@
       const nav = typeof navigator === 'object' ? navigator : {};
       const touchFirst = nav.maxTouchPoints > 0 && mm('(pointer: coarse)') && mm('(hover: none)');
       const desktop = !touchFirst && !['low', 'medium'].includes(params.get('quality')) && !(nav.deviceMemory && nav.deviceMemory < 8);
+      // (?gallery=presets, the internal building-preset page, needs the detail map: the massing and presets files exist only
+      // for it, so it chooses that map itself unless ?map= says otherwise; no other URL's map changes)
       const map = params.get('map') === 'eglinton' || params.get('map') === 'detail' ? params.get('map')
+        : params.get('gallery') === 'presets' ? 'detail'
         : EGLINTON_ON_DESKTOP && desktop ? 'eglinton' : 'detail';
       const eglinton = map === 'eglinton';
+      // (the page draws the buildings from their polygons (main.js drawnByDefault, or ?massing=1): their colliders are other
+      // colliders than the boxes', so it has its own prebuilt patio layout: tools/build-patios.mjs --frame eglinton-drawn, st-ndw9.23)
+      const presets = params.get('presets');
+      const drawn = eglinton && (params.get('massing') === '1' || (desktop && presets !== '0' && presets !== 'off'));
       return Object.assign([
         './js/quality.js',
         eglinton ? './js/frames/eglinton/toronto-sidewalks.js' : './js/toronto-sidewalks.js',
@@ -59,7 +66,7 @@
         './js/toronto-public-art.js',
         './js/toronto-cafeto.js',
         './js/toronto-storefronts.js',
-        eglinton ? './js/frames/eglinton/toronto-patios.js' : './js/toronto-patios.js',
+        drawn ? './js/frames/eglinton/toronto-patios-drawn.js' : eglinton ? './js/frames/eglinton/toronto-patios.js' : './js/toronto-patios.js',
         './js/toronto-tennis.js',
         './js/toronto-rinks.js',
         './js/high-park-features-data.js',
@@ -94,9 +101,15 @@
         // the detail map's one file here, the Eglinton map's cells fetched below (cityLidarCells)
         // (as above) on the detail map they were baked for; a default visit loads neither
         ...(params.get('lidarTrees') === '1' ? [...(desktop && !eglinton ? ['./js/lidar-trees-data.js'] : []), './js/lidar-trees.js'] : []),
+        // the schoolyard fences (docs/school-fences.md): on for every desktop (John, 2026-11-17), their data, then the
+        // runtime. ?schoolFences=0 turns them off; a phone or a low tier loads neither (main.js's guarded call then builds nothing)
+        ...(params.get('schoolFences') !== '0' && desktop ? ['./js/school-fences-data.js', './js/school-fences.js'] : []),
         './js/actor-models.js',
         './js/vehicle-lights.js',
         './js/pedestrians.js',
+        // the Rocketbox pedestrian: one walker in 64 is drawn as a Microsoft Rocketbox avatar (traffic.js finds
+        // window.CITY.rocketbox when it builds); ?rocketbox=0 leaves it out and every walker is the procedural body
+        ...(params.get('rocketbox') !== '0' ? ['./js/rocketbox-pedestrians.js'] : []),
         './js/lighting.js',
         './js/sidewalk-polygons.js',
         './js/sidewalk-sections.js',
@@ -184,6 +197,7 @@
         './js/road-network.js',
         './js/road-paint.js',
         './js/pedestrian-routes.js',
+        './js/pedestrian-crowd.js',
         './js/vehicle-physics.js',
         './js/traffic.js',
         './js/parked-cars.js',
@@ -868,6 +882,8 @@
     import { ClusteredLighting } from 'three/addons/lighting/ClusteredLighting.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+    import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+    import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
     import * as StylizedWater from './js/stylized-water.js';
 
     window.CITY = {
@@ -883,7 +899,9 @@
         SunLightNode,
         ClusteredLighting,
         GLTFLoader,
-        MeshoptDecoder
+        MeshoptDecoder,
+        KTX2Loader,
+        SkeletonUtils
       }
     };
 

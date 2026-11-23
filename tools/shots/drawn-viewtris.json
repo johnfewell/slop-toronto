@@ -1,0 +1,38 @@
+[
+ {
+  "name": "m-cabbagetown",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "name": "v-cabbagetown",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene, cam = A.cameraSystem.camera;\n const THREE_ = window.CITY.THREE; const fr = new THREE_.Frustum(), pm = new THREE_.Matrix4();\n cam.updateMatrixWorld(true); pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm, cam.coordinateSystem, cam.reversedDepth);\n const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const by = {}; let total = 0, calls = 0;\n scene.traverse((o) => { if (!o.isMesh || !vis(o) || o.layers.mask === 0) return; if (o.userData.shadowProxy) return; if (o.frustumCulled !== false && !fr.intersectsObject(o)) return;\n  const g = o.geometry; const tri = (g.index ? g.index.count : g.attributes.position.count) / 3; const dr = g.drawRange; const n = Math.min(tri, dr.count === Infinity ? tri : dr.count / 3) * (o.isInstancedMesh ? o.count : 1);\n  let key = o.name || o.type; if (/^MassingBuildings_/.test(key)) key = 'Massing tier ' + o.userData.massingTier; key = key.replace(/_\\d+$/, '_n').replace(/\\d+/g, '#');\n  const k = by[key] || (by[key] = { meshes: 0, tris: 0 }); k.meshes++; k.tris += n; total += n; calls++; });\n const rows = Object.entries(by).sort((a, b) => b[1].tris - a[1].tris).slice(0, 22).map(([k, v]) => [k, v.meshes, Math.round(v.tris)]);\n return { total: Math.round(total), calls, info: Math.round(A.renderer.info.render.triangles), rows }; })()"
+ },
+ {
+  "name": "m-queenwest",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()"
+ },
+ {
+  "name": "v-queenwest",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene, cam = A.cameraSystem.camera;\n const THREE_ = window.CITY.THREE; const fr = new THREE_.Frustum(), pm = new THREE_.Matrix4();\n cam.updateMatrixWorld(true); pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm, cam.coordinateSystem, cam.reversedDepth);\n const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const by = {}; let total = 0, calls = 0;\n scene.traverse((o) => { if (!o.isMesh || !vis(o) || o.layers.mask === 0) return; if (o.userData.shadowProxy) return; if (o.frustumCulled !== false && !fr.intersectsObject(o)) return;\n  const g = o.geometry; const tri = (g.index ? g.index.count : g.attributes.position.count) / 3; const dr = g.drawRange; const n = Math.min(tri, dr.count === Infinity ? tri : dr.count / 3) * (o.isInstancedMesh ? o.count : 1);\n  let key = o.name || o.type; if (/^MassingBuildings_/.test(key)) key = 'Massing tier ' + o.userData.massingTier; key = key.replace(/_\\d+$/, '_n').replace(/\\d+/g, '#');\n  const k = by[key] || (by[key] = { meshes: 0, tris: 0 }); k.meshes++; k.tris += n; total += n; calls++; });\n const rows = Object.entries(by).sort((a, b) => b[1].tris - a[1].tris).slice(0, 22).map(([k, v]) => [k, v.meshes, Math.round(v.tris)]);\n return { total: Math.round(total), calls, info: Math.round(A.renderer.info.render.triangles), rows }; })()"
+ },
+ {
+  "name": "m-financial300",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "name": "v-financial300",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene, cam = A.cameraSystem.camera;\n const THREE_ = window.CITY.THREE; const fr = new THREE_.Frustum(), pm = new THREE_.Matrix4();\n cam.updateMatrixWorld(true); pm.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); fr.setFromProjectionMatrix(pm, cam.coordinateSystem, cam.reversedDepth);\n const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const by = {}; let total = 0, calls = 0;\n scene.traverse((o) => { if (!o.isMesh || !vis(o) || o.layers.mask === 0) return; if (o.userData.shadowProxy) return; if (o.frustumCulled !== false && !fr.intersectsObject(o)) return;\n  const g = o.geometry; const tri = (g.index ? g.index.count : g.attributes.position.count) / 3; const dr = g.drawRange; const n = Math.min(tri, dr.count === Infinity ? tri : dr.count / 3) * (o.isInstancedMesh ? o.count : 1);\n  let key = o.name || o.type; if (/^MassingBuildings_/.test(key)) key = 'Massing tier ' + o.userData.massingTier; key = key.replace(/_\\d+$/, '_n').replace(/\\d+/g, '#');\n  const k = by[key] || (by[key] = { meshes: 0, tris: 0 }); k.meshes++; k.tris += n; total += n; calls++; });\n const rows = Object.entries(by).sort((a, b) => b[1].tris - a[1].tris).slice(0, 22).map(([k, v]) => [k, v.meshes, Math.round(v.tris)]);\n return { total: Math.round(total), calls, info: Math.round(A.renderer.info.render.triangles), rows }; })()"
+ }
+]

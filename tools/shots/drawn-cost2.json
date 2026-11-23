@@ -1,0 +1,74 @@
+[
+ {
+  "name": "m-cabbagetown",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "record": true,
+  "wait": 500,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()",
+  "name": "c-cabbagetown"
+ },
+ {
+  "name": "s-cabbagetown",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene; const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const R = { objects: 0, meshes: 0, visMeshes: 0, visInstanced: 0, visInstances: 0, visCasters: 0, visCasterInstances: 0, massing: { meshes: 0, vis: 0, casters: 0, tris: 0 }, boxes: { meshes: 0, vis: 0, instances: 0, visInstances: 0 }, standIns: 0, topByGroup: {} };\n const grp = (o) => { let p = o; while (p.parent && p.parent !== scene) p = p.parent; return p.name || p.type; };\n const t0 = performance.now(); scene.traverse((o) => { R.objects++; if (!o.isMesh) return; R.meshes++; const v = vis(o), n = o.isInstancedMesh ? o.count : 1; const g = grp(o);\n  if (v) { R.visMeshes++; if (o.isInstancedMesh) { R.visInstanced++; R.visInstances += n; } if (o.castShadow) { R.visCasters++; R.visCasterInstances += n; } const k = R.topByGroup[g] || (R.topByGroup[g] = { vis: 0, casters: 0 }); k.vis++; if (o.castShadow) k.casters++; }\n  if (/^MassingBuildings_/.test(o.name)) { R.massing.meshes++; if (v) { R.massing.vis++; R.massing.tris += (o.geometry.index ? o.geometry.index.count : 0) / 3; if (o.castShadow) R.massing.casters++; } }\n  if (/^Buildings_/.test(o.name)) { R.boxes.meshes++; R.boxes.instances += n; if (v) { R.boxes.vis++; R.boxes.visInstances += n; } }\n  if (o.userData && o.userData.shadowStandIn) R.standIns++; });\n R.traverseMs = performance.now() - t0; const t1 = performance.now(); for (let i = 0; i < 20; i++) scene.traverse(() => {}); R.traverse20Ms = performance.now() - t1;\n R.topByGroup = Object.fromEntries(Object.entries(R.topByGroup).sort((a, b) => b[1].vis - a[1].vis).slice(0, 12));\n R.cullingStats = A.cullingStats ? JSON.parse(JSON.stringify(A.cullingStats, (k, v) => (typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean' || (v && typeof v === 'object') ? v : undefined))) : null; return R; })()"
+ },
+ {
+  "name": "m-queenwest",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()"
+ },
+ {
+  "record": true,
+  "wait": 500,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()",
+  "name": "c-queenwest"
+ },
+ {
+  "name": "s-queenwest",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene; const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const R = { objects: 0, meshes: 0, visMeshes: 0, visInstanced: 0, visInstances: 0, visCasters: 0, visCasterInstances: 0, massing: { meshes: 0, vis: 0, casters: 0, tris: 0 }, boxes: { meshes: 0, vis: 0, instances: 0, visInstances: 0 }, standIns: 0, topByGroup: {} };\n const grp = (o) => { let p = o; while (p.parent && p.parent !== scene) p = p.parent; return p.name || p.type; };\n const t0 = performance.now(); scene.traverse((o) => { R.objects++; if (!o.isMesh) return; R.meshes++; const v = vis(o), n = o.isInstancedMesh ? o.count : 1; const g = grp(o);\n  if (v) { R.visMeshes++; if (o.isInstancedMesh) { R.visInstanced++; R.visInstances += n; } if (o.castShadow) { R.visCasters++; R.visCasterInstances += n; } const k = R.topByGroup[g] || (R.topByGroup[g] = { vis: 0, casters: 0 }); k.vis++; if (o.castShadow) k.casters++; }\n  if (/^MassingBuildings_/.test(o.name)) { R.massing.meshes++; if (v) { R.massing.vis++; R.massing.tris += (o.geometry.index ? o.geometry.index.count : 0) / 3; if (o.castShadow) R.massing.casters++; } }\n  if (/^Buildings_/.test(o.name)) { R.boxes.meshes++; R.boxes.instances += n; if (v) { R.boxes.vis++; R.boxes.visInstances += n; } }\n  if (o.userData && o.userData.shadowStandIn) R.standIns++; });\n R.traverseMs = performance.now() - t0; const t1 = performance.now(); for (let i = 0; i < 20; i++) scene.traverse(() => {}); R.traverse20Ms = performance.now() - t1;\n R.topByGroup = Object.fromEntries(Object.entries(R.topByGroup).sort((a, b) => b[1].vis - a[1].vis).slice(0, 12));\n R.cullingStats = A.cullingStats ? JSON.parse(JSON.stringify(A.cullingStats, (k, v) => (typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean' || (v && typeof v === 'object') ? v : undefined))) : null; return R; })()"
+ },
+ {
+  "name": "m-financial300",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "record": true,
+  "wait": 500,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()",
+  "name": "c-financial300"
+ },
+ {
+  "name": "s-financial300",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene; const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const R = { objects: 0, meshes: 0, visMeshes: 0, visInstanced: 0, visInstances: 0, visCasters: 0, visCasterInstances: 0, massing: { meshes: 0, vis: 0, casters: 0, tris: 0 }, boxes: { meshes: 0, vis: 0, instances: 0, visInstances: 0 }, standIns: 0, topByGroup: {} };\n const grp = (o) => { let p = o; while (p.parent && p.parent !== scene) p = p.parent; return p.name || p.type; };\n const t0 = performance.now(); scene.traverse((o) => { R.objects++; if (!o.isMesh) return; R.meshes++; const v = vis(o), n = o.isInstancedMesh ? o.count : 1; const g = grp(o);\n  if (v) { R.visMeshes++; if (o.isInstancedMesh) { R.visInstanced++; R.visInstances += n; } if (o.castShadow) { R.visCasters++; R.visCasterInstances += n; } const k = R.topByGroup[g] || (R.topByGroup[g] = { vis: 0, casters: 0 }); k.vis++; if (o.castShadow) k.casters++; }\n  if (/^MassingBuildings_/.test(o.name)) { R.massing.meshes++; if (v) { R.massing.vis++; R.massing.tris += (o.geometry.index ? o.geometry.index.count : 0) / 3; if (o.castShadow) R.massing.casters++; } }\n  if (/^Buildings_/.test(o.name)) { R.boxes.meshes++; R.boxes.instances += n; if (v) { R.boxes.vis++; R.boxes.visInstances += n; } }\n  if (o.userData && o.userData.shadowStandIn) R.standIns++; });\n R.traverseMs = performance.now() - t0; const t1 = performance.now(); for (let i = 0; i < 20; i++) scene.traverse(() => {}); R.traverse20Ms = performance.now() - t1;\n R.topByGroup = Object.fromEntries(Object.entries(R.topByGroup).sort((a, b) => b[1].vis - a[1].vis).slice(0, 12));\n R.cullingStats = A.cullingStats ? JSON.parse(JSON.stringify(A.cullingStats, (k, v) => (typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean' || (v && typeof v === 'object') ? v : undefined))) : null; return R; })()"
+ },
+ {
+  "name": "m-stjames",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP, C = window.CITY; const p = C.worldFromLatLon(43.6678, -79.3748); app.teleportTo(p.x, p.z, 0); app.cameraSystem.cinema = () => ({ pos: [p.x - 120, 110, p.z + 160], look: [p.x, 30, p.z], fov: 60 }); })()"
+ },
+ {
+  "record": true,
+  "wait": 500,
+  "js": "(async () => { const a = window.__CITY_APP; let best = { triangles: 0 }; for (let k = 0; k < 12; k++) { await new Promise((r) => requestAnimationFrame(r)); const i = a.renderer.info; if ((i.render && i.render.triangles || 0) >= best.triangles) best = { triangles: i.render.triangles, calls: i.render.drawCalls }; } return { ...best, rafSamples: 12 }; })()",
+  "name": "c-stjames"
+ },
+ {
+  "name": "s-stjames",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene; const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const R = { objects: 0, meshes: 0, visMeshes: 0, visInstanced: 0, visInstances: 0, visCasters: 0, visCasterInstances: 0, massing: { meshes: 0, vis: 0, casters: 0, tris: 0 }, boxes: { meshes: 0, vis: 0, instances: 0, visInstances: 0 }, standIns: 0, topByGroup: {} };\n const grp = (o) => { let p = o; while (p.parent && p.parent !== scene) p = p.parent; return p.name || p.type; };\n const t0 = performance.now(); scene.traverse((o) => { R.objects++; if (!o.isMesh) return; R.meshes++; const v = vis(o), n = o.isInstancedMesh ? o.count : 1; const g = grp(o);\n  if (v) { R.visMeshes++; if (o.isInstancedMesh) { R.visInstanced++; R.visInstances += n; } if (o.castShadow) { R.visCasters++; R.visCasterInstances += n; } const k = R.topByGroup[g] || (R.topByGroup[g] = { vis: 0, casters: 0 }); k.vis++; if (o.castShadow) k.casters++; }\n  if (/^MassingBuildings_/.test(o.name)) { R.massing.meshes++; if (v) { R.massing.vis++; R.massing.tris += (o.geometry.index ? o.geometry.index.count : 0) / 3; if (o.castShadow) R.massing.casters++; } }\n  if (/^Buildings_/.test(o.name)) { R.boxes.meshes++; R.boxes.instances += n; if (v) { R.boxes.vis++; R.boxes.visInstances += n; } }\n  if (o.userData && o.userData.shadowStandIn) R.standIns++; });\n R.traverseMs = performance.now() - t0; const t1 = performance.now(); for (let i = 0; i < 20; i++) scene.traverse(() => {}); R.traverse20Ms = performance.now() - t1;\n R.topByGroup = Object.fromEntries(Object.entries(R.topByGroup).sort((a, b) => b[1].vis - a[1].vis).slice(0, 12));\n R.cullingStats = A.cullingStats ? JSON.parse(JSON.stringify(A.cullingStats, (k, v) => (typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean' || (v && typeof v === 'object') ? v : undefined))) : null; return R; })()"
+ }
+]

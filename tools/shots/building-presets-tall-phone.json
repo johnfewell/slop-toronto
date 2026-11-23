@@ -1,0 +1,23 @@
+[
+ {
+  "name": "stjames-town-ground0",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1376.5, -2393.4, 0); app.cameraSystem.cinema = () => ({ pos: [1376.5, 1.7, -2393.4], look: [1333, 15, -2405], fov: 72 }); })()"
+ },
+ {
+  "name": "cityplace-ground1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1430, 172, 0); app.cameraSystem.cinema = () => ({ pos: [-1430, 1.7, 172], look: [-1370, 20, 172], fov: 72 }); })()"
+ },
+ {
+  "name": "stjames-cathedral-ground1",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(658.5, -375.7, 0); app.cameraSystem.cinema = () => ({ pos: [658.5, 1.7, -375.7], look: [676, 12.5, -406], fov: 72 }); })()"
+ }
+]

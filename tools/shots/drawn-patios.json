@@ -1,0 +1,20 @@
+[
+ {
+  "name": "patio-bremner333",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-972.7, 263.9, 0); app.cameraSystem.cinema = () => ({ pos: [-972.7, 20, 289.9], look: [-972.7, 0, 263.9], fov: 62 }); })()"
+ },
+ {
+  "name": "patio-elm37",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(157, -1355.8, 0); app.cameraSystem.cinema = () => ({ pos: [157, 14, -1339.8], look: [157, 0, -1355.8], fov: 62 }); })()"
+ },
+ {
+  "name": "patio-bloor828",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-2765.4, -2824, 0); app.cameraSystem.cinema = () => ({ pos: [-2765.4, 14, -2808], look: [-2765.4, 0, -2824], fov: 62 }); })()"
+ }
+]

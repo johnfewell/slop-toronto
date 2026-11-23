@@ -1,0 +1,34 @@
+[
+ {
+  "name": "player-walker",
+  "js": "(async () => { const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz)); await __pcSleep(9000); const pw = await __pcPlayerAtWalker(90000, 6); await __pcSleep(1500); __pcLogStart(); return pw; })()",
+  "wait": 100,
+  "record": true,
+  "hold": "KeyW",
+  "screencastMs": 6000,
+  "screencastQuality": 85,
+  "mode": "person",
+  "time": "midday"
+ },
+ {
+  "name": "player-walker-log",
+  "js": "(async () => ({ log: __pcLogStop(), report: __pcPlayerReport() }))()",
+  "wait": 100,
+  "record": true
+ },
+ {
+  "name": "player-cluster",
+  "js": "(async () => { __pcRelease(); const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz)); await __pcSleep(5000); const f = await __pcFind(5, 150000, 14); const pg = __pcPlayerAtGroup(5.5); await __pcSleep(1800); __pcLogStart(); return { f, pg }; })()",
+  "wait": 100,
+  "record": true,
+  "hold": "KeyW",
+  "screencastMs": 6000,
+  "screencastQuality": 85
+ },
+ {
+  "name": "player-cluster-log",
+  "js": "(async () => ({ log: __pcLogStop(), report: __pcPlayerReport() }))()",
+  "wait": 100,
+  "record": true
+ }
+]

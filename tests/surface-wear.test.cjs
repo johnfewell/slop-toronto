@@ -70,7 +70,7 @@ test('the road & sidewalk shaders read the wear level and keep the expensive wor
   for (let at = sidewalk.indexOf('if (wearFull) {'); at >= 0; at = sidewalk.indexOf('if (wearFull) {', at + 1)) fullBlocks.push(block(sidewalk, 'wearFull', at));
   const full = fullBlocks.join('\n');
   assert.match(full, /const atlas = sidewalkStampAtlas\(\);[\s\S]*If\(pixelSize\.lessThan\(0\.014\)/);
-  assert.match(full, /brush = noise2D\(vec2\(sAlong\.mul\(110\.0\)/);
+  assert.match(full, /brush = Fn\(\(\) => \{[\s\S]*?noise2D\(vec2\(sAlong\.mul\(110\.0\)/); // (in its own fade branch, st-iq0v.3)
   assert.match(full, /sidewalkGum\(/);
   for (const name of ['sidewalkStampAtlas()', 'sidewalkGum(', 'sAlong.mul(110']) {
     const outside = sidewalk.split(name).length - 1 - (full.split(name).length - 1);

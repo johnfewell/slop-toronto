@@ -24,6 +24,11 @@ const MID = window.CITY.QUALITY.treeMid; // decimated mesh within; whole-crown c
 const MID_STREET = Math.min(MID, Number(new URLSearchParams(location.search).get('treemidstreet') ?? window.CITY.QUALITY.treeMidStreet ?? MID));
 // mid trees further than this cast no shadow (a twin mesh that skips the shadow maps): drawing the ~500 mid trees of a
 // 320 m circle into both cascades cost 2.2 ms a frame on the M4 mini, for shadows a few pixels long
+// The near level's shadow casters further than this (m) cast through the decimated mesh (the one the mid level draws) in place
+// of the full mesh (QUALITY.treeCastLite, 0: off; ?treecastlite=<m> for A/B). On the M4 mini, with the kerb shadows off and 2048
+// maps, the trees cost 1.2-2.1 ms of a street frame in the shadow maps, 60% of it the full meshes (st-aeg2.2). (A dithered
+// ellipsoid over the crown saved twice as much but cast a flat, heavy disc on a lawn: it did not read as the same shade)
+const LITE_D = Number(new URLSearchParams(location.search).get('treecastlite') ?? window.CITY.QUALITY.treeCastLite ?? 0);
 const MID_SHADOW = Number(new URLSearchParams(location.search).get('treeshadow') ?? window.CITY.QUALITY.treeMidShadow); // ?treeshadow=320: all of them, for A/B
 // The wooded parks' woods (park-woods.js: High Park, Toronto Island): their trees stand 50-70 to the hectare and hide each other, so they are a class
 // of their own (WOODS_CLASS) handing over to the coarser levels nearer, at these shares of the distances above
@@ -194,6 +199,14 @@ const ALL_IN = -1e6, ALL_OUT = 1e9;
 // drew ~480 mid trees and ~12,000 cards all round). ?treecull=0 draws them all round, for A/B
 const VIEW_CULL = new URLSearchParams(location.search).get('treecull') !== '0';
 const VIEW_MARGIN = 0.5, RECUT = 0.3, CROWN_PAD = 25; // (rad, rad, m)
+// Within the cone, each tree is also tested against the camera's own frustum (turned outward by TURN_SLACK, its sphere grown by
+// FRUSTUM_PAD: the tree's crown from a centre 18 m up, and the 4 m the camera may travel before the next regroup): the cone was cut
+// by cell, a cell 200 m wide and its sphere grown by 25 m, so over half of the near and mid trees it let through were outside the
+// frame (about 1 M triangles of 1.6 M at Cabbagetown). A shadow caster out of the frame still casts: it draws in the shadow
+// cascades only, through a twin mesh sharing its buffers (TreeShadowCasters), the view's mesh holding the trees in the frame.
+// The same frame; ?treefrustum=0 draws as before, for A/B
+const FRUSTUM_CULL = VIEW_CULL && new URLSearchParams(location.search).get('treefrustum') !== '0';
+const TURN_SLACK = 0.3, REGROUP_TURN = 0.12, FRUSTUM_PAD = 28, FRUSTUM_LIFT = 18; // (rad, rad, m, m)
 // Trees are binned into square cells this wide for the level updates (cell-hierarchical, after mrdoob's trees.js in
 // upstream e35c06c): a cell lying wholly between two hand-over edges takes one level set per tree class without
 // per-tree distances; only the cells straddling an edge evaluate their trees one by one
@@ -482,8 +495,13 @@ async function buildEzTrees(scene, generated) {
   const impData = new Float32Array(N * 4); // (IMP_CLASS: the impostor's frame width and height (m), its model, a random)
   const levels = new Uint8Array(N); // bit L: drawn at level L (both levels inside a hand-over band)
   const meshes = [];
-  const make = (geo, material, name, attrs, noShadow, imp = false) => { meshes.push({ geo, material, name, capacity: 0, attrs, noShadow, imp }); return meshes.length - 1; };
+  const make = (geo, material, name, attrs, noShadow, imp = false, caster = false) => { meshes.push({ geo, material, name, capacity: 0, attrs, noShadow, imp, caster }); return meshes.length - 1; };
   const idxNear = models.map((m) => make(m.near, m.material, `Trees_${m.id}_near`));
+  // (LITE: the near level's casters are meshes of their own, in the cascades only: the near mesh's own geometry within LITE_D, the decimated one beyond)
+  const LITE = FRUSTUM_CULL && LITE_D > 0;
+  const idxCastNear = LITE ? models.map((m) => make(m.near, m.material, `Trees_${m.id}_cast_near`, false, false, false, true)) : [];
+  const idxCastLite = LITE ? models.map((m) => make(m.mid, m.material, `Trees_${m.id}_cast_lite`, false, false, false, true)) : [];
+  if (LITE) for (const mi of idxNear) meshes[mi].viewOnly = true;
   const idxMid = models.map((m) => make(m.mid, m.material, `Trees_${m.id}_mid`));
   const idxMidFar = models.map((m) => make(m.mid, m.material, `Trees_${m.id}_mid_noshadow`, false, true));
   const idxFar = farGeos.map((g, s) => make(g, farMaterial, `Trees_far_${TREE_SPECIES[s].name}`, true));
@@ -535,6 +553,7 @@ async function buildEzTrees(scene, generated) {
     meshOf[i * 3 + 1] = idxMid[m];
     meshOf[i * 3 + 2] = imp ? idxImp[m] : sp >= 0 ? idxFar[sp] : idxMid[m];
     meshes[idxNear[m]].capacity++;
+    if (LITE) { meshes[idxCastNear[m]].capacity++; meshes[idxCastLite[m]].capacity++; }
     meshes[idxMid[m]].capacity++;
     midFarOf[i] = idxMidFar[m];
     meshes[idxMidFar[m]].capacity++;
@@ -564,11 +583,32 @@ async function buildEzTrees(scene, generated) {
     mesh.count = 0;
     mesh.visible = false;
     mesh.frustumCulled = false; // instances surround the camera: the per-tree levels do the culling
-    mesh.castShadow = !m.attrs && !m.noShadow; // the far crowns stand past the shadow cascades
-    mesh.receiveShadow = true;
+    mesh.castShadow = !m.attrs && !m.noShadow && !m.viewOnly; // the far crowns stand past the shadow cascades
+    mesh.receiveShadow = !m.caster;
     group.add(mesh);
     return mesh;
   });
+  // The shadow casters' twins (FRUSTUM_CULL): the view draws the casters' trees in the frame; the cascades draw all round
+  const twinGroup = new THREE.Group();
+  twinGroup.name = 'TreeShadowCasters';
+  const twins = new Array(instanced.length).fill(null);
+  if (FRUSTUM_CULL) {
+    instanced.forEach((mesh, mi) => {
+      if (!mesh.castShadow || meshes[mi].caster) return;
+      const twin = new THREE.InstancedMesh(mesh.geometry, mesh.material, 1);
+      twin.instanceMatrix = mesh.instanceMatrix;
+      twin.instanceColor = mesh.instanceColor;
+      twin.name = mesh.name + '_shadow';
+      twin.count = 0;
+      twin.visible = false;
+      twin.frustumCulled = false;
+      twin.castShadow = true;
+      twin.receiveShadow = false;
+      mesh.castShadow = false;
+      twinGroup.add(twin);
+      twins[mi] = twin;
+    });
+  }
   // The hand-over edges per tree class, at street level (index 1) and aloft (0): per level [edge in, band in, edge
   // out, band out] as float32s (what aLodFade carries), and the distances where a class's level set changes
   const classFades = [new Float32Array(CLASSES * 12), new Float32Array(CLASSES * 12)];
@@ -646,8 +686,8 @@ async function buildEzTrees(scene, generated) {
   const BUCKET = 4, BUCKETS = 1024;
   let order = new Int32Array(1024), sorted = new Int32Array(1024);
   const key = new Uint16Array(N), bucketStart = new Int32Array(BUCKETS + 1);
-  function put(i, l, bits, F) {
-    const mi = l === 1 && bits & 8 ? midFarOf[i] : meshOf[i * 3 + l];
+  function put(i, l, bits, F, miTo = -1) {
+    const mi = miTo >= 0 ? miTo : l === 1 && bits & 8 ? midFarOf[i] : meshOf[i * 3 + l];
     const mesh = instanced[mi];
     const c = counts[mi]++;
     const far = meshes[mi].attrs;
@@ -680,6 +720,42 @@ async function buildEzTrees(scene, generated) {
     a.aLodShadow.array.set([0, 0], c * 2);
   }
   const PROXY_REACH = PROXY_FAR + PROXY_BAND * 0.5 + 40;
+  // The frame the instances were last grouped for (FRUSTUM_CULL): the camera's position and axes, its frustum's side planes turned out
+  const bPos = new V3(), bFwd = new V3(), bRight = new V3(), bUp = new V3();
+  let bTanH = 0, bTanV = 0, bSecH = 1, bSecV = 1, bFov = 0, bAspect = 0, bValid = false;
+  const outOfFrame = new Uint8Array(N);
+  function captureFrame(camera) {
+    const e = camera.matrixWorld.elements;
+    bRight.set(e[0], e[1], e[2]); bUp.set(e[4], e[5], e[6]); bFwd.set(-e[8], -e[9], -e[10]);
+    bPos.copy(cam);
+    const tanV = Math.tan((camera.fov * Math.PI) / 360);
+    const halfH = Math.atan(tanV * camera.aspect) + TURN_SLACK, halfV = Math.atan(tanV) + TURN_SLACK;
+    bValid = halfH < 1.5 && halfV < 1.5;
+    bTanH = Math.tan(halfH); bTanV = Math.tan(halfV);
+    bSecH = Math.sqrt(1 + bTanH * bTanH); bSecV = Math.sqrt(1 + bTanV * bTanV);
+    bFov = camera.fov; bAspect = camera.aspect;
+  }
+  // Has the camera turned or zoomed since the instances were grouped, so that the frame's trees no longer all draw?
+  const pFwd = new V3(), pRight = new V3();
+  function frameChanged(camera) {
+    if (!bValid) return true;
+    if (Math.abs(camera.fov - bFov) > 4 || Math.abs(camera.aspect - bAspect) > 0.05 * bAspect) return true; // (inside TURN_SLACK, which the planes carry)
+    const e = camera.matrixWorld.elements;
+    pRight.set(e[0], e[1], e[2]); pFwd.set(-e[8], -e[9], -e[10]);
+    const c = Math.cos(REGROUP_TURN);
+    return pFwd.dot(bFwd) < c || pRight.dot(bRight) < c;
+  }
+  // Could tree i (a sphere round its crown) be in the frame the instances were grouped for?
+  function inFrame(i) {
+    const vx = px[i] - bPos.x, vy = py[i] + FRUSTUM_LIFT - bPos.y, vz = pz[i] - bPos.z;
+    const z = vx * bFwd.x + vy * bFwd.y + vz * bFwd.z;
+    if (z < -FRUSTUM_PAD) return false;
+    const x = vx * bRight.x + vy * bRight.y + vz * bRight.z;
+    if (Math.abs(x) > z * bTanH + FRUSTUM_PAD * bSecH) return false;
+    const y = vx * bUp.x + vy * bUp.y + vz * bUp.z;
+    return Math.abs(y) <= z * bTanV + FRUSTUM_PAD * bSecV;
+  }
+  const viewCount = new Int32Array(instanced.length);
   function rebuild() {
     const t0 = performance.now();
     counts.fill(0);
@@ -697,7 +773,10 @@ async function buildEzTrees(scene, generated) {
         // (a level that casts no shadow out of the view cone can't be in the frame: the mid mesh beyond its shadow
         // distance, the cards)
         const proxy = PROXY && cls[i] === IMP_CLASS && bits & 6;
-        if (outOfView && !proxy && !(bits & 1) && (!(bits & 2) || bits & 8)) continue;
+        // (in the frame: in a cell of the cone and, with FRUSTUM_CULL, in the camera's frustum itself)
+        const out = outOfView || (bValid && !inFrame(i));
+        outOfFrame[i] = out ? 1 : 0;
+        if (out && !proxy && !(bits & 1) && (!(bits & 2) || bits & 8)) continue;
         if (n === order.length) { const o = new Int32Array(n * 2); o.set(order); order = o; sorted = new Int32Array(n * 2); }
         order[n++] = i;
         if (SORT) {
@@ -714,18 +793,32 @@ async function buildEzTrees(scene, generated) {
       for (let k = 0; k < n; k++) { const i = order[k]; sorted[bucketStart[key[i]]++] = i; }
       list = sorted;
     }
-    for (let k = 0; k < n; k++) {
-      const i = list[k];
-      const bits = levels[i];
-      const outOfView = !cellOf[i].inView;
-      for (let l = 0; l < 3; l++) {
-        if (!(bits & (1 << l))) continue;
-        if (outOfView && (l === 2 || (l === 1 && bits & 8))) continue; // (casts no shadow, can't be in the frame)
-        put(i, l, bits, F);
+    // The trees in the frame first (every level), then the casters out of it (their casting levels only, for the cascades): a
+    // caster's view mesh draws the first viewCount[mi] instances, its twin all of them
+    for (let phase = 0; phase < (FRUSTUM_CULL ? 2 : 1); phase++) {
+      for (let k = 0; k < n; k++) {
+        const i = list[k];
+        const bits = levels[i];
+        const outOfView = outOfFrame[i] === 1;
+        if (FRUSTUM_CULL && (phase === 1) !== outOfView) continue;
+        for (let l = 0; l < 3; l++) {
+          if (!(bits & (1 << l))) continue;
+          if (outOfView && (l === 2 || (l === 1 && bits & 8) || (LITE && l === 0))) continue; // (casts no shadow, can't be in the frame; or casts through its caster mesh)
+          put(i, l, bits, F);
+        }
+        if (phase === 0 && PROXY && cls[i] === IMP_CLASS && bits & 6) {
+          const dx = px[i] - cam.x, dz = pz[i] - cam.z;
+          if (dx * dx + dz * dz < PROXY_REACH * PROXY_REACH) putProxy(i);
+        }
       }
-      if (PROXY && cls[i] === IMP_CLASS && bits & 6) {
-        const dx = px[i] - cam.x, dz = pz[i] - cam.z;
-        if (dx * dx + dz * dz < PROXY_REACH * PROXY_REACH) putProxy(i);
+      if (phase === 0) for (let mi = 0; mi < instanced.length; mi++) viewCount[mi] = counts[mi];
+    }
+    if (LITE) {
+      for (let k = 0; k < n; k++) {
+        const i = list[k];
+        if (!(levels[i] & 1)) continue;
+        const dx = px[i] - cam.x, dy = py[i] - cam.y, dz = pz[i] - cam.z, m = treeModel[i];
+        put(i, 0, levels[i], F, dx * dx + dy * dy + dz * dz >= LITE_D * LITE_D ? idxCastLite[m] : idxCastNear[m]);
       }
     }
     instanced.forEach((mesh, mi) => {
@@ -733,14 +826,15 @@ async function buildEzTrees(scene, generated) {
       if (n > 0) {
         const a = mesh.geometry.attributes;
         const extra = meshes[mi].attrs ? a.aTreeData : mesh.instanceColor;
-        for (const attr of [mesh.instanceMatrix, extra, a.aLodOrigin, a.aLodFade, ...(meshes[mi].imp ? [a.aImp] : []), ...(a.aLodShadow ? [a.aLodShadow] : [])]) {
+        const twin = twins[mi];
+        for (const attr of [mesh.instanceMatrix, extra, a.aLodOrigin, a.aLodFade, ...(meshes[mi].imp ? [a.aImp] : []), ...(a.aLodShadow ? [a.aLodShadow] : []), ...(twin ? [twin.instanceMatrix] : [])]) {
           attr.clearUpdateRanges();
           attr.addUpdateRange(0, n * attr.itemSize);
           attr.needsUpdate = true;
         }
       }
-      mesh.count = n;
-      mesh.visible = n > 0;
+      if (twins[mi]) { mesh.count = viewCount[mi]; twins[mi].count = n; } else mesh.count = n;
+      mesh.visible = mesh.count > 0;
     });
     stats.rebuilds++;
     stats.sorted = SORT;
@@ -778,9 +872,10 @@ async function buildEzTrees(scene, generated) {
   function update(position, camera = null) {
     cam.copy(position);
     const viewChanged = VIEW_CULL && camera ? cutView(camera) : false;
+    const frameMoved = FRUSTUM_CULL && camera ? frameChanged(camera) : false;
     if (cam.distanceToSquared(last) < 16) {
-      if (viewChanged) rebuild();
-      return viewChanged;
+      if (viewChanged || frameMoved) { if (FRUSTUM_CULL && camera) captureFrame(camera); rebuild(); }
+      return viewChanged || frameMoved;
     }
     last.copy(cam);
     const low = cam.y < 40;
@@ -824,14 +919,27 @@ async function buildEzTrees(scene, generated) {
         if (bits !== levels[i]) { levels[i] = bits; changed = true; }
       }
     }
-    if (changed || viewChanged) rebuild();
-    return changed || viewChanged;
+    if (changed || viewChanged || (FRUSTUM_CULL && camera)) { if (FRUSTUM_CULL && camera) captureFrame(camera); rebuild(); }
+    return changed || viewChanged || (FRUSTUM_CULL && !!camera);
   }
   // follow the view camera of every scene render (the shadow cascades keep the view's levels)
   const viewPos = new V3();
   const prevBeforeRender = scene.onBeforeRender;
   scene.onBeforeRender = function (renderer, scn, camera, target) {
     prevBeforeRender.call(this, renderer, scn, camera, target);
+    // the casters' view meshes draw in the view, their twins in the shadow cascades (every orthographic render is a cascade)
+    if (FRUSTUM_CULL) {
+      const cascade = camera.isOrthographicCamera === true;
+      for (let mi = 0; mi < twins.length; mi++) {
+        if (!twins[mi]) continue;
+        instanced[mi].visible = !cascade && instanced[mi].count > 0;
+        twins[mi].visible = cascade && twins[mi].count > 0;
+      }
+      if (LITE) {
+        for (const mi of idxCastNear) instanced[mi].visible = cascade && instanced[mi].count > 0;
+        for (const mi of idxCastLite) instanced[mi].visible = cascade && instanced[mi].count > 0;
+      }
+    }
     if (camera.isOrthographicCamera === true || camera.isArrayCamera === true) return;
     viewPos.setFromMatrixPosition(camera.matrixWorld);
     viewer.value.copy(viewPos);
@@ -853,8 +961,10 @@ async function buildEzTrees(scene, generated) {
     mesh.count = 1;
     mesh.visible = true;
     mesh.instanceMatrix.needsUpdate = true;
+    if (twins[mi]) { twins[mi].count = 1; twins[mi].visible = true; }
   });
   scene.add(group);
+  if (FRUSTUM_CULL) scene.add(twinGroup);
   if (impostors) {
     // (main.js: once the renderer can draw, before the shader warm-up)
     window.CITY.bakeTreeImpostors = (renderer) => impostors.bake(renderer);

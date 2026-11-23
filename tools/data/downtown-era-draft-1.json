@@ -1,0 +1,377 @@
+{
+ "draft": 1,
+ "date": "2026-11-15",
+ "status": "Draft 1, the coordinator's judgement, not reviewed. John chose on 2026-11-15 to use it as is and correct neighbourhoods when they look wrong in the city.",
+ "eras": [
+  {
+   "key": "v",
+   "name": "Victorian",
+   "years": "before 1900"
+  },
+  {
+   "key": "e",
+   "name": "Edwardian",
+   "years": "1900 to 1919"
+  },
+  {
+   "key": "i",
+   "name": "Interwar",
+   "years": "1920 to 1939"
+  },
+  {
+   "key": "p",
+   "name": "Postwar",
+   "years": "1940 to 1979"
+  },
+  {
+   "key": "r",
+   "name": "Recent",
+   "years": "1980 on"
+  }
+ ],
+ "weights": {
+  "87": {
+   "name": "High Park-Swansea",
+   "weights": [
+    5,
+    45,
+    35,
+    10,
+    5
+   ],
+   "note": null
+  },
+  "80": {
+   "name": "Palmerston-Little Italy",
+   "weights": [
+    45,
+    40,
+    5,
+    5,
+    5
+   ],
+   "note": null
+  },
+  "81": {
+   "name": "Trinity-Bellwoods",
+   "weights": [
+    60,
+    25,
+    5,
+    3,
+    7
+   ],
+   "note": null
+  },
+  "86": {
+   "name": "Roncesvalles",
+   "weights": [
+    30,
+    50,
+    12,
+    4,
+    4
+   ],
+   "note": null
+  },
+  "68": {
+   "name": "North Riverdale",
+   "weights": [
+    20,
+    55,
+    20,
+    3,
+    2
+   ],
+   "note": null
+  },
+  "83": {
+   "name": "Dufferin Grove",
+   "weights": [
+    35,
+    45,
+    8,
+    5,
+    7
+   ],
+   "note": null
+  },
+  "84": {
+   "name": "Little Portugal",
+   "weights": [
+    65,
+    20,
+    5,
+    3,
+    7
+   ],
+   "note": null
+  },
+  "70": {
+   "name": "South Riverdale",
+   "weights": [
+    40,
+    35,
+    15,
+    3,
+    7
+   ],
+   "note": "West part in the frame"
+  },
+  "79": {
+   "name": "University",
+   "weights": [
+    70,
+    20,
+    3,
+    2,
+    5
+   ],
+   "note": null
+  },
+  "85": {
+   "name": "South Parkdale",
+   "weights": [
+    55,
+    30,
+    8,
+    4,
+    3
+   ],
+   "note": null
+  },
+  "78": {
+   "name": "Kensington-Chinatown",
+   "weights": [
+    70,
+    15,
+    5,
+    3,
+    7
+   ],
+   "note": null
+  },
+  "71": {
+   "name": "Cabbagetown-South St.James Town",
+   "weights": [
+    80,
+    12,
+    2,
+    1,
+    5
+   ],
+   "note": null
+  },
+  "73": {
+   "name": "Moss Park",
+   "weights": [
+    75,
+    12,
+    5,
+    3,
+    5
+   ],
+   "note": null
+  },
+  "166": {
+   "name": "St Lawrence-East Bayfront-The Islands",
+   "weights": [
+    5,
+    10,
+    35,
+    10,
+    40
+   ],
+   "note": "Island cottages plus St Lawrence townhouses"
+  },
+  "67": {
+   "name": "Playter Estates-Danforth",
+   "weights": [
+    10,
+    50,
+    35,
+    3,
+    2
+   ],
+   "note": "Only the south part is in the frame"
+  },
+  "95": {
+   "name": "Annex",
+   "weights": [
+    55,
+    35,
+    5,
+    2,
+    3
+   ],
+   "note": "Only the south edge is in the frame"
+  },
+  "172": {
+   "name": "Dovercourt Village",
+   "weights": [
+    10,
+    60,
+    25,
+    3,
+    2
+   ],
+   "note": "Only the south edge is in the frame"
+  },
+  "88": {
+   "name": "High Park North",
+   "weights": [
+    10,
+    60,
+    25,
+    3,
+    2
+   ],
+   "note": "Only the south edge is in the frame"
+  },
+  "171": {
+   "name": "Junction-Wallace Emerson",
+   "weights": [
+    20,
+    50,
+    15,
+    5,
+    10
+   ],
+   "note": "Only the south edge is in the frame"
+  },
+  "162": {
+   "name": "West Queen West",
+   "weights": [
+    70,
+    10,
+    5,
+    3,
+    12
+   ],
+   "note": null
+  },
+  "164": {
+   "name": "Wellington Place",
+   "weights": [
+    60,
+    10,
+    5,
+    0,
+    25
+   ],
+   "note": null
+  },
+  "168": {
+   "name": "Downtown Yonge East",
+   "weights": [
+    65,
+    15,
+    5,
+    0,
+    15
+   ],
+   "note": null
+  },
+  "167": {
+   "name": "Church-Wellesley",
+   "weights": [
+    65,
+    20,
+    5,
+    2,
+    8
+   ],
+   "note": null
+  },
+  "163": {
+   "name": "Fort York-Liberty Village",
+   "weights": [
+    5,
+    5,
+    5,
+    0,
+    85
+   ],
+   "note": "Townhouses among the condos"
+  },
+  "74": {
+   "name": "North St.James Town",
+   "weights": [
+    50,
+    35,
+    10,
+    0,
+    5
+   ],
+   "note": null
+  },
+  "72": {
+   "name": "Regent Park",
+   "weights": [
+    15,
+    0,
+    0,
+    15,
+    70
+   ],
+   "note": "Rebuilt since 2005; a few older houses on the edges"
+  },
+  "89": {
+   "name": "Runnymede-Bloor West Village",
+   "weights": [
+    2,
+    45,
+    45,
+    5,
+    3
+   ],
+   "note": "Only the east edge is in the frame"
+  },
+  "169": {
+   "name": "Bay-Cloverhill",
+   "weights": [
+    65,
+    20,
+    5,
+    0,
+    10
+   ],
+   "note": null
+  },
+  "170": {
+   "name": "Yonge-Bay Corridor",
+   "weights": [
+    40,
+    10,
+    10,
+    10,
+    30
+   ],
+   "note": null
+  },
+  "98": {
+   "name": "Rosedale-Moore Park",
+   "weights": [
+    55,
+    35,
+    5,
+    2,
+    3
+   ],
+   "note": "Only the south edge is in the frame"
+  },
+  "165": {
+   "name": "Harbourfront-CityPlace",
+   "weights": [
+    0,
+    0,
+    0,
+    0,
+    100
+   ],
+   "note": "Townhouses only"
+  }
+ },
+ "what": "Share of house-scale buildings by construction period, per City neighbourhood (158-neighbourhood model), for the 31 neighbourhoods inside Slop Toronto's downtown frame. weights are percentages in the order of eras. Set by hand from neighbourhood-era/1 (dated parts and the census block) and general knowledge of how the city grew; not measured. A part with its own yearBuilt keeps that year.",
+ "evidence": "neighbourhood-era/1; registry/investigations/neighbourhood-era.md"
+}

@@ -18,7 +18,8 @@ shadows through stand-ins. Toronto reimplements the technique on its own data an
 | Pilot (st-2nl.1) | **Done.** Kensington Market's 647 buildings on their polygons behind `?massing=1` (PR #34). Superseded by the city-wide data below. |
 | City-wide data (st-2nl.2) | **Done, flag only.** `?massing=1` fetches `js/massing-data.js` and `data/toronto-massing.bin` (852 KiB, only then) and stands all 35,254 detailed-city buildings on their polygons. The default page loads neither and is unchanged. See [City-wide sidecar](#city-wide-sidecar-st-2nl2). |
 | Compact cells and tiers (st-2nl.3) | **Code done, flag only; perf acceptance pending the quiet-mini baseline.** 16-byte vertices, a building table, near/mid/far tiers per 500 m cell, the facade styles merged into two materials, built in a worker. See [Compact cells and tiers](#compact-cells-and-tiers-st-2nl3). |
-| Default on | Planned, in the child beads below: needs st-2nl.3's matched baseline first. |
+| Drawn buildings by default (st-ndw9.21) | **On, on the bigger desktop map, inside the downtown frame** (John, 2026-11-17: "just launch things"). The default desktop page loads the sidecar and the presets files and draws the building presets where they exist; outside the frame, and on a phone, a low tier or `?map=detail`, the boxes stay. `?presets=0` is the old look. See [The bigger map](#the-bigger-map-st-ndw921). |
+| Default on everywhere (st-2nl.7) | Still planned: the rest of the city's outlines, the phone tier, and st-2nl.4 to .6 (box consumers, roofs from the data, edge faces). |
 
 ## 1. Data
 
@@ -332,6 +333,7 @@ One TGB1 layer, `MASSING`, in columns (one entry per record unless noted):
 | `hiddenN`, `hiddenEdge` | outer edges another part's wall stands on (no wall, no flicker) |
 | `streetN`, `streetEdge` | street fronts: `edge × 2 + 1` on a main street (9 m or wider), else `edge × 2` |
 | `skipRow`, `skipWhy`, `reasons` | rows left on their boxes, and why |
+| `frameName`, `frameRows`, `frameRowCheck`, `frameRowDelta` | the same index for the bigger map's geodata (st-ndw9.21): each record's row in its 140,541, delta coded, with the count and the check of those rows. The page uses whichever list the loaded geodata is |
 | `geodata`, `rows`, `rowCheck` | what it was built for: the geodata script's hash (tools), the row count and a hash of every row's centre and height (page) |
 
 The street fronts are new: the pilot searched the roads for them at startup (`nearestRoads` per edge). The tool now
@@ -499,7 +501,47 @@ stand-in materials) takes 1.7–1.9 s for the polygons in `buildCityBlocks`, the
 in each tier now). The `[init]` line gains a `massingData` phase (the modules, the fetch and the decode) and a
 `massingCells` phase (the wait for the worker before the culling setup). A sidecar built for other rows logs a warning
 and the buildings stay on their boxes. `?massingTier=near|mid|far` holds every cell in one tier; `?massingWorker=0`
-builds the cells on the main thread.
+builds the cells on the main thread. `?massing=1&presets=1` also fetches `data/toronto-building-presets.bin` (the
+per-building prototype preset, tools/build-building-presets.mjs, docs/building-presets.md) and attaches each polygon
+record its preset; `?massing=1&presets=debug` paints every polygon building its preset's debug colour, flat (a map of
+the assignment). Since st-ndw9.19 `?massing=1` alone is `?massing=1&presets=draw` (below), and `?massing=1&presets=0` is the plain massing that fetches neither file nor module.
+
+**The presets flag (st-ndw9.19, John's decision of 2026-11-16).** `?massing=1` with no `presets` parameter behaves as
+`?massing=1&presets=draw`: the drawn presets are what the massing mode shows. `?massing=1&presets=0` (or `presets=off`) is the old
+massing look, for comparison and as an escape: it fetches none of the presets files or modules, as `?massing=1` alone did before.
+`presets=1`, `presets=debug` and `presets=draw` keep their meanings; `?gallery=presets` is unchanged. `?massing=1` is still a
+flag: the default page (no `massing` parameter) loads, fetches and draws exactly what it did. The drawn presets exist for the
+detail map only: on the bigger desktop map (`?massing=1` with no `?map=detail`) the sidecar is refused and `?massing=1` behaves
+exactly as before: the same `[massing] ... data/toronto-massing.bin ... refused` warning, no presets file or module fetched, and
+no `[presets]` warning (that one still appears when `presets=` is given explicitly). To let `js/buildings.js` see the choice (it
+reads the page's own address), the page adds `presets=draw` to its address with `history.replaceState` when the flag was
+implied; no reload, no history entry.
+
+`?massing=1&presets=draw` (st-ndw9.13, st-ndw9.15) draws the house presets that have drawing parameters (the three of
+st-ndw9.13: the Victorian bay-and-gable semi, the Edwardian detached house, the Victorian row; and the ten more and two
+shop presets of st-ndw9.15: Victorian detached, Edwardian semi and row, interwar detached and semi, postwar detached and
+semi, recent detached and semi, the modern townhouse row, the early and later main-street shops; `js/building-draw.js`,
+parameters in `js/building-prototypes.js` `DRAW`) and leaves every other building as it is. It fetches the presets file and
+the debug file (`data/toronto-building-presets-debug.bin`, for each record's joined group and dwelling count) and loads
+`js/building-draw.js`. A drawn house's walls go through the same cell meshes with one of the extra facade styles of the
+rendered material (six: tall narrow Victorian windows twice, wide Edwardian pairs and wides, the early shops' tall narrow
+upper windows, the recent houses' large glazing; with the two plain ones that is all eight the material takes, none are
+left); its roof, gables, bargeboards, dormers, parapets, cornices and bay roofs are flat-coloured triangles in the existing
+hipped-roofs mesh; its bays, porch, vestibule and stoop are small extra polygon records that only the near tier draws
+(`nearOnly` in `js/massing-cells.js`), and a rear wing is a record of its own in every tier. No material, mesh or draw call
+is added. **A composed front and the real back** (decision 8 of the spec): the front block is a rectangle, the outline behind
+it is the rear wing, one storey lower under a flat roof; a front edge that does not fit is replaced by the next street or
+road-facing edge. **One roof per joined row** (decision 9): a group shares its roof form, ridge and cornice height, and the houses of a joined run stand on one front line: the median of the run's, for every house within 1.5 m of it (`snapFronts`, a first planning pass in `js/buildings.js`); a house further out keeps its own line, a real step in the City's outlines. A flat roof, and a rear wing's, is a tar-grey slab in the roof batch (the cell material's cap stays under it); the parapets and cornices are near-tier records. A shop
+keeps its outline, its wall kinds (so the shop fronts and signs the page draws) and its covers; the storeys above, the
+cornice and the parapet are drawn around them (the early shop's style has the plain style's storey, seed and corner pier, so
+the ground floor comes out as before). A house the rule cannot fit (no street edge or road to face, a shop front, too
+small, an outline whose main block fills under 0.8 of its rectangle, or more than a quarter of it in front of the front
+line; a shop of one storey, over five, or on a curtain wall) keeps today's look and is counted (`window.CITY.presetDrawStats`,
+and the `[presets] drawn:` console line).
+**Apartments, towers, offices, low blocks and places of worship** (st-ndw9.20): fifteen more presets are drawn behind the same flag, by `js/building-draw-tall.js` (kind `block`) and `js/building-draw-worship.js` (kind `worship`); the helpers all the planners share are in `js/building-draw-kit.js` (the site build refuses cyclic imports). A part keeps its outline and wall kinds; its walls go to a whole number of storeys of the preset's style, and everything else is flat-coloured triangles in the existing hipped-roofs batch, which is always drawn, so balcony bands (a slab edge, its top and underside and a rail: 8 triangles a floor a long side, never a box per balcony), penthouses, crowns, parapets, cornices, domes, towers and spires read from far away. No material, mesh or draw call is added. The merged materials take 16 styles now (`MAX_VARIANTS` in `js/massing-cells.js`, was 8): five more rendered styles (13 of 16 used) and five more curtain-wall styles after the page's three (`CURTAIN_VARIANTS`); each style costs one uniform and one select per parameter in the shader. The group facts (`drawFactsFrom`) add the parts' count, footprint and tallest height, whether a part stands on a podium, the main part's plan proportions (a slab is at least 2.2 : 1 and 28 m long), the religion, tradition and name, and a place of worship's parts (the largest is the nave; a compact part under 45% of its area and taller is the tower). A mid-rise on a group footprint under 300 m2 is probably a house under lidar tree height: it keeps today's look (counted as `house-sized`). No part of these presets lies inside a landmark that has a hand-made model (a test checks it).
+`?gallery=presets` (an internal page: no link to it anywhere; it stands in open water 3 km south of the city, where no street furniture is, and `waterAt` in `js/city-config.js` answers dry inside its rectangle so it can be walked and flown) implies `?massing=1&presets=draw` and stands every
+preset in a row of six synthetic lots on cleared, flat ground with a text label per row; presets with no drawing rule
+stand there in today's look, labelled "not drawn yet". The gallery needs no flag change of its own and does not change the default page.
 
 ### Rebuilding the data
 
@@ -819,6 +861,121 @@ GPU2_REVIEW_DIR=<where gpu2 copies runs back> GPU2=gpu2 GPU2_NAME=slop-toronto-r
   `massingData`, `massingCells`, `culling`, `compile`, the worker's build).
 - **Partial runs.** `--build` rebuilds `dist/` and `dist-main/` first. Without it, both must exist. `REPS`, `SHOTS`,
   `WARM=0` and `PREFIX` are for checking the script itself, not for the baseline.
+
+## The bigger map (st-ndw9.21)
+
+John, 2026-11-17: "I don't want to launch, just launch things. Don't hide them behind these URL query parameters." The default
+desktop page is the bigger map (`explore.html`: the Humber to Victoria Park, the lake to Eglinton; 140,541 building rows). It
+now loads the sidecar and the presets files and draws the building presets inside the downtown frame (x from -7,900 to 3,700 m,
+z from -3,000 to 3,600 m: the detail map's frame, 35,254 outlines), and keeps its boxes everywhere else.
+
+**Why the bigger map refused the outlines.** `row`, `rows` and `rowCheck` were for the detail map's list of 35,266 buildings. The
+bigger map's geodata is built from a bigger download: it holds each of those rows unchanged (all fields equal, found again by
+content and by durable ID), but in another order (only 2,216 sit at the same row number). `massingRows` compared the
+checks, found them different and refused the file whole ("built for other geodata").
+
+**What changed.**
+
+- `data/toronto-massing.bin` carries each record's row in the bigger map's list too (`frameRowDelta`, with `frameRows` and
+  `frameRowCheck`; +2.6 KB gzip, 872,639 to 875,253 bytes). `tools/build-massing.mjs` finds the rows by content in
+  `data/frames/eglinton/toronto-geodata.bin` (and cross-checks every one against the bigger map's durable IDs when
+  `--bigger-ids` gives them). The records are the same on both maps, in the same order, so the presets files, which are keyed by
+  record, need no change: they are checked against the sidecar's own `rowCheck` (`builtFor`, `js/building-presets.js`).
+- `js/massing-data.js` uses whichever list the loaded geodata is, and nothing for any other.
+- `js/main.js` runs the massing block for the default page when the map is the bigger one on a desktop and `presets` is not `0`
+  or `off`. A phone, a low tier (the tier test that chooses the detail map) and `?map=detail` keep the default page; `?massing=1`
+  still asks for the outlines there. The drawing is told by `window.CITY.PRESETS_DRAW_BY_DEFAULT` (it used to rewrite the address
+  with `history.replaceState`). The drawing's modules start loading beside the sidecar's download.
+- `?presets=0` (or `off`) is the old look: no massing, no presets, no file.
+
+**What is drawn, what is not.** Inside the frame the bigger map has 35,284 buildings: today's 35,266 and 18 that stand on the
+frame's line and that the detail map clipped. Of today's, 35,254 have an outline and 12 keep their boxes (11 outlines that
+cross themselves on the decimetre grid and one that touches itself in the source); the 18 keep theirs too. Every other
+building, 105,257 of them, is a box, as before. A building is a record or a box, never both: `tests/massing-bigger-map.test.mjs`
+runs `buildCityBlocks` on the bigger map's geodata and checks that exactly the records' rows lose their boxes, each has one
+collider, and nothing outside the frame has an outline. Two edge effects are expected and were not looked for: a building on the frame's line saw no
+neighbour across it when the sidecar was built, so a party wall against a building outside may be drawn with windows, and the
+presets' joined groups end at the frame's line.
+
+**What it costs** (the default page B against `?presets=0` A, the shared Mac mini, five alternating pairs, uncapped, 6 s windows;
+spreads are min to max; one or two windows a place failed to give a valid sample):
+
+| place | median frame ms A / B | CPU submission ms A / B | draw calls A / B | triangles (M) A / B |
+|---|---|---|---|---|
+| Cabbagetown, Spruce St | 21.46 / 24.50 | 21.17 / 23.95 | 1,083 / 1,130 | 7.64 / 8.78 |
+| Queen West at Augusta | 15.85 / 18.55 | 15.55 / 18.34 | 1,030 / 1,057 | 5.56 / 6.43 |
+| Financial District from 300 m | 15.12 / 19.15 | 14.79 / 18.86 | 958 / 957 | 4.80 / 5.78 |
+| St. James Town | 17.68 / 20.30 | 17.38 / 20.04 | 929 / 927 | 5.70 / 6.47 |
+| outside the frame (Yonge and Eglinton) | 12.50 / 12.27 | 12.16 / 11.82 | 630 / 626 | 3.17 / 3.05 |
+
+Inside the frame the page is slower by 2.6 to 4.0 ms a frame (+17 to +27%), far outside the spreads (0.0 to 0.5 ms); outside the
+frame there is no difference.
+
+**Where the cost is (the cause hunt, st-ndw9.21).** It is not the bigger map: uncapped, the detail map's `?massing=1` against its
+boxes costs +1.3 to +2.4 ms at the same four places (the earlier detail-map numbers were vsync-capped, and a capped window hides
+it). Six arms, five alternating rounds, median frame ms at Cabbagetown: detail boxes 19.7, detail outlines 19.9, detail outlines
+with presets 21.9; bigger map boxes 21.4, outlines 22.8, outlines with presets 25.1. The sun shadow costs the same with or
+without the drawn buildings (about 6.5 ms either way); the frame is not pixel-bound (at `?scale=0.4` the difference stays or
+grows); hiding the buildings group takes 1.1 ms off the boxes page and 3.8 ms off the drawn page. What is drawn: the
+visible triangles go from 0.34 M of boxes and 0.14 M of roofs (the one `HippedRoofs` mesh) to 1.0 M of massing meshes and 1.27 M of
+roofs, and the stand-ins from 0.28 M to 0.73 M. The roofs' single mesh over the whole city cannot be culled by the frustum, but cutting it in
+1 km cells (built and measured) saved only 0.1 to 1.1 M triangles and 0 to 1.0 ms and cost +1.0 s of load, so it was left out. The
+boxes the outlines replace are not built (157,736 box instances on the bigger map's boxes page, 113,898 with the outlines) or traversed.
+
+The load (+3.5 s to ready, in the inclusive profile of the bigger map's load): building the buildings +1.2 s (planning the 20,709 drawn houses,
+0.65 s, the rest the outline path), scene culling +1.0 s (the far band's bounds and the shadow stand-ins of 1.3 M near triangles), the sidecar
+and presets download and decode 0.2 s, shader compile +0.15 s, and 0.4 s of releasing CPU copies right after the reveal. Fixes kept
+(each exact: same numbers, same pixels; tests): the massing meshes' geometry box from the worker's own pass, the stand-ins read
+straight from the snorm16 arrays, the roofs' box and sphere in one pass, the sidecar and presets files requested at the top of the build,
+a row-wise inside count in the house planner, and the planner's road searches shared with the loop. Together they took 0.3 s off the
+drawn page and 0.5 s off the boxes page (21.7 s to 21.2 s; 25.1 s to 24.8 s): ready is still about +3.6 s over the boxes.
+
+Time to ready 21.5 s (20.8 to 22.1) with `?presets=0`, 24.3 s (23.8 to 24.6) with the drawn buildings: +2.8 s, of which the
+`blocks` step is +1.1 s (the polygons and the presets' planning on the main thread), `culling` +0.7 s (636 more meshes), the
+sidecar and presets download and decode 0.2 s (`massingData`), and `compile` +0.15 s. The worker's cells are ready by then
+(`massingCells` 1 ms), so the buildings are drawn from the first frame: nothing pops from boxes to drawn. Bytes: 949,381 of data
+(875,253 + 14,449 + 59,679) and 138,272 of script (about 47 KB gzip). Geometry: 88.1 MiB (near 49.3, mid 20.4, far 15.9) for
+the 35,195 drawn buildings. Twenty repeat loads: 20,709 houses drawn each time, no page error, no warning from the massing or
+presets code (ready 22.3 to 23.8 s).
+
+**Detail by distance (st-ndw9.21, second pass).** The drawn roofs are no longer one mesh over the city: per 500 m cell a full roof
+(drawn within 250 m of the camera), a far roof (the roof planes and the walls under them, without dormers, bargeboards, attic windows,
+timbering, gable bands, bay roofs, vestibule roofs, garage and picture-window quads: `pushRoof(A, lod)` in `js/building-draw.js`)
+within 1,200 m, and none beyond (the massing cells' far tier, the boxes, stands in), and the roofs of the towers, shops and places of
+worship (their balcony bands, crowns and penthouses read from any distance, so they are always drawn: 0.58 M triangles, one mesh, because scene-culling
+cuts the cells' roofs together again as one family; one mesh a cell was measured and was worse downtown, +0.8 ms and +90 draws). The roofs'
+arrays are filled per cell as the houses are planned, so there is no splitting pass. The shadow stand-ins of the near tier come from the worker
+without the near-only parts (bays, porches, piers), and the roofs' stand-in is the far roof. The tier limits of the massing cells are 250 m and
+1,200 m (were 600 m and 1,600 m). The first pass of the house planner asks for the front line alone (`frameOnly`: identical shifts, checked on all
+31,430 houses). Measured against the boxes page, five alternating rounds, uncapped (tag z1): median frame ms +3.1 / +2.4 / +2.9 / +2.0 at
+Cabbagetown, Queen West, the Financial District and St. James Town (was +3.8 / +3.4 / +3.8 / +2.7), 0.0 outside the frame; visible triangles
++1.1 M at Cabbagetown (was +1.75 M); time to ready +3.0 s (was +3.6 s; the machine's boxes runs ranged 20.9 to 24.6 s). Not met: the near
+tier is 0.6 M triangles in the three cells round the camera (590,000 in 3 cells: about 200,000 a cell in a dense street) drawn whole
+though most of it is behind the camera, and 250 m cells (BLOCK 500, SUB 250) took only 0.5 ms more off for 170 more draws, so they were not kept.
+
+## Trimming the drawn buildings (st-ndw9.22)
+
+PR #175 launched the drawn buildings at +2.0 to +3.1 ms a frame inside the downtown frame and +3.0 s to ready. What was measured
+(uncapped, the Mac mini, `tools/capture-drawn-default.sh`):
+
+- **Where the frame goes** (Cabbagetown, median ms with a class hidden, `JOB=probe2`): all buildings 2.8 ms against 1.0 on the boxes page;
+  the towers' roofs 0.9, the massing far tier 0.8, near tier 0.4, mid tier 0.2, the near roofs 0.2; the sun shadow pass 6.8 against 5.9,
+  of which the stand-ins 0.5. The earlier "the near tier is 0.6 M triangles in three cells, drawn whole" counted meshes whose `visible` flag
+  was set; in the camera's view the near tier is tens of thousands of triangles. `JOB=viewtris` counts what the frustum really holds.
+- **Cells in view.** Every massing mesh draws only the cells whose box meets the camera's frustum (`MC.quarterRuns`; the near tier by 250 m
+  quarter, `quarters` from the worker; at most four runs a near mesh, two a mid or far one; a view that sees none draws none).
+- **The towers' roofs** (0.58 M triangles, always drawn from anywhere) are one mesh of 500 m cells back to back in Morton order; each
+  frame draws the runs of the cells in view (`MC.cellRuns`, at most six draws). A cell reaching over the detail frame's edge keeps its own
+  mesh (scene-culling cuts those). In view: Queen West 0.58 M to 0.39 M, Financial 0.58 M to 0.29 M, Cabbagetown 0.58 M to 0.51 M.
+- **Stand-ins.** The near massing stand-in is built in the worker from outlines simplified at 1.25 m (the mid tier's) without the walls a
+  neighbour covers whole, as world-space triangles per 500 m cell; the roofs' is the far roof without soffits and fascia boards
+  (`MC.roofShadowStandIn`: gable 12 to 6 triangles, hip 16 to 6, ridge height kept). scene-culling hands both to the cell proxies as they
+  are, and bins a plain float mesh (the towers' roofs) straight from its array. Cell proxies 3.13 M to 1.90 M triangles city-wide, 212 k
+  to 151 k within 700 m at Cabbagetown. The frame did not move with it (the stand-ins cost about 0.5 ms hidden or not, before and
+  after): kept for the load (scene culling 2,178 to 1,907 ms, three runs each) and the memory.
+- **Patios** (`st-ndw9.23`): see docs/cafeto-patios.md.
+- **Towers' balcony bands** are untouched (a look decision). With every second floor's band left out, in view -0.06 to -0.15 M
+  triangles and -0.0 to -0.3 ms (tools/shots/drawn-bands.json frames).
 
 ## Pilot evidence
 

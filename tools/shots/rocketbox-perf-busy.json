@@ -1,0 +1,12 @@
+[
+ {
+  "name": "rb-perf-busy",
+  "mode": "person",
+  "time": "midday",
+  "x": 130,
+  "z": -345,
+  "js": "window.__rbWait(8000).then(() => window.__rbFace(130, -345)).then(() => window.__rbWait(3000))",
+  "wait": 1500,
+  "record": true
+ }
+]

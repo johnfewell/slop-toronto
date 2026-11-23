@@ -1,0 +1,18 @@
+[
+ {
+  "name": "stepoff",
+  "js": "(async () => { const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz)); await __pcSleep(9000); window.__pcClear = true; const f = await __pcFind(5, 300000, 8); __pcView('high'); const l = await __pcLead(4); __pcStepLogStart(); return { f, l }; })()",
+  "wait": 100,
+  "record": true,
+  "screencastMs": 22000,
+  "screencastQuality": 85,
+  "mode": "person",
+  "time": "midday"
+ },
+ {
+  "name": "stepoff-end",
+  "js": "(async () => ({ log: __pcStepLogStop(), near: __pcOverlap() }))()",
+  "wait": 100,
+  "record": true
+ }
+]

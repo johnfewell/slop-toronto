@@ -1,0 +1,23 @@
+[
+ {
+  "name": "qw-augusta-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()"
+ },
+ {
+  "name": "qw-augusta-close",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1380, -709, 0); app.cameraSystem.cinema = () => ({ pos: [-1380, 1.7, -709], look: [-1370.6, 4, -714.5], fov: 65 }); })()"
+ },
+ {
+  "name": "qw-augusta-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1446.6, -714.4, 0); app.cameraSystem.cinema = () => ({ pos: [-1446.6, 90, -714.4], look: [-1370.6, 0, -713.3], fov: 55 }); })()"
+ }
+]

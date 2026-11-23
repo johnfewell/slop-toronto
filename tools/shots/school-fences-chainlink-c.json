@@ -1,0 +1,38 @@
+[
+ {
+  "name": "oscar-face3-midday",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-6665.343759885089, g(-6665.343759885089,-5870.500527204745)+1.7, -5870.500527204745], look:[-6665.4, g(-6665.4,-5873.5)+1.2, -5873.5], fov:55}); })()"
+ },
+ {
+  "name": "marketlane-face3-midday",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[1338.9329980036812, g(1338.9329980036812,-120.20018148353054)+1.7, -120.20018148353054], look:[1338.9, g(1338.9,-123.2)+1.2, -123.2], fov:55}); })()"
+ },
+ {
+  "name": "givins-face3-midday",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-2873.499540730486, g(-2873.499540730486,-914.8524919627835)+1.7, -914.8524919627835], look:[-2870.5, g(-2870.5,-914.8)+1.2, -914.8], fov:55}); })()"
+ },
+ {
+  "name": "stnicholas-face3-midday",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-4948.9, g(-4948.9,-5617.7)+1.7, -5617.7], look:[-4948.9, g(-4948.9,-5620.7)+1.2, -5620.7], fov:55}); })()"
+ },
+ {
+  "name": "delasalle-face3-midday",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-164.4, g(-164.4,-4479.6)+1.7, -4479.6], look:[-164.4, g(-164.4,-4476.6)+1.2, -4476.6], fov:55}); })()"
+ },
+ {
+  "name": "rockcliffe-face3-midday",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7418.714815500778, g(-7418.714815500778,-5624.106573805452)+1.7, -5624.106573805452], look:[-7420.2, g(-7420.2,-5621.5)+1.2, -5621.5], fov:55}); })()"
+ }
+]

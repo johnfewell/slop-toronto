@@ -1,0 +1,33 @@
+[
+ {
+  "name": "crowd-midday",
+  "mode": "person",
+  "time": "midday",
+  "x": 150,
+  "z": 0,
+  "js": "window.__rbWait(8000).then(() => window.__rbFace(150, 0)).then((f) => window.__rbWait(4000).then((r) => ({ face: f, pose: window.__rbPose(), count: window.__rbCount(13), ...r })))",
+  "wait": 500,
+  "record": true,
+  "screencastMs": 12000
+ },
+ {
+  "name": "crowd-midday-log",
+  "js": "new Promise((r) => setTimeout(() => r(window.__rbCountLog), 1500))",
+  "wait": 100,
+  "record": true
+ },
+ {
+  "name": "crowd-midnight",
+  "time": "midnight",
+  "js": "window.__rbWait(3000).then((r) => ({ count: window.__rbCount(13), ...r }))",
+  "wait": 500,
+  "record": true,
+  "screencastMs": 12000
+ },
+ {
+  "name": "crowd-midnight-log",
+  "js": "new Promise((r) => setTimeout(() => r(window.__rbCountLog), 1500))",
+  "wait": 100,
+  "record": true
+ }
+]

@@ -1,0 +1,30 @@
+[
+ {
+  "name": "kensington-market",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1252, -1290, 0); app.cameraSystem.cinema = () => ({ pos: [-1252, 1.7, -1290], look: [-1256, 6, -1420], fov: 60 }); setTimeout(() => console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")), 5000); })()"
+ },
+ {
+  "name": "cabbagetown",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1785, -1868, 0); app.cameraSystem.cinema = () => ({ pos: [1785, 1.7, -1868], look: [1785, 6, -2000], fov: 60 }); setTimeout(() => console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")), 5000); })()"
+ },
+ {
+  "name": "financial-aerial",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 220, -60], look: [420, 0, -520], fov: 60 }); setTimeout(() => console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")), 5000); })()"
+ },
+ {
+  "name": "whole-frame-aerial",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1500, 400, 0); app.cameraSystem.cinema = () => ({ pos: [-1500, 900, 400], look: [-1500, 0, -900], fov: 60 }); setTimeout(() => console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")), 5000); })()"
+ }
+]

@@ -8,7 +8,7 @@ const source = readFileSync(join(__dirname, '../js/traffic.js'), 'utf8');
 function harness(overrides = {}) {
   const context = {
     clock: 10, pedRange: 40, PED_AVOID_INTERVAL: 0.12, PEDESTRIAN_DIVE_DURATION: 2.5,
-    KERB: 1.6, QUEUE_GAP: 0.62, peds: [],
+    KERB: 1.6, QUEUE_GAP: 0.62, peds: [], crowdOn: false, crowdCtx: { canTurn: () => false }, crowdStats: {},
     player: { x: 0, z: 0, y: 0, fx: 0, fz: 1, vx: 0, vz: 20, halfW: 0.86, halfL: 2.18 },
     pedGround: () => 0, mayCross: () => false, mayCrossMid: () => true,
     curbProgress: p => p.dir > 0 ? p.t : p.len - p.t,

@@ -1,0 +1,20 @@
+[
+ {
+  "name": "perf-kensington-market",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1252, -1290, 0); app.cameraSystem.cinema = () => ({ pos: [-1252, 1.7, -1290], look: [-1256, 6, -1420], fov: 60 }); setTimeout(() => console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")), 5000); })()",
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ },
+ {
+  "name": "perf-cabbagetown",
+  "mode": "person",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1785, -1868, 0); app.cameraSystem.cinema = () => ({ pos: [1785, 1.7, -1868], look: [1785, 6, -2000], fov: 60 }); setTimeout(() => console.log(\"[requests] \" + performance.getEntriesByType(\"resource\").map((e) => e.name.replace(location.origin, \"\").split(\"?\")[0]).filter((v, i, a) => a.indexOf(v) === i).sort().join(\" \")), 5000); })()",
+  "metricsMs": 6000,
+  "metricsWarmupMs": 2000
+ }
+]

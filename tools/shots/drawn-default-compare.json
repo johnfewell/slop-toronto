@@ -1,0 +1,44 @@
+[
+ {
+  "name": "cabbagetown-midday",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "name": "cabbagetown-midnight",
+  "time": "midnight",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "name": "queenwest-midday",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()"
+ },
+ {
+  "name": "queenwest-midnight",
+  "time": "midnight",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()"
+ },
+ {
+  "name": "financial300-midday",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "name": "financial300-midnight",
+  "time": "midnight",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "name": "collide",
+  "record": true,
+  "wait": 500,
+  "js": "(() => { const A = window.__CITY_APP, C = window.CITY, W = C.WorldCollision; const cols = A.cityBlocks.colliders.filter((c) => c.massing && c.polygon);\n let tested = 0, hitInside = 0, clearOutside = 0, tooClose = 0; const res = { massingColliders: cols.length, total: A.cityBlocks.colliders.length };\n const step = Math.max(1, Math.floor(cols.length / 1500));\n for (let k = 0; k < cols.length; k += step) { const c = cols[k], P = c.polygon; if (P.length < 3) continue;\n  let best = null, bl = 0; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length], l = Math.hypot(b.x - a.x, b.z - a.z); if (l > bl) { bl = l; best = [a, b]; } }\n  const [a, b] = best, dx = (b.x - a.x) / bl, dz = (b.z - a.z) / bl, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;\n  const nx = dz, nz = -dx; // outward (right-hand)\n  const inP = W.circleShape(mx - nx * 0.15, mz - nz * 0.15, 0.3), outP = W.circleShape(mx + nx * 1.5, mz + nz * 1.5, 0.3);\n  tested++; if (W.contact(inP, c)) hitInside++; if (!W.contact(outP, c)) clearOutside++; }\n res.tested = tested; res.hitInside = hitInside; res.clearOutside = clearOutside; return res; })()"
+ }
+]

@@ -1,0 +1,19 @@
+[
+ {
+  "name": "solo-female-adult-17",
+  "mode": "person",
+  "time": "midday",
+  "x": 150,
+  "z": 0,
+  "js": "window.__rbWait(8000).then(() => window.__rbFace(150, 0)).then(() => window.__rbPose(['female-adult-17'], 45000)).then((pose) => ({ pose, files: window.CITY.rocketbox.report().files, drawnByPerson: window.CITY.rocketbox.report().drawnByPerson, count: window.__rbCount(13) }))",
+  "wait": 500,
+  "record": true,
+  "screencastMs": 9000
+ },
+ {
+  "name": "solo-female-adult-17-log",
+  "js": "new Promise((r) => setTimeout(() => r(window.__rbCountLog), 1500))",
+  "wait": 100,
+  "record": true
+ }
+]

@@ -1,0 +1,110 @@
+[
+ {
+  "name": "oscar-face-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-6665.25, g(-6665.25,-5865.5)+1.7, -5865.5], look:[-6665.4, g(-6665.4,-5873.5)+1.2, -5873.5], fov:62}); })()"
+ },
+ {
+  "name": "oscar-above90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-6665.4, g(-6665.4,-5873.5)+90, -5821.3], look:[-6665.4, g(-6665.4,-5873.5), -5873.5], fov:55}); })()"
+ },
+ {
+  "name": "oscar-down90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-6665.4, g(-6665.4,-5873.5)+90, -5872], look:[-6665.4, g(-6665.4,-5873.5), -5873.5], fov:55}); })()"
+ },
+ {
+  "name": "marketlane-face-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[1339.12, g(1339.12,-103.2)+1.7, -103.2], look:[1338.9, g(1338.9,-123.2)+1.2, -123.2], fov:62}); })()"
+ },
+ {
+  "name": "marketlane-above90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[1338.9, g(1338.9,-123.2)+90, -71], look:[1338.9, g(1338.9,-123.2), -123.2], fov:55}); })()"
+ },
+ {
+  "name": "marketlane-down90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[1338.9, g(1338.9,-123.2)+90, -121.7], look:[1338.9, g(1338.9,-123.2), -123.2], fov:55}); })()"
+ },
+ {
+  "name": "givins-face-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-2878.5, g(-2878.5,-914.94)+1.7, -914.94], look:[-2870.5, g(-2870.5,-914.8)+1.2, -914.8], fov:62}); })()"
+ },
+ {
+  "name": "givins-above90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-2870.5, g(-2870.5,-914.8)+90, -862.5999999999999], look:[-2870.5, g(-2870.5,-914.8), -914.8], fov:55}); })()"
+ },
+ {
+  "name": "givins-down90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-2870.5, g(-2870.5,-914.8)+90, -913.3], look:[-2870.5, g(-2870.5,-914.8), -914.8], fov:55}); })()"
+ },
+ {
+  "name": "stnicholas-face-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-4948.9, g(-4948.9,-5612.7)+1.7, -5612.7], look:[-4948.9, g(-4948.9,-5620.7)+1.2, -5620.7], fov:62}); })()"
+ },
+ {
+  "name": "stnicholas-above90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-4948.9, g(-4948.9,-5620.7)+90, -5568.5], look:[-4948.9, g(-4948.9,-5620.7), -5620.7], fov:55}); })()"
+ },
+ {
+  "name": "stnicholas-down90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-4948.9, g(-4948.9,-5620.7)+90, -5619.2], look:[-4948.9, g(-4948.9,-5620.7), -5620.7], fov:55}); })()"
+ },
+ {
+  "name": "delasalle-face-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-164.4, g(-164.4,-4484.6)+1.7, -4484.6], look:[-164.4, g(-164.4,-4476.6)+1.2, -4476.6], fov:62}); })()"
+ },
+ {
+  "name": "delasalle-above90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-164.4, g(-164.4,-4476.6)+90, -4424.400000000001], look:[-164.4, g(-164.4,-4476.6), -4476.6], fov:55}); })()"
+ },
+ {
+  "name": "delasalle-down90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-164.4, g(-164.4,-4476.6)+90, -4475.1], look:[-164.4, g(-164.4,-4476.6), -4476.6], fov:55}); })()"
+ },
+ {
+  "name": "rockcliffe-face-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7416.24, g(-7416.24,-5628.45)+1.7, -5628.45], look:[-7420.2, g(-7420.2,-5621.5)+1.2, -5621.5], fov:62}); })()"
+ },
+ {
+  "name": "rockcliffe-above90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7420.2, g(-7420.2,-5621.5)+90, -5569.3], look:[-7420.2, g(-7420.2,-5621.5), -5621.5], fov:55}); })()"
+ },
+ {
+  "name": "rockcliffe-down90-golden",
+  "time": "golden",
+  "wait": 5000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const a=window.__CITY_APP, C=window.CITY; const g=(x,z)=>C.terrainHeightAt?C.terrainHeightAt(x,z):0; a.cameraSystem.cinema=()=>({pos:[-7420.2, g(-7420.2,-5621.5)+90, -5620], look:[-7420.2, g(-7420.2,-5621.5), -5621.5], fov:55}); })()"
+ }
+]

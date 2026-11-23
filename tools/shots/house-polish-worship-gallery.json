@@ -1,0 +1,212 @@
+[
+ {
+  "name": "church-gothic-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2444.5, 3188, 0); app.cameraSystem.cinema = () => ({ pos: [-2444.5, 1.7, 3188], look: [-2444.5, 4.5, 3154.5], fov: 62 }); })()"
+ },
+ {
+  "name": "church-gothic-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2386.5, 3185, 0); app.cameraSystem.cinema = () => ({ pos: [-2386.5, 1.7, 3185], look: [-2400.5, 5, 3154.5], fov: 68 }); })()"
+ },
+ {
+  "name": "church-gothic-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2372.5, 3206, 0); app.cameraSystem.cinema = () => ({ pos: [-2372.5, 40, 3206], look: [-2372.5, 0, 3154.5], fov: 62 }); })()"
+ },
+ {
+  "name": "church-gothic-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2425, 3178.5, 0); app.cameraSystem.cinema = () => ({ pos: [-2425, 1.7, 3178.5], look: [-2444.5, 5, 3154.5], fov: 66 }); })()"
+ },
+ {
+  "name": "church-chapel-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2452, 3129, 0); app.cameraSystem.cinema = () => ({ pos: [-2452, 1.7, 3129], look: [-2452, 4.5, 3104], fov: 62 }); })()"
+ },
+ {
+  "name": "church-chapel-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2404, 3126, 0); app.cameraSystem.cinema = () => ({ pos: [-2404, 1.7, 3126], look: [-2418, 5, 3104], fov: 68 }); })()"
+ },
+ {
+  "name": "church-chapel-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2395, 3147, 0); app.cameraSystem.cinema = () => ({ pos: [-2395, 40, 3147], look: [-2395, 0, 3104], fov: 62 }); })()"
+ },
+ {
+  "name": "church-chapel-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2435, 3128, 0); app.cameraSystem.cinema = () => ({ pos: [-2435, 1.7, 3128], look: [-2452, 5, 3104], fov: 66 }); })()"
+ },
+ {
+  "name": "church-modern-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2431, 3087, 0); app.cameraSystem.cinema = () => ({ pos: [-2431, 1.7, 3087], look: [-2431, 4.5, 3056], fov: 62 }); })()"
+ },
+ {
+  "name": "church-modern-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2355, 3084, 0); app.cameraSystem.cinema = () => ({ pos: [-2355, 1.7, 3084], look: [-2369, 5, 3056], fov: 68 }); })()"
+ },
+ {
+  "name": "church-modern-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2332, 3105, 0); app.cameraSystem.cinema = () => ({ pos: [-2332, 40, 3105], look: [-2332, 0, 3056], fov: 62 }); })()"
+ },
+ {
+  "name": "church-modern-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2407, 3080, 0); app.cameraSystem.cinema = () => ({ pos: [-2407, 1.7, 3080], look: [-2431, 5, 3056], fov: 66 }); })()"
+ },
+ {
+  "name": "mosque-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2106, 3516, 0); app.cameraSystem.cinema = () => ({ pos: [-2106, 1.7, 3516], look: [-2106, 4.5, 3484], fov: 62 }); })()"
+ },
+ {
+  "name": "mosque-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2030, 3513, 0); app.cameraSystem.cinema = () => ({ pos: [-2030, 1.7, 3513], look: [-2044, 5, 3484], fov: 68 }); })()"
+ },
+ {
+  "name": "mosque-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2007, 3534, 0); app.cameraSystem.cinema = () => ({ pos: [-2007, 40, 3534], look: [-2007, 0, 3484], fov: 62 }); })()"
+ },
+ {
+  "name": "mosque-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2082, 3508, 0); app.cameraSystem.cinema = () => ({ pos: [-2082, 1.7, 3508], look: [-2106, 5, 3484], fov: 66 }); })()"
+ },
+ {
+  "name": "synagogue-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2118, 3460, 0); app.cameraSystem.cinema = () => ({ pos: [-2118, 1.7, 3460], look: [-2118, 4.5, 3431], fov: 62 }); })()"
+ },
+ {
+  "name": "synagogue-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2058, 3457, 0); app.cameraSystem.cinema = () => ({ pos: [-2058, 1.7, 3457], look: [-2072, 5, 3431], fov: 68 }); })()"
+ },
+ {
+  "name": "synagogue-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2043, 3478, 0); app.cameraSystem.cinema = () => ({ pos: [-2043, 40, 3478], look: [-2043, 0, 3431], fov: 62 }); })()"
+ },
+ {
+  "name": "synagogue-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2098, 3455, 0); app.cameraSystem.cinema = () => ({ pos: [-2098, 1.7, 3455], look: [-2118, 5, 3431], fov: 66 }); })()"
+ },
+ {
+  "name": "temple-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2112, 3410, 0); app.cameraSystem.cinema = () => ({ pos: [-2112, 1.7, 3410], look: [-2112, 4.5, 3381], fov: 62 }); })()"
+ },
+ {
+  "name": "temple-street2",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2044, 3407, 0); app.cameraSystem.cinema = () => ({ pos: [-2044, 1.7, 3407], look: [-2058, 5, 3381], fov: 68 }); })()"
+ },
+ {
+  "name": "temple-air",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2025, 3428, 0); app.cameraSystem.cinema = () => ({ pos: [-2025, 40, 3428], look: [-2025, 0, 3381], fov: 62 }); })()"
+ },
+ {
+  "name": "temple-corner",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2090, 3405, 0); app.cameraSystem.cinema = () => ({ pos: [-2090, 1.7, 3405], look: [-2112, 5, 3381], fov: 66 }); })()"
+ },
+ {
+  "name": "church-gothic-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2447, 3165, 0); app.cameraSystem.cinema = () => ({ pos: [-2447, 2, 3165], look: [-2468.5, 6, 3154.5], fov: 70 }); })()"
+ },
+ {
+  "name": "church-chapel-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2452, 3109.4, 0); app.cameraSystem.cinema = () => ({ pos: [-2452, 2, 3109.4], look: [-2471, 6, 3104], fov: 70 }); })()"
+ },
+ {
+  "name": "church-modern-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2438, 3065, 0); app.cameraSystem.cinema = () => ({ pos: [-2438, 2, 3065], look: [-2464, 6, 3056], fov: 70 }); })()"
+ },
+ {
+  "name": "mosque-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2113, 3493.6, 0); app.cameraSystem.cinema = () => ({ pos: [-2113, 2, 3493.6], look: [-2139, 6, 3484], fov: 70 }); })()"
+ },
+ {
+  "name": "synagogue-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2121, 3438.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2121, 2, 3438.8], look: [-2143, 6, 3431], fov: 70 }); })()"
+ },
+ {
+  "name": "temple-side",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-2117, 3388.8, 0); app.cameraSystem.cinema = () => ({ pos: [-2117, 2, 3388.8], look: [-2141, 6, 3381], fov: 70 }); })()"
+ }
+]

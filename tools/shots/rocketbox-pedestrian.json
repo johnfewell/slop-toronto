@@ -1,0 +1,39 @@
+[
+  {
+    "name": "rb-close",
+    "mode": "person",
+    "time": "midday",
+    "x": -79,
+    "z": 43,
+    "js": "window.__rbView(4.5, 1.4, false)",
+    "wait": 1000,
+    "record": true,
+    "screencastMs": 9000
+  },
+  {
+    "name": "rb-mid",
+    "js": "window.__rbView(15, 1.7, false)",
+    "wait": 1500,
+    "record": true
+  },
+  {
+    "name": "rb-top",
+    "js": "window.__rbView(0, 60, true)",
+    "wait": 1500,
+    "record": true
+  },
+  {
+    "name": "rb-night-close",
+    "time": "midnight",
+    "js": "window.__rbView(4.5, 1.4, false)",
+    "wait": 4000,
+    "record": true
+  },
+  {
+    "name": "rb-twilight-close",
+    "time": "twilight",
+    "js": "window.__rbView(4.5, 1.4, false)",
+    "wait": 4000,
+    "record": true
+  }
+]

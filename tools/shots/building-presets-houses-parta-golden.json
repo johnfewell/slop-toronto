@@ -1,0 +1,37 @@
+[
+ {
+  "name": "cabbagetown-victorian-semi-air-g",
+  "mode": "person",
+  "time": "golden",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1912.2, -1876.6, 0); app.cameraSystem.cinema = () => ({ pos: [1912.2, 150, -1876.6], look: [1813.4, 0, -1878.5], fov: 60 }); })()"
+ },
+ {
+  "name": "cabbagetown-victorian-row-air-g",
+  "mode": "person",
+  "time": "golden",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1909.7, -1854.6, 0); app.cameraSystem.cinema = () => ({ pos: [1909.7, 150, -1854.6], look: [1815, 0, -1854.6], fov: 60 }); })()"
+ },
+ {
+  "name": "kensington-victorian-row-air-g",
+  "mode": "person",
+  "time": "golden",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1175.9, -1242.7, 0); app.cameraSystem.cinema = () => ({ pos: [-1175.9, 150, -1242.7], look: [-1174, 0, -1339.3], fov: 60 }); })()"
+ },
+ {
+  "name": "kensington-victorian-semi-air-g",
+  "mode": "person",
+  "time": "golden",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1337, -1325.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1337, 150, -1325.6], look: [-1238.7, 0, -1326.7], fov: 60 }); })()"
+ },
+ {
+  "name": "riverdale-edwardian-detached-air-g",
+  "mode": "person",
+  "time": "golden",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(2985, -2676.7, 0); app.cameraSystem.cinema = () => ({ pos: [2985, 150, -2676.7], look: [3083.3, 0, -2672.2], fov: 60 }); })()"
+ }
+]

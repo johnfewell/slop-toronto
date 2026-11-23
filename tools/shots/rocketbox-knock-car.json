@@ -1,0 +1,20 @@
+[
+ {
+  "name": "knock-car",
+  "mode": "car",
+  "time": "midday",
+  "x": -287,
+  "z": -1562,
+  "heading": 0,
+  "js": "window.__rbKnock({ kind: 'car', seconds: 14 })",
+  "wait": 200,
+  "record": true,
+  "screencastMs": 12000
+ },
+ {
+  "name": "knock-car-log",
+  "js": "new Promise((r) => setTimeout(() => r({ summary: window.__rbKnockSummary(), log: window.__rbKnockLog }), 2500))",
+  "wait": 100,
+  "record": true
+ }
+]

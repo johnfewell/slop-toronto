@@ -1,0 +1,14 @@
+[
+  {"name":"ob-stjames","time":"midday","wait":6000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.650537,-79.374001);const o=56.6;A.cameraSystem.cinema=()=>({pos:[w.x+o,80,w.z+o],look:[w.x,6,w.z],fov:45});})()"},
+  {"name":"ob-stmichael","time":"midday","wait":4000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.654930,-79.377401);const o=56.6;A.cameraSystem.cinema=()=>({pos:[w.x+o,80,w.z+o],look:[w.x,6,w.z],fov:45});})()"},
+  {"name":"ob-metropolitan","time":"midday","wait":4000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.653919,-79.376706);const o=56.6;A.cameraSystem.cinema=()=>({pos:[w.x+o,80,w.z+o],look:[w.x,6,w.z],fov:45});})()"},
+  {"name":"ob-ansheiminsk","time":"midday","wait":4000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.654447,-79.399504);const o=56.6;A.cameraSystem.cinema=()=>({pos:[w.x+o,80,w.z+o],look:[w.x,6,w.z],fov:45});})()"},
+  {"name":"ob-jamimosque","time":"midday","wait":4000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.653451,-79.454526);const o=56.6;A.cameraSystem.cinema=()=>({pos:[w.x+o,80,w.z+o],look:[w.x,6,w.z],fov:45});})()"},
+  {"name":"ob-kadampatemple","time":"midday","wait":4000,
+   "js":"(()=>{const C=window.CITY,A=window.__CITY_APP;const w=C.worldFromLatLon(43.660647,-79.420893);const o=56.6;A.cameraSystem.cinema=()=>({pos:[w.x+o,80,w.z+o],look:[w.x,6,w.z],fov:45});})()"}
+]

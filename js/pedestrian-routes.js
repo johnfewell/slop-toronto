@@ -650,7 +650,17 @@ function createPedestrianRoutes({ walkable: roadWalkable, onSidewalk, midCrossin
     return !!block && onSidewalk(target.x, target.z) && cornerClear(p, target, block, false, walkable);
   }
 
-  return { along, across, acrossMid, next, links, stats, canDodge };
+  // May a person stand at (x, z)? On the curb island and clear of the buildings (not of the furniture: people
+  // wait among the signal poles and signs at a corner), for the places in the group waiting at a curb (traffic.js)
+  // (`loose`: on the island alone, among the poles & furniture as well)
+  // (`free`: not on the island: clear of the buildings alone, for someone already at the curb's edge, where the island's
+  // outline is rough)
+  function canStand(x, z, loose = false, free = false) {
+    if (free) return roadWalkable(x - 0.3, x + 0.3, z - 0.3, z + 0.3);
+    return !!blockAt(x, z) && (loose || roadWalkable(x - 0.3, x + 0.3, z - 0.3, z + 0.3));
+  }
+
+  return { along, across, acrossMid, next, links, stats, canDodge, canStand };
 }
 
 Object.assign(window.CITY, { createPedestrianRoutes });

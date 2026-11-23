@@ -1,0 +1,26 @@
+[
+ {
+  "name": "m-cabbagetown",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "name": "t-cabbagetown",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene; const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const R = { tiers: {}, cells: A.cityBlocks && A.cityBlocks.massingCellTiers ? A.cityBlocks.massingCellTiers() : null };\n scene.traverse((o) => { if (!/^MassingBuildings_/.test(o.name)) return; const g = o.geometry, tri = (g.index ? g.index.count : g.attributes.position.count) / 3, dr = g.drawRange; const n = dr.count === Infinity ? tri : dr.count / 3; const t = o.userData.massingTier; const k = R.tiers[t] || (R.tiers[t] = { meshes: 0, visible: 0, totalTris: 0, drawnTris: 0 }); k.meshes++; k.totalTris += tri; if (vis(o)) { k.visible++; k.drawnTris += n; } });\n const st = window.CITY.massingStats; R.cellTiers = st && st.cellTiers; return R; })()"
+ },
+ {
+  "name": "m-financial300",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(420, -60, 0); app.cameraSystem.cinema = () => ({ pos: [420, 300, -60], look: [420, 0, -520], fov: 60 }); })()"
+ },
+ {
+  "name": "t-financial300",
+  "record": true,
+  "wait": 300,
+  "js": "(() => { const A = window.__CITY_APP, scene = A.scene; const vis = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };\n const R = { tiers: {}, cells: A.cityBlocks && A.cityBlocks.massingCellTiers ? A.cityBlocks.massingCellTiers() : null };\n scene.traverse((o) => { if (!/^MassingBuildings_/.test(o.name)) return; const g = o.geometry, tri = (g.index ? g.index.count : g.attributes.position.count) / 3, dr = g.drawRange; const n = dr.count === Infinity ? tri : dr.count / 3; const t = o.userData.massingTier; const k = R.tiers[t] || (R.tiers[t] = { meshes: 0, visible: 0, totalTris: 0, drawnTris: 0 }); k.meshes++; k.totalTris += tri; if (vis(o)) { k.visible++; k.drawnTris += n; } });\n const st = window.CITY.massingStats; R.cellTiers = st && st.cellTiers; return R; })()"
+ }
+]

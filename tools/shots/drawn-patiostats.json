@@ -1,0 +1,10 @@
+[
+ {
+  "name": "patiostats",
+  "mode": "person",
+  "time": "midday",
+  "wait": 1500,
+  "record": true,
+  "js": "(() => { const s = window.CITY.patioStats || {}; return { layout: s.layout, fingerprint: s.fingerprint, accepted: s.accepted, placed: s.placed, rejected: s.rejected, season: s.season, date: s.date, search: location.search }; })()"
+ }
+]

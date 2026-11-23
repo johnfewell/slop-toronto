@@ -1,0 +1,12 @@
+[
+ {
+  "name": "both",
+  "js": "(async () => { const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz));  await __pcSleep(9000); const f = await __pcFindBoth(3, 180000); const l = await __pcLead(2.5); return { f, l }; })()",
+  "wait": 100,
+  "record": true,
+  "screencastMs": 16000,
+  "screencastQuality": 85,
+  "mode": "person",
+  "time": "midday"
+ }
+]

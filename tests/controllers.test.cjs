@@ -925,3 +925,202 @@ test('st-phq5: across the Prince Edward Viaduct over the Don on foot, by bike & 
     }
   }
 });
+
+test('cyclist braking stops briskly, pauses at zero before reversing, and supports Space handbrake', () => {
+  function bikeHarness(speed = 0, colliders = []) {
+    const { controller, ent: cyclist } = teleportHarness('cyclist', colliders);
+    Object.assign(cyclist.position, { x: 0, y: 0, z: 0 });
+    Object.assign(cyclist, { heading: 0, speed });
+    controller.keys.boost = false;
+    return { controller, cyclist };
+  }
+
+  // Holding S from cruising speed (12 m/s) stops in ~6.5 m and pauses cleanly at 0 before backing up
+  const sBrake = bikeHarness(12);
+  sBrake.controller.keys.backward = true;
+  for (let i = 0; i < 72; i++) sBrake.controller.updateCyclist(1 / 60); // 1.2 s
+  assert.equal(sBrake.cyclist.speed, 0, 'S brake brings the bicycle to a clean stop without immediately reversing');
+  assert.ok(sBrake.cyclist.position.z > 5.5 && sBrake.cyclist.position.z < 7.5,
+    `bicycle stops within ~6.5 m from 12 m/s (got ${sBrake.cyclist.position.z.toFixed(2)} m)`);
+
+  // Continuing to hold S past the brief stop hold engages gentle reverse
+  for (let i = 0; i < 30; i++) sBrake.controller.updateCyclist(1 / 60);
+  assert.ok(sBrake.cyclist.speed < -0.5, 'continuing to hold S after stopping backs the bike up');
+
+  // Holding Space (keys.up) brakes to a complete stop and never reverses
+  const handbrake = bikeHarness(15);
+  handbrake.controller.keys.up = true;
+  for (let i = 0; i < 150; i++) handbrake.controller.updateCyclist(1 / 60);
+  assert.equal(handbrake.cyclist.speed, 0, 'Space handbrake stops at zero and never reverses');
+  assert.ok(handbrake.cyclist.position.z < 11.5, 'Space handbrake stops crisply from high speed');
+
+  // Wall-blocked cyclist clamps phantom speed so braking/reversing away works immediately.
+  // (Toronto's contact resolution keeps a G.SKIN gap, so a pinned bike can creep one skin-width every other
+  // frame; the clamp holds it to a single frame's acceleration, ~0.11 m/s, instead of building toward 12.8)
+  const blocked = bikeHarness(0, [{ minX: -10, maxX: 10, minZ: 0.5, maxZ: 10, maxY: 30 }]);
+  blocked.controller.keys.forward = true;
+  let peak = 0;
+  for (let i = 0; i < 120; i++) { blocked.controller.updateCyclist(1 / 60); peak = Math.max(peak, blocked.cyclist.speed); }
+  assert.ok(peak < 0.15, `wall-blocked cyclist clamps phantom speed (peak ${peak.toFixed(3)} m/s)`);
+});
+
+// The on-foot player (mrdoob's 536a907, st-iq0v.1.5): a crouch before take-off, an airborne flag, a landing, a blob
+// shadow pinned to the ground, and no speed built up against a wall
+function walkerHarness({ ground = () => 0, colliders = [], speed = 0 } = {}) {
+  const { controller, ent: person } = teleportHarness('person', colliders);
+  controller.getGroundHeight = (x, z, mode) => mode === 'person' ? ground(x, z) : 0;
+  const airs = [];
+  const shadow = { position: { y: 0.02 }, scale: { x: 1, y: 1, z: 1, set(x, y, z) { this.x = x; this.y = y; this.z = z; } } };
+  Object.assign(person, {
+    position: Object.assign(person.position, { x: 0, y: ground(0, 0), z: 0 }),
+    heading: 0, speed, verticalVel: 0, jumping: false, jumpPrep: 0, shadow
+  });
+  person.rig = { placed: true, update(_dt, _x, _z, _h, _g, _o, air) { airs.push(air); } };
+  person.crowd = { updates: 0, begin() {}, add() {}, end() {} };
+  controller.entities.cyclist = { type: 'cyclist', position: { x: 9999, y: 0, z: 9999 }, _riderHidden: true };
+  controller.keys.boost = false;
+  const frame = (dt = 1 / 60) => {
+    controller.updatePerson(dt);
+    controller.poseCharacters(dt, person.position);
+    return airs[airs.length - 1];
+  };
+  return { controller, person, shadow, airs, frame };
+}
+
+test('walk mode jump: a 0.085 s crouch with negative air, take-off, airborne with positive air, landing clears the flags', () => {
+  const h = walkerHarness();
+  h.controller.keys.up = true;
+  const timeline = [];
+  for (let i = 0; i < 60; i++) {
+    if (i === 1) h.controller.keys.up = false;
+    const air = h.frame();
+    timeline.push({ air, jumping: h.person.jumping, prep: h.person.jumpPrep, y: h.person.position.y });
+  }
+  // crouch: frames 0 and 1 (2 x 1/60 s > 0.085 s): prep runs down, air is negative, not yet airborne
+  assert.ok(timeline[0].prep > 0 && timeline[0].air < 0 && timeline[0].air > -1 && !timeline[0].jumping, 'first frame crouches');
+  assert.ok(timeline[1].prep > 0 && timeline[1].air < timeline[0].air + 1 && timeline[1].air < 0, 'still crouching');
+  const takeoff = timeline.findIndex((t) => t.jumping);
+  assert.ok(takeoff >= 2 && takeoff <= 6, `take-off after ~0.085 s of crouch (frame ${takeoff})`);
+  assert.equal(timeline[takeoff].prep, 0);
+  const flight = timeline.slice(takeoff).findIndex((t) => !t.jumping);
+  assert.ok(flight > 10, `airborne for a while (${flight} frames)`);
+  for (const t of timeline.slice(takeoff, takeoff + flight)) assert.ok(t.air >= 0.006, 'airborne frames pass positive air');
+  assert.ok(Math.max(...timeline.map((t) => t.y)) > 0.5, 'real jump height');
+  const landed = timeline[takeoff + flight];
+  assert.equal(landed.y, 0);
+  assert.equal(landed.prep, 0);
+  assert.equal(landed.air, 0, 'air returns to 0 on landing');
+  assert.equal(h.person.verticalVel, 0);
+  assert.equal(timeline[timeline.length - 1].air, 0);
+});
+
+test('walk mode: the blob shadow stays on the ground under a jump and shrinks with height', () => {
+  const h = walkerHarness();
+  h.controller.keys.up = true;
+  let minScale = 1;
+  for (let i = 0; i < 50; i++) {
+    h.frame();
+    h.controller.keys.up = false;
+    assert.ok(Math.abs(h.person.position.y + h.shadow.position.y - 0.02) < 1e-6, 'shadow stays at ground height');
+    minScale = Math.min(minScale, h.shadow.scale.x);
+  }
+  assert.ok(minScale < 0.85 && minScale >= 0.45, `shadow shrinks (${minScale})`);
+});
+
+test('walk mode: stepping off a curb stays grounded; falling more than 0.3 m is airborne and lands', () => {
+  const curb = walkerHarness({ ground: (x, z) => (z < 1 ? 0.22 : 0), speed: 4.4 });
+  curb.controller.keys.forward = 1;
+  for (let i = 0; i < 60; i++) {
+    curb.frame();
+    assert.equal(curb.person.jumping, false);
+    assert.equal(curb.airs[curb.airs.length - 1], 0);
+  }
+  assert.equal(curb.person.position.y, 0);
+  const ledge = walkerHarness({ ground: (x, z) => (z < 1 ? 3 : 0), speed: 0 });
+  ledge.controller.keys.forward = 1;
+  let sawAir = false;
+  for (let i = 0; i < 120; i++) { ledge.frame(); sawAir ||= ledge.person.jumping && ledge.airs[ledge.airs.length - 1] > 0.3; }
+  assert.ok(sawAir, 'a 3 m drop is airborne');
+  assert.equal(ledge.person.jumping, false);
+  assert.equal(ledge.person.position.y, 0);
+});
+
+test('walk mode: running down a 20 percent slope never sets jumping, and a jump can still start on it', () => {
+  const slope = (x, z) => 20 - 0.2 * z; // falls 0.2 m per metre
+  for (const dt of [1 / 60, 1 / 30, 1 / 15]) {
+    const h = walkerHarness({ ground: slope });
+    h.controller.keys.forward = 1;
+    h.controller.keys.boost = true;
+    let maxLag = 0, maxAir = 0;
+    for (let i = 0; i < Math.round(8 / dt); i++) {
+      h.frame(dt);
+      assert.equal(h.person.jumping, false, `slope at dt ${dt} frame ${i}`);
+      maxLag = Math.max(maxLag, h.person.position.y - slope(h.person.position.x, h.person.position.z));
+      maxAir = Math.max(maxAir, h.airs[h.airs.length - 1]);
+    }
+    assert.ok(h.person.speed > 7, 'running');
+    assert.equal(maxAir, 0, 'the rig sees no air on the slope');
+    assert.ok(maxLag < 0.2, `the body trails the slope by under 0.2 m (${maxLag.toFixed(3)})`);
+    h.controller.keys.up = true;
+    h.frame(dt);
+    assert.ok(h.person.jumpPrep > 0 || h.person.jumping, 'jump starts while running downhill');
+  }
+});
+
+test('walk mode: a person pushed against a wall does not build speed, and backs away at once', () => {
+  const h = walkerHarness({ colliders: [{ minX: -10, maxX: 10, minZ: 0.7, maxZ: 10, maxY: 30 }] });
+  h.controller.keys.forward = 1;
+  let peak = 0;
+  for (let i = 0; i < 180; i++) { h.frame(); if (i > 20) peak = Math.max(peak, h.person.speed); } // (after arriving at the wall)
+  assert.ok(peak < 0.5, `wall-blocked walker keeps no phantom speed (peak ${peak.toFixed(3)} m/s)`);
+  const z = h.person.position.z;
+  h.controller.keys.forward = false;
+  h.controller.keys.backward = 1;
+  h.frame();
+  assert.ok(h.person.speed < 0 && h.person.position.z < z, 'reversing responds on the next frame');
+});
+
+test('walk mode: teleport and mode changes clear the jump state, and an idle walker lands', () => {
+  const { controller, ent } = teleportHarness('person');
+  Object.assign(ent, { jumping: true, jumpPrep: 0.04, shadow: { position: { y: 0.9 }, scale: { set(x, y, z) { this.x = x; } } } });
+  controller.teleportActiveTo(10, 10, 0);
+  assert.equal(ent.jumping, false);
+  assert.equal(ent.jumpPrep, 0);
+  assert.equal(ent.shadow.position.y, 0.02);
+  assert.equal(ent.shadow.scale.x, 1);
+
+  const h = walkerHarness();
+  Object.assign(h.person, { jumping: true, jumpPrep: 0, verticalVel: 3 });
+  h.person.position.y = 1.5;
+  h.controller.activeMode = 'cyclist';
+  h.controller.landPerson();
+  assert.equal(h.person.jumping, false);
+  assert.equal(h.person.position.y, 0);
+});
+
+test('driveSpeed for a drive without powerSpeed (the car) is unchanged', () => {
+  const window = eventTarget();
+  const document = { ...eventTarget(), hidden: false };
+  window.CITY = { streetZ: () => 0, isTypingInField: (event) => ['INPUT', 'SELECT'].includes(event.target?.tagName) };
+  vm.runInNewContext(
+    source.replace('Object.assign(window.CITY, { ThirdPersonControllerManager });',
+      'Object.assign(window.CITY, { ThirdPersonControllerManager, __driveSpeed: driveSpeed });'),
+    { window, document });
+  const driveSpeed = window.CITY.__driveSpeed;
+  // a car-like drive: no powerSpeed (Toronto's car runs driveCar, not driveSpeed; this pins the shared function)
+  const CAR = { speed: 36, boostSpeed: 50, reverseSpeed: 10.5, acceleration: 4.5, boostAcceleration: 8, rolling: 0.18, drag: 0.0012, coast: 0.6, brake: 9 };
+  const dt = 1 / 60;
+  // expected values computed from origin/main's driveSpeed before this change
+  const cases = [
+    [0, 1, false, 0.075],
+    [10, 1, false, 10.070000999800039],
+    [20, 1, true, 20.12233773157404],
+    [30, -1, false, 29.829102538476917],
+    [20, 0, false, 19.979008396641344],
+    [-5, 1, false, -4.846515348465154]
+  ];
+  for (const [speed, throttle, boost, expected] of cases) {
+    assert.equal(driveSpeed(speed, throttle, boost, dt, CAR), expected,
+      `driveSpeed(${speed}, ${throttle}, boost ${boost}) unchanged`);
+  }
+});

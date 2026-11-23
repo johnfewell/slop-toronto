@@ -1,0 +1,18 @@
+[
+ {
+  "name": "pair",
+  "js": "(async () => { const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz)); await __pcSleep(9000); let r2 = await __pcPair(100000, 0.4); if (r2.error) r2 = await __pcPair(60000, 1.0); __pcTiltStart(); return r2; })()",
+  "wait": 100,
+  "record": true,
+  "screencastMs": 7000,
+  "screencastQuality": 85,
+  "mode": "person",
+  "time": "midday"
+ },
+ {
+  "name": "pair-tilt",
+  "js": "(async () => ({ log: __pcTiltStop() }))()",
+  "wait": 100,
+  "record": true
+ }
+]

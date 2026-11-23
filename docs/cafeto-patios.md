@@ -207,6 +207,27 @@ and it laid the patios out at startup (about 350 ms on the mini). `--frame eglin
 (`tools/cafeto-world.mjs` `PATIO_FRAMES`). The two maps place the same 199 cafés; two sidewalk cafés on the Danforth sit
 about 2 cm apart between them. Re-record **both** whenever an input changes.
 
+**The drawn-buildings page has its own layout too (`st-ndw9.23`).** Since the default desktop page draws the downtown buildings
+from their polygons (`st-ndw9.21`; also `?massing=1`), its solid colliders are those polygons, not the turned boxes, so the Eglinton
+map's boxes layout no longer matched its fingerprint and the page laid the patios out at startup again (about 320 ms on the mini,
+and a console warning). `--frame eglinton-drawn` records that page's layout into `js/frames/eglinton/toronto-patios-drawn.js` and
+`tools/data/frames/eglinton/patio-inputs-drawn.json`; `explore.html` loads it where `main.js` draws the buildings (the Eglinton map
+on a desktop unless `?presets=0|off`, or `?massing=1`), and the boxes' file everywhere else (`?presets=0`, `?map=eglinton` on a
+tablet, the detail map and the phone tier are as before). `tests/eglinton-frame.test.mjs` pins which page gets which file, and
+`tests/cafeto.test.mjs` replays and checks each file like the others; the drawn one also fingerprints `data/toronto-massing.bin`,
+whose polygons make its colliders:
+
+```
+gpu2 <name> -- env CAPTURE_TAG=patios-drawn CAPTURE_QUERY='?patios=layout' node tools/capture.mjs tools/shots/patio-layout.json
+node tools/build-patios.mjs <review dir>/patios-drawn-patio-layout.json --frame eglinton-drawn
+```
+
+(`JOB=patios` in `tools/capture-drawn-default.sh` runs the first line.) Against the boxes' layout of the same map the drawn one has
+209 sites, not 200: 158 the same, 27 moved (23 by under 1 m, 3 by about 1.5 m, one flanked patio by 13 m), 14 changed by under 5 cm
+(some a centimetre or a decimetre of depth; one is 6 m long instead of 4.5), 10 added and 1 dropped (all sidewalk patios; the curb platforms, and so the bikeways and the parked
+cars' places, are the same). The polygons are less in the way than the boxes round them. The patios are only built in the CaféTO
+season (1 June to 30 September by the page's date), so a page opened outside it builds none and pays nothing either way.
+
 The desktop and phone tiers record the same layout. The generator writes two files, the same bytes from the same record:
 
 - `js/toronto-patios.js` (shipped): each placed site's fields, exact (`id, kind, cx, cz, tx, tz, nx, nz, length, depth,

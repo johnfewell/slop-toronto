@@ -1,0 +1,16 @@
+[
+ {
+  "name": "stjames-town-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1373, -2405, 0); app.cameraSystem.cinema = () => ({ pos: [1373, 1.7, -2405], look: [1333, 30, -2405], fov: 62 }); })()"
+ },
+ {
+  "name": "cityplace-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1325, 172, 0); app.cameraSystem.cinema = () => ({ pos: [-1325, 1.7, 172], look: [-1370, 35, 172], fov: 70 }); })()"
+ }
+]

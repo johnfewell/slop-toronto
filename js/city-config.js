@@ -140,6 +140,10 @@ const WATER_RASTER = (() => {
 })();
 /** The lake or reservoir at (x, z), or null */
 function waterAt(x, z) {
+  // ?gallery=presets (st-ndw9.15): the gallery's rectangle stands in open water, over which its own ground plane is the ground: for
+  // the walk, the roads and the rest it is dry land (window.CITY.BUILDING_GALLERY exists only behind that flag)
+  const G = window.CITY.BUILDING_GALLERY;
+  if (G && x >= G.rect.x0 && x <= G.rect.x1 && z >= G.rect.z0 && z <= G.rect.z1) return null;
   const R = WATER_RASTER, ix = Math.floor(x / WATER_FAST) - R.x0, iz = Math.floor(z / WATER_FAST) - R.z0;
   if (!(ix >= 0 && ix < R.nx && iz >= 0 && iz < R.nz)) return waterAtExact(x, z);
   const c = iz * R.nx + ix, v = R.cells[c];

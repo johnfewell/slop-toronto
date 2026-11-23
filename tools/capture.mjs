@@ -30,9 +30,13 @@ const shots = process.argv[2]
 const ROOT = process.env.CAPTURE_ROOT ? path.resolve(process.env.CAPTURE_ROOT) + path.sep : fileURLToPath(new URL('..', import.meta.url));
 const PORT = Number(process.env.CAPTURE_PORT || 8768);
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.webmanifest': 'application/manifest+json' };
+// CAPTURE_REQUEST_LOG=1: every file this server hands out (path, bytes) goes to <tag>requests.json: a complete request list, which the
+// page's resource-timing buffer (250 entries) is not
+const reqLog = [];
 const server = http.createServer((req, res) => {
   const file = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
   if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return res.writeHead(404).end();
+  if (process.env.CAPTURE_REQUEST_LOG) reqLog.push({ path: new URL(req.url, 'http://x').pathname, bytes: fs.statSync(file).size });
   res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' });
   fs.createReadStream(file).pipe(res);
 }).listen(PORT, '127.0.0.1');
@@ -136,12 +140,13 @@ page.on('response', (r) => {
   }
 });
 
+// CAPTURE_SHOT_PROFILE=1: a shot with `profile: true` is profiled during its own wait only (<tag><name>-profile.txt)
 // CAPTURE_PROFILE=1: a CPU profile of the load (until the city is ready), its top self-time functions in profile.txt;
 // CAPTURE_PROFILE=shots profiles the shots instead (riding: a shot's hold is a key held through its wait, e.g. "KeyW")
 const PROFILE = process.env.CAPTURE_PROFILE;
-const cdp = PROFILE ? await page.context().newCDPSession(page) : null;
+const cdp = PROFILE || process.env.CAPTURE_SHOT_PROFILE ? await page.context().newCDPSession(page) : null;
 const startProfile = async () => { await cdp.send('Profiler.enable'); await cdp.send('Profiler.setSamplingInterval', { interval: 500 }); await cdp.send('Profiler.start'); };
-const stopProfile = async () => {
+const stopProfile = async (prefix = '') => {
   const { profile } = await cdp.send('Profiler.stop');
   const dt = new Map(), byId = new Map(profile.nodes.map((n) => [n.id, n]));
   profile.samples.forEach((id, i) => dt.set(id, (dt.get(id) || 0) + (profile.timeDeltas[i] || 0)));
@@ -152,7 +157,19 @@ const stopProfile = async () => {
     self.set(k, (self.get(k) || 0) + us);
   }
   const top = [...self].sort((a, b) => b[1] - a[1]).slice(0, 60).map(([k, us]) => `${Math.round(us / 1000)} ms  ${k}`);
-  fs.writeFileSync(path.join(OUT, 'profile.txt'), top.join('\n') + '\n');
+  fs.writeFileSync(path.join(OUT, prefix + 'profile.txt'), top.join('\n') + '\n');
+  // the same by inclusive time (a function and everything it called), top 80: where a phase's time goes, not only its leaves
+  const parent = new Map(); for (const n of profile.nodes) for (const c of n.children || []) parent.set(c, n.id);
+  const incl = new Map();
+  for (const [id, us] of dt) {
+    const seen = new Set();
+    for (let x = id; x !== undefined; x = parent.get(x)) {
+      const f = byId.get(x).callFrame, k = `${f.functionName || '(anon)'} ${f.url.split('/').pop()}:${f.lineNumber + 1}`;
+      if (!seen.has(k)) { seen.add(k); incl.set(k, (incl.get(k) || 0) + us); }
+    }
+  }
+  const topIncl = [...incl].filter(([k]) => !/^\((root|program|idle|garbage collector)\)/.test(k)).sort((a, b) => b[1] - a[1]).slice(0, Number(process.env.CAPTURE_PROFILE_TOP) || 80).map(([k, us]) => `${Math.round(us / 1000)} ms  ${k}`);
+  fs.writeFileSync(path.join(OUT, prefix + 'profile-inclusive.txt'), topIncl.join('\n') + '\n');
 };
 if (PROFILE && PROFILE !== 'shots') await startProfile();
 // CAPTURE_HEAP=1: a sampling heap profile from the load to the end of the shots: what is still alive, by the function
@@ -191,7 +208,10 @@ page.on('crash', () => log.push(`[capture] page crashed ${Date.now() - t0} ms af
 const captureUrl = new URL(`${BASE}/${process.env.CAPTURE_PAGE || 'explore.html'}${process.env.CAPTURE_QUERY || ''}`);
 if (METRICS_MS) captureUrl.searchParams.set('metrics', '1');
 await page.goto(captureUrl.href, { waitUntil: 'load', timeout: Number(process.env.CAPTURE_LOAD_TIMEOUT_MS || process.env.CAPTURE_NAVIGATION_TIMEOUT_MS || 30000) });
-const flush = () => fs.writeFileSync(path.join(OUT, `${TAG}console.log`), log.join('\n') + '\n');
+const flush = () => {
+  fs.writeFileSync(path.join(OUT, `${TAG}console.log`), log.join('\n') + '\n');
+  if (process.env.CAPTURE_REQUEST_LOG) fs.writeFileSync(path.join(OUT, `${TAG}requests.json`), JSON.stringify(reqLog) + '\n');
+};
 if (process.env.CAPTURE_STATIC) {
   const name = path.basename(process.env.CAPTURE_PAGE || 'page', '.html');
   await page.waitForTimeout(2500);
@@ -263,7 +283,10 @@ try {
       await download.saveAs(path.join(OUT, `${TAG}${s.name}.jpg`));
     }
     if (s.hold) await page.keyboard.down(s.hold);
+    // (a shot with `profile: true`, under CAPTURE_SHOT_PROFILE=1: a CPU profile of its wait alone, <tag><name>-profile.txt and -profile-inclusive.txt)
+    if (s.profile && process.env.CAPTURE_SHOT_PROFILE) await startProfile();
     await page.waitForTimeout(s.wait ?? 4000);
+    if (s.profile && process.env.CAPTURE_SHOT_PROFILE) await stopProfile(`${TAG}${s.name}-`);
     // (a shot's own metricsMs / metricsWarmupMs override the run's; metricsMs 0 skips its window)
     const shotMetricsMs = s.metricsMs ?? METRICS_MS, shotWarmupMs = s.metricsWarmupMs ?? METRICS_WARMUP;
     if (METRICS_MS && shotMetricsMs) {
@@ -290,7 +313,12 @@ try {
       fs.writeFileSync(path.join(OUT, `${TAG}${s.name}.metrics.json`), JSON.stringify(report, null, 2) + '\n');
       reports.push(report);
       fs.writeFileSync(path.join(OUT, `${TAG}metrics.json`), JSON.stringify(reports, null, 2) + '\n');
-      if (!report.frames.valid) throw new Error('measurement has no valid complete sample window (or exceeded bounded capacity); raw report retained');
+      if (!report.frames.valid) {
+        if (process.env.CAPTURE_KEEP_GOING !== '1') throw new Error('measurement has no valid complete sample window (or exceeded bounded capacity); raw report retained');
+        // (CAPTURE_KEEP_GOING=1, st-ndw9.22: one lost window does not end the run; the shot's metrics file says valid: false)
+        console.error(`[metrics] ${TAG}${s.name}: no valid complete sample window; going on`);
+        log.push(`[metrics] ${TAG}${s.name} INVALID WINDOW`);
+      } else
       log.push(`[metrics] ${TAG}${s.name} n=${report.frames.retainedSamples} median=${report.frames.frameIntervalMs.median}ms p95=${report.frames.frameIntervalMs.p95}ms ${measurementClass}`);
     }
     if (s.screencastMs) {

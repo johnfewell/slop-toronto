@@ -1,0 +1,19 @@
+[
+ {
+  "name": "away",
+  "mode": "person",
+  "time": "midday",
+  "x": 150,
+  "z": 0,
+  "js": "window.__rbWait(8000).then(() => window.__rbFace(150, 0)).then(() => window.__rbWait(3000)).then(() => window.__rbAway(30))",
+  "wait": 500,
+  "record": true,
+  "screencastMs": 29000
+ },
+ {
+  "name": "away-log",
+  "js": "new Promise((r) => setTimeout(() => r(window.__rbCrossLog), 1500))",
+  "wait": 100,
+  "record": true
+ }
+]

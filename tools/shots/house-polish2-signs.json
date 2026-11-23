@@ -1,0 +1,23 @@
+[
+ {
+  "name": "sign-queen-textiles-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1318, -729.4, 0); app.cameraSystem.cinema = () => ({ pos: [-1318, 1.7, -729.4], look: [-1318, 3.2, -743.3], fov: 70 }); })()"
+ },
+ {
+  "name": "sign-queen-textiles-near",
+  "mode": "person",
+  "time": "midday",
+  "wait": 4500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1331, -735, 0); app.cameraSystem.cinema = () => ({ pos: [-1331, 1.7, -735], look: [-1331, 3, -743.6], fov: 75 }); })()"
+ },
+ {
+  "name": "sign-affordable-textiles-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 5000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1358, -736.3, 0); app.cameraSystem.cinema = () => ({ pos: [-1358, 1.7, -736.3], look: [-1358, 3.2, -722.3], fov: 70 }); })()"
+ }
+]

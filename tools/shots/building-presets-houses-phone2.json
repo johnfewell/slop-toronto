@@ -1,0 +1,16 @@
+[
+ {
+  "name": "interwar-semi-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-7672, -2953.1, 0); app.cameraSystem.cinema = () => ({ pos: [-7672, 1.7, -2953.1], look: [-7692.4, 4.5, -2952.8], fov: 60 }); })()"
+ },
+ {
+  "name": "main-street-shop-early-p1-street",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3500,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1256.9, -1267.9, 0); app.cameraSystem.cinema = () => ({ pos: [-1256.9, 1.7, -1267.9], look: [-1279.8, 6, -1267.9], fov: 65 }); })()"
+ }
+]

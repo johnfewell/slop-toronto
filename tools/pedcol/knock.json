@@ -1,0 +1,36 @@
+[
+ {
+  "name": "knock-cyclist",
+  "js": "(async () => { const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz));  await __pcSleep(9000); const r2 = await __pcKnockSetup(120000, 11); await __pcSleep(1200); return r2; })()",
+  "wait": 100,
+  "record": true,
+  "hold": "KeyW",
+  "screencastMs": 7000,
+  "screencastQuality": 85,
+  "mode": "cyclist",
+  "time": "midday"
+ },
+ {
+  "name": "knock-cyclist-log",
+  "js": "(async () => ({ log: __pcKnockStop() }))()",
+  "wait": 100,
+  "record": true
+ },
+ {
+  "name": "knock-car",
+  "js": "(async () => { const C = window.CITY, a = C.worldFromLatLon(43.6562, -79.3806); const r = C.nearestRoads(a.x, a.z, 80)[0]; const nx = -r.dz, nz = r.dx, off = r.road.w / 2 + 2.5; window.__CITY_APP.teleportTo(r.px + nx * off, r.pz + nz * off, Math.atan2(r.dx, r.dz));  await __pcSleep(9000); const r2 = await __pcKnockSetup(120000, 13); await __pcSleep(1200); return r2; })()",
+  "wait": 100,
+  "record": true,
+  "hold": "KeyW",
+  "screencastMs": 7000,
+  "screencastQuality": 85,
+  "mode": "car",
+  "time": "midday"
+ },
+ {
+  "name": "knock-car-log",
+  "js": "(async () => ({ log: __pcKnockStop() }))()",
+  "wait": 100,
+  "record": true
+ }
+]

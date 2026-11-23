@@ -20,6 +20,12 @@ export const PATIO_FRAMES = {
   detail: { name: 'detail', bin: null, scripts: {} },
   eglinton: { name: 'eglinton', bin: 'data/frames/eglinton/toronto-geodata.bin',
     scripts: Object.fromEntries(['toronto-sidewalks.js', 'toronto-traffic-data.js', 'toronto-transit.js', 'toronto-subway.js']
+      .map((f) => [`js/${f}`, `js/frames/eglinton/${f}`])) },
+  // the same map with the buildings drawn from their polygons (the default desktop page since st-ndw9.21; ?massing=1): its
+  // colliders include the massing polygons, so it has its own layout (st-ndw9.23). `sources` are files beyond the data
+  // scripts that its colliders come from
+  'eglinton-drawn': { name: 'eglinton', variant: 'drawn', bin: 'data/frames/eglinton/toronto-geodata.bin', sources: ['data/toronto-massing.bin'],
+    scripts: Object.fromEntries(['toronto-sidewalks.js', 'toronto-traffic-data.js', 'toronto-transit.js', 'toronto-subway.js']
       .map((f) => [`js/${f}`, `js/frames/eglinton/${f}`])) }
 };
 /** A frame's file for one of the detail frame's (its own script, its binary for the geodata and the poles) */

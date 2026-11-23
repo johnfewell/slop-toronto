@@ -1,0 +1,26 @@
+[
+ {
+  "name": "m-cabbagetown",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(1800, -1601, 0); app.cameraSystem.cinema = () => ({ pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 }); })()"
+ },
+ {
+  "name": "y-cabbagetown",
+  "record": true,
+  "wait": 300,
+  "js": "(async () => { const A = window.__CITY_APP, scene = A.scene, sun = A.lightingSystem.sunLight;\n const meas = async (n = 120) => { const ts = []; for (let i = 0; i < n + 15; i++) { await new Promise((r) => requestAnimationFrame(r)); ts.push(performance.now()); } const d = []; for (let i = 16; i < ts.length; i++) d.push(ts[i] - ts[i - 1]); d.sort((a, b) => a - b); return +d[d.length >> 1].toFixed(2); };\n const R = {}; const info = () => { const i = A.renderer.info; return i.render ? i.render.triangles : 0; };\n const group = (pred, key) => { const list = []; scene.traverse((o) => { if (o.isMesh && o.visible && pred(o)) list.push(o); }); return list; };\n const toggle = async (key, list) => { if (!list.length) { R[key] = null; return; } list.forEach((o) => { o.visible = false; }); R[key] = await meas(); list.forEach((o) => { o.visible = true; }); };\n R.base = await meas(); R.baseTris = info();\n sun.castShadow = false; R.noSunShadow = await meas(); sun.castShadow = true;\n const prox = scene.getObjectByName('ShadowProxies'); if (prox) { prox.visible = false; R.noStandIns = await meas(); prox.visible = true; }\n await toggle('noNearMassing', group((o) => /^MassingBuildings_/.test(o.name) && o.userData.massingTier === 0));\n await toggle('noMidMassing', group((o) => /^MassingBuildings_/.test(o.name) && o.userData.massingTier === 1));\n await toggle('noFarMassing', group((o) => /^MassingBuildings_/.test(o.name) && o.userData.massingTier === 2));\n await toggle('noRoofsNear', group((o) => o.name === 'HippedRoofsNear'));\n await toggle('noRoofsFar', group((o) => o.name === 'HippedRoofsFar'));\n await toggle('noRoofsTall', group((o) => o.name === 'HippedRoofsTall'));\n await toggle('noRoofsAny', group((o) => /^HippedRoofs/.test(o.name)));\n const bld = scene.getObjectByName('CityBuildings'); if (bld) { bld.visible = false; R.allBuildingsHidden = await meas(); bld.visible = true; }\n R.base2 = await meas(); return R; })()"
+ },
+ {
+  "name": "m-queenwest",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1386.6, -713.6, 0); app.cameraSystem.cinema = () => ({ pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 }); })()"
+ },
+ {
+  "name": "y-queenwest",
+  "record": true,
+  "wait": 300,
+  "js": "(async () => { const A = window.__CITY_APP, scene = A.scene, sun = A.lightingSystem.sunLight;\n const meas = async (n = 120) => { const ts = []; for (let i = 0; i < n + 15; i++) { await new Promise((r) => requestAnimationFrame(r)); ts.push(performance.now()); } const d = []; for (let i = 16; i < ts.length; i++) d.push(ts[i] - ts[i - 1]); d.sort((a, b) => a - b); return +d[d.length >> 1].toFixed(2); };\n const R = {}; const info = () => { const i = A.renderer.info; return i.render ? i.render.triangles : 0; };\n const group = (pred, key) => { const list = []; scene.traverse((o) => { if (o.isMesh && o.visible && pred(o)) list.push(o); }); return list; };\n const toggle = async (key, list) => { if (!list.length) { R[key] = null; return; } list.forEach((o) => { o.visible = false; }); R[key] = await meas(); list.forEach((o) => { o.visible = true; }); };\n R.base = await meas(); R.baseTris = info();\n sun.castShadow = false; R.noSunShadow = await meas(); sun.castShadow = true;\n const prox = scene.getObjectByName('ShadowProxies'); if (prox) { prox.visible = false; R.noStandIns = await meas(); prox.visible = true; }\n await toggle('noNearMassing', group((o) => /^MassingBuildings_/.test(o.name) && o.userData.massingTier === 0));\n await toggle('noMidMassing', group((o) => /^MassingBuildings_/.test(o.name) && o.userData.massingTier === 1));\n await toggle('noFarMassing', group((o) => /^MassingBuildings_/.test(o.name) && o.userData.massingTier === 2));\n await toggle('noRoofsNear', group((o) => o.name === 'HippedRoofsNear'));\n await toggle('noRoofsFar', group((o) => o.name === 'HippedRoofsFar'));\n await toggle('noRoofsTall', group((o) => o.name === 'HippedRoofsTall'));\n await toggle('noRoofsAny', group((o) => /^HippedRoofs/.test(o.name)));\n const bld = scene.getObjectByName('CityBuildings'); if (bld) { bld.visible = false; R.allBuildingsHidden = await meas(); bld.visible = true; }\n R.base2 = await meas(); return R; })()"
+ }
+]
