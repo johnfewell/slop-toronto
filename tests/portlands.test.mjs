@@ -1,5 +1,5 @@
 // The Port Lands pieces (js/portlands-*.js, bead jf-li1): the Victory Soya & Essroc silos, the shell arches over the
-// Commissioners Street and Cherry Street bridges.
+// Commissioners Street and Cherry Street bridges, the armour-stone banks and the planting behind them.
 //
 // These build the REAL geometry against the real packed geodata in a Node VM and check what each piece must be, and what
 // it must not do: replace the map's own rows and decks without doubling them, stay in this map's lit materials (no toon
@@ -15,7 +15,7 @@ import { unpackGeo } from '../js/geodata-loader.js';
 // (the VM's arrays and objects come from another realm: compare them as JSON)
 const same = (a, b, msg) => assert.equal(JSON.stringify(a), JSON.stringify(b), msg);
 const ROOT = new URL('..', import.meta.url).pathname;
-const MODULES = ['high-park-data', 'don-valley', 'city-config', 'portlands-kit', 'portlands-landmarks', 'portlands-bridges',
+const MODULES = ['high-park-data', 'don-valley', 'city-config', 'portlands-kit', 'portlands-landmarks', 'portlands-bridges', 'portlands-banks',
   'biidaasige-park-data', 'biidaasige-map-anchors', 'biidaasige-path-network-data', 'biidaasige-play-landmarks', 'biidaasige-play-infrastructure',
   'biidaasige-play-pads', 'biidaasige-dog-surfaces', 'biidaasige-woodchip-island', 'biidaasige-dodem-three-island', 'biidaasige-adventure-play',
   'biidaasige-dodem', 'biidaasige-dodem-placements', 'biidaasige-heritage', 'biidaasige-paths', 'biidaasige-river-access', 'biidaasige-ground-mask',
@@ -147,6 +147,94 @@ test('bridge chains join the pieces one bridge is mapped as, in either direction
   const x = chains.find((c) => c.name === 'X');
   assert.equal(x.pieces, 3);
   assert.equal(Math.round(Math.hypot(x.pts[0].x - x.pts[x.pts.length - 1].x, x.pts[0].z - x.pts[x.pts.length - 1].z)), 30);
+});
+
+test('armour-stone banks: dark rough blocks sunk in a slope on the water\'s edge and land side, nothing on decks or far inland', async () => {
+  const { C, pl } = await world();
+  const stats = pl.layers.banks;
+  assert.ok(stats.chains >= 8 && stats.bankLengthM > 3000, `the river shores through the park (${stats.chains} chains, ${stats.bankLengthM} m)`);
+  assert.ok(stats.stones > 5000, `thousands of blocks (${stats.stones})`);
+  assert.ok(stats.triangles < 700000, `within a sane merged-geometry budget (${stats.triangles})`);
+  const group = pl.group.getObjectByName('PortLandsBanks');
+  const stoneMeshes = allMeshes(group).filter((m) => m.name.includes('armour'));
+  assert.ok(stoneMeshes.length >= 8 && stoneMeshes.every((m) => m.userData.cullCell === 200), 'cut into cells so distance culling can drop the far ones');
+  let sampled = 0, deck = 0, lum = 0, bright = 0, high = 0;
+  for (const m of stoneMeshes) {
+    const p = m.geometry.getAttribute('position'), c = m.geometry.getAttribute('color');
+    for (let i = 0; i < p.count; i += 23) {
+      sampled++;
+      if (C.bridgeAt(p.getX(i), p.getZ(i), 0)) deck++;
+      const l = 0.3 * c.getX(i) + 0.59 * c.getY(i) + 0.11 * c.getZ(i);
+      lum += l; if (l > 0.62) bright++;
+      assert.ok(p.getY(i) > 0.224 - 1.0 && p.getY(i) < 0.224 + 0.95, `height ${p.getY(i)}`);
+      if (p.getY(i) > 0.224 + 0.8) high++;
+    }
+  }
+  assert.ok(sampled > 2000);
+  assert.ok(lum / sampled < 0.36, `dark limestone, not white slabs (mean luminance ${(lum / sampled).toFixed(2)})`);
+  assert.equal(bright, 0, 'no pale vertex');
+  assert.equal(deck, 0, 'no stone on a bridge deck');
+  assert.ok(high === 0, `blocks sit low in the slope, not piled up (${high}/${sampled})`);
+});
+
+test('planting uses the map\'s own vegetation: sites at real sizes in the atlas tiles, none on water, decks or paths, and no stand-in shapes without park-cover', async () => {
+  const { C, pl, park } = await world();
+  assert.equal(pl.layers.banks.planted, false, 'park-cover is not loaded in this VM, so nothing of our own is drawn in its place');
+  assert.equal(pl.group.getObjectByName('PortLandsPlanting'), undefined);
+  const { shrubs, grass } = C.buildPortLandsBanks({ parkRing: park.parkRing, planting: false }).sites;
+  assert.ok(shrubs.length > 1200 && grass.length > 5000, `a planted shore (${shrubs.length} shrubs, ${grass.length} grass clumps)`);
+  for (const s of shrubs) {
+    assert.ok([4, 5, 6].includes(s.tile), 'broadleaf, sumac or sapling foliage');
+    assert.ok(s.h >= 0.8 && s.h <= 3.3 && s.r >= 0.6 && s.r <= 1.1, `real shrub size ${s.h} x ${s.r}`);
+  }
+  for (const s of grass) assert.ok([0, 1, 2].includes(s.tile) && s.h >= 0.7 && s.h <= 1.5 && s.r <= 0.9, 'bluestem, goldenrod and forbs at knee to waist height');
+  let wet = 0, deck = 0;
+  for (const s of [...shrubs, ...grass]) { if (C.waterAt(s.x, s.z)) wet++; if (C.bridgeAt(s.x, s.z, 4)) deck++; }
+  assert.equal(wet, 0); assert.equal(deck, 0, 'nothing on or beside a bridge deck');
+  assert.ok(shrubs.filter((s) => s.tile === 6).length < shrubs.length * 0.3, 'saplings are the minority: this is a new park with few big trees');
+});
+
+test('planting meshes: one near and far model per cell for shrubs, one crossed-card mesh for grass, culled by distance, from the shared park-cover models', async () => {
+  const { C, park } = await world();
+  const calls = [];
+  C.parkCover = {
+    shrubGeometry: (near) => { calls.push(near); return new THREE.PlaneGeometry(1, 1); },
+    shrubMaterial: () => new THREE.MeshBasicMaterial(),
+    updateShrubViewer: (p) => { calls.viewer = p; }
+  };
+  try {
+    const out = C.buildPortLandsBanks({ parkRing: park.parkRing });
+    assert.ok(out.stats.planted && out.stats.shrubs === out.sites.shrubs.length && out.stats.grass === out.sites.grass.length);
+    const meshes = allMeshes(out.group.getObjectByName('PortLandsPlanting'));
+    assert.ok(meshes.every((m) => m.isInstancedMesh && m.geometry.getAttribute('aShrub') && m.geometry.getAttribute('aShrubFade')));
+    assert.ok(meshes.some((m) => m.name.includes('shrub-near')) && meshes.some((m) => m.name.includes('grass')));
+    const first = meshes.find((m) => m.name.includes('shrub-near'));
+    const x = first.geometry.getAttribute('aShrub').getX(0) >= 0 ? first.geometry.getAttribute('aShrub').getY(0) : 0;
+    void x;
+    const sx = first.geometry.getAttribute('aShrub').getY(0), sz = first.geometry.getAttribute('aShrub').getW(0);
+    out.update({ x: sx, y: 2, z: sz });
+    assert.ok(meshes.some((m) => m.visible), 'near the planting, it draws');
+    assert.equal(calls.viewer.x, sx, 'the shared shrub material measures its dissolve from the camera');
+    out.update({ x: sx + 5000, y: 2, z: sz });
+    assert.ok(meshes.every((m) => !m.visible), 'far away, none of it draws');
+  } finally { delete C.parkCover; }
+});
+
+test('bank chains: inland normals point at land, the water side at water, and the same plan gives the same banks', async () => {
+  const { C, park } = await world();
+  const a = C.portLandsBankChains(park.parkRing), b = C.portLandsBankChains(park.parkRing);
+  assert.equal(a.length, b.length);
+  let land = 0, water = 0, n = 0;
+  for (const chain of a) {
+    for (let i = 3; i < chain.px.length - 3; i += 7) {
+      n++;
+      if (!C.waterAt(chain.px[i] + chain.nx[i] * 3, chain.pz[i] + chain.nz[i] * 3)) land++;
+      if (C.waterAt(chain.px[i] - chain.nx[i] * 1.5, chain.pz[i] - chain.nz[i] * 1.5)) water++;
+    }
+  }
+  assert.ok(n > 400);
+  assert.ok(land / n > 0.97, `three metres inland is land (${land}/${n})`);
+  assert.ok(water / n > 0.97, `one and a half metres out is water (${water}/${n})`);
 });
 
 test('?portlands=0 leaves every Port Lands piece out for an A/B and excludes no row', async () => {

@@ -1,7 +1,7 @@
 # Port Lands set pieces
 
 Tracked in `jf-li1`. Modules: `js/portlands-kit.js`, `js/portlands-landmarks.js`, `js/portlands-bridges.js`,
-`js/portlands.js` (integration). Tests: `tests/portlands.test.mjs`,
+`js/portlands-banks.js`, `js/portlands.js` (integration). Tests: `tests/portlands.test.mjs`,
 `tests/biidaasige-heritage.test.mjs`. Capture recipe: `tools/shots/portlands.json`.
 
 The shapes and placement come from the Port Lands modelling in the Canoe Cove rowing world, a sister project whose plan
@@ -19,6 +19,8 @@ crane aside, which is the park's own model), for an A/B.
 | **Atlas Crane** | the OSM node `node/9521067431` (2009.8, 804.0), head line on compass bearing 333, world axes | The earlier four-column gantry with one boom to the ground (`js/biidaasige-heritage.js`). `buildAtlasCrane` keeps its name, return shape, estimates and labels; the shape is now the Port Lands one. The native 3.1 m massing stand-in row stays excluded as before |
 | **Victory Soya Mills silos** ("St Marys Silos") | on the City massing row named "Silo", (1721.2, 298.5), angle -1.322 | That plain 42.8 m massing box (`GEO.buildings[33863]`), left out of `CityBuildings` by `portLandsExcludesBuilding` |
 | **Essroc silos** (80 Ookwemin St) | on the massing row at (2075.1, 425.6), angle -1.324 | That 36.9 m two-part massing box (`GEO.buildings[34071]`) |
+| **Armour-stone banks** | along the park's river shores, from the water's edge 5 m inland | Nothing: the mud and gravel apron and the reeds of `js/water-edges.js` stay on the water side |
+| **Planting behind the banks** | 3.6 to 18 m inland of the water's edge, in patches | Nothing: it keeps clear of paths, play pads, buildings and bridge approaches |
 | **Bridge shell arches**: Commissioners Street (orange), Cherry Street South (yellow), Cherry Street North (red) | on the map's own road-bridge decks over the Don mouth at (2768.9, 488.6), (2151.5, 796.0) and (1993.6, 387.7) | Nothing: the decks, kerbs, sidewalks, driving and walking over them stay `city-config.js` `ROAD_BRIDGES` and `city-grid.js` exactly. The shell is added on top |
 
 Fire Hall 30 and The Drum were **not** replaced. The Canoe Cove versions were compared against
@@ -66,19 +68,41 @@ piers and abutments (this map's deck sits at street level), lamps, name plaques,
 and the footbridges (this map's own paths and bridges already cross the side arms; the one standalone footbridge over
 the lap's water at 786 m has no counterpart that the rest of this map would stand on). About 14 k triangles.
 
-### Banks and planting: not shipped
+### Banks and planting (redo, `jf-li1.1`)
 
-The first version also laid armour-stone banks and planting along the park's river (`js/portlands-banks.js`). John
-reviewed it on 2026-11-25 and held it back: the shrubs and whips read as big pale-green faceted blobs and the armour stone as
-white slabs, neither of which fits this map's look. They are **not part of what ships** and not behind a URL flag. The code is
-kept on the branch `feat/portlands-banks-wip` and is being redone in the `jf-li1` child issue (this map's own lidar-crown
-trees and ground cover, darker rough stone sitting in the slope).
+The first version (pale slabs, faceted pale-green blobs; kept on branch `feat/portlands-banks-wip`) was held back on
+2026-11-25 because it did not fit this map. This version, `js/portlands-banks.js`:
+
+- **Stone.** `portLandsBankChains` walks the water rings that pass through the park (`C.WATER_BODIES`, `C.waterAt` for the land
+  side), resampled every metre with a smoothed inland normal, breaking at bridge decks. Along each chain a low earth-and-gravel
+  slope (toe on the apron 0.5 m inside the water's edge, crest about 0.27 m up, 1.7 to 3.4 m in, falling to the lawn by 5.2 m)
+  carries six rows of irregular blocks: five-to-seven-sided, each corner and facet its own height and shade, tilted, sunk,
+  with a dark contact ring where it meets the slope. The first course is biggest and closest-packed, later ones smaller, fewer
+  and lower. Colours are dark grey and tan limestone (`TONES`), never white; a few waterline blocks carry moss. The mud-and-gravel
+  apron and the reeds of `js/water-edges.js` stay on the water side, untouched.
+- **Planting uses the map's own vegetation.** `plantingSites` places sites (pure, tested in Node): shrub beds, tall-grass and
+  forb patches, a few saplings, thinning inland over 13 m, clear of paths, play pads, buildings and bridge approaches. They are
+  drawn with `CITY.parkCover.shrubGeometry / shrubMaterial / updateShrubViewer` (`js/park-cover.js`): the broadleaf, sumac and
+  sapling foliage and the bluestem, goldenrod and forb tiles of High Park's atlas, with the same near/far dissolve and the same
+  seasons as the city's trees (autumn colour, leaf fall to a bare thicket). Sizes: shrubs 0.8 to 1.7 m, saplings 1.8 to 3.2 m,
+  tall grass 0.7 to 1.5 m. There are no whip trees: this is a new park and the trees already in it stay. If park-cover is not
+  loaded nothing is drawn in its place (no stand-in shapes). One near and one far instanced mesh per 200 m cell for the shrubs,
+  one for the grass, switched off by distance each frame (`createPortLands(...).update`, called from `js/main.js`).
+- Roughly 4.6 km of shore, 12 k blocks and 15 k plants in 200 m cells (stone about 0.6 M triangles in all, of which only the cells
+  within 300 m draw, and none casts a shadow).
+
+Limits: this map's park has no surveyed relief (`docs/biidaasige-terrain.md`), so the slope is an overlay on the 0.224 m park
+datum, not graded ground, and the blocks are not in the park's footing index (a walker's feet pass through them). The stone
+is still low-poly next to the city's leaf-card vegetation; a rougher block mesh is the obvious next step.
 
 ## Verification
 
 ```sh
 node --test tests/portlands.test.mjs tests/biidaasige-heritage.test.mjs tests/biidaasige-runtime.test.mjs
 ```
+
+Banks visual: `GPU2_LOCK_WAIT=900 gpu2 portlands-banks -- env GPU2_OUT=gpu2-out node tools/capture.mjs tools/shots/portlands-banks.json`
+(`CAPTURE_QUERY='?portlands=0'` for the before frames).
 
 Visual: `GPU2_LOCK_WAIT=900 gpu2 portlands -- env GPU2_OUT=gpu2-out node tools/capture.mjs tools/shots/portlands.json` on
 the Mac mini. Captures establish look, not frame time.

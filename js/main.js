@@ -171,7 +171,7 @@ async function initApp() {
     if(window.CITY.biidaasigeParkStats)window.CITY.biidaasigeParkStats.nativeGroundMaterialsMasked=masked;
   }
   // the Port Lands pieces: the silos and the bridge shells (js/portlands.js)
-  const portLands = window.CITY.createPortLands?.(THREE, scene);
+  const portLands = window.CITY.createPortLands?.(THREE, scene, { parkRing: biidaasigePark?.parkRing });
   if (portLands) pushAll(landmarkColliders, portLands.colliders);
   markInit('landmarks');
   // ?massing=1: every building from the City's 3D Massing polygons instead of its boxes (docs/massing-buildings.md;
@@ -1760,7 +1760,7 @@ async function initApp() {
       if (++shadowFrame % QUALITY.shadowEvery === 0 || !warmedUp) sh.needsUpdate = true;
     }
     lakeWater.update(elapsed);
-    if (waterEdges) waterEdges.update(cameraSystem.camera.position); if (parkCover) parkCover.update(cameraSystem.camera);
+    if (waterEdges) waterEdges.update(cameraSystem.camera.position); if (parkCover) parkCover.update(cameraSystem.camera); if (portLands?.update) portLands.update(cameraSystem.camera.position);
     islandGardenCover?.update(cameraSystem.camera.position);
     if (skyClouds) skyClouds.update(holding ? 0 : dt);
     precipitation.update(subwayRide.inside || (rideSession.active && cameraSystem.activePresetId === 'pov'));
@@ -1930,7 +1930,7 @@ async function initApp() {
         cityBlocks.update(cameraSystem.currentPos.x, cameraSystem.currentPos.z);
         cityBlocks.updateLights?.(cameraSystem.camera); streetDetails.update?.(cameraSystem.camera);
         for (const light of staticLights) { light.updateMatrixWorld(); light.target?.updateMatrixWorld(); }
-        lightingSystem.update(cameraSystem.currentPos); lakeWater.update(elapsed); if (waterEdges) waterEdges.update(cameraSystem.camera.position); if (parkCover) parkCover.update(cameraSystem.camera);
+        lightingSystem.update(cameraSystem.currentPos); lakeWater.update(elapsed); if (waterEdges) waterEdges.update(cameraSystem.camera.position); if (parkCover) parkCover.update(cameraSystem.camera); if (portLands?.update) portLands.update(cameraSystem.camera.position);
         if (resetHistory) lightingSystem.sunLight.shadow.needsUpdate = true;
         updateSceneCulling(cameraSystem.camera.position);
         cityBlocks.updateMassingTiers(cameraSystem.camera);

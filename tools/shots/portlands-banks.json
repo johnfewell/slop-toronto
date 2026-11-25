@@ -1,0 +1,30 @@
+[
+ {
+  "name": "bank-river",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2540,712,0);const c={pos:[2528,4.5,722],look:[2555,0,688],fov:62};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "bank-along",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2480,712,0);const c={pos:[2440,5,710],look:[2540,0,690],fov:60};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "bank-walk",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2500,708,0);const c={pos:[2494,1.75,708],look:[2512,0.6,702],fov:70};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "bank-stone-close",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2474.8,700,0);const c={pos:[2474.2,1.8,702.4],look:[2477,0.15,709],fov:72};a.cameraSystem.cinema=()=>c;})();"
+ }
+]
