@@ -39,28 +39,32 @@ the designers' production models. Photos are **credited, never copied** into the
 
 ## Atlas Crane
 
-The Atlas is currently in its **restored WHITE paint** (WT text) but its **form** comes from the primary Waterfront
-Toronto restoration photo (`captain/atlas-wt.jpg`, `DSC07621_0.jpg`) — the Captain's read of that photo is
-authoritative. It is a huge white **GANTRY / A-frame**, modelled exactly as observed:
+**Updated for `jf-li1`:** the shape is now the Port Lands frame in `js/portlands-landmarks.js` (see
+[portlands.md](portlands.md)), worked out in the Canoe Cove rowing world from the restoration photo **plus** a November
+2026 photo, a pivot-base close-up and the City's 2025 aerial. It replaces the earlier four-column gantry with one boom to
+the ground that this section used to describe (read from the restoration photo alone); the two readings are of the same
+structure and disagree about the columns, so the later, better-sourced one is used and the old description is not kept.
+It is white-painted steel throughout:
 
-- **Four tall square-section (~1.4 m) lattice columns** at the corners of a rectangular portal (~10 m top span ×
-  ~8 m deep), standing as **two pairs** of towers, each pair leaning gently toward its partner; near-vertical, ~35–38 m.
-- **Individual white anti-climb sleeves** (~4 m) around **each** foot — not one solid plinth blocking the portal.
-- **Top crossbeams** joining the paired tower heads (with a black cable/hoist **track** along them), plus front/back
-  ties — the A-frame head.
-- **One giant square-section (~1.5 m) lattice BOOM** running from the **top** near a back corner all the way **down
-  to the ground ~25 m out front**, with a **pair of black cables** parallel along it. This long downward diagonal is
-  the iconic silhouette.
-- Four **individual foot colliders** + the boom's ground-footing collider.
+- **Two waterside pivot bases**, each a single pin on a plinth from which a **pair of steep square lattice members** springs
+  to the two heads (seen along the bank the bases overlap and the members open into a V; at 45° two stand upright and two
+  cross as an X).
+- **Two white pulley-housing heads**, about 12 m apart (one over the water's edge, one inland), each with sheave drums and a
+  railed platform, tied by **parallel runway beams** carrying the hoist trolley between them.
+- **A separate fifth lattice member** sloping from the inland head about 24 m down to its own footing, with the old hoist
+  ropes fanned beside it to a winch block.
+- Two **pivot-base colliders** and the fifth member's **footing collider**.
+- Placed at the OSM node with the frame's middle 0.8 m east and 6.5 m south of it, the head line on compass bearing 333
+  (square to the bank); the factory builds about the node in world axes (yaw 0).
 
-**Deliberately absent** (this is the correction after the Captain's photo review): the earlier invented rotating
-turret, mid-height operator cab, upward jib, hook hanging from an imaginary jib tip, invented counterweight block, and
-any TMU student observation platform / stairs / lift. None exist as a mesh (the tests assert this).
+**Deliberately absent**: any rotating turret, operator cab, upward jib, counterweight, and any TMU student observation
+platform / stairs / lift (the tests assert there are none), and none of the rowing world's added life (the hoisted canoe,
+people, gulls, flags).
 
 **Labels:** the structure's own height is an **explicit photo-estimate, 35–38 m** (default 36 m); WT's "40 m / 140 ft"
 is the **restoration scaffolding** (a different property). **`300-ton` is the structure's mass label** as the source
 states it ("300-ton Atlas Crane") — **no lifting capacity is published, so none is claimed** (there is no
-`capacityTons` field). Built of white-painted steel with the black hoist track and black boom cables.
+`capacityTons` field). Built of white-painted steel with dark runway rails and hoist ropes.
 
 ## The Drum
 

@@ -1290,6 +1290,7 @@ function buildCityBlocks(scene) {
     if (window.CITY.waterfrontMainBuildingExcludesBuilding?.(bi)) continue;
     if (window.CITY.waterfrontConcertStageExcludesBuilding?.(bi)) continue;
     if (window.CITY.biidaasigeParkExcludesBuilding?.(bi)) continue;
+    if (window.CITY.portLandsExcludesBuilding?.(bi)) continue;
     if (window.CITY.waterfrontBathurst?.stats.meshes > 0 && window.CITY.waterfrontBathurstExcludesBuilding?.(bi)) continue;
     if (window.CITY.waterfrontFerriesEnabled && b[9] === 'Jack Layton Ferry Terminal') continue;
     if (window.CITY.htoFirehallReplacesBuilding?.(b)) continue;

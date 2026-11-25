@@ -1,0 +1,58 @@
+[
+ {
+  "name": "crane-from-water",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2040,830,0);const c={pos:[2062,16,872],look:[2010,18,806],fov:55};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "crane-close",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2040,830,0);const c={pos:[1996,9,830],look:[2010,20,806],fov:62};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "victory-silos",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(1760,330,0);const c={pos:[1790,24,360],look:[1721,22,298],fov:55};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "essroc-silos",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2110,470,0);const c={pos:[2140,26,505],look:[2075,24,426],fov:55};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "commissioners-bridge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2740,520,0);const c={pos:[2735,11,535],look:[2769,5,489],fov:62};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "commissioners-deck",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2780,484,0);const c={pos:[2793,3.2,478],look:[2745,5,496],fov:70};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "cherry-south-bridge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(2120,810,0);const c={pos:[2108,13,832],look:[2151,6,796],fov:62};a.cameraSystem.cinema=()=>c;})();"
+ },
+ {
+  "name": "cherry-north-bridge",
+  "mode": "person",
+  "time": "midday",
+  "wait": 7000,
+  "js": "(()=>{const a=window.__CITY_APP;a.teleportTo(1970,410,0);const c={pos:[1962,12,425],look:[1994,6,388],fov:62};a.cameraSystem.cinema=()=>c;})();"
+ }
+]

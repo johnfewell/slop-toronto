@@ -456,156 +456,25 @@ function buildFireHall30(spec = {}) {
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-// 2. ATLAS CRANE factory. The ACTUAL primary-photo structure (Captain's read of the Waterfront Toronto 2024
-//    restoration photo, captain/atlas-wt.jpg): a HUGE white GANTRY / A-frame, NOT a turret crane.
+// 2. ATLAS CRANE factory. The shape is the Port Lands set piece in js/portlands-landmarks.js (bead jf-li1), worked out in
+//    the Canoe Cove rowing world from Waterfront Toronto's restoration photo, a November 2026 photo, a pivot-base
+//    close-up and the City's 2025 aerial: two waterside PIVOT BASES, each a single pin from which a PAIR of steep square
+//    lattice members springs to the two white pulley-housing heads (~12 m apart, tied by parallel runway beams), and a
+//    separate fifth lattice member sloping from the inland head down to its own footing with the old hoist ropes fanned
+//    beside it. It replaces this file's earlier reading (a four-column gantry with one boom to the ground), which was
+//    made from the restoration photo alone.
 //
-//    What the photo shows (authoritative): four TALL near-vertical lattice columns at the corners of a rectangular
-//    portal (each column a square-section lattice tower ~1.4 m across), reaching ~35-38 m (photo estimate); the four
-//    columns stand as TWO PAIRS of towers, each pair leaning gently toward its partner; the pairs are joined at the
-//    TOP by a heavy horizontal crossbeam (with black cable/hoist tracks) spanning the ~10 m portal top; a small white
-//    anti-climb SLEEVE (~4 m high) stands individually around each foot, not one solid plinth; and one giant long
-//    square-section (1.5 m) lattice BOOM runs from the TOP of the structure (near a back corner, ~35 m up) all the way
-//    DOWN to the GROUND ~25 m out front, with a pair of black cables parallel along the boom — this long downward
-//    diagonal is the iconic silhouette.
-//
-//    Deliberately ABSENT (this is the correction): no rotating turret, no mid-height operator cab, no upward jib and
-//    no hook hanging from an imaginary jib tip, no invented counterweight block, and no TMU student observation
+//    Deliberately ABSENT: any rotating turret, operator cab, upward jib, counterweight, and the TMU student observation
 //    platform/stairs. WT describes the Atlas as a "300-ton" crane (the structure's mass label); no lifting capacity is
 //    published, so no capacity claim is made here. WT's "40 m / 140 ft" is the verification scaffolding, a different
 //    property; the structure's own height here is an explicit photo estimate (default 36 m).
+//    The factory builds about the OSM node with the world's axes (yaw 0): the head line runs on compass bearing 333.
 function buildAtlasCrane(spec = {}) {
   if (!THREE) throw new Error('biidaasige-heritage: CITY.THREE is required');
-  const H = Number.isFinite(spec.height) ? spec.height : ATLAS_ESTIMATE.defaultHeightM; // default 36 m photo estimate
-  const baseSpan = Number.isFinite(spec.baseSpan) ? spec.baseSpan : 8.0;   // portal footprint across the pairs (~8 m deep)
-  const topSpan = Number.isFinite(spec.topSpan) ? spec.topSpan : 10.0;     // crossbeam length along +X (~10 m)
-  const towerSide = 1.4;            // square-section lattice column
-  const sleeveH = 4.0;              // the individual white anti-climb sleeve at each foot
-  const lean = 0.9;                 // each pair leans gently toward its partner (metres at the top)
-  const boomOut = Number.isFinite(spec.boomOut) ? spec.boomOut : 25;       // boom reaches ~25 m out front (+Z)
-  const boomSide = 1.5;             // the boom is a square-section lattice
-  const buckets = {};
-  const g = (list, key) => { (buckets[key] = buckets[key] || []).push(...list); };
-
-  // The four column feet. Pairs along +X are the "two V paired towers"; each pair leans together toward each other in
-  // the X direction (the gentle inward convergence the photo shows), so the tops are slightly closer than the feet.
-  const feet = [
-    { x: -topSpan / 2, z: -baseSpan / 2, sx: +1 }, // back-left
-    { x: +topSpan / 2, z: -baseSpan / 2, sx: -1 }, // back-right
-    { x: -topSpan / 2, z: +baseSpan / 2, sx: +1 }, // front-left
-    { x: +topSpan / 2, z: +baseSpan / 2, sx: -1 }  // front-right
-  ];
-  const columnTop = (f) => [f.x + f.sx * lean, H, f.z];
-
-  // A square-section lattice column: four corner chords + ring bracing + zig-zag diagonals (a real tower, not a box).
-  function latticeTower(ax, az, bx, by, bz, side, chordR = 0.10, bays = Math.max(6, Math.round(by / 4))) {
-    const half = side / 2;
-    // the four chords run at (+-half, +-half) around the column axis; interpolate from base to top
-    const chordCorner = (t, ux, uz) => {
-      const x = ax + (bx - ax) * t + ux * half;
-      const y = 0 + by * t;
-      const z = az + (bz - az) * t + uz * half;
-      return [x, y, z];
-    };
-    const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
-    for (const [ux, uz] of corners) g([beamGeo(THREE, chordCorner(0, ux, uz), chordCorner(1, ux, uz), chordR, 4)], 'steel');
-    for (let k = 0; k <= bays; k++) {
-      const t = k / bays;
-      const ringPts = corners.map(([ux, uz]) => chordCorner(t, ux, uz));
-      for (let i = 0; i < 4; i++) g([beamGeo(THREE, ringPts[i], ringPts[(i + 1) % 4], chordR * 0.5, 4)], 'steel');
-      if (k < bays) {
-        const t2 = (k + 1) / bays;
-        const r2 = corners.map(([ux, uz]) => chordCorner(t2, ux, uz));
-        for (let i = 0; i < 4; i++) g([beamGeo(THREE, ringPts[i], r2[(i + 1) % 4], chordR * 0.4, 4)], 'steel');
-      }
-    }
-  }
-  // A light horizontal lattice beam: four parallel chords (top pair + bottom pair) + zig-zag diagonals on two faces.
-  function latticeBeam(ax, ay, az, bx, by, bz, side, chordR = 0.09, bays = 6) {
-    const half = side / 2;
-    const pt = (t, oy, oz) => [ax + (bx - ax) * t + 0, ay + (by - ay) * t + oy, az + (bz - az) * t + oz];
-    const corners = [[-half, -half], [half, -half], [half, half], [-half, half]]; // (y, z) offsets around the axis
-    for (const [oy, oz] of corners) g([beamGeo(THREE, pt(0, oy, oz), pt(1, oy, oz), chordR, 4)], 'steel');
-    for (let k = 0; k < bays; k++) {
-      const t = k / bays, t2 = (k + 1) / bays;
-      for (const [oy, oz] of corners) {
-        const other = corners[(corners.findIndex((c) => c[0] === oy && c[1] === oz) + 1) % 4];
-        g([beamGeo(THREE, pt(t, oy, oz), pt(t2, other[0], other[1]), chordR * 0.45, 4)], 'steel');
-      }
-      g([beamGeo(THREE, pt(t, half, -half), pt(t, half, half), chordR * 0.45, 4)], 'steel'); // top-face tie
-    }
-  }
-  for (const f of feet) {
-    const top = columnTop(f);
-    latticeTower(f.x, f.z, top[0], H, top[2], towerSide, 0.11, Math.max(6, Math.round(H / 7)));
-    // individual white anti-climb sleeve around this foot (not one solid plinth across the portal)
-    g([boxFromBase(THREE, f.x, 0, f.z, towerSide + 0.5, sleeveH, towerSide + 0.5)], 'sleeve');
-  }
-
-  // Heavy horizontal crossbeam across each PAIR of tower heads along +X (with a black cable/hoist track along it).
-  for (const z of [-baseSpan / 2, +baseSpan / 2]) {
-    const xL = -topSpan / 2 + lean, xR = +topSpan / 2 - lean;
-    // beam: a lattice box girder from head to head
-    latticeBeam(xL, H, z, xR, H, z, 1.1, 0.10, 5);
-    g([boxFromBase(THREE, 0, H + 0.55, z, (xR - xL), 0.35, 0.5)], 'track');           // black track along the beam top
-    g([beamGeo(THREE, [-topSpan / 2 + lean, H + 0.2, z], [topSpan / 2 - lean, H + 0.2, z], 0.16, 8)], 'steel');
-  }
-  // Two cross beams tie the front pair's head to the back pair's head (front/back, along -Z), giving the A-frame top.
-  for (const x of [-topSpan / 2 + lean, +topSpan / 2 - lean]) {
-    latticeBeam(x, H, -baseSpan / 2, x, H, +baseSpan / 2, 1.1, 0.09, 3);
-  }
-
-  // The giant long lattice BOOM: a square-section (1.5 m) truss from the TOP near a back corner down to the ground
-  // ~25 m out front (+Z). Two black cables run parallel along the boom.
-  const boomTop = [-topSpan / 2 + lean, H - 0.3, -baseSpan / 2];   // top near a back corner
-  const boomFoot = [-topSpan / 2 + lean, 0.15, -baseSpan / 2 + boomOut];
-  latticeTower(boomTop[0], boomTop[2], boomFoot[0], boomFoot[1], boomFoot[2], boomSide, 0.13, 8);
-  // the pair of black cables parallel along the boom (slightly offset either side of the boom axis)
-  for (const off of [-0.45, 0.45]) {
-    g([beamGeo(THREE, [boomTop[0] + off, boomTop[1], boomTop[2]], [boomFoot[0] + off, boomFoot[1] + 0.2, boomFoot[2]], 0.035, 4)], 'cable');
-  }
-  // A short footing pad under the boom's ground end (it truly lands on the ground in front)
-  g([boxFromBase(THREE, boomFoot[0], 0, boomFoot[2], boomSide + 1.0, 0.16, boomSide + 1.0)], 'footing');
-
-  const mats = {
-    steel: material(THREE, 0xf2f4f6, 0.55, 0.30),
-    sleeve: material(THREE, 0xfbfbfc, 0.7, 0.05),
-    track: material(THREE, 0x1d2328, 0.6, 0.25),
-    cable: material(THREE, 0x25292d, 0.5, 0.35),
-    footing: material(THREE, 0x9ea1a3, 0.95)
-  };
-  const built = assemble(THREE, buckets, mats, 'BiidaasigeAtlasCrane', { cullDistance: 900, cullCell: 140 });
-  if (!built.group.children.length) throw new Error('biidaasige-heritage: Atlas Crane produced no meshes');
-  const b = extent(THREE, built.group);
-  // Four INDIVIDUAL foot colliders (one per column) + the boom's ground footing.
-  const colliders = feet.map((f, i) => ({
-    minX: f.x - (towerSide + 0.5) / 2, maxX: f.x + (towerSide + 0.5) / 2,
-    minZ: f.z - (towerSide + 0.5) / 2, maxZ: f.z + (towerSide + 0.5) / 2,
-    minY: 0, maxY: H, prop: true, kind: `atlascrane-foot-${i + 1}`, id: 'atlas-crane'
-  }));
-  colliders.push({
-    minX: boomFoot[0] - (boomSide + 1) / 2, maxX: boomFoot[0] + (boomSide + 1) / 2,
-    minZ: boomFoot[2] - (boomSide + 1) / 2, maxZ: boomFoot[2] + (boomSide + 1) / 2,
-    minY: 0, maxY: 0.16, prop: true, kind: 'atlascrane-boom-footing', id: 'atlas-crane'
-  });
-  return {
-    id: 'atlas-crane',
-    name: 'Atlas Crane',
-    group: built.group, colliders, surfaces: [], climbable: false,
-    triangles: built.triangles, drawCalls: built.drawCalls,
-    footprint: {
-      widthM: Math.round((b.max.x - b.min.x) * 10) / 10, depthM: Math.round((b.max.z - b.min.z) * 10) / 10,
-      source: 'gantry portal ~10 m top span x ~8 m deep + a ~25 m boom reaching out front (photo estimates)'
-    },
-    heights: {
-      representativeM: H, representativeRangeM: ATLAS_ESTIMATE.heightM,
-      source: ATLAS_ESTIMATE.heightSource, installed: ATLAS_ESTIMATE.installed,
-      massLabel: '300-ton (the structure mass label Waterfront Toronto publishes; NOT a lifting capacity)'
-    },
-    form: 'white gantry / A-frame: four lattice columns in two leaning pairs, a top crossbeam with hoist tracks, and one long square-section lattice boom running down to the ground out front',
-    front: '+Z', placement: 'local-origin factory; place from atlasCranePlacement() (current OSM node)',
-    faceDirection: '+Z (the boom reaches out front +Z; the crossbeam runs across +X)',
-    source: SOURCES.atlas, photos: SOURCES.atlasPhoto, attribution: ATTRIBUTION.atlas
-  };
+  if (typeof C.buildPortLandsCrane !== 'function') throw new Error('biidaasige-heritage: js/portlands-landmarks.js must load first');
+  const feature = C.biidaasigeParkFeature ? C.biidaasigeParkFeature('atlas-crane') : null;
+  const r = C.buildPortLandsCrane({ height: Number.isFinite(spec.height) ? spec.height : ATLAS_ESTIMATE.defaultHeightM, lat: feature?.lat, lon: feature?.lon });
+  return { ...r, source: SOURCES.atlas, photos: SOURCES.atlasPhoto, attribution: ATTRIBUTION.atlas };
 }
 
 // -------------------------------------------------------------------------------------------------------------------

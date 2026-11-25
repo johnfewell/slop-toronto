@@ -144,7 +144,7 @@ function createBiidaasigePark(THREE = C.THREE, scene) {
     }
   }
   const atlas=C.biidaasigeParkWorld('atlas-crane');
-  if(atlas&&C.buildAtlasCrane) addModel(result,C.buildAtlasCrane(),{...atlas,yaw:Math.atan2(-11.8,-21.6)},'atlas-crane');
+  if(atlas&&C.buildAtlasCrane) addModel(result,C.buildAtlasCrane(),{...atlas,yaw:0},'atlas-crane');
   // Child builders are called only by this owner; their local-origin aggregate previews are deliberately unused.
   if (C.buildBadlandsScramble) {
     const badlands = C.buildBadlandsScramble({baseY:CONFIG.groundY+.008});

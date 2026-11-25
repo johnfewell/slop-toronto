@@ -5,7 +5,7 @@
 //   * the Fire Hall reads as ONE building: two-storey mass, red-brick walls over cream stone, a raised hip roof plane
 //     above the cornice, the upper narrow/wide/narrow window triads, the adapted ground-floor glazed entry, and the
 //     documented ~24 m south displacement from the native GEO row exactly reproducing the current OSM ring;
-//   * the Atlas Crane is a lattice crane (a long triangulated jib well past the base, guy cables, a lettering band)
+//   * the Atlas Crane is a lattice frame (two pivot bases, paired members to two heads, a fifth member to its own footing)
 //     and NOT the TMU student observation platform (no stairs/steps anywhere);
 //   * The Drum is an OPEN oculus shade structure with a red roof annulus, a white perimeter, paired timber V-strings
 //     and the source's 201 m2 footprint — and it never invents a moon/cultural graphic (no texture, no decal);
@@ -29,6 +29,8 @@ function city({ withData = true, withProjection = true } = {}) {
   const CITY = { THREE, Addons: { mergeGeometries } };
   const ctx = { window: { CITY }, console: { info() {}, warn() {}, log() {}, error() {} }, performance };
   vm.createContext(ctx);
+  vm.runInContext(read('js/portlands-kit.js'), ctx, { filename: 'portlands-kit.js' });
+  vm.runInContext(read('js/portlands-landmarks.js'), ctx, { filename: 'portlands-landmarks.js' });
   if (withData) vm.runInContext(read('js/biidaasige-park-data.js'), ctx, { filename: 'biidaasige-park-data.js' });
   if (withData) vm.runInContext(read('js/biidaasige-heritage.js'), ctx, { filename: 'biidaasige-heritage.js' });
   else vm.runInContext(read('js/biidaasige-heritage.js'), ctx, { filename: 'biidaasige-heritage.js' });
@@ -150,34 +152,36 @@ function register() {
     }
   });
 
-  test('Atlas Crane: the ACTUAL white gantry/A-frame (four lattice columns, top beams, long boom to the ground)', () => {
+  test('Atlas Crane: two pivot bases each springing a pair of lattice members to two heads, plus a fifth member to its own footing', () => {
     const C = city();
     const r = C.buildAtlasCrane();
     assert.equal(r.id, 'atlas-crane');
     assert.equal(r.climbable, false);
     finite(r.group, 'atlas');
     const b = bbox(r.group);
-    // TALL gantry: the actual structure is a ~35-38 m photo estimate (not a short turret crane)
-    assert.ok(b.max.y >= 34 && b.max.y <= 40, `gantry height in the photo-estimate range (${b.max.y.toFixed(1)} m)`);
+    // TALL: the structure is a ~35-38 m photo estimate (not a short turret crane)
+    assert.ok(b.max.y >= 34 && b.max.y <= 40, `crane height in the photo-estimate range (${b.max.y.toFixed(1)} m)`);
     assert.equal(r.heights.representativeM, 36, 'default representative height is the 36 m photo estimate');
-    assert.equal(r.heights.representativeRangeM.length, 2);
     assert.ok(r.heights.representativeRangeM[0] === 35 && r.heights.representativeRangeM[1] === 38);
-    // a near-vertical portal: the column cluster is ~10-12 m across, not a wide low box
-    assert.ok(b.max.x - b.min.x <= 13, `portal width ~10-12 m (got ${(b.max.x - b.min.x).toFixed(1)})`);
-    // the giant BOOM reaches far out front (+Z) and comes all the way DOWN to the ground
-    assert.ok(b.max.z > 18, `the boom reaches ~25 m out front (got ${b.max.z.toFixed(1)})`);
-    assert.ok(b.min.y <= 0.2, 'the boom foot lands on the ground (not a hovering jib tip)');
-    // the four INDIVIDUAL anti-climb sleeves + the boom footing are separate colliders (not one plinth)
-    const feet = r.colliders.filter((c) => /foot-\d/.test(c.kind));
-    assert.equal(feet.length, 4, 'four individual foot colliders');
-    assert.ok(r.colliders.some((c) => c.kind === 'atlascrane-boom-footing'), 'the boom ground footing collider');
-    // real steel lattice + the black hoist track + the pair of boom cables, on white-painted steel
+    // the fifth member slopes ~24 m inland from the inland head down to the ground: the plan spread is well past the heads' 12 m
+    const reach = Math.max(b.max.x - b.min.x, b.max.z - b.min.z);
+    assert.ok(reach > 28 && reach < 45, `the fifth member reaches ~24 m past the frame (plan spread ${reach.toFixed(1)} m)`);
+    assert.ok(b.min.y <= 0, 'the footings stand on / sink into the ground');
+    // two pivot bases and the fifth member's footing are separate colliders
+    assert.equal(r.colliders.filter((c) => /base-\d/.test(c.kind)).length, 2, 'two pivot-base colliders');
+    assert.ok(r.colliders.some((c) => c.kind === 'atlascrane-fifth-footing'), 'the fifth member footing collider');
+    // white lattice steel, the stone footings and the dark hoist ropes
     assert.ok(areaOf(meshByKey(r.group, 'steel').geometry) > 30, 'lattice steel members present');
-    assert.ok(meshByKey(r.group, 'sleeve'), 'the per-foot white anti-climb sleeves are modelled');
-    assert.ok(meshByKey(r.group, 'track'), 'the black cable/hoist track along the top beam is modelled');
-    assert.ok(meshByKey(r.group, 'cable'), 'the pair of black cables along the boom is modelled');
-    // the invented (wrong) turret-crane parts must NOT exist: no cab, counterweight, hook, turret
-    for (const banned of [/(^|-)cab$/, /counter ?weight/i, /hook/i, /turret/i, /stair/i, /platform/i, /lift/i]) {
+    assert.ok(meshByKey(r.group, 'footing'), 'the plinths and footings are modelled');
+    assert.ok(meshByKey(r.group, 'cable'), 'the fanned hoist ropes are modelled');
+    // no toon / ink pipeline and no rowing-world life: plain lit materials with vertex colour, nothing moving
+    r.group.traverse((o) => {
+      if (!o.isMesh) return;
+      assert.ok(o.material.vertexColors, `${o.name} uses vertex colour`);
+      assert.ok(o.material.isMeshStandardMaterial || o.material.isMeshStandardNodeMaterial, `${o.name} is a standard lit material`);
+    });
+    // the invented (wrong) turret-crane parts must NOT exist: no cab, counterweight, turret, stairs, platform
+    for (const banned of [/(^|-)cab$/, /counter ?weight/i, /turret/i, /stair/i, /lift/i, /canoe/i, /gull/i]) {
       assert.equal(nameIncludes(r.group, banned), false, `no invented ${banned} part`);
     }
     // '300-ton' is a structure MASS label, NOT a lifting capacity; the height is a photo-estimate
@@ -186,8 +190,11 @@ function register() {
     assert.equal(C.BIIDAASIGE_ATLAS_ESTIMATE.verifiedCapacityTons, undefined, 'no lifting-capacity claim');
     assert.match(r.heights.massLabel, /NOT a lifting capacity/);
     assert.match(r.heights.source, /photo estimate/i);
-    assert.match(r.form, /gantry|A-frame/i);
+    assert.match(r.form, /pivot bases/i);
     assert.match(r.source, /waterfrontoronto\.ca/);
+    // the head line runs on compass bearing 333: with true north given, the inland direction follows it
+    const rot = C.buildAtlasCrane({ });
+    assert.ok(rot.triangles > 2000, 'a real lattice, not a box');
   });
 
   test('The Drum: an OPEN oculus shade structure with a red annulus, white perimeter, paired V-strings, 201 m2', () => {

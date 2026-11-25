@@ -170,6 +170,9 @@ async function initApp() {
     window.CITY.maskBiidaasigePlayIslandPaths?.(biidaasigePark.paths?.group,[biidaasigePark.woodchipIsland,biidaasigePark.threeIsland]);
     if(window.CITY.biidaasigeParkStats)window.CITY.biidaasigeParkStats.nativeGroundMaterialsMasked=masked;
   }
+  // the Port Lands pieces: the silos and the bridge shells (js/portlands.js)
+  const portLands = window.CITY.createPortLands?.(THREE, scene);
+  if (portLands) pushAll(landmarkColliders, portLands.colliders);
   markInit('landmarks');
   // ?massing=1: every building from the City's 3D Massing polygons instead of its boxes (docs/massing-buildings.md;
   // js/massing-data.js and data/toronto-massing.bin are fetched only then, so normal play never loads them)
@@ -558,7 +561,7 @@ async function initApp() {
   // (scene-culling.js). The cycle tracks' flexi-posts and the CaféTO patios set their own cull distances for it; left
   // out of this list, each drew every post and patio in the city in every frame (~430k triangles, st-z51b). The TTC
   // pylons keep their reach (no cull distance) and are cut into kilometre cells the view frustum skips
-  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios', 'TtcPylons', 'WaterfrontDetails', 'WaterfrontBeachGround', 'WaterfrontPublicRealm', 'WaterfrontLandmarks', 'WaterfrontMusicGarden', 'WaterfrontHarbourfront', 'WaterfrontMainBuilding', 'WaterfrontConcertStage', 'BiidaasigePark', 'BiidaasigeAmenities', 'BiidaasigeLighting', 'WaterfrontFerries', 'WaterfrontIslandArrivals', 'WaterfrontSherbourne', 'WaterfrontBathurst', 'WaterfrontBeachLandscape', 'WaterfrontHtoLandscape', 'WaterfrontHtoFirehall', 'WaterfrontIslandAccess', 'WaterfrontDinghies', 'SchoolFences']
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios', 'TtcPylons', 'WaterfrontDetails', 'WaterfrontBeachGround', 'WaterfrontPublicRealm', 'WaterfrontLandmarks', 'WaterfrontMusicGarden', 'WaterfrontHarbourfront', 'WaterfrontMainBuilding', 'WaterfrontConcertStage', 'BiidaasigePark', 'PortLands', 'BiidaasigeAmenities', 'BiidaasigeLighting', 'WaterfrontFerries', 'WaterfrontIslandArrivals', 'WaterfrontSherbourne', 'WaterfrontBathurst', 'WaterfrontBeachLandscape', 'WaterfrontHtoLandscape', 'WaterfrontHtoFirehall', 'WaterfrontIslandAccess', 'WaterfrontDinghies', 'SchoolFences']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   // ?massing=1: the polygon cells, built in a worker since `blocks` (their near tier gives the shadow stand-ins)

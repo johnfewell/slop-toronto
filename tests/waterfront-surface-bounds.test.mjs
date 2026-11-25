@@ -14,7 +14,7 @@ import { unpackGeo } from '../js/geodata-loader.js';
 
 const root = new URL('../', import.meta.url);
 const modules = [...fs.readFileSync(new URL('explore.html', root), 'utf8')
-  .matchAll(/'\.\/js\/((?:waterfront|biidaasige)-[a-z0-9-]+)\.js'/g)].map((m) => m[1]);
+  .matchAll(/'\.\/js\/((?:waterfront|biidaasige|portlands-kit|portlands-landmarks)(?:-[a-z0-9-]+)?)\.js'/g)].map((m) => m[1]);
 
 async function city(withFeatures = true) {
   const layers = await unpackGeo(fs.readFileSync(new URL('data/toronto-geodata.bin', root)));
