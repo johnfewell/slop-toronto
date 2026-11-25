@@ -62,6 +62,9 @@ Passenger travel: [streetcar controls and implementation notes](docs/streetcar-r
 [streetcar](docs/streetcar-riding-spec.md) and [subway](docs/subway-riding-spec.md) designs. The latest engine integration is recorded in
 [the upstream sync notes](docs/upstream-sync.md).
 
+Material layers: [clear coat on vehicles, water coats on wet roads, sheen on clothes](docs/material-layers.md), after Ben Houston's
+Slop New York lighting; `?coat=0` turns them off for an A/B.
+
 Camera movement: [interactive cycling/driving follow and the optional CN Tower two-shot](docs/camera-rig.md),
 including the legacy comparison toggle, collision contract and repeatable checks.
 

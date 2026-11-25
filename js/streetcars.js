@@ -896,7 +896,10 @@ function moduleGeometry(len, nose, door) {
 // `lamp`: the cab end's lamps, white headlamps (the leading cab) or red tail lamps (the trailing one, turned round);
 // `atlas`: the destination signs (transit.js signAtlas), each car's row its instance's signRow
 function createStreetcarMaterial(lamp = 0xfff1d6, atlas = null, reversed = false) {
-  const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.38, metalness: 0.25 });
+  // The livery is a slightly rough paint under a glossy clear coat, the glass bare (quality.js `coat`; after Ben Houston's
+  // Slop New York lighting, CREDITS.md); without it (the phone tier) a glossy semi-metal
+  const { COAT, coatSSR } = window.CITY;
+  const mat = COAT ? new THREE.MeshPhysicalNodeMaterial({ roughness: 0.5, metalness: 0.0 }) : new THREE.MeshStandardNodeMaterial({ roughness: 0.38, metalness: 0.25 });
   const y = positionGeometry.y;
   const dz = abs(uv().x);
   const side = step(0.6, abs(normalGeometry.x));
@@ -927,8 +930,14 @@ function createStreetcarMaterial(lamp = 0xfff1d6, atlas = null, reversed = false
   })();
   mat.colorNode = col;
   const glassy = band.max(doorGlass).max(screen);
-  mat.roughnessNode = mix(float(0.38), float(0.08), glassy);
-  mat.metalnessNode = mix(float(0.25), float(0.7), glassy);
+  mat.roughnessNode = mix(float(COAT ? 0.5 : 0.38), float(0.08), glassy);
+  mat.metalnessNode = mix(float(COAT ? 0.0 : 0.25), float(0.7), glassy);
+  if (COAT) {
+    // (the coat covers the paint: not the glass, the door seams or the black skirt, whose unpainted plastic stays dull)
+    mat.clearcoatNode = float(1.0).sub(glassy.max(seams).max(skirt));
+    mat.clearcoatRoughnessNode = float(0.1);
+    mat.mrtNode = coatSSR();
+  }
   // lit saloon after dusk, the cab end's lamps (always on, brighter at night)
   const night = smoothstep(0.6, 1.15, cityUniforms.uInteriorGlow); // (as the vehicles' lamps, actor-models.js)
   const lampMask = smoothstep(0.6, 0.63, y).mul(float(1.0).sub(smoothstep(0.76, 0.79, y))).mul(front).mul(smoothstep(0.8, 0.84, lx)).mul(float(1.0).sub(smoothstep(1.06, 1.1, lx)));

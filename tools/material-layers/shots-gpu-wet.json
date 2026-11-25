@@ -1,0 +1,4 @@
+[
+  { "name": "street-wet", "mode": "person", "camera": "pov", "x": 386.5, "z": -343.6, "heading": 3.141592653589793, "wait": 3000 },
+  { "name": "street-wet-gpu", "js": "window.__CITY_APP.gpuTimes(); new Promise((r) => setTimeout(() => r(window.__CITY_APP.gpuTimes()), 8000))", "wait": 100, "record": true }
+]

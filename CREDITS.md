@@ -39,6 +39,12 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 - **Physically based lake water** (`?water=pbr`, `js/pbr-water.js`): mrdoob's "Physically Based Estuary Water" from
   Slop New York (MIT, above), as also carried by Slop San Francisco by @unable0_ (MIT), refitted to Toronto's
   waterfront. https://github.com/unable12/slop-sanfrancisco
+- **Physical material layers** (`js/tsl-materials.js` `coatSSR`, `js/actor-models.js`, `js/streetcars.js`,
+  `js/pedestrians.js`, `js/rocketbox-pedestrians.js`; quality.js `coat`): the idea and the layering from Ben Houston's
+  enhanced Slop New York lighting (a clear coat over vehicle paint and bus livery, water as a clear coat over wet
+  asphalt and sidewalk, a sheen lobe on clothing). https://ben3d.ca/blog/enhanced-slop-new-york-lighting, code at
+  https://github.com/bhouston/slop-newyork (branch `ssr-brdf`, MIT, © 2026 Mr.doob). Re-written here on stock three.js
+  r187 `MeshPhysicalNodeMaterial`: none of his three.js fork is used.
 - **three.js**, WebGPURenderer and TSL, loaded from jsDelivr at the r187 release (tag `r187`, commit `7e89746a`, the
   import map in `explore.html`; npm `three` 0.187.0 for tests and tools). MIT.
   https://threejs.org/

@@ -2106,15 +2106,22 @@ function createLoftedCarMaterial(spec, fixedColorHex = null) {
     return outCol;
   });
 
-  // ---- Roughness & metalness (glossy clearcoat with tight sun highlight & strong SSR/IBL reflection) ---------------
-  const paintRough = mix(float(0.11), float(0.16), isMetallic);
-  const paintMetal = mix(float(0.32), float(0.42), isMetallic).add(fresnel.mul(0.14));
+  // ---- Roughness, metalness & clear coat ------------------------------------------------------------------------
+  // With the material layers (quality.js `coat`; after Ben Houston's Slop New York lighting, CREDITS.md) the paint is a
+  // slightly rough coloured dielectric, never a metal (no tinted reflections, the metallic finishes included), under a
+  // glossy clear coat: the coat is what shines, and reflects the sky (the environment) and the street (SSR, coatSSR).
+  // Without them (the phone tier) the paint stays a glossy semi-metal, as before
+  const { COAT, coatSSR } = window.CITY;
+  const paintRough = COAT ? mix(float(0.5), float(0.4), isMetallic) : mix(float(0.11), float(0.16), isMetallic);
+  const paintMetal = COAT ? float(0.0) : mix(float(0.32), float(0.42), isMetallic).add(fresnel.mul(0.14));
+  const coatRough = float(0.08); // (Ben's 0.04 sparkled on the curved panels: no temporal anti-aliasing here)
 
   const roughFn = Fn(() => {
     const r = float(0.78).toVar();
     If(isBody.greaterThan(0.5), () => {
+      // (the road film dulls the coat on the sills, not the paint under it)
       const lowMatte = smoothstep(sillY + 0.10, sillY - 0.01, p.y).mul(0.16);
-      r.assign(paintRough.add(lowMatte));
+      r.assign(COAT ? paintRough : paintRough.add(lowMatte));
     }).ElseIf(isWindow.greaterThan(0.5), () => {
       const { glass, seal } = evalWindowGlass();
       r.assign(mix(mix(paintRough, float(0.78), seal), float(0.08), glass));
@@ -2141,6 +2148,29 @@ function createLoftedCarMaterial(spec, fixedColorHex = null) {
       m.assign(mix(paintMetal, float(0.65), smoothstep(0.45, 0.65, n.z.negate())));
     });
     return m;
+  });
+
+  // The coat covers the paint only: not the glass, its seals, the mirror glass or the trim
+  const clearcoatFn = Fn(() => {
+    const c = float(0.0).toVar();
+    If(isBody.greaterThan(0.5), () => {
+      c.assign(1.0);
+    }).ElseIf(isWindow.greaterThan(0.5), () => {
+      const { glass, seal } = evalWindowGlass();
+      c.assign(one.sub(seal).mul(one.sub(glass)));
+    }).ElseIf(isMirror.greaterThan(0.5), () => {
+      c.assign(one.sub(smoothstep(0.45, 0.65, n.z.negate())));
+    });
+    return c;
+  });
+
+  // The road film on the sills dulls the coat
+  const coatRoughFn = Fn(() => {
+    const r = coatRough.toVar();
+    If(isBody.greaterThan(0.5), () => {
+      r.assign(coatRough.add(smoothstep(sillY + 0.10, sillY - 0.01, p.y).mul(0.16)));
+    });
+    return r;
   });
 
   // ---- Emissive (evaluated only on front/rear lamp zones, taxi sign, or braking rear window) -----------------------
@@ -2184,12 +2214,17 @@ function createLoftedCarMaterial(spec, fixedColorHex = null) {
     return emit;
   });
 
-  const mat = new THREE.MeshStandardNodeMaterial();
+  const mat = COAT ? new THREE.MeshPhysicalNodeMaterial() : new THREE.MeshStandardNodeMaterial();
   mat.envMapIntensity = 1.35;
   if (fixed) mat.userData.carState = stateUniform;
   mat.colorNode = colorFn();
   mat.roughnessNode = roughFn();
   mat.metalnessNode = metalFn();
+  if (COAT) {
+    mat.clearcoatNode = clearcoatFn();
+    mat.clearcoatRoughnessNode = coatRoughFn();
+    mat.mrtNode = coatSSR();
+  }
   mat.emissiveNode = emissiveFn().mul(lampsOn);
 
   _carMaterialCache.set(cacheKey, mat);
@@ -2496,10 +2531,19 @@ function createLoftedBusMaterial() {
 
   const col = mix(mix(body, color(0x1b1f24), isTrim), color(0xc9ced3), isPod);
 
-  const mat = new THREE.MeshStandardNodeMaterial();
+  // The livery is a slightly rough paint under a glossy clear coat, as on the cars (quality.js `coat`, Ben Houston's Slop
+  // New York lighting, CREDITS.md); the glass, lamps, seals & trim are bare. Without it (the phone tier) a glossy semi-metal
+  const { COAT, coatSSR } = window.CITY;
+  const mat = COAT ? new THREE.MeshPhysicalNodeMaterial() : new THREE.MeshStandardNodeMaterial();
   mat.colorNode = col;
-  mat.roughnessNode = mix(mix(mix(float(0.3), float(0.16), max(glass, max(headLamp, tailCol))), float(0.7), max(isTrim, seal.mul(one.sub(glass)))), float(0.45), isPod);
-  mat.metalnessNode = mix(mix(float(0.22), float(0.7), glass), float(0.05), max(isTrim, isPod));
+  const paintRough = COAT ? float(0.5) : float(0.3);
+  mat.roughnessNode = mix(mix(mix(paintRough, float(0.16), max(glass, max(headLamp, tailCol))), float(0.7), max(isTrim, seal.mul(one.sub(glass)))), float(0.45), isPod);
+  mat.metalnessNode = mix(mix(COAT ? float(0.0) : float(0.22), float(0.7), glass), float(0.05), max(isTrim, isPod));
+  if (COAT) {
+    mat.clearcoatNode = one.sub(max(max(glass, max(headLamp, tailCol)), max(max(isTrim, isPod), seal)));
+    mat.clearcoatRoughnessNode = float(0.1);
+    mat.mrtNode = coatSSR();
+  }
 
   const brake = state.x;
   const blink = max(state.y.mul(step(0.0, p.x)), state.z.mul(step(p.x, 0.0)));

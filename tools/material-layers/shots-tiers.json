@@ -1,0 +1,17 @@
+[
+ {
+  "name": "cars-golden-suv",
+  "mode": "person",
+  "time": "golden",
+  "wait": 5000,
+  "js": "window.__mlCar({lat:43.6505,lon:-79.3972,body:'suv',dist:4.8,height:1.0,angle:-0.9})",
+  "record": true
+ },
+ {
+  "name": "streetcar-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6466, -79.3895);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) < 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target');\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 14 + rx * 5.0, n.y + 1.5, n.z + fz * 14 + rz * 5.0], look: [m.x, m.y + 1.6, m.z], fov: 55 }; };\n})()"
+ }
+]

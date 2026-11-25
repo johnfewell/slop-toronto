@@ -1,0 +1,30 @@
+[
+ {
+  "name": "wet-dusk-street",
+  "mode": "person",
+  "wait": 9000,
+  "js": "window.__mlStreet({lat:43.6463,lon:-79.392,road:'King Street West',height:1.8,ahead:70,fov:60,lookY:0.2})",
+  "record": true
+ },
+ {
+  "name": "wet-dusk-sidewalk",
+  "mode": "person",
+  "wait": 7000,
+  "js": "window.__mlStreet({lat:43.6505,lon:-79.3972,road:'Queen Street West',height:1.6,ahead:40,back:0,fov:70,lookY:-0.3})",
+  "record": true
+ },
+ {
+  "name": "wet-dusk-taxi",
+  "mode": "person",
+  "wait": 7000,
+  "js": "window.__mlCar({lat:43.6446,lon:-79.3948,body:'taxi',dist:6.5,height:1.3,angle:0.7})",
+  "record": true
+ },
+ {
+  "name": "wet-dusk-suv",
+  "mode": "person",
+  "wait": 7000,
+  "js": "window.__mlCar({lat:43.6505,lon:-79.3972,body:'suv',dist:6.5,height:1.3,angle:-0.7})",
+  "record": true
+ }
+]

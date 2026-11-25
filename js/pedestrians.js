@@ -786,7 +786,8 @@ const qrot = (q, v) => v.add(cross(q.xyz, cross(q.xyz, v).add(v.mul(q.w))).mul(2
  * while the far LOD (`detail = 0`) shades its part colours directly in the vertex stage.
  */
 function createPersonMaterial(pose, detail = 1) {
-  const mat = new THREE.MeshStandardNodeMaterial({ metalness: 0 });
+  // (with the material layers, quality.js `coat`: the near body's cloth also has a sheen lobe)
+  const mat = window.CITY.COAT ? new THREE.MeshPhysicalNodeMaterial({ metalness: 0 }) : new THREE.MeshStandardNodeMaterial({ metalness: 0 });
   const base = int(instanceIndex).mul(STRIDE);
   const info = pose.element(base.add(STRIDE - 1)); // seed, female, girth, hair
 
@@ -1009,6 +1010,15 @@ function createPersonMaterial(pose, detail = 1) {
   })();
 
   mat.roughnessNode = vLocal.w;
+
+  if (window.CITY.COAT) {
+    // Cloth catches light at grazing angles (fibres standing off the surface): a sheen lobe in the cloth's own colour,
+    // on the coat, trousers & sleeves (not the skin, hair or shoes). After Ben Houston's Slop New York lighting, CREDITS.md
+    const pId = vPartC.w;
+    const cloth = step(pId, 0.5).add(step(0.5, pId).mul(step(pId, 1.5))).add(step(2.5, pId).mul(step(pId, 3.5)));
+    mat.sheenNode = mat.colorNode.mul(cloth);
+    mat.sheenRoughnessNode = float(0.5);
+  }
 
   return mat;
 }

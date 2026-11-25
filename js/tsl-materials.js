@@ -99,6 +99,36 @@ const SURFACE_WEAR = window.CITY.QUALITY?.surfaceWear ?? 2;
 // fascia
 const STOREFRONT_DETAIL = window.CITY.QUALITY?.storefronts ?? 2;
 
+// The physical material layers (quality.js `coat`; jf-rcw; after Ben Houston's Slop New York lighting, CREDITS.md): a
+// clear coat over the vehicles' paint and livery, water as a clear coat over the wet roads & walks, a sheen lobe on the
+// clothes. Each lobe is its own MeshPhysicalNodeMaterial layer on stock three r187: the coat's reflection of the sky is
+// the scene's environment, its reflection of the street SSR's (the scene pass writes the coat's weight & roughness
+// where the surface has one, see coatSSR); without SSR (the medium tier) the coat reflects the environment alone
+const COAT = window.CITY.QUALITY?.coat ?? false;
+// SSR's weight on a coat: its Fresnel (F0 0.04) times this gain. SSR is added to the frame (it replaces nothing) at the
+// pass's intensity of 0.5, so the physical weight alone, 4% face on, would leave the street out of the paint
+const COAT_SSR_GAIN = 3.0;
+const physicalOrStandard = (parameters) => (COAT ? new THREE.MeshPhysicalNodeMaterial(parameters) : new THREE.MeshStandardNodeMaterial(parameters));
+
+/**
+ * The scene pass's metal/rough attachment for a material with a clear coat (main.js writes metalness & roughness, the
+ * lobe the surface shows through nothing): SSR reflects what the OUTERMOST lobe shows. Where the coat is on, its
+ * Fresnel weighs the reflection (`gain`) and its roughness sets the blur; elsewhere the base lobe, as before.
+ * `boost` (a surface's own multiplier) weighs SSR's street more than the coat's environment: see the road. Assign the
+ * result to `material.mrtNode`; main.js drops it on the tiers that draw no SSR.
+ */
+function coatSSR(gain = COAT_SSR_GAIN, boost = 1.0) {
+  const { metalness, roughness, clearcoat, clearcoatRoughness } = window.CITY.TSL;
+  const ndv = clamp(dot(normalView, positionViewDirection), 0.0, 1.0);
+  const coatFresnel = pow(float(1.0).sub(ndv), 5.0).mul(0.96).add(0.04);
+  const weight = max(metalness, clamp(clearcoat.mul(coatFresnel).mul(gain * boost), 0.0, 1.0));
+  // (the coat's roughness as soon as there is a coat: a film of 0.15 has to read as the water's 0.38, not as the asphalt's
+  // 0.9, or the roughness gate below leaves it out of SSR)
+  const rough = mix(roughness, clearcoatRoughness, smoothstep(0.0, 0.08, clearcoat));
+  const fade = smoothstep(360.0, 180.0, positionView.z.negate()); // (main.js ssrFade)
+  return mrt({ metalRough: vec2(rough.lessThan(0.75).select(weight.mul(fade), 0.0), rough) });
+}
+
 // Fast deterministic 2D -> 1D hash in TSL
 const hash2D = Fn(([p]) => {
   return fract(sin(dot(p, vec2(127.1, 311.7))).mul(43758.5453));
@@ -2237,8 +2267,9 @@ const roadCracks = Fn(([wxz, px, dir, worn]) => {
  * over the asphalt as its own strip (js/streetcars.js).
  */
 function createRoadSurfaceMaterial() {
-  const mat = new THREE.MeshStandardNodeMaterial({
-    metalness: 0.24,
+  // (with the material layers, quality.js `coat`: the water on it is a clear coat over the asphalt, not a metal)
+  const mat = physicalOrStandard({
+    metalness: COAT ? 0.0 : 0.24,
     roughness: 0.48
   });
 
@@ -2380,12 +2411,28 @@ function createRoadSurfaceMaterial() {
     if (wearLite) dry = dry.sub(patchSeal.mul(0.3)).sub(patchCover.mul(patchFresh).mul(0.06)).add(pothole.mul(0.06));
     if (wearFull) dry = dry.sub(tarSnake.mul(0.38)).sub(oilDrip.mul(0.18));
     // (the wet film & damp-stain gloss are left as they were: wet surfaces are st-wt0.11's)
+    if (COAT) return dry; // (the water's own gloss is the coat's, below: the asphalt under it stays as rough as when dry)
     const wetRough = mix(dry, float(0.38), max(film.mul(0.9), damp.mul(0.8)));
     return mix(wetRough, float(0.1), puddle);
   })();
 
-  // Water's Fresnel (F0 = 0.02): weights SSR & trades diffuse for reflection in pools (fully) and the wet film (partly)
-  mat.metalnessNode = clamp(waterFresnel.mul(1.6), 0.0, 0.85).mul(max(puddle, film.mul(0.6)));
+  if (COAT) {
+    // The water is a clear coat over the asphalt, with its own Fresnel: whole in the pools, partial on the damp stains and
+    // barely there in the wet film, which only takes the edge off the asphalt's mattness (a soft sheen, too rough for SSR).
+    // The coat darkens & reflects at once (three's layering: the base gives way to it by the coat's Fresnel), where the
+    // metalness below traded diffuse for reflection by hand. After Ben Houston's Slop New York lighting, CREDITS.md
+    // (Ben's numbers. The film's coat mirrors the environment too, so it stays at his 0.15, a soft sheen: stronger, it
+    // washed the wet road with the sky at dusk. But Toronto's wet night reads by the lit signs mirrored in the film, which
+    // SSR drew at about 0.6 of the water's Fresnel & roughness 0.38: the first capture with his weights lost the
+    // billboards' streaks down Yonge Street. So SSR's weight on the road is boosted instead, below, & the roughness
+    // is the film's own)
+    mat.clearcoatNode = max(puddle, max(damp.mul(0.35), film.mul(0.15)));
+    mat.clearcoatRoughnessNode = mix(mix(float(0.6), float(0.38), max(film.mul(0.9), damp.mul(0.8))), float(0.1), puddle);
+    mat.mrtNode = coatSSR(COAT_SSR_GAIN, 2.1);
+  } else {
+    // Water's Fresnel (F0 = 0.02): weights SSR & trades diffuse for reflection in pools (fully) and the wet film (partly)
+    mat.metalnessNode = clamp(waterFresnel.mul(1.6), 0.0, 0.85).mul(max(puddle, film.mul(0.6)));
+  }
 
   // Footprint-gated asphalt relief via bumpNormal (from CityGenerator.js): 6 mm ravelled coarse texture + 1.6 mm fine
   // aggregate grit; with wear, raised patches with their tar seals and pothole bowls, and at full wear a gentle swell &
@@ -2429,7 +2476,10 @@ function createRoadSurfaceMaterial() {
     return bumpNormal(height.mul(float(1.0).sub(puddle)));
   })();
 
-  mat.emissiveNode = Fn(() => {
+  // The water's painted-in sky glow & neon tint (New York's Times Square, still in this port) stay with the old materials:
+  // with the layers on, the water's coat mirrors the environment & SSR the lit street itself. (Kept on, the glow made a
+  // blue sheet of the wet road at night: the A/B captures, jf-rcw)
+  if (!COAT) mat.emissiveNode = Fn(() => {
     const wx = positionWorld.x;
     const wz = positionWorld.z;
 
@@ -2657,7 +2707,7 @@ function sidewalkStampAtlas() {
  * - 0: plain concrete with its transverse joints.
  */
 function createSidewalkMaterial() {
-  const mat = new THREE.MeshStandardNodeMaterial({
+  const mat = physicalOrStandard({
     metalness: 0.0,
     roughness: 0.88
   });
@@ -2880,12 +2930,20 @@ function createSidewalkMaterial() {
     let dry = float(0.9);
     if (wearLite) dry = dry.sub(margin.mul(0.1)).sub(fresh.mul(0.03)).sub(expJoint.mul(0.25));
     if (wearFull) dry = dry.sub(gum.mul(0.25)).add(scaling.mul(0.05));
+    if (COAT) return dry; // (the water's gloss is the coat's, below)
     const wetRough = mix(dry, float(0.55), max(swWet.z, swWet.x.mul(0.7)));
     return mix(wetRough, float(0.2), swPuddle);
   })();
 
-  // Water's Fresnel (F0 = 0.02) on pools & the wet film, as for the roadway
-  mat.metalnessNode = clamp(swFresnel.mul(1.6), 0.0, 0.85).mul(max(swPuddle, swWet.z.mul(0.3)));
+  if (COAT) {
+    // The water on the pools & the wet film is a clear coat over the flags, as for the roadway
+    mat.clearcoatNode = max(swPuddle, swWet.z.mul(0.3));
+    mat.clearcoatRoughnessNode = mix(float(0.55), float(0.2), swPuddle);
+    mat.mrtNode = coatSSR();
+  } else {
+    // Water's Fresnel (F0 = 0.02) on pools & the wet film, as for the roadway
+    mat.metalnessNode = clamp(swFresnel.mul(1.6), 0.0, 0.85).mul(max(swPuddle, swWet.z.mul(0.3)));
+  }
 
   // Joint grooves (rounded on the tooled ones), the rounded formed edges, concrete grain and, with wear, the heaved
   // sections; at full wear the broom finish, hairline cracks, the stamp pressed in, salt-scaled hollows, gum & pores via
@@ -3598,5 +3656,5 @@ function createRenderedWallMaterial() {
   return mat;
 }
 
-Object.assign(window.CITY, { lodDither, filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, setFootprintTable, footprintVertex, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, TREE_CARD_TWIGS: { haze: TWIG_HAZE, colour: TWIG_COLOUR }, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
+Object.assign(window.CITY, { COAT, coatSSR, physicalOrStandard, lodDither, filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, setFootprintTable, footprintVertex, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, TREE_CARD_TWIGS: { haze: TWIG_HAZE, colour: TWIG_COLOUR }, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
 })();

@@ -1,0 +1,78 @@
+[
+ {
+  "name": "cars-midday-taxi",
+  "mode": "person",
+  "wait": 5000,
+  "js": "window.__mlCar({lat:43.6446,lon:-79.3948,body:'taxi',dist:6.5,height:1.25,angle:0.7})",
+  "record": true,
+  "time": "midday"
+ },
+ {
+  "name": "cars-midday-suv",
+  "mode": "person",
+  "wait": 5000,
+  "js": "window.__mlCar({lat:43.6505,lon:-79.3972,body:'suv',dist:6.5,height:1.25,angle:-0.7})",
+  "record": true,
+  "time": "midday"
+ },
+ {
+  "name": "streetcar-midday",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6466, -79.3895);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) < 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target');\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 14 + rx * 5.0, n.y + 1.5, n.z + fz * 14 + rz * 5.0], look: [m.x, m.y + 1.6, m.z], fov: 55 }; };\n})()"
+ },
+ {
+  "name": "cars-golden-taxi",
+  "mode": "person",
+  "wait": 5000,
+  "js": "window.__mlCar({lat:43.6446,lon:-79.3948,body:'taxi',dist:4.8,height:1.0,angle:0.9})",
+  "record": true,
+  "time": "golden"
+ },
+ {
+  "name": "cars-golden-suv",
+  "mode": "person",
+  "wait": 5000,
+  "js": "window.__mlCar({lat:43.6505,lon:-79.3972,body:'suv',dist:4.8,height:1.0,angle:-0.9})",
+  "record": true,
+  "time": "golden"
+ },
+ {
+  "name": "streetcar-golden",
+  "mode": "person",
+  "time": "golden",
+  "wait": 6000,
+  "js": "(() => {\nconst app = window.__CITY_APP, C = window.CITY, t = C.worldFromLatLon(43.6466, -79.3895);\nlet best = null, bd = 1e9;\nfor (const c of app.streetcars.cars) { const s = c.sections[2]; if (s.y < -1) continue; if (Math.abs(Math.sin(s.yaw)) < 0.7) continue; const d = Math.hypot(s.x - t.x, s.z - t.z); if (d < bd) { bd = d; best = c; } }\nconsole.log('[shot] streetcar ' + Math.round(bd) + ' m from target');\nconst s0 = best.sections[2]; app.teleportTo(s0.x + 30, s0.z + 30, 0);\napp.cameraSystem.cinema = () => { const n = best.sections[0], m = best.sections[2]; const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw), rx = -fz, rz = fx;\nreturn { pos: [n.x + fx * 14 + rx * 5.0, n.y + 1.5, n.z + fz * 14 + rz * 5.0], look: [m.x, m.y + 1.6, m.z], fov: 55 }; };\n})()"
+ },
+ {
+  "name": "people-close-midday",
+  "mode": "person",
+  "time": "midday",
+  "x": -79,
+  "z": 43,
+  "wait": 1500,
+  "js": "window.__mlPerson([\"male-adult-04\"],3.2,1.35)",
+  "record": true
+ },
+ {
+  "name": "people-close-golden-f",
+  "mode": "person",
+  "time": "golden",
+  "x": -79,
+  "z": 43,
+  "wait": 1500,
+  "js": "window.__mlPerson([\"female-adult-06\"],3.0,1.3)",
+  "record": true
+ },
+ {
+  "name": "people-close-golden-m",
+  "mode": "person",
+  "time": "golden",
+  "x": -79,
+  "z": 43,
+  "wait": 1500,
+  "js": "window.__mlPerson([\"business-male-02\"],3.0,1.3)",
+  "record": true
+ }
+]

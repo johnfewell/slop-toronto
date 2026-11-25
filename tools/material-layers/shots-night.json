@@ -1,0 +1,26 @@
+[
+ {
+  "name": "night-yonge",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 9000,
+  "js": "window.__mlStreet({lat:43.6561,lon:-79.3802,road:'Yonge Street',height:2.0,ahead:90,fov:62,lookY:2.5})",
+  "record": true
+ },
+ {
+  "name": "night-dundas",
+  "mode": "person",
+  "time": "midnight",
+  "wait": 6000,
+  "js": "window.__mlStreet({lat:43.6561,lon:-79.3802,road:'Dundas Street East',height:1.8,ahead:70,fov:60,lookY:0.3})",
+  "record": true
+ },
+ {
+  "name": "night-taxi",
+  "mode": "person",
+  "wait": 5000,
+  "js": "window.__mlCar({lat:43.6446,lon:-79.3948,body:'taxi',dist:6.5,height:1.3,angle:0.7})",
+  "record": true,
+  "time": "midnight"
+ }
+]

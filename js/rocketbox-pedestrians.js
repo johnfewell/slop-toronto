@@ -276,8 +276,23 @@ function init() {
     return { bones, meshes, triangles: Math.round(tris) };
   }
 
+  // The clothes' sheen lobe (quality.js `coat`; after Ben Houston's Slop New York lighting, CREDITS.md): a body material
+  // (the clothes, with the arms & legs' skin in the same texture; the head, hair & lashes have their own) becomes a physical
+  // material with a sheen in the texture's own colour: cloth catches light at grazing angles, the fibres standing off the surface
+  function sheened(mat) {
+    if (!window.CITY.COAT || !mat || !/_(body|equpiment)$/i.test(mat.name || '') || !mat.isMeshStandardMaterial) return mat;
+    const m = new THREE.MeshPhysicalMaterial();
+    THREE.MeshStandardMaterial.prototype.copy.call(m, mat);
+    m.sheen = 1;
+    m.sheenRoughness = 0.5;
+    m.sheenColor.setScalar(0.8);
+    m.sheenColorMap = mat.map; // (the same texture: the cloth's own colour)
+    return m;
+  }
+
   // the hair and lashes are an alpha-masked card: cut it, do not blend it
   function cutout(mat) {
+    mat = sheened(mat);
     if (mat && (mat.transparent || mat.alphaTest > 0 || /opacity|hair|lash/i.test(mat.name || ''))) {
       mat.alphaTest = 0.5;
       mat.transparent = false;

@@ -1,0 +1,9 @@
+[
+ {
+  "name": "wet-night-street",
+  "mode": "person",
+  "wait": 9000,
+  "js": "window.__mlStreet({lat:43.6561,lon:-79.3802,road:'Yonge Street',height:2.0,ahead:90,fov:62,lookY:2.5})",
+  "record": true
+ }
+]

@@ -28,6 +28,10 @@ const TIERS = {
     // and SMAA keeps the overhead wires and the CN Tower's lit edge that FXAA smears (docs/perf-pass-coo.md)
     aa: 'smaa',
     ssr: true, // screen-space reflections (half res): also the scene pass's normal & metal/rough targets
+    // the physical material layers (jf-rcw; Ben Houston's Slop New York lighting, CREDITS.md): a clear coat over the
+    // vehicles' paint & livery, water as a clear coat over wet roads & walks, a sheen lobe on the people's clothes
+    // (MeshPhysicalNodeMaterial). ?coat=0 turns them off, ?coat=1 on for any tier
+    coat: true,
     bloom: true,
     bloomScale: 0.5, // the bloom's render resolution, as a share of the frame (medium: 0.35, 1-2% faster at King & Bay, the house street & High Park on the M4 mini; st-iq0v.5)
     clouds: 'medium', // the clouds library's quality preset, or null: the sky dome's painted clouds
@@ -85,7 +89,7 @@ const TIERS = {
     audio: { motors: 8, sirens: 2, events: 8, hrtf: true }
   },
   medium: {
-    scale: 1, aa: 'msaa', ssr: false, bloom: true, bloomScale: 0.35, clouds: 'medium', cloudScale: 0.75,
+    scale: 1, aa: 'msaa', ssr: false, coat: true, bloom: true, bloomScale: 0.35, clouds: 'medium', cloudScale: 0.75,
     shadowTile: 2048, shadowFar: 0.75,
     treeNear: 45, treeMid: 250, treeMidShadow: 90, treeFar: 0.85, treeImpMid: 40, massingLimits: [450, 1300],
     rocketboxNear: 30, rocketboxMax: 14,
@@ -95,7 +99,7 @@ const TIERS = {
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
-    scale: 1, aa: 'fxaa', ssr: false, bloom: true, bloomScale: 0.5, clouds: 'low', cloudScale: 0.5, // (0.35 measured no faster on this tier: st-iq0v.5)
+    scale: 1, aa: 'fxaa', ssr: false, coat: false, bloom: true, bloomScale: 0.5, clouds: 'low', cloudScale: 0.5, // (0.35 measured no faster on this tier: st-iq0v.5)
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7, treeImpMid: 35,
     massingLimits: [300, 1000], // (the full outlines only close by on a phone)
@@ -162,6 +166,8 @@ for (const [k, v] of params) {
   QUALITY[key] = Array.isArray(QUALITY[key]) ? v.split(',').map(Number) // e.g. ?q.clusterGrid=128,64,16,24
     : v === 'true' ? true : v === 'false' ? false : Number.isFinite(Number(v)) ? Number(v) : v;
 }
+if (params.get('coat') === '0') QUALITY.coat = false;
+else if (params.get('coat') === '1') QUALITY.coat = true;
 const forcedScale = parseFloat(params.get('scale'));
 if (forcedScale >= 0.25 && forcedScale <= 2) QUALITY.scale = forcedScale;
 console.info(`[quality] ${tier}: ${reason}`);
