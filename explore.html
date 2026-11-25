@@ -85,6 +85,8 @@
         eglinton ? './js/frames/eglinton/toronto-signal-plan.js' : './js/toronto-signal-plan.js',
         './js/signal-plan.js',
         './js/world-collision.js',
+        // (before tsl-materials.js: its materials' aoNode calls it; Ben Houston's sky occlusion, docs/sky-occlusion.md)
+        './js/sky-occlusion.js',
         './js/tsl-materials.js',
         // (the naturalistic water edges' shore data & runtime: the ground materials read its sand, main.js builds it)
         './js/toronto-shores.js',

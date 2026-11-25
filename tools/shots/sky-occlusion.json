@@ -1,0 +1,102 @@
+[
+ {
+  "name": "street-midday",
+  "time": "midday",
+  "mode": "person",
+  "camera": "pov",
+  "x": 150,
+  "z": -322,
+  "heading": 0,
+  "wait": 3500
+ },
+ {
+  "name": "towers-midday",
+  "time": "midday",
+  "mode": "person",
+  "camera": "pov",
+  "x": 150,
+  "z": -322,
+  "heading": -1.5708,
+  "wait": 3500
+ },
+ {
+  "name": "resid-midday",
+  "time": "midday",
+  "mode": "person",
+  "camera": "pov",
+  "x": -4622,
+  "z": -704,
+  "heading": 1.5708,
+  "wait": 3500
+ },
+ {
+  "name": "park-midday",
+  "time": "midday",
+  "mode": "person",
+  "camera": "pov",
+  "x": -6388,
+  "z": -2042,
+  "heading": 1.5708,
+  "wait": 3500
+ },
+ {
+  "name": "waterfront-midday",
+  "time": "midday",
+  "mode": "person",
+  "camera": "pov",
+  "x": -298,
+  "z": 688,
+  "heading": 3.1416,
+  "wait": 3500
+ },
+ {
+  "name": "street-twilight",
+  "time": "twilight",
+  "mode": "person",
+  "camera": "pov",
+  "x": 150,
+  "z": -322,
+  "heading": 0,
+  "wait": 3500
+ },
+ {
+  "name": "towers-twilight",
+  "time": "twilight",
+  "mode": "person",
+  "camera": "pov",
+  "x": 150,
+  "z": -322,
+  "heading": -1.5708,
+  "wait": 3500
+ },
+ {
+  "name": "resid-twilight",
+  "time": "twilight",
+  "mode": "person",
+  "camera": "pov",
+  "x": -4622,
+  "z": -704,
+  "heading": 1.5708,
+  "wait": 3500
+ },
+ {
+  "name": "park-twilight",
+  "time": "twilight",
+  "mode": "person",
+  "camera": "pov",
+  "x": -6388,
+  "z": -2042,
+  "heading": 1.5708,
+  "wait": 3500
+ },
+ {
+  "name": "waterfront-twilight",
+  "time": "twilight",
+  "mode": "person",
+  "camera": "pov",
+  "x": -298,
+  "z": 688,
+  "heading": 3.1416,
+  "wait": 3500
+ }
+]

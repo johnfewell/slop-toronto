@@ -314,11 +314,18 @@ const distantWindowLight = Fn(([grid, fw, probability, seed, lod]) => {
  * Abuja is an open, low-rise city of wide roads and set-back compounds: the sky is only partly hidden near the ground
  * (walls, trees, the neighbouring buildings) and wholly open up the towers of the Central Business District.
  */
-const canyonSkyAONode = Fn(() => {
-  const wp = positionWorld;
+// With the sky occlusion (sky-occlusion.js, tiers with the pass on) it is the share of the sky the surface sees over the
+// skyline around it, found in the height map of the city, with the hidden part refilled by the bounce; the height
+// function below stays for the phone tier and the hero probe's renders have the map too (it is world space)
+const heightCanyonAO = (wp) => {
   const heightOpenness = smoothstep(0.0, 30.0, wp.y);
   const streetCrevice = smoothstep(0.0, 4.0, wp.y).mul(0.12).add(0.88);
   return mix(float(0.7), float(1.0), heightOpenness).mul(streetCrevice);
+};
+const canyonSkyAONode = Fn(() => {
+  const wp = positionWorld;
+  const sky = window.CITY.SkyOcclusion && window.CITY.SkyOcclusion.aoNode(wp, normalWorldGeometry);
+  return sky ? sky : heightCanyonAO(wp);
 });
 
 // Material caches to prevent duplicate WebGPU WGSL shader compilation across blocks & landmarks

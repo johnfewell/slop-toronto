@@ -496,6 +496,8 @@ class LightingSystem {
     if (cityUniforms.uCanyonBounce) {
       cityUniforms.uCanyonBounce.value = p.canyonBounce;
     }
+    // the sky occlusion refills the sky the buildings hide with this bounce (js/sky-occlusion.js)
+    if (window.CITY.SkyOcclusion) window.CITY.SkyOcclusion.setBounce(this.hemiLight, p.canyonBounce);
 
     this.scene.environmentIntensity = p.envIntensity;
     this.bakeEnvironmentMap();

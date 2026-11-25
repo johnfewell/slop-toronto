@@ -72,6 +72,9 @@ const TIERS = {
     // cracks, oil drips; heaved, replaced, cracked & salt-scaled panels, gum); 1: the patches, potholes & panel wear
     // only (no Voronoi crack networks, gum or scaling); 0: plain asphalt & panels (the shaders before the port)
     surfaceWear: 2,
+    // sky-occlusion.js: the sky each surface sees over the skyline, from a height map of the city (compass slices x steps
+    // per fragment); null: the materials keep their height-only canyon AO
+    skyOcclusion: { slices: 8, steps: 10, range: 500 }, // (16 x 13, Ben's, cost 4 ms at King & Bay on the M4 mini and read the same: docs/sky-occlusion.md)
     // tsl-materials.js: the generated storefronts' interiors. 2: parallax shop interiors behind the glass (shelves, stock,
     // a counter, lamps); 1: a flat lit interior (glazing, doors & fascia unchanged)
     storefronts: 2,
@@ -96,6 +99,7 @@ const TIERS = {
     cull: 0.8, cars: 140, buses: 8, peds: 220, streetcarSpacing: 700, trains: 0.7, subway: 1, farCity: 0.6, lightPool: 0.6,
     parkedCars: 7000, parkedNear: 50, parkedFar: 200, parkedShadows: true,
     signRes: 1, lean: true, surfaceWear: 1, storefronts: 2, poleWires: false, tramSpans: true,
+    skyOcclusion: { slices: 6, steps: 8, range: 350, texel: { maxTexels: 8e6 } },
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
@@ -107,7 +111,7 @@ const TIERS = {
     cull: 0.6, cars: 90, buses: 5, peds: 140, streetcarSpacing: 1000, trains: 0.5, subway: 0.7, farCity: 0.35, lightPool: 0.4,
     // (parked cars: about half, the full model only close by and no shadows from them)
     parkedCars: 5000, parkedNear: 30, parkedFar: 140, parkedShadows: false,
-    signRes: 0.5, lean: true, surfaceWear: 1, storefronts: 1, poleWires: false, tramSpans: true,
+    signRes: 0.5, lean: true, surfaceWear: 1, storefronts: 1, poleWires: false, tramSpans: true, skyOcclusion: null,
     // (measured on the Pixel 8, which is CPU-bound: every shadow caster is drawn again in both cascades) no kerb
     // shadows (~1 ms a frame, unseen at phone size) and an even 30 fps. (Shadows to 100 m instead of 150 m saved under
     // 1 ms in a paired A/B on the phone and lost the far buildings' shadows: not taken)

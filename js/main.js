@@ -569,6 +569,13 @@ async function initApp() {
     await cityBlocks.massingReady;
     markInit('massingCells');
   }
+  // Sky occlusion (js/sky-occlusion.js): the city's buildings drawn once into a top-down height map, which the materials'
+  // aoNode searches for the horizon around each fragment. After the massing cells: their colliders are in by now
+  if (window.CITY.SkyOcclusion && window.CITY.SkyOcclusion.state.setting) {
+    window.CITY.SkyOcclusion.attach(allColliders, window.CITY.CITY_BOUNDS);
+    window.CITY.SkyOcclusion.setBounce(lightingSystem.hemiLight, window.CITY.cityUniforms.uCanyonBounce.value);
+    markInit('skyOcclusion');
+  }
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
   // The static city's ~9,000 objects never move: the per-frame matrix pass skips them (it was 2.6 ms of every frame).
   // Only its lights move (the street lights' spot pool follows the rider): the frame loop updates those itself

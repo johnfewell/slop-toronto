@@ -26,6 +26,12 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   pedestrian avoidance/dives, player lamps, audio refinements, procedural tree LODs and filtered fire escapes (MIT,
   same upstream attribution above). Adapted for Toronto's decks, crossings, quality tiers and existing driving model.
   See [the integration record](docs/upstream-sync.md) for source commits and scope.
+- **Sky occlusion** (`js/sky-occlusion.js`, `docs/sky-occlusion.md`): Ben Houston's height-map sky occlusion from his
+  enhanced Slop New York lighting (bhouston/slop-newyork, branch `ssr-brdf`; MIT, © Ben Houston; the write-up is at
+  https://ben3d.ca/blog/enhanced-slop-new-york-lighting). The buildings are drawn once into a top-down height map
+  with a max-mip pyramid, the horizon is searched in 16 compass slices of 13 steps, and the cosine-weighted visible
+  sky is integrated in closed form per slice (the slice integral of GTAO). Here it is evaluated in the materials'
+  `aoNode` on stock three.js r187 instead of in his half-resolution screen pass on his three.js fork.
 - **Generated storefronts and entrances** (`js/tsl-materials.js` `createStorefront`, `createBuildingEntrance`,
   `boxCoverage`): adapted from mrdoob's Slop New York `8d88e41`, `26bb9fe`, `09d27e0` and `dbaf5f9` (MIT, same upstream
   attribution above), for Toronto's box facades, storeys and data-driven selection, with a blank fascia in place of
