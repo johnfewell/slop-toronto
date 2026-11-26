@@ -15,9 +15,11 @@ const C = window.CITY;
 const enabled = () => new URLSearchParams(typeof location === 'undefined' ? '' : location.search).get('portlands') !== '0';
 let active = null;
 
-function createPortLands(THREE = C.THREE, scene, options = {}) {
+// A generator (one `yield` between its pieces) for main.js's late build; createPortLands runs it through at once
+function* createPortLandsSteps(THREE = C.THREE, scene, options = {}) {
   active = null;
   C.portLandsStats = null;
+  C.releasePortLandsBaseEdits?.();
   if (!enabled() || !THREE || !C.PORTLANDS_KIT) return null;
   const result = { group: new THREE.Group(), colliders: [], excludedRows: new Set(), layers: {} };
   result.group.name = 'PortLands';
@@ -31,6 +33,7 @@ function createPortLands(THREE = C.THREE, scene, options = {}) {
       result.layers.silos = { triangles: silos.triangles, built: silos.built.map((b) => b.id) };
     }
   } catch (e) { console.warn('[portlands] silos failed', e); }
+  yield 'bridges';
   // bridge shells
   try {
     const shells = C.buildPortLandsBridges?.({});
@@ -39,25 +42,30 @@ function createPortLands(THREE = C.THREE, scene, options = {}) {
       result.layers.bridges = { triangles: shells.triangles, built: shells.bridges };
     }
   } catch (e) { console.warn('[portlands] bridge shells failed', e); }
+  yield 'banks';
   // armour-stone banks and planting (js/portlands-banks.js)
   try {
     const parkRing = options.parkRing || options.park?.parkRing;
-    const banks = parkRing ? C.buildPortLandsBanks?.({ parkRing }) : null;
+    const banks = parkRing ? (C.buildPortLandsBanksSteps ? yield* C.buildPortLandsBanksSteps({ parkRing }) : null) : null;
     if (banks?.group) {
       result.group.add(banks.group);
       result.layers.banks = banks.stats;
       result.update = banks.update || null; // (per frame: the planting's viewer and distance)
     }
   } catch (e) { console.warn('[portlands] banks failed', e); }
+  yield 'portlands-done';
   active = result;
   result.nativeGeo = C.GEO;
+  C.claimPortLandsBaseEdits?.(C.GEO); // (the silo rows the base city leaves out: js/park-detail.js)
   if (scene) scene.add(result.group);
   C.portLandsStats = { silos: result.layers.silos || null, bridges: result.layers.bridges || null, banks: result.layers.banks || null, colliders: result.colliders.length };
   return result;
 }
 
-/** buildings.js: a massing row the silos replace (matched by place and form, so only the two silo rows). */
-const portLandsExcludesBuilding = (i) => !!active && active.nativeGeo === C.GEO && active.excludedRows.has(i);
+function createPortLands(THREE, scene, options) {
+  const steps = createPortLandsSteps(THREE, scene, options);
+  for (let r = steps.next(); ; r = steps.next()) if (r.done) return r.value;
+}
 
-Object.assign(C, { createPortLands, portLandsExcludesBuilding });
+Object.assign(C, { createPortLands, createPortLandsSteps });
 })();

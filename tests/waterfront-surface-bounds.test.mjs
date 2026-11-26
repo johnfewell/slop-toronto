@@ -13,8 +13,11 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { unpackGeo } from '../js/geodata-loader.js';
 
 const root = new URL('../', import.meta.url);
-const modules = [...fs.readFileSync(new URL('explore.html', root), 'utf8')
-  .matchAll(/'\.\/js\/((?:waterfront|biidaasige|portlands-kit|portlands-landmarks)(?:-[a-z0-9-]+)?)\.js'/g)].map((m) => m[1]);
+// (the order they run in: the start-up list, then the park's and the Port Lands' detail scripts, cityAppScripts.detail)
+const html = fs.readFileSync(new URL('explore.html', root), 'utf8');
+const detailText = html.match(/const detail = \[[\s\S]*?\];/)[0];
+const pick = (text) => [...text.matchAll(/'\.\/js\/((?:waterfront|biidaasige|portlands-kit|portlands-landmarks|park-detail)(?:-[a-z0-9-]+)?)\.js'/g)].map((m) => m[1]);
+const modules = [...pick(html.replace(detailText, '')), ...pick(detailText)];
 
 async function city(withFeatures = true) {
   const layers = await unpackGeo(fs.readFileSync(new URL('data/toronto-geodata.bin', root)));

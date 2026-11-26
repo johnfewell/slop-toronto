@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const read = (path) => readFileSync(join(__dirname, '..', path), 'utf8');
 const context = vm.createContext({ window: { CITY: {} } });
-for (const path of ['js/toronto-geodata.js', 'js/city-config.js', 'js/biidaasige-map-anchors.js', 'js/biidaasige-park.js']) vm.runInContext(read(path), context);
+for (const path of ['js/toronto-geodata.js', 'js/city-config.js', 'js/biidaasige-map-anchors.js', 'js/park-detail.js', 'js/biidaasige-park.js']) vm.runInContext(read(path), context);
 const { TELEPORT_LOCATIONS, LANDMARK_SITES, CITY_BOUNDS, GEO, blockAt, nearestRoads, isOnLand, waterAt } = context.window.CITY;
 // Park destinations are registered by successful assembly in production. Exercise its actual pure arrival resolver.
 TELEPORT_LOCATIONS.biidaasige = context.window.CITY.biidaasigeParkArrival();
@@ -103,7 +103,9 @@ test('preset and map teleports share arrival resets', () => {
       getAttribute: () => key,
       addEventListener: (_event, handler) => handlers.set(key, handler)
     })),
-    closePopovers: () => calls.push(['closePopovers'])
+    closePopovers: () => calls.push(['closePopovers']),
+    parkDetailGate: () => null, // (the park is built: js/park-detail.js; its own tests hold a jump for it)
+    toast: () => {}
   };
   vm.runInNewContext(`${slice('  function teleportTo(', '  let mapOverlay')}
 ${slice('  teleportButtons.forEach(', "  document.querySelectorAll('[data-ride]')")}

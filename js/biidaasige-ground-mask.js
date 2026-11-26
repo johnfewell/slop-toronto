@@ -21,7 +21,8 @@ function insideNode(rings){
 }
 // Reveal successful source-footprinted beach, dog-area and woodchip surfaces through coarse native lawn and paving.
 // Only those actual footprints qualify; source park paths and the water pass are retained. Called before shader compilation.
-C.maskBiidaasigeParkGround=function(scene,river,dogs,woodchip,threeIsland){
+// A generator, a `yield` after each material (its shader builds on its next draw): main.js's late build masks one a frame
+function* maskGroundSteps(scene,river,dogs,woodchip,threeIsland){
  const T=C.TSL;
  if(!T||!scene||(!river?.sites?.length&&!dogs?.sites?.length&&!woodchip?.surfaces?.length&&!threeIsland?.surfaces?.length))return 0;
  const ids=new Set((river?.sites||[]).filter(s=>s.kind==='beach').map(s=>s.id));
@@ -32,17 +33,24 @@ C.maskBiidaasigeParkGround=function(scene,river,dogs,woodchip,threeIsland){
  if(!rings.length)return 0;
  const ground=scene.getObjectByName('CityGround');if(!ground)return 0;
  const names=new Set(['StreetLevel','Lawns','Yards','OpenLand','Forecourts','Walkways']);let changed=0;
+ const todo=[];
  ground.traverse(o=>{
   if(!o.isMesh||!names.has(o.name))return;
   for(const m of Array.isArray(o.material)?o.material:[o.material]){
-   if(!m?.isNodeMaterial||m.userData.biidaasigeParkGroundMask)continue;
-   const inside=insideNode(rings);
-   m.maskNode=m.maskNode?m.maskNode.and(inside.not()):inside.not();
-   m.userData.biidaasigeParkGroundMask=true;m.needsUpdate=true;changed++;
+   if(!m?.isNodeMaterial||m.userData.biidaasigeParkGroundMask||todo.includes(m))continue;
+   todo.push(m);
   }
  });
+ for(const m of todo){
+  const inside=insideNode(rings);
+  m.maskNode=m.maskNode?m.maskNode.and(inside.not()):inside.not();
+  m.userData.biidaasigeParkGroundMask=true;m.needsUpdate=true;changed++;
+  yield 'mask';
+ }
  return changed;
-};
+}
+C.maskBiidaasigeParkGroundSteps=maskGroundSteps;
+C.maskBiidaasigeParkGround=function(...a){const g=maskGroundSteps(...a);for(let r=g.next();;r=g.next())if(r.done)return r.value;};
 // A few coarse OSM path-ribbon edges intrude into the photographed play islands.
 // Clone only nearby path materials, retaining their original masks elsewhere.
 C.maskBiidaasigePlayIslandPaths=function(group,islands){

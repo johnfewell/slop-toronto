@@ -409,7 +409,8 @@ async function buildEzTrees(scene, generated) {
     }
     // (the wooded parks' lidar trees name their model, height and crown radius: park-woods.js)
     const h = t.height || t.scale * slopHeight, named = t.model ? ids.indexOf(t.model) : -1;
-    sites.push({ x: t.x, y: (t.y || 0) + cutDown(t.x, t.z), z: t.z, model: named >= 0 ? named : genModel(t.species || 0, h), height: h, tier: t.tier || 0, width: t.width || 0, woods: !!t.woods });
+    sites.push({ x: t.x, y: (t.y || 0) + cutDown(t.x, t.z), z: t.z, model: named >= 0 ? named : genModel(t.species || 0, h), height: h, tier: t.tier || 0, width: t.width || 0, woods: !!t.woods,
+      gen: true }); // (generated: retire() below reaches them)
     if (t.woods) inWoods++;
   }
   // HTO: the captain-digitized ASLA plan tree symbols, already registered with the module's plan homographies and
@@ -490,6 +491,7 @@ async function buildEzTrees(scene, generated) {
   const treeModel = new Int16Array(N); // (each tree's model: its shadow stand-in's mesh)
   const midFarOf = new Int16Array(N);
   const tier = new Uint8Array(N);
+  const generatedAt = new Uint8Array(N); // (1: a generated park or yard tree)
   const isPine = new Uint8Array(N);
   const cls = new Uint8Array(N); // tree class: tier * 2 + pine, WOODS_CLASS or IMP_CLASS (the hand-over edges are the same within a class)
   const impData = new Float32Array(N * 4); // (IMP_CLASS: the impostor's frame width and height (m), its model, a random)
@@ -513,6 +515,7 @@ async function buildEzTrees(scene, generated) {
   sites.forEach((t, i) => {
     const m = Math.max(0, t.model);
     treeModel[i] = m;
+    generatedAt[i] = t.gen ? 1 : 0;
     const r1 = hashPos(t.x, 1.3, t.z), r2 = hashPos(t.z, 7.1, t.x), r3 = hashPos(t.x + t.z, 3.3, 0.7);
     const yaw = r2 * Math.PI * 2;
     // (the pilot's lidar trees a little less even: VARY_ON)
@@ -840,6 +843,23 @@ async function buildEzTrees(scene, generated) {
     stats.sorted = SORT;
     stats.lastRebuildMs = performance.now() - t0;
   }
+  // Late change to the generated trees (main.js assembleParkDetail: Biidaasige Park's, which the start-up build made before its
+  // scripts had loaded): the trees where the park draws its own ground and structures leave. pred(x, z) says which; the City's
+  // inventory trees are not generated and stay. The cells drop them; the next grouping (one is run here) leaves them out
+  function retire(pred) {
+    let n = 0;
+    for (const cell of cells) {
+      let gone = 0;
+      for (const i of cell.trees) if (generatedAt[i] && pred(px[i], pz[i])) gone++;
+      if (!gone) continue;
+      const kept = new Int32Array(cell.trees.length - gone);
+      let at = 0;
+      for (const i of cell.trees) { if (generatedAt[i] && pred(px[i], pz[i])) { levels[i] = 0; n++; } else kept[at++] = i; }
+      cell.trees = kept;
+    }
+    if (n) { stats.retired = (stats.retired || 0) + n; if (lastLow !== null) rebuild(); }
+    return n;
+  }
   const last = new V3(Infinity, Infinity, Infinity);
   const cam = new V3();
   let lastLow = null;
@@ -974,7 +994,7 @@ async function buildEzTrees(scene, generated) {
   window.CITY.ezTreeDinghyStats = { enabled: dinghyKeepoutOn, scatterDropped: dinghyScatterDropped, mappedConflicts: dinghyMappedConflicts };
   console.info(`[ezTrees] ${N} trees (${ST.length / 4 - offRail} from the City's inventory, ${offRail} left out of the rail corridor, ${generated.length} in parks & yards (${inWoods} in the wooded parks' woods; ${piled} of the City's piled on one point in those parks left out), ${onBanks} on road cuts' banks), ${ids.length} models${impostors ? `; ${impTrees} woods trees with impostors beyond ${IMP_MID} m` : ''}`);
   window.CITY.treeStats = stats;
-  return { group, update, stats };
+  return { group, update, stats, retire };
 }
 
 Object.assign(window.CITY, { buildEzTrees, ezTreeMaterial: fadeMaterial }); // (the material: tests/seasons.test.mjs builds it)

@@ -29,6 +29,7 @@ const PLANT_CULL_M = 190;    // the planting's farthest model draws to here (dis
 const SHRUB_NEAR_M = 42;     // the rounded shrub is drawn within this, the crossed cards beyond
 const GRASS_CULL_M = 75;     // clumps of tall grass; beyond it the lawn's own colour takes over
 
+const drain = (steps) => { for (let r = steps.next(); ; r = steps.next()) if (r.done) return r.value; };
 function mulberry32(seed) {
   let a = seed >>> 0;
   return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
@@ -155,11 +156,13 @@ function slopeHeight(v) {
 }
 
 /** The gravel-and-earth slope under the stone, as strips along the chain (the toe on the apron, the crest 1.7-3.4 m in). */
-function buildSlope(chains, rand, isLand, cells, T) {
+function* buildSlopeSteps(chains, rand, isLand, cells, T) {
+  let n = 0;
   const vs = [SLOPE_FROM_M, 0, 0.6, 1.2, 1.8, 2.6, 3.4, 4.3, STONE_WIDTH_M];
   let tris = 0;
   for (const chain of chains) {
     for (let u = 0; u < chain.lengthM - 1; u += 1.5) {
+      if ((++n & 15) === 0) yield 'banks-slope';
       const u1 = Math.min(u + 1.5, chain.lengthM);
       const pos = [], col = [];
       const vert = (uu, v) => {
@@ -190,6 +193,7 @@ function buildSlope(chains, rand, isLand, cells, T) {
   }
   return tris;
 }
+const buildSlope = (...a) => drain(buildSlopeSteps(...a));
 
 /**
  * One rough block: a polygon of five to seven irregular sides, its top a ring of facets rising to a raised middle (so the
@@ -248,8 +252,8 @@ function blockGeometry(T, cx, cz, topY, a, b, hgt, yaw, tilt, tone, rand, mossy,
  * The armour stone: rows of blocks from the waterline inland, the first course the biggest and the closest-packed (half in
  * the water's edge apron), the later ones smaller, fewer and more sunk, so the stone thins out into the slope's crest.
  */
-function buildArmour(chains, rand, isLand, cells, T) {
-  let stones = 0, tris = 0;
+function* buildArmourSteps(chains, rand, isLand, cells, T) {
+  let stones = 0, tris = 0, n = 0;
   const rows = [
     { v: 0.1, size: 1.15, skip: 0.02, rise: 0.08 },
     { v: 0.95, size: 1.05, skip: 0.06, rise: 0.13 },
@@ -272,6 +276,7 @@ function buildArmour(chains, rand, isLand, cells, T) {
         const yaw = Math.atan2(z2 - z, x2 - x) + (rand() - 0.5) * 0.7; // (loosely along the shore, each its own way)
         const topY = GROUND_Y + slopeHeight(v) + row.rise * (0.4 + rand() * 0.9) + 0.06;
         const tone = TONES[Math.floor(rand() * TONES.length)];
+        if ((++n & 15) === 0) yield 'banks-armour';
         const g = blockGeometry(T, x, z, topY, a, b, 0.55 + rand() * 0.35, yaw, [(rand() - 0.5) * 0.22, (rand() - 0.5) * 0.22], tone, rand, row.v < 1.2 && rand() < 0.12, GROUND_Y + slopeHeight(v) + 0.02);
         cellList(cells.stone, x, z).push(g);
         stones++; tris += g.getAttribute('position').count / 3;
@@ -281,6 +286,7 @@ function buildArmour(chains, rand, isLand, cells, T) {
   }
   return { stones, triangles: tris };
 }
+const buildArmour = (...a) => drain(buildArmourSteps(...a));
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Planting: where the plants stand (pure: no rendering), then drawn with js/park-cover.js's own models
@@ -289,12 +295,14 @@ function buildArmour(chains, rand, isLand, cells, T) {
  * the air), thinning inland; and the grass that spills onto the stone slope's back. Each { x, z, h, r, tile, yaw } with
  * tile as js/park-cover.js's atlas: 0 bluestem, 1 goldenrod, 2 forbs, 4 broadleaf shrub, 5 sumac, 6 sapling.
  */
-function plantingSites(chains, rand, clear) {
+function* plantingSitesSteps(chains, rand, clear) {
   const shrubs = [], grass = [];
+  let n = 0;
   const DEPTH = 13;
   for (const chain of chains) {
     // tall grass and forbs
     for (let u = 0; u < chain.lengthM; u += 1.25) {
+      if ((++n & 7) === 0) yield 'banks-sites';
       for (let v = 3.6; v < STONE_WIDTH_M + DEPTH; v += 1.25) {
         const [x, z] = bandPoint(chain, u + (rand() - 0.5) * 1.1, v + (rand() - 0.5) * 1.1);
         if (!clear(x, z)) continue;
@@ -308,6 +316,7 @@ function plantingSites(chains, rand, clear) {
     }
     // shrubs and saplings
     for (let u = 0; u < chain.lengthM; u += 2.1) {
+      if ((++n & 7) === 0) yield 'banks-sites';
       for (let v = STONE_WIDTH_M + 0.6; v < STONE_WIDTH_M + DEPTH; v += 2.1) {
         const [x, z] = bandPoint(chain, u + (rand() - 0.5) * 1.8, v + (rand() - 0.5) * 1.8);
         if (!clear(x, z)) continue;
@@ -324,6 +333,7 @@ function plantingSites(chains, rand, clear) {
   }
   return { shrubs, grass };
 }
+const plantingSites = (...a) => drain(plantingSitesSteps(...a));
 
 // The shared atlas models are unit-size: the shrub's rounded model has radius ~0.636 and height ~1.118 (near), the crossed cards
 // are 1 wide and 1 tall (far, and the grass)
@@ -399,7 +409,8 @@ function buildPlantingMeshes(sites, T) {
  * Builds the armour-stone banks and the planting for the park's shores. Returns { group, update, stats } (group null when
  * the park's water edges are not found: another frame, or ?portlands=0).
  */
-function buildPortLandsBanks(options = {}) {
+// (a generator, a `yield` after each phase, for main.js's late build; buildPortLandsBanks runs it through at once)
+function* buildPortLandsBanksSteps(options = {}) {
   const T = C.THREE;
   const parkRing = options.parkRing;
   if (!parkRing?.length || typeof C.waterAt !== 'function') return { group: null, stats: { chains: 0 } };
@@ -407,14 +418,19 @@ function buildPortLandsBanks(options = {}) {
   const chains = options.chains || collectBankChains(parkRing, options.bodies, options);
   const rand = mulberry32(0x70727469);
   const cells = { stone: new Map() };
-  const slopeTris = buildSlope(chains, rand, isLand, cells, T);
-  const armour = buildArmour(chains, rand, isLand, cells, T);
+  yield 'banks-chains';
+  const slopeTris = yield* buildSlopeSteps(chains, rand, isLand, cells, T);
+  yield 'banks-slope';
+  const armour = yield* buildArmourSteps(chains, rand, isLand, cells, T);
+  yield 'banks-armour';
   const clear = (x, z) => !C.waterAt(x, z) && !C.bridgeAt?.(x, z, 7) && !C.biidaasigeParkClearAt?.(x, z) && (typeof C.blockAt !== 'function' || !C.blockAt(x, z)?.building);
-  const sites = plantingSites(chains, rand, clear);
+  const sites = yield* plantingSitesSteps(chains, rand, clear);
+  yield 'banks-sites';
   const group = new T.Group();
   group.name = 'PortLandsBanks';
   let triangles = slopeTris + armour.triangles, meshes = 0;
   for (const [key, list] of cells.stone) {
+    yield 'banks-merge'; // (one cell's stones a step)
     const geo = C.Addons.mergeGeometries(list, false);
     for (const g of list) g.dispose();
     if (!geo) continue;
@@ -422,6 +438,7 @@ function buildPortLandsBanks(options = {}) {
     group.add(K.meshOf(geo, 'stone', `PortLandsBanks-armour-${key}`, { cullDistance: 300, cullCell: CELL_M, castShadow: false }));
     meshes++;
   }
+  yield 'banks-stone';
   const planting = options.planting === false ? null : buildPlantingMeshes(sites, T);
   if (planting) group.add(planting.group);
   return {
@@ -430,5 +447,7 @@ function buildPortLandsBanks(options = {}) {
   };
 }
 
-Object.assign(C, { buildPortLandsBanks, portLandsBankChains: collectBankChains, portLandsPlantingSites: plantingSites, PORTLANDS_BANK_CONFIG: { STONE_WIDTH_M, GROUND_Y, CELL_M } });
+const buildPortLandsBanks = (options = {}) => drain(buildPortLandsBanksSteps(options));
+
+Object.assign(C, { buildPortLandsBanks, buildPortLandsBanksSteps, portLandsBankChains: collectBankChains, portLandsPlantingSites: plantingSites, PORTLANDS_BANK_CONFIG: { STONE_WIDTH_M, GROUND_Y, CELL_M } });
 })();

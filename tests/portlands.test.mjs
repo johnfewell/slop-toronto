@@ -16,7 +16,7 @@ import { unpackGeo } from '../js/geodata-loader.js';
 const same = (a, b, msg) => assert.equal(JSON.stringify(a), JSON.stringify(b), msg);
 const ROOT = new URL('..', import.meta.url).pathname;
 const MODULES = ['high-park-data', 'don-valley', 'city-config', 'portlands-kit', 'portlands-landmarks', 'portlands-bridges', 'portlands-banks',
-  'biidaasige-park-data', 'biidaasige-map-anchors', 'biidaasige-path-network-data', 'biidaasige-play-landmarks', 'biidaasige-play-infrastructure',
+  'biidaasige-park-data', 'biidaasige-map-anchors', 'park-detail', 'biidaasige-path-network-data', 'biidaasige-play-landmarks', 'biidaasige-play-infrastructure',
   'biidaasige-play-pads', 'biidaasige-dog-surfaces', 'biidaasige-woodchip-island', 'biidaasige-dodem-three-island', 'biidaasige-adventure-play',
   'biidaasige-dodem', 'biidaasige-dodem-placements', 'biidaasige-heritage', 'biidaasige-paths', 'biidaasige-river-access', 'biidaasige-ground-mask',
   'biidaasige-park', 'portlands'];

@@ -4,11 +4,8 @@
 // from source geometry in the active frame. Unplaced factory previews never enter the world.
 const C = window.CITY;
 const CONFIG = Object.freeze({ groundY: 0.224, // Toronto ground overlay, metres; not a measured park elevation
-  modelFacing: 'OSM footprint axis / documented map estimate; not surveyed', surfaceCellM: 4, youngTreeScale: .45 });
-// Each obsolete massing row was checked in the 2025 City ortho at its own
-// georeferenced centre; see tools/fixtures/biidaasige-native-identities.json.
-const REVIEWED_OLD_MASSING = [[2677.7,630.1,26.1],[2848.2,624.4,12.6],[2887,755.6,12.1],
-  [1780.9,757.5,11.3],[2189,884.9,10.4],[2486.6,687.1,4.3],[2422.4,608.3,3.6]];
+  modelFacing: 'OSM footprint axis / documented map estimate; not surveyed', surfaceCellM: 4, youngTreeScale: C.BIIDAASIGE_YOUNG_TREE_SCALE ?? .45 });
+// The building rows the park replaces are js/park-detail.js's (the base city reads them before this file has loaded).
 let active = null;
 const enabled = () => new URLSearchParams(typeof location === 'undefined' ? '' : location.search).get('biidaasige') !== '0';
 function axisYaw(feature) {
@@ -54,13 +51,12 @@ function addModel(result, model, pose, id) {
   result.models.push({ id, pose, triangles: model.triangles || 0, bounds: box });
   return true;
 }
-function biidaasigeParkArrival() {
-  const a=C.biidaasigeMapAnchor?.('snowy-owl');
-  return a ? {x:a.x-24,z:a.z+12,heading:Math.atan2(24,-12),road:'Biidaasige Park Main Path'} : null;
-}
-function createBiidaasigePark(THREE = C.THREE, scene) {
+// A generator, one `yield` between the park's pieces, so main.js's late build (assembleParkDetail) can spend a few milliseconds a
+// frame on it; createBiidaasigePark runs it through at once, as the start-up build always did
+function* createBiidaasigeParkSteps(THREE = C.THREE, scene) {
   active = null;
   C.biidaasigeParkStats = null;
+  C.releaseBiidaasigeBaseEdits?.();
   if (!enabled() || !THREE || !C.biidaasigeParkProjectionAvailable?.()) return null;
   const parkRing=C.BIIDAASIGE_PARK.park.polygon.map(([lat,lon])=>C.worldFromLatLon(lat,lon));
   const frame=C.GEO?.frame;
@@ -74,27 +70,33 @@ function createBiidaasigePark(THREE = C.THREE, scene) {
     result.group.add(pads.group);result.pads=pads;
     for(const surface of pads.surfaces || [])result.surfaceTriangles.push({id:surface.kind||'play-pad',t:surface.triangle});
   }
+  yield 'woodchip';
   const woodchip=C.buildBiidaasigeWoodchipIsland?.();
   if(woodchip?.group&&woodchip.ringWorld?.length>=3&&woodchip.surfaces?.length){
     result.group.add(woodchip.group);result.woodchipIsland=woodchip;
     for(const surface of woodchip.surfaces)result.surfaceTriangles.push({id:'inverted-oak-woodchip-island',t:surface.triangle});
     result.colliders.push(...(woodchip.colliders||[]));
   }
+  yield 'threeIsland';
   const threeIsland=C.buildBiidaasigeDodemThreeIsland?.();
   if(threeIsland?.group&&threeIsland.ringWorld?.length>=3&&threeIsland.surfaces?.length){
     result.group.add(threeIsland.group);result.threeIsland=threeIsland;
     for(const surface of threeIsland.surfaces)result.surfaceTriangles.push({id:'dodem-three-animal-island',t:surface.triangle});
     result.colliders.push(...(threeIsland.colliders||[]));
   }
+  yield 'dogs';
   const dogs=C.buildBiidaasigeDogSurfaces?.();
   if(dogs?.group&&dogs.sites?.length){
     result.group.add(dogs.group);result.dogSurfaces=dogs;
     for(const surface of dogs.surfaces || [])result.surfaceTriangles.push({id:surface.siteId||'dog-surface',t:surface.triangle});
   }
+  yield 'dodem';
   for(const pose of C.biidaasigeDodemSourcePoses?.()||[]){
     const model=C.buildBiidaasigeDodemAnimal?.(pose.kind);
     if(model)addModel(result,model,pose,pose.id);
+    yield 'dodem-animal';
   }
+  yield 'raccoon';
   const feature = C.biidaasigeParkFeature('reaching-raccoon');
   const point = C.biidaasigeParkWorld(feature);
   if (point && C.buildReachingRaccoon) addModel(result, C.buildReachingRaccoon(),
@@ -104,6 +106,7 @@ function createBiidaasigePark(THREE = C.THREE, scene) {
     const anchor=C.biidaasigeMapAnchor?.(id);
     if(anchor&&factory)addModel(result,factory(),{...anchor,yaw},id);
   }
+  yield 'cableways';
   for(const length of [20,40]){
     const a=C.biidaasigeMapAnchor?.('cableway-'+length);
     if(a&&C.buildBiidaasigeCableway){
@@ -120,6 +123,7 @@ function createBiidaasigePark(THREE = C.THREE, scene) {
   const timber=C.biidaasigeMapAnchor?.('inverted-timber-cluster');
   if(timber&&C.buildBiidaasigeInvertedTrees)addModel(result,C.buildBiidaasigeInvertedTrees({groundFinish:false}),
     {...timber,yaw:.1},'inverted-timber-cluster');
+  yield 'fireHall';
   const fireFeature = C.biidaasigeParkFeature('old-fire-hall-30');
   const firePoint = C.biidaasigeParkWorld(fireFeature);
   const ring = C.biidaasigeParkRingWorld(fireFeature);
@@ -137,15 +141,12 @@ function createBiidaasigePark(THREE = C.THREE, scene) {
     const loZ=Math.min(...local.map(p=>p.z)),hiZ=Math.max(...local.map(p=>p.z));
     const centre=transformPoint((loX+hiX)/2,(loZ+hiZ)/2,{...firePoint,yaw});
     if (addModel(result,C.buildFireHall30({width:hiX-loX,depth:hiZ-loZ}),{...centre,yaw},fireFeature.id)) {
-      const geo=C.GEO;
-      const native=(geo?.buildings || []).map((b,i)=>({b,i})).filter(({b})=>Math.hypot(b[0]-2384,b[1]-622)<1.5&&Math.abs(b[4]-8.4)<.15);
-      result.nativeFireHallRows=new Set(native.map(r=>r.i));
-      result.nativeGeo=geo;
     }
   }
   const atlas=C.biidaasigeParkWorld('atlas-crane');
   if(atlas&&C.buildAtlasCrane) addModel(result,C.buildAtlasCrane(),{...atlas,yaw:0},'atlas-crane');
   // Child builders are called only by this owner; their local-origin aggregate previews are deliberately unused.
+  yield 'badlands';
   if (C.buildBadlandsScramble) {
     const badlands = C.buildBadlandsScramble({baseY:CONFIG.groundY+.008});
     if (badlands?.group) {
@@ -154,6 +155,7 @@ function createBiidaasigePark(THREE = C.THREE, scene) {
       result.layers.push({ id: 'badlands-scramble', result: badlands });
     }
   }
+  yield 'paths';
   if(C.buildBiidaasigePaths){
     const paths=C.buildBiidaasigePaths();
     if(paths?.group){
@@ -166,18 +168,15 @@ function createBiidaasigePark(THREE = C.THREE, scene) {
       result.pathSurfaceIds=new Set(pathTriangles.map(t=>t.pathId));
     }
   }
+  yield 'river';
   const river=C.buildBiidaasigeRiverAccess?.();
   if(river?.group){
     result.group.add(river.group);result.river=river;
     for(const surface of river.surfaces || [])result.surfaceTriangles.push({id:surface.siteId,t:surface.triangle});
   }
   result.nativeGeo=C.GEO;
-  result.excludedNativeRows=new Set(result.nativeFireHallRows || []);
-  for(let i=0;i<(C.GEO?.buildings?.length || 0);i++){
-    const b=C.GEO.buildings[i];
-    if(REVIEWED_OLD_MASSING.some(([x,z,h])=>Math.hypot(b[0]-x,b[1]-z)<1 && Math.abs(b[4]-h)<.15))result.excludedNativeRows.add(i);
-    if(result.models.some(m=>m.id==='atlas-crane')&&Math.hypot(b[0]-1998.2,b[1]-782.4)<1&&Math.abs(b[4]-3.1)<.15)result.excludedNativeRows.add(i);
-  }
+  result.excludedNativeRows=C.biidaasigeExcludedRows?.(C.GEO) || new Set();
+  C.claimBiidaasigeBaseEdits?.(C.GEO); // (the rows, the turf's trunk and the stale poles the base city leaves out: js/park-detail.js)
   result.surfaceCells=new Map();
   // (the triangles' plan box, so a query away from the park skips the cell key and its string; st-s1y8)
   result.surfaceBox={minX:Infinity,maxX:-Infinity,minZ:Infinity,maxZ:-Infinity};
@@ -191,7 +190,7 @@ function createBiidaasigePark(THREE = C.THREE, scene) {
       if(!result.surfaceCells.has(k))result.surfaceCells.set(k,[]);result.surfaceCells.get(k).push(item);}
   }
   const owlSite=result.models.find(m=>m.id==='snowy-owl')?.pose;
-  if(owlSite&&C.TELEPORT_LOCATIONS)C.TELEPORT_LOCATIONS.biidaasige=biidaasigeParkArrival();
+  if(owlSite&&C.TELEPORT_LOCATIONS)C.TELEPORT_LOCATIONS.biidaasige=C.biidaasigeParkArrival();
   result.dodemUnplaced=['bear','beaver','eagle','turtle','otter','wolf','musky'].filter(kind=>!result.models.some(m=>m.id==='dodem-'+kind));
   if(!result.dodemUnplaced.length)result.unplaced=result.unplaced.filter(id=>id!=='dodem-animal-sculptures');
   active = result;
@@ -199,15 +198,6 @@ function createBiidaasigePark(THREE = C.THREE, scene) {
   C.biidaasigeParkStats = { models: result.models.map(m => m.id), layers: result.layers.map(l => l.id),
     unplaced: result.unplaced, dodemPlaced: result.models.filter(m=>m.id.startsWith('dodem-')).map(m=>m.id), dodemUnplaced: result.dodemUnplaced, colliders: result.colliders.length };
   return result;
-}
-function biidaasigeParkInside(x,z){
-  if(!active)return false;
-  const ring=active.parkRing;let inside=false;
-  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
-    const a=ring[i],b=ring[j];
-    if((a.z>z)!==(b.z>z)&&x<(b.x-a.x)*(z-a.z)/(b.z-a.z)+a.x)inside=!inside;
-  }
-  return inside;
 }
 function biidaasigeParkClearAt(x, z) {
   if (!active) return false;
@@ -239,13 +229,10 @@ function biidaasigeParkSurfaceAt(x, z, opts = {}) {
   }
   return best;
 }
-// This one historical inventory trunk falls inside the actual dog turf (City asset989014).
-// Both independently reviewed ortho and current turf asset show no internal tree; preserve every other mapped row.
-function biidaasigeParkExcludesTree(x,z,model,heightDm){
- return !!active&&active.nativeGeo===C.GEO&&model===6&&heightDm===104
-  &&Math.hypot(x-2180.9,z-679.9)<.15&&C.biidaasigeDogSurfaceAt?.(x,z)?.kind==='turf';
+function createBiidaasigePark(THREE, scene) {
+  const steps = createBiidaasigeParkSteps(THREE, scene);
+  for (let r = steps.next(); ; r = steps.next()) if (r.done) return r.value;
 }
-const biidaasigeParkExcludesBuilding = i => !!active && active.nativeGeo === C.GEO && active.excludedNativeRows?.has(i) === true;
-Object.assign(C, { biidaasigeParkExcludesTree, biidaasigeParkArrival, biidaasigeParkExcludesBuilding, BIIDAASIGE_PARK_CONFIG: CONFIG, createBiidaasigePark, biidaasigeParkClearAt,
-  biidaasigeParkSurfaceAt, biidaasigeParkInside, biidaasigeTransformCollider: transformCollider, biidaasigeAddModel: addModel });
+Object.assign(C, { BIIDAASIGE_PARK_CONFIG: CONFIG, createBiidaasigePark, createBiidaasigeParkSteps, biidaasigeParkClearAt,
+  biidaasigeParkSurfaceAt, biidaasigeTransformCollider: transformCollider, biidaasigeAddModel: addModel });
 })();

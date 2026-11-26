@@ -110,8 +110,8 @@ const TIMBER_SITES = Object.freeze([]);
 // City pole OBJECTIDs inside the park polygon that the 2025 orthophoto shows are not there (in the river and its basins,
 // or on bare ground; tools/fixtures/biidaasige-timber-poles.json orthoCheck). The generic street light layer would
 // otherwise draw each as a 9 m light, because the dataset predates the park. Skipped by js/mapped-poles.js while the park
-// is on. The bridge-deck lights (real) and the 3 poles not checked are left alone.
-const STALE_CITY_POLE_IDS = Object.freeze([142451, 142452, 142453, 142458, 142461, 142462, 142463, 142464, 142483, 142485, 142486, 142488, 142489, 142490, 142599, 142600, 142601, 142616, 142618]);
+// is on (the list is js/park-detail.js's). The bridge-deck lights (real) and the 3 poles not checked are left alone.
+const STALE_CITY_POLE_IDS = window.CITY.BIIDAASIGE_STALE_CITY_POLE_IDS; // (js/park-detail.js: mapped-poles.js reads it before this file loads)
 const TIMBER_SOURCE = Object.freeze({
   imagery: 'City of Toronto 2025 aerial imagery, 8 cm (basemap/cot_ortho_2025_color_8cm)',
   fixture: 'tools/fixtures/biidaasige-timber-poles.json',

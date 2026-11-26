@@ -67,6 +67,12 @@ async function initApp() {
   // (a capture fixture's ?liveReading=1 condition comes the same way, already resolved, as a fetch that beat the build)
   const liveReading = liveStart.mode !== 'live' ? Promise.resolve(null)
     : liveStart.capture ? Promise.resolve(liveStart.lateCondition ?? null) : LIVE.fetchReading();
+  // Biidaasige Park and the Port Lands (js/park-detail.js): their scripts load once the city is ready, unless the visit starts
+  // in them (a saved position, a link, ?parkDetail=now), when they load now and are built with the city, as they always were
+  const parkDetail = window.CITY.parkDetail;
+  const parkDetailAtStart = !parkDetail || !parkDetail.scripts().length || parkDetail.startsInRegion();
+  const parkDetailFetch = parkDetail && parkDetailAtStart ? parkDetail.load() : null; // (fetched while the renderer starts)
+  if (!parkDetailAtStart) window.CITY.claimParkBaseEdits?.(); // (what the base city leaves out for them, from its first build)
   const container = document.getElementById('canvas-container');
   const loadingOverlay = document.getElementById('loading-overlay');
   const loadingStatus = document.getElementById('loading-status');
@@ -164,6 +170,7 @@ async function initApp() {
     const waterfront = build?.(THREE, scene);
     if (waterfront) pushAll(landmarkColliders, waterfront.colliders);
   }
+  if (parkDetailFetch) await parkDetailFetch;
   const biidaasigePark = window.CITY.createBiidaasigePark?.(THREE, scene);
   if (biidaasigePark) {
     pushAll(landmarkColliders, biidaasigePark.colliders);
@@ -172,7 +179,7 @@ async function initApp() {
     if(window.CITY.biidaasigeParkStats)window.CITY.biidaasigeParkStats.nativeGroundMaterialsMasked=masked;
   }
   // the Port Lands pieces: the silos and the bridge shells (js/portlands.js)
-  const portLands = window.CITY.createPortLands?.(THREE, scene, { parkRing: biidaasigePark?.parkRing });
+  let portLands = window.CITY.createPortLands?.(THREE, scene, { parkRing: biidaasigePark?.parkRing });
   if (portLands) pushAll(landmarkColliders, portLands.colliders);
   markInit('landmarks');
   // ?massing=1: every building from the City's 3D Massing polygons instead of its boxes (docs/massing-buildings.md;
@@ -307,6 +314,9 @@ async function initApp() {
     for (const tree of streetDetails.treePositions) if (window.CITY.biidaasigeParkInside?.(tree.x,tree.z)) {
       tree.scale *= window.CITY.BIIDAASIGE_PARK_CONFIG.youngTreeScale;
     }
+  } else if (!parkDetailAtStart && window.CITY.biidaasigeBaseEditsOn?.()) {
+    // (the park is not loaded: the young planting scale from js/park-detail.js, its polygon; the trees the park clears leave later)
+    for (const tree of streetDetails.treePositions) if (window.CITY.biidaasigeParkInside?.(tree.x, tree.z)) tree.scale *= window.CITY.BIIDAASIGE_YOUNG_TREE_SCALE;
   }
   markInit('streetDetails');
   // Trees: the City's street trees & the parkland ones in John's EZ-Tree models (ez-trees.js), else mrdoob's
@@ -327,7 +337,8 @@ async function initApp() {
   }
   const treeMode = new URLSearchParams(location.search).get('trees'); // ?trees=slop: mrdoob's trees (comparison)
   if (window.CITY.clearParkSignTrees) window.CITY.clearParkSignTrees(streetDetails.treePositions); // (park-signs.js)
-  if (treeMode === 'slop' || !(await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees(allColliders);
+  let ezTrees = null;
+  if (treeMode === 'slop' || !(ezTrees = await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees(allColliders);
   // (the woods' impostors, tree-impostors.js: their atlases drawn once, before the shader warm-up sees them)
   if (window.CITY.bakeTreeImpostors) window.CITY.bakeTreeImpostors(renderer);
   streetDetails.releaseBuildIndexes();
@@ -340,18 +351,26 @@ async function initApp() {
   const streetProps = await window.CITY.buildStreetProps(scene, allColliders);
   for (const c of streetProps.colliders || []) (c.openData ? allColliders : propColliders).push(c);
   const wayfindingMaps=window.CITY.buildWayfindingMaps?.(streetProps.group);
-  if (biidaasigePark && window.CITY.buildBiidaasigeAmenities) {
+  // The park's benches, bins and fountains (clear of the City's rendered benches) and its lights (clear of the rendered wayfinding
+  // signs): built here when the park is part of the start-up, by assembleParkDetail after the city is on screen otherwise.
+  // `into` is where their groups go: the scene, or the late build's hidden stage
+  const buildParkAmenities = (into, park) => {
+    if (!park || !window.CITY.buildBiidaasigeAmenities) return null;
     const renderedSites = (window.CITY.benchStats?.placed > 0 ? window.CITY.benchStats.sites : [])
       .map(s => ({ x:s.x, z:s.z, kind:'bench' }));
-    const amenities = window.CITY.buildBiidaasigeAmenities(scene, null, { renderedSites, skipDogAreaIds: (biidaasigePark.dogSurfaces?.sites || []).map(s=>s.id) });
-    if (amenities) pushAll(allColliders, amenities.colliders);
-  }
-
-  if (biidaasigePark && window.CITY.buildBiidaasigeLighting) {
+    return window.CITY.buildBiidaasigeAmenities(into, null, { renderedSites, skipDogAreaIds: (park.dogSurfaces?.sites || []).map(s=>s.id) });
+  };
+  const buildParkLighting = (into, park, addLampSites) => {
+    if (!park || !window.CITY.buildBiidaasigeLighting) return null;
     const renderedSites = (streetProps.colliders || []).filter(c => c.kind === 'wayfinding')
       .map(c => ({x:(c.minX+c.maxX)/2,z:(c.minZ+c.maxZ)/2,kind:'wayfinding'}));
-    const parkLighting=window.CITY.buildBiidaasigeLighting(scene,null,{renderedSites,addLampSites:streetDetails.addLampSites});
-    if(parkLighting)pushAll(propColliders,parkLighting.colliders);
+    return window.CITY.buildBiidaasigeLighting(into,null,{renderedSites,addLampSites});
+  };
+  {
+    const amenities = buildParkAmenities(scene, biidaasigePark);
+    if (amenities) pushAll(allColliders, amenities.colliders);
+    const parkLighting = buildParkLighting(scene, biidaasigePark, streetDetails.addLampSites);
+    if (parkLighting) pushAll(propColliders, parkLighting.colliders);
   }
 
   // the flexi-posts on the cycle tracks' separators, and the separators' & posts' colliders (cycling.js)
@@ -1174,9 +1193,161 @@ async function initApp() {
     elLocation.replaceChildren(...nodes);
   }
 
+  // --- Biidaasige Park and the Port Lands, built after the city is on screen (js/park-detail.js, docs/park-detail-loading.md) ---
+  // Their scripts are not part of the start-up unless the visit starts in them (parkDetailAtStart). Otherwise, once the city is
+  // ready: the scripts load, the park and the Port Lands are built a few milliseconds a frame into a hidden stage, joined to the
+  // culling and warmed a few meshes a frame (drawn at nothing, so their pipelines build while the player cannot see them), and
+  // then, on one frame that builds nothing, shown: the trees the park replaces leave the tree field, the ground the park draws is
+  // masked, its colliders and lamps join. A teleport, link or ride into them before that waits for it (parkDetailGate).
+  let parkDetailState = parkDetailAtStart ? 'built' : 'pending'; // pending | building | built | failed
+  if (parkDetailAtStart && parkDetail) parkDetail.state = 'built';
+  let resolveParkBuilt = null;
+  const parkDetailBuilt = parkDetailState === 'built' ? Promise.resolve(true) : new Promise((resolve) => { resolveParkBuilt = resolve; });
+  const parkNextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  // Runs a generator a few milliseconds a frame; its return value
+  async function parkSliced(steps, ms = 4) {
+    const slow = (window.CITY.parkDetail.slow = window.CITY.parkDetail.slow || []); // (a step over 40 ms, by the piece it was before: for the captures)
+    let label = 'start';
+    for (;;) {
+      const t0 = performance.now();
+      do {
+        const s0 = performance.now(), r = steps.next();
+        if (performance.now() - s0 > 40) slow.push(`${label} ${Math.round(performance.now() - s0)}ms`);
+        if (r.done) return r.value;
+        label = r.value || label;
+      } while (performance.now() - t0 < ms);
+      await parkNextFrame();
+    }
+  }
+  async function assembleParkDetail() {
+    if (parkDetailState !== 'pending') return parkDetailBuilt;
+    parkDetailState = 'building';
+    const C = window.CITY, PD = C.parkDetail, t0 = performance.now();
+    PD.startedAt = t0; // (performance.now() when the build began: the captures line it up with their frame times)
+    const marks = [];
+    const mark = (label) => marks.push(`${label} ${Math.round(performance.now() - t0)}ms`);
+    try {
+      await PD.load();
+      mark('scripts');
+      await parkNextFrame();
+      const stage = new THREE.Group();
+      stage.name = 'ParkDetail';
+      stage.visible = false; // (nothing of it is drawn until it is built and joined to the culling)
+      scene.add(stage);
+      const park = C.createBiidaasigeParkSteps ? await parkSliced(C.createBiidaasigeParkSteps(THREE, null)) : null;
+      if (park) stage.add(park.group);
+      mark('park');
+      await parkNextFrame();
+      const portLandsNew = C.createPortLandsSteps ? await parkSliced(C.createPortLandsSteps(THREE, null, { parkRing: park?.parkRing })) : null;
+      if (portLandsNew) stage.add(portLandsNew.group);
+      mark('portLands');
+      await parkNextFrame();
+      const amenities = buildParkAmenities(stage, park);
+      mark('amenities');
+      await parkNextFrame();
+      const lamps = [];
+      const lighting = buildParkLighting(stage, park, (sites) => { for (const s of sites) lamps.push(s); });
+      mark('lighting');
+      await parkNextFrame();
+      // the culling's chunks and shadow stand-ins for the new meshes, held visible while they warm
+      const roots = stage.children.slice();
+      stage.updateMatrixWorld(true);
+      const cull = setupSceneCulling(scene, roots, lightingSystem.sunLight.shadow, { append: true, hold: true });
+      for (const root of roots) {
+        root.updateMatrixWorld(true);
+        root.updateMatrixWorld = () => {}; // (as the city's: the static groups never move)
+        root.traverse((o) => { if (o.isLight) staticLights.push(o); });
+      }
+      window.CITY.gateEmptyInstances(stage);
+      stage.traverse((o) => {
+        if (renderer.backend.isWebGPUBackend && o.isInstancedMesh) o.instanceMatrix = new THREE.StorageInstancedBufferAttribute(o.instanceMatrix.array, 16);
+        if (!QUALITY.ssr) for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) m.mrtNode = null;
+      });
+      mark('culling');
+      // warm: every mesh drawn at nothing, a few a frame, so its pipelines and node state build now
+      const warm = [], ranges = new Map();
+      stage.traverse((o) => {
+        if (!(o.isMesh || o.isLine || o.isPoints) || !o.visible) return;
+        warm.push({ o, fc: o.frustumCulled, count: o.isInstancedMesh ? o.count : -1 });
+        if (o.isInstancedMesh) o.count = 0;
+        else if (o.geometry && !ranges.has(o.geometry)) { ranges.set(o.geometry, { ...o.geometry.drawRange }); o.geometry.setDrawRange(0, 0); }
+        o.visible = false;
+        o.frustumCulled = false;
+      });
+      stage.visible = true;
+      const PER_FRAME = 3;
+      for (let k = 0; k < warm.length; k += PER_FRAME) {
+        for (let j = k; j < Math.min(warm.length, k + PER_FRAME); j++) warm[j].o.visible = true;
+        await parkNextFrame();
+      }
+      for (let i = 0; i < 3; i++) await parkNextFrame(); // (let the last pipelines finish)
+      mark(`warm ${warm.length}`);
+      // the swap: nothing new to build this frame, only counts, visibility and the base city's edits
+      await parkNextFrame();
+      for (const w of warm) { if (w.count >= 0) w.o.count = w.count; w.o.frustumCulled = w.fc; }
+      for (const [geometry, range] of ranges) geometry.setDrawRange(range.start, range.count);
+      window.CITY.releaseCullingHold(cull);
+      const lateColliders = [...(park?.colliders || []), ...(portLandsNew?.colliders || []), ...(amenities?.colliders || []), ...(lighting?.colliders || [])];
+      if (lateColliders.length) window.CITY.WorldCollision.swap([], lateColliders); // (the controllers add them to their cells)
+      mark('restored');
+      if (park) {
+        if (ezTrees) {
+          const clear = ezTrees.retire((x, z) => C.biidaasigeParkClearAt?.(x, z));
+          if (C.biidaasigeParkStats) Object.assign(C.biidaasigeParkStats, { treesRetired: clear });
+        }
+      }
+      mark('trees');
+      // the ground the park draws is cut out of the city's: one material a frame (each one's shader builds on its next draw)
+      if (park && C.maskBiidaasigeParkGroundSteps) {
+        await parkNextFrame();
+        const masked = await parkSliced(C.maskBiidaasigeParkGroundSteps(scene, park.river, park.dogSurfaces, park.woodchipIsland, park.threeIsland), 0) || 0;
+        await parkNextFrame();
+        C.maskBiidaasigePlayIslandPaths?.(park.paths?.group, [park.woodchipIsland, park.threeIsland]);
+        if (C.biidaasigeParkStats) C.biidaasigeParkStats.nativeGroundMaterialsMasked = masked;
+      }
+      mark('masked');
+      if (lamps.length) streetDetails.addLampSites(lamps);
+      if (portLandsNew) portLands = portLandsNew;
+      mark('shown');
+      parkDetailState = 'built';
+      window.CITY.parkDetail.state = 'built';
+      console.info(`[park-detail] built after the city was ready: ${marks.join(', ')}; steps over 40 ms: ${(window.CITY.parkDetail.slow || []).join(', ') || 'none'}`);
+      window.CITY.parkDetail.marks = marks;
+      resolveParkBuilt?.(true);
+    } catch (err) {
+      parkDetailState = 'failed';
+      console.warn('[park-detail] the park and the Port Lands could not be built; the base city stays as it is', err);
+      resolveParkBuilt?.(false);
+    }
+    return parkDetailBuilt;
+  }
+  // When to start: after the first frames once the city is ready, sooner for a rider coming near (updateParkDetail, every frame)
+  let parkDetailReadyAt = 0;
+  function updateParkDetail(position) {
+    if (parkDetailState !== 'pending' || !parkDetailReadyAt) return;
+    const PD = window.CITY.parkDetail;
+    const near = PD.distanceTo(position.x, position.z) < PD.NEAR_M;
+    if (near || performance.now() - parkDetailReadyAt > 2500) assembleParkDetail();
+  }
+  // A destination in the region while the park is not built waits for it (a teleport, a link, Sights, the map)
+  function parkDetailGate(x, z) {
+    if (parkDetailState === 'built' || parkDetailState === 'failed') return null;
+    const PD = window.CITY.parkDetail;
+    if (!PD || !PD.inBox(x, z, 400)) return null;
+    assembleParkDetail();
+    return parkDetailBuilt;
+  }
+
   // y: the surface arrived on, where it matters (the Don Valley pilot: a deck or the valley's floor under it;
   // city-config.js streetArrival), else the street level
   function teleportTo(x, z, heading = Math.PI, y = null) {
+    // (a place in Biidaasige Park or the Port Lands before they are built: the jump waits for them, a moment after the city is ready)
+    const holdFor = parkDetailGate(x, z);
+    if (holdFor) {
+      toast('Loading Biidaasige Park…', 4000);
+      holdFor.then((ok) => { if (ok) teleportTo(x, z, heading, y); else toast('The park could not load. Try again in a moment.', 4000); });
+      return null;
+    }
     if (!cancelTransit()) return null;
     tourGuide?.setAutoDrive(false);
     const destination = y === null || controllerManager.activeMode === 'helicopter' ? controllerManager.teleportActiveTo(x, z, heading)
@@ -1792,6 +1963,7 @@ async function initApp() {
     lakeWater.update(elapsed);
     if (waterEdges) waterEdges.update(cameraSystem.camera.position); if (parkCover) parkCover.update(cameraSystem.camera); if (portLands?.update) portLands.update(cameraSystem.camera.position);
     islandGardenCover?.update(cameraSystem.camera.position);
+    updateParkDetail(cameraSystem.camera.position);
     if (skyClouds) skyClouds.update(holding ? 0 : dt);
     precipitation.update(subwayRide.inside || (rideSession.active && cameraSystem.activePresetId === 'pov'));
     if (!holding) {
@@ -1850,6 +2022,7 @@ async function initApp() {
         if (loadingOverlay) loadingOverlay.classList.add('hidden');
         setLoadingProgress(1);
         window.__CITY_APP.ready = true;
+        parkDetailReadyAt = performance.now();
         openDeepLink();
         if (multiplayer) multiplayer.start({ tourGuide, rideSession, subwayRide, teleportTo, camera: cameraSystem.camera });
         // The phone tiers: the CPU copies of what the GPU now holds go (scene-culling.js), a second pass a little later

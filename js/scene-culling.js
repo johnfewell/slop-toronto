@@ -373,7 +373,10 @@ function splitMeshIntoCells(mesh, cell, keyOf = null) {
  * cameras render the shadow stand-ins (none are made without it). Returns stats; the culling itself runs in
  * updateSceneCulling().
  */
-function setupSceneCulling(scene, roots, shadow = null) {
+// options.append: more roots joining a city already set up (main.js assembleParkDetail: the park, built after the city was on
+// screen): their meshes are chunked, stood in for and culled as these were, added to the lists the frame reads; the far band is left
+// as it was
+function setupSceneCulling(scene, roots, shadow = null, options = {}) {
   scene.updateMatrixWorld(true);
   const stats = { chunkedMeshes: 0, chunks: 0, proxiedMeshes: 0, proxies: 0, proxyTriangles: 0 };
   const culled = [];
@@ -384,7 +387,7 @@ function setupSceneCulling(scene, roots, shadow = null) {
   for (const root of roots) root.traverse((o) => { if (o.children.length) parents.push(o); });
   const merge = mergeSmallMeshes(parents);
   // (a bigger map's far band: its city-wide meshes cut at today's city's edge first, see splitFarBand)
-  stats.bandSplit = splitFarBand(roots);
+  stats.bandSplit = options.append ? 0 : splitFarBand(roots);
   stats.mergedMeshes = merge.merged;
   stats.mergedInto = merge.into;
 
@@ -698,10 +701,14 @@ function setupSceneCulling(scene, roots, shadow = null) {
     stats.chunks += chunks.length;
   }
 
-  state.culled = culled;
-  state.buckets = bucketCulled(culled);
+  state.culled = options.append ? state.culled.concat(culled) : culled;
+  const buckets = bucketCulled(culled); // (only the new chunks: the earlier ones are in their buckets already)
+  // options.hold: the new chunks and buckets stay as they are (visible, or hidden by the caller) until releaseCullingHold(stats): the
+  // caller is warming them a few at a time, and the per-frame distance test would hide the far ones before they were drawn once
+  if (options.hold) { for (const c of culled) c.hold = true; for (const b of buckets) b.hold = true; stats.held = { entries: culled, buckets }; }
+  state.buckets = options.append && state.buckets ? state.buckets.concat(buckets) : buckets;
   stats.buckets = state.buckets.length;
-  setupFarBand(scene, roots, new Set(culled.map((c) => c.mesh)), stats);
+  if (!options.append) setupFarBand(scene, roots, new Set(culled.map((c) => c.mesh)), stats);
   return stats;
 }
 
@@ -990,6 +997,7 @@ function updateSceneCulling(cameraPosition) {
   if (band.cells.length) updateFarBand(x, z);
   const k = Q.dist;
   const cull = (c) => {
+    if (c.hold) return c.mesh.visible;
     const dx = c.x - x;
     const dy = c.y - y;
     const dz = c.z - z;
@@ -1000,6 +1008,7 @@ function updateSceneCulling(cameraPosition) {
     return;
   }
   for (const b of state.buckets) {
+    if (b.hold) continue;
     if (Math.hypot(b.x - x, b.z - z) - b.r >= b.dMax * (b.fixed ? 1 : k)) {
       b.group.visible = false;
       continue;
@@ -1091,5 +1100,13 @@ function holdsInstances() {
   return this.count > 0;
 }
 
-Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, gateEmptyInstances, SHADOW_PROXY_LAYER, releaseCpuCopies, applySnorm }); // (applySnorm: tests/scene-culling-fast.test.mjs)
+function releaseCullingHold(stats) {
+  const h = stats && stats.held;
+  if (!h) return;
+  for (const c of h.entries) c.hold = false;
+  for (const b of h.buckets) b.hold = false;
+  stats.held = null;
+}
+
+Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, releaseCullingHold, gateEmptyInstances, SHADOW_PROXY_LAYER, releaseCpuCopies, applySnorm }); // (applySnorm: tests/scene-culling-fast.test.mjs)
 })();

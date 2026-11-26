@@ -56,6 +56,34 @@
       // colliders than the boxes', so it has its own prebuilt patio layout: tools/build-patios.mjs --frame eglinton-drawn, st-ndw9.23)
       const presets = params.get('presets');
       const drawn = eglinton && (params.get('massing') === '1' || (desktop && presets !== '0' && presets !== 'off'));
+      // Biidaasige Park and the Port Lands (24 scripts, one third of a megabyte of data): not part of the start-up. Loaded once the city
+      // is ready, on approach, or up front for a start, saved position or link inside them (js/park-detail.js, docs/park-detail-loading.md).
+      // Their order is the order they ran in as part of the list above.
+      const detail = [
+        './js/biidaasige-park-data.js',
+        './js/biidaasige-path-network-data.js',
+        './js/biidaasige-play-landmarks.js',
+        './js/biidaasige-play-infrastructure.js',
+        './js/biidaasige-play-pads.js',
+        './js/biidaasige-adventure-play.js',
+        './js/biidaasige-amenities.js',
+        './js/biidaasige-dog-surfaces.js',
+        './js/biidaasige-woodchip-island.js',
+        './js/biidaasige-dodem-three-island.js',
+        './js/biidaasige-dodem.js',
+        './js/biidaasige-dodem-placements.js',
+        './js/biidaasige-lighting.js',
+        './js/portlands-kit.js',
+        './js/portlands-landmarks.js',
+        './js/portlands-bridges.js',
+        './js/portlands-banks.js',
+        './js/biidaasige-heritage.js',
+        './js/biidaasige-paths.js',
+        './js/biidaasige-river-access.js',
+        './js/biidaasige-ground-mask.js',
+        './js/biidaasige-park.js',
+        './js/portlands.js'
+      ];
       return Object.assign([
         './js/quality.js',
         eglinton ? './js/frames/eglinton/toronto-sidewalks.js' : './js/toronto-sidewalks.js',
@@ -138,30 +166,8 @@
         './js/waterfront-harbourfront.js',
         './js/waterfront-main-building.js',
         './js/waterfront-concert-stage.js',
-        './js/biidaasige-park-data.js',
         './js/biidaasige-map-anchors.js',
-        './js/biidaasige-path-network-data.js',
-        './js/biidaasige-play-landmarks.js',
-        './js/biidaasige-play-infrastructure.js',
-        './js/biidaasige-play-pads.js',
-        './js/biidaasige-adventure-play.js',
-        './js/biidaasige-amenities.js',
-        './js/biidaasige-dog-surfaces.js',
-        './js/biidaasige-woodchip-island.js',
-        './js/biidaasige-dodem-three-island.js',
-        './js/biidaasige-dodem.js',
-        './js/biidaasige-dodem-placements.js',
-        './js/biidaasige-lighting.js',
-        './js/portlands-kit.js',
-        './js/portlands-landmarks.js',
-        './js/portlands-bridges.js',
-        './js/portlands-banks.js',
-        './js/biidaasige-heritage.js',
-        './js/biidaasige-paths.js',
-        './js/biidaasige-river-access.js',
-        './js/biidaasige-ground-mask.js',
-        './js/biidaasige-park.js',
-        './js/portlands.js',
+        './js/park-detail.js',
         './js/waterfront-ferries.js',
         './js/waterfront-island-arrivals-data.js',
         './js/waterfront-island-arrivals.js',
@@ -261,7 +267,7 @@
         './js/mp-protocol.js',
         './js/multiplayer.js',
         './js/main.js'
-      ], { cityMap: map, cityDesktop: desktop, cityLidarCells: params.get('lidarTrees') === '1' && desktop && eglinton }); // (cityAppScripts.cityMap: which city data the page fetches below; .cityDesktop: the test above, for js/lidar-trees.js's message; .cityLidarCells: fetch the Eglinton map's lidar tree cells)
+      ], { cityMap: map, detail, cityDesktop: desktop, cityLidarCells: params.get('lidarTrees') === '1' && desktop && eglinton }); // (cityAppScripts.cityMap: which city data the page fetches below; .cityDesktop: the test above, for js/lidar-trees.js's message; .cityLidarCells: fetch the Eglinton map's lidar tree cells)
     })();
     // The city database (window.CITY.GEO), the mapped poles (POLES) and the parked cars (PARKED_CARS): data/toronto-geodata.bin
     // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by

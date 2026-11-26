@@ -40,6 +40,7 @@ function city({ park = true, lighting = true, projection = true } = {}) {
   if (!projection) delete CITY.worldFromLatLon;
   const ctx = { window: { CITY }, console: { info() {}, warn() {}, log() {}, error() {} } };
   if (park) vm.runInNewContext(read('js/biidaasige-park-data.js'), ctx);
+  vm.runInNewContext(read('js/park-detail.js'), ctx); // (the stale pole list the lighting file reads is its)
   if (lighting) vm.runInNewContext(read('js/biidaasige-lighting.js'), ctx);
   return CITY;
 }
