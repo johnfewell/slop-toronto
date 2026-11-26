@@ -1,0 +1,32 @@
+[
+ {
+  "name": "perf-start",
+  "wait": 3000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);const ts=[];let last=performance.now();const t0=last;await new Promise(res=>{(function f(){const n=performance.now();ts.push(n-last);last=n;if(n-t0<6000)requestAnimationFrame(f);else res()})()});ts.sort((a,b)=>a-b);const m=ts.reduce((a,b)=>a+b,0)/ts.length;const mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null;console.log('[perf] perf-start mean '+m.toFixed(2)+' ms median '+ts[ts.length>>1].toFixed(2)+' p95 '+ts[Math.floor(ts.length*0.95)].toFixed(2)+' n '+ts.length+' readyAt '+window.__mapScaleReadyAt+' heapMB '+mem+' parked '+(window.CITY.parkedStats&&window.CITY.parkedStats.kept)+' res '+performance.getEntriesByType('resource').filter(e=>/toronto-|bike-share-stations|geodata/.test(e.name)).reduce((s,e)=>s+(e.transferSize||0),0))})()",
+  "mode": "person"
+ },
+ {
+  "name": "perf-annex",
+  "wait": 3500,
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP,cars=C.parkedCarsList().filter(c=>c.z<-3200&&c.z>-5200&&c.x>-3000&&c.x<500),cell=new Map();for(const c of cars){const k=Math.floor(c.x/60)+','+Math.floor(c.z/60);cell.set(k,(cell.get(k)||0)+1);}const best=[...cell.entries()].sort((p,q)=>q[1]-p[1])[0]||['0,0',0],[i,j]=best[0].split(',').map(Number),here=cars.filter(c=>Math.floor(c.x/60)===i&&Math.floor(c.z/60)===j),m={x:here.reduce((n,c)=>n+c.x,0)/here.length,z:here.reduce((n,c)=>n+c.z,0)/here.length},c0=(here.length?here:[{x:-1720,z:-3872}]).sort((p,q)=>Math.hypot(p.x-m.x,p.z-m.z)-Math.hypot(q.x-m.x,q.z-m.z))[0],r=C.nearestRoads(c0.x,c0.z,40)[0],L=Math.hypot(r.px-c0.x,r.pz-c0.z)||1,ux=(r.px-c0.x)/L,uz=(r.pz-c0.z)/L,x=c0.x+ux*(L+6),z=c0.z+uz*(L+6);console.log('[ride-check] parked street '+JSON.stringify({cell:best[1],at:[Math.round(m.x),Math.round(m.z)],street:r.road&&r.road.name}));window.__parkedSpot={x:c0.x,z:c0.z};a.cameraSystem.cinema=null;a.teleportTo(x,z,Math.atan2(c0.x-x,c0.z-z)+0.5);a.selectCamera('pov',true);})()",
+  "mode": "person"
+ },
+ {
+  "name": "perf-annex-frame",
+  "wait": 2000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);const ts=[];let last=performance.now();const t0=last;await new Promise(res=>{(function f(){const n=performance.now();ts.push(n-last);last=n;if(n-t0<5000)requestAnimationFrame(f);else res()})()});ts.sort((a,b)=>a-b);const m=ts.reduce((a,b)=>a+b,0)/ts.length;console.log('[perf] annex mean '+m.toFixed(2)+' ms median '+ts[ts.length>>1].toFixed(2)+' p95 '+ts[Math.floor(ts.length*0.95)].toFixed(2)+' n '+ts.length+' heapMB '+(performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null))})()",
+  "mode": "person"
+ },
+ {
+  "name": "perf-danforth",
+  "wait": 3500,
+  "js": "(() => { const C=window.CITY,a=window.__CITY_APP;const b={x:4177.31,z:-2741.72};const r=C.nearestRoads(b.x,b.z,40)[0];const L=Math.hypot(r.px-b.x,r.pz-b.z)||1;const x=b.x+(r.px-b.x)/L*7,z=b.z+(r.pz-b.z)/L*7;a.cameraSystem.cinema=null;a.teleportTo(x,z,Math.atan2(b.x-x,b.z-z));a.selectCamera('pov',true);})()",
+  "mode": "person"
+ },
+ {
+  "name": "perf-danforth-frame",
+  "wait": 2000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);const ts=[];let last=performance.now();const t0=last;await new Promise(res=>{(function f(){const n=performance.now();ts.push(n-last);last=n;if(n-t0<5000)requestAnimationFrame(f);else res()})()});ts.sort((a,b)=>a-b);const m=ts.reduce((a,b)=>a+b,0)/ts.length;console.log('[perf] danforth mean '+m.toFixed(2)+' ms median '+ts[ts.length>>1].toFixed(2)+' p95 '+ts[Math.floor(ts.length*0.95)].toFixed(2)+' n '+ts.length+' heapMB '+(performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null))})()",
+  "mode": "person"
+ }
+]

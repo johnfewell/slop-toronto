@@ -333,3 +333,42 @@ captured again with the same shots and flags, tagged `parked-bin-{desk,phone}--*
 - The by-laws are resolved onto centre lines by rule. Offsets move along the street's direction at the cross street,
   which is approximate on curves. "The lane first south of" is taken as 40 m.
 - Parked cars are static: a rush-hour ban keeps the curb clear all day, and the cars do not leave at night.
+
+## On the Eglinton map (`jf-2g0`)
+
+The bigger map (`?map=eglinton`, the desktop default) had the detail map's 11,040 cars and none beyond Bloor, the Don and the Humber. Its
+binary, `data/frames/eglinton/toronto-geodata.bin`, now holds the cars of its whole frame, placed by the same rules from the frame's own
+world. Three tools take `--frame eglinton`; the detail map's files are not touched:
+
+```sh
+node tools/fetch-parking.mjs --frame eglinton       # no new download: reads the cached raw by-law and permit files
+node tools/build-parking.mjs --frame eglinton       # js/frames/eglinton/toronto-parking.js (build input, never shipped)
+node --max-old-space-size=12288 tools/build-parked-cars.mjs --frame eglinton   # about 80 s: the cars, packed into the frame's binary
+```
+
+- **By-laws.** The curb schedules were filtered to the detail frame when they were fetched. For the frame the same cached 800 MB download is
+  filtered to the frame's streets and box: `tools/data/frame-eglinton-parking-bylaws-20261030.json` holds the 7,430 records the detail
+  snapshot does not (the detail snapshot's 6,741 are all in the frame's set), and `frame-eglinton-permit-parking-20261030.json` the permit
+  areas it lacks (96 reach the frame; 53 reached the detail frame). The builder joins them and resolves them on the frame's database:
+  14,171 records, 11,143 rules (8,716 no parking, 1,844 allowed, 583 reserved), 872 not in force; unresolved by reason: 1,184 ends the game
+  cannot place, 361 outside, 564 text the parser does not understand, 47 implausible lengths. Inside the detail map's box the frame's rules
+  are exactly the detail map's.
+- **The world.** The layout runs on the frame's database, sidewalk polygons, traffic lanes, bikeways, pay stations (1,007) and the
+  drawn-buildings café platforms the desktop page loads (`js/frames/eglinton/toronto-patios-drawn.js`), through `loadParkingWorld(root, 'eglinton')`.
+- **Result: 36,049 legal stalls and 26,224 cars** (paid 3,078, restricted 4,539, permit 12,494, local 6,113; sedan 9,360, SUV 9,664, minivan
+  3,112, pickup 1,765, van 2,323). Rejections, stall by stall: curb island 367,710, lane 760,179, by-law 344,149, bikeway 44,703, arterial
+  38,854, junction 29,037, stop 8,395, hydrant 7,308, reserved 4,071, streetcar 1,092, crossing 1,144, patio 669, surveyed 500, laneway 494,
+  grade 241, overlap 13, bike share 3.
+- **Inside the old detail box** the frame's world gives 10,215 cars where the detail map's gave 11,040: 9,815 are the same car in the
+  same place, 1,225 go and 400 are new. The detail map's cars were placed in its own world, and the frame's differs in its curbs, lanes,
+  bikeways and café platforms; a stall that fails moves the next ones along the curb, which changes their seeds. The cars the Eglinton page
+  showed in that part were already audited against the frame's lanes at load.
+- **In the page.** `js/parked-cars.js` capped a tier at 12,000 / 7,000 / 5,000 cars, sized on the detail map's 11,040. On a bigger database
+  the tier keeps the same share (`DETAIL_MAP_CARS`): the high tier's cap is 28,504, so all 26,224 are drawn; the medium and low tiers keep
+  63% and 45%. The load-time audit leaves out 618 cars on a lane the traffic builds and 109 in the Don Valley pilot's cut: 25,497 stand, each
+  with a collider. Decoding the stalls takes 7 to 8 ms (2.8 ms for the detail map's), laying the cars out 110 ms.
+- **Binary.** The frame's binary changes from 5,306,815 to 5,355,091 bytes (+48 KB gzip, +0.9%). The other layers are read from it and written
+  back exactly (`repackFrameCars` checks that the file repacks to itself first), and the page's `?v=` hash for it is set in `explore.html`.
+  The prebuilt café layouts record that binary's hash among their sources, so `tools/data/frames/eglinton/patio-inputs*.json` carry the new
+  one; the layouts themselves did not change (`?patios=check`, below).
+- **Phones and low tiers** keep the detail map by default; `?map=eglinton` on one gets the scaled share.

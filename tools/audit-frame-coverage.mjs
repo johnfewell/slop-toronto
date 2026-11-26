@@ -5,10 +5,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { projectPoint, furniture, feedCounts, frameBoxes } from './build-open-data.mjs';
 import { parkingMeters } from './build-parking-meters.mjs';
 import { cafeto } from './build-cafeto.mjs';
+import { decodeGeo } from '../js/geodata-loader.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const read = (f) => JSON.parse(fs.readFileSync(path.join(root, f), 'utf8'));
@@ -37,6 +39,19 @@ export function audit() {
   for (const [kind, f] of [['Washrooms', 'washroom-facilities'], ['Parks and recreation centres', 'parks-and-recreation-facilities'], ['Drinking water', 'parks-drinking-fountains'], ['Outdoor rinks (cards)', 'outdoor-artificial-ice-rinks'], ['Tennis listings (cards)', 'tennis-courts-facilities']]) {
     add(kind, `${f}, all records`, (fr) => inFrame(fr, read(`tools/data/${f}-20261028.json`).records.map((r) => r.geometry)));
   }
+  // (jf-2g0) the layers hand-reviewed per site: what each map holds as geometry, counted from the committed reviews and binaries
+  const rinkFeatures = [...feat('rink-footprints-20261028').features, ...feat('rink-footprints-20261126-eglinton').features];
+  add('Rink polygons (City Outdoor Recreation Areas, reviewed)', 'Outdoor Recreation Area polygons of the rink inventory', (fr) => rinkFeatures.filter((f) => {
+    const g = f.geometry, outer = g.type === 'Polygon' ? g.coordinates[0] : g.coordinates[0][0];
+    return projectPoint(point(outer[0][0], outer[0][1]), fr);
+  }).length);
+  const wayPoint = (e, fr) => projectPoint(point(e.geometry[0].lon, e.geometry[0].lat), fr);
+  const tennisWays = [[feat('sports-footprints-20261023').elements, feat('tennis-review-20261028').groups], [feat('tennis-footprints-20261126-eglinton').elements, feat('tennis-review-20261126-eglinton').groups]]
+    .flatMap(([elements, groups]) => { const byId = new Map(elements.map((e) => [e.id, e])); return groups.flatMap((g) => g.ways.map((id) => byId.get(id))); });
+  add('Tennis court footprints (reviewed OSM courts)', 'OSM courts of the reviews, joined to City facilities', (fr) => tennisWays.filter((e) => wayPoint(e, fr)).length);
+  const carsIn = (bin, fr) => { const u8 = zlib.gunzipSync(fs.readFileSync(path.join(root, bin))), L = decodeGeo(u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength)); return L.PARKED_CARS; };
+  const carRows = Object.fromEntries([['detail', 'data/toronto-geodata.bin'], ['eglinton', 'data/frames/eglinton/toronto-geodata.bin']].map(([k, b]) => [k, carsIn(b).counts.cars]));
+  out.push({ layer: 'Parked cars (by-law curb schedule, pay stations)', source: 'each map\'s packed binary (PARKED_CARS)', detail: carRows.detail, eglinton: carRows.eglinton });
   const bike = { data: read('tools/data/bike-share-stations-20261026.json').stationInformation.data };
   add('Bike Share stations', 'GBFS station_information', (fr) => inFrame(fr, bike.data.stations.filter((s) => s.capacity > 0).map((s) => point(s.lon, s.lat))));
   return out;

@@ -1,0 +1,70 @@
+[
+ {
+  "name": "stats",
+  "wait": 2500,
+  "js": "(() => {window.__rk=(asset)=>{const C=window.CITY,r=C.RINKS.records.find(q=>q.assetId===asset),site=C.rinkStats.sites.find(q=>q.assetId===asset);if(!r||!site)throw new Error('Rink not drawn '+asset);const rect=C.outlineRectangle(r.polygons[0].outer);let p=[rect.x,rect.z];if(!C.inRecord(r,...p)){const xs=r.polygons[0].outer.map(q=>q[0]),zs=r.polygons[0].outer.map(q=>q[1]);outer:for(let x=Math.min(...xs);x<Math.max(...xs);x+=1)for(let z=Math.min(...zs);z<Math.max(...zs);z+=1)if(C.inRecord(r,x,z)){p=[x,z];break outer;}}return {r,site,rect,p,px:-rect.az,pz:rect.ax};};window.__rkView=(asset,{side=1,along=.45,dist=1,height=1,fov=55}={})=>{const {site,rect,px,pz}=window.__rk(asset),d=(rect.width/2+rect.length*.35+14)*dist,x=rect.x+px*d*side+rect.ax*rect.length*along,z=rect.z+pz*d*side+rect.az*rect.length*along;window.__CITY_APP.cameraSystem.cinema=()=>({pos:[x,site.y+18*height+rect.length*.25*height,z],look:[rect.x,site.y,rect.z],fov});};const C=window.CITY,a=window.__CITY_APP,s=C.rinkStats,t=C.tennisStats,p=C.parkedStats;const rinkRej=s.rejected&&s.rejected.map?s.rejected.map(x=>x.assetId?x.assetId+':'+x.reason:JSON.stringify(x)):s.rejected;console.log('[ride-check] eglinton-rinks-courts-cars '+JSON.stringify({search:location.search,season:s.season,sceneDate:s.sceneDate,rinks:{source:s.sourceCount,placed:s.placed,rejected:rinkRej,triangles:[s.surfaceTriangles,s.boardTriangles],colliders:s.colliders,boards:s.boards,surfaces:s.sites.map(x=>x.assetId+':'+x.surface)},tennis:{source:t.sourceCount,placed:t.placed,rejected:t.rejected,pads:t.pads&&t.pads.length,rejectedPads:t.rejectedPads},parked:{tier:p.tier,cap:p.cap,source:p.source,kept:p.kept,laneDropped:p.laneDropped,patioDropped:p.patioDropped,valleyDropped:p.valleyDropped,colliders:p.colliders,ms:p.ms,decodeMs:p.decodeMs,near:p.near,far:p.far},heapMB:performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null,readyAt:window.__mapScaleReadyAt}));})()",
+  "mode": "person"
+ },
+ {
+  "name": "rink-monarch",
+  "wait": 2500,
+  "js": "window.__rkView('43593',{side:-1,along:.2,dist:1.0})"
+ },
+ {
+  "name": "rink-caboto-hockey",
+  "wait": 2500,
+  "js": "window.__rkView('43583',{side:1,along:.15,dist:1.1})"
+ },
+ {
+  "name": "rink-caboto-slab",
+  "wait": 2500,
+  "js": "window.__rkView('14276',{side:1,along:.1,dist:1.4,height:1.2})"
+ },
+ {
+  "name": "rink-wallace-emerson",
+  "wait": 2500,
+  "js": "window.__rkView('43609',{side:-1,along:.3,dist:1.2})"
+ },
+ {
+  "name": "rink-kew-gardens",
+  "wait": 2500,
+  "js": "window.__rkView('44162',{side:1,along:.3,dist:1.2})"
+ },
+ {
+  "name": "rink-greenwood-rejected",
+  "wait": 2500,
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP,r=C.RINKS.records.find(q=>q.assetId==='43586'),rect=C.outlineRectangle(r.polygons[0].outer);a.cameraSystem.cinema=()=>({pos:[rect.x+40,40,rect.z+60],look:[rect.x,5,rect.z],fov:60});})()"
+ },
+ {
+  "name": "rink-pov-monarch",
+  "wait": 3000,
+  "js": "(() => {const a=window.__CITY_APP,{rect,site}=window.__rk('43593'),d=rect.length/2+7,q={x:rect.x-rect.ax*d,z:rect.z-rect.az*d};a.cameraSystem.cinema=null;a.teleportTo(q.x,q.z,Math.atan2(rect.x-q.x,rect.z-q.z));a.selectCamera('pov',true);})()",
+  "mode": "person"
+ },
+ {
+  "name": "tennis-leaside",
+  "wait": 2500,
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP,sites=C.tennisStats.sites.filter(s=>s.cityLocationId==='425'),c={x:sites.reduce((n,s)=>n+s.x,0)/sites.length,z:sites.reduce((n,s)=>n+s.z,0)/sites.length};console.log('[ride-check] leaside courts '+sites.length);a.cameraSystem.cinema=()=>({pos:[c.x-38,26,c.z+34],look:[c.x,0,c.z],fov:58});})()"
+ },
+ {
+  "name": "tennis-beaches",
+  "wait": 2500,
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP,sites=C.tennisStats.sites.filter(s=>s.cityLocationId==='219'),c={x:sites.reduce((n,s)=>n+s.x,0)/sites.length,z:sites.reduce((n,s)=>n+s.z,0)/sites.length};console.log('[ride-check] beaches courts '+sites.length);a.cameraSystem.cinema=()=>({pos:[c.x-30,24,c.z+36],look:[c.x,0,c.z],fov:58});})()"
+ },
+ {
+  "name": "tennis-churchill",
+  "wait": 2500,
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP,sites=C.tennisStats.sites.filter(s=>s.cityLocationId==='200'),c={x:sites.reduce((n,s)=>n+s.x,0)/sites.length,z:sites.reduce((n,s)=>n+s.z,0)/sites.length};console.log('[ride-check] churchill courts '+sites.length);a.cameraSystem.cinema=()=>({pos:[c.x-34,26,c.z+30],look:[c.x,0,c.z],fov:58});})()"
+ },
+ {
+  "name": "parked-annex-street",
+  "wait": 3500,
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP,cars=C.parkedCarsList().filter(c=>c.z<-3200&&c.z>-5200&&c.x>-3000&&c.x<500),cell=new Map();for(const c of cars){const k=Math.floor(c.x/60)+','+Math.floor(c.z/60);cell.set(k,(cell.get(k)||0)+1);}const best=[...cell.entries()].sort((p,q)=>q[1]-p[1])[0],[i,j]=best[0].split(',').map(Number),here=cars.filter(c=>Math.floor(c.x/60)===i&&Math.floor(c.z/60)===j),m={x:here.reduce((n,c)=>n+c.x,0)/here.length,z:here.reduce((n,c)=>n+c.z,0)/here.length},c0=here.sort((p,q)=>Math.hypot(p.x-m.x,p.z-m.z)-Math.hypot(q.x-m.x,q.z-m.z))[0],r=C.nearestRoads(c0.x,c0.z,40)[0],L=Math.hypot(r.px-c0.x,r.pz-c0.z)||1,ux=(r.px-c0.x)/L,uz=(r.pz-c0.z)/L,x=c0.x+ux*(L+6),z=c0.z+uz*(L+6);console.log('[ride-check] parked street '+JSON.stringify({cell:best[1],at:[Math.round(m.x),Math.round(m.z)],street:r.road&&r.road.name}));window.__parkedSpot={x:c0.x,z:c0.z};a.cameraSystem.cinema=null;a.teleportTo(x,z,Math.atan2(c0.x-x,c0.z-z)+0.5);a.selectCamera('pov',true);})()",
+  "mode": "person"
+ },
+ {
+  "name": "parked-annex-aerial",
+  "wait": 3000,
+  "js": "(() => {const a=window.__CITY_APP,s=window.__parkedSpot;a.cameraSystem.cinema=()=>({pos:[s.x+30,28,s.z+34],look:[s.x,0,s.z],fov:60});})()"
+ }
+]

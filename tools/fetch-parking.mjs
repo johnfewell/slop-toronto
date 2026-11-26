@@ -10,12 +10,16 @@
 // tools/data/parking-bylaws-<date>.json and tools/data/permit-parking-<date>.json, each with its resource, dates,
 // licence and the SHA-256 of the download.
 // usage: node tools/fetch-parking.mjs [--force]   then: node tools/build-parking.mjs
+//        node tools/fetch-parking.mjs --frame eglinton   (the same raw downloads, no new fetch: what the bigger map's frame adds
+//        to the detail map's two snapshots, tools/data/frame-<name>-parking-bylaws-<date>.json and frame-<name>-permit-parking-<date>.json;
+//        then: node tools/build-parking.mjs --frame eglinton)
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import { frameArgs, loadFrameGeo } from './frame-geo.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const API = 'https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action';
@@ -130,7 +134,8 @@ export function project(frame, lat, lon) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   fs.mkdirSync(OUT, { recursive: true });
-  const GEO = loadCity();
+  const { frame: frameName } = frameArgs();
+  const GEO = frameName === 'detail' ? loadCity() : (await loadFrameGeo(frameName)).GEO;
   const names = new Set(GEO.roads.map((r) => r[0]).filter(Boolean));
   const D = GEO.frame.detail, PAD = 200;
   const inFrame = ({ x, z }) => x > D.x0 - PAD && x < D.x1 + PAD && z > D.z0 - PAD && z < D.z1 + PAD;
@@ -161,11 +166,22 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   counts.kept = kept.length;
   kept.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const date = by.source.fetchedAt.slice(0, 10).replace(/-/g, '');
-  const byOut = path.join(ROOT, `tools/data/parking-bylaws-${date}.json`);
-  fs.writeFileSync(byOut, JSON.stringify({
+  let byOut = path.join(ROOT, `tools/data/parking-bylaws-${date}.json`);
+  if (frameName === 'detail') fs.writeFileSync(byOut, JSON.stringify({
     source: { ...by.source, scope: 'Chapter 950 curb schedules (no parking / stopping / standing, restricted periods, reserved curbs), in force, on streets the game has; the rest of the 950 schedules left out' },
     schedules: CURB_SCHEDULES, counts, records: kept
   }) + '\n');
+  else {
+    // a frame beyond the detail map: only what the detail map's snapshot does not hold (the build joins the two)
+    const have = new Set(JSON.parse(fs.readFileSync(byOut, 'utf8')).records.map((r) => r.id));
+    const extra = kept.filter((r) => !have.has(r.id));
+    counts.inDetailSnapshot = kept.length - extra.length; counts.added = extra.length;
+    byOut = path.join(ROOT, `tools/data/frame-${frameName}-parking-bylaws-${date}.json`);
+    fs.writeFileSync(byOut, JSON.stringify({
+      source: { ...by.source, scope: `Chapter 950 curb schedules in force on the streets of the ${frameName} map, beyond the records of parking-bylaws-${date}.json (the detail map's)` },
+      schedules: CURB_SCHEDULES, counts, records: extra
+    }) + '\n');
+  }
   console.log(`[parking] by-laws: ${JSON.stringify(counts)} -> ${path.relative(ROOT, byOut)}`);
 
   // 2. The permit parking areas reaching into the frame
@@ -176,7 +192,14 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const polys = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
     return polys.some((poly) => poly[0].some(([lon, lat]) => inFrame(project(GEO.frame, lat, lon))));
   }).map((f) => ({ area: f.properties.AREA_NAME, geometry: f.geometry }));
-  const pmOut = path.join(ROOT, `tools/data/permit-parking-${pm.source.fetchedAt.slice(0, 10).replace(/-/g, '')}.json`);
-  fs.writeFileSync(pmOut, JSON.stringify({ source: { ...pm.source, scope: 'permit parking areas reaching into the detail frame' }, total: fc.features.length, areas }) + '\n');
+  const pmDate = pm.source.fetchedAt.slice(0, 10).replace(/-/g, '');
+  let pmOut = path.join(ROOT, `tools/data/permit-parking-${pmDate}.json`);
+  if (frameName === 'detail') fs.writeFileSync(pmOut, JSON.stringify({ source: { ...pm.source, scope: 'permit parking areas reaching into the detail frame' }, total: fc.features.length, areas }) + '\n');
+  else {
+    const have = new Set(JSON.parse(fs.readFileSync(pmOut, 'utf8')).areas.map((a) => JSON.stringify(a)));
+    const extra = areas.filter((a) => !have.has(JSON.stringify(a)));
+    pmOut = path.join(ROOT, `tools/data/frame-${frameName}-permit-parking-${pmDate}.json`);
+    fs.writeFileSync(pmOut, JSON.stringify({ source: { ...pm.source, scope: `permit parking areas reaching into the ${frameName} map, beyond permit-parking-${pmDate}.json's (the detail map's)` }, total: fc.features.length, inFrame: areas.length, areas: extra }) + '\n');
+  }
   console.log(`[parking] permit areas: ${areas.length} of ${fc.features.length} -> ${path.relative(ROOT, pmOut)}`);
 }

@@ -28,17 +28,29 @@ const run = (file) => { const ctx = { window: { CITY: {} } }; vm.runInNewContext
 /** The ID sidecar of a geodata script (`ids`, built beside `idsGeo` by tools/frames/build-frame.mjs) for another geodata with the
  * same buildings and places in other rows, the packed binary's (it was installed after later edits): each row takes the ID of the
  * row that holds the same building (centre and plan) or place (point and name); a row the script lacks gets '' (no durable ID) */
-export function alignIds(GEO, { ids, idsGeo }) {
+export function alignIds(GEO, { ids, idsGeo }, { detailIds = null, fixTable = null } = {}) {
   const src = run(idsGeo).GEO, side = run(ids).GEO_IDS;
   if (side.counts.buildings !== src.buildings.length || side.counts.pois !== src.pois.length) throw new Error('the ID sidecar does not describe that geodata');
   const bKey = (b) => `${b[0]},${b[1]},${JSON.stringify(b[3])}`, pKey = (p) => `${p[0]},${p[1]},${p[2]}`;
   const queue = (rows, key, list) => { const m = new Map(); rows.forEach((r, i) => { const k = key(r); (m.get(k) || m.set(k, []).get(k)).push(list[i]); }); return m; };
   const bq = queue(src.buildings, bKey, side.buildings), pq = queue(src.pois, pKey, side.pois);
   const buildings = GEO.buildings.map((b) => bq.get(bKey(b))?.shift() ?? '');
+  // rows the sidecar's script lacks (edited after it was built): the detail map's sidecar for the same centre and plan, then the
+  // frame's table of reviewed IDs (tools/data/frames/<name>-building-ids.json), each by centre
+  const fixes = new Map((fixTable?.buildings || []).map((f) => [`${f.x},${f.z}`, f.id]));
+  const today = detailIds ? new Map(detailIds.GEO.buildings.map((b, i) => [bKey(b), detailIds.GEO_IDS.buildings[i]])) : new Map();
+  const viaDetail = [];
+  buildings.forEach((id, i) => {
+    if (id) return;
+    const b = GEO.buildings[i], t = today.get(bKey(b)) || fixes.get(`${b[0]},${b[1]}`);
+    if (t) { buildings[i] = t; viaDetail.push(i); }
+  });
   const pois = GEO.pois.map((p) => pq.get(pKey(p))?.shift() ?? '');
   return { schema: side.schema, geodata: side.geodata, counts: { buildings: buildings.length, pois: pois.length }, buildings, pois,
-    unmatched: { buildings: buildings.filter((x) => !x).length, pois: pois.filter((x) => !x).length } };
+    unmatched: { buildings: buildings.filter((x) => !x).length, pois: pois.filter((x) => !x).length }, fromDetailOrTable: viaDetail.length };
 }
+/** The detail map's database and ID sidecar (js/toronto-geodata.js, js/toronto-geodata-ids.js) */
+const detailPair = () => { const ctx = { window: { CITY: {} } }; for (const f of ['toronto-geodata', 'toronto-geodata-ids']) vm.runInNewContext(fs.readFileSync(path.join(ROOT, `js/${f}.js`), 'utf8'), ctx); return ctx.window.CITY; };
 /** { GEO, GEO_IDS? } of a frame. GEO_IDS (docs/geodata-ids.md) is the detail frame's sidecar, or `ids` for another frame (built
  * by tools/frames/build-frame.mjs beside the geodata the binary came from; checked against the binary's rows) */
 export async function loadFrameGeo(frame = 'detail', { ids = null, idsGeo = null, needIds = false } = {}) {
@@ -51,7 +63,8 @@ export async function loadFrameGeo(frame = 'detail', { ids = null, idsGeo = null
     ({ GEO } = await unpackGeo(fs.readFileSync(path.join(ROOT, `data/frames/${frame}/toronto-geodata.bin`))));
     if (needIds) {
       if (!ids || !idsGeo) throw new Error(`--ids <toronto-geodata-ids.js> and --ids-geo <toronto-geodata.js>, built with the ${frame} geodata (tools/frames/build-frame.mjs), are needed`);
-      GEO_IDS = alignIds(GEO, { ids, idsGeo });
+      const fixFile = path.join(ROOT, `tools/data/frames/${frame}-building-ids.json`);
+      GEO_IDS = alignIds(GEO, { ids, idsGeo }, { detailIds: detailPair(), fixTable: fs.existsSync(fixFile) ? JSON.parse(fs.readFileSync(fixFile, 'utf8')) : null });
     }
   }
   return { GEO, GEO_IDS, world: GEO.frame.detail };

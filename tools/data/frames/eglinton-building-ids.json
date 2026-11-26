@@ -1,0 +1,47 @@
+{
+ "note": "Buildings of the Eglinton frame's packed binary that tools/frames/build-frame.mjs's ID sidecar does not hold (the binary was rebuilt after it; these rows were edited: height or plan). The first five are the same buildings as the detail map's (js/toronto-geodata-ids.js), found by centre and plan; the last two are in no sidecar, and take the City 3D Massing 2025 record whose footprint centre lies 1.6 m and 2.1 m from theirs (the next record is more than 16 m away).",
+ "buildings": [
+  {
+   "x": -1858.6,
+   "z": 139.9,
+   "id": "to-3dmassing-2025:100832",
+   "via": "detail sidecar (same centre and plan)"
+  },
+  {
+   "x": -2258.6,
+   "z": -1568,
+   "id": "to-3dmassing-2025:103837",
+   "via": "detail sidecar (same centre and plan)"
+  },
+  {
+   "x": -3065.3,
+   "z": -1246.1,
+   "id": "to-3dmassing-2025:105149",
+   "via": "detail sidecar (same centre and plan)"
+  },
+  {
+   "x": -919.2,
+   "z": -682.2,
+   "id": "to-3dmassing-2025:137504",
+   "via": "detail sidecar (same centre and plan)"
+  },
+  {
+   "x": -919.8,
+   "z": -683.8,
+   "id": "to-3dmassing-2025:137506",
+   "via": "detail sidecar (same centre and plan)"
+  },
+  {
+   "x": 446,
+   "z": -4219.7,
+   "id": "to-3dmassing-2025:175163",
+   "via": "nearest massing record, 1.6 m"
+  },
+  {
+   "x": 465.1,
+   "z": -4219.5,
+   "id": "to-3dmassing-2025:175172",
+   "via": "nearest massing record, 2.1 m"
+  }
+ ]
+}

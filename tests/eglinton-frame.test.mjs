@@ -29,7 +29,8 @@ const FRAME_FILES = ['toronto-sidewalks.js', 'toronto-subway.js', 'toronto-subwa
   'toronto-benches.js', 'toronto-wayfinding.js', 'toronto-parking-meters.js', 'toronto-cafeto.js', 'toronto-city-facilities.js',
   'toronto-public-art.js', 'bike-share-stations.js'];
 
-test('a default visit loads no file of the Eglinton frame; ?map=eglinton swaps in exactly its fifteen scripts', () => {
+const FRAME_ADDITIONS = ['./js/frames/eglinton/toronto-tennis.js', './js/frames/eglinton/toronto-rinks.js'];
+test('a default visit loads no file of the Eglinton frame; ?map=eglinton swaps in exactly its fifteen scripts and adds its two', () => {
   // (today's map: ?map=detail anywhere, and a phone's default visit; the schoolyard fences' two scripts are on for a desktop by
   // default since 2026-11-17, so these two are compared with ?schoolFences=0, which is how a phone's list reads)
   const today = scriptsFor('?map=detail&schoolFences=0'), other = scriptsFor('', { touch: true }), egl = scriptsFor('?map=eglinton&schoolFences=0&presets=0'); // (?presets=0: the boxes' page, whose colliders are the boxes')
@@ -37,9 +38,16 @@ test('a default visit loads no file of the Eglinton frame; ?map=eglinton swaps i
   assert.ok(!today.some((s) => s.includes('/frames/')), 'today\'s scripts only');
   assert.deepEqual(other, today, 'a phone\'s default visit is today\'s map');
   assert.deepEqual(scriptsFor('?map=other', { touch: true }), today, 'any other value is the device\'s default');
-  assert.equal(egl.length, today.length);
-  const swapped = egl.filter((s, i) => s !== today[i]);
+  // (the tennis courts and the rink polygons beyond the detail map's are added to the detail map's records, jf-2g0: its two files
+  // stay in the list, each followed by the frame's, which pushes onto them)
+  assert.deepEqual(egl.filter((s) => FRAME_ADDITIONS.includes(s)), FRAME_ADDITIONS);
+  assert.equal(egl[egl.indexOf('./js/toronto-tennis.js') + 1], './js/frames/eglinton/toronto-tennis.js');
+  assert.equal(egl[egl.indexOf('./js/toronto-rinks.js') + 1], './js/frames/eglinton/toronto-rinks.js');
+  const eglSwapped = egl.filter((s) => !FRAME_ADDITIONS.includes(s));
+  assert.equal(eglSwapped.length, today.length);
+  const swapped = eglSwapped.filter((s, i) => s !== today[i]);
   assert.deepEqual(swapped.sort(), FRAME_FILES.map((f) => `./js/frames/eglinton/${f}`).sort());
+  for (const f of FRAME_ADDITIONS) assert.ok(fs.existsSync(new URL(`../${f}`, import.meta.url)), f);
   for (const f of FRAME_FILES) assert.ok(fs.existsSync(new URL(`../js/frames/eglinton/${f}`, import.meta.url)), f);
 });
 

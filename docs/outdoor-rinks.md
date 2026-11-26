@@ -88,3 +88,31 @@ gpu2 slop-toronto-rinks -- node tools/check-rinks.mjs
 - The production transcription job was running, so frame rates are **contended-functional** evidence only.
 - Captures are in `ride-anywhere-geo/review/gpu2/slop-toronto-rinks/rinks-{desktop,phone,ice}--*.png`. They were compared with the aerial references for Dufferin Grove (one long hockey rink, with the pleasure pad to the west), High Park (boards on the north pad only), Nathan Phillips Square (the pool), Riverdale Park East (rink beside the tennis courts) and Withrow Park (rink cut into the bank).
 - The first capture pass made the off-season concrete too bright, so it read as ice. The concrete was darkened and recaptured.
+
+## On the Eglinton map (`jf-2g0`)
+
+`?map=eglinton` holds 37 City outdoor rink and skate-trail records (the detail map 17), so 20 more now have their City polygon.
+`node tools/build-rinks.mjs --frame eglinton` joins them by `ASSET_ID` exactly as above, from `tools/data/rink-footprints-20261126-eglinton.json`
+(the City's Outdoor Recreation Area polygons, layer 34, fetched 2026-11-26) and `tools/data/rink-review-20261126-eglinton.json`, and writes
+`js/frames/eglinton/toronto-rinks.js`. That file adds its records to `CITY.RINKS` after the detail map's, so the detail map's
+`js/toronto-rinks.js` (and a change to one of its polygons) is not repeated in it and the detail map's download does not grow. The
+builder checks the whole frame's inventory at once and fails on an inventory record with no polygon.
+
+**Review.** All 20 were checked against the City's 2025 8 cm aerial (each record keeps its export request, extent and image hash;
+the images stay in `~/.cache/slop-toronto/props/rinks-eglinton/`, none ships). Four sites (eight of them) have a pair of pads on one slab: a
+round-cornered boarded hockey pad and an open rectangular pad beside it (Giovanni Caboto `14276` / `43583`, Hodgson Public School
+`14283` / `43588`, Ramsden Park `14293` / `43596`, North Toronto Memorial `43728` / `43584`). At every one the inventory has the boards on
+the other pad from the one the aerial shows. The City polygons of the 37 records overlap nowhere. The scene follows the aerial, as it does at High Park, and the audit lists all eight flags
+(`CITY.RINKS.audit`); the cards keep the source values. Gates are on the access side of each boarded pad, read off the aerial, to about
+2 m. Cedarvale Park `43562`'s City outline is drawn wider than its boards (a 3 to 4 m apron on one side and a notch), and is kept as the City
+draws it. Greenwood Park `43586` is under a roof in the aerial, so it is expected to be rejected.
+
+**Placement.** The same rules as above place 15 of the 20 and, with the detail map's 16, 31 of the 37. The six not drawn (each reported in
+`CITY.rinkStats.rejected`, never moved): Toronto Metropolitan University Square `43574` (100 m² under a building, as on the detail map),
+Greenwood Park `43586` (under the arena's roof, 1,143 m²), North Toronto Memorial `43584` and `43728` (1.5 m² of each polygon under
+the arena's wall; the limit is 1 m²), and the Greenwood Park and Dieppe Park skate trails `59882` and `59883` (their loops cross a footpath
+that the game draws as another curb island). Their cards say "Outline not drawn" with the reason.
+
+**Season.** Unchanged: `?rinks=ice` / `?rinks=off`, ice from 1 December to 15 March, the squares' pools off-season. Checked on the
+Mac mini on the Eglinton map on 26 November (no ice; trees bare) and 15 January (ice), Monarch Park `43593`, Giovanni Caboto `43583` and
+`14276`, Wallace-Emerson `43609`, Kew Gardens `44162`.

@@ -69,7 +69,11 @@
         './js/toronto-storefronts.js',
         drawn ? './js/frames/eglinton/toronto-patios-drawn.js' : eglinton ? './js/frames/eglinton/toronto-patios.js' : './js/toronto-patios.js',
         './js/toronto-tennis.js',
+        // (the tennis courts and rink polygons beyond the detail map's are added to the detail map's records, so its own files stay
+        // the same and download as before, jf-2g0)
+        ...(eglinton ? ['./js/frames/eglinton/toronto-tennis.js'] : []),
         './js/toronto-rinks.js',
+        ...(eglinton ? ['./js/frames/eglinton/toronto-rinks.js'] : []),
         './js/toronto-holiday.js',
         './js/high-park-features-data.js',
         eglinton ? './js/frames/eglinton/toronto-subway.js' : './js/toronto-subway.js',
@@ -262,7 +266,7 @@
     // (tools/build-geodata.mjs & tools/pack-geodata.mjs, which set its version to the file's hash), fetched and decoded by
     // js/geodata-loader.js while three.js loads
     const cityGeo = (() => {
-      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=5f8b68409775' : './data/toronto-geodata.bin?v=4eb48bcae3c4');
+      const bin = fetch(cityAppScripts.cityMap === 'eglinton' ? './data/frames/eglinton/toronto-geodata.bin?v=c11b50bdad52' : './data/toronto-geodata.bin?v=4eb48bcae3c4');
       return import('./js/geodata-loader.js').then((m) => m.loadGeo(bin)); // (fingerprinted by the build like the scripts)
     })();
     // The Eglinton map's lidar-only trees (docs/lidar-trees.md), ?lidarTrees=1 on a desktop only: their index by its hash

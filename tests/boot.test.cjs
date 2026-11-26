@@ -66,7 +66,8 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
   // (High Park's terrain pilot loads by default; the Don Valley's data only with ?donvalley=1: see the next tests)
   // (and the lidar-only trees' data only with ?lidarTrees=1: see its test below)
   // (and the schoolyard fences, on by default for a desktop: see their test below)
-  assert.equal(links.length, preloadScript[1].match(/'\.\/js\/[\w-]+\.js'/g).filter((s) => !s.includes('geodata-loader') && !s.includes('/don-valley-data') && !s.includes('/lidar-trees')).length);
+  // (+ 2: the Eglinton map's tennis and rink additions, whose paths are in the list as ./js/frames/eglinton/..., spread in)
+  assert.equal(links.length, 2 + preloadScript[1].match(/'\.\/js\/[\w-]+\.js'/g).filter((s) => !s.includes('geodata-loader') && !s.includes('/don-valley-data') && !s.includes('/lidar-trees')).length);
   assert.ok(!links.includes('./js/lidar-trees-data.js') && !links.includes('./js/lidar-trees.js'), 'a default visit loads none of the lidar trees');
   assert.ok(links.includes('./js/school-fences-data.js') && links.includes('./js/school-fences.js'), 'a desktop\'s default visit loads the school fences');
   assert.ok(links.includes('./js/high-park-data.js') && links.includes('./js/don-valley.js'), 'High Park\'s terrain is on by default');

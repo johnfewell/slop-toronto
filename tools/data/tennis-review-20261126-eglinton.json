@@ -1,0 +1,571 @@
+{
+ "reviewSource": "tools/data/tennis-review-20261126-eglinton.json",
+ "dimensionsSource": "ITF 2026 Rules of Tennis, Rule 1",
+ "groups": [
+  {
+   "cityLocationId": "67",
+   "ways": [
+    57869745,
+    1030580749
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3206408,43.6644493,-79.3196201,43.6651925&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "d29f7cd1945fefe8dd1c06bbe71880274bc48a4941df3efe51e47892f764da68"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "78",
+   "ways": [
+    1504713619,
+    1504713620,
+    1504713621,
+    1504713622,
+    1504713623,
+    1504713624
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3889192,43.7004602,-79.3872714,43.7016596&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "1d04e994db11d5005d6adf2651bf929c354c1d8642c4ea75e45d2fc325b439c3"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "Six club courts on the City park, tagged private (members only) in OSM; the City lists them as the park's club courts.",
+   "blueWays": [],
+   "colours": "blue-green",
+   "privateAccessOk": true
+  },
+  {
+   "cityLocationId": "79",
+   "ways": [
+    19930053,
+    1043309241,
+    1043309242,
+    1043309243
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4248364,43.6754614,-79.42345,43.6764709&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "25bbf0cb55157526f8355fe596e6062855dc9c0be6e0b0b59c4ebf88e0fd2b86"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": [],
+   "colours": "blue-green"
+  },
+  {
+   "cityLocationId": "86",
+   "ways": [
+    9153063,
+    1178811454
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4339581,43.664989,-79.4326867,43.6659149&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "d304e847a097a38b4d7a79fb7a30ce964b781dd3e4c5445868b87f1ffaa8b5a9"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": [],
+   "colours": "blue-green"
+  },
+  {
+   "cityLocationId": "117",
+   "ways": [
+    25670072,
+    975858244
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4058625,43.7061539,-79.4037635,43.7076814&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "a11cce5664d61fa1dbf597b5a36720718e7bf4f613ff64ddeb43c4a634825084"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "127",
+   "ways": [
+    1505106799,
+    1505106800,
+    1505106801,
+    1505106802
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3160608,43.6749201,-79.3144145,43.6761189&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "82470e9bfc930b58777bed1d540714fbccf9410ce8773e7ede804b718a70aece"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "167",
+   "ways": [
+    1110600156,
+    1110600157,
+    1110600158,
+    1110600159,
+    1110600160,
+    1110600161,
+    1110600162,
+    1110600163
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3956075,43.6754925,-79.3927045,43.6776062&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "4afd53fa3b56d93490bc0eed807e60ba41a4a72f4b7cb6c8623c3ce905cff18b"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "Eight courts on the aerial in two blocks (four west, four east, the east block partly under trees). The City lists twelve; three further OSM ways at the park are 1 x 3 m fragments, not courts, and are left out.",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "168",
+   "ways": [
+    1002387409,
+    1002387410,
+    1002387411,
+    1002387412,
+    1002387413
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3834002,43.6927303,-79.3819419,43.6937918&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "c18c5b870917dd0ca41772c3f588928ca8dace9db779ccf248ebb4020c720f3c"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "Five courts; OSM also maps the club house area as a 68 x 37 m sports centre, which is not a court.",
+   "blueWays": [],
+   "colours": "blue-green"
+  },
+  {
+   "cityLocationId": "200",
+   "ways": [
+    1212388611,
+    1212388612,
+    1212388613,
+    1212388614,
+    1212388615,
+    1212388616,
+    1212388617,
+    1212388618,
+    1212388619,
+    1212388620
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.409875,43.6826552,-79.4075979,43.6843131&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "f0d8cc810c7a3a926fa5855acdb876fd793c6be2e40f1a8c1698199ae8b61433"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "Ten courts on the aerial, blue with a green surround; the City club listing says seven.",
+   "blueWays": [],
+   "colours": "blue-green"
+  },
+  {
+   "cityLocationId": "210",
+   "ways": [
+    978009765,
+    978009766,
+    978009767,
+    978009768,
+    978009769,
+    978009770,
+    978009772,
+    978009773
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3805291,43.6821556,-79.3776651,43.6842408&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "33ab73195fe61a7a23bc369b44c0ca84f68888695e870d43816feb6557039a96"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "Eight courts; OSM also maps a private club building polygon (way 1002392232), not a court.",
+   "blueWays": [],
+   "colours": "blue-green"
+  },
+  {
+   "cityLocationId": "216",
+   "ways": [
+    118521676,
+    1206163932
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4525961,43.6661612,-79.4514247,43.6670143&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "564f3d7de898ca469f7b08bc57a8e516460950fd3ff30065cb884dec6aac940d"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "219",
+   "ways": [
+    1505107386,
+    1505107387,
+    1505107388,
+    1505107389,
+    1505107390,
+    1505107391,
+    1505107392,
+    1505107393,
+    1505107394,
+    1505107395
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.300717,43.6653868,-79.2981986,43.6672207&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "a2db8d3c491e0ea8b661b096551b470e3e40a754817a46e9dbee0a91bee1c8af"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "Ten courts of the Beaches tennis club on the City park, tagged private in OSM (members only); the City lists them as the park's club courts. Five grey in the north row, five blue in the south row.",
+   "blueWays": [
+    1505107386,
+    1505107387,
+    1505107388,
+    1505107389,
+    1505107390
+   ],
+   "colours": "asphalt",
+   "privateAccessOk": true
+  },
+  {
+   "cityLocationId": "220",
+   "ways": [
+    297102064,
+    1031067841
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3001239,43.689084,-79.2989532,43.6899362&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "d36fb621fe2dfde34d98a2e9afafaef27772f79129d6f1ee0bdc46b34187e69e"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "228",
+   "ways": [
+    1491012025,
+    1491012026,
+    1491012027,
+    1491012028,
+    1491012029
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3040648,43.6819369,-79.3024051,43.6831453&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "ba871043c5bdcb9d0648d97ffa04ff78e3ec1b7f52f08b8767adba6b6a73a8a7"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "235",
+   "ways": [
+    1354494581,
+    1354494582
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4788626,43.6676945,-79.4773258,43.6688137&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "f3484200f9fc721d7bfb78d10f8e3635e6e8ca55ca97561dc2be7b4a4cb7bad2"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "245",
+   "ways": [
+    1504681631,
+    1504681632
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4005486,43.6964321,-79.3988647,43.6976578&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "66e5a9ba9df65a2d9e599743b22ade9502cd7f8cb52ad95754c3ae681018cd51"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "276",
+   "ways": [
+    1505105251,
+    1505105252
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3075747,43.7097964,-79.3055148,43.7112955&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "ab9148b9c96823611df60f79a8c1df6b371875b32f6ccfcade29b226c6602dc2"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "424",
+   "ways": [
+    105741835,
+    1434684004
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3740641,43.7096704,-79.3717934,43.7113228&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "37f32651ea8e6305db98b2ae6ac53fac3ec58e06bf402642884e91909ff5d511"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "425",
+   "ways": [
+    1005042670,
+    1005042671,
+    1005042672,
+    1005042673,
+    1005042674,
+    1005042675
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3504759,43.7019702,-79.3482134,43.7036169&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "48e684df0261ff548aee28d27ad4150fc15e78ca2ccafeac84f397da3bc46024"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "",
+   "blueWays": [],
+   "colours": "blue-green"
+  },
+  {
+   "cityLocationId": "582",
+   "ways": [
+    1505104068,
+    1505104069,
+    1505104070,
+    1505104071
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3291438,43.712211,-79.3273243,43.7135351&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "680a8e0ad3ca1bf74f914f69b509f821edb23af9841d1928e1b4ebf40de7132e"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "629",
+   "ways": [
+    684295183,
+    1044554563
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4322851,43.6899658,-79.4261661,43.69442&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "a3afb24aa75521045753f8ba0f5e199e24b9024cb9b9629f5cc6df0638c01a33"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "Two of the four courts at the park are mapped in OSM (the other two lie beyond the mapped pair, unmapped). A third mapped quadrilateral, way 1044554553, is a private backyard court east of the park and is not a City court.",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "733",
+   "ways": [
+    129724674,
+    981497625,
+    981497626
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.2853669,43.6963079,-79.2838078,43.6974428&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "3158ae73b68dc3a93cb179472c996fe3968504878d6575830ff4d4e04d292440"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "Three courts; OSM also maps a 35 x 48 m area polygon (way 981497624) that is not a court.",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "934",
+   "ways": [
+    1356732176,
+    1356732177,
+    1356732178,
+    1356732179,
+    1356732180,
+    1356732181
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3683183,43.705113,-79.3667315,43.7062678&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "10ec19ec300d0bac6f60247e902674135e074c0405a5ca0b9ceb90a986f5ec62"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": [],
+   "colours": "blue-green"
+  },
+  {
+   "cityLocationId": "1025",
+   "ways": [
+    1002474664,
+    1002474665
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3706373,43.6944115,-79.3692553,43.6954175&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "305f13de4c57f7603a814acc9538bc6e1aaf150c0d5645cdd5bc27db36e795c0"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": [],
+   "colours": "blue-green"
+  },
+  {
+   "cityLocationId": "2016",
+   "ways": [
+    1505105512,
+    1505105513,
+    1505105514,
+    1505105515
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.2959186,43.6914555,-79.2945789,43.6924308&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "c1449b46d0ad6c56578923047867d909fe9b9f21fdb2593520614643909dcac2"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": [],
+   "colours": "blue-green"
+  },
+  {
+   "cityLocationId": "2307",
+   "ways": [
+    966535843,
+    966535844
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.2883674,43.7138928,-79.2873672,43.7146206&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "249d6c250c13ac03d83cab688e038817dd7516eb6c8a0e97398be690eaa68d2d"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial at full size.",
+   "notes": "Two courts; OSM also maps a 36 x 48 m fenced enclosure (way 25775080) that is not a court.",
+   "blueWays": []
+  },
+  {
+   "cityLocationId": "2568",
+   "ways": [
+    32402756,
+    985371980,
+    985371981,
+    985371982,
+    985371983
+   ],
+   "aerial": {
+    "service": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer",
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3309513,43.6922902,-79.3294627,43.6933738&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "sha256": "4fabb3ce12fd10d88eba81815063d0e90f26cbd0ccd247267e3a25024adcd27d"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "OSM court footprints joined to the City facility by distance (within 230 m of the City point, court-shaped closed quadrilaterals) and checked against the City 2025 8 cm aerial on a contact sheet.",
+   "notes": "",
+   "blueWays": [],
+   "colours": "blue-green"
+  }
+ ],
+ "unmatched": [
+  {
+   "cityLocationId": "514",
+   "name": "Earlscourt Park tennis courts \u00b7 Public",
+   "cityCourts": [
+    {
+     "courts": 1,
+     "access": "Public"
+    }
+   ],
+   "reason": "No court-shaped OSM footprint within 230 m of the City point, and none on the 2025 aerial at the point (path and trees)."
+  }
+ ],
+ "pads": [],
+ "sampleChecked": [
+  "78",
+  "167",
+  "168",
+  "200",
+  "219",
+  "276",
+  "424",
+  "425",
+  "514",
+  "629",
+  "733",
+  "2307"
+ ]
+}

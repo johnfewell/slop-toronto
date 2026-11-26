@@ -4,7 +4,7 @@ Beads: `st-26p.1`, `st-26p.5`, `st-26p.16`. Snapshots fetched 2026-10-28.
 
 ## Frame coverage: the City's layers on the Eglinton map
 
-Bead `jf-e8y`. The page opens one of two maps (`explore.html`): the detail map (the Humber to Cherry Beach, the lake to Bloor,
+Beads `jf-e8y` and `jf-2g0`. The page opens one of two maps (`explore.html`): the detail map (the Humber to Cherry Beach, the lake to Bloor,
 `x` −7900..3700, `z` −3000..3600) and the bigger Eglinton map (`?map=eglinton`, the desktop default, `x` −7900..9600, `z` −7300..3600).
 Several City layers were clipped to the detail map when they were imported, so on the Eglinton map the benches, pay stations and the
 rest stopped at Bloor and the Don. Each of them now has a file of its own for the Eglinton map in `js/frames/eglinton/`, built from the
@@ -30,6 +30,9 @@ placed number is what the page puts on the street after the placement rules and 
 | Drinking water | 248 | 248 | **468** |
 | Outdoor rinks (cards) | 17 | 17 | **37** |
 | Tennis listings (cards) | 11 | 11 | **39** |
+| Rink polygons (City Outdoor Recreation Areas, each checked on the 2025 aerial) | 17 (16 placed) | 17 (16 placed) | **37** (31 placed; 6 rejected, below) |
+| Tennis court footprints (reviewed OSM courts joined to City facilities) | 43 (43 placed) | 43 | **155** (155 placed, at 37 City facilities; 1 City facility has no mapped court) |
+| Parked cars (by-law curb schedule, pay stations) | 11,040 | 11,040, none beyond the detail map | **26,224** (25,497 kept in the page, below) |
 | Public art records | 308 | 308 | **314** |
 | Heritage Register places | 7,241 | 7,241 | **7,472** |
 | Bike Share stations | 481 | 481 | **772** |
@@ -40,9 +43,6 @@ placed number is what the page puts on the street after the placement rules and 
 | Hydrants / bike rings / shelters / post boxes | 4,187 / 11,574 / 561 / 347 | 12,513 / 15,444 / 1,572 / 645 | same |
 | Mapped poles (streetlight, signal, hydro) | 38,534 | 100,739 | same |
 | **Not extended** | | | |
-| Parked cars (by-law curb schedule, pay stations) | 11,040 | 11,040, none beyond the detail map | same |
-| Tennis court footprints (reviewed OSM courts) | 43 | 43 | same: each group is checked by hand on the aerial |
-| Rink polygons (City Outdoor Recreation Areas) | 17 | 17 | same: the 37 rink cards give the other 20 a place card, no model |
 | Storefront signs (Queen West corridor, OSM names) | 1 corridor | 1 corridor | same: an OSM list for one curated corridor, not City data |
 
 Why the poster columns and corrals fell by two and six against `docs/mapped-street-furniture.md`'s 346 and 152 on the Eglinton map:
@@ -54,10 +54,35 @@ The places each file holds are the Eglinton database's own rows, not the detail 
 place's building (`b`) were all rows of the detail geodata, so a record copied over would point at another building. The builders take
 the frame's packed binary (`tools/frame-geo.mjs`); building and place IDs (`to-3dmassing-2025:...`, `osm:...`) come from the
 sidecar that `tools/frames/build-frame.mjs` writes beside a frame's geodata, matched row by row to the installed binary by building
-centre and plan or place point and name. Seven buildings of the binary are not in that sidecar's script (they were added later, island
-buildings), and their records carry no massing ID. The detail map's facilities file was out of step with its geodata for 62 building
+centre and plan or place point and name. Seven buildings of the binary are not in that sidecar's script (the binary was rebuilt after it,
+and these rows were edited): five are the same buildings as the detail map's, whose sidecar holds their IDs (found by centre and plan),
+and two take the City 3D Massing record whose footprint centre lies 1.6 m and 2.1 m from theirs (the next record is more than 16 m
+away). They are in `tools/data/frames/eglinton-building-ids.json`, which `tools/frame-geo.mjs` reads after the sidecar and the detail
+map's. Of the 314 art records and 7,472 heritage places only one, 375 Queen St W, stood on one of them: its card now carries
+`to-3dmassing-2025:137506`. The detail map's facilities file was out of step with its geodata for 62 building
 rows (the geodata was rebuilt after the file was written); it is rebuilt here, so its matches are right again. Nothing else in a detail
 file changed.
+
+### Frame coverage: rinks, tennis courts and parked cars
+
+These three were left out of the first pass because each is placed from hand-checked geometry, not from a point or a row (bead `jf-2g0`).
+Each now has per-frame data and, in `explore.html`, a file that `?map=eglinton` loads after the detail map's own (the detail map's
+`js/toronto-rinks.js` and `js/toronto-tennis.js` are unchanged and its download does not grow; the parked cars were already in the
+frame's own binary). Counts are what the page puts on the map in the real late-November season (`liveDate=2026-11-26`), desktop tier.
+
+| Layer | Eglinton map before | Source in the frame | Placed | Rejected (reason) |
+| --- | ---: | ---: | ---: | --- |
+| Rink polygons | 17 | 37 | **31** | 6: Toronto Metropolitan University Square `43574` (100 m² under a building; as before), Greenwood Park `43586` (the rink is under a roof: 1,143 m² under the building), North Toronto Memorial `43584` and `43728` (1.5 m² each under the arena's wall, over the 1 m² limit), Greenwood Park and Dieppe Park skate trails `59882`, `59883` (the loop crosses a footpath the game draws as another curb island) |
+| Tennis court footprints | 43 | 155 (112 added, at 27 City facilities) | **155** | 0 courts; 1 City facility, Earlscourt Park `514`, has no court on the aerial or in OpenStreetMap; the 14 paved surrounds of the detail map are as before, the added courts stand on their ground without a traced surround |
+| Parked cars | 11,040 | 26,224 (36,049 legal stalls) | **25,497** | 727 left out by the page's audit: 618 on a lane the traffic builds, 109 in the Don Valley pilot's cut |
+
+Tennis court counts that differ from the City's stay in the audit, never summed or adjusted: Ramsden Park (the City lists 12; eight on the
+aerial), Sir Winston Churchill Park (7 listed; ten on the aerial) and Cedarvale Park (4 listed; two mapped).
+
+**Rinks** are in [outdoor-rinks.md](outdoor-rinks.md) (twenty new City polygons, each checked against the 2025 aerial and recorded in
+`tools/data/rink-review-20261126-eglinton.json`; eight board flags where the aerial overrules the inventory), **tennis** in
+[tennis-courts.md](tennis-courts.md) (OSM footprints, all 28 City sites viewed on the aerial) and **parked cars** in
+[parked-cars.md](parked-cars.md) (the by-laws of the whole frame resolved onto its streets, 26,224 cars in its own binary).
 
 Poster columns, publication corrals and the litter receptacle audit, in both frames: [mapped street furniture](mapped-street-furniture.md).
 
@@ -70,6 +95,21 @@ against this one, shared machine, so relative evidence only): city ready 24.7–
 after; JS heap 2,785–2,861 MB before and 2,819–2,887 MB after (mean 2,825 to 2,840, +0.5%); frame time at the start 13.71 ms to 13.87 ms,
 on Danforth Ave 19.75 ms to 19.91 ms, on St Clair Ave W 18.52 ms to 18.28 ms. All within the run-to-run spread. Placement
 adds no draw calls (the same instanced kinds, culled in chunks by `scene-culling.js`).
+
+**Rinks, tennis courts and parked cars (`jf-2g0`).** Download: `toronto-rinks.js` 53 KB raw (9.3 KB Brotli) and `toronto-tennis.js` 40 KB
+(5.0 KB) are new files the Eglinton map loads; its binary grows from 5,306,815 to 5,355,091 bytes (+48 KB, already gzip). The detail map's files are
+identical. On the Mac mini (`tools/capture-eglinton-rinks-courts-cars.sh perf`, five alternating pairs, `?map=eglinton`, 1600 × 900,
+uncapped, the main build 38f22f0 against this one, shared machine, so relative evidence only): city ready 24.9–25.6 s (median 25.1) before
+and 25.7–31.8 s (median 26.2) after, the two slow runs on a busy machine; JS heap at the start 2,824–2,852 MB before and 2,780–2,892 MB after
+(means 2,836 and 2,837), and 2,941–2,968 and 2,902–3,005 MB (2,956 and 2,954) after walking to the Danforth. Frame time at the start
+13.43–16.55 ms (median 13.49) before and 13.33–13.62 (13.51) after; on the Danforth 19.43–19.48 ms (19.44) before and 19.65–20.14 (19.69)
+after: 0.25 ms (1.3%) more in every pair, where the Eglinton map now draws its own placement of the cars there. The densest car street
+outside the old frame (Bathurst Street at x −1,720, z −3,872) runs at 17.5–17.8 ms. The cars add 15,300 colliders and instance cells, no draw call: the same
+instanced bodies, culled in 64 m cells within 70 m (full) and 260 m (stand-in). Decoding the stalls takes 4.7–8 ms and the load-time layout 110–150 ms.
+`?patios=check` found the prebuilt café layout identical to the runtime's (316 sites) with the new binary and no car on a platform.
+
+Captures (rinks, tennis, cars; late November `liveDate=2026-11-26`, no season preset, trees bare, and 15 January for ice):
+`tools/shots/eglinton-rinks-courts-cars.json`, `tools/shots/eglinton-rinks-ice.json`.
 
 Captures (late November, `liveDate=2026-11-26`, no season preset, trees bare): `tools/shots/eglinton-furniture.json` at Danforth Ave
 (837), St Clair Ave W (510), Heath St W at Yonge and Eglinton Ave W.

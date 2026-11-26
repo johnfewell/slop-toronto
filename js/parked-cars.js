@@ -28,6 +28,7 @@
 // Everything here is + - * / Math.round & Math.imul, never Math.sin or Math.atan2 (which may differ by an ulp between
 // browsers), so every browser gets the very rows the node build wrote.
 
+const DETAIL_MAP_CARS = 11040; // the cars of the detail map (its binary's), which quality.js's tier caps were sized on
 const KINDS = ['sedan', 'suv', 'minivan', 'pickup', 'van'];
 const CATS = ['paid', 'restricted', 'permit', 'local'];
 const FIELDS = ['x', 'z', 'yaw', 'kind', 'paint', 'style', 'cat', 'order']; // (a decoded car's row)
@@ -175,7 +176,9 @@ function buildParkedCars(scene, network, { patioColliders = [] } = {}) {
   stats.decodeMs = Math.round((performance.now() - td) * 10) / 10;
 
   // 1. the tier's share: the cars with the lowest seeded order
-  if (rows.length > Q.parkedCars) rows = rows.slice().sort((a, b) => a[F.order] - b[F.order]).slice(0, Q.parkedCars);
+  // (Q.parkedCars was sized on the detail map's ~11k cars; the bigger map's database holds more, so its tier keeps the same share)
+  stats.cap = rows.length > DETAIL_MAP_CARS * 1.2 ? Math.round(Q.parkedCars * rows.length / DETAIL_MAP_CARS) : Q.parkedCars;
+  if (rows.length > stats.cap) rows = rows.slice().sort((a, b) => a[F.order] - b[F.order]).slice(0, stats.cap);
 
   // 2. the audit: the lanes the traffic actually drives (road-network.js edges), the patios actually built
   const LG = 24, laneGrid = new Map();
@@ -394,7 +397,7 @@ function buildParkedCars(scene, network, { patioColliders = [] } = {}) {
   stats.cats = cars.reduce((m, c) => ((m[c.cat] = (m[c.cat] || 0) + 1), m), {});
   // (for the captures: every car's body box, and where a point lies against them)
   window.CITY.parkedCarsList = () => cars.map((c) => ({ kind: c.kind, x: c.cx, z: c.cz, yaw: c.yaw, hl: c.hl, hw: c.hw, cat: c.cat }));
-  console.info(`[parked] ${cars.length} parked cars (${Q.tier}: cap ${Q.parkedCars}; ${stats.laneDropped} off the built lanes' way, ` +
+  console.info(`[parked] ${cars.length} parked cars (${Q.tier}: cap ${stats.cap}; ${stats.laneDropped} off the built lanes' way, ` +
     `${stats.patioDropped} on a patio left out) in ${stats.ms} ms (decoded in ${stats.decodeMs} ms)`);
   return { group, colliders, update, parkedAt, stats, cars };
 }

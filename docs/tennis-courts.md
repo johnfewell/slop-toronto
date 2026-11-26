@@ -44,3 +44,31 @@ gpu2 slop-toronto-open-data -- node tools/check-tennis.mjs
 ```
 
 The targeted suite passes **64/64**, including source identities/count disagreements, duplicate enclosure rejection, private-source exclusion, dimensions, pavement containment, rotated collision clearance, terrain area conservation, height interpolation and controller floor/deck/interior precedence. GPU checks pass on desktop and explicit low-tier 412×915 phone views of Sorauren, Trinity Bellwoods, High Park and Moss Park, including all 43 controller floors, overview, real walking/net collision and night views. The production build passes. The static harness's `/live/vehicles` 404 remains a known limitation. Runs alongside production transcription establish function/appearance, not idle-machine performance budgets.
+
+## On the Eglinton map (`jf-2g0`)
+
+The City lists 39 tennis rows at 37 facilities inside `?map=eglinton`; the detail map holds 11 rows at ten. The other 27 facilities have
+their courts as reviewed OpenStreetMap footprints, joined to the City facility the same way:
+`node tools/fetch-tennis-footprints.mjs --frame eglinton` reads the sport-tagged closed ways of the frame from the same cached Geofabrik
+Ontario extract (2026-10-23; the extract's own timestamp was not recorded, so this too is a processing date) into
+`tools/data/tennis-footprints-20261126-eglinton.json`, and `node tools/build-tennis.mjs --frame eglinton` joins the ways named in
+`tools/data/tennis-review-20261126-eglinton.json` and writes `js/frames/eglinton/toronto-tennis.js`, which adds its courts to
+`CITY.TENNIS` after the detail map's (whose file is unchanged).
+
+**The join.** A way belongs to a City facility when it is court-shaped (a closed quadrilateral 20 to 27 m by 9 to 13 m: the builder then
+holds it to the ITF 23.77 × 10.97 m within 8% and 5%) and lies within 230 m of the City point. All 28 facilities were laid over the City's
+2025 8 cm aerial (12 at full size, 16 on contact sheets; every export request and image hash is in the review) and every footprint sits on a
+court. The result is **112 courts at 27 facilities, 155 with the detail map's 43**. Left out, with the reason: 1 to 3 fragments of
+1 to 3 m near Ramsden Park, Symington Avenue and Coleman Parks (not courts), enclosure and area polygons at Moore Park, Rosedale,
+Prairie Drive and Clairlea (way ids in the review's notes), and one private backyard court beside Cedarvale Park (way `1044554553`; no City
+facility).
+
+**Club courts tagged private.** The builder keeps rejecting an OSM court tagged `access=private`, except in a group the review marks
+`privateAccessOk`. Two groups are: the Beaches Park (10) and June Rowlands Park (6) club courts, which the City lists as the parks' club
+courts and OpenStreetMap tags as members-only. Both the group flag and the City listing's "Club" access are tested.
+
+**No court:** Earlscourt Park (`514`, one public court listed): nothing within 230 m on OpenStreetMap, and the aerial at the City point shows a
+path and trees. It stays a place card only. **Counts that differ** stay in `TENNIS.audit`: Ramsden Park (City 12, mapped 8), Sir Winston
+Churchill Park (7 and 10) and Cedarvale Park (4 and 2). The added courts have no traced paved surround (the detail map's 14 pavement
+outlines are by hand); they stand on the ground, with the same net collider and ground rule. Placement: all 155 pass (none rejected on the
+Eglinton map). Checked on the Mac mini: Leaside Park, Beaches Park and Sir Winston Churchill Park.

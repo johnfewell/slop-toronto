@@ -10,11 +10,21 @@
 // here (packParkedCars checks that before it writes). Writing the committed script also repacks that file
 // (tools/pack-geodata.mjs) and sets its hash in explore.html, as tools/build-poles.mjs does.
 // usage: node tools/build-parked-cars.mjs [--out js/toronto-parked-cars.js]   (--out elsewhere leaves the binary alone)
+//        node tools/build-parked-cars.mjs --frame eglinton   (the bigger map: its streets, by-laws (js/frames/eglinton/toronto-parking.js,
+//        tools/build-parking.mjs --frame eglinton), pay stations and drawn-buildings café platforms; the cars are packed into that
+//        map's own binary, data/frames/eglinton/toronto-geodata.bin, and its hash set in explore.html. The map's other layers are
+//        read from that binary and written back exactly, so only the cars change)
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { loadReplayWorld } from './patio-replay.mjs';
+import { PATIO_FRAMES } from './cafeto-world.mjs';
+import { frameArgs } from './frame-geo.mjs';
+import { decodeGeo } from '../js/geodata-loader.js';
+import { packCity } from './geo-bin.mjs';
+import { setFrameHash } from './frames/align-buildings.mjs';
 import { packGeodata } from './pack-geodata.mjs';
 import { FIXTURE as ROAD_SURFACES } from './road-surfaces.mjs';
 
@@ -25,11 +35,14 @@ export const PARKED_JS = 'js/toronto-parked-cars.js';
 export const OCCUPANCY = { paid: 0.72, restricted: 0.7, permit: 0.82, local: 0.62 };
 
 /** The world with every placement input, in node */
-export function loadParkingWorld(root = ROOT) {
-  const world = loadReplayWorld(root);
+export function loadParkingWorld(root = ROOT, frameName = 'detail') {
+  // (another frame: its binary, scripts and prebuilt café platforms, the drawn-buildings layout the desktop page loads)
+  const world = loadReplayWorld(root, frameName === 'detail' ? PATIO_FRAMES.detail : PATIO_FRAMES[`${frameName}-drawn`]);
   const { CITY } = world;
   const context = vm.createContext({ window: { CITY }, console: { ...console, info() {}, warn() {} } });
-  for (const file of ['js/toronto-patios.js', 'js/toronto-parking.js', 'js/parking-layout.js']) {
+  const files = frameName === 'detail' ? ['js/toronto-patios.js', 'js/toronto-parking.js', 'js/parking-layout.js']
+    : [`js/frames/${frameName}/toronto-patios-drawn.js`, `js/frames/${frameName}/toronto-parking.js`, 'js/parking-layout.js'];
+  for (const file of files) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   }
   // the bikeways as the page builds them: routed round the prebuilt CaféTO platforms in their place (cycling.js)
@@ -165,16 +178,37 @@ export function parkedCarsJs(PACKED) {
     `(function () {\nwindow.CITY = window.CITY || {};\nwindow.CITY.PARKED_CARS = ${JSON.stringify(PACKED)};\n})();\n`;
 }
 
+/** The frame's binary with its cars replaced by `packed` (the layers it holds otherwise written back exactly): { file, hash } */
+export function repackFrameCars(binFile, packed) {
+  const u8 = zlib.gunzipSync(fs.readFileSync(binFile));
+  const layers = decodeGeo(u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength));
+  const same = packCity(layers);
+  if (!Buffer.from(same.file).equals(fs.readFileSync(binFile))) throw new Error(`${binFile} does not repack to itself: its layers are not written back exactly`);
+  return packCity({ GEO: layers.GEO, POLES: layers.POLES, PARKED_CARS: packed });
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const outArg = process.argv.indexOf('--out');
-  const out = path.resolve(outArg > 0 ? process.argv[outArg + 1] : path.join(ROOT, PARKED_JS));
-  const built = buildParkedCars();
-  const { PARKED, ms } = built;
-  const js = parkedCarsJs(packParkedCars(built));
-  fs.writeFileSync(out, js);
-  console.log(`[parked] ${path.relative(ROOT, out)}: ${JSON.stringify(PARKED.counts)} (${js.length} bytes, layout ${Math.round(ms)} ms)`);
-  if (out === path.join(ROOT, PARKED_JS)) {
-    const packed = packGeodata();
-    console.log(`[parked] repacked data/toronto-geodata.bin (${packed.file.length} bytes, hash ${packed.hash})`);
+  const { frame } = frameArgs();
+  if (frame === 'detail') {
+    const out = path.resolve(outArg > 0 ? process.argv[outArg + 1] : path.join(ROOT, PARKED_JS));
+    const built = buildParkedCars();
+    const { PARKED, ms } = built;
+    const js = parkedCarsJs(packParkedCars(built));
+    fs.writeFileSync(out, js);
+    console.log(`[parked] ${path.relative(ROOT, out)}: ${JSON.stringify(PARKED.counts)} (${js.length} bytes, layout ${Math.round(ms)} ms)`);
+    if (out === path.join(ROOT, PARKED_JS)) {
+      const packed = packGeodata();
+      console.log(`[parked] repacked data/toronto-geodata.bin (${packed.file.length} bytes, hash ${packed.hash})`);
+    }
+  } else {
+    const built = buildParkedCars(loadParkingWorld(ROOT, frame));
+    const { PARKED, ms } = built, P = packParkedCars(built);
+    console.log(`[parked ${frame}] ${JSON.stringify(PARKED.counts)} (layout ${Math.round(ms)} ms)`);
+    if (outArg > 0) fs.writeFileSync(path.resolve(process.argv[outArg + 1]), parkedCarsJs(P));
+    const bin = path.join(ROOT, `data/frames/${frame}/toronto-geodata.bin`), packed = repackFrameCars(bin, P);
+    fs.writeFileSync(bin, packed.file);
+    setFrameHash(path.join(ROOT, 'explore.html'), frame, packed.hash);
+    console.log(`[parked ${frame}] repacked ${path.relative(ROOT, bin)} (${packed.file.length} bytes, hash ${packed.hash})`);
   }
 }

@@ -1,0 +1,555 @@
+{
+ "references": [
+  "https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/ice-snow-activities/public-leisure-skating/"
+ ],
+ "records": [
+  {
+   "assetId": "14276",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4535783,43.6749243,-79.452002,43.6760721&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8844732.472262034,
+     "ymin": 5415273.013851582,
+     "xmax": -8844555.810943611,
+     "ymax": 5415449.675170006,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "6b2d58aabdd6af2b964eb400a77580f5ad9e7ef0fc89a3ff9af86f4543328aaf"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": false,
+   "appearance": "pavement",
+   "notes": "Source says boards; the aerial shows an open concrete slab here. The boarded, round-cornered pad is the neighbouring record 43583, which the source marks as having none. The scene follows the aerial; the cards keep the source values."
+  },
+  {
+   "assetId": "14283",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3865666,43.7007677,-79.3849865,43.7019177&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8837272.75987908,
+     "ymin": 5419251.467389701,
+     "xmax": -8837095.683670111,
+     "ymax": 5419428.543598671,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "152901beb2e4375c08be1fdaee99fcd967579a78a9fb77b5293f562794917ea4"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": false,
+   "appearance": "pavement",
+   "notes": "Source says boards; the aerial shows an open concrete slab. The boarded round-cornered pad is the neighbouring record 43588 (source: none). The scene follows the aerial."
+  },
+  {
+   "assetId": "14293",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3925105,43.6755556,-79.3909366,43.6767016&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8837934.431850377,
+     "ymin": 5415370.178697686,
+     "xmax": -8837758.045722324,
+     "ymax": 5415546.564825739,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "8760e843c9a2e287f93e76389b1e0491904fdbdcba44366f304bf1895f20625f"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": false,
+   "appearance": "pavement",
+   "notes": "Source says boards; the 2025 aerial shows the Ramsden Park rink slab under works (bare concrete, site machinery) with no dasher boards on this rectangular pad. The boarded round-cornered pad on the slab is the neighbouring record 43596 (source: none). The scene follows the aerial."
+  },
+  {
+   "assetId": "14306",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4404984,43.6664433,-79.4390577,43.6674924&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8843276.364836065,
+     "ymin": 5413967.782578307,
+     "xmax": -8843114.917677278,
+     "ymax": 5414129.229737095,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "52265f40561239cf5579c1be8b1df98c42206c0d28712f3db94248f8c5f92877"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": false,
+   "appearance": "pavement",
+   "notes": "Round-ended paved pleasure pad beside the boarded pad 43609, no boards in the aerial, matching the source."
+  },
+  {
+   "assetId": "43562",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4316338,43.6906226,-79.4300742,43.691758&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8842289.619811803,
+     "ymin": 5417689.478993518,
+     "xmax": -8842114.821297914,
+     "ymax": 5417864.277507407,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "ac62bba1d409ec6c1fe7fb87d53060672c92bbd683fc9fe14e4d6f311375ddac"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Boarded pad seen in the aerial. The City polygon is drawn wider than the boards: it includes a 3 to 4 m apron on the east side and a notch at the south end. Kept as the City draws it. Gate at the south-east notch.",
+   "gatePixel": [
+    641,
+    718
+   ]
+  },
+  {
+   "assetId": "43577",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4486974,43.6626058,-79.4471498,43.663733&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8844189.127274018,
+     "ymin": 5413377.249497235,
+     "xmax": -8844015.672195785,
+     "ymax": 5413550.704575467,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "6afd5b484d2514a07a8d992d2625f66e38a31c54c7061e545bb2a724e64383e9"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Boarded round-cornered pad, outline matches the aerial. Gate on the north side by the shelter.",
+   "gatePixel": [
+    453,
+    414
+   ]
+  },
+  {
+   "assetId": "43578",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4229871,43.6648058,-79.4214196,43.6659473&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8841327.065621905,
+     "ymin": 5413715.791532189,
+     "xmax": -8841151.403581746,
+     "ymax": 5413891.453572349,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "97149a8f38ca8ccc2a649d42749c64a2f45c8507c292ff9c5cd3bfab00d4937a"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Boarded pad, outline matches the aerial. Gate at the south end by the car park.",
+   "gatePixel": [
+    647,
+    750
+   ]
+  },
+  {
+   "assetId": "43581",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3372256,43.691224,-79.3357422,43.6923039&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8831780.116926262,
+     "ymin": 5417782.066062617,
+     "xmax": -8831613.861227233,
+     "ymax": 5417948.321761645,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "3770d5771e7db258231819d742dfa5890c832905e7dba5e839453726a1341c39"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Boarded pad, outline matches the aerial. Gate at the north-west end, beside the paved plaza.",
+   "gatePixel": [
+    427,
+    343
+   ]
+  },
+  {
+   "assetId": "43583",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4535108,43.6747666,-79.4519352,43.6759139&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8844724.958447585,
+     "ymin": 5415248.742038659,
+     "xmax": -8844548.374550447,
+     "ymax": 5415425.325935797,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "8a7135b0a5b98147e17c7c78d82fcad48270d307a60f28396029390ae5fbdd41"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Round-cornered boarded hockey pad south of the open slab (14276), seen as white dasher boards with rounded corners; the source marks it as having no boards. Gate on the west end, beside the car park path.",
+   "gatePixel": [
+    311,
+    556
+   ]
+  },
+  {
+   "assetId": "43584",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4052703,43.706033,-79.403701,43.7071751&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8839354.846863491,
+     "ymin": 5420062.242489529,
+     "xmax": -8839178.97165611,
+     "ymax": 5420238.11769691,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "6dd5e8514d9d02fb34c6df523d3f37a4f69c140926cbe6812fc818d79f9a2b79"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Round-cornered boarded pad north of the fenced slab, boards visible along its north side and round corner; source marks none. Gate on the west end.",
+   "gatePixel": [
+    311,
+    543
+   ]
+  },
+  {
+   "assetId": "43586",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3301872,43.6685786,-79.3286197,43.6697201&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8830996.633528905,
+     "ymin": 5414296.389229109,
+     "xmax": -8830820.960447414,
+     "ymax": 5414472.0623106,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "2f049b585cdc0e39d72dbc60a7c233cea1160cac8bfdca809ec821232746f18b"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Roofed: the 2025 aerial shows the Greenwood Park rink under a roof. The outline lies inside the roofed building, so the scene is expected to reject it (a building over it). Source boards kept."
+  },
+  {
+   "assetId": "43588",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3865052,43.7006094,-79.3849267,43.7017582&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8837265.92129594,
+     "ymin": 5419227.092730537,
+     "xmax": -8837089.030330973,
+     "ymax": 5419403.983695506,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "d854406fae50dc91f73d69903d07571f8c040a14c724d81c11395c4fa68a13f6"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Round-cornered boarded pad beside the open slab (14283), boards visible in the aerial; source marks none. Gate on the east end.",
+   "gatePixel": [
+    792,
+    543
+   ]
+  },
+  {
+   "assetId": "43593",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.326308,43.6765448,-79.3247747,43.6776613&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8830564.79420183,
+     "ymin": 5415522.43081802,
+     "xmax": -8830392.945763707,
+     "ymax": 5415694.279256144,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "060e038ced44e1126ad6e567f5d13e5f52aad76af9013c500daa41a72f2f011f"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Boarded pad, outline matches the aerial. Gate on the north side by the player benches.",
+   "gatePixel": [
+    453,
+    479
+   ]
+  },
+  {
+   "assetId": "43596",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.392563,43.6757107,-79.3909949,43.6768525&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8837940.275953554,
+     "ymin": 5415394.050654562,
+     "xmax": -8837764.535818718,
+     "ymax": 5415569.790789398,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "eeaeaf7b633581a6509fc5b5f17a382b715a9ef9decb88b750a24edc9fbee9d3"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Round-cornered pad on the same slab, boards expected as at the other three twin-pad sites; the slab was under works when the 2025 aerial was flown (source marks none). Gate on the west end.",
+   "gatePixel": [
+    311,
+    550
+   ]
+  },
+  {
+   "assetId": "43601",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3801788,43.6823004,-79.378625,43.6834317&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8836561.67055121,
+     "ymin": 5416408.35030604,
+     "xmax": -8836387.527414015,
+     "ymax": 5416582.493443237,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "162763d7037584e08c1b3e1861a482d14f11e9801b77390ee57aea88d8270712"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Boarded pad, outline matches the aerial. Gate on the south side by the player benches.",
+   "gatePixel": [
+    608,
+    634
+   ]
+  },
+  {
+   "assetId": "43609",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4408795,43.6663656,-79.4393291,43.6674946&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8843318.830714967,
+     "ymin": 5413955.82535164,
+     "xmax": -8843145.087766115,
+     "ymax": 5414129.568300492,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "c041cb00f3d214727a3f088ca4b6c061e5eb1e3b23e42cfec9ded3052b0380a6"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Boarded pad, outline matches the aerial. Gate on the east side by the equipment shed.",
+   "gatePixel": [
+    643,
+    699
+   ]
+  },
+  {
+   "assetId": "43728",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.4052263,43.7058757,-79.4036638,43.7070128&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8839349.942076692,
+     "ymin": 5420038.019680427,
+     "xmax": -8839174.837300252,
+     "ymax": 5420213.1244568685,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "5d2025e1f1a1c75db211a2aaf87266b3785a7bd300830f82038fe23b6cfc2e2e"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": false,
+   "appearance": "pavement",
+   "notes": "Source says boards; the aerial shows an open fenced slab with court lines on this strip, not dasher boards. The boarded round-cornered pad north of it is the neighbouring record 43584 (source: none). The scene follows the aerial."
+  },
+  {
+   "assetId": "44162",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.2987997,43.6661963,-79.2972258,43.6673425&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8827502.594949504,
+     "ymin": 5413929.771885618,
+     "xmax": -8827326.20554753,
+     "ymax": 5414106.161287593,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "24089f3a9d421e7837371bc5f6821c8cc614d5132cfc30f23356785c45ac97d4"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": true,
+   "appearance": "pavement",
+   "notes": "Boarded pad, outline matches the aerial, boards and court markings visible. Gate on the south side by the player benches.",
+   "gatePixel": [
+    647,
+    634
+   ]
+  },
+  {
+   "assetId": "59882",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3303663,43.6686326,-79.3283545,43.6700976&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8831016.734421046,
+     "ymin": 5414304.699575547,
+     "xmax": -8830791.27494711,
+     "ymax": 5414530.159049484,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "8838524b14dcbd96ab0d237c497f7ce713ef5d1989b5f9a6ed71ed8a24bedeb2"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": false,
+   "appearance": "pavement",
+   "notes": "Skate trail around planted islands, outline matches the paved loop between the pool house and the roofed rink in the aerial."
+  },
+  {
+   "assetId": "59883",
+   "aerial": {
+    "year": 2025,
+    "exportRequest": "https://gis.toronto.ca/arcgis/rest/services/basemap/cot_ortho_2025_color_8cm/MapServer/export?bbox=-79.3370379,43.6914195,-79.3355811,43.6924799&bboxSR=4326&imageSR=3857&size=1100,1100&format=jpg&f=pjson",
+    "extent": {
+     "xmin": -8831759.20200139,
+     "ymin": 5417812.163987896,
+     "xmax": -8831595.947913717,
+     "ymax": 5417975.418075568,
+     "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+     }
+    },
+    "width": 1100,
+    "height": 1100,
+    "sha256": "e490a3b49f7ad6f454123905b84136c2cb0e6ba451528e999bc9aacc6508698c"
+   },
+   "reviewedAt": "2026-11-26",
+   "evidence": "City ASSET_ID polygon checked against City 2025 8 cm aerial; the mapped outline is kept, no outline is inferred from the inventory dimensions.",
+   "boards": false,
+   "appearance": "pavement",
+   "notes": "Skate trail around a planted island, outline matches the paved loop beside the Dieppe Park rink in the aerial."
+  }
+ ]
+}

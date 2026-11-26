@@ -1,0 +1,8 @@
+[
+ {
+  "name": "stats",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const C=window.CITY,p=C.patioStats||{},k=C.parkedStats; console.log('[ride-check] parked-patios '+JSON.stringify({search:location.search,patios:{layout:p.layout,check:p.check,placed:p.placed,fingerprint:p.fingerprint,laneConflicts:p.laneConflicts&&p.laneConflicts.length},parked:{kept:k.kept,cap:k.cap,laneDropped:k.laneDropped,patioDropped:k.patioDropped,valleyDropped:k.valleyDropped,colliders:k.colliders,near:k.near,far:k.far}})); })()"
+ }
+]
