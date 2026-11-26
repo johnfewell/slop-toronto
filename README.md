@@ -89,6 +89,28 @@ as skipped, with the reason, when it is missing:
   `$GPU2_REVIEW_DIR/<gpu2 name>/` (on John's laptop, `review/gpu2/` in the ride-anywhere-geo checkout). The docs
   write capture folders that way, and `tools/massing-baseline.sh` reads `GPU2_REVIEW_DIR` (or `RESULTS`) from the
   environment.
+- **Frame-time chart for perf reports:** attach a frame-time chart to any report that says a load, a streaming step or a
+  new feature changed how smooth the game is. Record the frame intervals with the `frame-times` shot, then draw them:
+
+  ```sh
+  # on the mini, one run per build and profile (CAPTURE_TAG names the output; FT = frame times)
+  gpu2-local <name> -- env CAPTURE_ROOT=dist CAPTURE_PORT=<port> CAPTURE_CDN_CACHE=1 CAPTURE_UNCAPPED=1 \
+    CAPTURE_TAG=phone-after CAPTURE_FT_SECONDS=20 CAPTURE_VIEWPORT=412x915 CAPTURE_DPR=2.625 CAPTURE_MOBILE=1 \
+    CAPTURE_CPU_THROTTLE=4 'CAPTURE_QUERY=?quality=low&autoscale=0&time=midday' \
+    node tools/capture.mjs tools/shots/frame-times.json
+  # on the laptop: one panel per file, or --overlay for before/after in one panel
+  node tools/frame-time-chart.mjs --overlay --label before --label after out.png phone-before-frame-times.json phone-after-frame-times.json
+  ```
+
+  `tools/shots/frame-times.json` records every frame's interval with `requestAnimationFrame` after the city is ready,
+  for `CAPTURE_FT_SECONDS` seconds (default 20), or until a page expression is true plus `CAPTURE_FT_TAIL_SECONDS`
+  (default 4) when `CAPTURE_FT_WAIT_FOR` is set, e.g. `CAPTURE_FT_WAIT_FOR="CITY.parkDetail.state==='built'"`.
+  Any module can add a named event to the chart with `window.__ftMark?.('name')` (capture runs define the hook; in the
+  real game the optional call does nothing). The chart draws each mark as a dashed line; `--marks a,b` keeps only some.
+  `node tools/frame-time-chart.mjs` takes `--overlay`, `--label`, `--title`, `--marks`, `--max-ms`, `--x-label`,
+  `--width` and `--panel-height` (see the top of the file), reads any number of metrics JSON files and writes a PNG.
+  Run before and after back to back on the same mini and say so: frame times from a shared mini are relative
+  evidence, not budgets.
 - **No local paths:** `tests/no-local-paths.test.mjs` fails if a tracked file that the public snapshot publishes names
   a laptop home folder (anything under `/Users`) or a machine's local host name (a Bonjour `.local` or Tailscale
   `.ts.net` name). Write such locations as `$GPU2_REVIEW_DIR/…`, `~/.cache/…` or a description instead.

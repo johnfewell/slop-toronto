@@ -83,6 +83,9 @@ const page = await browser.newPage({
 });
 // Deterministic network fixtures for application lifecycle checks, isolated to this fresh browser context.
 if (process.env.CAPTURE_INIT_SCRIPT) await page.addInitScript({ path: path.resolve(process.env.CAPTURE_INIT_SCRIPT) });
+// The in-page mark hook for tools/shots/frame-times.json: any module may call `window.__ftMark?.('name')`; the shot
+// draws it as a dashed line on the frame-time chart (tools/frame-time-chart.mjs). Only capture runs define it.
+await page.addInitScript(() => { window.__ftMarks = []; window.__ftMark = (name) => { window.__ftMarks.push([String(name), performance.now()]); }; });
 const seed = process.env.CAPTURE_SEED === undefined ? null : Number(process.env.CAPTURE_SEED);
 if (seed !== null) {
   if (!Number.isSafeInteger(seed) || seed < 1 || seed > 0xffffffff) throw new Error('CAPTURE_SEED must be uint32 > 0');
@@ -258,12 +261,17 @@ try {
       await page.reload({ waitUntil: 'load' });
       await page.waitForFunction(() => window.__CITY_APP?.ready, null, { timeout: Number(process.env.CAPTURE_READY_TIMEOUT_MS || 240000) });
     }
+    // (tools/shots/frame-times.json: CAPTURE_FT_SECONDS / CAPTURE_FT_WAIT_FOR / CAPTURE_FT_TAIL_SECONDS override the shot's own)
+    if (process.env.CAPTURE_FT_SECONDS) s.ftSeconds = Number(process.env.CAPTURE_FT_SECONDS);
+    if (process.env.CAPTURE_FT_WAIT_FOR) s.ftWaitFor = process.env.CAPTURE_FT_WAIT_FOR;
+    if (process.env.CAPTURE_FT_TAIL_SECONDS) s.ftTailSeconds = Number(process.env.CAPTURE_FT_TAIL_SECONDS);
     const shotResult = await page.evaluate((s) => {
       const app = window.__CITY_APP;
       if (s.mode) app.selectMode(s.mode);
       if (s.x !== undefined) app.teleportTo(s.x, s.z, s.heading ?? Math.PI);
       if (s.time) app.selectTime(s.time);
       if (s.camera) app.selectCamera(s.camera, true);
+      window.__captureShot = s; // (a shot's js reads its own extra fields, e.g. ftSeconds)
       if (s.js) return (0, eval)(s.js);
     }, s);
     if (s.record) fs.writeFileSync(path.join(OUT, `${TAG}${s.name}.json`), JSON.stringify(shotResult, null, 2) + '\n');
