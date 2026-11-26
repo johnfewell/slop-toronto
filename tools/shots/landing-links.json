@@ -1,0 +1,139 @@
+[
+ {
+  "name": "t00-hud",
+  "js": "document.getElementById('btn-toggle-hud').click(); document.body.classList.add('film')",
+  "wait": 1500
+ },
+ {
+  "name": "link-00-cinesphere",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Cinesphere\"); const p = r[0]; if (!p) return { query: \"Cinesphere\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Cinesphere\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-01-rogers-centre",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Rogers Centre\"); const p = r[0]; if (!p) return { query: \"Rogers Centre\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Rogers Centre\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-02-cn-tower",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"CN Tower\"); const p = r[0]; if (!p) return { query: \"CN Tower\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"CN Tower\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-03-harbourfront-centre",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Harbourfront Centre\"); const p = r[0]; if (!p) return { query: \"Harbourfront Centre\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Harbourfront Centre\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-04-union-station",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Union Station\"); const p = r[0]; if (!p) return { query: \"Union Station\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Union Station\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-05-st-lawrence-market",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"St. Lawrence Market\"); const p = r[0]; if (!p) return { query: \"St. Lawrence Market\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"St. Lawrence Market\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-06-distillery-district",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Distillery District\"); const p = r[0]; if (!p) return { query: \"Distillery District\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Distillery District\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-07-grenadier-pond",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Grenadier Pond\"); const p = r[0]; if (!p) return { query: \"Grenadier Pond\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Grenadier Pond\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-08-high-park-zoo",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"High Park Zoo\"); const p = r[0]; if (!p) return { query: \"High Park Zoo\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"High Park Zoo\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-09-high-park",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"High Park\"); const p = r[0]; if (!p) return { query: \"High Park\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"High Park\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-10-biidaasige-park",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Biidaasige Park\"); const p = r[0]; if (!p) return { query: \"Biidaasige Park\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Biidaasige Park\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-11-sugar-beach",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Sugar Beach\"); const p = r[0]; if (!p) return { query: \"Sugar Beach\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Sugar Beach\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-12-toronto-music-garden",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Toronto Music Garden\"); const p = r[0]; if (!p) return { query: \"Toronto Music Garden\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Toronto Music Garden\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-13-jack-layton-ferry-terminal",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Jack Layton Ferry Terminal\"); const p = r[0]; if (!p) return { query: \"Jack Layton Ferry Terminal\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Jack Layton Ferry Terminal\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-14-centre-island",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Centre Island\"); const p = r[0]; if (!p) return { query: \"Centre Island\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Centre Island\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-15-toronto-city-hall",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Toronto City Hall\"); const p = r[0]; if (!p) return { query: \"Toronto City Hall\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Toronto City Hall\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-16-royal-ontario-museum",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Royal Ontario Museum\"); const p = r[0]; if (!p) return { query: \"Royal Ontario Museum\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Royal Ontario Museum\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-17-ontario-legislative-building",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Ontario Legislative Building\"); const p = r[0]; if (!p) return { query: \"Ontario Legislative Building\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Ontario Legislative Building\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-18-kensington-market",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Kensington Market\"); const p = r[0]; if (!p) return { query: \"Kensington Market\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Kensington Market\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "link-19-eglinton",
+  "record": true,
+  "wait": 3500,
+  "js": "(() => { const a = window.__CITY_APP, tg = a.tourGuide; a.cameraSystem.cinema = null; a.selectMode('cyclist'); a.selectCamera('chase', true); const r = tg.search(\"Eglinton\"); const p = r[0]; if (!p) return { query: \"Eglinton\", found: null, frame: window.CITY.GEO.frame.detail }; tg.teleportToPlace(p); tg.showPlace(p, { fly: false }); const e = a.controllerManager.getActiveEntity && a.controllerManager.getActiveEntity(); return { query: \"Eglinton\", found: [p.name, p.kind, Math.round(p.x), Math.round(p.z)], at: e ? [Math.round(e.position.x), Math.round(e.position.z)] : null, label: window.CITY.getLocationLabel && e ? window.CITY.getLocationLabel(e.position.x, e.position.z) : null, frame: [window.CITY.GEO.frame.detail.x0, window.CITY.GEO.frame.detail.x1, window.CITY.GEO.frame.detail.z0, window.CITY.GEO.frame.detail.z1] }; })()"
+ },
+ {
+  "name": "ride-504",
+  "record": true,
+  "wait": 6000,
+  "js": "(() => { try { window.__CITY_APP.rideFeatured('504'); return { ok: true }; } catch (e) { return { error: String(e) }; } })()"
+ },
+ {
+  "name": "ride-subway",
+  "record": true,
+  "wait": 6000,
+  "js": "(() => { try { window.__CITY_APP.rideFeatured('subway'); return { ok: true }; } catch (e) { return { error: String(e) }; } })()"
+ }
+]

@@ -1,0 +1,40 @@
+{
+ "prelude": "const H = (window.__HC = {});\n  H.wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));\n  // a slow drift: from pos, sliding `side` m across the view and `fwd` m along it, rising `up` m; look keeps its offset\n  H.drift = (shot, pos, look, fov, side = 0, fwd = 0, up = 0, lookShift = 1) => {\n    const dx = look[0] - pos[0], dz = look[2] - pos[2], l = Math.hypot(dx, dz) || 1;\n    const f = [dx / l, dz / l], r = [-f[1], f[0]];\n    const d = [r[0] * side + f[0] * fwd, up, r[1] * side + f[1] * fwd];\n    shot.ease = 'linear';\n    shot.path = [\n      { t: 0, pos, look, fov },\n      { t: shot.duration, pos: pos.map((v, i) => v + d[i]), look: look.map((v, i) => v + d[i] * lookShift), fov }\n    ];\n  };\n  // a smoothed follow camera: the target's position & forward yaw low-passed per frame\n  H.follower = (k = 0.06) => {\n    let s = null;\n    return (x, y, z, yaw) => {\n      if (!s) s = { x, y, z, yaw };\n      else {\n        s.x += (x - s.x) * 0.5; s.y += (y - s.y) * 0.5; s.z += (z - s.z) * 0.5;\n        s.yaw += H.wrap(yaw - s.yaw) * k;\n      }\n      return s;\n    };\n  };\n  H.clearInput = () => {\n    const cm = window.__CITY_APP.controllerManager;\n    cm.clearTouchInput();\n  };\n  const S = window.CITY.LANDMARK_SITES || {};\n  console.log('[hc] sites ' + JSON.stringify(Object.fromEntries(Object.entries(S).map(([k, v]) => [k, v && [Math.round(v.x), Math.round(v.z)]]))));\n  console.log('[hc] cn ' + JSON.stringify(window.CITY.GEO.points && window.CITY.GEO.points.cnTower) + ' humberArch ' + JSON.stringify(window.CITY.TELEPORT_LOCATIONS.humberArch));",
+ "shots": [
+  {
+   "name": "cover-sunset",
+   "duration": 11.5,
+   "ease": "linear",
+   "path": [
+    {
+     "t": 0,
+     "pos": [
+      -2330,
+      9,
+      1030
+     ],
+     "look": [
+      -740,
+      195,
+      -232
+     ],
+     "fov": 32
+    },
+    {
+     "t": 11.5,
+     "pos": [
+      -2310,
+      10.5,
+      1048
+     ],
+     "look": [
+      -720,
+      196.5,
+      -214
+     ],
+     "fov": 32
+    }
+   ]
+  }
+ ]
+}

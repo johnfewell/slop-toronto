@@ -1,4 +1,4 @@
 {
-  "prompt": "ORIGIN (not generated, not stock): in-app capture of the Slop Toronto city (st-lawrence), rendered by tools/capture.mjs from tools/shots/site.json on the Mac mini via gpu2, 2026-10-31. Shown on the home page (index.html).",
-  "createdAt": "2026-10-31T20:04:44.814Z"
+  "prompt": "ORIGIN (not generated, not stock): still, the first frame of the home page's muted loop st-lawrence, an in-app capture of the Slop Toronto city rendered by tools/render-film.mjs from tools/shots/landing-clips-golden.json (written by tools/make-home-clips-shots.mjs with LIVE=1) on the Mac mini via gpu2, encoded by tools/encode-home-clips.sh, 2026-11-26. The sky is live on the real date, 26 Nov 2026, set to 15:50 Toronto time with the weather set to sunny; the trees are bare.",
+  "createdAt": "2026-11-26T21:24:35.000Z"
 }

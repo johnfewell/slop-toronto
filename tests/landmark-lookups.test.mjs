@@ -14,6 +14,11 @@ const read = (f) => fs.readFileSync(new URL(`../${f}`, import.meta.url));
 // the landing page's links into the map (explore.html#place=...)
 const LINKS = [...read('index.html').toString().matchAll(/explore\.html#place=([^"&]+)"/g)].map((m) => decodeURIComponent(m[1]));
 
+// links to a place the City or OpenStreetMap names that is not one of tools/landmark-defs.mjs's landmarks: it still has
+// to arrive on a street, facing it (st-mcqm). Eglinton is the bigger map's northern edge: the downtown map has no such place.
+const NAMED_PLACES = ['Grenadier Pond', 'High Park Zoo', 'Biidaasige Park', 'Jack Layton Ferry Terminal'];
+const EGLINTON_ONLY = ['Eglinton'];
+
 async function city(bin) {
   const window = { CITY: { ...(await unpackGeo(read(bin))), DEBUG_ROADS: false } };
   const context = vm.createContext({ window, console: { log() {}, info() {}, warn() {} }, performance, Math, location: { search: '' }, URLSearchParams, Buffer });
@@ -86,9 +91,14 @@ for (const [frame, bin] of [['detail', 'data/toronto-geodata.bin'], ['Eglinton',
     const C = await city(bin);
     assert.ok(LINKS.length >= 10, `${LINKS.length} links`);
     for (const q of LINKS) {
+      if (EGLINTON_ONLY.includes(q) && frame !== 'Eglinton') continue;
       const hit = arrive(C, q);
-      assert.equal(hit.p?.kind, 'landmark', `${q}: ${hit.p ? `${hit.p.kind} ${hit.p.name}` : 'nothing'}`);
-      const d = onStreetFacing(C, hit, q);
+      if (NAMED_PLACES.includes(q) || EGLINTON_ONLY.includes(q)) assert.ok(hit.p && hit.p.kind !== 'street', `${q}: ${hit.p ? `${hit.p.kind} ${hit.p.name}` : 'nothing'}`);
+      else assert.equal(hit.p?.kind, 'landmark', `${q}: ${hit.p ? `${hit.p.kind} ${hit.p.name}` : 'nothing'}`);
+      // (Centre Island is pinned at its ferry dock: it faces the island's nearest shore, as in the test above)
+      const island = {};
+      if (hit.p.landmarkId === 'centreIsland') nearOutline(hit.a.x, hit.a.z, C.LANDMARK_SITES.centreIsland.ring, island);
+      const d = onStreetFacing(C, hit, q, hit.p.landmarkId === 'centreIsland' ? island : hit.p);
       assert.ok(d < 600, `${q}: ${d.toFixed(0)} m away`);
     }
   });

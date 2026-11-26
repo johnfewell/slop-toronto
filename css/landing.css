@@ -1001,6 +1001,171 @@ input {
   text-underline-offset: 0.12em;
 }
 
+/* A lead and four: the water and the road to Eglinton (the lead spans two rows beside two columns of two) */
+.uptown-grid.five {
+  grid-template-columns: 1.6fr 1fr 1fr;
+  gap: 28px 28px;
+}
+
+.uptown-grid.five .up-lead {
+  grid-row: 1 / span 2;
+}
+
+.uptown-grid.five .up + .up {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.uptown-grid.five .up:nth-child(2),
+.uptown-grid.five .up:nth-child(4) {
+  padding-left: 28px;
+  border-left: var(--rule);
+}
+
+.uptown-grid.five .up:nth-child(3),
+.uptown-grid.five .up:nth-child(5) {
+  padding-left: 28px;
+  border-left: var(--rule);
+}
+
+.uptown-grid.five .up b {
+  font-size: 26px;
+}
+
+.uptown-grid.five .up-lead b {
+  font-size: clamp(34px, 3.4vw, 50px);
+}
+
+/* The park */
+.park-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 0 28px;
+  margin-bottom: 28px;
+}
+
+.park-grid figure {
+  margin: 0;
+}
+
+.park-grid img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  filter: contrast(1.06) saturate(1.08);
+}
+
+/* the lead picture fills the height of the stack beside it */
+.park-lead {
+  display: flex;
+  flex-direction: column;
+}
+
+.park-lead a {
+  display: block;
+  flex: 1;
+  min-height: 0;
+}
+
+.park-grid .park-lead img {
+  height: calc(100% - 0px);
+  aspect-ratio: auto;
+}
+
+.uptown-grid.five .up-lead a {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.uptown-grid.five .up-lead img {
+  flex: 1;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+.park-side {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  padding-left: 28px;
+  border-left: var(--rule);
+}
+
+.pic-caption {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.park-go {
+  margin-top: 8px;
+}
+
+.park-note {
+  max-width: 62ch;
+  margin-top: 16px;
+  font-size: 15px;
+  font-weight: 550;
+}
+
+/* In this week's paper */
+.paper-box {
+  max-width: var(--max);
+  margin: 64px auto 0;
+  padding: 0 var(--gutter);
+}
+
+.paper-box a {
+  display: block;
+  padding: 14px 18px 12px;
+  border: 3px solid var(--ink);
+  text-decoration: none;
+}
+
+.paper-box .paper-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.paper-box b {
+  display: block;
+  margin: 4px 0 4px;
+  font-stretch: 70%;
+  font-weight: 900;
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.paper-box span.paper-dek {
+  display: block;
+  max-width: 70ch;
+  font-weight: 550;
+}
+
+.paper-box .paper-when {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.paper-box a:hover b {
+  text-decoration: underline;
+  text-decoration-color: var(--red);
+  text-decoration-thickness: 4px;
+  text-underline-offset: 0.12em;
+}
+
 /* By the numbers */
 .readings {
   width: 100%;
@@ -1061,6 +1226,41 @@ input {
   font-weight: 750;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+/* the two-reading version: downtown beside the map to Eglinton */
+.readings.two thead th small {
+  display: block;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+}
+
+.readings.two thead th:nth-child(2),
+.readings.two thead th:nth-child(3),
+.readings.two td.num {
+  text-align: right;
+}
+
+.readings.two td.num {
+  width: auto;
+  padding-left: 12px;
+  padding-right: 0;
+  font-size: clamp(30px, 3.8vw, 58px);
+}
+
+.readings.two td.num + td.num {
+  padding-left: clamp(16px, 2.4vw, 36px);
+}
+
+.readings.two td.num small {
+  font-size: 0.45em;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.readings.two td:last-child {
+  min-width: 11ch;
 }
 
 /* the live outside reading, kept apart from the build's figures */
@@ -1518,6 +1718,54 @@ input {
     font-size: 24px;
   }
 
+  /* a phone has no map as far as Eglinton: its search finds no such place */
+  .up-desktop {
+    display: none;
+  }
+
+  .uptown-grid.five {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px 16px;
+  }
+
+  .uptown-grid.five .up-lead {
+    grid-row: auto;
+  }
+
+  .uptown-grid.five .up:nth-child(n) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .uptown-grid.five .up b {
+    font-size: 22px;
+  }
+
+  .park-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .park-grid .park-lead img,
+  .uptown-grid.five .up-lead img {
+    height: auto;
+    aspect-ratio: 16 / 9;
+    flex: none;
+  }
+
+  .park-lead a {
+    flex: none;
+  }
+
+  .park-side {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .paper-box {
+    margin-top: 40px;
+  }
+
   .readings thead {
     display: none;
   }
@@ -1543,6 +1791,40 @@ input {
     margin-top: 4px;
     padding: 0;
     text-align: left;
+  }
+
+  .readings.two tbody tr {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 16px;
+  }
+
+  .readings.two tbody th,
+  .readings.two td:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .readings.two td.num {
+    padding: 0;
+    text-align: left;
+    font-size: 42px;
+  }
+
+  .readings.two td.num::before {
+    content: attr(data-label);
+    display: block;
+    font-stretch: 100%;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .readings.two td.num + td.num {
+    padding-left: 0;
+  }
+
+  .readings.two td:last-child {
+    min-width: 0;
   }
 
   .outside {

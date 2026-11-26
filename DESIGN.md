@@ -1,6 +1,6 @@
 ---
 name: Slop Toronto
-description: Downtown Toronto and the waterfront in 3D, set as this week's free city paper.
+description: Toronto, lake to Eglinton, in 3D, set as this week's free city paper.
 colors:
   newsprint: "#e9e6dc"
   black-ink: "#151412"
@@ -210,7 +210,7 @@ A broadsheet front page, then a single column of sections at a maximum of 1600px
 - **Front page:** cover and rail side by side (rail clamp 340-410px), together filling the rest of the first viewport (at least 560px) and ending on a 6px rule. The coverline block sits bottom-left on the cover; the listings share out the rail's spare height so the Corrections box lands at the foot. Short desktop windows (861px+ wide, 860px tall or less) tighten the rows so Corrections still lands in the first screen.
 - **Phones (860px and narrower):** masthead, then the cover with the search, then the listings. The cover is tall enough (up to 692px) for the CN Tower's pod to stand clear above the coverline, and its crop follows the tower via a computed object-position.
 - **Accepted exception:** on phones shorter than 840px the cover falls back to a shorter height (up to 640px) so the search stays in the first screen; the pod may sit behind the coverline there. The search wins.
-- **Sections:** 64px apart (48px on phones), each opening on a section bar. Ride the TTC is a 1fr 1fr 0.72fr grid split by 2px vertical rules (two columns under 1180px, one on phones); Off the lake is 1.6fr 1fr 1fr; How it works and What's real use CSS columns (3 at 260px, 4 at 220px) with 40px gaps and a 1px ink column rule.
+- **Sections:** 64px apart (48px on phones), each opening on a section bar. Ride the TTC is a 1fr 1fr 0.72fr grid split by 2px vertical rules (two columns under 1180px, one on phones); Off the lake (up to Eglinton) and On the water are 1.6fr 1fr 1fr with the lead spanning two rows beside four smaller sights in two columns, split by 1px column rules (two columns on phones, the lead across both); The park is 1.6fr 1fr, a lead picture beside two stacked ones; How it works and What's real use CSS columns (3 at 260px, 4 at 220px) with 40px gaps and a 1px ink column rule.
 - **Back page and colophon:** the back page sits 72px down; the colophon opens on a 6px rule in two columns.
 
 ## Elevation & Depth
@@ -251,6 +251,8 @@ Printed, blunt and confident: ink blocks with reversed caps, and a hover that in
 
 ### Boxed Notices
 - **Corrections:** a 3px ink box at the foot of the rail, with an uppercase bold run-in ("Corrections:") stating what is art and that WebGPU is needed.
+- **In this week's paper:** a 3px ink box before the back page, linking the latest news story: an uppercase label, the headline in the Title style, the dek and the date, with a red underline on hover. Hand-written until the news index builds it.
+- **Two-reading table:** By the numbers sets Downtown (every device) beside To Eglinton (desktop), each reading in the Figure style at a smaller size (clamp 30-58px), with the source at the right; on phones each row stacks and labels its two figures.
 - **Outside right now:** a 3px ink box with the live Pearson temperature in the Figure style, its condition, and the source credited. It and the masthead weather ear come from Environment and Climate Change Canada; if the reading fails or is older than three hours, both stay hidden (the ear keeps its line height so the masthead does not jump).
 
 ### Sticker

@@ -1,4 +1,4 @@
 {
-  "prompt": "ORIGIN (not generated, not stock): in-app screenshot of the Slop Toronto city (the Bloor Viaduct over the Don Valley with a Line 2 train), the existing docs/images/hero-bloor-viaduct.jpg cropped to 16:9 and resized to 960x540 with cwebp on 2026-10-31 for the home page's subway panel.",
-  "createdAt": "2026-10-31T20:04:44.830Z"
+  "prompt": "ORIGIN (not generated, not stock): still, the first frame of the home page's muted loop subway-viaduct, an in-app capture of the Slop Toronto city rendered by tools/render-film.mjs from tools/shots/landing-clips-midday.json (written by tools/make-home-clips-shots.mjs with LIVE=1) on the Mac mini via gpu2, encoded by tools/encode-home-clips.sh, 2026-11-26. The sky is live on the real date, 26 Nov 2026, set to 12:30 Toronto time with the weather set to sunny; the trees are bare.",
+  "createdAt": "2026-11-26T21:24:35.000Z"
 }

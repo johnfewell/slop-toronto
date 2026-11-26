@@ -17,13 +17,13 @@ Both usually arrive from a shared link or a post and decide within a few seconds
 
 ## Product Purpose
 
-Slop Toronto is downtown Toronto and the waterfront in 3D, in the browser: walk, cycle, drive or fly from the Humber Bay Arch Bridge along the lake to Sugar Beach, past the CN Tower and through downtown, and ride the 504 streetcar or the subway across the Don Valley.
+Slop Toronto is Toronto in 3D, in the browser, from the lake to Eglinton on a laptop or desktop (downtown to Bloor on a phone): walk, cycle, drive or fly from the Humber Bay Arch Bridge along the lake past the CN Tower and through downtown, up to Eglinton, through High Park and its zoo and the new Port Lands park, and ride the 504 streetcar or the subway across the Don Valley. The scenery follows the real date: leaves, rinks, patios and the holiday lights.
 
 The landing page has one job: **get the visitor into the city.** Success is the visitor opening it, through Explore, the place search or a sight.
 
 ## Positioning
 
-The city is built from the City of Toronto's own open data and OpenStreetMap at 1:1: the City's 3D Massing footprints and heights, its street trees, hydrants, bike rings, park signs, cycling network and CaféTO patios, and the real TTC subway and streetcar network you can ride. It runs on the engine of mrdoob's Slop New York (by way of Abuja Tour), rebuilt for Toronto.
+The city is built from the City of Toronto's own open data and OpenStreetMap at 1:1: the City's 3D Massing footprints and heights, its street trees, hydrants, bike rings, litter bins, poster columns, park signs, cycling network, CaféTO patios, outdoor rinks and road works, and the real TTC subway and streetcar network you can ride. It runs on the engine of mrdoob's Slop New York (by way of Abuja Tour), rebuilt for Toronto.
 
 ## Operating Context
 
@@ -44,8 +44,8 @@ The city is built from the City of Toronto's own open data and OpenStreetMap at 
 
 ## Evidence on Hand
 
-- In-app screenshots: `assets/site/` (hero, ride, CN Tower, Rogers Centre, Union Station, City Hall, ROM, St. Lawrence Market, Distillery District, Harbourfront Centre, Cinesphere, Queen's Park), `docs/images/hero-bloor-viaduct.jpg`, `docs/images/grid.jpg`, `assets/og-toronto.jpg`. New shots come from the capture tooling (`npm run capture`, the `gpu2` recipe in `docs/adoption-measurements.md`).
-- Figures currently on the page, from the city data: 35,266 buildings, 1,383 named streets, 57,120 street trees, ~6 km of lakeshore, 11.6 × 6.6 km of downtown at 1:1. Any new figure must come from the data, not be estimated.
+- In-app screenshots: `assets/site/` (hero, ride, CN Tower, Rogers Centre, Union Station, City Hall, ROM, St. Lawrence Market, Distillery District, Harbourfront Centre, Cinesphere, Queen's Park, High Park, Biidaasige Park, Sugar Beach, the Music Garden, the ferry terminal, Centre Island, Kensington Market, Yonge and Eglinton; all retaken on 2026-11-26, `docs/landing-refresh-spec.md`), `docs/images/hero-bloor-viaduct.jpg`, `docs/images/grid.jpg`, `assets/og-toronto.jpg`. New shots come from the capture tooling (`npm run capture`, the `gpu2` recipe in `docs/adoption-measurements.md`).
+- Figures currently on the page, from the city data (`docs/landing-refresh-figures.md`), downtown / to Eglinton: 35,271 / 140,548 buildings, 1,383 / 3,390 named streets, 55,852 / 180,125 street trees placed, 76.6 / 190.8 km² (11.6 × 6.6 / 17.5 × 10.9 km) at 1:1. Any new figure must come from the data, not be estimated.
 - No testimonials, press, user counts or endorsements exist; do not invent them.
 
 ## Product Principles

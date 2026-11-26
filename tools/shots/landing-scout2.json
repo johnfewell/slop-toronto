@@ -1,0 +1,112 @@
+[
+ {
+  "name": "t00-hud",
+  "js": "document.getElementById('btn-toggle-hud').click(); document.body.classList.add('film')",
+  "wait": 1500
+ },
+ {
+  "name": "rom-0",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-378.0, -2546.0, 0); const y0 = g(-378.0, -2546.0), y1 = g(-378, -2716); a.cameraSystem.cinema = () => ({ pos: [-378.0, y0 + 50, -2546.0], look: [-378, y1 + 12, -2716], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "rom-90",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-208.0, -2716.0, 0); const y0 = g(-208.0, -2716.0), y1 = g(-378, -2716); a.cameraSystem.cinema = () => ({ pos: [-208.0, y0 + 50, -2716.0], look: [-378, y1 + 12, -2716], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "rom-270",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-548.0, -2716.0, 0); const y0 = g(-548.0, -2716.0), y1 = g(-378, -2716); a.cameraSystem.cinema = () => ({ pos: [-548.0, y0 + 50, -2716.0], look: [-378, y1 + 12, -2716], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "queens-park-0",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-308.0, -1951.0, 0); const y0 = g(-308.0, -1951.0), y1 = g(-308, -2101); a.cameraSystem.cinema = () => ({ pos: [-308.0, y0 + 35, -1951.0], look: [-308, y1 + 18, -2101], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "queens-park-90",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-158.0, -2101.0, 0); const y0 = g(-158.0, -2101.0), y1 = g(-308, -2101); a.cameraSystem.cinema = () => ({ pos: [-158.0, y0 + 35, -2101.0], look: [-308, y1 + 18, -2101], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "queens-park-270",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-458.0, -2101.0, 0); const y0 = g(-458.0, -2101.0), y1 = g(-308, -2101); a.cameraSystem.cinema = () => ({ pos: [-458.0, y0 + 35, -2101.0], look: [-308, y1 + 18, -2101], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-a-0",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6700.0, -1455.0, 0); const y0 = g(-6700.0, -1455.0), y1 = g(-6700, -1500); a.cameraSystem.cinema = () => ({ pos: [-6700.0, y0 + 4, -1455.0], look: [-6700, y1 + 3, -1500], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-a-90",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6655.0, -1500.0, 0); const y0 = g(-6655.0, -1500.0), y1 = g(-6700, -1500); a.cameraSystem.cinema = () => ({ pos: [-6655.0, y0 + 4, -1500.0], look: [-6700, y1 + 3, -1500], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-a-180",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6700.0, -1545.0, 0); const y0 = g(-6700.0, -1545.0), y1 = g(-6700, -1500); a.cameraSystem.cinema = () => ({ pos: [-6700.0, y0 + 4, -1545.0], look: [-6700, y1 + 3, -1500], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-a-270",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6745.0, -1500.0, 0); const y0 = g(-6745.0, -1500.0), y1 = g(-6700, -1500); a.cameraSystem.cinema = () => ({ pos: [-6745.0, y0 + 4, -1500.0], look: [-6700, y1 + 3, -1500], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-b-0",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6550.0, -1305.0, 0); const y0 = g(-6550.0, -1305.0), y1 = g(-6550, -1350); a.cameraSystem.cinema = () => ({ pos: [-6550.0, y0 + 4, -1305.0], look: [-6550, y1 + 3, -1350], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-b-90",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6505.0, -1350.0, 0); const y0 = g(-6505.0, -1350.0), y1 = g(-6550, -1350); a.cameraSystem.cinema = () => ({ pos: [-6505.0, y0 + 4, -1350.0], look: [-6550, y1 + 3, -1350], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-b-180",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6550.0, -1395.0, 0); const y0 = g(-6550.0, -1395.0), y1 = g(-6550, -1350); a.cameraSystem.cinema = () => ({ pos: [-6550.0, y0 + 4, -1395.0], look: [-6550, y1 + 3, -1350], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-b-270",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6595.0, -1350.0, 0); const y0 = g(-6595.0, -1350.0), y1 = g(-6550, -1350); a.cameraSystem.cinema = () => ({ pos: [-6595.0, y0 + 4, -1350.0], look: [-6550, y1 + 3, -1350], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-c-0",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6300.0, -1855.0, 0); const y0 = g(-6300.0, -1855.0), y1 = g(-6300, -1900); a.cameraSystem.cinema = () => ({ pos: [-6300.0, y0 + 4, -1855.0], look: [-6300, y1 + 3, -1900], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-c-90",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6255.0, -1900.0, 0); const y0 = g(-6255.0, -1900.0), y1 = g(-6300, -1900); a.cameraSystem.cinema = () => ({ pos: [-6255.0, y0 + 4, -1900.0], look: [-6300, y1 + 3, -1900], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-c-180",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6300.0, -1945.0, 0); const y0 = g(-6300.0, -1945.0), y1 = g(-6300, -1900); a.cameraSystem.cinema = () => ({ pos: [-6300.0, y0 + 4, -1945.0], look: [-6300, y1 + 3, -1900], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "woods-c-270",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(-6345.0, -1900.0, 0); const y0 = g(-6345.0, -1900.0), y1 = g(-6300, -1900); a.cameraSystem.cinema = () => ({ pos: [-6345.0, y0 + 4, -1900.0], look: [-6300, y1 + 3, -1900], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "eglinton-yonge-far-0",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(500.0, -6438.0, 0); const y0 = g(500.0, -6438.0), y1 = g(500, -6818); a.cameraSystem.cinema = () => ({ pos: [500.0, y0 + 95, -6438.0], look: [500, y1 + 0, -6818], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "eglinton-yonge-far-180",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(500.0, -7198.0, 0); const y0 = g(500.0, -7198.0), y1 = g(500, -6818); a.cameraSystem.cinema = () => ({ pos: [500.0, y0 + 95, -7198.0], look: [500, y1 + 0, -6818], fov: 50 }); })()",
+  "wait": 6500
+ },
+ {
+  "name": "eglinton-yonge-far-90",
+  "js": "(() => { const a = window.__CITY_APP, cm = a.controllerManager; const g = (x, z) => Math.max(cm.getGroundHeight(x, z, 'person') || 0, 0); a.selectMode('cyclist'); a.selectCamera('chase', true); a.teleportTo(880.0, -6818.0, 0); const y0 = g(880.0, -6818.0), y1 = g(500, -6818); a.cameraSystem.cinema = () => ({ pos: [880.0, y0 + 95, -6818.0], look: [500, y1 + 0, -6818], fov: 50 }); })()",
+  "wait": 6500
+ }
+]

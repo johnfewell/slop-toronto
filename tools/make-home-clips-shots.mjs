@@ -292,5 +292,8 @@ const which = process.argv[3] || 'all';
 const pick = which === 'cover' ? shots.filter((s) => s.name.startsWith('cover-'))
   : which === 'listings' ? shots.filter((s) => !s.name.startsWith('cover-'))
   : which === 'all' ? shots : shots.filter((s) => which.split(',').includes(s.name));
+// LIVE=1: no time preset on the shots (a preset is the classic summer 22 August); the render's page query then carries
+// ?liveDate=&liveClock= and the scenery follows that real date and hour (the 2026-11-26 landing refresh, st-mcqm)
+if (process.env.LIVE) for (const s of pick) delete s.time;
 fs.writeFileSync(process.argv[2], JSON.stringify({ prelude, shots: pick }, null, 1) + '\n');
 console.log(pick.map((s) => s.name).join(' '));

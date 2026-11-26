@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Slop Toronto · the city and the waterfront in 3D</title>
-  <meta name="description" content="Slop Toronto: downtown Toronto and the waterfront in 3D, in your browser. Cycle the lake from the Humber Bay Arch Bridge to Sugar Beach, or walk, drive and fly past the CN Tower and through downtown." />
+  <title>Slop Toronto · Toronto, lake to Eglinton, in 3D</title>
+  <meta name="description" content="Slop Toronto: Toronto in 3D in your browser, from the lake to Eglinton on a laptop (downtown on a phone). Cycle the lake from the Humber Bay Arch Bridge, walk High Park, ride the 504 and the subway, or fly past the CN Tower." />
   <!-- social: link previews -->
   <link rel="canonical" href="./" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Slop Toronto" />
   <meta property="og:locale" content="en_CA" />
   <meta property="og:url" content="https://sloptoronto.ca/" />
-  <meta property="og:title" content="Slop Toronto · the city and the waterfront in 3D" />
-  <meta property="og:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
+  <meta property="og:title" content="Slop Toronto · Toronto, lake to Eglinton, in 3D" />
+  <meta property="og:description" content="Toronto in 3D in your browser, from the lake to Eglinton: walk, cycle, drive, fly or ride the TTC, along the lake, through High Park and the new Port Lands park." />
   <meta property="og:image" content="https://sloptoronto.ca/assets/og-toronto.jpg" />
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Slop Toronto · the city and the waterfront in 3D" />
-  <meta name="twitter:description" content="Downtown Toronto and the waterfront in 3D, in your browser: walk, cycle, drive or fly past the CN Tower, along the lake and through the downtown streets." />
+  <meta name="twitter:title" content="Slop Toronto · Toronto, lake to Eglinton, in 3D" />
+  <meta name="twitter:description" content="Toronto in 3D in your browser, from the lake to Eglinton: walk, cycle, drive, fly or ride the TTC, along the lake, through High Park and the new Port Lands park." />
   <meta name="twitter:image" content="https://sloptoronto.ca/assets/og-toronto.jpg" />
   <meta name="twitter:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <!-- /social -->
@@ -69,7 +69,9 @@
       <li><a href="./news/laptop-drew-downtown.html">News</a></li>
       <li><a href="#listings">Sights</a></li>
       <li><a href="#ride"><b>Ride</b> the 504</a></li>
-      <li><a href="#ride">The subway</a></li>
+      <li><a href="#park">The park</a></li>
+      <li><a href="#water">The water</a></li>
+      <li><a href="#uptown">To Eglinton</a></li>
       <li><a href="#numbers">By the numbers</a></li>
       <li><a href="#how">How it works</a></li>
       <li><a href="#real">What's real</a></li>
@@ -94,7 +96,7 @@
         </button>
         <div class="coverstory">
           <h1 id="coverline">Toronto,<br />to scale.</h1>
-          <p class="cover-dek">Downtown and the waterfront in 3D, in your browser. Walk, cycle, drive, fly, or ride the TTC.</p>
+          <p class="cover-dek">From the lake to Eglinton in 3D, in your browser (downtown on phones). Walk, cycle, drive, fly, or ride the TTC.</p>
           <form class="where" action="./explore.html" id="hero-search" role="search">
             <label for="where-q">Where to?</label>
             <input id="where-q" type="search" name="q" placeholder="CN Tower, Queens Quay, a café…" data-placeholder-phone="CN Tower, a café…" autocomplete="off" enterkeyhint="go" />
@@ -177,6 +179,7 @@
         </ol>
         <div class="corrections">
           <p><b>Corrections:</b> the water and the façades are art, not data. Needs WebGPU: a recent Chrome or Edge.</p>
+          <p>Phones get downtown; laptops and desktops get the city from the lake to Eglinton, and that bigger map takes a little longer to load.</p>
           <p class="webgpu-note" data-webgpu-note hidden>This browser doesn't seem to support WebGPU yet. Try the latest Chrome or Edge.</p>
         </div>
       </aside>
@@ -209,9 +212,9 @@
         <div class="getting-around">
           <h3>Getting around</h3>
           <ul>
-            <li><a href="./explore.html#mode=cycle"><b>Cycle</b> the Martin Goodman Trail along the lake, from the arch bridge to Sugar Beach</a></li>
-            <li><a href="./explore.html#mode=walk"><b>Walk</b> among the crowds on the sidewalks, across the crosswalks</a></li>
-            <li><a href="./explore.html#mode=drive"><b>Drive</b> in the traffic on the downtown grid, and up onto the Gardiner</a></li>
+            <li><a href="./explore.html#mode=cycle"><b>Cycle</b> the Martin Goodman Trail along the lake, from the Humber Bay Arch Bridge to Sugar Beach</a></li>
+            <li><a href="./explore.html#mode=walk"><b>Walk</b> among the crowds on the sidewalks, across the crosswalks and over the bridges</a></li>
+            <li><a href="./explore.html#mode=drive"><b>Drive</b> in the traffic on the city grid, round the road works, and up onto the Gardiner</a></li>
             <li><a href="./explore.html#mode=fly"><b>Fly</b> over the harbour and the islands to the top of the CN Tower</a></li>
             <li><a href="./explore.html"><b>Toronto's own sky:</b> the real time of day and the weather at Pearson, or pick golden hour, midday, sunset or night</a></li>
           </ul>
@@ -219,15 +222,82 @@
       </div>
     </section>
 
-    <!-- Off the lake -->
-    <section class="section uptown" aria-labelledby="uptown-h">
-      <h2 id="uptown-h" class="bar">Off the lake</h2>
-      <p class="section-dek">Pick a sight and you arrive on the street in front of it, facing it. Everything around it is there too: the roads, the traffic, the people.</p>
-      <ul class="uptown-grid">
+    <!-- The park: High Park -->
+    <section class="section park" id="park" aria-labelledby="park-h">
+      <h2 id="park-h" class="bar">The park: High Park</h2>
+      <p class="section-dek">The whole of High Park on its real ground, from the plateau down to Grenadier Pond and the ravines, with the zoo's paddocks and their animals.</p>
+      <div class="park-grid">
+        <figure class="park-lead">
+          <a href="./explore.html#place=Grenadier%20Pond"><img src="./assets/site/park-pond.webp" alt="Grenadier Pond in High Park at low sun in late November, with the city across the water, rendered in the app" width="1600" height="900" loading="lazy" /></a>
+          <figcaption class="pic-caption">In the picture: Grenadier Pond in the low sun of 26 November, in the app.</figcaption>
+        </figure>
+        <div class="park-side">
+          <figure>
+            <a href="./explore.html#place=High%20Park%20Zoo"><img src="./assets/site/park-zoo.webp" alt="A reindeer grazing in its paddock at High Park Zoo, rendered in the app" width="960" height="540" loading="lazy" /></a>
+            <figcaption class="pic-caption">In the picture: a reindeer grazing in its paddock, in the app.</figcaption>
+          </figure>
+          <figure>
+            <a href="./explore.html#place=High%20Park"><img src="./assets/site/park-woods.webp" alt="Low sun through the bare trunks of High Park's woods, rendered in the app" width="960" height="540" loading="lazy" /></a>
+            <figcaption class="pic-caption">In the picture: the woods in late November, in the app.</figcaption>
+          </figure>
+        </div>
+      </div>
+      <div class="columns">
+        <p><b class="runin">The pond.</b> Grenadier Pond, with its reeds and willows, sits at its own level on the province's lidar ground; the slope down to it from the plateau is real.</p>
+        <p><b class="runin">The woods.</b> Black oak savanna, oak woodland and the ravine woods, drawn crown by crown from the lidar, with worn-earth trails. The trees follow the real date: they are bare in the picture and green in summer.</p>
+        <p><b class="runin">The zoo.</b> Ten species in their real paddocks (bison, yak, Highland cattle, llama, reindeer and more) that graze, peck and amble. The animals are licensed models; where they wander is made up.</p>
+      </div>
+      <p class="park-note">The real zoo is closed for construction until spring 2027. Here it is open, as on an ordinary day.</p>
+      <p class="park-go"><a class="more" href="./explore.html#place=High%20Park%20Zoo">Go to the zoo <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></a></p>
+    </section>
+
+    <!-- On the water -->
+    <section class="section water" id="water" aria-labelledby="water-h">
+      <h2 id="water-h" class="bar">On the water</h2>
+      <p class="section-dek">The waterfront rebuilt from the City's plans and photographs, from the new Port Lands park to the ferry docks. Pick a place and you arrive on the shore in front of it.</p>
+      <ul class="uptown-grid five">
+        <li class="up up-lead">
+          <a href="./explore.html#place=Biidaasige%20Park">
+            <img src="./assets/site/water-biidaasige.webp" alt="Biidaasige Park and its arched bridge in the Port Lands, the skyline behind, rendered in the app" width="1600" height="900" loading="lazy" />
+            <b>Biidaasige Park</b><span>The Port Lands · the new park</span>
+          </a>
+        </li>
+        <li class="up">
+          <a href="./explore.html#place=Sugar%20Beach">
+            <img src="./assets/site/water-sugar-beach.webp" alt="Sugar Beach's pink umbrellas on Queens Quay, rendered in the app" width="960" height="540" loading="lazy" />
+            <b>Sugar Beach</b><span>Queens Quay E · the pink umbrellas</span>
+          </a>
+        </li>
+        <li class="up">
+          <a href="./explore.html#place=Toronto%20Music%20Garden">
+            <img src="./assets/site/water-music-garden.webp" alt="The Toronto Music Garden beside Queens Quay, rendered in the app" width="960" height="540" loading="lazy" />
+            <b>Toronto Music Garden</b><span>Queens Quay W · six Bach rooms</span>
+          </a>
+        </li>
+        <li class="up">
+          <a href="./explore.html#place=Jack%20Layton%20Ferry%20Terminal">
+            <img src="./assets/site/water-ferry.webp" alt="The Jack Layton Ferry Terminal and its slips at sunset, rendered in the app" width="960" height="540" loading="lazy" />
+            <b>Jack Layton Ferry Terminal</b><span>Bay St · the island slips</span>
+          </a>
+        </li>
+        <li class="up">
+          <a href="./explore.html#place=Centre%20Island">
+            <img src="./assets/site/water-centre-island.webp" alt="Centre Island with the skyline across the water, rendered in the app" width="960" height="540" loading="lazy" />
+            <b>Centre Island</b><span>Toronto Island Park · the woods and the skyline</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <!-- To Eglinton -->
+    <section class="section uptown" id="uptown" aria-labelledby="uptown-h">
+      <h2 id="uptown-h" class="bar">Off the lake, up to Eglinton</h2>
+      <p class="section-dek">Pick a sight and you arrive on the street in front of it, facing it. Everything around it is there too: the roads, the traffic, the people. On a laptop or desktop the map runs up to Eglinton; a phone has downtown to Bloor.</p>
+      <ul class="uptown-grid five">
         <li class="up up-lead">
           <a href="./explore.html#place=Toronto%20City%20Hall">
-            <img src="./assets/site/city-hall.webp" alt="Toronto City Hall and Nathan Phillips Square, rendered in the app" width="960" height="540" loading="lazy" />
-            <b>Toronto City Hall</b><span>Nathan Phillips Square</span>
+            <img src="./assets/site/city-hall.webp" alt="Toronto City Hall and Nathan Phillips Square with the TORONTO sign and the Freedom Arches, rendered in the app" width="1600" height="900" loading="lazy" />
+            <b>Toronto City Hall</b><span>Nathan Phillips Square · the sign, the arches, the rink</span>
           </a>
         </li>
         <li class="up">
@@ -242,20 +312,32 @@
             <b>Queen's Park</b><span>University Ave · the Legislature</span>
           </a>
         </li>
+        <li class="up">
+          <a href="./explore.html#place=Kensington%20Market">
+            <img src="./assets/site/kensington.webp" alt="Kensington Market's streets with the CN Tower behind, rendered in the app" width="960" height="540" loading="lazy" />
+            <b>Kensington Market</b><span>Augusta Ave · the old main streets</span>
+          </a>
+        </li>
+        <li class="up up-desktop">
+          <a href="./explore.html#place=Eglinton">
+            <img src="./assets/site/eglinton.webp" alt="Yonge Street at Eglinton, rendered in the app" width="960" height="540" loading="lazy" />
+            <b>Yonge &amp; Eglinton</b><span>The map's northern edge · desktop</span>
+          </a>
+        </li>
       </ul>
     </section>
 
     <!-- By the numbers -->
     <section class="section numbers" id="numbers" aria-labelledby="numbers-h">
       <h2 id="numbers-h" class="bar">By the numbers</h2>
-      <table class="readings">
-        <caption>The city at 1:1, counted from the data it is built from.</caption>
-        <thead><tr><th scope="col">Reading</th><th scope="col">What</th><th scope="col">Source</th></tr></thead>
+      <table class="readings two">
+        <caption>The city at 1:1, counted from the data it is built from. Phones and low-quality settings get the downtown map; laptops and desktops get the map to Eglinton.</caption>
+        <thead><tr><th scope="col">Reading</th><th scope="col">Downtown <small>every device</small></th><th scope="col">To Eglinton <small>desktop</small></th><th scope="col">Source</th></tr></thead>
         <tbody>
-          <tr><td class="num">35,266</td><th scope="row">buildings, with the City's own heights</th><td>City of Toronto 3D Massing</td></tr>
-          <tr><td class="num">1,383</td><th scope="row">named streets to walk, cycle or drive</th><td>OpenStreetMap</td></tr>
-          <tr><td class="num">57,120</td><th scope="row">street trees where the City says they stand</th><td>City of Toronto Street Tree Data</td></tr>
-          <tr><td class="num">1&thinsp;:&thinsp;1</td><th scope="row">11.6 × 6.6 km of downtown, to scale</th><td>City of Toronto · OpenStreetMap</td></tr>
+          <tr><th scope="row">buildings, with the City's own heights</th><td class="num" data-label="Downtown">35,271</td><td class="num" data-label="To Eglinton">140,548</td><td>City of Toronto 3D Massing</td></tr>
+          <tr><th scope="row">named streets to walk, cycle or drive</th><td class="num" data-label="Downtown">1,383</td><td class="num" data-label="To Eglinton">3,390</td><td>OpenStreetMap</td></tr>
+          <tr><th scope="row">street trees, placed at the City's mapped spots</th><td class="num" data-label="Downtown">55,852</td><td class="num" data-label="To Eglinton">180,125</td><td>City of Toronto Street Tree Data</td></tr>
+          <tr><th scope="row">of the city, to scale, 1&thinsp;:&thinsp;1</th><td class="num" data-label="Downtown">76.6&thinsp;km²<br><small>11.6 × 6.6 km</small></td><td class="num" data-label="To Eglinton">190.8&thinsp;km²<br><small>17.5 × 10.9 km</small></td><td>City of Toronto · OpenStreetMap</td></tr>
         </tbody>
       </table>
       <!-- not build data: the one live reading on the page, filled by js/landing.js, absent if it can't be had -->
@@ -274,6 +356,8 @@
         <p><b class="runin">Search like a map app.</b> Type a place, a street, a neighbourhood or just “café”. Suggestions appear as you type, nearest first, typos forgiven.</p>
         <p><b class="runin">Plan any route.</b> From where you stand, or from anywhere, to anywhere. By car (one-way streets obeyed), on foot or by bicycle, with every turn spelled out. <a href="./explore.html#to=Union%20Station">Try directions to Union Station</a>.</p>
         <p><b class="runin">Go, or let the guide drive.</b> Follow the blue line on the road with live turn-by-turn guidance, or switch on Tour Drive and the guide takes you there, stopping at red lights.</p>
+        <p><b class="runin">The real date.</b> Leaves turn, rinks freeze and fill with skaters, patios close and the holiday lights go up when Toronto's do. Open it in summer and it is summer.</p>
+        <p><b class="runin">Toronto's own sky.</b> The sun where it stands now, and the cloud, fog, rain or snow that Pearson reports. Or pick golden hour, midday, sunset or night.</p>
       </div>
     </section>
 
@@ -281,12 +365,24 @@
     <section class="section real" id="real" aria-labelledby="real-h">
       <h2 id="real-h" class="bar">What's real, and what's made up</h2>
       <div class="columns">
-        <p><b class="runin">Buildings.</b> Every footprint and height from the City of Toronto's 3D Massing. The façades are the engine's own: no photographs.</p>
-        <p><b class="runin">Streets.</b> OpenStreetMap's roads with their lanes and one-way streets, laid on the City's edge-of-roadway map, signals where they are mapped.</p>
-        <p><b class="runin">Trees &amp; street furniture.</b> Street trees, fire hydrants and bike rings where the City's open data puts them.</p>
-        <p><b class="runin">Water &amp; light.</b> The lake, the harbour and the shoreline from OpenStreetMap; the terrain from SRTM. The sky is Toronto's: the sun where it stands now, and the cloud, fog, rain or snow Pearson reports.<span data-weather-aside hidden></span></p>
+        <p><b class="runin">Buildings.</b> Every footprint and height from the City of Toronto's 3D Massing. On desktop, downtown's houses, shops, towers and places of worship are drawn in their real shapes, with roofs from the City's heights and faded painted signs on old party walls. The façades are the engine's own: no photographs.</p>
+        <p><b class="runin">Streets.</b> OpenStreetMap's roads with their lanes and one-way streets, laid on the City's edge-of-roadway map, signals where they are mapped. Road works come from the City's Road Restrictions feed: barrels, cones and signs, and traffic that goes round them.</p>
+        <p><b class="runin">Trees &amp; street furniture.</b> Street trees, fire hydrants, bike rings, litter bins and poster columns at the spots the City's open data maps. The woods of High Park and Toronto Island Park are drawn crown by crown from the province's lidar.</p>
+        <p><b class="runin">Water &amp; light.</b> The lake, the harbour and the shoreline from OpenStreetMap: natural shores are beach, reed and mud where it maps them, and seawalls stay seawalls. The terrain is SRTM, with High Park and the Don Valley on the province's lidar. The sky is Toronto's: the sun where it stands now, and the cloud, fog, rain or snow Pearson reports.<span data-weather-aside hidden></span></p>
+        <p><b class="runin">Parks &amp; animals.</b> The City's trees and paths, and High Park's woods and trails from lidar and the City's data. The zoo's animals are licensed models placed in the real paddocks; their wandering is made up.</p>
+        <p><b class="runin">Made up.</b> The look of the water and the façades are art. The TORONTO sign's fountain, the skaters and the crowds are scenery on a rule, not a survey.</p>
       </div>
     </section>
+
+    <!-- In this week's paper: the latest news story, hand-written until the news index (st-p5rl) builds it -->
+    <div class="paper-box">
+      <a href="./news/laptop-drew-downtown.html">
+        <span class="paper-label">In this week's paper</span>
+        <b>Local man’s laptop ‘draws’ downtown</b>
+        <span class="paper-dek">Bathurst to the Don, Bloor to the harbour: 12.66 km² of Toronto in one picture, made in an evening. The drawing was free. The homework cost $79.72. The internet has notes.</span>
+        <span class="paper-when">News · Wednesday, November 4, 2026</span>
+      </a>
+    </div>
 
     <!-- Back page -->
     <section class="backpage" aria-labelledby="back-h">
@@ -301,8 +397,8 @@
   <footer class="colophon" id="credits">
     <h2 class="colophon-name"><span class="mast-box">Slop</span> Toronto</h2>
     <p>Built with <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">three.js</a> (MIT) on the engine of <a href="https://github.com/mrdoob/slop-newyork" target="_blank" rel="noopener noreferrer">Slop New York</a> by mrdoob (MIT), by way of <a href="https://abujatour.site/" target="_blank" rel="noopener noreferrer">Abuja Tour</a> (MIT).</p>
-    <p>Data: <a href="https://open.toronto.ca/" target="_blank" rel="noopener noreferrer">City of Toronto Open Data</a> under the <a href="https://open.toronto.ca/open-data-license/" target="_blank" rel="noopener noreferrer">Open Government Licence – Toronto</a> (3D Massing, Edge of Roadway, Street Tree Data, Water Hydrants, Bicycle Parking, TTC Routes and Schedules, TTC BusTime live vehicle positions) · Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) · Terrain: AWS Terrain Tiles (SRTM) · Weather on this page: <a href="https://eccc-msc.github.io/open-data/licence/readme_en/" target="_blank" rel="noopener noreferrer">Environment and Climate Change Canada (Open Government Licence – Canada)</a>.</p>
-    <p>Stylized water: port of Uber Stylized Water (MIT, © MatrixRex / norio) · Trees: <a href="https://github.com/dgreenheck/ez-tree" target="_blank" rel="noopener noreferrer">EZ-Tree</a> by Dan Greenheck (MIT) · Textures: <a href="https://polyhaven.com/" target="_blank" rel="noopener noreferrer">Poly Haven</a> (CC0) · Street props by John Fewell · Zoo animals: Poly by Google (CC BY 3.0) and Quaternius (CC0) via <a href="https://poly.pizza" target="_blank" rel="noopener noreferrer">Poly Pizza</a> · Type: Archivo (SIL Open Font License) · <a href="./CREDITS.md">All credits</a></p>
+    <p>Data: <a href="https://open.toronto.ca/" target="_blank" rel="noopener noreferrer">City of Toronto Open Data</a> under the <a href="https://open.toronto.ca/open-data-license/" target="_blank" rel="noopener noreferrer">Open Government Licence – Toronto</a> (3D Massing, Edge of Roadway, Street Tree Data, Water Hydrants, Bicycle Parking, Street Furniture, Road Restrictions, TTC Routes and Schedules, TTC BusTime live vehicle positions) · Woods and ground of High Park, Toronto Island Park and the Don Valley: Ontario Elevation Mapping Program lidar (<a href="https://www.ontario.ca/page/open-government-licence-ontario" target="_blank" rel="noopener noreferrer">Open Government Licence – Ontario</a>) · Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL) · Terrain: AWS Terrain Tiles (SRTM) · Weather on this page: <a href="https://eccc-msc.github.io/open-data/licence/readme_en/" target="_blank" rel="noopener noreferrer">Environment and Climate Change Canada (Open Government Licence – Canada)</a>.</p>
+    <p>Stylized water: port of Uber Stylized Water (MIT, © MatrixRex / norio) · Trees: <a href="https://github.com/dgreenheck/ez-tree" target="_blank" rel="noopener noreferrer">EZ-Tree</a> by Dan Greenheck (MIT) · Textures: <a href="https://polyhaven.com/" target="_blank" rel="noopener noreferrer">Poly Haven</a> (CC0) · Street props by John Fewell · Pedestrians: <a href="https://github.com/microsoft/Microsoft-Rocketbox" target="_blank" rel="noopener noreferrer">Microsoft Rocketbox</a> (MIT) · Sky occlusion and material layers after Ben Houston's <a href="https://github.com/bhouston/slop-newyork" target="_blank" rel="noopener noreferrer">Slop New York lighting</a> (MIT) · Zoo animals: Poly by Google (CC BY 3.0) and Quaternius (CC0) via <a href="https://poly.pizza" target="_blank" rel="noopener noreferrer">Poly Pizza</a> · Type: Archivo (SIL Open Font License) · <a href="./CREDITS.md">All credits</a></p>
     <p>Contact: <a href="mailto:john@sloptoronto.ca">john@sloptoronto.ca</a></p>
     <p class="colophon-small">A fan project, not affiliated with the City of Toronto or the places shown. Storefront signs show shops' names, not their trademarked logos. Every picture and clip on this page is the app itself. Privacy-friendly page analytics via a self-hosted Umami instance; no cookies.</p>
   </footer>

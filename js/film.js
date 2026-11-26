@@ -105,7 +105,7 @@ let shown = -1;
 function show(i, t) {
   const app = window.__CITY_APP, shot = SHOTS[i];
   if (i !== shown) {
-    app.selectTime(shot.time);
+    if (shot.time) app.selectTime(shot.time); // (none: the page's own live sky, a ?liveClock= render)
     shown = i;
   }
   // (a shot's own camera(t), set by a tools/render-film.mjs setup: following a vehicle, say)
@@ -121,7 +121,7 @@ function play() {
     if (start === null) start = elapsed;
     const { index, local } = shotAt((elapsed - start) % DURATION);
     if (index !== shown) {
-      app.selectTime(SHOTS[index].time);
+      if (SHOTS[index].time) app.selectTime(SHOTS[index].time);
       shown = index;
     }
     return window.CITY.Cinema.evalShot(SHOTS[index], local);
