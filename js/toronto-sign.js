@@ -34,8 +34,10 @@ const SPEC = Object.freeze({
   leafColor: 0xff2030,
   wheelColors: Object.freeze({ white: 0xfff1d8, yellow: 0xffbd1a, red: 0xff1c1c, black: 0x060606 }),
   rimColor: 0xc9ced4, // the silver edge of the leaf and the wheel's thin rim
-  fountain: Object.freeze({ count: 40, x0: -18.5, x1: 7.0, dz: 9, hMin: 1.8, hMax: 3.0, width: 0.8 }), // dz: the row's distance from the pool's north edge (in the photograph the jets stand well out in the pool, the letters' reflections between)
-  reflectionLength: 8, // how far the sign's colours run out over the water (m)
+  // the row stands on the pool's centre line (dz is half the City polygon's 30.3 m depth; the builder uses the polygon's own) and runs about
+  // 65% of the sign's length (the sign is x -22.3 to 8.1, centre -7.1), centred on it, at the same density as before (1.5 jets a metre)
+  fountain: Object.freeze({ count: 31, x0: -17.0, x1: 2.8, dz: 15.2, hMin: 1.8, hMax: 3.0, width: 0.8 }),
+  reflectionLength: 11, // how far the sign's colours run out over the water (m)
   waterMonths: Object.freeze([4, 10]) // the fountain's months (assumption, below)
 });
 
@@ -152,12 +154,12 @@ function fountainOn({ season, forced = false, month }) {
   return month >= SPEC.waterMonths[0] && month <= SPEC.waterMonths[1];
 }
 // The jets' places and heights along the sign (deterministic): [{ x, z, h, phase, color }] with z relative to the pool's north edge
-function jetSites(zEdge = -818.8) {
+function jetSites(zEdge = -818.8, depth = 30.4) {
   const F = SPEC.fountain, out = [];
   for (let i = 0; i < F.count; i++) {
     const t = i / (F.count - 1), r1 = Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1, r2 = Math.abs(Math.sin(i * 78.233) * 12345.6789) % 1;
     const x = F.x0 + t * (F.x1 - F.x0);
-    out.push({ x, z: zEdge + F.dz + (r2 - 0.5) * 0.7, h: F.hMin + r1 * (F.hMax - F.hMin), phase: r2, color: colorAt(x) });
+    out.push({ x, z: zEdge + depth / 2 + (r2 - 0.5) * 0.7, h: F.hMin + r1 * (F.hMax - F.hMin), phase: r2, color: colorAt(x) });
   }
   return out;
 }
@@ -232,7 +234,7 @@ function buildTorontoSign(scene) {
   const rs = C.rinkStats?.season ? { season: C.rinkStats.season, forced: !!C.rinkStats.forced } : C.sceneSeason ? C.sceneSeason(typeof location !== 'undefined' ? location.search : '', sceneDate) : { season: 'off', forced: false };
   const poolRec = C.RINKS?.records?.find((r) => r.assetId === '43599');
   const ring = poolRec?.polygons?.[0]?.outer;
-  const pool = ring ? { x0: Math.min(...ring.map((q) => q[0])), x1: Math.max(...ring.map((q) => q[0])), z0: Math.min(...ring.map((q) => q[1])) } : { x0: -19.3, x1: 35.5, z0: -818.8 };
+  const pool = ring ? { x0: Math.min(...ring.map((q) => q[0])), x1: Math.max(...ring.map((q) => q[0])), z0: Math.min(...ring.map((q) => q[1])), z1: Math.max(...ring.map((q) => q[1])) } : { x0: -19.3, x1: 35.5, z0: -818.8, z1: -788.4 };
   // the pool's surface: the rink site's own height (rinks.js) plus its lift, else the ground there
   const poolSite = C.rinkStats?.sites?.find((q) => q.assetId === '43599');
   const poolY = (Number.isFinite(poolSite?.y) ? poolSite.y : groundAt(pool.x0 + 11, pool.z0 + 6)) + 0.024;
@@ -260,15 +262,15 @@ function buildTorontoSign(scene) {
     rg.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
     rg.computeBoundingSphere();
     const rm = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }); // (the quads wind face-down: both sides draw)
-    const fade = float(1).sub(uv().y).pow(1.5).mul(smoothstep(float(0), float(0.12), uv().y)).mul(smoothstep(float(0), float(0.12), uv().x)).mul(smoothstep(float(0), float(0.12), float(1).sub(uv().x))); // soft all round, strongest at the coping, gone 8 m out
+    const fade = float(1).sub(uv().y).pow(2.2).mul(smoothstep(float(0), float(0.12), uv().y)).mul(smoothstep(float(0), float(0.45), uv().x)).mul(smoothstep(float(0), float(0.45), float(1).sub(uv().x))); // soft all round, strongest at the coping, gone 8 m out
     const ripple = sin(uv().y.mul(38).sub(time.mul(0.8)).add(uv().x.mul(11))).mul(0.12).add(0.88);
-    rm.colorNode = vertexColor().mul(fade).mul(ripple).mul(night).mul(1.5);
+    rm.colorNode = vertexColor().mul(fade).mul(ripple).mul(night).mul(1.3);
     rm.opacityNode = float(1);
     const reflection = new THREE.Mesh(rg, rm); reflection.name = 'TorontoSignReflection'; reflection.renderOrder = 3;
     group.add(reflection);
   }
   if (fountain) {
-    const F = SPEC.fountain, sites = jetSites(pool.z0);
+    const F = SPEC.fountain, sites = jetSites(pool.z0, pool.z1 - pool.z0);
     const pos = [], uvs = [], attr = [], cols = [], bpos = [], buv = [], bcols = [];
     for (const s of sites) {
       const c = new THREE.Color(s.color), hw = F.width / 2;
@@ -280,7 +282,7 @@ function buildTorontoSign(scene) {
         for (let i = 0; i < 6; i++) { attr.push(s.x, s.z, s.phase, s.h); cols.push(c.r, c.g, c.b); }
       }
       // the lit base: a soft flat glow disc on the water
-      const R = 0.8, y = 0.045;
+      const R = 1.7, y = 0.045;
       bpos.push(s.x - R, y, s.z - R, s.x + R, y, s.z - R, s.x + R, y, s.z + R, s.x - R, y, s.z - R, s.x + R, y, s.z + R, s.x - R, y, s.z + R);
       buv.push(0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1);
       for (let i = 0; i < 6; i++) bcols.push(c.r, c.g, c.b);
@@ -301,7 +303,7 @@ function buildTorontoSign(scene) {
     const flare = smoothstep(float(0.3), float(1), v).mul(0.9).add(0.45); // slim at the nozzle, a soft plume above
     jm.positionNode = vec3(jet.x.add(positionLocal.x.sub(jet.x).mul(flare)), positionLocal.y.sub(poolY + 0.02).mul(pulse).add(poolY + 0.02), jet.y.add(positionLocal.z.sub(jet.y).mul(flare)));
     // water by day (white spray, a little shaded blue); at night the jet is lit from its base in the sign's colour
-    jm.colorNode = mix(vec3(0.86, 0.9, 0.95), mix(vec3(0.8, 0.62, 1), vertexColor(), 0.3).mul(1.5), night); // lavender at night, a little of the letter's colour in it
+    jm.colorNode = mix(vec3(0.86, 0.9, 0.95), mix(vec3(0.8, 0.62, 1), vertexColor(), 0.12).mul(1.5), night); // lavender at night, a little of the letter's colour in it
     const edge = float(1).sub(abs(u.mul(2).sub(1)));
     const column = smoothstep(float(0), float(1), edge).pow(1.4); // soft gaussian-like body
     const strands = sin(u.mul(31).add(ph.mul(50)).add(v.mul(hgt).mul(3)).sub(time.mul(6))).mul(0.25).add(0.75).mul(sin(v.mul(hgt).mul(6).sub(time.mul(8)).add(ph.mul(40))).mul(0.2).add(0.8)); // spray running up it
@@ -315,7 +317,7 @@ function buildTorontoSign(scene) {
     bg.computeBoundingSphere();
     const bm = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
     const rr = uv().sub(0.5).length().mul(2);
-    bm.colorNode = vertexColor().mul(float(1).sub(rr).max(0).pow(2.2)).mul(night).mul(1.8);
+    bm.colorNode = vertexColor().mul(float(1).sub(rr).max(0).pow(2.2)).mul(night).mul(1.2);
     bm.opacityNode = float(1);
     const baseGlow = new THREE.Mesh(bg, bm); baseGlow.name = 'TorontoSignFountainLights'; baseGlow.renderOrder = 3;
     group.add(baseGlow);

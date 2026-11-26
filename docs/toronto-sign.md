@@ -36,3 +36,7 @@ Captures: `tools/capture-toronto-sign.sh` (summer night with the fountain, 12 De
 ## v2 (2026-11-26, after John's review of the first capture)
 
 The R has a big round bowl over the top 58% with a round-ended counter and a diagonal leg (the first R's counter was a slot); the O's ring is 0.7 m, the stems 0.58 m. The wheel's quarters are split by an X (white top, yellow right, red bottom, black left), as in the photograph. At night every letter, the wheel and the leaf glow (emissive above 1, so the bloom takes them). The leaf's silver rim is a full-outline plate with the red face inset. The jets are 40 plumes of three crossed soft quads, 1.8 to 3 m, lavender at night with a little of the letter's colour, and the water glow under each letter is three times brighter.
+
+## v3 (2026-11-26)
+
+The fountain row stands on the pool's centre line (half the City polygon's depth, 15.2 m out from the north edge), not against the coping, and runs 65% of the sign's length (19.8 m of the sign's 30.4 m), centred on it: 31 jets at the same density as before. The jets are lavender-lit; the lit bases are 1.7 m soft pools in the letters' colours that overlap under the row, and the colour on the water runs out 14 m from the coping toward the jets.

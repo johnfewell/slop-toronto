@@ -3,7 +3,7 @@
   "name": "sign1-photo-view",
   "mode": "person",
   "wait": 7000,
-  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-7, -772, 0); a.cameraSystem.cinema = () => ({ pos: [-7, 6.5, -782], look: [-7, 0.8, -821.7], fov: 30 }); })()"
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-7, -750, 0); a.cameraSystem.cinema = () => ({ pos: [-7, 13, -772], look: [-7, 1.0, -821.7], fov: 26 }); })()"
  },
  {
   "name": "sign2-wheel",
@@ -21,6 +21,6 @@
   "name": "sign4-R",
   "mode": "person",
   "wait": 1500,
-  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-7, -772, 0); a.cameraSystem.cinema = () => ({ pos: [-11, 2.2, -812], look: [-11, 1.9, -821.7], fov: 36 }); })()"
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-7, -750, 0); a.cameraSystem.cinema = () => ({ pos: [-11, 2.2, -812], look: [-11, 1.9, -821.7], fov: 36 }); })()"
  }
 ]

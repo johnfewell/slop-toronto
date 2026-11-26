@@ -86,10 +86,13 @@ test('the R has a big round bowl over the top half and a diagonal leg, the O a t
   assert.ok(TS.SPEC.strokeO > TS.SPEC.stroke);
 });
 
-test('the fountain: 40 jets along the sign, on in the water season only (spring to autumn), never on the ice', () => {
-  const jets = TS.jetSites();
-  assert.equal(jets.length, 40);
-  assert.ok(jets[0].x < -17 && jets.at(-1).x > 6 && jets.every((j) => j.z > bbox.z0 + 7 && j.z < bbox.z0 + 11 && j.h > 1.7 && j.h < 3.1));
+test('the fountain: 31 jets along 65% of the sign length, on the pool centre line, on in the water season only (spring to autumn), never on the ice', () => {
+  const jets = TS.jetSites(bbox.z0, bbox.z1 - bbox.z0);
+  assert.equal(jets.length, 31);
+  const els = TS.signElements(), signLen = els.at(-1).x + els.at(-1).w - els[0].x, signMid = els[0].x + signLen / 2, rowLen = jets.at(-1).x - jets[0].x;
+  assert.ok(rowLen / signLen > 0.6 && rowLen / signLen < 0.7 && Math.abs((jets[0].x + jets.at(-1).x) / 2 - signMid) < 0.5, 'about 65% of the sign, centred on it');
+  const mid = (bbox.z0 + bbox.z1) / 2;
+  assert.ok(jets.every((j) => Math.abs(j.z - mid) < 0.5 && j.h > 1.7 && j.h < 3.1));
   for (let i = 1; i < jets.length; i++) assert.ok(jets[i].x > jets[i - 1].x);
   assert.equal(TS.colorAt(jets[0].x), TS.SPEC.colors[0], 'a jet takes the lit colour of the letter behind it');
   for (const m of [4, 5, 7, 8, 10]) assert.equal(TS.fountainOn({ season: 'off', month: m }), true, 'month ' + m);
@@ -143,7 +146,7 @@ test('in the water season the builder adds the reflected colour, the jets and th
   const C = load({ ...env, rinkStats: { season: 'off', forced: false }, SITE_DATE: { month: 8, day: 22 } });
   const r = C.buildTorontoSign(new THREE.Scene());
   for (const n of ['TorontoSignReflection', 'TorontoSignFountainJets', 'TorontoSignFountainLights']) assert.ok(r.group.getObjectByName(n), n);
-  assert.equal(C.torontoSignStats.jets, 40);
+  assert.equal(C.torontoSignStats.jets, 31);
   assert.ok(C.torontoSignStats.waterTriangles < 1100);
   const winterWater = load({ ...env, rinkStats: { season: 'off', forced: false }, SITE_DATE: { month: 11, day: 26 } });
   const w = winterWater.buildTorontoSign(new THREE.Scene());
