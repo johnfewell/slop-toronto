@@ -56,6 +56,7 @@ async function initApp() {
       const want = [md.MASSING_URL];
       if (presetsArg === null || presetsArg === 'draw' || presetsArg === '1' || presetsArg === 'debug' || galleryPage) want.push(bp.PRESETS_URL);
       if (presetsArg === null || presetsArg === 'draw' || galleryPage) want.push(bd.DEBUG_URL);
+      if (!/^(0|off|boxes)$/.test(new URLSearchParams(location.search).get('roofs') || '') && presetsArg !== '0' && presetsArg !== 'off') want.push(md.HEIGHTS_URL);
       for (const u of want) window.CITY.EARLY_FETCH.set(u, fetch(u));
     }).catch(() => {});
   }
@@ -187,11 +188,12 @@ async function initApp() {
         import('./building-presets.js').catch(() => {});
         import('./building-presets-debug.js').catch(() => {});
         import('./building-draw.js').catch(() => {});
+        import('./roof-skeleton.js').catch(() => {});
       }
       // (js/massing-cells.js: the compact cell meshes buildings.js has built off the main thread, st-2nl.3)
       const [{ loadMassing }, cells] = await Promise.all([import('./massing-data.js'), import('./massing-cells.js')]);
       window.CITY.MassingCells = cells;
-      const M = await loadMassing(window.CITY.GEO);
+      const M = await loadMassing(window.CITY.GEO, undefined, { heights: !/^(0|off|boxes)$/.test(new URLSearchParams(location.search).get('roofs') || '') && !/^(0|off)$/.test(presetsArg || '') });
       window.CITY.MASSING = M;
       console.info(`[massing] data/toronto-massing.bin: ${M.bytes} bytes, ${M.records} records, decoded in ${M.decodeMs.toFixed(1)} ms, ` +
         `rows in ${M.expandMs.toFixed(1)} ms${M.error ? '; ' + M.error : ''}`);
@@ -231,6 +233,8 @@ async function initApp() {
               // (js/buildings.js reads the address for presets=draw; with no presets parameter this says so instead of rewriting it)
               if (presetsByDefault) window.CITY.PRESETS_DRAW_BY_DEFAULT = true;
               window.CITY.BuildingDraw = draw;
+              // (st-2nl.5: the roofs over the polygons, for the pitched houses the presets do not draw; ?roofs=0 keeps the boxes' hips)
+              try { window.CITY.RoofSkeleton = await import('./roof-skeleton.js'); } catch (err) { console.warn('[roofs] could not load js/roof-skeleton.js; the boxes keep their hips', err); }
               window.CITY.BUILDING_DRAW_FACTS = facts.facts;
               console.info(`[presets] draw: ${facts.bytes} bytes of groups, ${facts.facts.size} records, presets drawn: ${draw.DRAWN_PRESETS.join(', ')}`);
               if (galleryPage) {

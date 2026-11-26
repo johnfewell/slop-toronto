@@ -41,7 +41,7 @@ import vm from 'node:vm';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { openShp } from 'shapefile';
+import { openShp, openDbf } from 'shapefile';
 import { packGeo } from './geo-pack.mjs';
 import { unpackGeo } from '../js/geodata-loader.js';
 import { rowCheck, MASSING_SCHEMA } from '../js/massing-data.js';
@@ -209,6 +209,20 @@ for (;;) {
   for (const r of hits) {
     if ((r.k === undefined) !== (polys.length === 1) || (r.k !== undefined && !polys[r.k])) { r.skip = `the record has ${polys.length} polygons`; continue; }
     r.rings = polys[r.k || 0].map((ring) => ring.map((p) => toWorld(...lonLat(p))));
+  }
+}
+// the record's MAX_HEIGHT (the lidar maximum: a pitched roof's ridge) and AVG_HEIGHT (the mean of its roof surface), in the
+// dbf, same record order as the shp: what js/roof-skeleton.js takes a roof's pitch and eave height from (st-2nl.5)
+{
+  const dbf = await openDbf(SHP.replace(/\.shp$/i, '.dbf'));
+  let k = -1;
+  for (;;) {
+    const { done, value } = await dbf.read();
+    if (done) break;
+    k++;
+    const hits = want.get(k);
+    if (!hits) continue;
+    for (const r of hits) { r.maxH = Math.round((Number(value.MAX_HEIGHT) || 0) * 10) / 10; r.avgH = Math.round((Number(value.AVG_HEIGHT) || 0) * 10) / 10; }
   }
 }
 const tRead = Date.now() - t0;
@@ -385,6 +399,24 @@ if (!opt.frame && fs.existsSync(BIGGER_BIN)) {
   stats.frameRowsInFrame = big.filter((b) => b[0] >= GEO.frame.detail.x0 && b[0] <= GEO.frame.detail.x1 && b[1] >= GEO.frame.detail.z0 && b[1] <= GEO.frame.detail.z1).length;
 }
 const packed = packGeo({ MASSING: M });
+// the records' MAX_HEIGHT and AVG_HEIGHT in a file of their own (st-2nl.5): the sidecar's bytes stay as they were (the prebuilt patio layouts
+// fingerprint it), and a page that does not draw roofs from the data never fetches this
+{
+  const H = { schema: 1, dataset: DATASET, records: byId.length, fid: byId.map((r) => r.fid), part: byId.map((r) => (r.k === undefined ? 0 : r.k + 1)),
+    maxH: byId.map((r) => r.maxH ?? 0), avgH: byId.map((r) => r.avgH ?? 0) };
+  const hp = packGeo({ HEIGHTS: H });
+  const HOUT = path.join(path.dirname(OUT), 'toronto-massing-heights.bin');
+  fs.writeFileSync(HOUT, hp.file);
+  const hh = createHash('sha256').update(hp.file).digest('hex').slice(0, 12);
+  if (OUT === COMMITTED) {
+    const page = path.join(ROOT, 'js/massing-data.js');
+    const js = fs.readFileSync(page, 'utf8');
+    const next = js.replace(/(\.\/data\/toronto-massing-heights\.bin\?v=)[0-9a-f]*/, `$1${hh}`);
+    if (next === js && !js.includes(hh)) throw new Error('js/massing-data.js: no ./data/toronto-massing-heights.bin?v= to set');
+    if (next !== js) fs.writeFileSync(page, next);
+  }
+  console.log(`[massing] heights: ${hp.file.length} bytes gzip -> ${path.relative(ROOT, HOUT)} (v=${hh})`);
+}
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, packed.file);
 const hash = createHash('sha256').update(packed.file).digest('hex').slice(0, 12);

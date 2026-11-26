@@ -31,6 +31,17 @@ import { unpackGeo } from './geodata-loader.js';
 
 export const MASSING_URL = './data/toronto-massing.bin?v=42491c9e73fe'; // (tools/build-massing.mjs sets the hash)
 export const MASSING_SCHEMA = 2;
+// each record's MAX_HEIGHT (the lidar maximum: a pitched roof's ridge) and AVG_HEIGHT (its mean) for js/roof-skeleton.js (st-2nl.5): a file of
+// its own, one TGB1 layer HEIGHTS { schema, records, fid, part, maxH, avgH } in the sidecar's record order; only the pages that draw roofs fetch it
+export const HEIGHTS_URL = './data/toronto-massing-heights.bin?v=8928f8c1a865'; // (tools/build-massing.mjs sets the hash)
+
+/** Attaches each loaded record its `maxH` and `avgH` (m) from the heights file's HEIGHTS layer; false (nothing attached) when it is not this sidecar's */
+export function attachHeights(out, MASSING, HEIGHTS) {
+  if (!HEIGHTS || HEIGHTS.schema !== 1 || !MASSING || HEIGHTS.records !== MASSING.fid.length) return false;
+  for (let i = 0; i < HEIGHTS.records; i++) if (HEIGHTS.fid[i] !== MASSING.fid[i] || HEIGHTS.part[i] !== MASSING.part[i]) return false;
+  for (const rec of out.rows.values()) { rec.maxH = HEIGHTS.maxH[rec.index]; rec.avgH = HEIGHTS.avgH[rec.index]; }
+  return true;
+}
 
 /** FNV-1a over GEO.buildings' count and each row's centre and height (decimetres): the rows a sidecar was built for */
 export function rowCheck(buildings) {
@@ -112,7 +123,8 @@ export function fetchData(url) {
  * Fetches and reads the sidecar for the loaded GEO: massingRows' result, plus bytes (as fetched), decodeMs (inflate +
  * decode) and expandMs (to rows). Leaves a 'massing-decode' performance measure.
  */
-export async function loadMassing(GEO, url = MASSING_URL) {
+export async function loadMassing(GEO, url = MASSING_URL, { heights = false } = {}) {
+  const heightsReq = heights ? fetchData(HEIGHTS_URL).catch(() => null) : null; // (asked for beside the sidecar)
   const res = await fetchData(url);
   if (!res.ok) throw new Error(`massing: ${res.url}: HTTP ${res.status}`);
   const buffer = await res.arrayBuffer();
@@ -120,6 +132,13 @@ export async function loadMassing(GEO, url = MASSING_URL) {
   const { MASSING } = await unpackGeo(buffer);
   const t1 = performance.now();
   const out = massingRows(MASSING, GEO);
+  out.heights = false;
+  if (heightsReq && !out.error) {
+    try {
+      const hr = await heightsReq;
+      if (hr && hr.ok) { const { HEIGHTS } = await unpackGeo(await hr.arrayBuffer()); out.heights = attachHeights(out, MASSING, HEIGHTS); }
+    } catch { /* (no heights: today's roofs) */ }
+  }
   const t2 = performance.now();
   performance.measure('massing-decode', { start: t0, end: t2, detail: { bytes: buffer.byteLength } });
   return Object.assign(out, { bytes: buffer.byteLength, decodeMs: t1 - t0, expandMs: t2 - t1, meta: { edition: MASSING.edition, geodata: MASSING.geodata } });

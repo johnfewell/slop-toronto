@@ -104,10 +104,26 @@ Pilot (`tsl-materials.js` `createFootprintFacades`, `buildings.js`):
     the boxes' rectangles, with the flat cap 5 cm under them. The cap closes anything the rectangles leave open, and
     the hips' eaves (0.6 m) cover the small mismatches. This keeps the look of the street while the walls follow the
     true outline. A hip over an L-shaped outline still reads as two overlapping hips.
-- **Next:**
-  - **Straight-skeleton hips and gables** over arbitrary simple polygons. For houses, `MAX_HEIGHT` is the ridge and
-    `AVG_HEIGHT` sits near the eaves. That gives a pitch per building, not a random 24–32°.
-  - **Big or complex roofs** (stepped, sawtooth, domes): read the multipatch roof surfaces, as the landmarks do.
+- **Roofs from the data (st-2nl.5, `js/roof-skeleton.js`).** A pitched house that is not drawn as a preset (and every drawn one that fell
+  back to today's look) gets a roof over its own polygon instead of a hip on each box rectangle. `?roofs=0` is the old look.
+  - **Heights.** `data/toronto-massing-heights.bin` (69 KB, `HEIGHTS` layer, in the sidecar's record order; its own file so
+    `toronto-massing.bin` and the prebuilt patio layouts that fingerprint it stay as they were) holds each record's `MAX_HEIGHT`
+    and `AVG_HEIGHT`. Only the page that draws the presets fetches it. Measured over the city's 15,664 pitched houses: `MAX - AVG`
+    is 3.5 m at the median (1.6 at p5, 6.2 at p95), which on a "AVG is the mean of the roof" reading would mean slopes over 54
+    degrees, so `AVG_HEIGHT` is taken as sitting near the eaves: the eave stands 30% of the way up from AVG to MAX, the ridge stands
+    at MAX, and the pitch is rise over the roof's deepest point (kept between 16 and 46 degrees; the eave moves to keep the ridge at
+    MAX). A difference under 0.7 m is a flat roof (the cap stays: 480 of 15,658); no room under the ridge (eave under 2.5 m) is flat too.
+  - **Hip.** The straight skeleton of the polygon (wavefront propagation with edge and split events, cubic in the corners, a house has
+    6 to 14), one face per edge, lifted by the pitch. L, T, U and notched houses get a valley, not crossed hips. All 15,178 planned
+    houses of the city got a skeleton (none fell back); a skeleton that does not cover the polygon's area to 2%, or that fails, is
+    rejected and the house keeps its box hips. Nothing throws (`tests/roof-skeleton.test.mjs`: bow ties, spikes, NaN, slivers, 600 fuzzed polygons).
+  - **Gable.** A near-rectangular plan (at least 84% of its oriented rectangle, at most 10 corners, at least 1.2 : 1) with a
+    gable: two slopes about a ridge along the long side (or along its longest party wall) and the gable-end triangles above the eave, in the wall colour.
+    Gable where the house is joined to a neighbour (a party wall in the sidecar, so a row or a semi reads as parallel gables, not as separate pyramids)
+    or its preset is Victorian or Edwardian; hip for postwar and recent detached houses and for every complex plan.
+  - **Rows.** Houses in one preset group take the group's majority form, the median pitch and eave of the group, and the group's roof colour.
+  - **Walls.** They stop at the roof's eave instead of at AVG_HEIGHT with a roof on top; colliders are unchanged.
+  - **Cost.** The same `HippedRoofs` mesh (no draw call is added). Measured numbers are in the pull request.  - **Big or complex roofs** (stepped, sawtooth, domes): read the multipatch roof surfaces, as the landmarks do.
     Decimate them to the cell budget.
   - **Overhangs and arcades** (minimum height above zero in the multipatch): out of scope until the passage rules
     (ID-5) exist.
@@ -275,7 +291,7 @@ matched baseline is pending a quiet mini.
 | Geometry memory and build time city-wide (about 150 MiB, about 1.4 s at the pilot's format) | Compact vertices, tiers, worker/prebuilt cells (section 5); flag until measured |
 | Phone frame time: more triangles, more walls in view at street level | Mid tier on phones, matched idle baseline before default |
 | Pipelines: 5 more facade materials to compile | One footprint material per style replacing the box ones once all buildings are polygons; until then the flag adds them |
-| Pitched roofs: hips stay on box rectangles over a polygon (L-houses read as crossed hips) | Straight-skeleton roofs from max/avg heights; multipatch roofs for complex ones |
+| Pitched roofs: hips stay on box rectangles over a polygon (L-houses read as crossed hips) | Done for houses (st-2nl.5): straight-skeleton hips and gables from max/avg heights. Multipatch roofs for complex ones are still open |
 | Box consumers (signs, patios, entrances, yards) disagree slightly with the walls | Shared "footprint of row" accessor; migrate before removing boxes |
 | Party-wall probe misreads a narrow gap (≤ 0.35 m) as a shared wall | Walls are kept whole (windowless only), so a misread never opens a hole |
 | Coplanar walls between a tower and a podium it isn't fully on (base not found) | Same as today's boxes; the 0.6 m reach found 10 in Kensington; check the Financial District before default |

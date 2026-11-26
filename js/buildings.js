@@ -1281,6 +1281,63 @@ function buildCityBlocks(scene) {
     frontShifts = snap.shifts;
     drawStats.snap = { runs: snap.runs, snapped: snap.snapped, steps: snap.steps };
   }
+  // ?massing=1 roofs from the data (st-2nl.5, js/roof-skeleton.js, loaded by main.js): a pitched house that is not drawn as a preset gets its
+  // hip or gable roof over its own polygon, the ridge at the City's MAX_HEIGHT and the eave from AVG_HEIGHT, instead of a hip over each
+  // box rectangle. A pre-pass plans them all, so a joined row (the presets' groups) takes one form, one pitch and one eave height;
+  // ?roofs=0 keeps the boxes' hips (for comparison). A house with no plan (a flat difference, a shape it cannot do) is counted.
+  const RS = massing && window.CITY.RoofSkeleton && typeof location !== 'undefined' && !/^(0|off|boxes)$/.test(new URLSearchParams(location.search).get('roofs') || '') ? window.CITY.RoofSkeleton : null;
+  const roofPlans = new Map(); // (row -> a plan, or { ok: false, reason })
+  const roofStats = RS ? { houses: 0, hip: 0, gable: 0, flat: 0, failed: {}, tris: 0, shared: 0, rows: 0, ms: 0 } : null;
+  const roofEligible = (bi, foot) => {
+    const bb = GEO.buildings[bi];
+    return bb && bb[6] === 1 && bb[5] !== 3 && foot.maxH !== undefined && foot.rings.length === 1 && !window.CITY.islandBuildingProfile?.(bb, bi) && !(bb[4] <= DISTILLERY.maxH && inDistillery(bb[0], bb[1]));
+  };
+  const roofOpts = (foot, grouped, form) => {
+    const era = (foot.preset || '').split('-')[0];
+    const attached = foot.covered.size > 0 || grouped;
+    const gable = era === 'victorian' || era === 'edwardian' ? true : era === 'postwar' || era === 'recent' ? false : attached;
+    // (a joined house's ridge runs along its longest party wall: front to back)
+    let axis;
+    if (foot.covered.size) {
+      let bl = 3;
+      const r = foot.rings[0];
+      for (const i of foot.covered.keys()) { const a = r[i], c = r[(i + 1) % r.length], l = Math.hypot(c[0] - a[0], c[1] - a[1]); if (l > bl) { bl = l; axis = [(c[0] - a[0]) / l, (c[1] - a[1]) / l]; } }
+    }
+    return { max: foot.maxH, avg: foot.avgH, gable, axis, form: form || 'auto' };
+  };
+  if (RS) {
+    const tr = performance.now();
+    const groups = new Map();
+    for (const [bi, foot] of massing.rows) {
+      if (bi >= realRows || !roofEligible(bi, foot)) continue;
+      if (presetDraw && foot.preset && window.CITY.BuildingPrototypes.byId[foot.preset]?.draw) continue; // (drawn houses have their own roof, js/building-draw.js)
+      const facts = foot.drawFacts || (drawFacts && drawFacts.get(foot.index)) || null;
+      const gid = facts && facts.groupId;
+      const g = gid && facts.group && facts.group.n > 1 ? gid : null;
+      const plan = RS.planRoof(foot.rings[0], roofOpts(foot, !!g));
+      roofPlans.set(bi, plan);
+      if (g) (groups.get(g) || groups.set(g, []).get(g)).push(bi);
+    }
+    // a joined row: one form (the majority's), then one pitch and one eave height (the medians) for the houses that share it
+    for (const members of groups.values()) {
+      const done = members.filter((bi) => roofPlans.get(bi).ok);
+      if (done.length < 2) continue;
+      const gables = done.filter((bi) => roofPlans.get(bi).form === 'gable').length;
+      const form = gables * 2 >= done.length ? 'gable' : 'hip';
+      for (const bi of done) if (roofPlans.get(bi).form !== form && form === 'gable') roofPlans.set(bi, RS.planRoof(massing.rows.get(bi).rings[0], roofOpts(massing.rows.get(bi), true, 'gable')));
+      const same = done.map((bi) => roofPlans.get(bi)).filter((pl) => pl.ok && pl.form === form);
+      const sh = RS.sharedRoof(same);
+      if (sh) {
+        for (const bi of done) {
+          const pl = roofPlans.get(bi);
+          if (!pl.ok || pl.form !== form) continue;
+          roofPlans.set(bi, RS.planRoof(massing.rows.get(bi).rings[0], { ...roofOpts(massing.rows.get(bi), true, form), fixed: sh }));
+        }
+        roofStats.rows++; roofStats.shared += same.length;
+      }
+    }
+    roofStats.ms += performance.now() - tr;
+  }
   for (let bi = 0; bi < GEO.buildings.length; bi++) {
     const b = GEO.buildings[bi];
     // Replacement builders run before CityBuildings and opt in only when their
@@ -1382,6 +1439,8 @@ function buildCityBlocks(scene) {
     // flat cap under them closes whatever the rectangles leave open), its collider is the polygon itself
     let edges = null;
     let drawPlan = null; // (?presets=draw: this house's plan, js/building-draw.js; null keeps today's look)
+    let roofPushed = false;
+    let roofPlan = null; // (?massing=1: this house's roof over its polygon, js/roof-skeleton.js; { ok: false } is a flat roof or a shape it cannot do; null keeps the boxes' hip)
     if (foot) {
       const tf = performance.now();
       const fr = footprintEdges(foot.rings[0], foot.covered, foot.hidden, foot.street, faces[front], shopFront, Math.min(foot.base, h - 0.5), h);
@@ -1423,7 +1482,20 @@ function buildCityBlocks(scene) {
         // the preset colour too, a little darker; the pitched roofs below take the same)
         if (proto) { if (style === 2) { style = 0; variant = 0; } recPaint = [...linear(proto.color), -1]; debugRoofRgb = linear(proto.color).map((v) => v * 0.62); }
       }
-      let recRings = foot.rings, recKinds = fr.kinds, recH = y0 + h, recCap = y0 + (pitched ? h - 0.05 : h) - (bi % 5) * 0.012;
+      // ?massing=1 roofs from the data: this house's plan (the pre-pass's, or its own where a drawn house fell back to today's look); the
+      // walls then stop at its eave and the roof carries on to the ridge at the City's MAX_HEIGHT
+      if (RS && !drawPlan && !victorian && roof === 1 && kind !== 3 && roofEligible(bi, foot)) {
+        const tr = performance.now();
+        roofPlan = roofPlans.get(bi) || RS.planRoof(foot.rings[0], roofOpts(foot, false));
+        roofStats.houses++;
+        if (roofPlan.ok) { roofStats[roofPlan.form]++; roofStats.tris += RS.planTriangles(roofPlan); }
+        else if (/^(flat|no room)/.test(roofPlan.reason)) roofStats.flat++; // (the heights say flat: the cap stays as the roof)
+        else { const why = roofPlan.reason.split(':')[0]; roofStats.failed[why] = (roofStats.failed[why] || 0) + 1; roofPlan = null; } // (a shape it cannot do: the boxes' hip)
+        roofStats.ms += performance.now() - tr;
+      }
+      const roofWall = roofPlan && roofPlan.ok ? roofPlan.eave : null;
+      const flatRoof = !!roofPlan && !roofPlan.ok;
+      let recRings = foot.rings, recKinds = fr.kinds, recH = y0 + (roofWall ?? h), recCap = (roofWall != null ? recH - 0.05 : y0 + (pitched && !flatRoof ? h - 0.05 : h)) - (bi % 5) * 0.012;
       let recCover = foot.rings[0].map((_, i) => (foot.covered.has(i) ? foot.covered.get(i) : NaN));
       if (drawPlan) {
         // a drawn house: its outline with the front edge cut into door and window stretches, whole storeys to the eave in a
@@ -1556,6 +1628,23 @@ function buildCityBlocks(scene) {
         stats.hip++;
       } else if (drawPlan) {
         // a drawn house has its own roof (js/building-draw.js), pushed once with its record above
+      } else if (roofPlan && roofPlan.ok) {
+        // its roof over the polygon, pushed once (the draws below are the hip's, taken as before so that nothing else of this building moves)
+        const roofPitch = (24 + rnd() * 8) * Math.PI / 180; void roofPitch;
+        const roofPaint = weighted(ROOF_PAINT, rnd());
+        if (!roofPushed) {
+          roofPushed = true;
+          // (a joined row's roofs take one colour: its group's)
+          const facts = foot.drawFacts || (drawFacts && drawFacts.get(foot.index)) || null;
+          let hex = roofPaint;
+          if (facts && facts.group && facts.group.n > 1) { let hh = 2166136261; for (const ch of String(facts.groupId)) hh = Math.imul(hh ^ ch.charCodeAt(0), 16777619); hex = weighted(ROOF_PAINT, mulberry32(hh)()); }
+          const rgbRoof = debugRoofRgb || linear(hex);
+          stats.roofTris = (stats.roofTris || 0) + RS.pushRoofPlan(roofTiles, roofPlan, y0, rgbRoof, linear(paintHex));
+          stats.hip++;
+        }
+      } else if (roofPlan) {
+        // a flat roof the City's heights say (MAX_HEIGHT barely above AVG_HEIGHT), or a shape the skeleton cannot do: the cap stays, as for a flat building
+        rnd(); rnd();
       } else if (roof === 1 && kind !== 3) {
         // (the random draw is taken whatever the colour, so a debug building does not move any other building's roofs)
         // (the pitch is drawn before the colour, as before: the two share one random sequence, so their order is the look)
@@ -1698,6 +1787,12 @@ function buildCityBlocks(scene) {
       colliders.push({ minX: x - r, maxX: x + r, minZ: z - r, maxZ: z + r, maxY: H, obb: { cx: x, cz: z, hx: r, hz: r, cs: 1, sn: 0 } });
       stats.chimneys++;
     }
+  }
+  if (roofStats) {
+    roofStats.ms = Math.round(roofStats.ms * 10) / 10;
+    window.CITY.roofStats = roofStats;
+    console.info(`[buildings] roofs from the data: ${roofStats.houses} pitched houses, ${roofStats.hip} hip + ${roofStats.gable} gable roofs (${roofStats.tris} triangles), ${roofStats.flat} flat by their heights, ` +
+      `${Object.values(roofStats.failed).reduce((a, b) => a + b, 0)} kept the boxes' hips (${JSON.stringify(roofStats.failed)}), ${roofStats.shared} houses in ${roofStats.rows} joined rows share a pitch and eave; ${roofStats.ms} ms`);
   }
   window.CITY.distilleryStats = { victorian: stats.victorian, stone: stats.stone, monitor: stats.monitor, monitorTris: stats.monitorTris, chimneys: stats.chimneys };
   buckets.forEach((items, i) => {

@@ -1,0 +1,38 @@
+[
+ {
+  "name": "pal-street",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-1948, -1600, 0); app.cameraSystem.cinema = () => ({ pos: [-1948, 1.7, -1600], look: [-1948, 4, -1500], fov: 66 }); console.log('[ride-check] roofs ' + JSON.stringify(window.CITY.roofStats || null)); })();(() => { setTimeout(() => { console.log('[ride-check] census ' + JSON.stringify((() => { const app = window.__CITY_APP; const names = {}; let total = 0; app.scene.traverse((o) => { if (o.isMesh && o.geometry && /Roofs/.test(o.name)) { const g = o.geometry; const t = (g.index ? g.index.count : g.attributes.position.count) / 3; names[o.name] = (names[o.name] || 0) + t; total += t; } }); const i = app.renderer.info.render; return { roofTriangles: total, names, frameTriangles: i.triangles, drawCalls: i.drawCalls ?? i.calls }; })())); }, 6000); })()"
+ },
+ {
+  "name": "pal-air",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-1948, -1580, 0); app.cameraSystem.cinema = () => ({ pos: [-1948, 55, -1500], look: [-1948, 0, -1580], fov: 60 }); console.log('[ride-check] roofs ' + JSON.stringify(window.CITY.roofStats || null)); })();(() => { setTimeout(() => { console.log('[ride-check] census ' + JSON.stringify((() => { const app = window.__CITY_APP; const names = {}; let total = 0; app.scene.traverse((o) => { if (o.isMesh && o.geometry && /Roofs/.test(o.name)) { const g = o.geometry; const t = (g.index ? g.index.count : g.attributes.position.count) / 3; names[o.name] = (names[o.name] || 0) + t; total += t; } }); const i = app.renderer.info.render; return { roofTriangles: total, names, frameTriangles: i.triangles, drawCalls: i.drawCalls ?? i.calls }; })())); }, 6000); })()"
+ },
+ {
+  "name": "markham-street",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-1843, -2150, 0); app.cameraSystem.cinema = () => ({ pos: [-1843, 1.7, -2150], look: [-1843, 4, -2060], fov: 66 }); console.log('[ride-check] roofs ' + JSON.stringify(window.CITY.roofStats || null)); })();(() => { setTimeout(() => { console.log('[ride-check] census ' + JSON.stringify((() => { const app = window.__CITY_APP; const names = {}; let total = 0; app.scene.traverse((o) => { if (o.isMesh && o.geometry && /Roofs/.test(o.name)) { const g = o.geometry; const t = (g.index ? g.index.count : g.attributes.position.count) / 3; names[o.name] = (names[o.name] || 0) + t; total += t; } }); const i = app.renderer.info.render; return { roofTriangles: total, names, frameTriangles: i.triangles, drawCalls: i.drawCalls ?? i.calls }; })())); }, 6000); })()"
+ },
+ {
+  "name": "markham-air",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-1843, -2130, 0); app.cameraSystem.cinema = () => ({ pos: [-1843, 55, -2050], look: [-1843, 0, -2130], fov: 60 }); console.log('[ride-check] roofs ' + JSON.stringify(window.CITY.roofStats || null)); })();(() => { setTimeout(() => { console.log('[ride-check] census ' + JSON.stringify((() => { const app = window.__CITY_APP; const names = {}; let total = 0; app.scene.traverse((o) => { if (o.isMesh && o.geometry && /Roofs/.test(o.name)) { const g = o.geometry; const t = (g.index ? g.index.count : g.attributes.position.count) / 3; names[o.name] = (names[o.name] || 0) + t; total += t; } }); const i = app.renderer.info.render; return { roofTriangles: total, names, frameTriangles: i.triangles, drawCalls: i.drawCalls ?? i.calls }; })())); }, 6000); })()"
+ },
+ {
+  "name": "college-street",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-2030, -1817, 0); app.cameraSystem.cinema = () => ({ pos: [-2030, 1.7, -1817], look: [-1930, 8, -1817], fov: 66 }); console.log('[ride-check] roofs ' + JSON.stringify(window.CITY.roofStats || null)); })();(() => { setTimeout(() => { console.log('[ride-check] census ' + JSON.stringify((() => { const app = window.__CITY_APP; const names = {}; let total = 0; app.scene.traverse((o) => { if (o.isMesh && o.geometry && /Roofs/.test(o.name)) { const g = o.geometry; const t = (g.index ? g.index.count : g.attributes.position.count) / 3; names[o.name] = (names[o.name] || 0) + t; total += t; } }); const i = app.renderer.info.render; return { roofTriangles: total, names, frameTriangles: i.triangles, drawCalls: i.drawCalls ?? i.calls }; })())); }, 6000); })()"
+ },
+ {
+  "name": "college-air",
+  "time": "midday",
+  "wait": 9000,
+  "js": "(() => { const b=document.getElementById(\"btn-toggle-hud\"); if(b && !document.body.classList.contains(\"film\")){b.click();document.body.classList.add(\"film\");} })();(() => { const app = window.__CITY_APP; app.teleportTo(-1990, -1817, 0); app.cameraSystem.cinema = () => ({ pos: [-1990, 70, -1760], look: [-1990, 0, -1820], fov: 60 }); console.log('[ride-check] roofs ' + JSON.stringify(window.CITY.roofStats || null)); })();(() => { setTimeout(() => { console.log('[ride-check] census ' + JSON.stringify((() => { const app = window.__CITY_APP; const names = {}; let total = 0; app.scene.traverse((o) => { if (o.isMesh && o.geometry && /Roofs/.test(o.name)) { const g = o.geometry; const t = (g.index ? g.index.count : g.attributes.position.count) / 3; names[o.name] = (names[o.name] || 0) + t; total += t; } }); const i = app.renderer.info.render; return { roofTriangles: total, names, frameTriangles: i.triangles, drawCalls: i.drawCalls ?? i.calls }; })())); }, 6000); })()"
+ }
+]
