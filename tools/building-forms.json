@@ -112,12 +112,12 @@
       "file": "data/toronto-massing.bin",
       "edition": "3DMassingShapefile_2025_WGS84",
       "records": 35254,
-      "date": "2026-11-16"
+      "date": "2026-11-26"
     },
     "geodata": {
       "file": "js/toronto-geodata.js",
       "rows": 35266,
-      "date": "2026-11-16"
+      "date": "2026-11-26"
     },
     "dataset": {
       "dataset": "buildings/4",

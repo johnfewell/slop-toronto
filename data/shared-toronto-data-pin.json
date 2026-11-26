@@ -9,7 +9,7 @@
       "bakedInto": [
         "js/lidar-trees-data.js"
       ],
-      "dataSha256": "0bc2ffbf3b40a4709ee2bf08a20e75e11c38e2ff5d05e32b3c95835a4a06ffa7",
+      "dataSha256": "d3d812e9214f53c4993e9ab575c17b3c2f13b0b556381a028ed9c1d2538041e5",
       "eglinton": {
         "bakedInto": [
           "data/frames/eglinton/lidar-trees/"
@@ -38,7 +38,7 @@
       "bakedInto": [
         "tools/data/building-inputs.json"
       ],
-      "dataSha256": "dc6a7e8f27a18a2ace018b94d6ceda47ba0e02d9a777fceb244a8dd8f6c4704f"
+      "dataSha256": "3d18bdcb4f9be59a313b86623659bdd24fa9435223abccfd0e4ee6e88f18b9dd"
     },
     "neighbourhood-era/1": {
       "manifestCommit": "ebbbfa2",
@@ -49,7 +49,7 @@
       "bakedInto": [
         "tools/data/building-inputs.json"
       ],
-      "dataSha256": "dc6a7e8f27a18a2ace018b94d6ceda47ba0e02d9a777fceb244a8dd8f6c4704f"
+      "dataSha256": "3d18bdcb4f9be59a313b86623659bdd24fa9435223abccfd0e4ee6e88f18b9dd"
     },
     "school-grounds/1": {
       "manifestCommit": "c19199a",

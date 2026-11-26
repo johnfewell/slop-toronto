@@ -1,0 +1,38 @@
+[
+ {
+  "name": "m01-shaw-street",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-2776, -830.5, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-2776, 22, -804.5], look: [-2776, 0, -830.5], fov: 55 });\n})()"
+ },
+ {
+  "name": "m02-front-street-west",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-45, -41.5, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-45, 22, -15.5], look: [-45, 0, -41.5], fov: 55 });\n})()"
+ },
+ {
+  "name": "m03-river-street",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2343.5, -1533.5, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2343.5, 22, -1507.5], look: [2343.5, 0, -1533.5], fov: 55 });\n})()"
+ },
+ {
+  "name": "m04-canada-boulevard",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-2584.5, 369.5, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-2584.5, 24, 397.5], look: [-2584.5, 0, 369.5], fov: 55 });\n})()"
+ },
+ {
+  "name": "m05-cherry-street",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(1990, -29, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [1990, 22, -3], look: [1990, 0, -29], fov: 55 });\n})()"
+ },
+ {
+  "name": "m06-remembrance-drive",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-3093, 765, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-3093, 26, 795], look: [-3093, 0, 765], fov: 55 });\n})()"
+ }
+]

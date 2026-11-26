@@ -141,3 +141,41 @@ export function trackClearance(index, x, z, tx, tz) {
   return best;
 }
 
+
+/** The width a median is under, as the mean width of its island (2 x area / perimeter), and its area: the test for a
+ *  long thin island between the two carriageways of a dual road (tools/geo-blocks.mjs flags the blocks that pass it, and
+ *  keeps the holes of City road polygons that pass it: docs/road-medians.md) */
+export const MEDIAN_WIDTH = 9; // m
+export const MEDIAN_AREA = 60000; // m2
+
+/** Whether a ring in world metres ([[x, z], ...]) is a median by that test */
+export function isMedianRing(ring) {
+  let a = 0, per = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    a += ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1];
+    per += Math.hypot(ring[i][0] - ring[j][0], ring[i][1] - ring[j][1]);
+  }
+  a = Math.abs(a) / 2;
+  return per > 0 && (2 * a) / per < MEDIAN_WIDTH && a < MEDIAN_AREA;
+}
+
+/** Fills a surface ({ ring, holes }, world metres) on a raster with `val`, less its holes: they keep whatever the raster
+ *  has there. A hole is not another surface's: where a second polygon covers it, that polygon fills it. `raster` is a
+ *  Raster (tools/geo-base.mjs): its `fillRing`, `res`, `x0`, `z0`, `w`, `h` and `d`. */
+export function fillSurface(raster, { ring, holes }, val) {
+  if (!holes || !holes.length) return raster.fillRing(ring, val);
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  for (const [x, z] of ring) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z; }
+  const sub = new raster.constructor(x0 - 1, z0 - 1, x1 + 1, z1 + 1, raster.res);
+  sub.fillRing(ring, 1);
+  for (const h of holes) sub.fillRing(h, 0);
+  const ox = Math.round((sub.x0 - raster.x0) / raster.res), oz = Math.round((sub.z0 - raster.z0) / raster.res);
+  for (let j = 0; j < sub.h; j++) {
+    const tj = j + oz;
+    if (tj < 0 || tj >= raster.h) continue;
+    for (let i = 0; i < sub.w; i++) {
+      const ti = i + ox;
+      if (ti >= 0 && ti < raster.w && sub.d[j * sub.w + i]) raster.d[tj * raster.w + ti] = val;
+    }
+  }
+}

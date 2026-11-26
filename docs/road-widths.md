@@ -224,7 +224,8 @@ All measurements are from the City of Toronto 2025 orthophoto. The full table of
 
 - **Lake Shore East at 22942636@300.** It is drawn 25.6 m both before and after: the City polygon there spans both
   carriageways and the median. `tools/fetch-roadway.mjs` keeps only each polygon's outer ring, so City medians become
-  road everywhere. This is not changed here.
+  road everywhere. This is not changed here. (Later, st-ceg7 kept the holes: docs/road-medians.md. It did not change this
+  road: the City's polygon there has no hole.)
 - **Villiers.** The City's polygon is about 2.75 m narrower than the orthophoto.
 - **The Commissioners eastbound lane where the carriageways split** (1418441608@95) was drawn 16 m in the first pass
   against 4.5 m measured. The grass island between the carriageways was drawn all along (a median, −7 to −2.5 m). The

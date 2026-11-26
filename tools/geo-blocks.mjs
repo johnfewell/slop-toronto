@@ -2,7 +2,7 @@
 // width over the land of the detailed city (minus lakes & reservoirs), then labelling what's left. Each block: its curb
 // outline, axis-aligned lot rects inside its property line (the curb less the sidewalk / verge), metadata.
 import { Raster, rdpRing, ringArea, log, load, toWorld, osmRoads } from './geo-base.mjs';
-import { loadRoadSurfaces, retireCityRoadway, surfaceNear, widthProfile, cycleTrackIndex, trackClearance } from './road-surfaces.mjs';
+import { loadRoadSurfaces, retireCityRoadway, surfaceNear, widthProfile, cycleTrackIndex, trackClearance, fillSurface, isMedianRing, MEDIAN_WIDTH, MEDIAN_AREA } from './road-surfaces.mjs';
 import { DETAIL, rasterRoads } from './geo-roads.mjs';
 import { waterRings, islandRings, lake } from './geo-land.mjs';
 
@@ -38,15 +38,20 @@ if (cityRoadway) {
   cityRoadway = retireCityRoadway(cityRoadway, here);
   surveyed.retire = here;
 }
-const surfaceRings = cityRoadway ? [...cityRoadway.map(([, ring]) => ring), ...surveyed.surfaces.filter((s) => s.roadway).map((s) => s.ring)]
-  .map((ring) => ring.map(([lon, lat]) => toWorld(lon, lat))) : [];
+// (a City polygon keeps its holes, the medians and traffic islands inside it: `holes` are land, unless another surface
+// covers them; fillSurface. Only the holes that are medians by the test below are kept: a hole that is a whole block
+// (a lane polygon drawn round it) stays road, as before, for now: it would bring back buildings, and renumber the
+// building list and everything pinned to it. docs/road-medians.md)
+const holesSeen = cityRoadway ? cityRoadway.reduce((n, [, , holes]) => n + (holes ? holes.length : 0), 0) : 0;
+const surfaceRings = cityRoadway ? [...cityRoadway.map(([kind, ring, holes]) => ({ ring, holes })), ...surveyed.surfaces.filter((s) => s.roadway).map((s) => ({ ring: s.ring }))]
+  .map(({ ring, holes }) => ({ ring: ring.map(([lon, lat]) => toWorld(lon, lat)), holes: (holes || []).map((h) => h.map(([lon, lat]) => toWorld(lon, lat))).filter(isMedianRing) })) : [];
 // the surveyed roadway, and the ground strips cut out of City polygons (filled back to ground, the surveyed roadway
 // over them again): in world metres
 const surveyedRings = cityRoadway ? surveyed.surfaces.filter((s) => s.roadway).map((s) => s.ring.map(([lon, lat]) => toWorld(lon, lat))) : [];
 const groundRings = cityRoadway ? surveyed.ground.map((g) => g.ring.map(([lon, lat]) => toWorld(lon, lat))) : [];
 // the mapped surface on its own raster, to tell where a centre line has one
 const covered = new Raster(DETAIL.x0, DETAIL.z0, DETAIL.x1, DETAIL.z1, RES);
-for (const ring of surfaceRings) covered.fillRing(ring, 1);
+for (const surface of surfaceRings) fillSurface(covered, surface, 1);
 for (const ring of groundRings) covered.fillRing(ring, 0);
 for (const ring of surveyedRings) covered.fillRing(ring, 1);
 export const roadCover = []; // per run: what the coverage test found (tools/report-road-widths.mjs)
@@ -125,11 +130,11 @@ for (const s of stamps) {
   }
 }
 if (cityRoadway) {
-  for (const ring of surfaceRings) R.fillRing(ring, 0);
+  for (const surface of surfaceRings) fillSurface(R, surface, 0);
   for (const ring of groundRings) R.fillRing(ring, 1);
   for (const ring of surveyedRings) R.fillRing(ring, 0);
   const openKm = roadCover.reduce((a, c) => a + c.openLength, 0) / 1000;
-  log(`City road surface: ${cityRoadway.length} polygons drawn as roadway (${surveyed.retire.length} out-of-date ones retired), ` +
+  log(`City road surface: ${cityRoadway.length} polygons drawn as roadway, ${surfaceRings.reduce((n, r) => n + (r.holes ? r.holes.length : 0), 0)} of their ${holesSeen} holes kept as medians (${surveyed.retire.length} out-of-date ones retired), ` +
     `${surveyed.surfaces.filter((s) => s.roadway).length} surveyed surfaces, ${groundRings.length} ground strips, ${trackCapped.length} widened samples held back by a cycle track (of ${tracks.segments} track segments); ${openKm.toFixed(1)} km of road with no mapped surface drawn at its own width`);
 }
 // the raster's rim: no block runs off the detailed area (they'd have no streets on that side)
@@ -336,7 +341,7 @@ for (const c of comps) {
     const a = poly[i], b = poly[(i + 1) % poly.length];
     per += Math.hypot(b[0] - a[0], b[1] - a[1]);
   }
-  const median = (2 * area) / per < 9 && area < 60000;
+  const median = (2 * area) / per < MEDIAN_WIDTH && area < MEDIAN_AREA;
   const bw = (c.i1 - c.i0 + 1) * RES, bd = (c.j1 - c.j0 + 1) * RES;
   const rectness = area / (bw * bd);
   const { rects } = area >= 300 && !median ? lotRects(c, area > 200000 ? 16 : 8) : { rects: [] };
