@@ -315,7 +315,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
       dl: 0, dlv: 0, blink: 0, blinkPhase: Math.random() * 0.8,
       // (dodging the player, react: 1 swerving in a panic, 2 steering round it; evade, the offset right of its lane
       // centre it steers for meanwhile)
-      dodge: 0, evade: 0, alarm: 0, panicUntil: 0, panicAcc: 0, reaction: 0.6 + Math.random() * 0.4, passCheck: 0,
+      hug: 0, dodge: 0, evade: 0, alarm: 0, panicUntil: 0, panicAcc: 0, reaction: 0.6 + Math.random() * 0.4, passCheck: 0,
       passSpeed: PASS_SPEED,
       x: 0, z: 0, prevX: 0, prevZ: 0, tx: 0, tz: 1, nose: 0, yaw: 0, yawRate: 0, steer: 0, delta: 0,
       pitch: 0, roll: 0, pitchVel: 0, rollVel: 0, vx: 0, vz: 0, yawOffset: 0, yawVel: 0, impactTime: 0,
@@ -1202,6 +1202,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
       if (v.bus && m.turn !== 'S' && m.to.lanes.length < 2) w *= 0.05;
       if (v.bus && m.to.tram) w *= 0.001; // streetcar routes have streetcars, not buses (e.tram, streetcars.js)
       if (m.to.busOnly && !v.route) w = 0; // (a contraflow for the TTC's buses on their routes: road-network.js)
+      if (m.to.worksClosed) w = 0; // (a road the City's works close: not even a bus without its route)
       if (fromLane) {
         if (m.out[v.lane] < 0) w = 0;
       } else if (Math.abs(nearestLane(m, v.lane) - v.lane) * 22 > e.len - v.s) {
@@ -1487,12 +1488,52 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     return 'none';
   }
 
+  const RW = () => window.CITY.roadworks;
+
   // Overtake into an adjacent lane when it is clearly quicker (MOBIL), or work towards a lane the planned turn
   // can be made from; either only if neither v nor its new follower has to brake hard for it. Not while still
   // pulling out of an intersection or dodging the player, nor in the last 12 m before the next.
   function changeLanes(v) {
     const e = v.edge;
-    if (v.conn || v.commit || v.dodge || v.panicUntil || Math.abs(v.dl) > 0.5 || v.s < v.half) return;
+    if (v.conn || v.commit || v.dodge || v.panicUntil || Math.abs(v.dl) > 0.5) return;
+    // Road works (roadworks-layout.js): out of a closed kerb lane before the taper, into the open lane as soon as there is a
+    // gap (the traffic there makes one: a driver at the taper waits and is let in), at any distance from the junction, and
+    // from the first metre of the edge (a zone can start at its mouth: a driver stopped short of the taper must be able to go)
+    if (e.laneZones) {
+      const z = RW().closedZoneAhead(e, v.lane, v.s + v.half);
+      const dec = z && RW().laneDecision(z, v.lane, v.s + v.half, v.wait);
+      if (dec && dec.merge >= 0) {
+        if (laneSafe(v, dec.merge, dec.bSafe, dec.minGap, true)) {
+          v.dl += e.lanes[v.lane] - e.lanes[dec.merge];
+          v.lane = dec.merge;
+          v.trail = null;
+        }
+        return;
+      }
+    }
+    // ...and a zone that starts at the mouth of the edge it is about to turn into: out of the lane that leads into a closed one, on
+    // this edge, with all its length to do it in (rather than at the barrels, from the junction)
+    const next = v.move && v.move.to;
+    if (next && next.laneZones && v.s > 2) {
+      const out = v.move.out[v.lane];
+      const zn = out >= 0 ? RW().closedZoneAhead(next, out, 0, 22) : null;
+      const d = e.len - v.s - v.half;
+      if (zn && zn.open.length && d < RW().MERGE_LEAD) {
+        let best = -1;
+        for (let t = 0; t < e.lanes.length; t++) {
+          const o = v.move.out[t];
+          if (o >= 0 && !zn.closed[o] && (best < 0 || Math.abs(t - v.lane) < Math.abs(best - v.lane))) best = t;
+        }
+        const step = best >= 0 ? v.lane + Math.sign(best - v.lane) : -1;
+        if (step >= 0 && step !== v.lane && v.move.out[step] >= 0 && !(e.laneZones && RW().closedZoneAhead(e, step, v.s + v.half)) && laneSafe(v, step, d > 25 ? -2.5 : d > 10 ? -4 : -6, 1.5, true)) {
+          v.dl += e.lanes[v.lane] - e.lanes[step];
+          v.lane = step;
+          v.trail = null;
+          return;
+        }
+      }
+    }
+    if (v.s < v.half) return;
     // A stopped driver may clear the shared tram lane before the stop line, using a legal straight-through lane.
     if (e.len - v.s - v.half < 12 && !(e.tram && v.wait > 4 && v.move.turn === 'S')) return;
     let target = -1;
@@ -1521,7 +1562,9 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
   }
 
   // Can v move into lane t leaving itself and its new follower at least bSafe (negative) acceleration?
-  function laneSafe(v, t, bSafe) {
+  function laneSafe(v, t, bSafe, minGap = 1.5, forced = false) {
+    // (never into a lane the road works close ahead, unless it is on the way out of a closed one)
+    if (!forced && v.edge.laneZones && RW().closedZoneAhead(v.edge, t, v.s + v.half)) return false;
     let lead = null;
     let back = null;
     for (const o of v.edge.occ[t]) {
@@ -1534,12 +1577,12 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     }
     if (lead) {
       const gap = lead.s - lead.v.half - v.s - v.half;
-      if (gap < 1.5 || freeAcc(v) + brake(v, gap, lead.v.speed) < bSafe) return false;
+      if (gap < minGap || freeAcc(v) + brake(v, gap, lead.v.speed) < bSafe) return false;
     }
     if (back) {
       const f = back.v;
       const gap = v.s - v.half - back.s - f.half;
-      if (gap < 1.5 || freeAcc(f) + brake(f, gap, v.speed) < bSafe) return false;
+      if (gap < minGap || freeAcc(f) + brake(f, gap, v.speed) < bSafe) return false;
     }
     const off = v.edge.lanes[t] - v.edge.lanes[v.lane] - v.dl;
     const og = obstacleGap(v, off);
@@ -1666,6 +1709,19 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
       cap = bendSpeed(v, v.conn);
     }
     if (v.edge.stops || (v.move && v.move.to && v.move.to.stops)) worst = Math.min(worst, crossingsAhead(v));
+    if (!v.conn && v.edge.laneZones) {
+      // road works: the zone's speed past them, and short of the taper in a closed lane that has not got out yet, a stop; and
+      // where no lane is open, edging away from the barrels a little (v.hug, steer)
+      const f = v.s + v.half;
+      let hug = 0;
+      for (const z of v.edge.laneZones) {
+        cap = Math.min(cap, RW().zoneSpeedCap(z, f, v.s - v.half));
+        if (z.hugs[v.lane] && f > z.a + 4 && v.s - v.half < z.b) hug = z.hugs[v.lane];
+        const dec = RW().laneDecision(z, v.lane, f, v.wait);
+        if (dec.stop < Infinity) worst = Math.min(worst, stopAt(v, dec.stop, 1));
+      }
+      v.hug = hug;
+    } else if (v.hug) v.hug = 0;
     worst = Math.min(worst, followPlayer(v));
     // --- Streetcars: keep behind them ---
     const og = obstacleGap(v);
@@ -2068,7 +2124,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     let bend = Math.atan2(bendB.dx, bendB.dz) - Math.atan2(bendA.dx, bendA.dz);
     bend -= Math.round(bend / (Math.PI * 2)) * Math.PI * 2;
     // ...plus how far right of its path it heads, and how far right of where it should be it is (nose and dl - evade)
-    const off = v.dl - (v.dodge ? v.evade : 0);
+    const off = v.dl - (v.dodge ? v.evade : v.hug || 0);
     const want = Math.atan((wheelbase * bend) / 2) + v.nose + approach(v.bus, v.speed, off, v.dodge);
     v.delta = wheelTowards(v.driver, wheelbase, v.speed, v.delta, want, panic, dt);
     const slide = v.driver.grip / Math.max(v.speed, 0.1);
@@ -2083,7 +2139,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     v.dlv = v.speed * Math.sin(nose);
     // (edging over at a standstill: not into the player beside it)
     const beside = Math.abs(v.pAhead) < v.half + 3 && Math.abs(v.pRight) < 3.5;
-    if (!v.dodge && v.speed < 1.5 && !beside) v.dlv += clamp(-0.42 * v.dl, -0.3, 0.3) * (1 - v.speed / 1.5);
+    if (!v.dodge && v.speed < 1.5 && !beside) v.dlv += clamp(-0.42 * (v.dl - (v.hug || 0)), -0.3, 0.3) * (1 - v.speed / 1.5);
     v.dl += v.dlv * dt;
   }
 
@@ -2178,7 +2234,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     v.steer = v.delta;
 
     const turn = v.move.turn;
-    const off = v.dl - (v.dodge ? v.evade : 0);
+    const off = v.dl - (v.dodge ? v.evade : v.hug || 0);
     if (v.dodge === 1) v.blink = 0; // no time to signal a swerve
     else if (Math.abs(off) > 0.3 && Math.abs(v.dlv) > 0.05) v.blink = off > 0 ? -1 : 1;
     else if (turn !== 'S' && (v.conn || v.edge.len - v.s < 35)) v.blink = turn === 'R' ? 1 : -1;
@@ -2353,7 +2409,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     v.acc = 0;
     v.impactTime = 0;
     v.dl = v.dlv = 0;
-    v.dodge = v.evade = v.alarm = v.panicUntil = v.panicAcc = v.passCheck = 0;
+    v.dodge = v.evade = v.alarm = v.panicUntil = v.panicAcc = v.passCheck = v.hug = 0;
     v.vx = v.vz = v.yawOffset = v.yawVel = v.pitch = v.pitchVel = v.roll = v.rollVel = 0;
     locate(v);
     v.prevX = v.x;
@@ -2388,8 +2444,8 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     }
     r.i = i;
     const m = v.edge.moves.find((mv) => mv.to === r.edges[i + 1]);
-    if (!m) r.off = 'lost';
-    return m || null;
+    if (!m || m.to.worksClosed) r.off = 'lost'; // (a road the works closed since the route was drawn: it roams on from here)
+    return m && !m.to.worksClosed ? m : null;
   }
   // the curb lane while the next stop is on this link within 150 m (-1: none)
   function stopLane(v) {
@@ -2433,6 +2489,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     if (protectView && nearView(x, z, v.half + 4, VEHICLE_SPAWN_DISTANCE)) return false;
     if (player.active && Math.hypot(x - player.x, z - player.z) < 25) return false;
     if (!laneClear(e.occ[lane], s, v.half + 8)) return false;
+    if (e.laneZones && RW().closedZoneAhead(e, lane, s, 20)) return false;
     if (movers.some((o) => Math.abs(o.x - x) < o.halfL + v.half + 8 && Math.abs(o.z - z) < o.halfL + v.half + 8 && Math.abs((o.y || 0) - edgeY(e, s)) < 2.5)) return false;
     v.dwellUntil = 0;
     place(v, e, lane, s);
@@ -2465,6 +2522,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
       if (d < rMin || d > rMax || (protectView && nearView(x, z, v.half + 4, VEHICLE_SPAWN_DISTANCE))) continue;
       if (player.active && Math.hypot(x - player.x, z - player.z) < 25) continue;
       if (!laneClear(e.occ[lane], s, v.half + 8)) continue;
+      if (e.laneZones && RW().closedZoneAhead(e, lane, s + v.half, 0) && RW().closedZoneAhead(e, lane, s - v.half, 0)) continue; // (not in a lane the works close)
       // --- Streetcars: never spawn on one ---
       if (movers.some((o) => Math.abs(o.x - x) < o.halfL + v.half + 8 && Math.abs(o.z - z) < o.halfL + v.half + 8 && Math.abs((o.y || 0) - edgeY(e, s)) < 2.5)) continue;
       place(v, e, lane, s);
@@ -4032,6 +4090,7 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
     group,
     update,
     setHour, // main.js: the time of day (hours) the City's volumes are read at
+    getHour: () => hour, // (roadworks.js: the hour the road works start at)
     pedRoutes, // (pedestrian-signals.js: the crosswalks people use)
     whyWaiting, // (tools/traffic-measure.js)
     pedWhy(p) { // (tools/pedcol: why does this person still wait at the curb)

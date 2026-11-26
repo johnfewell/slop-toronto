@@ -10,7 +10,9 @@
 // raises nothing: the city is exactly what it was without this file. ?roadworks=0 leaves it out altogether.
 //
 // Only the records in effect on the scene's day are drawn (js/roadworks-layout.js: the City's dates and weekday schedule;
-// the day the city opened on, today's for a preset, whose summer day is only a look). They are the City's *reported*
+// the day the city opened on, today's for a preset, whose summer day is only a look), and of those only the ones at work at
+// the scene's hour (setHour, which main.js calls wherever it sets the traffic's: a record's "07:00-19:00" shows its barrels
+// and shuts its roads for those hours of the scene's clock, the time-of-day buttons included). They are the City's *reported*
 // restrictions: submitted by the permit applicants and not field verified, with no lane geometry, so where the barrels
 // stand is a rule (roadworks-layout.js), and the card each shows (CITY.roadworksCard) says so and carries the City's own
 // words and dates. Not drawn: sidewalks, crossings, streetcar tracks, junctions, flyovers, parked cars or anything solid.
@@ -18,7 +20,9 @@
 // One instanced mesh per kind (cone, barrel, jersey barrier, barricade, three signs, arrow board), all one material over
 // one canvas atlas: eight draw calls for the city, chunked and distance-culled by scene-culling.js (group CityRoadworks).
 // Every piece is solid to the player like other street furniture. A full closure's rows are also boxes the traffic keeps
-// behind (traffic.js setObstacles), and the traffic edges a closure covers whole are closed to cars (closeEdges).
+// behind (traffic.js setObstacles), and the traffic edges a closure covers whole (or ends in a row) are closed to cars
+// (closeEdges, which the buses detour round: transit-buses.js). A lane closure's barrels close the lanes beyond them for
+// the traffic on that edge (laneZoneTable): the drivers in them merge into an open lane before the taper.
 
 const C = window.CITY;
 const FEED_URL = './live/roadworks';
@@ -290,7 +294,7 @@ async function buildRoadworks(scene, { trafficSystem = null, parkedAt = null, co
     const byKind = {};
     for (const s of layout.sites) (byKind[s.kind] ||= []).push(s);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
-    const newColliders = [], boxes = [];
+    const newColliders = [], recBoxes = new Map(), colliderRec = new Map();
     for (const [kind, list] of Object.entries(byKind)) {
       const geo = geos[kind];
       const mesh = new THREE.InstancedMesh(geo, material, list.length);
@@ -304,8 +308,8 @@ async function buildRoadworks(scene, { trafficSystem = null, parkedAt = null, co
         m.compose(p, q, sc);
         mesh.setMatrixAt(i, m);
         const col = collider(kind, s, y);
-        if (col) newColliders.push(col);
-        if ((kind === 'barricade' || kind === 'barrier')) boxes.push({ x: s.x, y, z: s.z, yaw: s.yaw + Math.PI / 2, halfW: 0.3, halfL: (s.w || unit) / 2, speed: 0 });
+        if (col) { newColliders.push(col); colliderRec.set(col, s.rec); }
+        if ((kind === 'barricade' || kind === 'barrier')) (recBoxes.get(s.rec) || recBoxes.set(s.rec, []).get(s.rec)).push({ x: s.x, y, z: s.z, yaw: s.yaw + Math.PI / 2, halfW: 0.3, halfL: (s.w || unit) / 2, speed: 0 });
       });
       mesh.instanceMatrix.needsUpdate = true;
       mesh.castShadow = KIND[kind].shadow;
@@ -317,12 +321,88 @@ async function buildRoadworks(scene, { trafficSystem = null, parkedAt = null, co
     }
     scene.add(group);
 
-    // the traffic: the rows' boxes (cars stop in front of them) & the roads a closure covers whole
-    if (trafficSystem && trafficSystem.setObstacles && boxes.length) trafficSystem.setObstacles(boxes, 'roadworks');
-    if (trafficSystem && trafficSystem.network && C.roadworks.closeEdges) {
-      const lines = layout.plans.filter((pl) => pl.placed && feed.records[pl.rec].t === 'R' && pl.full).map((pl) => ({ pts: pl.line, half: 7 }));
-      if (lines.length) { const r = C.roadworks.closeEdges(trafficSystem.network, lines); stats.closedEdges = r.closed; stats.closedStubs = r.stubs; }
-    }
+    // the hours: what is at work at the scene's hour. Instances of the others are squeezed to nothing (the meshes may have been
+    // cut into cells by scene-culling.js by then: the cells' instances are found by where they stand), their colliders lifted
+    // out of reach, their boxes and closed edges and lane zones left out. Called for the hour main.js sets
+    const R = C.roadworks;
+    const dow = R.dayRange(layout.day).dow;
+    const recs = layout.plans.filter((pl) => pl.placed).map((pl) => pl.rec);
+    let active = new Set(recs), activeKey = null, hourNow = null;
+    const posKey = (kind, x, z) => `${kind}|${Math.round(Math.fround(x) * 100)}|${Math.round(Math.fround(z) * 100)}`;
+    const recAt = new Map();
+    for (const s2 of layout.sites) recAt.set(posKey(s2.kind, s2.x, s2.z), s2.rec);
+    const barrels = layout.sites.filter((s2) => s2.kind === 'barrel' && s2.side).map((s2) => ({ x: s2.x, z: s2.z, rec: s2.rec, side: s2.side, fx: s2.fx, fz: s2.fz }));
+    const laneTable = trafficSystem && trafficSystem.network && R.laneZoneTable ? R.laneZoneTable(trafficSystem.network, barrels) : null;
+    stats.laneZones = laneTable ? laneTable.zones.length : 0;
+    stats.laneBarrels = laneTable ? { total: barrels.length, ...laneTable.stage } : null; // (where the barrels were and were not found on the traffic's roads)
+    const fullClosed = layout.plans.filter((pl) => pl.placed && feed.records[pl.rec].t === 'R' && pl.full);
+    let shut = [];
+    const meshesOf = () => { const out = []; group.traverse((o) => { if (o.isInstancedMesh) out.push(o); }); return out; };
+    const holds = new WeakMap(); // mesh -> { base: the instances' matrices as drawn, rec: each one's record } (made on the first call, all in view)
+    const setVisible = () => {
+      for (const mesh of meshesOf()) {
+        const kind = mesh.name.replace(/^Roadworks_/, '');
+        const arr = mesh.instanceMatrix.array;
+        let hold = holds.get(mesh);
+        if (!hold) {
+          hold = { base: Float32Array.from(arr), rec: new Int32Array(mesh.count) };
+          for (let j = 0; j < mesh.count; j++) hold.rec[j] = recAt.get(posKey(kind, arr[16 * j + 12], arr[16 * j + 14])) ?? -1;
+          holds.set(mesh, hold);
+        }
+        let changed = false;
+        for (let j = 0; j < mesh.count; j++) {
+          const on = hold.rec[j] < 0 || active.has(hold.rec[j]);
+          if (on === (arr[16 * j + 5] !== 0)) continue; // (a hidden instance has no height)
+          changed = true;
+          if (on) for (let k = 0; k < 16; k++) arr[16 * j + k] = hold.base[16 * j + k];
+          else { for (let k = 0; k < 16; k++) arr[16 * j + k] = 0; arr[16 * j + 15] = 1; }
+        }
+        if (changed) mesh.instanceMatrix.needsUpdate = true;
+      }
+      for (const [rec, list] of recColliders) for (const c of list) c.minY = active.has(rec) ? c.rwMinY : 1e6;
+    };
+    const setTraffic = () => {
+      if (!trafficSystem) return;
+      const t1 = performance.now();
+      const rows = boxesByRec.size ? [...boxesByRec].filter(([rec]) => active.has(rec)).flatMap(([, list]) => list) : [];
+      if (trafficSystem.setObstacles) trafficSystem.setObstacles(rows, 'roadworks');
+      if (trafficSystem.network && R.closeEdges) {
+        R.openEdges(shut);
+        shut = [];
+        const lines = fullClosed.filter((pl) => active.has(pl.rec)).map((pl) => ({ pts: pl.line, half: 7 }));
+        const rowPts = rows.map((b) => ({ x: b.x, z: b.z }));
+        if (lines.length) { const r = R.closeEdges(trafficSystem.network, lines, { rows: rowPts }); stats.closedEdges = r.closed; stats.closedStubs = r.stubs; shut = r.edges || []; }
+        else { stats.closedEdges = 0; stats.closedStubs = 0; }
+      }
+      if (laneTable) stats.laneZonesActive = laneTable.apply((rec) => active.has(rec));
+      for (const fn of C.roadworksListeners) { try { fn(); } catch (e) { console.warn('[roadworks] listener', e); } }
+      stats.trafficMs = Math.round(performance.now() - t1); // (each time the hour changes which records are at work)
+      console.info(`[roadworks] ${active.size} records at work at ${stats.hour}:00: ${stats.closedEdges} traffic edges closed (and ${stats.closedStubs} stubs), ${stats.laneZonesActive} lane zones, in ${stats.trafficMs} ms`);
+    };
+    let drawn = false; // the first public call draws whatever the hour leaves (the scene's culling has cut the meshes by then)
+    const setHour = (hour, visual = true) => {
+      if (!Number.isFinite(hour)) return;
+      hourNow = hour;
+      const next = new Set(recs.filter((rec) => R.activeAtHour(feed.records[rec], dow, hour)));
+      const key = [...next].sort((a, b) => a - b).join(',');
+      const same = key === activeKey && activeKey !== null;
+      if (same && (drawn || !visual)) return;
+      const changed = key !== activeKey;
+      activeKey = key;
+      active = next;
+      stats.activeAtHour = next.size;
+      stats.hour = hour;
+      if (visual) { setVisible(); drawn = true; }
+      if (changed) setTraffic();
+    };
+    // (the colliders & boxes, by record)
+    const recColliders = new Map(), boxesByRec = new Map();
+    for (const [rec, list] of recBoxes) boxesByRec.set(rec, list);
+    for (const col of newColliders) { col.rwMinY = col.minY; const rec = colliderRec.get(col); (recColliders.get(rec) || recColliders.set(rec, []).get(rec)).push(col); }
+
+    C.roadworksLive.setHour = setHour; // (for the captures & probes)
+    Object.defineProperties(C.roadworksLive, { laneTable: { value: laneTable }, activeSet: { get: () => active } });
+    C.roadworksPlaces = () => placesOf(layout, feed); // (navigation.js: the search box finds them)
 
     // the card
     const card = buildCard();
@@ -347,15 +427,17 @@ async function buildRoadworks(scene, { trafficSystem = null, parkedAt = null, co
       let best = -1, bd = 16;
       const cx = Math.floor(pos.x / 40), cz = Math.floor(pos.z / 40);
       for (let a = cx - 1; a <= cx + 1; a++) for (let b = cz - 1; b <= cz + 1; b++)
-        for (const s of bySite.get(a * 100003 + b) || []) { const d = Math.hypot(s.x - pos.x, s.z - pos.z); if (d < bd) { bd = d; best = s.rec; } }
+        for (const s of bySite.get(a * 100003 + b) || []) { const d = Math.hypot(s.x - pos.x, s.z - pos.z); if (d < bd && active.has(s.rec)) { bd = d; best = s.rec; } }
       const overlay = C.uiOverlay || document.body.classList.contains('place-open');
       if (best < 0 || overlay) { if (shownRec >= 0) { card.el.hidden = true; shownRec = -1; } if (best < 0) dismissed = -1; return; }
       if (best === dismissed) return;
       if (best !== shownRec) show(best);
     };
+    // (main.js sets the hour as it starts; should nothing set it, the traffic's own hour is used after a while)
+    setTimeout(() => { if (!drawn) setHour(trafficSystem && trafficSystem.getHour ? trafficSystem.getHour() : 12); }, 10000);
     stats.ms = Math.round(performance.now() - t0);
-    console.info(`[roadworks] ${stats.sites} pieces for ${stats.placed} of ${stats.active} active records (${stats.inFrame} in the frame, ${stats.records} in the feed), ${stats.closedEdges} traffic edges closed, in ${stats.ms} ms`);
-    return { group, colliders: newColliders, update, stats, sites: layout.sites, records: feed.records };
+    console.info(`[roadworks] ${stats.sites} pieces for ${stats.placed} of ${stats.active} active records (${stats.inFrame} in the frame, ${stats.records} in the feed), in ${stats.ms} ms`);
+    return { group, colliders: newColliders, update, setHour, stats, sites: layout.sites, records: feed.records, places: () => placesOf(layout, feed) };
   } catch (e) {
     console.warn('[roadworks] left out:', e);
     return null;
@@ -375,5 +457,20 @@ function collider(kind, s, y) {
   return c;
 }
 
+// The search index's entries (navigation.js): one place for each record placed on the scene's day, at the middle of its pieces
+function placesOf(layout, feed) {
+  const sums = new Map();
+  for (const s of layout.sites) { const a = sums.get(s.rec) || sums.set(s.rec, { x: 0, z: 0, n: 0 }).get(s.rec); a.x += s.x; a.z += s.z; a.n++; }
+  const out = [];
+  for (const pl of layout.plans) {
+    const a = pl.placed && sums.get(pl.rec);
+    if (!a) continue;
+    const r = feed.records[pl.rec], sched = scheduleText(r);
+    out.push({ kind: 'place', cat: 'roadwork', name: titleFor(r), x: a.x / a.n, z: a.z / a.n, sub: `Road works · ${r.n || r.r}${sched ? ` · ${sched}` : ''}`, keywords: `road works construction closure closed lane ${r.r}` });
+  }
+  return out;
+}
+
+C.roadworksListeners = C.roadworksListeners || []; // (transit-buses.js: told when the closed roads change, to take its detours)
 Object.assign(C, { buildRoadworks, fetchRoadworks, roadworksCard: { cardFacts, scheduleText, titleFor } });
 })();

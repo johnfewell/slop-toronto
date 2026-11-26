@@ -222,7 +222,7 @@ function roadworksSites(records, deps, { day = null, now = Date.now(), siteDate 
           const lanes = Math.max(1, Math.round(width / 3.4)), lane = Math.min(3.6, Math.max(2.5, width / lanes));
           const lat = side * Math.max(0.6, curb - lane + 0.4);
           const x = r.px + c.nx * lat, z = r.pz + c.nz * lat;
-          if (clearSpot(x, z, 0.35, 'barrel')) emit('barrel', x, z, hash(x + ':' + z) * 6.28);
+          if (clearSpot(x, z, 0.35, 'barrel')) emit('barrel', x, z, hash(x + ':' + z) * 6.28, { side, fx: r.dx, fz: r.dz });
         }
         for (const e of ends) {
           const q = along(pts, e.s), r0 = snap(q.x, q.z);
@@ -304,29 +304,269 @@ function roadworksSites(records, deps, { day = null, now = Date.now(), siteDate 
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// Hours: a record's daily window ("07:00-19:00") against the scene's clock
+// ---------------------------------------------------------------------------------------------------------------------
+/** "07:00-19:00" as { from, to } minutes after midnight, or null (no window: work all day) */
+function hourWindow(text) {
+  const m = /^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/.exec(String(text || '').trim());
+  if (!m) return null;
+  return { from: Number(m[1]) * 60 + Number(m[2]), to: Number(m[3]) * 60 + Number(m[4]) };
+}
+/** Is the record at work at `hour` (0-24, fractional) on a day whose weekday is `dow` (0 = Sunday)? No schedule: always. A
+ *  window that runs past midnight ("21:00-05:00") also covers the early hours of the next day. */
+function activeAtHour(rec, dow, hour) {
+  if (!rec.sc) return true;
+  const h = (((hour % 24) + 24) % 24) * 60;
+  const today = hourWindow(rec.sc[dow]), prev = hourWindow(rec.sc[(dow + 6) % 7]);
+  if (rec.sc[dow] && !today) return true; // (a window we cannot read: all day, as the card says it)
+  if (today) {
+    const end = today.to >= 23 * 60 + 59 ? 24 * 60 : today.to; // ("until 23:59" is to the end of the day)
+    if (today.from <= today.to ? h >= today.from && h < end : h >= today.from) return true;
+  }
+  return !!(prev && prev.from > prev.to && h < prev.to);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Lane closures in the traffic: which lanes of which edges the barrels close, and what a driver does about it
+// ---------------------------------------------------------------------------------------------------------------------
+const CLIP = 1.5; // m from a barrel line to the centre of a lane a car clears it by
+const HUG = 0.45; // m a driver edges away from the barrels where there is no open lane to move to
+const LANE_TAPER = TAPER_LEN + 2; // m before the first barrel where the taper (and the closed lane's end for a driver) starts
+const MERGE_LEAD = 45; // m before the taper where drivers in a closed lane begin to look for a gap
+const MERGE_LAST = 18; // m before the taper: still in the closed lane, a driver stops short of it and waits to be let in
+const ZONE_SPEED = 11; // m/s (40 km/h) past the works beside an open lane
+const STOP_PATIENCE = 45; // s a driver waits at the taper for a gap before it goes on regardless
+const CRAWL_SPEED = 4; // m/s (15 km/h) where no lane is open (one lane each way: the road narrows to the gap beside the barrels)
+/**
+ * `barrels`: [{ x, z, rec, side, fx, fz }] (the layout's barrel sites: side +1 is the right of the way the stretch's
+ * direction (fx, fz) runs). Returns { apply(isActive(rec)) -> number of zones in force, zones }: a zone is { a, b, closed:
+ * [bool per lane], open: [lane indexes], cap, rec } on an edge, a..b metres along it, and `apply` sets edge.laneZones from
+ * the records that are active (so the hours switch them with the barrels). A lane is closed where its centre lies beyond
+ * the barrel line, on the barrel's side, for the edge's own way (the barrels of a kerb lane close nothing of the other way).
+ */
+function laneZoneTable(network, barrels, { cell = 48 } = {}) {
+  const edges = (network && network.edges) || [];
+  const grid = new Map();
+  for (const e of edges) {
+    if (!(e.len > 0) || !e.lanes || !e.lanes.length) continue;
+    for (let s = 0; s <= e.len + 10; s += 16) {
+      const x = e.sx + e.dx * Math.min(s, e.len), z = e.sz + e.dz * Math.min(s, e.len);
+      const k = Math.floor(x / cell) * 100003 + Math.floor(z / cell);
+      const list = grid.get(k) || grid.set(k, []).get(k);
+      if (list[list.length - 1] !== e) list.push(e);
+    }
+  }
+  const per = new Map(); // `${rec}|${edgeIndex}` -> zone
+  const index = new Map(edges.map((e, i) => [e, i]));
+  const stage = { 'no-edge': 0, 'off-the-edge': 0, 'across-the-road': 0, 'outside-the-lanes': 0, 'no-lane-closed': 0, closed: 0 }; // (how far each barrel got)
+  for (const b of barrels) {
+    const seen = new Set();
+    let best = 'no-edge';
+    const rank = (k) => Object.keys(stage).indexOf(k);
+    for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) {
+      for (const e of grid.get((Math.floor(b.x / cell) + a) * 100003 + Math.floor(b.z / cell) + c) || []) {
+        if (seen.has(e)) continue;
+        seen.add(e);
+        const px = b.x - e.sx, pz = b.z - e.sz;
+        const s = px * e.dx + pz * e.dz, o = px * e.rx + pz * e.rz;
+        const reach = (k) => { if (rank(k) > rank(best)) best = k; };
+        if (s < -2 || s > e.len + 2) continue;
+        reach('off-the-edge');
+        const cos = e.dx * b.fx + e.dz * b.fz;
+        if (Math.abs(cos) < 0.8) continue;
+        reach('across-the-road');
+        if (o < e.lanes[0] - 3.2 || o > e.lanes[e.lanes.length - 1] + 3.2) continue;
+        reach('outside-the-lanes');
+        const sideE = b.side * (cos > 0 ? 1 : -1);
+        // a lane is closed where its centre lies beyond the barrel line, and where a car in it would clip the barrels (the
+        // lane's centre within CLIP m of the line, on the open side): CLIP is a car's half width, a barrel's radius & a margin
+        const closed = e.lanes.map((lo) => sideE * (lo - o) > -CLIP);
+        if (!closed.some(Boolean)) continue;
+        reach('closed');
+        const key = `${b.rec}|${index.get(e)}`;
+        let z = per.get(key);
+        if (!z) per.set(key, (z = { edge: e, rec: b.rec, a: Infinity, b: -Infinity, closed: e.lanes.map(() => false), hugs: e.lanes.map(() => 0) }));
+        z.a = Math.min(z.a, s); z.b = Math.max(z.b, s);
+        closed.forEach((c, i) => { if (c) { z.closed[i] = true; z.hugs[i] = Math.sign(e.lanes[i] - o) * HUG || sideE * HUG; } });
+      }
+    }
+    stage[best]++;
+  }
+  const zones = [];
+  for (const z of per.values()) {
+    z.open = z.closed.map((c, i) => (c ? -1 : i)).filter((i) => i >= 0);
+    z.cap = z.open.length ? ZONE_SPEED : CRAWL_SPEED;
+    if (z.open.length) z.hugs = z.hugs.map(() => 0); // (a driver with an open lane goes to it; only where there is none does it edge over)
+    z.a = Math.max(0, z.a - LANE_TAPER);
+    z.b = Math.min(z.edge.len, z.b + 5);
+    zones.push(z);
+  }
+  let applied = [];
+  return {
+    zones, stage,
+    apply(isActive) {
+      for (const e of applied) delete e.laneZones;
+      applied = [];
+      let n = 0;
+      for (const z of zones) {
+        if (isActive && !isActive(z.rec)) continue;
+        const e = z.edge;
+        if (!e.laneZones) { e.laneZones = []; applied.push(e); }
+        e.laneZones.push(z);
+        n++;
+      }
+      return n;
+    }
+  };
+}
+/** The zone of edge e that has lane `lane` closed within `reach` m ahead of position s (front bumper), still not past it */
+function closedZoneAhead(e, lane, s, reach = MERGE_LEAD) {
+  const zs = e && e.laneZones;
+  if (!zs) return null;
+  for (const z of zs) if (z.closed[lane] && s < z.b && s + reach > z.a) return z;
+  return null;
+}
+/** The open lane a driver in closed lane `lane` takes a step towards (the neighbour towards the nearest open lane), or -1 */
+function mergeStep(z, lane) {
+  if (!z.closed[lane] || !z.open.length) return -1;
+  let best = z.open[0];
+  for (const i of z.open) if (Math.abs(i - lane) < Math.abs(best - lane)) best = i;
+  return lane + Math.sign(best - lane);
+}
+/** The speed a driver front at `f` m along the edge may have for zone z: slowing to the zone's speed by the taper, at `decel` */
+function zoneSpeedCap(z, f, tail, decel = 1.8) {
+  if (tail > z.b) return Infinity; // (its rear is past the works)
+  return Math.sqrt(z.cap * z.cap + 2 * decel * Math.max(0, z.a - f));
+}
+/**
+ * What a driver in lane `lane`, front bumper f m along the edge, does about the zone: { merge: the lane to step to or -1,
+ * bSafe: the hardest braking it asks of itself and the driver it cuts in front of (a gap that gets bigger as the taper
+ * nears, and with the time it has waited), minGap, stop: the distance to the taper start where it must stop and wait to be
+ * let in (Infinity: carry on) }. A driver in an open lane has nothing to do but keep to the zone's speed.
+ */
+function laneDecision(z, lane, f, waited = 0) {
+  const none = { merge: -1, bSafe: -3, minGap: 1.5, stop: Infinity };
+  if (!z || !z.closed[lane] || !z.open.length || f > z.b) return none;
+  const d = z.a - f; // to the taper's start (negative: already inside)
+  if (d > MERGE_LEAD) return none;
+  const hurry = d > 25 ? 0 : d > 10 ? 1 : 2;
+  const bSafe = -2.5 - 1.5 * hurry - (waited > 3 ? 2 : 0) - (waited > 8 ? 2 : 0);
+  const minGap = waited > 8 ? 0.8 : waited > 3 ? 1.1 : 1.5;
+  // the wait at the taper: short of its start; inside it (a zone that starts at the edge's mouth), short of the first barrel; and
+  // after a long wait (the open lane never gave a gap) it carries on slowly rather than hold the road for ever
+  let stop = Infinity;
+  if (d < MERGE_LAST && waited < STOP_PATIENCE) stop = Math.max(0.1, d > -1 ? d - 1 : z.a + LANE_TAPER - 1.5 - f);
+  return { merge: mergeStep(z, lane), bSafe, minGap, stop };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Buses: a route's chain of links, round the roads the works close
+// ---------------------------------------------------------------------------------------------------------------------
+const DETOUR_MAX = 400; // m of detour beyond three times the closed stretch
+function detourPath(from, to, limit) {
+  const dist = new Map([[from, 0]]), prev = new Map(), open = [[0, from]];
+  while (open.length) {
+    let bi = 0;
+    for (let i = 1; i < open.length; i++) if (open[i][0] < open[bi][0]) bi = i;
+    const [d, e] = open.splice(bi, 1)[0];
+    if (d > dist.get(e)) continue;
+    if (e === to) {
+      const path = [];
+      for (let x = to; x !== from; x = prev.get(x)) path.push(x);
+      return path.reverse();
+    }
+    for (const m of e.moves || []) {
+      const f = m.to;
+      if (f.worksClosed || f.tram) continue;
+      const nd = d + (f === to ? 0 : f.len);
+      if (nd < limit && nd < (dist.get(f) ?? Infinity)) { dist.set(f, nd); prev.set(f, e); open.push([nd, f]); }
+    }
+  }
+  return null;
+}
+/**
+ * A bus route's links with the closed ones (`worksClosed`) taken round: each closed stretch is replaced by the shortest way over
+ * open links from the link before it to the link after it, when that is no longer than three times the stretch plus DETOUR_MAX m
+ * (and never along a streetcar link). No way: a stretch at an end of the route is left out (`cut`); one in the middle stays
+ * (`left`: the scheduled bus passes it as a position, and a bus on the road leaves its route there, traffic.js routeMove).
+ * Returns { links, detoured, left, cut }; `links` is the argument itself when nothing on it is closed.
+ */
+function detourRoute(base) {
+  const out = [];
+  let i = 0, detoured = 0, left = 0, cut = 0, any = false;
+  while (i < base.length) {
+    if (!base[i].worksClosed) { out.push(base[i++]); continue; }
+    any = true;
+    let j = i;
+    while (j < base.length && base[j].worksClosed) j++;
+    const before = out[out.length - 1], after = base[j];
+    const run = base.slice(i, j).reduce((t, e) => t + e.len, 0);
+    const path = before && after ? detourPath(before, after, Math.min(3 * run + DETOUR_MAX, run + 1200)) : null;
+    if (path) { for (const e of path.slice(0, -1)) out.push(e); detoured++; }
+    else if (!before || !after) cut++;
+    else { for (const e of base.slice(i, j)) out.push(e); left++; }
+    i = j;
+  }
+  return { links: any && out.length ? out : base, detoured, left, cut };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // The traffic: the roads a full closure shuts to cars (traffic.js edges: a closed edge is busOnly, as High Park's park roads
 // are; js/high-park-features.js closeHighParkRoads)
 // ---------------------------------------------------------------------------------------------------------------------
 /** Closes the traffic edges lying along the closed stretches: `lines` [{ pts: [{x, z}], half: m }]. An edge whose points at
  *  a quarter, a half and three quarters of its length all lie within `half` m of a line is closed, then the open edges near
  *  them that no longer reach (or are reached from) the rest of the network are too. Returns { closed, stubs } */
-function closeEdges(network, lines, { reach = 160 } = {}) {
+function closeEdges(network, lines, { reach = 160, rows = [] } = {}) {
   const edges = (network && network.edges) || [];
   const segDist = (x, z, ax, az, bx, bz) => {
     const ex = bx - ax, ez = bz - az, L2 = ex * ex + ez * ez || 1e-9;
     const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / L2));
     return Math.hypot(ax + ex * t - x, az + ez * t - z);
   };
-  const near = (x, z) => lines.some((l) => l.pts.some((p, i) => i > 0 && segDist(x, z, l.pts[i - 1].x, l.pts[i - 1].z, p.x, p.z) < l.half));
+  // (grids: each edge is asked about three points & the rows, and the hour changes ask again: the work is the few segments & rows near)
+  const CELL = 32, key = (a, b) => a * 100003 + b;
+  const segCells = new Map();
+  for (const l of lines) for (let i = 1; i < l.pts.length; i++) {
+    const a = l.pts[i - 1], b = l.pts[i], seg = { ax: a.x, az: a.z, bx: b.x, bz: b.z, half: l.half };
+    for (let ix = Math.floor((Math.min(a.x, b.x) - l.half) / CELL); ix <= Math.floor((Math.max(a.x, b.x) + l.half) / CELL); ix++)
+      for (let iz = Math.floor((Math.min(a.z, b.z) - l.half) / CELL); iz <= Math.floor((Math.max(a.z, b.z) + l.half) / CELL); iz++)
+        (segCells.get(key(ix, iz)) || segCells.set(key(ix, iz), []).get(key(ix, iz))).push(seg);
+  }
+  const near = (x, z) => (segCells.get(key(Math.floor(x / CELL), Math.floor(z / CELL))) || []).some((g) => segDist(x, z, g.ax, g.az, g.bx, g.bz) < g.half);
+  // a row of barricades across an edge ends the road there too: nobody drives up to it and waits for ever
+  const rowCells = new Map();
+  for (const r of rows) { const k = key(Math.floor(r.x / CELL), Math.floor(r.z / CELL)); (rowCells.get(k) || rowCells.set(k, []).get(k)).push(r); }
+  const rowOn = (e) => {
+    const lo = (e.lanes ? e.lanes[0] : -3) - 4, hi = (e.lanes ? e.lanes[e.lanes.length - 1] : 3) + 4;
+    const seen = new Set();
+    for (let t = 0; t <= e.len + 16; t += 16) {
+      const x = e.sx + e.dx * Math.min(t, e.len), z = e.sz + e.dz * Math.min(t, e.len);
+      for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const r of rowCells.get(key(Math.floor(x / CELL) + a, Math.floor(z / CELL) + c)) || []) {
+        if (seen.has(r)) continue;
+        seen.add(r);
+        const px = r.x - e.sx, pz = r.z - e.sz, s = px * e.dx + pz * e.dz, o = px * e.rx + pz * e.rz;
+        if (s > -1 && s < e.len + 1 && o > lo && o < hi) return true;
+      }
+    }
+    return false;
+  };
   let closed = 0;
-  const shut = [];
+  const shut = [], list = [];
+  const shutEdge = (e) => { e.busOnly = true; e.roadClosed = true; e.worksClosed = true; list.push(e); };
   for (const e of edges) {
     if (e.busOnly) continue;
-    if ([0.25, 0.5, 0.75].every((t) => near(e.sx + e.dx * e.len * t, e.sz + e.dz * e.len * t))) { e.busOnly = true; e.roadClosed = true; closed++; shut.push(e); }
+    if ([0.25, 0.5, 0.75].every((t) => near(e.sx + e.dx * e.len * t, e.sz + e.dz * e.len * t)) || (rows.length && rowOn(e))) { shutEdge(e); closed++; shut.push(e); }
   }
   if (!closed) return { closed: 0, stubs: 0 };
   // the region round the closures: open edges inside it that cannot reach the open edges outside it, nor be reached from them
-  const inRegion = (e) => shut.some((s) => Math.hypot(e.sx - s.sx, e.sz - s.sz) < reach);
+  const shutCells = new Map();
+  for (const s of shut) { const k = key(Math.floor(s.sx / reach), Math.floor(s.sz / reach)); (shutCells.get(k) || shutCells.set(k, []).get(k)).push(s); }
+  const inRegion = (e) => {
+    const ix = Math.floor(e.sx / reach), iz = Math.floor(e.sz / reach);
+    for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const s of shutCells.get(key(ix + a, iz + c)) || []) if (Math.hypot(e.sx - s.sx, e.sz - s.sz) < reach) return true;
+    return false;
+  };
   const open = edges.filter((e) => !e.busOnly);
   const spread = (forward) => {
     const seen = new Set(open.filter((e) => !inRegion(e)));
@@ -342,9 +582,14 @@ function closeEdges(network, lines, { reach = 160 } = {}) {
   };
   const from = spread(true), to = spread(false);
   let stubs = 0;
-  for (const e of open) if (inRegion(e) && !(from.has(e) && to.has(e))) { e.busOnly = true; e.roadClosed = true; stubs++; }
-  return { closed, stubs };
+  for (const e of open) if (inRegion(e) && !(from.has(e) && to.has(e))) { shutEdge(e); stubs++; }
+  return { closed, stubs, edges: list };
+}
+/** Opens again the edges closeEdges closed (`list` is its `edges`) */
+function openEdges(list) {
+  for (const e of list || []) { e.busOnly = false; e.roadClosed = false; e.worksClosed = false; }
 }
 
-Object.assign(window.CITY, { roadworksSites, roadworks: { KINDS, nameKey, dayRange, activeOn, sceneDay, torontoDayOf, closeEdges, along, polyLength, BARREL_STEP, TAPER_LEN } });
+Object.assign(window.CITY, { roadworksSites, roadworks: { KINDS, nameKey, dayRange, activeOn, sceneDay, torontoDayOf, closeEdges, openEdges, detourRoute, along, polyLength, BARREL_STEP, TAPER_LEN,
+  hourWindow, activeAtHour, laneZoneTable, closedZoneAhead, mergeStep, zoneSpeedCap, laneDecision, LANE_TAPER, MERGE_LEAD, MERGE_LAST, ZONE_SPEED, CRAWL_SPEED, STOP_PATIENCE, CLIP, HUG } });
 })();

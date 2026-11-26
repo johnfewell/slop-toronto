@@ -1,0 +1,26 @@
+[
+ {
+  "name": "rwt-0-checks",
+  "mode": "person",
+  "wait": 1500,
+  "js": "(async () => { await new Promise((r) => { const s = document.createElement('script'); s.src = './tools/roadworks-traffic-checks.js?' + Date.now(); s.onload = r; document.head.appendChild(s); }); await window.__roadworksChecks(); })()"
+ },
+ {
+  "name": "rwt-1-bloor-st-w",
+  "mode": "person",
+  "wait": 25000,
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP,T=a.trafficSystem;const names=['Bloor St W'];const all=[];for(const e of T.network.edges)for(const z of e.laneZones||[])all.push({e,z,name:(C.roadworksLive.records[z.rec]||{}).r,len:z.b-z.a});const pick=names.map(n=>all.filter(x=>x.name===n&&x.len>=30&&(false?x.z.open.length>0:true)).sort((p,q)=>q.e.vph-p.e.vph)[0]).find(Boolean)||all.filter(x=>x.len>=40&&(false?x.z.open.length>0:true)).sort((p,q)=>q.e.vph-p.e.vph)[0];const {e,z}=pick;const s=Math.min(e.len-2,z.b+20),o=e.lanes[e.lanes.length-1]+4.5;const x=e.sx+e.dx*s+e.rx*o,zz=e.sz+e.dz*s+e.rz*o;a.teleportTo(x,zz,Math.atan2(-e.dx,-e.dz));a.selectCamera('pov',true);console.log('[ride-check] traffic at lane closure '+JSON.stringify({road:pick.name,edge:e.id,lanes:e.lanes.length,closed:z.closed.map(Number).join(''),open:z.open.length,a:Math.round(z.a),b:Math.round(z.b),vph:Math.round(e.vph),rec:(C.roadworksLive.records[z.rec]||{}).n}));})()"
+ },
+ {
+  "name": "rwt-2-merge-lane-closure",
+  "mode": "person",
+  "wait": 25000,
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP,T=a.trafficSystem;const names=['Don Mills Rd', 'Lake Shore Blvd E', 'Harbour St', 'Eglinton Ave E'];const all=[];for(const e of T.network.edges)for(const z of e.laneZones||[])all.push({e,z,name:(C.roadworksLive.records[z.rec]||{}).r,len:z.b-z.a});const pick=names.map(n=>all.filter(x=>x.name===n&&x.len>=30&&(true?x.z.open.length>0:true)).sort((p,q)=>q.e.vph-p.e.vph)[0]).find(Boolean)||all.filter(x=>x.len>=40&&(true?x.z.open.length>0:true)).sort((p,q)=>q.e.vph-p.e.vph)[0];const {e,z}=pick;const s=Math.min(e.len-2,z.b+20),o=e.lanes[e.lanes.length-1]+4.5;const x=e.sx+e.dx*s+e.rx*o,zz=e.sz+e.dz*s+e.rz*o;a.teleportTo(x,zz,Math.atan2(-e.dx,-e.dz));a.selectCamera('pov',true);console.log('[ride-check] traffic at lane closure '+JSON.stringify({road:pick.name,edge:e.id,lanes:e.lanes.length,closed:z.closed.map(Number).join(''),open:z.open.length,a:Math.round(z.a),b:Math.round(z.b),vph:Math.round(e.vph),rec:(C.roadworksLive.records[z.rec]||{}).n}));})()"
+ },
+ {
+  "name": "rwt-3-queen-st-w",
+  "mode": "person",
+  "wait": 25000,
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP,T=a.trafficSystem;const names=['Queen St W', 'Dundas St W', 'King St W', 'College St', 'Yonge St'];const all=[];for(const e of T.network.edges)for(const z of e.laneZones||[])all.push({e,z,name:(C.roadworksLive.records[z.rec]||{}).r,len:z.b-z.a});const pick=names.map(n=>all.filter(x=>x.name===n&&x.len>=30&&(false?x.z.open.length>0:true)).sort((p,q)=>q.e.vph-p.e.vph)[0]).find(Boolean)||all.filter(x=>x.len>=40&&(false?x.z.open.length>0:true)).sort((p,q)=>q.e.vph-p.e.vph)[0];const {e,z}=pick;const s=Math.min(e.len-2,z.b+20),o=e.lanes[e.lanes.length-1]+4.5;const x=e.sx+e.dx*s+e.rx*o,zz=e.sz+e.dz*s+e.rz*o;a.teleportTo(x,zz,Math.atan2(-e.dx,-e.dz));a.selectCamera('pov',true);console.log('[ride-check] traffic at lane closure '+JSON.stringify({road:pick.name,edge:e.id,lanes:e.lanes.length,closed:z.closed.map(Number).join(''),open:z.open.length,a:Math.round(z.a),b:Math.round(z.b),vph:Math.round(e.vph),rec:(C.roadworksLive.records[z.rec]||{}).n}));})()"
+ }
+]

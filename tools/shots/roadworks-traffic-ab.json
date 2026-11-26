@@ -1,0 +1,18 @@
+[
+ {
+  "name": "ab-1-lane-closure-king",
+  "mode": "person",
+  "js": "(() => {const L=window.CITY.roadworksLive,a=window.__CITY_APP;const ok=(p)=>p.placed&&L.records[p.rec].t==='C';const n=(p)=>L.sites.filter(s=>s.rec===p.rec&&s.kind==='barrel').length;const pref=['Bloor St W','Queen St W','Dundas St W','Bay St','Yonge St','University Ave','College St'];let pl=null;for(const r of pref){pl=L.plans.filter(p=>ok(p)&&L.records[p.rec].r===r&&n(p)>=5).sort((x,y)=>n(y)-n(x))[0];if(pl)break;}pl=pl||L.plans.filter(p=>ok(p)&&n(p)>=5)[0];const b=L.sites.filter(s=>s.rec===pl.rec&&s.kind==='barrel');const s0=b[0],s1=b[b.length-1];const dx=s1.x-s0.x,dz=s1.z-s0.z,l=Math.hypot(dx,dz)||1;const x=s0.x-dx/l*11,z=s0.z-dz/l*11;a.teleportTo(x,z,Math.atan2(dx,dz));a.selectCamera('pov',true);console.log('[ride-check] lane closure '+JSON.stringify(L.records[pl.rec]).slice(0,300));})()",
+  "wait": 8000,
+  "metricsMs": 20000,
+  "metricsWarmupMs": 4000
+ },
+ {
+  "name": "ab-4-lane-closure-queen",
+  "mode": "person",
+  "js": "(() => {const L=window.CITY.roadworksLive,a=window.__CITY_APP;const ok=(p)=>p.placed&&L.records[p.rec].t==='C';const n=(p)=>L.sites.filter(s=>s.rec===p.rec&&s.kind==='barrel').length;const pref=['Queen St W','Dundas St W','King St W','Queen St E','Richmond St W','Adelaide St W'];let pl=null;for(const r of pref){pl=L.plans.filter(p=>ok(p)&&L.records[p.rec].r===r&&n(p)>=5).sort((x,y)=>n(y)-n(x))[0];if(pl)break;}pl=pl||L.plans.filter(p=>ok(p)&&n(p)>=5)[0];const b=L.sites.filter(s=>s.rec===pl.rec&&s.kind==='barrel');const s0=b[0],s1=b[b.length-1];const dx=s1.x-s0.x,dz=s1.z-s0.z,l=Math.hypot(dx,dz)||1;const x=s0.x-dx/l*11,z=s0.z-dz/l*11;a.teleportTo(x,z,Math.atan2(dx,dz));a.selectCamera('pov',true);console.log('[ride-check] lane closure '+JSON.stringify(L.records[pl.rec]).slice(0,300));})()",
+  "wait": 8000,
+  "metricsMs": 20000,
+  "metricsWarmupMs": 4000
+ }
+]

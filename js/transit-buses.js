@@ -249,11 +249,41 @@ function createTransitBuses(traffic) {
         i0 = best.ei;
         stops.push(best);
       }
-      routes.push({ pat, links, cum, len, stops, sign: pat.sign, signRow: 0, buses: [], clock: 0, headway: Infinity });
+      routes.push({ pat, links, cum, len, stops, sign: pat.sign, signRow: 0, buses: [], clock: 0, headway: Infinity, base: { links, stops, cum, len } });
     }
   }
   const signs = TRANSIT.busSigns('busSign');
   for (const r of routes) r.signRow = signs ? signs.rowOf(r.sign) : 0;
+
+  // Road works (roadworks.js, jf-dqj): where a road the City's works close lies on a route, the route goes round it: the
+  // shortest way back to the route's next link over open roads, if that is no more than three times the closed stretch and 400
+  // m more. No way round (or the closure at the route's very start or end): the stretch at the ends is left out of the route;
+  // one in the middle stays on it, as a position along the route (the scheduled bus passes it), and a bus on the road that
+  // reaches it leaves its route there and roams on (traffic.js routeMove) until it is recycled. Re-done whenever the closed
+  // roads change (the hours of the records), from the route as it was matched
+  const detours = { routes: 0, detoured: 0, left: 0, cut: 0 };
+  function reroute() {
+    detours.routes = detours.detoured = detours.left = detours.cut = 0;
+    for (const r of routes) {
+      const { links: base, stops: baseStops } = r.base;
+      const way = window.CITY.roadworks.detourRoute(base);
+      detours.detoured += way.detoured; detours.left += way.left; detours.cut += way.cut;
+      const out = way.links;
+      if (out.length === r.links.length && out.every((e, k) => e === r.links[k])) continue;
+      const cum = [0];
+      for (let k = 0; k < out.length; k++) cum.push(cum[k] + out[k].len + 10);
+      const at = new Map(out.map((e, k) => [e, k]));
+      const stops = [];
+      for (const st of baseStops) { const k = at.get(base[st.ei]); if (k !== undefined) stops.push({ ...st, ei: k }); }
+      for (const b of r.buses) if (b.real && b.real.route && b.real.route.edges === r.links) b.real.route.off = 'lost'; // (on the old chain: roams on)
+      r.links = out; r.cum = cum; r.len = cum[out.length]; r.stops = stops;
+      for (const b of r.buses) b.d = Math.min(b.d, r.len);
+      detours.routes++;
+    }
+    if (detours.detoured || detours.left || detours.cut) console.info(`[transit] road works: ${detours.detoured} closed stretches of bus routes taken round, ${detours.left} left on the route (no way round), ${detours.cut} cut at a route's end`);
+  }
+  if (window.CITY.roadworks && window.CITY.roadworks.detourRoute) reroute();
+  if (window.CITY.roadworks && window.CITY.roadworks.detourRoute && window.CITY.roadworksListeners) window.CITY.roadworksListeners.push(reroute);
 
   // The scheduled buses: positions along the routes, a bus each when near
   const thin = Math.max(1, 12 / Math.max(1, (window.CITY.QUALITY.buses || 12))) ** 0.5; // (the phone tiers: a little thinner)
@@ -461,7 +491,7 @@ function createTransitBuses(traffic) {
   const nb = routes.reduce((t, r) => t + r.buses.length, 0);
   if (cut.length) console.info(`[transit] bus routes cut where the city's roads don't go on as the TTC's do: ${cut.join(', ')}`);
   console.info(`[transit] ${routes.length} bus routes on the roads (${[...new Set(routes.map((r) => r.pat.route))].join(', ')}), ${nb} buses scheduled at ${TRANSIT.hour}:00, ${routes.reduce((t, r) => t + r.stops.length, 0)} stops; matched in ${Math.round(performance.now() - t0)} ms${failed.length ? `; not matched: ${failed.join(', ')}` : ''}`);
-  return { routes, update, simulate, liveBuses };
+  return { routes, update, simulate, liveBuses, reroute, detours };
 }
 
 Object.assign(window.CITY, { createTransitBuses });

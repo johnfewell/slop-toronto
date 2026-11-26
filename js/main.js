@@ -884,6 +884,7 @@ async function initApp() {
     if (rideSession.held) return;
     const hour = liveSky.active ? LIVE.torontoClock(liveNow()).hour : window.CITY.SUN_HOURS[timeId];
     if (trafficSystem.setHour && hour !== undefined) trafficSystem.setHour(hour); // (the City's volumes at that hour)
+    if (roadworks && roadworks.setHour && hour !== undefined) roadworks.setHour(hour); // (the road works at work at that hour)
     liveSky.hour = liveSky.active ? hour : null;
     // the TTC's headways for that hour (transit.js; live: the preset nearest the light)
     if (window.CITY.TRANSIT) window.CITY.TRANSIT.setTime(lightingSystem.activePresetId);
@@ -1009,7 +1010,7 @@ async function initApp() {
     const before = lightingSystem.activePresetId;
     applyVisualTime('live');
     const hour = LIVE.torontoClock(liveNow()).hour;
-    if (trafficSystem.setHour && (liveSky.hour === null || Math.abs(hour - liveSky.hour) >= 0.25)) { trafficSystem.setHour(hour); liveSky.hour = hour; }
+    if (trafficSystem.setHour && (liveSky.hour === null || Math.abs(hour - liveSky.hour) >= 0.25)) { trafficSystem.setHour(hour); if (roadworks && roadworks.setHour) roadworks.setHour(hour); liveSky.hour = hour; }
     if (window.CITY.TRANSIT && lightingSystem.activePresetId !== before) window.CITY.TRANSIT.setTime(lightingSystem.activePresetId);
   }
   function refreshReading() {

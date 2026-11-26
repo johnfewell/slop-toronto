@@ -48,7 +48,7 @@ const CATEGORY_LABEL = {
   hotel: 'Hotel', bank: 'Bank', food: 'Restaurant & café', worship: 'Place of worship', fuel: 'Filling station',
   health: 'Hospital & health', education: 'School & university', market: 'Market & mall', shop: 'Shop',
   government: 'Government', office: 'Office', leisure: 'Leisure & sights', transport: 'Transport', place: 'Place', washroom:'Washroom',water:'Drinking water',rink:'Outdoor ice rink',tennis:'Tennis courts',
-  art: 'Public art', heritage: 'Heritage property'
+  art: 'Public art', heritage: 'Heritage property', roadwork: 'Road works'
 };
 // what people type when they want a kind of place
 const CATEGORY_WORDS = {
@@ -68,7 +68,8 @@ const CATEGORY_WORDS = {
   washroom:['washroom','washrooms','toilet','toilets','restroom','restrooms'],
   water:['water','fountain','fountains','bottle','refill'],rink:['rink','rinks','skating','skate'],tennis:['tennis'],
   art: ['art', 'artwork', 'artworks', 'sculpture', 'sculptures', 'statue', 'statues', 'monument', 'monuments', 'memorial', 'mural', 'murals'],
-  heritage: ['heritage', 'designated', 'historic']
+  heritage: ['heritage', 'designated', 'historic'],
+  roadwork: ['roadwork', 'roadworks', 'closure', 'closures', 'construction', 'detour']
 };
 
 let INDEX = null;
@@ -103,6 +104,8 @@ function buildIndex() {
   // same artwork gives way to the City's record
   const D = window.CITY.Discovery;
   for (const item of D ? D.discoveryPlaces() : []) add(item);
+  // the City's road works & closures in effect on the scene's day (roadworks.js; none when the feed was down or ?roadworks=0)
+  for (const item of window.CITY.roadworksPlaces ? window.CITY.roadworksPlaces() : []) add(item);
   const merged = D ? D.mergedPoiRows() : new Set();
   (GEO.pois || []).forEach(([x, z, name, cat], row) => {
     if (!merged.has(row)) add({ kind: 'place', cat, name, x, z, sub: `${CATEGORY_LABEL[cat] || 'Place'} · ${districtAt(x, z)}` });
