@@ -1,0 +1,32 @@
+[
+ {
+  "name": "b0-base",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-1858.6, 139.9, 0); a.cameraSystem.cinema = () => ({ pos: [-1858.6, 18, 165.9], look: [-1858.6, 2, 139.9], fov: 55 }); })()"
+ },
+ {
+  "name": "b1-noreceive",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(() => { const T = window.CITY.TSL; const a = window.__CITY_APP; const ms = []; a.scene.traverse((m) => { if (m.isMesh && /^HippedRoofs/.test(m.name)) ms.push(m); }); const mat = ms[0].material; mat.colorNode = T.vec3(0.3, 0.3, 0.3); for (const m of ms) m.receiveShadow = false; mat.needsUpdate = true; return ms.length; })()"
+ },
+ {
+  "name": "b2-noreceive-noao",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(() => { const T = window.CITY.TSL; const a = window.__CITY_APP; const ms = []; a.scene.traverse((m) => { if (m.isMesh && /^HippedRoofs/.test(m.name)) ms.push(m); }); const mat = ms[0].material; mat.colorNode = T.vec3(0.3, 0.3, 0.3); for (const m of ms) m.receiveShadow = false; mat.aoNode = T.float(1); mat.needsUpdate = true; return ms.length; })()"
+ },
+ {
+  "name": "b3-emissive",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(() => { const T = window.CITY.TSL; const a = window.__CITY_APP; const ms = []; a.scene.traverse((m) => { if (m.isMesh && /^HippedRoofs/.test(m.name)) ms.push(m); }); const mat = ms[0].material; mat.colorNode = T.vec3(0.3, 0.3, 0.3); mat.emissiveNode = T.vec3(0.2, 0.0, 0.0); mat.needsUpdate = true; return ms.length; })()"
+ },
+ {
+  "name": "b4-normalup",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(() => { const T = window.CITY.TSL; const a = window.__CITY_APP; const ms = []; a.scene.traverse((m) => { if (m.isMesh && /^HippedRoofs/.test(m.name)) ms.push(m); }); const mat = ms[0].material; mat.colorNode = T.vec3(0.3, 0.3, 0.3); mat.emissiveNode = null; mat.normalNode = T.vec3(0, 1, 0); mat.needsUpdate = true; return ms.length; })()"
+ }
+]

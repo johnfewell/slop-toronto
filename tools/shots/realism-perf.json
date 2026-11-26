@@ -1,0 +1,30 @@
+[
+ {
+  "name": "perf-sign-from-pool",
+  "mode": "person",
+  "wait": 5000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-9, -821.7, 0); a.cameraSystem.cinema = () => ({ pos: [-9, 4.2, -788], look: [-9, 1.9, -821.7], fov: 62 }); })()",
+  "metricsMs": 8000
+ },
+ {
+  "name": "perf-pool-overview",
+  "mode": "person",
+  "wait": 5000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(6, -806, 0); a.cameraSystem.cinema = () => ({ pos: [8, 48, -748], look: [6, 0, -806], fov: 60 }); })()",
+  "metricsMs": 8000
+ },
+ {
+  "name": "perf-roof-b1",
+  "mode": "person",
+  "wait": 5000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-1858.6, 139.9, 0); window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-1858.6, 18, 165.9], look: [-1858.6, 2, 139.9], fov: 55 }); })()",
+  "metricsMs": 8000
+ },
+ {
+  "name": "perf-queen-aerial",
+  "mode": "person",
+  "wait": 5000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-3373.3, -777.0, 0); a.cameraSystem.cinema = () => ({ pos: [-3373.3, 70, -717.0], look: [-3373.3, 0, -777.0], fov: 60 }); })()",
+  "metricsMs": 8000
+ }
+]

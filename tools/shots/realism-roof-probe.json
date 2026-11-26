@@ -1,0 +1,9 @@
+[
+ {
+  "name": "roof-probe3",
+  "mode": "person",
+  "wait": 9000,
+  "record": true,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-1858.6, 139.9, 0); a.cameraSystem.cinema = () => ({ pos: [-1858.6, 18, 165.9], look: [-1858.6, 2, 139.9], fov: 55 }); const hits = []; a.scene.traverse((m) => { if (!m.isMesh || !m.geometry || !m.geometry.attributes.position) return; const g = m.geometry, p = g.attributes.position; if (!p.array) { return; } const M = m.matrixWorld.elements; const found = []; for (let i = 0; i < p.count && found.length < 8; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = M[0] * x + M[4] * y + M[8] * z + M[12], wy = M[1] * x + M[5] * y + M[9] * z + M[13], wz = M[2] * x + M[6] * y + M[10] * z + M[14]; if (Math.abs(wx + 1858.6) < 9 && Math.abs(wz - 139.9) < 9 && wy > 3.5 && wy < 9) { const rec = { i, w: [wx, wy, wz].map((v) => +v.toFixed(2)) }; for (const [k, at] of Object.entries(g.attributes)) { if (k === 'position' || !at.array) continue; rec[k] = Array.from({ length: at.itemSize }, (_, c) => +at.getComponent(i, c).toFixed(3)); } found.push(rec); } } if (found.length) hits.push({ name: m.name, mat: m.material && (m.material.name || m.material.type), count: p.count, found }); }); return { n: hits.length, hits }; })()"
+ }
+]

@@ -22,7 +22,11 @@ Cross-checks:
 
 ### Over the rink and pool polygon
 
-The City's rink polygon for the square (asset `43599`) is 54.6 m (x) by 30 m (z), centred on z −803.9, the same as the arches' span. The three arches stand inside its length (x −19 to 36) and cross its width, with their feet 4 to 5 m beyond its long edges, on the paving (the City's polygon is smaller than the pool the orthophoto shows, about 76 × 41 m, so the arches' feet sit at the pool's real edge). The rink boards run along the polygon's edge; the soffit is 4.8 m above it, so nothing touches them. There is no TORONTO sign model in the scene to clash with.
+The City's rink polygon for the square (asset `43599`) is 54.6 m (x) by 30 m (z), centred on z −803.9, the same as the arches' span. The three arches stand inside its length (x −19 to 36) and cross its width, with their feet 4 to 5 m beyond its long edges, on the paving. The rink boards run along the polygon's edge; the soffit is 4.8 m above it, so nothing touches them.
+
+**The polygon is the right size (jf-gdw, 2026-11-26).** An earlier note here said the pool in the orthophoto is about 76 × 41 m. That figure is the pool measured in Web Mercator metres: the City's export (`imageSR=3857`) is stretched by 1/cos(43.65°) = 1.38 at this latitude, and 54.8 × 1.38 = 75.8 and 30.3 × 1.38 = 41.9. Projected into the world frame (ground metres) the four pool corners read from the 2025 orthophoto are x −19.3 to 35.5 and z −818.8 to −788.4, which is the City polygon to within 0.4 m (x −19.2 to 35.7, z −819.0 to −789.0). Nothing about the pool, ice or boards changed. `tests/toronto-sign.test.mjs` pins the size. The 38.56 m span of the arches' feet is the pool's 30.3 m short side plus about 4 m of coping each end, as the orthophoto shows.
+
+The TORONTO sign stands on the pool's north coping beside the arches' west end ([toronto-sign.md](toronto-sign.md)).
 
 ## What is drawn
 

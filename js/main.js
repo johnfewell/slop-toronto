@@ -278,6 +278,9 @@ async function initApp() {
   // Nathan Phillips Square's three Freedom Arches over the reflecting pool, all year (freedom-arches.js)
   const freedomArches = window.CITY.buildFreedomArches?.(scene);
   if (freedomArches) pushAll(allColliders, freedomArches.colliders);
+  // The lit TORONTO sign on the pool's north coping, all year (toronto-sign.js)
+  const torontoSign = window.CITY.buildTorontoSign?.(scene);
+  if (torontoSign) pushAll(allColliders, torontoSign.colliders);
   // Toronto's holiday installations on their real dates (holiday.js): the City Hall tree & Cavalcade arches, the Distillery's Winter Village
   const holiday = window.CITY.buildHoliday?.(scene, allColliders);
   if (holiday) pushAll(allColliders, holiday.colliders);

@@ -1,0 +1,8 @@
+[
+ {
+  "name": "b1",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-1858.6, 139.9, 0); window.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-1858.6, 18, 165.9], look: [-1858.6, 2, 139.9], fov: 55 }); })()"
+ }
+]

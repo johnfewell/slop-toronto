@@ -1,0 +1,50 @@
+[
+ {
+  "name": "egl-street-east",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-1958.7, -6957.1, 0); a.cameraSystem.cinema = () => ({ pos: [-1998.7, 2.4, -6957.1], look: [-1958.7, 4, -6957.1], fov: 70 }); })()"
+ },
+ {
+  "name": "egl-street-south",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-1998.7, -6917.1, 0); a.cameraSystem.cinema = () => ({ pos: [-1998.7, 2.4, -6957.1], look: [-1998.7, 4, -6917.1], fov: 70 }); })()"
+ },
+ {
+  "name": "egl-aerial",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-1998.7, -6957.1, 0); a.cameraSystem.cinema = () => ({ pos: [-1998.7, 70, -6897.1], look: [-1998.7, 0, -6957.1], fov: 60 }); })()"
+ },
+ {
+  "name": "egl-sky",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-1968.7, -6927.1, 0); a.cameraSystem.cinema = () => ({ pos: [-1998.7, 2.0, -6957.1], look: [-1968.7, 40, -6927.1], fov: 70 }); })()"
+ },
+ {
+  "name": "queen-street-east",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-3333.3, -777.0, 0); a.cameraSystem.cinema = () => ({ pos: [-3373.3, 2.4, -777.0], look: [-3333.3, 4, -777.0], fov: 70 }); })()"
+ },
+ {
+  "name": "queen-street-south",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-3373.3, -737.0, 0); a.cameraSystem.cinema = () => ({ pos: [-3373.3, 2.4, -777.0], look: [-3373.3, 4, -737.0], fov: 70 }); })()"
+ },
+ {
+  "name": "queen-aerial",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-3373.3, -777.0, 0); a.cameraSystem.cinema = () => ({ pos: [-3373.3, 70, -717.0], look: [-3373.3, 0, -777.0], fov: 60 }); })()"
+ },
+ {
+  "name": "queen-sky",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-3343.3, -747.0, 0); a.cameraSystem.cinema = () => ({ pos: [-3373.3, 2.0, -777.0], look: [-3343.3, 40, -747.0], fov: 70 }); })()"
+ }
+]

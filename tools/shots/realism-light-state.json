@@ -1,0 +1,9 @@
+[
+ {
+  "name": "light-state",
+  "mode": "person",
+  "wait": 6000,
+  "record": true,
+  "js": "(() => { const a = window.__CITY_APP, s = a.scene, r = a.renderer; const lights = []; s.traverse((o) => { if (o.isLight) lights.push({ type: o.type, name: o.name, intensity: +o.intensity.toFixed(3), color: o.color && o.color.getHexString(), shadow: !!o.castShadow, pos: o.position && o.position.toArray().map((v) => +v.toFixed(1)) }); }); const SO = window.CITY.SkyOcclusion; const L = a.lightingSystem || a.lighting || null; return { map: location.search, preset: L && (L.activePresetId || L.presetId), hemi: L && L.hemiLight && { i: +L.hemiLight.intensity.toFixed(3), sky: L.hemiLight.color.getHexString(), gnd: L.hemiLight.groundColor.getHexString() }, sun: L && L.sunLight && { i: +L.sunLight.intensity.toFixed(3), pos: L.sunLight.position.toArray().map((v) => +v.toFixed(0)) }, exposure: r.toneMappingExposure, tone: r.toneMapping, fog: s.fog ? { type: s.fog.type, near: s.fog.near, far: s.fog.far, density: s.fog.density, color: s.fog.color && s.fog.color.getHexString() } : null, env: !!s.environment, envI: s.environmentIntensity, bgI: s.backgroundIntensity, lights, skyOcc: SO && SO.state ? Object.fromEntries(Object.entries(SO.state).filter(([, v]) => typeof v !== 'object')) : null, bounds: window.CITY.CITY_BOUNDS && Object.fromEntries(Object.entries(window.CITY.CITY_BOUNDS).filter(([, v]) => typeof v === 'number')) }; })()"
+ }
+]

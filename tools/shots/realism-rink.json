@@ -1,0 +1,26 @@
+[
+ {
+  "name": "rink1-sign-from-pool",
+  "mode": "person",
+  "wait": 6000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-9, -821.7, 0); a.cameraSystem.cinema = () => ({ pos: [-9, 4.2, -788], look: [-9, 1.9, -821.7], fov: 62 }); })()"
+ },
+ {
+  "name": "rink2-overview-arches",
+  "mode": "person",
+  "wait": 1500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(6, -806, 0); a.cameraSystem.cinema = () => ({ pos: [8, 48, -748], look: [6, 0, -806], fov: 60 }); })()"
+ },
+ {
+  "name": "rink3-sign-from-plaza",
+  "mode": "person",
+  "wait": 1500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-9, -821.7, 0); a.cameraSystem.cinema = () => ({ pos: [-9, 3.2, -840], look: [-9, 1.7, -821.7], fov: 62 }); })()"
+ },
+ {
+  "name": "rink4-arches-and-sign",
+  "mode": "person",
+  "wait": 1500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(0, -812, 0); a.cameraSystem.cinema = () => ({ pos: [-46, 9, -786], look: [0, 3.5, -812], fov: 62 }); })()"
+ }
+]

@@ -741,7 +741,10 @@ function pushMonitorRoof(A, cx, cz, ang, u0, u1, v0, v1, y, pitch, eave, rgb, gl
 // ends and the gable-less eaves less)
 function createRoofMaterial(ribbed) {
   const { snowOver } = window.CITY;
-  const mat = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: ribbed ? 0.5 : 0.62, metalness: ribbed ? 0.45 : 0.15 });
+  // (no `vertexColors`: three multiplies a node material's colour by the vertex colour when it is set, and colorNode below
+  // already reads that attribute, so every roof was squared: a charcoal 0x2c2d30 (0.025 linear) came out at 0.0006, pure
+  // black in the low November sun, jf-dr1)
+  const mat = new THREE.MeshStandardNodeMaterial({ roughness: ribbed ? 0.5 : 0.62, metalness: ribbed ? 0.45 : 0.15 });
   mat.colorNode = Fn(() => {
     const c = attribute('color', 'vec3');
     const t = uv();
