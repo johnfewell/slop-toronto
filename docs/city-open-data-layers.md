@@ -2,6 +2,8 @@
 
 Beads: `st-26p.1`, `st-26p.5`, `st-26p.16`. Snapshots fetched 2026-10-28.
 
+Poster columns, publication corrals and the litter receptacle audit, in both frames: [mapped street furniture](mapped-street-furniture.md).
+
 ## Benches
 
 [City street-furniture benches](https://open.toronto.ca/dataset/street-furniture-bench/) supply stable IDs, asset type, frontage, side and Existing status. `tools/data/benches-20261028.json` preserves the complete source and resource/date/licence metadata. Run `node tools/build-open-data.mjs` to regenerate `js/toronto-benches.js`: 315 Existing points inside the detail frame. Temporarily removed assets are excluded. This inventory covers the coordinated street-furniture program, not every park bench.

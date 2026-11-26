@@ -363,7 +363,7 @@ const ORDER = ['curb', 'sidewalk', 'narrow', 'lane', 'streetcar', 'bikeway', 'co
 // infrastructure clearances; 0: not on the curb's side)]. A sidewalk café keeps 0.6 m from the edge of each.
 const FURNITURE = {
   hydrant: [0.25, 1.2], bikeRing: [0.4, 0], shelter: [1.8, 5.0], litterBin: [0.4, 1.0], postBox: [0.35, 1.0],
-  parkSign: [0.5, 0], bench: [0.9, 1.0], parkingMeter: [0.3, 1.0], wayfinding: [0.3, 3.0], infoPillar: [0.75, 3.0],
+  parkSign: [0.5, 0], bench: [0.9, 1.0], parkingMeter: [0.3, 1.0], wayfinding: [0.3, 3.0], infoPillar: [0.75, 3.0], posterColumn: [0.55, 1.0], publicationCorral: [0.8, 1.0],
   tree: [0.6, 0], subwayEntrance: [2.5, 0], bikeShare: [1.0, 1.0]
 };
 

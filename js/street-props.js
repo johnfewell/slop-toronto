@@ -3,7 +3,7 @@
 // John's street props where the City says they stand (GEO.props, tools/geo-props.mjs): his fire hydrant at every
 // City hydrant, his post-and-ring bike stand at every City bike ring, his transit shelter at every City shelter, his
 // three-chamber litter & recycling bin at every City litter receptacle and his Canada Post box at every OpenStreetMap post
-// box. One instanced mesh per model (assets/props/*.glb: his Meshy models, textures cut to 512 px, meshopt), each prop on
+// box, plus the City's poster columns and publication corrals (js/toronto-street-furniture.js). One instanced mesh per model (assets/props/*.glb: his Meshy models, textures cut to 512 px, meshopt), each prop on
 // the sidewalk and turned to face its nearest street; scene-culling.js chunks them and hides them by distance. Each is
 // solid (world-collision.js prop colliders): the hydrant a circle, the rest their model's footprint as a turned box, the
 // Open Data furniture (parking pay stations, benches, TO360 signs & pillars) its own measured footprint.
@@ -24,14 +24,20 @@ const KINDS = [
   ['parkingMeter', 'parking-meter', 'front', 120, true],
   ['bench', 'plaza-bench', 'front', 140, true],
   ['wayfinding', 'wayfinding', 'front', 150, true],
-  ['infoPillar', 'info-pillar', 'front', 150, true]
+  ['infoPillar', 'info-pillar', 'front', 150, true],
+  // the City's poster columns (their four posters are original abstract art) and publication corrals (the boxes face the
+  // walkers, away from the road)
+  ['posterColumn', 'poster-column', 'front', 140, true],
+  ['publicationCorral', 'publication-corral', 'back', 110, true]
 ];
 
 // the round ones (a circle a little inside the model's widest reach: a hydrant's nozzles stick out)
 const ROUND = { hydrant: 0.85 };
 // The Open Data furniture placed by its own layout (parking-meters.js parkingMeterSites, benchSites: already clear of the
 // roadway, buildings and other furniture), with its own collider below; the rest gets its model's footprint
-const LAID_OUT = ['parkingMeter', 'bench', 'wayfinding', 'infoPillar'];
+const LAID_OUT = ['parkingMeter', 'bench', 'wayfinding', 'infoPillar', 'posterColumn', 'publicationCorral'];
+// ...and the ones a layout puts on a sidewalk itself (their site is final: not stepped back, not checked for the roadway)
+const OPEN_DATA_LAYOUT = ['bench', 'wayfinding', 'infoPillar', 'posterColumn', 'publicationCorral'];
 
 // A uniform grid over items' bounds, for the startup placement checks below (st-bz1o.2). `some(x0, x1, z0, z1, test)`
 // runs `test` on every item whose bounds share a cell with the query's, and on the items with no usable bounds or
@@ -158,6 +164,29 @@ async function buildStreetProps(scene, staticColliders = []) {
   props.infoPillar=infoLayout.sites.flatMap((s)=>[s.x,s.z]);
   window.CITY.infoPillarStats={sourceCount:sourceSigns.filter((r)=>r.type==='Info Pillar').length,accepted:infoLayout.sites.length,placed:0,rejected:infoLayout.rejected,sites:infoLayout.sites};
   window.CITY.wayfindingStats.unsupported=sourceSigns.filter((r)=>!['TO360','Info Pillar'].includes(r.type)).length;
+  const infoGrid = siteGrid(infoLayout.sites);
+  // The City's poster columns ('PPC'; its 'Collar' records are a poster ring on a pole, not drawn) and publication
+  // corrals: Existing records only, the same sidewalk rules as the benches, clear of every other piece of furniture
+  const SF = window.CITY.STREET_FURNITURE || {};
+  // (?mappedFurniture=0 leaves both out, for A/B timing and captures; the City's own data is otherwise always drawn)
+  const mappedFurniture = typeof location === 'undefined' || new URLSearchParams(location.search).get('mappedFurniture') !== '0';
+  const sourcePosters = mappedFurniture ? SF.posters?.records || [] : [];
+  const posterLayout = W && window.CITY.benchSites
+    ? window.CITY.benchSites(sourcePosters.filter((r)=>r.type==='PPC'),{nearestRoads,blockAt,bikeShareAt:window.CITY.bikeShareAt,halfWidth:.55,halfDepth:.55,clearBehind:1,
+      blocked:(x,z)=>obstruction(x,z,2.54)||nearSite(meterGrid,x,z,1)||nearSite(benchGrid,x,z,1.6)||nearSite(signGrid,x,z,1.3)||nearSite(infoGrid,x,z,1.8)})
+    : {sites:[],rejected:{}};
+  const posterGrid = siteGrid(posterLayout.sites);
+  props.posterColumn=posterLayout.sites.flatMap((s)=>[s.x,s.z]);
+  window.CITY.posterStats={sourceCount:sourcePosters.length,unsupported:sourcePosters.filter((r)=>r.type!=='PPC').length,accepted:posterLayout.sites.length,placed:0,rejected:posterLayout.rejected,sites:posterLayout.sites,feed:SF.posters?.counts};
+  const sourceCorrals = mappedFurniture ? SF.publications?.records || [] : [];
+  const corralLayout = W && window.CITY.benchSites
+    ? window.CITY.benchSites(sourceCorrals,{nearestRoads,blockAt,bikeShareAt:window.CITY.bikeShareAt,halfWidth:.8,halfDepth:.36,clearBehind:1,
+      blocked:(x,z)=>obstruction(x,z,1.12)||nearSite(meterGrid,x,z,1)||nearSite(benchGrid,x,z,1.5)||nearSite(signGrid,x,z,1.2)||nearSite(infoGrid,x,z,1.8)||nearSite(posterGrid,x,z,1.6)})
+    : {sites:[],rejected:{}};
+  props.publicationCorral=corralLayout.sites.flatMap((s)=>[s.x,s.z]);
+  window.CITY.publicationStats={sourceCount:sourceCorrals.length,unsupported:0,accepted:corralLayout.sites.length,placed:0,rejected:corralLayout.rejected,sites:corralLayout.sites,feed:SF.publications?.counts};
+  // The litter receptacles come packed in the city database (GEO.props.litterBin): audited here, placed below
+  window.CITY.litterStats={feed:SF.litter?.counts,inFrame:(props.litterBin||[]).length/2,placed:0,bikeShare:0,inRoad:0,nudged:0};
   const { GLTFLoader, MeshoptDecoder } = window.CITY.Addons;
   if (!GLTFLoader || !MeshoptDecoder) return { group, counts: {}, colliders };
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -204,9 +233,10 @@ async function buildStreetProps(scene, staticColliders = []) {
     }
     if (key === 'shelter') pts = spreadAlongStreet(pts, (b.max.x - b.min.x) * k);
     // (none standing in a Bike Share station's docks or bikes, bike-share.js; a shelter stays where the City has it)
-    if (!['shelter','parkingMeter','bench','wayfinding','infoPillar'].includes(key) && window.CITY.bikeShareAt) {
+    if (!['shelter','parkingMeter',...OPEN_DATA_LAYOUT].includes(key) && window.CITY.bikeShareAt) {
       const kept = [];
       for (let i = 0; i < pts.length; i += 2) if (!window.CITY.bikeShareAt(pts[i], pts[i + 1], 'prop')) kept.push(pts[i], pts[i + 1]);
+      if (key === 'litterBin') window.CITY.litterStats.bikeShare = (pts.length - kept.length) / 2;
       pts = kept;
     }
     // a prop the data puts on the curb line (a metre of raster & outline simplification) steps back onto the sidewalk;
@@ -217,7 +247,7 @@ async function buildStreetProps(scene, staticColliders = []) {
     for (let i = 0; i < pts.length; i += 2) {
       let x = pts[i], z = pts[i + 1];
       const road = nearestRoads(x, z, 30)[0];
-      if (road && !['bench','wayfinding','infoPillar'].includes(key) && !blockAt(x, z)) {
+      if (road && !OPEN_DATA_LAYOUT.includes(key) && !blockAt(x, z)) {
         const ax = x - road.px, az = z - road.pz, L = Math.hypot(ax, az) || 1;
         for (let t = 0.25; t <= 3; t += 0.25) {
           if (blockAt(x + (ax / L) * t, z + (az / L) * t)) { x += (ax / L) * (t + 0.3); z += (az / L) * (t + 0.3); nudged++; break; }
@@ -242,11 +272,14 @@ async function buildStreetProps(scene, staticColliders = []) {
         // toward the road (front) or across the curb (along), with a little hand-placed wobble
         const tx = road.px - x, tz = road.pz - z;
         yaw = facing === 'along' ? Math.atan2(-road.dz, road.dx) : Math.atan2(tx, tz) + (facing === 'back' ? Math.PI : 0);
-        if (!['shelter','parkingMeter','bench','wayfinding','infoPillar'].includes(key)) yaw += (hash(x, z) - 0.5) * 0.12;
+        if (!['shelter','parkingMeter',...OPEN_DATA_LAYOUT].includes(key)) yaw += (hash(x, z) - 0.5) * 0.12;
       } else yaw = hash(x, z) * Math.PI * 2;
       if (key === 'bench') yaw = benchLayout.sites[i].yaw;
       if (key === 'wayfinding') yaw = signLayout.sites[i].yaw;
       if (key === 'infoPillar') yaw = infoLayout.sites[i].yaw;
+      // a column is round: a quarter turn by its place shows each of its four posters to the street in turn
+      if (key === 'posterColumn') yaw = posterLayout.sites[i].yaw + Math.floor(hash(x, z) * 4) * Math.PI / 2;
+      if (key === 'publicationCorral') yaw = corralLayout.sites[i].yaw + Math.PI; // (its boxes face the walkers)
       // (down a road cut's sidewalks too: city-config.js cutAt, Strachan Ave under the railway)
       p.set(x, (blockAt(x, z) ? CITY_BOUNDS.sidewalkHeight : 0) + (window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0), z);
       if (!LAID_OUT.includes(key)) colliders.push(ROUND[key] ? circleCollider(x, z, Math.max(hx, hz) * ROUND[key], p.y, top, key) : boxCollider(x, z, hx, hz, yaw, p.y, top, key));
@@ -256,6 +289,8 @@ async function buildStreetProps(scene, staticColliders = []) {
       // (street furniture too: `prop`, met with the slim bodies, world-collision.js)
       if (key === 'parkingMeter') colliders.push({ minX:x-0.28, maxX:x+0.28, minZ:z-0.28, maxZ:z+0.28, minY:p.y, maxY:p.y+1.8288, prop:true, kind:key, openData:true });
       if (key === 'wayfinding') colliders.push({minX:x-.27,maxX:x+.27,minZ:z-.27,maxZ:z+.27,minY:p.y,maxY:p.y+2.7,prop:true,kind:key,openData:true});
+      if (key === 'posterColumn') colliders.push({ ...circleCollider(x, z, 0.52, p.y, 2.54, key), openData: true });
+      if (key === 'publicationCorral') colliders.push({ ...boxCollider(x, z, 0.76, 0.33, yaw, p.y, 1.12, key), openData: true });
       if (key === 'bench'||key === 'infoPillar') {
         const cs = Math.cos(yaw), sn = Math.sin(yaw), hx = key==='bench' ? .9 : .28, hz = key==='bench' ? .4 : .674;
         const rx = Math.abs(cs)*hx+Math.abs(sn)*hz, rz = Math.abs(sn)*hx+Math.abs(cs)*hz;
@@ -278,6 +313,9 @@ async function buildStreetProps(scene, staticColliders = []) {
     if (key === 'bench') window.CITY.benchStats.placed = n;
     if (key === 'wayfinding') window.CITY.wayfindingStats.placed = n;
     if (key === 'infoPillar') window.CITY.infoPillarStats.placed = n;
+    if (key === 'posterColumn') window.CITY.posterStats.placed = n;
+    if (key === 'publicationCorral') window.CITY.publicationStats.placed = n;
+    if (key === 'litterBin') Object.assign(window.CITY.litterStats, { placed: n, nudged, inRoad });
     if (nudged || inRoad) console.info(`[streetProps] ${key}: ${nudged} stepped back onto the sidewalk, ${inRoad} left out of the roadway`);
   }));
   scene.add(group);

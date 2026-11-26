@@ -364,7 +364,7 @@ async function initApp() {
   const publicArt = window.CITY.buildPublicArt?.(scene, [...allColliders, ...propColliders]);
   if (publicArt) pushAll(allColliders, publicArt.colliders);
   // the City's CaféTO sidewalk & curb lane cafés, placed by rule clear of everything above (cafeto-patios.js)
-  const patioFurniture = [['bench', 'benchStats'], ['parkingMeter', 'parkingMeterStats'], ['wayfinding', 'wayfindingStats'], ['infoPillar', 'infoPillarStats']]
+  const patioFurniture = [['bench', 'benchStats'], ['parkingMeter', 'parkingMeterStats'], ['wayfinding', 'wayfindingStats'], ['infoPillar', 'infoPillarStats'], ['posterColumn', 'posterStats'], ['publicationCorral', 'publicationStats']]
     .flatMap(([kind, key]) => (window.CITY[key]?.sites || []).map((s) => ({ x: s.x, z: s.z, kind })));
   // (prebuilt: js/toronto-patios.js; async only when it has to lay them out again, see cafeto-patios.js)
   const patios = window.CITY.buildPatios

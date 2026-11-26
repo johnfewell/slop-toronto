@@ -1,0 +1,14 @@
+[
+ {
+  "name": "perf-street",
+  "mode": "person",
+  "wait": 3000,
+  "js": "(async()=>{const C=window.CITY,a=window.__CITY_APP;const egl=new URLSearchParams(location.search).get('map')==='eglinton';const px=egl?-3551.45:-3322.56,pz=egl?-6959.73:-776.63;const r=C.nearestRoads(px,pz,40)[0];const L=Math.hypot(r.px-px,r.pz-pz)||1;const x=px+(r.px-px)/L*6,z=pz+(r.pz-pz)/L*6;a.teleportTo(x,z,Math.atan2(px-x,pz-z));a.selectCamera('pov',true);})().then(()=>(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);const ts=[];let last=performance.now();const t0=last;await new Promise(res=>{(function f(){const n=performance.now();ts.push(n-last);last=n;if(n-t0<6000)requestAnimationFrame(f);else res()})()});ts.sort((a,b)=>a-b);const m=ts.reduce((a,b)=>a+b,0)/ts.length;console.log('[perf] perf-street mean '+m.toFixed(2)+' ms median '+ts[ts.length>>1].toFixed(2)+' p95 '+ts[Math.floor(ts.length*0.95)].toFixed(2)+' n '+ts.length)})())"
+ },
+ {
+  "name": "perf-start",
+  "mode": "person",
+  "wait": 3000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);const ts=[];let last=performance.now();const t0=last;await new Promise(res=>{(function f(){const n=performance.now();ts.push(n-last);last=n;if(n-t0<6000)requestAnimationFrame(f);else res()})()});ts.sort((a,b)=>a-b);const m=ts.reduce((a,b)=>a+b,0)/ts.length;console.log('[perf] perf-start mean '+m.toFixed(2)+' ms median '+ts[ts.length>>1].toFixed(2)+' p95 '+ts[Math.floor(ts.length*0.95)].toFixed(2)+' n '+ts.length)})()"
+ }
+]

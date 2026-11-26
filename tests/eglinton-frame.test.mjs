@@ -24,9 +24,9 @@ const listFor = (search, { touch = false, memory, on } = {}) => {
 const scriptsFor = (search, device) => [...listFor(search, device)];
 // (toronto-patios.js: that map's prebuilt CaféTO layout, tools/build-patios.mjs --frame eglinton, st-3cbb)
 const FRAME_FILES = ['toronto-sidewalks.js', 'toronto-subway.js', 'toronto-subway-topology.js', 'toronto-traffic-data.js',
-  'toronto-transit.js', 'toronto-signal-plan.js', 'toronto-patios.js'];
+  'toronto-transit.js', 'toronto-signal-plan.js', 'toronto-patios.js', 'toronto-street-furniture.js'];
 
-test('a default visit loads no file of the Eglinton frame; ?map=eglinton swaps in exactly its seven scripts', () => {
+test('a default visit loads no file of the Eglinton frame; ?map=eglinton swaps in exactly its eight scripts', () => {
   // (today's map: ?map=detail anywhere, and a phone's default visit; the schoolyard fences' two scripts are on for a desktop by
   // default since 2026-11-17, so these two are compared with ?schoolFences=0, which is how a phone's list reads)
   const today = scriptsFor('?map=detail&schoolFences=0'), other = scriptsFor('', { touch: true }), egl = scriptsFor('?map=eglinton&schoolFences=0&presets=0'); // (?presets=0: the boxes' page, whose colliders are the boxes')

@@ -1,0 +1,25 @@
+[
+ {
+  "name": "sf-stats",
+  "mode": "person",
+  "wait": 2000,
+  "js": "(() => { const C = window.CITY; const pick = (s) => ({ sourceCount: s.sourceCount, accepted: s.accepted, placed: s.placed, rejected: s.rejected, unsupported: s.unsupported, feed: s.feed }); const out = { poster: pick(C.posterStats), publication: pick(C.publicationStats), litter: C.litterStats, map: new URLSearchParams(location.search).get('map') || 'default' }; console.log('[ride-check] street-furniture ' + JSON.stringify(out)); if (!(C.posterStats.placed > 20) || !(C.publicationStats.placed > 20)) throw new Error('street furniture missing'); })()"
+ },
+ {
+  "name": "sf-poster",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const street = new URLSearchParams(location.search).get('sfStreet') || 'Queen St W'; const pos = C.posterStats.sites.filter((s) => s.frontage === street); const cor = C.publicationStats.sites; const near = (p) => Math.min(...cor.map((c) => Math.hypot(c.x - p.x, c.z - p.z))); const p = pos.sort((u, v) => near(u) - near(v))[0]; if (!p) throw new Error('no poster on ' + street); const d = 6; const x = p.x + Math.sin(p.yaw) * d, z = p.z + Math.cos(p.yaw) * d; a.teleportTo(x, z, Math.atan2(p.x - x, p.z - z)); a.selectCamera('pov', true); console.log('[ride-check] poster site ' + JSON.stringify({ id: p.id, x: p.x, z: p.z, street, nearestCorralM: near(p) })); })()"
+ },
+ {
+  "name": "sf-corral",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const street = new URLSearchParams(location.search).get('sfStreet') || 'Queen St W'; const cor = C.publicationStats.sites.filter((s) => s.frontage === street); const c = cor[Math.min(1, cor.length - 1)]; if (!c) throw new Error('no corral on ' + street); const f = c.yaw + Math.PI, ax = Math.cos(f), az = -Math.sin(f); const x = c.x + ax * 1.1 + Math.sin(f) * 2.3, z = c.z + az * 1.1 + Math.cos(f) * 2.3; a.teleportTo(x, z, Math.atan2(c.x - x, c.z - z)); a.selectCamera('pov', true); console.log('[ride-check] corral site ' + JSON.stringify({ id: c.id, x: c.x, z: c.z, street })); })()"
+ },
+ {
+  "name": "sf-trees",
+  "wait": 1500,
+  "js": "(() => { const s = window.CITY.SEASON || window.CITY.seasonState || null; console.log('[ride-check] season ' + JSON.stringify(s && (s.name || s.id || s)) + ' date ' + JSON.stringify(window.CITY.SITE_DATE || window.CITY.SCENE_DATE || null)); })()"
+ }
+]
