@@ -19,7 +19,8 @@ shadows through stand-ins. Toronto reimplements the technique on its own data an
 | City-wide data (st-2nl.2) | **Done, flag only.** `?massing=1` fetches `js/massing-data.js` and `data/toronto-massing.bin` (852 KiB, only then) and stands all 35,254 detailed-city buildings on their polygons. The default page loads neither and is unchanged. See [City-wide sidecar](#city-wide-sidecar-st-2nl2). |
 | Compact cells and tiers (st-2nl.3) | **Code done, flag only; perf acceptance pending the quiet-mini baseline.** 16-byte vertices, a building table, near/mid/far tiers per 500 m cell, the facade styles merged into two materials, built in a worker. See [Compact cells and tiers](#compact-cells-and-tiers-st-2nl3). |
 | Drawn buildings by default (st-ndw9.21) | **On, on the bigger desktop map, inside the downtown frame** (John, 2026-11-17: "just launch things"). The default desktop page loads the sidecar and the presets files and draws the building presets where they exist; outside the frame, and on a phone, a low tier or `?map=detail`, the boxes stay. `?presets=0` is the old look. See [The bigger map](#the-bigger-map-st-ndw921). |
-| Default on everywhere (st-2nl.7) | Still planned: the rest of the city's outlines, the phone tier, and st-2nl.4 to .6 (box consumers, roofs from the data, edge faces). |
+| Facades on the real edges (st-2nl.6) | **Done, where the outlines are drawn** (the default desktop page's downtown frame and `?massing=1`). Edge classes (street, party, exposed party, rear), common-brick party walls, painted ghost signs on exposed party walls, and the hook that stands the storefront signs on the real edge. See [Facades on the real polygon edges](#facades-on-the-real-polygon-edges-st-2nl6). |
+| Default on everywhere (st-2nl.7) | Still planned: the rest of the city's outlines, the phone tier, and st-2nl.4 (box consumers). |
 
 ## 1. Data
 
@@ -992,6 +993,64 @@ PR #175 launched the drawn buildings at +2.0 to +3.1 ms a frame inside the downt
 - **Patios** (`st-ndw9.23`): see docs/cafeto-patios.md.
 - **Towers' balcony bands** are untouched (a look decision). With every second floor's band left out, in view -0.06 to -0.15 M
   triangles and -0.0 to -0.3 ms (tools/shots/drawn-bands.json frames).
+
+## Facades on the real polygon edges (st-2nl.6)
+
+The drawn buildings' walls already stood on the outline's edges (section 4). This phase names what each edge is, gives the
+party walls their own look, hangs painted ghost signs on the walls that show above a lower neighbour, and moves the storefront
+signs onto the real edge. Only buildings drawn from their outlines are touched: the box city (outside the frame, a phone, a
+low tier, `?presets=0`) keeps today's look, wall for wall.
+
+### Edge classes
+
+`buildings.js footprintEdges` gives each outer edge a `cls`, from the sidecar's inputs (`covered`, `hidden`, `street`):
+
+| `cls` | Means | Wall kind |
+|---|---|---|
+| `hidden` | another part's wall stands on it | no wall |
+| `party` | a neighbour covers at least half the wall above its foot (the rule John approved on 2026-10-31), or the edge is under 2 m; nothing, or under 3 m, shows above the neighbour | lot line (windowless) |
+| `exposed-party` | the same, and the wall shows 3 m or more above the neighbour's roof (`exposed` m) | lot line |
+| `street` | looks onto a street within 15 m of its kerb (the best takes the front kind; on a shop every one of 3 m or more is a shop front) | shop, entry |
+| `rear` | the rest, with windows on every floor | rear |
+
+`edge.neighbour` is the neighbour's roof height, `edge.exposed` how much of the wall shows above it. The pure helpers that
+hang things on the edges are in `js/facade-edges.js` (`tests/facade-edges.test.mjs`: made-up rectangular, L-shaped, trapezoidal
+and notched lots, and every one of the 35,254 real outlines).
+
+### Party walls
+
+On the footprint meshes a party wall of a painted (not brick) building is common brick, red-brown or buff by building, with
+patches of grey parging (some walls parged all over) and soot running down from the roof, where it was the front's paint. A brick
+building's party walls keep its own brick. The shader reads it from the wall kinds already in the vertex; no attribute is added.
+
+### Ghost signs
+
+`WALL_KINDS.ghost` and `.ghostLarge` (5 and 6) are lot-line walls that carry a faded painted advertisement. `ghostKinds` picks at most
+one a building, from a hash of its durable ID (the same walls every load), among its exposed party walls that can hold a panel:
+a small one (2.6 x 8.5 m) needs 4.4 m showing and a wall of 10.5 m, a large one (4.4 x 14.4 m) 6.8 m and 16.4 m. The share that
+take one depends on the street the building stands on: 45% on Queen, Dundas, King, College, Spadina, Bathurst and Yonge, 22% on the
+older side streets (Church, Parliament, Augusta, Kensington, Baldwin, Bloor...), 6% elsewhere. Only rendered (painted) facades
+take one: the glass towers' blank walls do not (of 183 qualifying walls city-wide, 83 are on rendered buildings). `?ghostsigns=0` leaves them out.
+
+The lettering is drawn once with `fillText` into one 1,024 x 1,020 atlas (12 designs in two cells across, about 5.5 MiB with mips):
+generic trade words of the kind the old main streets carry (dry goods, boots and shoes, furniture, hats and caps, tailoring,
+hardware, coal and wood, home bread, pianos, cigars, storage, watches). Names and marks of real businesses are not used. The
+atlas holds a coverage mask (R the ink, G the painted panel); the shader picks ground and ink colours by hash (cream and brick red,
+white on green, cream on red, gilt on navy), fades the paint to 40 to 70% and flakes it off in patches. The panel stands 1.0 to 1.2 m
+under the wall's top, at a hashed place along it. The atlas is read inside the branch of the walls that carry a sign, with an explicit
+mip level, so no other wall pays for the texture.
+
+### What it costs
+
+No triangle is added: a ghost wall is an existing wall with another kind, and the party-wall look is shader work. Measured on the shared Mac mini (`tools/capture-facades.sh`, JOB=perf, six party-wall shots on Queen West and Spadina, uncapped, 8 s windows, one before/after pair; relative evidence, not budgets): median frame interval 16.2 / 15.6 / 15.1 / 11.9 / 15.7 / 15.9 ms before and 16.2 / 15.7 / 15.5 / 12.2 / 15.9 / 15.8 ms after (0.0 to +0.4 ms), CPU submission the same to within 0.6 ms. Load: choosing the ghost walls costs about 5 ms on the main thread (the street lookup is made only for the buildings with a wall that qualifies); the atlas is drawn once (12 cells of text) and is about 5.5 MiB on the GPU. Phones and the box city load none of it.
+
+### The hook for records keyed to a face
+
+`resolveFaceEdge(edges, { x, z, nx, nz })` finds the polygon edge a record's wall point and normal stand on (within 1.5 m and
+15 degrees; a face compiled from a box side is up to a metre off the real wall) and `placeOnEdge` puts a board of a given width on
+it, kept inside the edge. `js/storefront-signs.js` uses it: on a drawn building each sign stands on the real edge, facing out of
+it, and its board width is cut to the edge's length; a record that resolves to none keeps the position it was compiled with
+(`CITY.storefrontStats.snapped` and `.unresolved` count them). A licensed facade photo (st-wt0.16) would key the same way.
 
 ## Pilot evidence
 

@@ -191,8 +191,9 @@ async function initApp() {
         import('./roof-skeleton.js').catch(() => {});
       }
       // (js/massing-cells.js: the compact cell meshes buildings.js has built off the main thread, st-2nl.3)
-      const [{ loadMassing }, cells] = await Promise.all([import('./massing-data.js'), import('./massing-cells.js')]);
+      const [{ loadMassing }, cells, facadeEdges] = await Promise.all([import('./massing-data.js'), import('./massing-cells.js'), import('./facade-edges.js')]);
       window.CITY.MassingCells = cells;
+      window.CITY.FacadeEdges = facadeEdges; // (st-2nl.6: ghost signs on exposed party walls, the faces storefront signs resolve to)
       const M = await loadMassing(window.CITY.GEO, undefined, { heights: !/^(0|off|boxes)$/.test(new URLSearchParams(location.search).get('roofs') || '') && !/^(0|off)$/.test(presetsArg || '') });
       window.CITY.MASSING = M;
       console.info(`[massing] data/toronto-massing.bin: ${M.bytes} bytes, ${M.records} records, decoded in ${M.decodeMs.toFixed(1)} ms, ` +

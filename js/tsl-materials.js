@@ -547,9 +547,12 @@ function apartmentInteriorBehind(coverage, uCoord, vCoord, winUV, cellId, winW, 
  * Treatment of each wall of a box-local facade box (createFacadeBoxes `faces`, read by facadeCell). shop: street front
  * with storefronts on the ground floor; entry: residential street front, windows down to the ground floor and one
  * entrance door; rear: yard, court & air-shaft walls, plain common brick with windows on every floor; lotLine:
- * windowless lot-line (party) wall, common brick or grey parging; blankStone: windowless wall in the facade's stone.
+ * windowless lot-line (party) wall, common brick or grey parging; blankStone: windowless wall in the facade's stone;
+ * ghost & ghostLarge: lot-line walls that show a painted ghost sign (footprint meshes only).
  */
-const WALL_KINDS = { shop: 0, entry: 1, rear: 2, lotLine: 3, blankStone: 4 };
+const WALL_KINDS = { shop: 0, entry: 1, rear: 2, lotLine: 3, blankStone: 4, ghost: 5, ghostLarge: 6 };
+// (ghost, ghostLarge: an exposed party wall of the ?massing=1 footprint meshes that carries a painted ghost sign, a lot-line wall
+// in every other respect; picked by js/facade-edges.js ghostKinds, painted by createRenderedFacadeMaterial)
 
 // ---- The ?massing=1 cell meshes' compact vertices (js/massing-cells.js, docs/massing-buildings.md st-2nl.3) ----------
 // `position` (snorm16 x 4): x, z in decimetres from the block's centre (the mesh's matrix scales them back to metres)
@@ -741,7 +744,13 @@ function facadeCell(windowWidth, floorHeight, boxLocal, cornerPier = 0, footprin
   const wall = float(1.0).sub(isRoof);
   const isGroundFloor = floor0.mul(float(1.0).sub(step(WALL_KINDS.shop + 0.5, kind)));
   const blank = step(WALL_KINDS.lotLine - 0.5, kind).mul(wall);
-  const back = step(WALL_KINDS.rear - 0.5, kind).mul(float(1.0).sub(step(WALL_KINDS.blankStone - 0.5, kind))).mul(wall);
+  // (blankStone is the one blank kind in the facade's own stone; the lot-line and ghost kinds are common brick)
+  const stoneKind = step(WALL_KINDS.blankStone - 0.5, kind).mul(float(1.0).sub(step(WALL_KINDS.blankStone + 0.5, kind)));
+  const back = step(WALL_KINDS.rear - 0.5, kind).mul(float(1.0).sub(stoneKind)).mul(wall);
+  // party: a lot-line wall of any kind but the stone one (the footprint meshes' party walls); ghost: one with a painted sign
+  const party = blank.mul(float(1.0).sub(stoneKind));
+  const ghost = step(WALL_KINDS.ghost - 0.5, kind).mul(wall);
+  const ghostLarge = step(WALL_KINDS.ghostLarge - 0.5, kind).mul(wall);
   // One entrance per residential front, in a bay picked by the building's tone
   const isEntry = step(WALL_KINDS.entry - 0.5, kind).mul(float(1.0).sub(step(WALL_KINDS.entry + 0.5, kind)));
   const door = floor0.mul(isEntry).mul(wall).mul(step(abs(bayIdx.sub(min(floor(tone.mul(bays)), bays.sub(1.0)))), 0.5));
@@ -759,7 +768,7 @@ function facadeCell(windowWidth, floorHeight, boxLocal, cornerPier = 0, footprin
   const solid = max(max(inPier.mul(float(1.0).sub(isGroundFloor)), blank), partial);
   return {
     isRoof, uCoord, vCoord, gridV, cellId, cellUV, fw, bayWidth, isGroundFloor, solid, floor0, back, blank, door, tone,
-    wallS, wallW, wallH, fromTop, boxSeed, partial, coping
+    wallS, wallW, wallH, fromTop, boxSeed, partial, coping, party, ghost, ghostLarge
   };
 }
 
@@ -1525,6 +1534,60 @@ function createPreWarBuildingMaterial(opts = {}) {
   return mat;
 }
 
+// ---- Ghost signs (st-2nl.6): faded painted advertising on the exposed party walls of the ?massing=1 buildings -----------------
+// One shared atlas, 12 designs (2 x 6 cells of 512 x 170): the lettering is drawn here with fillText, in generic trade words
+// of the kind the old main streets carry (no business names, no marks of anyone's). R = the ink, G = the painted panel (the
+// shader picks the colours, so a design reads as cream-and-red, white-on-green and so on, and fades by hash). Built the first
+// time a footprint material is, in the page (a 1 x 1 stand-in where there is no canvas: the node tests).
+const GHOST_CELL = { w: 512, h: 170, cols: 2, rows: 6, pad: 10 };
+const GHOST_DESIGNS = [
+  ['DRY GOODS', '& MILLINERY', 'sans'], ['BOOTS & SHOES', 'REPAIRS WHILE YOU WAIT', 'serif'], ['FURNITURE', 'CARPETS · STOVES · BEDDING', 'slab'],
+  ['HATS & CAPS', 'WHOLESALE & RETAIL', 'sans'], ['FINE TAILORING', 'SUITS MADE TO ORDER', 'serif'], ['HARDWARE', 'PAINTS · OILS · GLASS', 'slab'],
+  ['COAL · WOOD', 'PROMPT DELIVERY', 'sans'], ['HOME BREAD', 'CAKES · PASTRY · PIES', 'serif'], ['PIANOS', 'SOLD · TUNED · REPAIRED', 'slab'],
+  ['CIGARS', 'TOBACCO · PIPES', 'serif'], ['STORAGE', '& CARTAGE', 'sans'], ['WATCHES', 'CLOCKS · JEWELLERY', 'slab']
+];
+const GHOST_FONTS = {
+  sans: '900 {px}px Impact, "Arial Black", "Helvetica Neue", Arial, sans-serif',
+  serif: '700 {px}px Georgia, "Times New Roman", serif',
+  slab: '800 {px}px Rockwell, "Courier New", Georgia, serif'
+};
+let _ghostAtlas = null;
+function ghostSignAtlas() {
+  if (_ghostAtlas) return _ghostAtlas;
+  const { w, h, cols, rows, pad } = GHOST_CELL;
+  let tex;
+  if (typeof document === 'undefined' || !document.createElement) {
+    tex = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1, THREE.RGBAFormat, THREE.UnsignedByteType);
+  } else {
+    const canvas = document.createElement('canvas');
+    canvas.width = w * cols; canvas.height = h * rows;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    GHOST_DESIGNS.forEach(([big, small, face], k) => {
+      const ox = (k % cols) * w, oy = Math.floor(k / cols) * h;
+      ctx.fillStyle = 'rgb(0,255,0)'; ctx.fillRect(ox + pad, oy + pad, w - 2 * pad, h - 2 * pad);
+      ctx.strokeStyle = ctx.fillStyle = 'rgb(255,255,0)';
+      ctx.lineWidth = 5; ctx.strokeRect(ox + pad + 7, oy + pad + 7, w - 2 * pad - 14, h - 2 * pad - 14);
+      ctx.lineWidth = 2; ctx.strokeRect(ox + pad + 15, oy + pad + 15, w - 2 * pad - 30, h - 2 * pad - 30);
+      const fit = (text, px, maxW) => { ctx.font = GHOST_FONTS[face].replace('{px}', String(px)); const m = ctx.measureText(text).width; return m > maxW ? Math.floor(px * maxW / m) : px; };
+      const bigPx = fit(big, 78, w - 2 * pad - 60), smallPx = Math.min(fit(small, 26, w - 2 * pad - 70), Math.floor(bigPx * 0.4));
+      ctx.font = GHOST_FONTS[face].replace('{px}', String(bigPx)); ctx.fillText(big, ox + w / 2, oy + h * 0.42);
+      ctx.font = GHOST_FONTS.serif.replace('{px}', String(smallPx)).replace('700', '600'); ctx.fillText(small, ox + w / 2, oy + h * 0.77);
+    });
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    tex = new THREE.DataTexture(new Uint8Array(img.data.buffer), canvas.width, canvas.height, THREE.RGBAFormat, THREE.UnsignedByteType);
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.anisotropy = 4;
+  }
+  tex.colorSpace = THREE.NoColorSpace; // (data: a coverage mask in R and G, not colours)
+  tex.needsUpdate = true;
+  _ghostAtlas = tex;
+  return tex;
+}
+
 /**
  * Abuja's Rendered & Painted Concrete Facade TSL Material (box-local, createFacadeBoxes with `paint`)
  * Most of the city is reinforced-concrete frame and sandcrete block, plastered and painted: cream, off-white, beige,
@@ -1582,6 +1645,7 @@ function createRenderedFacadeMaterial(opts = {}) {
   if (footprintLocal) useFootprintVertex(mat);
   const facade = facadeCell(uWindowWidth, uFloorHeight, true, cornerPier, footprintLocal);
   const { isRoof, uCoord, vCoord, gridV, cellId, cellUV, fw, bayWidth, isGroundFloor, solid, door, tone, floor0, coping } = facade;
+  const { wallS, wallW, fromTop, boxSeed } = facade;
   const paintAttr = footprintLocal ? footprintVertex().paint : attribute('paint', 'vec4');
   const paint = paintAttr.xyz;
   // (?presets=debug: buildings.js sets a footprint record's paint.w below -0.5 to mark a debug building, whose roof the
@@ -1594,6 +1658,11 @@ function createRenderedFacadeMaterial(opts = {}) {
   const glassStyle = fract(paintAttr.w);
   const isStone = victorian ? step(3.5, paintAttr.w) : null; // (the Distillery's limestone)
   const brickOnly = victorian ? isBrick.mul(float(1.0).sub(isStone)) : isBrick;
+  // st-2nl.6: the party (lot-line) walls of the footprint meshes on a painted (not brick) building are common brick: they were
+  // the front's paint, but a wall nobody paints stays red-brown or buff brick, weathered with grey parging and soot. The box
+  // meshes of the default page and the phone keep their look (footprintLocal only)
+  const partyW = footprintLocal ? facade.party.mul(float(1.0).sub(isBrick)) : null;
+  const brickAny = partyW ? max(brickOnly, partyW) : brickOnly;
   // --- end Toronto layer ---
   const open = float(1.0).sub(solid).mul(float(1.0).sub(door));
   const effHalfX = halfWinX.isNode ? halfWinX : float(halfWinX);
@@ -1683,11 +1752,57 @@ function createRenderedFacadeMaterial(opts = {}) {
     const rowC = vCoord.div(0.1);
     const row = floor(rowC);
     const colC = uCoord.div(0.26).add(mod(row, 2.0).mul(0.5));
-    const brickFade = float(1.0).sub(smoothstep(0.3, 0.7, max(fwidth(rowC), fwidth(colC)))).mul(brickOnly);
-    const mortar = max(gridLine(colC.mul(0.26), 0.26, 0.012), gridLine(vCoord, 0.1, 0.012)).mul(brickFade).mul(float(1.0).sub(coping));
+    const brickFade = float(1.0).sub(smoothstep(0.3, 0.7, max(fwidth(rowC), fwidth(colC)))).mul(brickAny);
+    let parge = float(0.0);
+    if (partyW) {
+      // common brick (red-brown or buff by building) with patches of grey parging, some walls parged all over, and soot down from the roof
+      const commonBrick = mix(
+        mix(color(0x6c3d30), color(0x8a503e), fract(tone.mul(7.31))),
+        mix(color(0x9a8669), color(0xb09a7a), fract(tone.mul(5.17))),
+        step(0.58, tone)
+      );
+      wall = mix(wall, commonBrick, partyW.mul(0.9));
+      const pargePatch = smoothstep(0.6, 0.76, noise2D(vec2(uCoord.mul(0.11), vCoord.mul(0.07)).add(tone.mul(37.0))));
+      parge = partyW.mul(max(step(0.74, fract(tone.mul(3.7))), pargePatch.mul(0.85)));
+      wall = mix(wall, color(0x8f8b84), parge);
+      const soot = smoothstep(0.25, 0.78, noise2D(vec2(uCoord.mul(1.4), vCoord.mul(0.05)))).mul(float(1.0).sub(smoothstep(0.0, 60.0, vCoord)));
+      wall = mix(wall, color(0x4a4236), partyW.mul(soot).mul(0.3).mul(float(1.0).sub(parge)));
+    }
+    const mortar = max(gridLine(colC.mul(0.26), 0.26, 0.012), gridLine(vCoord, 0.1, 0.012)).mul(brickFade).mul(float(1.0).sub(coping)).mul(float(1.0).sub(parge));
     const brickTone = hash2D(vec2(floor(colC), row).add(vec2(uSeed, 3.1))).sub(0.5).mul(0.18).mul(brickFade).add(1.0);
-    wall = mix(wall, wall.mul(brickTone), isBrick);
+    wall = mix(wall, wall.mul(brickTone), brickAny);
     wall = mix(wall, paint.mul(0.5).add(color(0x9a958c).mul(0.5)), mortar.mul(0.65));
+    if (footprintLocal) {
+      // The ghost sign: a faded painted panel on the wall above the lower neighbour (kinds ghost & ghostLarge). The panel sits
+      // `top` m under the wall's top, centred with a hashed offset; the atlas cell is read inside the branch with an explicit level
+      const large = facade.ghostLarge;
+      const panelH = mix(float(2.6), float(4.4), large);
+      const panelW = panelH.mul(3.28); // (the drawn panel of an atlas cell is 492 x 150 texels)
+      const panelTop = mix(float(1.0), float(1.2), large);
+      const pick = fract(tone.mul(13.7).add(boxSeed.mul(0.618)));
+      const left = wallW.sub(panelW).mul(mix(0.2, 0.8, fract(pick.mul(7.3))));
+      const su = wallS.sub(left).div(panelW), sv = fromTop.sub(panelTop).div(panelH);
+      const lod = clamp(log2(max(max(fwidth(su).mul(GHOST_CELL.w), fwidth(sv).mul(GHOST_CELL.h)), 1.0)), 0.0, 3.0);
+      const design = floor(fract(tone.mul(29.3).add(boxSeed.mul(0.37))).mul(GHOST_DESIGNS.length));
+      const cellX = design.sub(floor(design.mul(0.5)).mul(2.0)), cellY = floor(design.mul(0.5));
+      const inPanel = facade.ghost.mul(step(0.0, su)).mul(step(su, 1.0)).mul(step(0.0, sv)).mul(step(sv, 1.0));
+      const signPaint = vec4(0.0).toVar();
+      If(inPanel.greaterThan(0.5), () => {
+        const cuv = vec2(
+          cellX.add(mix(GHOST_CELL.pad / GHOST_CELL.w, 1 - GHOST_CELL.pad / GHOST_CELL.w, su)).div(GHOST_CELL.cols),
+          cellY.add(mix(GHOST_CELL.pad / GHOST_CELL.h, 1 - GHOST_CELL.pad / GHOST_CELL.h, sv)).div(GHOST_CELL.rows)
+        );
+        const t = texture(ghostSignAtlas(), cuv).level(lod);
+        const pal = fract(tone.mul(17.9).add(boxSeed.mul(0.21)));
+        const ground = mix(mix(mix(color(0xd6c9a4), color(0x2f4a3a), step(0.25, pal)), color(0x7a2e24), step(0.5, pal)), color(0x2b3445), step(0.75, pal));
+        const ink = mix(mix(mix(color(0x6e2c22), color(0xd9ceb0), step(0.25, pal)), color(0xd8cba8), step(0.5, pal)), color(0xd1c28a), step(0.75, pal));
+        const flake = smoothstep(0.5, 0.74, noise2D(vec2(wallS.mul(0.7), fromTop.mul(1.1)).add(tone.mul(31.0))));
+        const wear = float(1.0).sub(flake.mul(0.85));
+        const cover = mix(float(0.42), float(0.72), fract(pick.mul(5.9))).mul(wear);
+        signPaint.assign(vec4(mix(ground, ink, t.x), t.y.mul(cover)));
+      });
+      wall = mix(wall, signPaint.xyz, signPaint.w);
+    }
     wall = mix(wall, color(0x4a443d), dust.mul(0.6));
     if (victorian) {
       // the Stone Distillery's ashlar: 0.5 m courses of 1.1 m blocks, broken joints, each block a shade off, in thin

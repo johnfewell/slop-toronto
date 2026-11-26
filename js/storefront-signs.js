@@ -109,7 +109,7 @@ function buildStorefrontSigns(scene, { facadeOf = () => null } = {}) {
   const CITY = window.CITY;
   const data = rebindStorefrontRows(CITY.STOREFRONTS, CITY.GEO?.buildings, CITY.GEO?.pois);
   const QUALITY = CITY.QUALITY || { tier: 'high' };
-  const stats = { records: data?.signs?.length || 0, placed: 0, skipped: {}, atlas: null, attribution: data?.attribution || null };
+  const stats = { records: data?.signs?.length || 0, placed: 0, snapped: 0, unresolved: 0, skipped: {}, atlas: null, attribution: data?.attribution || null };
   CITY.storefrontStats = stats;
   const off = typeof location !== 'undefined' && new URLSearchParams(location.search).get('storefronts') === '0';
   if (!data || !data.signs?.length || off) {
@@ -127,7 +127,16 @@ function buildStorefrontSigns(scene, { facadeOf = () => null } = {}) {
     if (s.h < top + 0.3) { skip('too low'); continue; }
     // (a building on High Park's relief stands on its base, js/don-valley.js buildingBase)
     const base = CITY.DON_VALLEY?.buildingBase ? CITY.DON_VALLEY.buildingBase(b[0], b[1]) : 0;
-    signs.push({ ...s, y: base + top - BOARD_H / 2 });
+    // On a drawn building (?massing=1 and the default page's downtown) the board stands on the polygon's real edge, not on the
+    // box face the record was compiled on (up to a metre off): the edge facing the record's normal within 15 degrees and 1.5 m
+    // of its point (js/facade-edges.js resolveFaceEdge, st-2nl.6); a record that resolves to none keeps its own position
+    let at = null;
+    const FE = CITY.FacadeEdges, rec = FE && CITY.MASSING && CITY.MASSING.rows && CITY.MASSING.rows.get(s.b);
+    if (rec) {
+      const hit = FE.resolveFaceEdge(FE.edgesOfRing(rec.rings[0], rec.hidden), s);
+      if (hit) { at = FE.placeOnEdge(hit, s, s.width); stats.snapped++; } else stats.unresolved++;
+    }
+    signs.push({ ...s, ...(at || {}), y: base + top - BOARD_H / 2 });
   }
   if (!signs.length) {
     console.info(`[storefronts] no signs: ${JSON.stringify(stats.skipped)}`);

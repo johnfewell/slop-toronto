@@ -41,13 +41,19 @@ function footprintEdges(outer, covered, hidden, street, frontKind, shopFront, ba
   for (let i = 0; i < n; i++) {
     const [ax, az] = outer[i], [bx, bz] = outer[(i + 1) % n];
     const dx = bx - ax, dz = bz - az, len = Math.hypot(dx, dz) || 1e-9;
-    const e = { ax, az, bx, bz, nx: dz / len, nz: -dx / len, len, kind: WALL_KINDS.rear, street: false };
+    // cls (st-2nl.6, js/facade-edges.js EDGE_CLASS): hidden | party (a neighbour covers it) | exposed-party (a lower neighbour stands against
+    // it: the wall shows 3 m or more above its roof, `exposed` m) | street | rear; `neighbour` is that roof's height (NaN: none)
+    const e = { ax, az, bx, bz, nx: dz / len, nz: -dx / len, len, kind: WALL_KINDS.rear, street: false, cls: 'rear', exposed: 0, neighbour: covered.has(i) ? covered.get(i) : NaN };
     edges.push(e);
-    if (hidden.has(i)) { e.kind = -1; continue; }
+    if (hidden.has(i)) { e.kind = -1; e.cls = 'hidden'; continue; }
     const cover = covered.has(i) ? covered.get(i) - base : 0;
-    if ((cover > 0.5 && cover >= (h - base) / 2) || len < 2) { e.kind = WALL_KINDS.lotLine; continue; }
+    if ((cover > 0.5 && cover >= (h - base) / 2) || len < 2) {
+      e.kind = WALL_KINDS.lotLine;
+      if (cover > 0.5) { e.exposed = Math.max(0, h - covered.get(i)); e.cls = e.exposed >= 3 ? 'exposed-party' : 'party'; }
+      continue;
+    }
     if (!street.has(i)) continue;
-    e.street = true;
+    e.street = true; e.cls = 'street';
     const score = len * (street.get(i) ? 2 : 1);
     if (score > bestScore) { bestScore = score; best = i; }
   }
@@ -1222,7 +1228,7 @@ function buildCityBlocks(scene) {
   const realRows = gallery ? GEO.buildings.length - window.CITY.BUILDING_GALLERY.lots.length : GEO.buildings.length;
   const footRecords = [];
   const footSeeds = materials.map(() => 0); // (each style's records numbered as before, for their seeds)
-  const massingStats = massing && { buildings: 0, records: massing.records, rejected: massing.rejected, courtyards: 0, partyWalls: 0, onPodium: 0, boxesReplaced: 0, ms: 0 };
+  const massingStats = massing && { buildings: 0, records: massing.records, rejected: massing.rejected, courtyards: 0, partyWalls: 0, ghostSigns: 0, ghostWalls: [], onPodium: 0, boxesReplaced: 0, ms: 0 };
   const roofTiles = { pos: [], nor: [], uv: [], col: [] };
   const roofSheets = { pos: [], nor: [], uv: [], col: [] };
   // The drawn roofs (st-ndw9.21): one full roof and one far roof per 500 m cell, the near one drawn within ROOF_NEAR of the camera and the
@@ -1288,6 +1294,7 @@ function buildCityBlocks(scene) {
   // hip or gable roof over its own polygon, the ridge at the City's MAX_HEIGHT and the eave from AVG_HEIGHT, instead of a hip over each
   // box rectangle. A pre-pass plans them all, so a joined row (the presets' groups) takes one form, one pitch and one eave height;
   // ?roofs=0 keeps the boxes' hips (for comparison). A house with no plan (a flat difference, a shape it cannot do) is counted.
+  const GHOST = massing && window.CITY.FacadeEdges && typeof location !== 'undefined' && new URLSearchParams(location.search).get('ghostsigns') !== '0' ? window.CITY.FacadeEdges : null;
   const RS = massing && window.CITY.RoofSkeleton && typeof location !== 'undefined' && !/^(0|off|boxes)$/.test(new URLSearchParams(location.search).get('roofs') || '') ? window.CITY.RoofSkeleton : null;
   const roofPlans = new Map(); // (row -> a plan, or { ok: false, reason })
   const roofStats = RS ? { houses: 0, hip: 0, gable: 0, flat: 0, failed: {}, tris: 0, shared: 0, rows: 0, ms: 0 } : null;
@@ -1508,6 +1515,18 @@ function buildCityBlocks(scene) {
         recRings = drawPlan.keep ? foot.rings : [drawPlan.ring, ...foot.rings.slice(1)]; recKinds = drawPlan.kinds;
         recCover = drawPlan.cover;
         recH = y0 + drawPlan.eaveH; recCap = recH - 0.05 - (bi % 5) * 0.012;
+      }
+      // Ghost signs (st-2nl.6, js/facade-edges.js): one exposed party wall of a rendered building may take a painted sign. The older
+      // main streets take them most; the wall is picked from the building's ID, so it never moves. ?ghostsigns=0 leaves them out.
+      if (GHOST && style === 0 && recKinds) {
+        const chance = () => { let c = 0; for (const r of nearestRoads(cx, cz, 45)) c = Math.max(c, GHOST.ghostChanceFor(r.road.name)); return c; }; // (asked only when a wall qualifies)
+        const g = GHOST.ghostKinds({ id: foot.id, ring: recRings[0], kinds: recKinds, cover: recCover, top: recH - y0, chance });
+        if (g.edge >= 0) {
+          recKinds = g.kinds; massingStats.ghostSigns++;
+          if (!drawPlan) fr.edges[g.edge].ghost = g.kinds[g.edge];
+          const ring = recRings[0], a = ring[g.edge], b = ring[(g.edge + 1) % ring.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+          massingStats.ghostWalls.push({ id: foot.id, kind: g.kinds[g.edge], x: (a[0] + b[0]) / 2, z: (a[1] + b[1]) / 2, nx: (b[1] - a[1]) / L, nz: -(b[0] - a[0]) / L, len: L, top: recH - y0 });
+        }
       }
       footRecords.push({
         // (its material: the rendered or the curtain-wall facades, which merge their styles; variant: its style there)
