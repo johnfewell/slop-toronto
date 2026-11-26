@@ -1,0 +1,20 @@
+[
+ {
+  "name": "sign1-photo-view",
+  "mode": "person",
+  "wait": 7000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-7, -772, 0); a.cameraSystem.cinema = () => ({ pos: [-7, 6.5, -782], look: [-7, 0.8, -821.7], fov: 30 }); })()"
+ },
+ {
+  "name": "sign2-wheel",
+  "mode": "person",
+  "wait": 1500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-7, -785, 0); a.cameraSystem.cinema = () => ({ pos: [-14, 1.9, -808], look: [-19, 1.8, -821.7], fov: 40 }); })()"
+ },
+ {
+  "name": "sign3-leaf",
+  "mode": "person",
+  "wait": 1500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-7, -785, 0); a.cameraSystem.cinema = () => ({ pos: [12, 1.9, -808], look: [6, 1.9, -821.7], fov: 40 }); })()"
+ }
+]

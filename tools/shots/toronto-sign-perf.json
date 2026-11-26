@@ -1,0 +1,16 @@
+[
+ {
+  "name": "perf-sign-view",
+  "mode": "person",
+  "wait": 5000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-9, -821.7, 0); a.cameraSystem.cinema = () => ({ pos: [-7, 6.5, -782], look: [-7, 0.8, -821.7], fov: 30 }); })()",
+  "metricsMs": 8000
+ },
+ {
+  "name": "perf-pool-overview",
+  "mode": "person",
+  "wait": 5000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(6, -806, 0); a.cameraSystem.cinema = () => ({ pos: [8, 48, -748], look: [6, 0, -806], fov: 60 }); })()",
+  "metricsMs": 8000
+ }
+]
