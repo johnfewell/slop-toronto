@@ -704,7 +704,10 @@ function applyWaterfrontBeachLandscapeGroundMask(mat) {
   if (!T || !mat.isNodeMaterial) return mat;
   const { Fn, positionWorld, float } = T;
   try {
-    const node = Fn(() => {
+    // (the test is run only inside the rings' boxes: st-aeg2.4, tsl-materials.js guardedInside)
+    const boxes = C.groundMaskBox ? [layout.aprons.parkRing, layout.aprons.plazaEnvelope].map((r) => C.groundMaskBox(r, 1)) : null;
+    const guard = (build) => (boxes && C.guardedInside ? C.guardedInside(boxes, build) : build());
+    const node = guard(() => Fn(() => {
       const p = positionWorld.xz;
       let inside = null;
       for (const ring of [layout.aprons.parkRing, layout.aprons.plazaEnvelope]) {
@@ -722,7 +725,7 @@ function applyWaterfrontBeachLandscapeGroundMask(mat) {
         inside = inside ? inside.or(odd) : odd;
       }
       return inside || float(0).greaterThan(float(1));
-    })();
+    })());
     mat.maskNode = mat.maskNode ? mat.maskNode.and(node.not()) : node.not();
     if (!mat.userData) mat.userData = {};
     mat.userData.waterfrontBeachLandscapeMask = true;

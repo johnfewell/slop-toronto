@@ -1805,7 +1805,10 @@ function applyWaterfrontHtoLandscapeGroundMask(mat, THREE = C?.THREE) {
   if (!T || !mat.isNodeMaterial) return mat;
   const { Fn, positionWorld, float, select } = T;
   try {
-    const node = Fn(() => {
+    // (the test is run only inside the rings' boxes: st-aeg2.4, tsl-materials.js guardedInside)
+    const boxes = C.groundMaskBox ? polys.flatMap(({ rings }) => rings.map((r) => C.groundMaskBox(r, 1))) : null;
+    const guard = (build) => (boxes && C.guardedInside ? C.guardedInside(boxes, build) : build());
+    const node = guard(() => Fn(() => {
       const p = positionWorld.xz;
       let crossings = float(0);
       for (const { rings } of polys) {
@@ -1822,7 +1825,7 @@ function applyWaterfrontHtoLandscapeGroundMask(mat, THREE = C?.THREE) {
         }
       }
       return crossings.mod(2).greaterThan(0.5);
-    })();
+    })());
     mat.maskNode = mat.maskNode ? mat.maskNode.and(node.not()) : node.not();
     if (!mat.userData) mat.userData = {};
     mat.userData.waterfrontHtoLandscapeMask = true;
@@ -1845,7 +1848,9 @@ function applyWaterfrontHtoBoardwalkGroundMask(mat, THREE = C?.THREE) {
   if (!T || !mat.isNodeMaterial) return mat;
   const { Fn, positionWorld, float, select } = T;
   try {
-    const node = Fn(() => {
+    const boxes = C.groundMaskBox ? [C.groundMaskBox(ring, 1)] : null;
+    const guard = (build) => (boxes && C.guardedInside ? C.guardedInside(boxes, build) : build());
+    const node = guard(() => Fn(() => {
       const p = positionWorld.xz;
       let crossings = float(0);
       for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -1857,7 +1862,7 @@ function applyWaterfrontHtoBoardwalkGroundMask(mat, THREE = C?.THREE) {
         crossings = crossings.add(select(inZ.and(p.x.lessThan(xInt)), float(1), float(0)));
       }
       return crossings.mod(2).greaterThan(0.5);
-    })();
+    })());
     mat.maskNode = mat.maskNode ? mat.maskNode.and(node.not()) : node.not();
     if (!mat.userData) mat.userData = {};
     mat.userData.waterfrontHtoBoardwalkMask = true;

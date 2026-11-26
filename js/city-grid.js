@@ -819,9 +819,17 @@ function maskedByWater(mat, M) {
   tex.minFilter = THREE.LinearFilter;
   tex.needsUpdate = true;
   const base = mat.colorNode;
+  // the box of the wet cells, a texel and a bit over (the texture is filtered): a fragment outside it never reads the mask (st-aeg2.4)
+  let wi0 = M.w, wi1 = -1, wj0 = M.h, wj1 = -1;
+  for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) if (data[j * M.w + i]) { if (i < wi0) wi0 = i; if (i > wi1) wi1 = i; if (j < wj0) wj0 = j; if (j > wj1) wj1 = j; }
+  if (wi1 < 0) return mat; // (no water: nothing to drop)
+  const wet = { x0: M.x0 + (wi0 - 2) * M.res, x1: M.x0 + (wi1 + 3) * M.res, z0: M.z0 + (wj0 - 2) * M.res, z1: M.z0 + (wj1 + 3) * M.res };
   mat.colorNode = Fn(() => {
     const uv = positionWorld.xz.sub(vec2(M.x0, M.z0)).div(vec2(M.w * M.res, M.h * M.res));
-    If(texture(tex, uv).r.greaterThan(0.5), () => { Discard(); });
+    const p = positionWorld.xz;
+    If(p.x.greaterThanEqual(wet.x0).and(p.x.lessThanEqual(wet.x1)).and(p.y.greaterThanEqual(wet.z0)).and(p.y.lessThanEqual(wet.z1)), () => {
+      If(texture(tex, uv).r.greaterThan(0.5), () => { Discard(); });
+    });
     return base;
   })();
   return mat;
@@ -888,22 +896,38 @@ function maskRoadCuts(mat) {
   const rects = cutRects();
   if (!rects.length || !mat || !mat.isNodeMaterial || mat.userData.roadCutMask) return mat;
   const { positionWorld, vec2, dot } = window.CITY.TSL;
-  let inside = null;
-  for (const c of rects) {
-    const d = positionWorld.xz.sub(vec2(c.x0, c.z0));
-    const t = dot(d, vec2(c.ux, c.uz)), l = dot(d, vec2(-c.uz, c.ux));
-    const inC = t.greaterThan(0.0).and(t.lessThan(c.len)).and(l.greaterThan(c.l0)).and(l.lessThan(c.l1));
-    inside = inside ? inside.or(inC) : inC;
-  }
   const bm = cutBankMask();
-  if (bm) {
-    const { texture } = window.CITY.TSL;
-    const onBank = texture(bm.tex, positionWorld.xz.sub(vec2(bm.x0, bm.z0)).div(vec2(bm.w, bm.h))).r.greaterThan(0.5);
-    inside = inside.or(onBank);
-  }
+  const buildInside = () => {
+    let inside = null;
+    for (const c of rects) {
+      const d = positionWorld.xz.sub(vec2(c.x0, c.z0));
+      const t = dot(d, vec2(c.ux, c.uz)), l = dot(d, vec2(-c.uz, c.ux));
+      const inC = t.greaterThan(0.0).and(t.lessThan(c.len)).and(l.greaterThan(c.l0)).and(l.lessThan(c.l1));
+      inside = inside ? inside.or(inC) : inC;
+    }
+    if (bm) {
+      const { texture } = window.CITY.TSL;
+      const onBank = texture(bm.tex, positionWorld.xz.sub(vec2(bm.x0, bm.z0)).div(vec2(bm.w, bm.h))).r.greaterThan(0.5);
+      inside = inside.or(onBank);
+    }
+    return inside;
+  };
+  // (the oblongs and the banks' footprint are a few small boxes: a fragment elsewhere skips every test, st-aeg2.4)
+  const inside = window.CITY.guardedInside ? window.CITY.guardedInside(cutMaskBoxes(rects, bm), buildInside) : buildInside();
   mat.maskNode = mat.maskNode ? mat.maskNode.and(inside.not()) : inside.not();
   mat.userData.roadCutMask = true;
   return mat;
+}
+// The boxes the road-cut mask can fire in: each oblong's corners (a metre over), and the banks' mask texture's footprint
+function cutMaskBoxes(rects, bm) {
+  const boxes = [];
+  for (const c of rects) {
+    const pts = [];
+    for (const t of [0, c.len]) for (const l of [c.l0, c.l1]) pts.push([c.x0 + c.ux * t - c.uz * l, c.z0 + c.uz * t + c.ux * l]);
+    boxes.push(window.CITY.groundMaskBox(pts, 1));
+  }
+  if (bm) boxes.push({ x0: bm.x0 - 1, z0: bm.z0 - 1, x1: bm.x0 + bm.w + 1, z1: bm.z0 + bm.h + 1 });
+  return window.CITY.clusterMaskBoxes(boxes);
 }
 
 function buildCityGrid(scene) {

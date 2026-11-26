@@ -369,12 +369,14 @@ function applyWaterfrontIslandAccessGroundMask(mat, THREE = C?.THREE) {
   const m = islandAccessMaskTexture(THREE);
   if (!m) return mat;
   try {
-    const node = T.Fn(() => {
+    // (the lookup is run only over the mask's own footprint: st-aeg2.4, tsl-materials.js guardedInside)
+    const build = () => T.Fn(() => {
       const u = T.positionWorld.x.sub(T.float(m.minX)).div(T.float(m.rangeX));
       const v = T.positionWorld.z.sub(T.float(m.minZ)).div(T.float(m.rangeZ));
       const sampled = T.texture(m.tex, T.vec2(u, v)).r;
       return sampled.greaterThan(T.float(0.5));
     })();
+    const node = C?.guardedInside ? C.guardedInside([{ x0: m.minX - 1, z0: m.minZ - 1, x1: m.minX + m.rangeX + 1, z1: m.minZ + m.rangeZ + 1 }], build) : build();
     mat.maskNode = mat.maskNode ? mat.maskNode.and(node.not()) : node.not();
     if (!mat.userData) mat.userData = {};
     mat.userData.waterfrontIslandAccessMask = true;

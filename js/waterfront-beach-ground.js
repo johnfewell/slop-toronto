@@ -224,7 +224,10 @@ function applyWaterfrontBeachGroundMask(mat, THREE = C?.THREE) {
   if (!T || !mat.isNodeMaterial) return mat;
   const { Fn, positionWorld, float } = T;
   try {
-    const node = Fn(() => {
+    // (the test is run only inside the sand rings' boxes: st-aeg2.4, tsl-materials.js guardedInside)
+    const boxes = C.groundMaskBox ? sites.map((s) => C.groundMaskBox(s.sandRing, 1)) : null;
+    const guard = (build) => (boxes && boxes.length && C.guardedInside ? C.guardedInside(boxes, build) : build());
+    const node = guard(() => Fn(() => {
       const p = positionWorld.xz;
       let inside = null;
       for (const s of sites) {
@@ -260,7 +263,7 @@ function applyWaterfrontBeachGroundMask(mat, THREE = C?.THREE) {
         inside = inside ? inside.or(inSand) : inSand;
       }
       return inside || float(0).greaterThan(float(1));
-    })();
+    })());
     mat.maskNode = mat.maskNode ? mat.maskNode.and(node.not()) : node.not();
     if (!mat.userData) mat.userData = {};
     mat.userData.waterfrontBeachMask = true;

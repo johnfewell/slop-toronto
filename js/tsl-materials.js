@@ -3788,5 +3788,56 @@ function createRenderedWallMaterial() {
   return mat;
 }
 
-Object.assign(window.CITY, { COAT, coatSSR, physicalOrStandard, lodDither, filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, setFootprintTable, footprintVertex, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, TREE_CARD_TWIGS: { haze: TWIG_HAZE, colour: TWIG_COLOUR }, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
+// ---- Ground masks, run only where they can fire (st-aeg2.4) ----------------------------------------------------------------
+// The ground materials cut holes where something else stands in the ground's place: the road cuts and the subway's open spans, the
+// waterfront's decks and plazas, the beaches, the Island's berths, the Biidaasige park's surfaces, and the lake itself. Each hole's test is
+// plain arithmetic on the fragment's world xz (one ray-cast term for every edge of a polygon, one distance for every footway segment, one
+// oblong for every cut), written out in full in every ground material's shader, so every ground pixel of the city paid for all of them
+// wherever it was: 1.7 to 2.2 ms of a 14 to 19 ms frame on the Mac mini (st-aeg2.4). A hole can only be where its footprint is.
+// `guardedInside(boxes, build)` runs `build()` (a bool node: true where the fragment is cut away) only for fragments whose world xz lies in
+// one of `boxes` ({ x0, z0, x1, z1 } metres, padded by the caller where the footprint has a width) and is false everywhere else, which is what
+// the full test gives there too: the picture does not change. Without boxes (or without the TSL `bool`) it is `build()` as it was.
+function guardedInside(boxes, build) {
+  const T = window.CITY.TSL;
+  if (!boxes || !boxes.length || !T || !T.bool || !T.If || !T.Fn) return build();
+  return T.Fn(() => {
+    const p = T.positionWorld.xz;
+    let near = null;
+    for (const b of boxes) {
+      const t = p.x.greaterThanEqual(T.float(b.x0)).and(p.x.lessThanEqual(T.float(b.x1))).and(p.y.greaterThanEqual(T.float(b.z0))).and(p.y.lessThanEqual(T.float(b.z1)));
+      near = near ? near.or(t) : t;
+    }
+    const inside = T.bool(false).toVar();
+    T.If(near, () => { inside.assign(build()); });
+    return inside;
+  })();
+}
+// The box of some points ([x, z] pairs or { x, z }), grown by `pad` metres
+function groundMaskBox(points, pad = 0) {
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  for (const q of points) {
+    const x = Array.isArray(q) ? q[0] : q.x, z = Array.isArray(q) ? q[1] : q.z;
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
+  }
+  return { x0: x0 - pad, z0: z0 - pad, x1: x1 + pad, z1: z1 + pad };
+}
+// Boxes merged while they are near each other (within `gap` m) and the merged box stays under `span` m a side: a few boxes that cover the same
+// ground, so the guard is a few comparisons however many footprints there are
+function clusterMaskBoxes(boxes, gap = 120, span = 900) {
+  const out = boxes.map((b) => ({ ...b }));
+  for (let again = true; again;) {
+    again = false;
+    for (let i = 0; i < out.length && !again; i++) for (let j = i + 1; j < out.length && !again; j++) {
+      const a = out[i], b = out[j];
+      if (a.x0 - gap > b.x1 || b.x0 - gap > a.x1 || a.z0 - gap > b.z1 || b.z0 - gap > a.z1) continue;
+      const m = { x0: Math.min(a.x0, b.x0), z0: Math.min(a.z0, b.z0), x1: Math.max(a.x1, b.x1), z1: Math.max(a.z1, b.z1) };
+      if (m.x1 - m.x0 > span || m.z1 - m.z0 > span) continue;
+      out[i] = m; out.splice(j, 1); again = true;
+    }
+  }
+  return out;
+}
+
+
+Object.assign(window.CITY, { COAT, coatSSR, physicalOrStandard, guardedInside, groundMaskBox, clusterMaskBoxes, lodDither, filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, setFootprintTable, footprintVertex, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, TREE_CARD_TWIGS: { haze: TWIG_HAZE, colour: TWIG_COLOUR }, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
 })();

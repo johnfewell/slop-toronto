@@ -4,7 +4,9 @@ const C=window.CITY;
 const asRing=ring=>ring.map(p=>Array.isArray(p)?{x:p[0],z:p[1]}:{x:p.x,z:p.z});
 function insideNode(rings){
  const T=C.TSL;
- return T.Fn(()=>{
+ // (run only inside the rings' boxes: st-aeg2.4, tsl-materials.js guardedInside)
+ const boxes=C.groundMaskBox?rings.map(r=>C.groundMaskBox(r.map(p=>[p.x,p.z]),1)):null;
+ const build=()=>T.Fn(()=>{
   const p=T.positionWorld.xz;let any=null;
   for(const ring of rings){
    let count=T.float(0);
@@ -18,6 +20,7 @@ function insideNode(rings){
   }
   return any;
  })();
+ return boxes&&boxes.length&&C.guardedInside?C.guardedInside(C.clusterMaskBoxes(boxes),build):build();
 }
 // Reveal successful source-footprinted beach, dog-area and woodchip surfaces through coarse native lawn and paving.
 // Only those actual footprints qualify; source park paths and the water pass are retained. Called before shader compilation.

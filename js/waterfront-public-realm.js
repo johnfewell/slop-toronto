@@ -611,7 +611,10 @@ function applyWaterfrontDeckGroundMask(mat, THREE = C?.THREE) {
   if (!T || !mat.isNodeMaterial) return mat;
   const { Fn, positionWorld, float, select } = T;
   try {
-    const node = Fn(() => {
+    // (the test is run only inside the decks' boxes: st-aeg2.4, tsl-materials.js guardedInside)
+    const boxes = C.groundMaskBox ? WATERFRONT_WAVEDECKS.map((d) => C.groundMaskBox(d.plan, 1)) : null;
+    const guard = (build) => (boxes && boxes.length && C.guardedInside ? C.guardedInside(boxes, build) : build());
+    const node = guard(() => Fn(() => {
       const p = positionWorld.xz;
       let inside = null;
       for (const deck of WATERFRONT_WAVEDECKS) {
@@ -633,7 +636,7 @@ function applyWaterfrontDeckGroundMask(mat, THREE = C?.THREE) {
         inside = inside ? inside.or(odd) : odd;
       }
       return inside || float(0).greaterThan(float(1));
-    })();
+    })());
     mat.maskNode = mat.maskNode ? mat.maskNode.and(node.not()) : node.not();
     if (!mat.userData) mat.userData = {};
     mat.userData.waterfrontDeckMask = true;

@@ -437,7 +437,13 @@ function applyWaterfrontIslandGroundMask(mat, THREE = C?.THREE) {
   if (!layout.areas.length && !layout.corridors.length) return mat;
   const { Fn, positionWorld, float } = T;
   try {
-    const node = Fn(() => {
+    // (the test is run only inside the areas' and footways' boxes, the exemptions only take away from them: st-aeg2.4, tsl-materials.js guardedInside)
+    const boxes = C.groundMaskBox ? C.clusterMaskBoxes([
+      ...layout.areas.map((a) => C.groundMaskBox(a.plan, 1)),
+      ...layout.corridors.map((c) => C.groundMaskBox(c.nodes, c.half + 1))
+    ]) : null;
+    const guard = (build) => (boxes && boxes.length && C.guardedInside ? C.guardedInside(boxes, build) : build());
+    const node = guard(() => Fn(() => {
       const p = positionWorld.xz;
       // squared distance from the point to a segment (TSL)
       const dist2 = (ax, az, bx, bz) => {
@@ -481,7 +487,7 @@ function applyWaterfrontIslandGroundMask(mat, THREE = C?.THREE) {
         exempt = exempt ? exempt.or(hit) : hit;
       }
       return exempt ? covered.and(exempt.not()) : covered;
-    })();
+    })());
     mat.maskNode = mat.maskNode ? mat.maskNode.and(node.not()) : node.not();
     if (!mat.userData) mat.userData = {};
     mat.userData.waterfrontIslandMask = true;
