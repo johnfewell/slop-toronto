@@ -323,9 +323,16 @@ function simplifyRing(pts, tol) {
 // The roof (from `roofFrom` m up to 150 m above it: not a tower's pod overhead) seen from above makes up for a mesh whose
 // walls are too broken to close: where the outline traced covers under 60 % of what the roof does, or over 115 % (an
 // open end joined to the wrong one closed off open ground), what the roof covers is the outline.
-function footprintRings(tris, heights, cell = 0.15, tolerance = 0.1, roofFrom = Infinity) {
+function footprintRings(tris, heights, cell, tolerance, roofFrom) {
+  const steps = footprintRingsSteps(tris, heights, cell, tolerance, roofFrom);
+  let r;
+  do r = steps.next(); while (!r.done);
+  return r.value;
+}
+// (the same as a generator that yields between its stages, for a caller that must not hold a frame: footprintCollidersSteps)
+function* footprintRingsSteps(tris, heights, cell = 0.15, tolerance = 0.1, roofFrom = Infinity) {
   const segs = [];
-  for (const y of heights) closeSlice(sliceTriangles(tris, y), segs);
+  for (const y of heights) { closeSlice(sliceTriangles(tris, y), segs); yield; }
   if (segs.length < 12) return [];
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
   for (let i = 0; i < tris.length; i += 3) { x0 = Math.min(x0, tris[i]); x1 = Math.max(x1, tris[i]); z0 = Math.min(z0, tris[i + 2]); z1 = Math.max(z1, tris[i + 2]); }
@@ -360,6 +367,7 @@ function footprintRings(tris, heights, cell = 0.15, tolerance = 0.1, roofFrom = 
     return n;
   };
   const solidCells = fill(null);
+  yield;
   if (roofFrom < Infinity) {
     // the roof's cover: (nearly) level faces from roofFrom up, rasterised at the cells' centres
     const roof = new Uint8Array(W * H);
@@ -380,7 +388,8 @@ function footprintRings(tris, heights, cell = 0.15, tolerance = 0.1, roofFrom = 
         if ((d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0)) { roof[k] = 1; roofCells++; }
       }
     }
-    if (solidCells < 0.6 * roofCells || (solidCells > 1.15 * roofCells && roofCells > 0.4 * solidCells)) fill(roof, false);
+    yield;
+    if (solidCells < 0.6 * roofCells || (solidCells > 1.15 * roofCells && roofCells > 0.4 * solidCells)) { fill(roof, false); yield; }
   }
   const solid = (x, z) => x >= 0 && z >= 0 && x < W && z < H && grid[z * W + x] !== 2;
   // the boundary's directed edges, solid on the left: corner -> next corners
@@ -393,6 +402,7 @@ function footprintRings(tris, heights, cell = 0.15, tolerance = 0.1, roofFrom = 
     if (!solid(x, z + 1)) add((z + 1) * V + x + 1, (z + 1) * V + x);
     if (!solid(x - 1, z)) add((z + 1) * V + x, z * V + x);
   }
+  yield;
   // the walls drawn, bucketed, to lay the traced corners back onto
   const SB = 2, buckets = new Map();
   for (let i = 0; i < segs.length; i += 4) {
@@ -422,6 +432,7 @@ function footprintRings(tris, heights, cell = 0.15, tolerance = 0.1, roofFrom = 
     const ax = a % V, az = Math.floor(a / V), bx = b % V, bz = Math.floor(b / V), cx = c % V, cz = Math.floor(c / V);
     return (bx - ax) * (cz - bz) - (bz - az) * (cx - bx);
   };
+  yield;
   for (const start of [...next.keys()]) {
     while (next.has(start) && next.get(start).length) {
       const ring = [];
@@ -452,6 +463,7 @@ function footprintRings(tris, heights, cell = 0.15, tolerance = 0.1, roofFrom = 
       let ring2 = simplifyRing(pts, tolerance).map(snap);
       ring2 = simplifyRing(ring2, tolerance * 0.5);
       if (ring2.length >= 3) rings.push(ring2);
+      yield;
     }
   }
   return rings;
@@ -469,9 +481,16 @@ function hull(points) {
 // The convex hulls of what the triangles hold in each band of `step` metres from y0 up to top (their corners inside a
 // band, their edges' crossings of its bottom & top), in one sweep: [{ y0, y1, ring }]
 function bandHulls(tris, y0, top, step) {
+  const steps = bandHullsSteps(tris, y0, top, step);
+  let r;
+  do r = steps.next(); while (!r.done);
+  return r.value;
+}
+function* bandHullsSteps(tris, y0, top, step) {
   const n = Math.max(0, Math.ceil((top - y0) / step - 1e-6));
   const pts = Array.from({ length: n }, () => []);
   for (let i = 0; i < tris.length; i += 9) {
+    if (i % 90000 === 0 && i) yield; // (every 10k triangles)
     let lo = Infinity, hi = -Infinity;
     for (let k = 0; k < 3; k++) { const y = tris[i + k * 3 + 1]; if (y < lo) lo = y; if (y > hi) hi = y; }
     const b0 = Math.max(0, Math.floor((lo - y0) / step)), b1 = Math.min(n - 1, Math.floor((hi - y0) / step));
@@ -489,7 +508,9 @@ function bandHulls(tris, y0, top, step) {
       }
     }
   }
-  return pts.map((p, b) => ({ y0: y0 + b * step, y1: Math.min(top, y0 + (b + 1) * step), ring: p.length >= 3 ? hull(p) : [] }));
+  const bands = [];
+  for (let b = 0; b < pts.length; b++) { bands.push({ y0: y0 + b * step, y1: Math.min(top, y0 + (b + 1) * step), ring: pts[b].length >= 3 ? hull(pts[b]) : [] }); yield; }
+  return bands;
 }
 function polygonCollider(points, minY, maxY) {
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
@@ -503,16 +524,23 @@ function polygonCollider(points, minY, maxY) {
 // that (the helicopter, the decks) the convex hull of each BAND metres of it
 const GROUND_TOP = 3.0, BAND = 8;
 // (roof: false for what stands on columns, its roofs overhead: see footprintRings)
-function footprintColliders(objects, { ground = 0, cell = 0.15, roof = true } = {}) {
+function* footprintCollidersSteps(objects, { ground = 0, cell = 0.15, roof = true } = {}) {
   const tris = meshTriangles(objects);
   if (tris.length < 27) return [];
+  yield; // (the stages below are 20 to 50 ms each on the ROM's 93k triangles: a caller that must not stall a frame runs one a frame)
   let top = -Infinity;
   for (let i = 1; i < tris.length; i += 3) top = Math.max(top, tris[i]);
   const out = [];
   const heights = [0.37, 1.07, 1.83, 2.71].map((h) => ground + h);
-  for (const ring of footprintRings(tris, heights, cell, 0.1, roof ? ground + GROUND_TOP : Infinity)) out.push(polygonCollider(ring, undefined, ground + GROUND_TOP));
-  for (const b of bandHulls(tris, ground + GROUND_TOP, top, BAND)) if (b.ring.length >= 3) out.push(polygonCollider(b.ring, b.y0, b.y1));
+  for (const ring of yield* footprintRingsSteps(tris, heights, cell, 0.1, roof ? ground + GROUND_TOP : Infinity)) out.push(polygonCollider(ring, undefined, ground + GROUND_TOP));
+  for (const b of yield* bandHullsSteps(tris, ground + GROUND_TOP, top, BAND)) if (b.ring.length >= 3) out.push(polygonCollider(b.ring, b.y0, b.y1));
   return out;
+}
+function footprintColliders(objects, options) {
+  const steps = footprintCollidersSteps(objects, options);
+  let r;
+  do r = steps.next(); while (!r.done);
+  return r.value;
 }
 
 // ---- street furniture (street-props.js, cycling.js, street-details.js, pedestrian-signals.js...): `prop` colliders,
@@ -544,7 +572,7 @@ function swap(remove, add) {
 window.CITY.WorldCollision = {
   CAR_FOOTPRINT, CAR_REACH, SKIN,
   carShape, circleShape, colliderShape, contact, inside,
-  footprintColliders, footprintRings, polygonCollider, meshTriangles, hull, circleCollider, boxCollider,
+  footprintColliders, footprintCollidersSteps, footprintRings, polygonCollider, meshTriangles, hull, circleCollider, boxCollider,
   swap, changes
 };
 })();

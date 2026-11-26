@@ -8,7 +8,7 @@ const job = process.argv[2];
 const shots = [{ name: 'lib', wait: 100, metricsMs: 0, js: lib }];
 const place = (name, body, o = {}) => shots.push({ name: `${job}-${name}`, wait: 200, record: true, metricsMs: 0, ...o, js: `(async () => { await __P.go(${JSON.stringify(name)}, ${o.settle || 9000}); ${body} })()` });
 if (job === 'disc') {
-  const names = ['cab', 'qwa', 'tb', 'fin', 'fin300', 'stj', 'out', 'isl', 'isln', 'night'];
+  const names = (process.env.PLACES || 'cab qwa tb fin fin300 stj out isl isln night').split(' ');
   names.forEach((n, i) => place(n, `const R = { place: ${JSON.stringify(n)}, census: await __P.census(8), base: await __P.meas(500, 2500), treecull: __P.treeCull() };${i === 0 ? ' R.tree = __P.tree(); R.quality = __P.quality();' : ''} return R;`));
 } else if (job === 'trace') {
   // the sequence of renderer.render calls (pass, scene, camera, target) over a few frames at PLACES
@@ -44,6 +44,24 @@ if (job === 'disc') {
   // runtime: the ground's children hidden one at a time, at PLACES
   const names = (process.env.PLACES || 'cab').split(' ');
   names.forEach((n) => place(n, `return await __P.run({ rounds: 3, keep: 0, only: 'ground' });`, { wait: 300, settle: 7000 }));
+} else if (job === 'groundmats') {
+  // the ground's drawn meshes (CityGround, visible, in the view) by material: count, triangles, material class and name, shadow flags, what it casts/receives; at PLACES
+  const names = (process.env.PLACES || 'egl').split(' ');
+  names.forEach((n) => place(n, `const T = window.CITY.THREE, A = window.__CITY_APP, cam = A.cameraSystem.camera; cam.updateMatrixWorld();
+    const fr = new T.Frustum().setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse), cam.coordinateSystem, cam.reversedDepth);
+    const sp = new T.Sphere(), by = {}, vis = (o) => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
+    for (const top of A.scene.children.filter((c) => (c.name || c.type) === 'CityGround')) top.traverse((m) => {
+      if (!m.isMesh || !vis(m)) return; const g = m.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); sp.copy(g.boundingSphere).applyMatrix4(m.matrixWorld); if (!fr.intersectsSphere(sp)) return;
+      const mat = Array.isArray(m.material) ? m.material[0] : m.material, tris = (g.index ? g.index.count : g.attributes.position.count) / 3;
+      let anc = m.parent, path = []; while (anc && anc !== top) { path.unshift(anc.name || anc.type); anc = anc.parent; }
+      const k = (mat.name || '') + '|' + mat.type + '|' + path.slice(0, 2).join('/') + '|rs' + (m.receiveShadow ? 1 : 0) + 'cs' + (m.castShadow ? 1 : 0) + '|' + (mat.transparent ? 'T' : 'O') + (mat.maskNode ? 'M' : '') + (mat.alphaTest ? 'A' : '') + (mat.side === 2 ? 'D' : '');
+      const e = by[k] ||= { meshes: 0, tris: 0, attrs: Object.keys(g.attributes).join(',') }; e.meshes++; e.tris += tris; });
+    return { place: ${JSON.stringify(n)}, by: Object.entries(by).sort((a, b) => b[1].tris - a[1].tris).slice(0, 30) };`, { settle: 7000 }));
+} else if (job === 'ft') {
+  // every frame's interval for FTSECONDS (default 20) at each of PLACES, in the shape tools/frame-time-chart.mjs draws (tools/shots/frame-times.json's recorder)
+  const ftjs = JSON.parse(fs.readFileSync(dir + '../shots/frame-times.json', 'utf8'))[0].js;
+  const names = (process.env.PLACES || 'hpw egl').split(' ');
+  names.forEach((n) => place(n, `window.__captureShot = { ftSeconds: ${Number(process.env.FTSECONDS || 20)} }; const R = await (${ftjs}); R.place = ${JSON.stringify(n)}; return R;`, { settle: Number(process.env.FTSETTLE || 8000) }));
 } else if (job === 'visit') {
   // one page load, every place in PLACES: the base frame (median, CPU split) and a short census total, for the
   // reload arms (a query, see visits.sh); WINDOW ms per place

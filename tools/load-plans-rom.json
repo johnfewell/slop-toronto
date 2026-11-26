@@ -1,0 +1,11 @@
+{
+ "tag": "rom-ab",
+ "arms": { "A": "dist-main", "B": "dist-rom" },
+ "rounds": 2,
+ "order": "ABAB",
+ "settings": [
+  { "name": "phone-low-slow", "viewport": "412x915", "dpr": 2.625, "mobile": true, "cpuThrottle": 4, "query": "?quality=low&liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z", "net": { "latency": 150, "down": 1600000, "up": 750000 } },
+  { "name": "desk-egl-slow", "viewport": "1600x900", "query": "?liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z", "net": { "latency": 150, "down": 1600000, "up": 750000 } },
+  { "name": "phone-low-4x", "viewport": "412x915", "dpr": 2.625, "mobile": true, "cpuThrottle": 4, "query": "?quality=low&liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z", "net": null }
+ ]
+}

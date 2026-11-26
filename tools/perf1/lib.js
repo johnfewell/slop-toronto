@@ -10,6 +10,8 @@
   // perf-pass-views.json, so numbers can be set beside the earlier censuses)
   const ll = (lat, lon) => window.CITY.worldFromLatLon(lat, lon);
   const stj = ll(43.6678, -79.3748), out = ll(43.7064, -79.3985);
+  const egw = ll(43.7062, -79.4005), ege = ll(43.7075, -79.3920);
+  const hpG = (x, z) => (window.CITY.cutAt ? window.CITY.cutAt(x, z) : 0) + (window.CITY.blockAt(x, z) ? 0.22 : 0);
   P.places = {
     cab: { x: 1800, z: -1601, cam: { pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 } },
     qwa: { x: -1386.6, z: -713.6, cam: { pos: [-1386.6, 1.7, -713.6], look: [-1370.6, 6, -713.3], fov: 65 } },
@@ -20,6 +22,11 @@
     out: { x: out.x, z: out.z, cam: { pos: [out.x, 1.7, out.z], look: [out.x + 40, 6, out.z - 60], fov: 62 } },
     isl: { x: -658, z: 2419, cam: { pos: [-658, 1.7, 2419], look: [-935, 6, 2303], fov: 62 } },
     isln: { x: -658, z: 2419, cam: { pos: [-658, 1.7, 2419], look: [-658, 6, 2119], fov: 62 } },
+    // (st-perf heavy views, 2026-11-26: High Park's densest woods on foot and from above, and a busy Eglinton street at Yonge looking east)
+    hpw: { x: -6240, z: -2350, cam: { pos: [-6240, hpG(-6240, -2350) + 1.7, -2350], look: [-6200, hpG(-6200, -2440) + 4, -2440], fov: 62 } },
+    hpa: { x: -6240, z: -2350, cam: { pos: [-6120, 70, -2230], look: [-6280, 10, -2400], fov: 55 } },
+    egl: { x: egw.x, z: egw.z, cam: { pos: [egw.x, 1.7, egw.z], look: [ege.x, 6, ege.z], fov: 62 } },
+    rom: { x: -300, z: -2640, cam: { pos: [-300, 20, -2640], look: [-349, 12, -2699], fov: 60 } },
     // (perf2 sheets: the same cameras at golden hour, a look at the sidewalk's dapple from 2 m up, one aerial, the Island at golden hour)
     cabg: { x: 1800, z: -1601, time: 'golden', cam: { pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 } },
     cabc: { x: 1800, z: -1601, cam: { pos: [1800, 2.2, -1601], look: [1797, 0, -1604], fov: 60 } },
@@ -110,7 +117,7 @@
     const label = cam === A.cameraSystem.camera ? 'main' : cam === sc[0] ? 'shadow0' : cam === sc[1] ? 'shadow1' : 'other';
     if (P.skip.has(label)) return undefined;
     if (P.skipNames.size && (P.skipNames.has(s.name) || (s.isSprite && P.skipNames.has('Sprite')) || [...P.skipNames].some((n) => n.endsWith('*') && (s.name || '').startsWith(n.slice(0, -1))))) return undefined;
-    if (acc && label === 'main') acc.frames++;
+    if (acc && label === 'main' && !s.isSprite) acc.frames++; // (the stars sprite also renders through the main camera: not a frame)
     if (P.traceOn) {
       const rt = R.getRenderTarget();
       P.traceOn.push({ f: A.frameNo, label, depth: stack.length, scene: s === scene ? 'scene' : (s.name || s.type), cam: cam.type + (cam === A.cameraSystem.camera ? '(main)' : ''),

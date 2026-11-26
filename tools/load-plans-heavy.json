@@ -1,0 +1,13 @@
+{
+ "tag": "hv-load-base",
+ "arms": { "A": "dist-main" },
+ "rounds": 3,
+ "order": "A",
+ "settings": [
+  { "name": "desk-egl-fast", "viewport": "1600x900", "query": "?liveDate=2026-11-26", "net": null },
+  { "name": "desk-detail-fast", "viewport": "1600x900", "query": "?map=detail&liveDate=2026-11-26", "net": null },
+  { "name": "phone-low-4x", "viewport": "412x915", "dpr": 2.625, "mobile": true, "cpuThrottle": 4, "query": "?quality=low&liveDate=2026-11-26", "net": null },
+  { "name": "desk-egl-slow", "viewport": "1600x900", "query": "?liveDate=2026-11-26", "net": { "latency": 150, "down": 1600000, "up": 750000 } },
+  { "name": "phone-low-slow", "viewport": "412x915", "dpr": 2.625, "mobile": true, "cpuThrottle": 4, "query": "?quality=low&liveDate=2026-11-26", "net": { "latency": 150, "down": 1600000, "up": 750000 } }
+ ]
+}

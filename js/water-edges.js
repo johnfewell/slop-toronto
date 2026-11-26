@@ -18,7 +18,7 @@ const S = C.SHORES;
 const params = new URLSearchParams(location.search);
 const OFF = !S || params.get('shores') === '0';
 const DEBUG = params.get('shores') === 'debug' || params.get('shores') === 'debug-all'; // (the apron magenta, the fringe yellow, the shallows cyan)
-const Q = C.QUALITY || { tier: 'high' };
+const Q = C.QUALITY || { tier: 'high', ssr: true };
 const LOW = Q.tier === 'low';
 
 // Shore classes
@@ -642,8 +642,11 @@ function shallowsMaterial() {
   mat.polygonOffsetFactor = -2;
   mat.polygonOffsetUnits = -4;
   if (DEBUG) { mat.colorNode = color(0x00ffff); mat.opacityNode = float(0.9); }
-  // (the water's own reflections & SSR stay: the scene pass's normal & metal/rough targets keep the water's)
-  mat.mrtNode = mrt({ normal: vec4(0.0, 0.0, 0.0, 0.0), metalRough: vec4(0.0, 0.0, 0.0, 0.0) });
+  // This mesh can arrive after the startup material pass. Only override the extra outputs when the scene has them.
+  if (Q.ssr) {
+    // Preserve the water's normal and metal/roughness values for screen-space reflections.
+    mat.mrtNode = mrt({ normal: vec4(0.0, 0.0, 0.0, 0.0), metalRough: vec4(0.0, 0.0, 0.0, 0.0) });
+  }
   return mat;
 }
 

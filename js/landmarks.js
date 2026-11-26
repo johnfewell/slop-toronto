@@ -1043,24 +1043,50 @@ function buildLandmarks(scene) {
     const s = S.rom;
     boxCollider(s.x, s.z, s.w / 2, s.d / 2, s.ang || 0, 36);
     const romBox = colliders.slice(-1);
-    Promise.all([
+    // The model's 6 MB are fetched once the city is ready, not during the start-up: they only shared the link with the
+    // trees' models the first frame waits for (on a phone's 1.6 Mbps link, tens of seconds of ready time; st-tw6z). Its
+    // outline collider above stands from the start, as the model's does when it arrives.
+    const afterReady = () => new Promise((resolve) => {
+      const poll = () => (window.__CITY_APP && window.__CITY_APP.ready ? resolve() : setTimeout(poll, 250));
+      poll();
+    });
+    afterReady().then(() => Promise.all([
       fetch('./assets/landmarks/rom-fit.json').then((r) => r.json()),
       new window.CITY.Addons.GLTFLoader().loadAsync('./assets/landmarks/rom.glb')
-    ]).then(([fit, gltf]) => {
+    ])).then(async ([fit, gltf]) => {
+      // Placed without a long frame (it arrives after the loading screen): its meshes are drawn at nothing a few a frame first,
+      // so their pipelines and buffers build while nothing shows, then it is shown, and its outline collider is built a stage a frame
+      const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
       const rom = gltf.scene;
       rom.name = 'Landmark_rom';
       rom.rotation.y = fit.rotationY;
       rom.position.set(fit.x, SW_Y + fit.y, fit.z);
+      const meshes = [];
       rom.traverse((o) => {
         if (o.isMesh) {
           o.castShadow = true;
           o.receiveShadow = true;
+          meshes.push({ o, visible: o.visible, fc: o.frustumCulled, range: { ...o.geometry.drawRange } });
         }
       });
+      for (const m of meshes) { m.o.geometry.setDrawRange(0, 0); m.o.frustumCulled = false; m.o.visible = false; }
       group.add(rom);
       rom.updateMatrixWorld(true); // (the static city's matrices are frozen once built: main.js)
-      const next = WC ? WC.footprintColliders(rom) : [];
-      if (next.length) WC.swap(romBox, next); // (the model's outline in place of the site's rectangle)
+      await nextFrame();
+      for (let k = 0; k < meshes.length; k++) { // (one a frame: a mesh's first draw builds its pipeline and binds its textures, 20 to 60 ms)
+        meshes[k].o.visible = true;
+        await nextFrame();
+      }
+      for (let i = 0; i < 3; i++) await nextFrame(); // (let the last pipelines finish)
+      for (const m of meshes) { m.o.geometry.setDrawRange(m.range.start, m.range.count); m.o.frustumCulled = m.fc; m.o.visible = m.visible; }
+      window.__ftMark?.('ROM model shown');
+      if (WC) {
+        const steps = WC.footprintCollidersSteps(rom);
+        let r = steps.next();
+        while (!r.done) { await nextFrame(); r = steps.next(); }
+        if (r.value.length) WC.swap(romBox, r.value); // (the model's outline in place of the site's rectangle)
+      }
+      window.__ftMark?.('ROM collider built');
       console.info('[landmarks] ROM model placed');
     }).catch((e) => console.warn('[landmarks] ROM model did not load:', e));
     done.add('rom');

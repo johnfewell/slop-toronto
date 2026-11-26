@@ -1124,3 +1124,24 @@ test('driveSpeed for a drive without powerSpeed (the car) is unchanged', () => {
       `driveSpeed(${speed}, ${throttle}, boost ${boost}) unchanged`);
   }
 });
+
+test('a collider swap after the cells are built goes into the cells and finds what a rebuild finds (the ROM outline arriving)', () => {
+  const h = teleportHarness('person');
+  const WC = h.window.CITY.WorldCollision, c = h.controller;
+  const box = (x, z) => WC.boxCollider(x, z, 5, 5, 0, 0, 10, 'box');
+  const a = box(0, 0), b = box(100, 0), tiny = WC.circleCollider(3, 3, 0.3, 0, 2);
+  c.colliders = [a, b, tiny];
+  assert.equal(JSON.stringify(c.nearColliders(0, 0, 20).map((k) => k._order)), '[0,2]', 'built: the box and the small post near the origin');
+  const outline = WC.polygonCollider([{ x: -8, z: -8 }, { x: 8, z: -8 }, { x: 8, z: 8 }, { x: -8, z: 8 }], 0, 20);
+  const post = WC.circleCollider(-2, -2, 0.3, 0, 2);
+  WC.swap([a], [outline, post]);
+  const near = c.nearColliders(0, 0, 20);
+  assert.ok(!near.includes(a), 'the stand-in is gone from its cells');
+  assert.ok(near.includes(outline) && near.includes(post) && near.includes(tiny), 'the new colliders are in them');
+  const orders = Array.from(near, (k) => k._order);
+  assert.equal(JSON.stringify(orders), JSON.stringify([...orders].sort((x, y) => x - y)), 'in order');
+  const fresh = teleportHarness('person').controller;
+  fresh.colliders = [b, tiny, outline, post];
+  assert.equal(fresh.nearColliders(0, 0, 20).length, near.length, 'the same as a rebuild');
+  assert.ok(c.nearColliders(100, 0, 20).length === 1 && c.nearColliders(100, 0, 20)[0] === b, 'the far one is untouched');
+});

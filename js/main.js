@@ -448,19 +448,25 @@ async function initApp() {
   markInit('roadworks');
   // the people's heads at every crosswalk, the midblock signals & the pedestrian crossovers (pedestrian-signals.js)
   if (window.CITY.buildPedestrianSignals) pushAll(propColliders, (window.CITY.buildPedestrianSignals(scene, trafficSystem, streetDetails.signalClock)?.colliders || []));
+  markInit('pedSignals');
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
+  markInit('highwayTraffic');
   // --- Toronto layer (after aalghooneh/slop-toronto): the TTC's streetcars, which the traffic keeps behind ---
   const streetcars = window.CITY.createStreetcars(scene, trafficSystem);
+  markInit('streetcarCars');
   // the TTC's buses on their routes (transit-buses.js), in place of roaming ones
   const transitBuses = window.CITY.createTransitBuses ? window.CITY.createTransitBuses(trafficSystem) : null;
   // the Union Station Rail Corridor's tracks & GO trains (rail-corridor.js)
+  markInit('transitBuses');
   const railCorridor = window.CITY.createRailCorridor(scene, trafficSystem);
+  markInit('railCorridor');
   pushAll(allColliders, railCorridor.colliders); // the raised tracks' embankments (the player's only)
   // the streetcars' sounds (audio branch: reads streetcars.cars, safe before the audio exists)
   if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(streetcars);
   // the TTC subway where it shows: Line 2 on the Bloor Viaduct, the station entrances (subway.js)
   const subway = window.CITY.createSubway(scene);
   pushAll(allColliders, subway.colliders);
+  markInit('subway');
   // the TTC's subway pylons at the entrances (ttc-pylons.js; their colliders are subway.js's)
   if (window.CITY.buildTtcPylons) await window.CITY.buildTtcPylons(scene, subway.entrances.pylons);
   if (window.CITY.Audio && window.CITY.Audio.addStreetcars) window.CITY.Audio.addStreetcars(subway);

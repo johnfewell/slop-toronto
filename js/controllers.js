@@ -1026,31 +1026,41 @@ class ThirdPersonControllerManager {
   nearColliders(x, z, r) {
     const CELL = 48, FINE = 8;
     const key = (ix, iz) => (ix + 4096) * 8192 + (iz + 4096);
-    // (a model that loaded later replaced its stand-in's colliders: js/world-collision.js swap)
+    // each collider's cell lists: the 48 m cells, or (the small ones) the 8 m cells; one pass over its bounds
+    const eachCell = (c, fn) => {
+      const small = c.maxX - c.minX <= FINE && c.maxZ - c.minZ <= FINE;
+      const cells = small ? this._fineCells : this._colliderCells, size = small ? FINE : CELL;
+      for (let ix = Math.floor(c.minX / size); ix <= Math.floor(c.maxX / size); ix++) {
+        for (let iz = Math.floor(c.minZ / size); iz <= Math.floor(c.maxZ / size); iz++) fn(cells, key(ix, iz));
+      }
+    };
+    // (a model that loaded later replaced its stand-in's colliders: js/world-collision.js swap. With the cells already built the
+    // change goes into them, not a rebuild of every collider's cells: that was a 100 ms frame when the ROM's outline arrived)
     if (G && G.changes.length !== (this._changesSeen || 0)) {
+      const built = !!this._colliderCells;
       for (const { remove, add } of G.changes.slice(this._changesSeen || 0)) {
         const gone = new Set(remove);
         this.colliders = this.colliders.filter((c) => !gone.has(c)).concat(add);
+        if (built) {
+          for (const c of remove) eachCell(c, (cells, k) => { const l = cells.get(k); const i = l ? l.indexOf(c) : -1; if (i >= 0) l.splice(i, 1); });
+          for (const c of add) { c._order = this._orderNext++; eachCell(c, (cells, k) => { let l = cells.get(k); if (!l) cells.set(k, (l = [])); l.push(c); }); }
+        }
       }
       this._changesSeen = G.changes.length;
-      this._colliderCells = null;
+      if (!built) this._colliderCells = null;
     }
     if (!this._colliderCells) {
       this._colliderCells = new Map();
       this._fineCells = new Map();
       this.colliders.forEach((c, i) => {
         c._order = i;
-        const small = c.maxX - c.minX <= FINE && c.maxZ - c.minZ <= FINE;
-        const cells = small ? this._fineCells : this._colliderCells, size = small ? FINE : CELL;
-        for (let ix = Math.floor(c.minX / size); ix <= Math.floor(c.maxX / size); ix++) {
-          for (let iz = Math.floor(c.minZ / size); iz <= Math.floor(c.maxZ / size); iz++) {
-            const k = key(ix, iz);
-            let list = cells.get(k);
-            if (!list) cells.set(k, (list = []));
-            list.push(c);
-          }
-        }
+        eachCell(c, (cells, k) => {
+          let list = cells.get(k);
+          if (!list) cells.set(k, (list = []));
+          list.push(c);
+        });
       });
+      this._orderNext = this.colliders.length;
       this._grids = [[this._colliderCells, CELL], [this._fineCells, FINE]];
       this._nearList = [];
       this._nearStamp = 0;

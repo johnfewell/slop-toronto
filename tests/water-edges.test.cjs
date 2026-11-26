@@ -76,6 +76,30 @@ test('the rollout: every batch shipped, the default draws every natural shore th
   assert.ok(Math.abs(length(def.naturalShores()) - length(runs)) < 1, 'the default is the whole map');
 });
 
+test('late shore meshes only override reflection targets on tiers that render SSR', async () => {
+  const THREE = await import('three/webgpu');
+  const TSL = await import('three/tsl');
+  class TextureLoader {
+    load() { return new THREE.Texture(); }
+  }
+  for (const [tier, ssr] of [['high', true], ['medium', false], ['low', false]]) {
+    const testCity = { ...C, THREE: { ...THREE, TextureLoader }, TSL, QUALITY: { tier, ssr } };
+    vm.runInNewContext(read('js/water-edges.js'), {
+      window: { CITY: testCity }, location: { search: '' }, URLSearchParams, atob, console: { info() {} }, performance, setTimeout
+    });
+    const scene = new THREE.Scene();
+    await testCity.buildWaterEdges(scene).ready;
+    assert.ok(scene.getObjectByName('ShoreApron'), tier);
+    const shallows = scene.getObjectByName('ShoreShallows');
+    if (tier === 'low') {
+      assert.equal(shallows, undefined);
+    } else {
+      assert.ok(shallows, tier);
+      assert.equal(Boolean(shallows.material.mrtNode), ssr, tier);
+    }
+  }
+});
+
 test('st-bz1o.13: the bigger map\'s band ponds get their shores; ponds under paved plots still do not', async () => {
   const { unpackGeo } = await import('../js/geodata-loader.js');
   const layers = await unpackGeo(readFileSync(join(__dirname, '..', 'data/frames/eglinton/toronto-geodata.bin')));
