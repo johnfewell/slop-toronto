@@ -372,13 +372,13 @@ const REVIEWED_MASSING_EDITION = '3DMassingShapefile_2025_WGS84';
 // numeric OSM way id for reference (`null` when the row has no OSM footprint). `nativeFp` is the committed row's own
 // footprint signature, so a rebuilt/reshaped row can never inherit this override.
 const REVIEWED_MARINA_OUTLIERS = new Map([
-  [32501, { row: 32501, massingId: 'to-3dmassing-2025:354314', marinaWay: 193043084, osmWay: 795796083, appearance: 'shed',
+  [32506, { row: 32506, massingId: 'to-3dmassing-2025:354314', marinaWay: 193043084, osmWay: 795796083, appearance: 'shed',
     osmOsm: 'osm:way/795796083', nativeFp: '[0.551,[[-6.3,6.3,-2.8,2.8]]]', nativeHeight: 31.9,
     massing: { max: 31.9, avg: 3.3, min: 16.1 }, note: 'OSM Way 795796083 building=yes; 2024 orthophoto: small low dark grey pitched-roof marina building beside grouped dinghies' }],
-  [32502, { row: 32502, massingId: 'to-3dmassing-2025:354315', marinaWay: 193043084, osmWay: null, appearance: 'storage',
+  [32507, { row: 32507, massingId: 'to-3dmassing-2025:354315', marinaWay: 193043084, osmWay: null, appearance: 'storage',
     osmOsm: '', nativeFp: '[0.608,[[-5.6,5.6,-3.1,3.1]]]', nativeHeight: 28.7,
     massing: { max: 28.7, avg: 2.8, min: 9.8 }, note: 'no OSM footprint; 2024 orthophoto: pale ground-level pad under leafless canopy beside boat racks; function and roof uncertain' }],
-  [32503, { row: 32503, massingId: 'to-3dmassing-2025:354316', marinaWay: 193043084, osmWay: null, appearance: 'storage',
+  [32508, { row: 32508, massingId: 'to-3dmassing-2025:354316', marinaWay: 193043084, osmWay: null, appearance: 'storage',
     osmOsm: '', nativeFp: '[-0.953,[[-5.4,5.4,-3.1,3.1]]]', nativeHeight: 28.5,
     massing: { max: 28.5, avg: 2.9, min: 0.4 }, note: 'no OSM footprint; 2024 orthophoto: pale ground-level pad under leafless canopy beside boat racks; function and roof uncertain' }]
 ]);
@@ -410,7 +410,7 @@ function reviewedMarinaOutlier(rowIndex, row, marina, massingParts) {
 // timber walls, dark navy doors/shutters/trim and low eaves; the 2024 City orthophoto shows the first row's low dark
 // pitched roof and the other two as pale low storage under canopy. Door counts/positions are approximations.
 //
-// st-sb3r.39 (QCYC clubhouse, row 32139 / OSM Way 43805118): the `clubhouse` entry is a representative, photo-informed
+// st-sb3r.39 (QCYC clubhouse, row 32144 / OSM Way 43805118): the `clubhouse` entry is a representative, photo-informed
 // read of the official club homepage hero (white two-storey envelope, dark grey pitched/hip roof with an offset wing,
 // a waterfront balcony/terrace and repeated bays). The hero image's acquisition date is unknown; it is NOT a measured
 // survey. Client-side `js/buildings.js` derives the frontage wall from the mapped footprint + the marina water instead
@@ -489,7 +489,7 @@ function classifyReviewedMarinaOutlier(massingParts, entry) {
 // OSM binding or level count disables it (fail closed).
 const CLUBHOUSE_MASSING_EDITION = '3DMassingShapefile_2025_WGS84';
 const REVIEWED_CLUBHOUSE = {
-  row: 32139, osmWay: 43805118, marinaWay: 193043084, osmOsm: 'osm:way/43805118',
+  row: 32144, osmWay: 43805118, marinaWay: 193043084, osmOsm: 'osm:way/43805118',
   nativeFp: '[-0.983,[[-18.7,15.3,-3.5,9.5],[-2.2,18.8,-8.5,-3.5]]]', nativeHeight: 9.4, levels: 2,
   waterV: -1,
   note: 'OSM Way 43805118 building=yes, name "Queen City Yacht Club clubhouse", building:levels 2 (NRCan CanVec import); official QCYC homepage hero: white two-storey envelope, dark grey hip roof, waterfront balcony on the -v side, repeated bays'

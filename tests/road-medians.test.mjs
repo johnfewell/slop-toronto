@@ -135,28 +135,35 @@ const flatIn = (f, x, z) => {
 };
 const blockAt = (x, z) => geo().blocks.find((b) => flatIn(b[0], x, z));
 
-// Places where the City's road polygon has a hole and the orthophoto shows a median: world x, z of the island's middle,
-// the road's bearing's normal, and the drawn carriageway on each side of it (m, measured on the committed build)
+// Places where the City's road polygon has a hole and the orthophoto shows a median: world x, z of the island's middle
+// and what it is made of there (docs/road-medians.md): 'lawn' and 'concrete' are raised islands (block rows 1 and 2), 'paint'
+// is a gore on the road (no island, an outline in GEO.gores)
 const MEDIANS = [
-  { name: 'Shaw Street', x: -2776, z: -830.5 },
-  { name: 'River Street', x: 2343.5, z: -1533.5 },
-  { name: 'Front Street West at the Princes\' Gates', x: -45, z: -41.5 },
-  { name: 'Remembrance Drive', x: -3093, z: 765 },
-  { name: 'Cherry Street', x: 1990, z: -29 }
+  { name: 'Shaw Street', x: -2776, z: -830.5, kind: 'lawn' },
+  { name: 'River Street', x: 2343.5, z: -1533.5, kind: 'lawn' },
+  { name: 'Front Street West at the Princes\' Gates (a paved plaza island)', x: -45, z: -41.5, kind: 'concrete' },
+  { name: 'Remembrance Drive (a painted gore on a car park)', x: -3093, z: 765, kind: 'paint' },
+  { name: 'Cherry Street (a brick-paved strip)', x: 1990, z: -29, kind: 'concrete' },
+  { name: 'Lake Shore Boulevard East at Cherry (a concrete apron with a crosswalk)', x: 2002.7, z: 127.5, kind: 'concrete' }
 ];
 
-test('the committed city has an island at each of these medians, flagged as a median', () => {
+test('the committed city has each of these medians made of what the orthophoto shows', () => {
   for (const m of MEDIANS) {
     const b = blockAt(m.x, m.z);
+    if (m.kind === 'paint') {
+      assert.ok(!b, `${m.name}: no raised island`);
+      assert.ok(geo().gores.some((g) => flatIn(g, m.x, m.z)), `${m.name}: a painted gore at ${m.x}, ${m.z}`);
+      continue;
+    }
     assert.ok(b, `${m.name}: a curb island at ${m.x}, ${m.z}`);
-    assert.equal(b[5], 1, `${m.name}: it is a median`);
+    assert.equal(b[5], m.kind === 'lawn' ? 1 : 2, `${m.name}: ${m.kind}`);
     assert.ok(b[0].length >= 8, `${m.name}: it has an outline`);
   }
 });
 
 test('a median splits the carriageway it was drawn across: two roadways, not one 14-22 m road (Shaw Street)', () => {
   // across Shaw Street at the median: land (the median) between two roadways, each under 6 m wide
-  const m = MEDIANS[0];
+  const m = MEDIANS[0]; // (Shaw Street)
   const dirs = [[0, 1], [1, 0]]; // the road runs roughly east-west here: walk north-south
   let best = null;
   for (const [dx, dz] of dirs) {
@@ -173,7 +180,23 @@ test('a median splits the carriageway it was drawn across: two roadways, not one
   assert.ok(Math.max(...best) < 8, `no roadway is wider than a lane pair: ${best.join(', ')}`);
 });
 
-test('the build\'s road polygons with holes: the committed binary and script agree the medians are there', () => {
-  const medians = geo().blocks.filter((b) => b[5] === 1).length;
-  assert.ok(medians >= 440, `${medians} medians on the detail map (399 before the holes were kept)`);
+test('the build\'s road polygons with holes: every one of the 446 medians of the detail map is an island or a gore', () => {
+  const islands = geo().blocks.filter((b) => b[5] > 0).length;
+  assert.equal(islands + geo().gores.length, 446, `${islands} islands and ${geo().gores.length} painted gores (399 medians before the holes were kept, 445 with them)`);
+});
+
+test('the fat holes are back: five buildings stood inside whole blocks of laneway polygons', () => {
+  const ids = (() => {
+    const c = { window: {} };
+    vm.runInNewContext(fs.readFileSync(path.join(root, 'js/toronto-geodata-ids.js'), 'utf8'), c);
+    return c.window.CITY.GEO_IDS.buildings;
+  })();
+  assert.equal(ids.length, 35271);
+  for (const id of [100832, 103837, 105149, 137504, 137506]) {
+    const row = ids.indexOf(`to-3dmassing-2025:${id}`);
+    assert.ok(row >= 0, `massing ${id} is a building row`);
+    const b = geo().buildings[row];
+    const near = [[0, 0], [5, 0], [-5, 0], [0, 5], [0, -5]].some(([dx, dz]) => blockAt(b[0] + dx, b[1] + dz));
+    assert.ok(near, `massing ${id} stands on a block (within 5 m of ${b[0]}, ${b[1]})`);
+  }
 });

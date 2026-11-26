@@ -103,7 +103,7 @@ painted across the full visible width.
 ## 5. What does **not** work as a measurement source
 
 - **City physical-sidewalk polygons** (`js/toronto-sidewalks.js`): they do cover the Algonquin blocks (islands
-  2895/2901/2903/2904/2905/2907 each have pieces), but they are the **walk surface**, not the lane footprint. They do not
+  2789/2795/2797/2798/2799/2801 each have pieces), but they are the **walk surface**, not the lane footprint. They do not
   bound the lane and are not used here.
 - **One ground photo**: a single perspective view cannot give metres. Correctly excluded.
 

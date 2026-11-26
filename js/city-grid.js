@@ -1409,7 +1409,7 @@ function buildCityGrid(scene) {
     }
     if (!inner) continue;
     if (b.median) {
-      const mat = tramMedians.has(b) ? 'paved' : 'lawn';
+      const mat = tramMedians.has(b) || b.concrete ? 'paved' : 'lawn';
       if (!ponds.length) geos[mat].push(extrude(createWorldXZShape(inner), 0.03, SW_TOP - 0.03));
       else { const top = yardGeometry(inner, SW_TOP, ponds); if (top) geos[mat].push(top); }
       continue;

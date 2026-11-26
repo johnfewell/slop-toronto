@@ -139,7 +139,7 @@ test('The Power Plant: the eight mapped rows resolve by identity in both shipped
   assert.equal(C.POWER_PLANT.rows.length, 8);
   const detail = C.powerPlantRows();
   assert.ok(detail, 'the eight rows resolve in the detail frame');
-  assert.deepEqual(detail.map((r) => r.index).join(','), '33256,33257,33258,33259,33260,33261,33262,33263');
+  assert.deepEqual(detail.map((r) => r.index).join(','), '33261,33262,33263,33264,33265,33266,33267,33268');
   // the eglinton frame holds the same rows at different indices: resolution must follow name+centre+height, not index
   const { GEO: EGL } = await unpackGeo(readBin('data/frames/eglinton/toronto-geodata.bin'));
   const ctx = makeContext({ overrides: { GEO: EGL } });
@@ -201,7 +201,7 @@ test('The Power Plant: the south gallery carries the source-photographed industr
   assert.ok(E.entryHeight + E.entryRoof <= 8.7, 'the entry + pyramid roof fit the mapped gallery height');
   // theatre: the tallest mapped row is the grey/dark metal volume; the atrium is exposure-gated
   assert.ok(pp.theatre, 'the north theatre is recorded');
-  assert.equal(pp.theatre.tallest, 33263, 'the tallest mapped row is the theatre');
+  assert.equal(pp.theatre.tallest, 33268, 'the tallest mapped row is the theatre');
   assert.equal(pp.theatre.h, 16.5, 'the theatre keeps its mapped height');
 });
 
@@ -217,10 +217,10 @@ test('the exclusion hook is keyed by stable identity and only names rows actuall
   assert.equal(typeof C.waterfrontHarbourfrontExcludesBuilding, 'function', 'the hook exists after the build');
   const drawn = C.powerPlantLayout().parts.map((p) => p.row.index);
   for (const bi of drawn) assert.equal(C.waterfrontHarbourfrontExcludesBuilding(bi), true, `row ${bi} is excluded`);
-  for (const bi of [33246, 33247, 33255, 33200, 34614]) assert.equal(C.waterfrontHarbourfrontExcludesBuilding(bi), false, `row ${bi} is not excluded`);
+  for (const bi of [33251, 33252, 33260, 33205, 34619]) assert.equal(C.waterfrontHarbourfrontExcludesBuilding(bi), false, `row ${bi} is not excluded`);
   // identity, not stored index: the same stored indices in ANOTHER frame's data must NOT be excluded
   const { GEO: EGL } = await unpackGeo(readBin('data/frames/eglinton/toronto-geodata.bin'));
-  assert.equal(C.waterfrontHarbourfrontExcludesBuilding(33259, EGL), false, 'same index in the eglinton table is a different building');
+  assert.equal(C.waterfrontHarbourfrontExcludesBuilding(33264, EGL), false, 'same index in the eglinton table is a different building');
   const egRow = EGL.buildings.findIndex((b) => b[9] === C.POWER_PLANT.name && Math.abs(b[0] + 331.6) < 0.5 && Math.abs(b[1] - 722.5) < 0.5);
   assert.equal(C.waterfrontHarbourfrontExcludesBuilding(egRow, EGL), true, 'the eglinton gallery row is excluded by identity');
   // a fresh context before any build has no hook
@@ -231,7 +231,7 @@ test('the exclusion hook is keyed by stable identity and only names rows actuall
   guard.GEO.frame.detail = { x0: 0, x1: 20, z0: 0, z1: 20 };
   assert.equal(guard.createWaterfrontHarbourfront(THREE, { add() {} }), null);
   assert.equal(typeof guard.waterfrontHarbourfrontExcludesBuilding, 'function', 'a safe predicate remains');
-  assert.equal(guard.waterfrontHarbourfrontExcludesBuilding(33259), false, 'stale state is cleared on an unsupported frame');
+  assert.equal(guard.waterfrontHarbourfrontExcludesBuilding(33264), false, 'stale state is cleared on an unsupported frame');
 });
 
 test('the Power Plant brick uses world-metre courses (not unit-box uv) and a white instance tint (no double multiply)', async () => {

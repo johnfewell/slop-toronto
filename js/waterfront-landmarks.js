@@ -10,7 +10,7 @@
 //      reclad with a green-patina metal roof (like Union Station and the Royal York) and its old clock tower.
 //      Source: https://en.wikipedia.org/wiki/Queen%27s_Quay_Terminal ; Waterfront BIA listing
 //      https://www.waterfrontbia.com/listing/queens-quay-terminal . The main eight-storey block is the committed City
-//      3D Massing / OSM building "Queen's Quay Terminal" (row 33202, 140 x 61.4 m, mapped height 31 m, its long axis on
+//      3D Massing / OSM building "Queen's Quay Terminal" (row 33207, 140 x 61.4 m, mapped height 31 m, its long axis on
 //      the water); the stone-and-glass residential addition is the small named rows around it (33204 at 43 m, plus the
 //      rooftop cores), and the clock tower sits on the north-front rooftop structure (row 33203, a photo/map inference).
 //      The warehouse's strongest read is its long lakefront face along the harbour; the
@@ -48,7 +48,7 @@
 //   invents a placement; where the source gives no measured size for a detail (unloader reach, the mural's band) the
 //   module records the figure it used as an explicit estimate.
 // - Components are keyed by their STABLE identity (mapped name + world centre + mapped height), never by row index: the
-//   default desktop frame is eglinton, whose building table is a different size and order (QQT sits at rows 131069.. there
+//   default desktop frame is eglinton, whose building table is a different size and order (QQT sits at rows 131076.. there
 //   vs 33202.. in the detail map) but the same world centres. resolveComponents() finds the active frame's rows, so the
 //   module never suppresses an unrelated building.
 // - To avoid drawing a generic City box *under* the silhouette, the module exposes `window.CITY.waterfrontLandmark-
@@ -90,7 +90,7 @@ const QQT = {
   address: '207 Queens Quay W',
   // The committed components, keyed by their stable identity (name + world centre + mapped height), NOT by row index:
   // the same building sits at the same world position in every frame (detail and the default eglinton map share the
-  // projection and centres) but at a different row index (e.g. row 33202 in detail = row 131069 in eglinton). The
+  // projection and centres) but at a different row index (e.g. row 33207 in detail = row 131076 in eglinton). The
   // resolver below finds the active frame's row from these keys, so the module never suppresses an unrelated building.
   keys: {
     warehouse: { name: "Queen's Quay Terminal", cx: -206.4, cz: 692.4, h: 31 },   // the 8-storey block (the long mass)
@@ -295,7 +295,7 @@ function boxCorner(box, su, sv) {
 }
 
 // Resolve the stable component keys to the ACTIVE frame's building-row indices. The default desktop frame is eglinton,
-// whose building table is a different size and order (QQT sits at rows 131069..131079 there vs 33202..33212 in detail)
+// whose building table is a different size and order (QQT sits at rows 131076..131086 there vs 33207..33217 in detail)
 // but the same world centres; so rows are found by name (where present) + centre + mapped height, never assumed by
 // index. Cached per GEO so the scan runs once. Rows that do not resolve stay -1 and are simply not built or excluded —
 // this can never suppress an unrelated building.
@@ -374,7 +374,7 @@ function rowParts(buildings, bi) {
   return out;
 }
 
-// Queen's Quay Terminal: the eight-storey warehouse block (row 33202, mapped 31 m) and the 1983 addition (row 33204) as
+// Queen's Quay Terminal: the eight-storey warehouse block (row 33207, mapped 31 m) and the 1983 addition (row 33204) as
 // its own mapped parts — two long perimeter bands and an end band at 43 m enclosing an OPEN courtyard — plus the small
 // mapped rooftop structures (penthouses/cores, 43-46 m). Nothing is a single invented "inset box": every piece is a
 // mapped footprint part. The warehouse shell is the committed row, described as a simplified rectangle (not a survey

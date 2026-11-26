@@ -1,9 +1,9 @@
 // Queen City Yacht Club clubhouse (st-sb3r.39): committed identity, appearance data and renderer geometry.
 //
-// Row 32139 (OSM Way 43805118, "Queen City Yacht Club clubhouse", building:levels 2) is the Marina Clubhouse the GPU
+// Row 32144 (OSM Way 43805118, "Queen City Yacht Club clubhouse", building:levels 2) is the Marina Clubhouse the GPU
 // captures show as a generic brown envelope. This suite proves the BOUNDED, source-informed correction:
 //
-//   * the committed data carries the clubhouse appearance only on row 32139, with the source-verified water side (-v);
+//   * the committed data carries the clubhouse appearance only on row 32144, with the source-verified water side (-v);
 //   * the reviewed-profile gate fails closed: a reshaped footprint, a moved centre, a changed OSM binding or another
 //     frame gets no profile, so no clubhouse facade (and no balcony) appears anywhere else;
 //   * the rendered geometry is TWO storeys: the wall height leaves two window bands below a ~5.15 m eave and a shallow
@@ -24,7 +24,7 @@ const readJson = (rel) => JSON.parse(read(rel));
 
 const fixture = readJson('tools/data/island-outliers.json');
 const osm = readJson('tools/data/qcyc-clubhouse-osm.json');
-const CLUBHOUSE = 43805118, ROW = 32139;
+const CLUBHOUSE = 43805118, ROW = 32144;
 
 function loadData() {
   const ctx = { window: {}, console: { info() {}, log() {}, warn() {}, error() {} } };
@@ -58,7 +58,7 @@ async function loadHelpers() {
 const clubhouseWay = osm.elements.find((e) => e.id === CLUBHOUSE);
 const rowOf = (GEO) => GEO.buildings.find((r) => r[0] === 1255.6 && r[1] === 2126.3);
 
-test('committed data carries the clubhouse appearance on exactly row 32139, water side -v', () => {
+test('committed data carries the clubhouse appearance on exactly row 32144, water side -v', () => {
   const rows = DATA.records.filter((r) => r.appearance && r.appearance.style === 'qcyc-clubhouse');
   assert.equal(rows.length, 1, 'exactly one clubhouse appearance');
   const r = rows[0];
@@ -183,12 +183,12 @@ test('every balcony/railing sample lies OUTSIDE the native footprint union, on t
 });
 
 test('shed and storage appearances, height and footprint are unchanged by this pass', () => {
-  const shed = DATA.records.find((r) => r.row === 32501);
+  const shed = DATA.records.find((r) => r.row === 32506);
   assert.equal(shed.appearance.style, 'qcyc-shed');
   assert.equal(shed.height, 4);
   assert.equal(shed.fp, '[0.551,[[-6.3,6.3,-2.8,2.8]]]');
   assert.equal((DATA.massingRecords || []).length, 2);
   for (const r of DATA.massingRecords) assert.equal(r.appearance.style, 'qcyc-storage');
-  // The clubhouse's own reviewed binding (row 32139 lives in the OSM records array, not the three outlier rows).
+  // The clubhouse's own reviewed binding (row 32144 lives in the OSM records array, not the three outlier rows).
   assert.equal(DATA.summary.massing.reviewedClubhouse.nativeFp, '[-0.983,[[-18.7,15.3,-3.5,9.5],[-2.2,18.8,-8.5,-3.5]]]');
 });

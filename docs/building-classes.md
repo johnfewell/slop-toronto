@@ -1,6 +1,6 @@
 # Building classes: what the city's footprints are
 
-Every building in the detailed city that `?massing=1` stands on its City 3D Massing outline (35,254 records), measured
+Every building in the detailed city that `?massing=1` stands on its City 3D Massing outline (35,259 records), measured
 and sorted into classes, so the prototype list in the building-prototypes spec (`st-ndw9`, phase 0a, §4) can be drawn
 from counts rather than guesswork. Bead `st-ndw9.1`. The spec itself is not in this repo.
 
@@ -68,13 +68,13 @@ same with the group style in place of the side style, e.g. `pair/h2/side/house/i
 
 A record is one City 3D Massing part, not one building: a tower and its podium are separate records, and a terrace may be
 several. **196 records is the largest joined group** (a chain of buildings through party walls);
-there are **22,855 joined groups** in all (a building with no party wall is a group of one).
+there are **22,858 joined groups** in all (a building with no party wall is a group of one).
 
 Group size distribution:
 
 | records in the group | groups | records |
 |---|---|---|
-| 1 | 19,355 | 19,355 |
+| 1 | 19,358 | 19,358 |
 | 2 | 1,852 | 3,704 |
 | 3 | 495 | 1,485 |
 | 4 | 244 | 976 |
@@ -85,9 +85,9 @@ Group size distribution:
 | 9 | 57 | 513 |
 | 10 | 62 | 620 |
 | 11 | 36 | 396 |
-| 12 | 50 | 600 |
+| 12 | 49 | 588 |
 | 13 | 30 | 390 |
-| 14 | 23 | 322 |
+| 14 | 24 | 336 |
 | 15 | 27 | 405 |
 | 16 | 21 | 336 |
 | 17 | 14 | 238 |
@@ -127,9 +127,9 @@ By kind (the group's kind is its tallest record's):
 
 | kind | groups | records |
 |---|---|---|
-| house | 12,415 | 13,758 |
-| low-rise | 2,434 | 3,250 |
-| mid-rise | 6,496 | 9,635 |
+| house | 12,417 | 13,760 |
+| low-rise | 2,435 | 3,251 |
+| mid-rise | 6,496 | 9,637 |
 | tower | 967 | 6,804 |
 | shed | 133 | 148 |
 | works | 27 | 87 |
@@ -142,104 +142,104 @@ table below is the one to draw those prototypes from.
 ## Classes by count — records (party sides)
 
 Classes ranked by count, with each class's share of records, its share of the city's total footprint area
-(11,960,369 m²), and the running (cumulative) shares. 258 non-empty record classes.
+(11,963,380 m²), and the running (cumulative) shares. 258 non-empty record classes.
 
 | # | class | records | share | cum. share | area share | cum. area share |
 |---|---|---|---|---|---|---|
 | 1 | `none/h2/side/house/in` | 8,690 | 24.65% | 24.65% | 10.60% | 10.60% |
 | 2 | `none/h5/side/mid-rise/in` | 3,467 | 9.83% | 34.48% | 10.93% | 21.53% |
-| 3 | `none/h4/side/mid-rise/in` | 1,728 | 4.90% | 39.39% | 3.92% | 25.46% |
-| 4 | `none/h4/side/low-rise/in` | 1,726 | 4.90% | 44.28% | 5.59% | 31.05% |
-| 5 | `one/h2/side/house/in` | 1,590 | 4.51% | 48.79% | 1.78% | 32.83% |
-| 6 | `both/h6/side/tower/in` | 1,506 | 4.27% | 53.06% | 3.89% | 36.72% |
-| 7 | `none/h3/side/house/in` | 1,259 | 3.57% | 56.63% | 1.78% | 38.50% |
-| 8 | `both/h5/side/mid-rise/in` | 1,089 | 3.09% | 59.72% | 3.12% | 41.63% |
-| 9 | `none/h1/side/house/in` | 875 | 2.48% | 62.21% | 0.96% | 42.58% |
-| 10 | `none/h2/main/house/in` | 828 | 2.35% | 64.55% | 1.20% | 43.78% |
-| 11 | `one/h5/side/mid-rise/in` | 648 | 1.84% | 66.39% | 1.89% | 45.67% |
+| 3 | `none/h4/side/mid-rise/in` | 1,728 | 4.90% | 39.38% | 3.92% | 25.45% |
+| 4 | `none/h4/side/low-rise/in` | 1,726 | 4.90% | 44.28% | 5.59% | 31.04% |
+| 5 | `one/h2/side/house/in` | 1,590 | 4.51% | 48.78% | 1.78% | 32.82% |
+| 6 | `both/h6/side/tower/in` | 1,506 | 4.27% | 53.06% | 3.89% | 36.71% |
+| 7 | `none/h3/side/house/in` | 1,259 | 3.57% | 56.63% | 1.78% | 38.49% |
+| 8 | `both/h5/side/mid-rise/in` | 1,091 | 3.09% | 59.72% | 3.13% | 41.62% |
+| 9 | `none/h1/side/house/in` | 877 | 2.49% | 62.21% | 0.96% | 42.58% |
+| 10 | `none/h2/main/house/in` | 828 | 2.35% | 64.56% | 1.20% | 43.78% |
+| 11 | `one/h5/side/mid-rise/in` | 648 | 1.84% | 66.39% | 1.88% | 45.67% |
 | 12 | `both/h6/main/tower/in` | 585 | 1.66% | 68.05% | 2.56% | 48.23% |
-| 13 | `both/h5/side/tower/in` | 584 | 1.66% | 69.71% | 1.44% | 49.68% |
-| 14 | `none/h5/main/mid-rise/in` | 452 | 1.28% | 70.99% | 4.54% | 54.22% |
-| 15 | `both/h2/side/house/in` | 395 | 1.12% | 72.11% | 0.48% | 54.70% |
-| 16 | `both/h5/main/mid-rise/in` | 395 | 1.12% | 73.23% | 2.04% | 56.73% |
+| 13 | `both/h5/side/tower/in` | 584 | 1.66% | 69.71% | 1.44% | 49.67% |
+| 14 | `none/h5/main/mid-rise/in` | 452 | 1.28% | 70.99% | 4.54% | 54.21% |
+| 15 | `both/h5/main/mid-rise/in` | 396 | 1.12% | 72.11% | 2.04% | 56.25% |
+| 16 | `both/h2/side/house/in` | 395 | 1.12% | 73.24% | 0.48% | 56.73% |
 | 17 | `both/h5/side/civic/in` | 391 | 1.11% | 74.34% | 1.52% | 58.25% |
-| 18 | `none/h4/main/low-rise/in` | 362 | 1.03% | 75.37% | 2.62% | 60.88% |
+| 18 | `none/h4/main/low-rise/in` | 362 | 1.03% | 75.37% | 2.62% | 60.87% |
 | 19 | `one/h4/side/low-rise/in` | 346 | 0.98% | 76.35% | 0.99% | 61.87% |
 | 20 | `both/h4/side/low-rise/in` | 306 | 0.87% | 77.22% | 1.10% | 62.97% |
-| 21 | `one/h3/side/house/in` | 299 | 0.85% | 78.06% | 0.37% | 63.34% |
-| 22 | `one/h4/side/mid-rise/in` | 282 | 0.80% | 78.86% | 0.60% | 63.94% |
-| 23 | `both/h4/side/mid-rise/in` | 258 | 0.73% | 79.60% | 0.92% | 64.86% |
-| 24 | `corner/h5/side/mid-rise/in` | 253 | 0.72% | 80.31% | 0.67% | 65.52% |
-| 25 | `none/h4/main/mid-rise/in` | 243 | 0.69% | 81.00% | 1.58% | 67.10% |
-| 26 | `none/h3/main/house/in` | 172 | 0.49% | 81.49% | 0.30% | 67.41% |
-| 27 | `one/h2/main/house/in` | 170 | 0.48% | 81.97% | 0.25% | 67.66% |
-| 28 | `one/h5/main/mid-rise/in` | 168 | 0.48% | 82.45% | 0.95% | 68.60% |
-| 29 | `none/h6/side/tower/in` | 167 | 0.47% | 82.92% | 2.23% | 70.83% |
-| 30 | `one/h1/side/house/in` | 166 | 0.47% | 83.39% | 0.16% | 70.99% |
-| 31 | `one/h6/side/tower/in` | 163 | 0.46% | 83.86% | 0.72% | 71.71% |
-| 32 | `both/h5/main/tower/in` | 160 | 0.45% | 84.31% | 0.82% | 72.53% |
-| 33 | `none/h4/side/house/in` | 160 | 0.45% | 84.76% | 0.48% | 73.01% |
+| 21 | `one/h3/side/house/in` | 299 | 0.85% | 78.07% | 0.37% | 63.34% |
+| 22 | `one/h4/side/mid-rise/in` | 282 | 0.80% | 78.87% | 0.60% | 63.94% |
+| 23 | `both/h4/side/mid-rise/in` | 258 | 0.73% | 79.60% | 0.92% | 64.85% |
+| 24 | `corner/h5/side/mid-rise/in` | 253 | 0.72% | 80.32% | 0.67% | 65.52% |
+| 25 | `none/h4/main/mid-rise/in` | 243 | 0.69% | 81.01% | 1.58% | 67.10% |
+| 26 | `none/h3/main/house/in` | 172 | 0.49% | 81.49% | 0.30% | 67.40% |
+| 27 | `one/h2/main/house/in` | 170 | 0.48% | 81.98% | 0.25% | 67.65% |
+| 28 | `none/h6/side/tower/in` | 167 | 0.47% | 82.45% | 2.23% | 69.88% |
+| 29 | `one/h5/main/mid-rise/in` | 167 | 0.47% | 82.92% | 0.94% | 70.82% |
+| 30 | `one/h1/side/house/in` | 166 | 0.47% | 83.39% | 0.16% | 70.98% |
+| 31 | `one/h6/side/tower/in` | 163 | 0.46% | 83.86% | 0.72% | 71.70% |
+| 32 | `both/h5/main/tower/in` | 160 | 0.45% | 84.31% | 0.82% | 72.52% |
+| 33 | `none/h4/side/house/in` | 160 | 0.45% | 84.76% | 0.48% | 73.00% |
 | 34 | `corner/h6/side/tower/in` | 154 | 0.44% | 85.20% | 0.56% | 73.56% |
-| 35 | `corner/h2/side/house/in` | 152 | 0.43% | 85.63% | 0.17% | 73.74% |
-| 36 | `both/h3/side/house/in` | 144 | 0.41% | 86.04% | 0.18% | 73.92% |
-| 37 | `both/h4/main/low-rise/in` | 139 | 0.39% | 86.44% | 0.75% | 74.67% |
-| 38 | `both/h4/side/civic/in` | 132 | 0.37% | 86.81% | 0.45% | 75.12% |
-| 39 | `none/h6/main/tower/in` | 123 | 0.35% | 87.16% | 2.59% | 77.71% |
-| 40 | `both/h4/main/mid-rise/in` | 116 | 0.33% | 87.49% | 0.61% | 78.32% |
-| 41 | `both/h1/side/house/in` | 107 | 0.30% | 87.79% | 0.14% | 78.47% |
-| 42 | `one/h4/side/house/in` | 107 | 0.30% | 88.09% | 0.16% | 78.62% |
-| 43 | `both/h6/side/civic/in` | 105 | 0.30% | 88.39% | 0.48% | 79.10% |
+| 35 | `corner/h2/side/house/in` | 152 | 0.43% | 85.63% | 0.17% | 73.73% |
+| 36 | `both/h3/side/house/in` | 144 | 0.41% | 86.04% | 0.18% | 73.91% |
+| 37 | `both/h4/main/low-rise/in` | 139 | 0.39% | 86.43% | 0.75% | 74.66% |
+| 38 | `both/h4/side/civic/in` | 132 | 0.37% | 86.81% | 0.45% | 75.11% |
+| 39 | `none/h6/main/tower/in` | 123 | 0.35% | 87.16% | 2.59% | 77.70% |
+| 40 | `both/h4/main/mid-rise/in` | 116 | 0.33% | 87.49% | 0.61% | 78.31% |
+| 41 | `both/h1/side/house/in` | 107 | 0.30% | 87.79% | 0.14% | 78.46% |
+| 42 | `one/h4/side/house/in` | 107 | 0.30% | 88.09% | 0.16% | 78.61% |
+| 43 | `both/h6/side/civic/in` | 105 | 0.30% | 88.39% | 0.48% | 79.09% |
 | 44 | `none/h5/side/tower/in` | 105 | 0.30% | 88.69% | 1.40% | 80.50% |
-| 45 | `both/h2/main/house/in` | 104 | 0.29% | 88.99% | 0.14% | 80.65% |
-| 46 | `corner/h4/side/low-rise/in` | 102 | 0.29% | 89.27% | 0.46% | 81.11% |
-| 47 | `corner/h5/main/mid-rise/in` | 100 | 0.28% | 89.56% | 0.52% | 81.63% |
-| 48 | `one/h4/main/low-rise/in` | 97 | 0.28% | 89.83% | 0.48% | 82.12% |
-| 49 | `both/h4/side/house/in` | 94 | 0.27% | 90.10% | 0.17% | 82.28% |
-| 50 | `none/h1/main/house/in` | 89 | 0.25% | 90.35% | 0.11% | 82.40% |
-| 51 | `both/h2/side/low-rise/in` | 86 | 0.24% | 90.60% | 0.55% | 82.95% |
-| 52 | `none/h5/main/tower/in` | 84 | 0.24% | 90.83% | 1.46% | 84.41% |
-| 53 | `corner/h1/side/house/in` | 82 | 0.23% | 91.07% | 0.09% | 84.50% |
-| 54 | `corner/h4/side/mid-rise/in` | 80 | 0.23% | 91.29% | 0.27% | 84.77% |
-| 55 | `one/h5/side/tower/in` | 77 | 0.22% | 91.51% | 0.41% | 85.17% |
-| 56 | `one/h6/main/tower/in` | 77 | 0.22% | 91.73% | 0.78% | 85.95% |
-| 57 | `none/h5/side/civic/in` | 75 | 0.21% | 91.94% | 1.20% | 87.14% |
-| 58 | `corner/h6/main/tower/in` | 69 | 0.20% | 92.14% | 0.64% | 87.78% |
-| 59 | `one/h4/main/mid-rise/in` | 67 | 0.19% | 92.33% | 0.47% | 88.25% |
-| 60 | `one/h5/side/civic/in` | 66 | 0.19% | 92.52% | 0.34% | 88.60% |
-| 61 | `corner/h5/side/tower/in` | 61 | 0.17% | 92.69% | 0.25% | 88.85% |
-| 62 | `corner/h5/side/civic/in` | 60 | 0.17% | 92.86% | 0.25% | 89.10% |
-| 63 | `both/h3/main/house/in` | 59 | 0.17% | 93.03% | 0.10% | 89.20% |
-| 64 | `corner/h3/side/house/in` | 59 | 0.17% | 93.19% | 0.08% | 89.27% |
-| 65 | `corner/h4/side/civic/in` | 58 | 0.16% | 93.36% | 0.22% | 89.50% |
-| 66 | `none/h2/side/low-rise/in` | 58 | 0.16% | 93.52% | 0.47% | 89.97% |
-| 67 | `one/h1/side/shed/out` | 58 | 0.16% | 93.69% | 0.01% | 89.98% |
-| 68 | `corner/h4/side/house/in` | 51 | 0.14% | 93.83% | 0.07% | 90.05% |
-| 69 | `none/h1/side/house/out` | 49 | 0.14% | 93.97% | 0.02% | 90.07% |
-| 70 | `none/h2/main/low-rise/in` | 49 | 0.14% | 94.11% | 0.41% | 90.48% |
-| 71 | `corner/h4/main/low-rise/in` | 48 | 0.14% | 94.25% | 0.34% | 90.81% |
-| 72 | `one/h3/main/house/in` | 47 | 0.13% | 94.38% | 0.08% | 90.90% |
-| 73 | `none/h4/main/house/in` | 46 | 0.13% | 94.51% | 0.16% | 91.06% |
-| 74 | `one/h2/side/low-rise/in` | 45 | 0.13% | 94.64% | 0.22% | 91.28% |
-| 75 | `none/h4/side/civic/in` | 44 | 0.12% | 94.76% | 0.34% | 91.61% |
-| 76 | `one/h4/side/civic/in` | 44 | 0.12% | 94.89% | 0.22% | 91.83% |
-| 77 | `one/h5/main/tower/in` | 44 | 0.12% | 95.01% | 0.51% | 92.33% |
-| 78 | `both/h4/main/house/in` | 42 | 0.12% | 95.13% | 0.10% | 92.43% |
-| 79 | `corner/h4/main/mid-rise/in` | 41 | 0.12% | 95.25% | 0.27% | 92.70% |
-| 80 | `one/h1/side/house/out` | 40 | 0.11% | 95.36% | 0.01% | 92.72% |
-| 81 | `both/h5/side/worship/in` | 39 | 0.11% | 95.47% | 0.14% | 92.86% |
-| 82 | `corner/h2/main/house/in` | 39 | 0.11% | 95.58% | 0.06% | 92.92% |
-| 83 | `none/h1/side/shed/in` | 39 | 0.11% | 95.69% | 0.03% | 92.95% |
-| 84 | `none/h1/side/shed/out` | 39 | 0.11% | 95.80% | 0.01% | 92.96% |
-| 85 | `both/h2/main/low-rise/in` | 34 | 0.10% | 95.90% | 0.18% | 93.14% |
-| 86 | `both/h2/side/civic/in` | 34 | 0.10% | 96.00% | 0.08% | 93.22% |
-| 87 | `both/h5/main/civic/in` | 33 | 0.09% | 96.09% | 0.31% | 93.53% |
-| 88 | `none/h5/side/worship/in` | 33 | 0.09% | 96.18% | 0.17% | 93.70% |
-| 89 | `both/h1/side/low-rise/in` | 32 | 0.09% | 96.27% | 0.11% | 93.81% |
-| 90 | `one/h4/main/house/in` | 32 | 0.09% | 96.37% | 0.07% | 93.87% |
-| 91 | `one/h1/side/shed/in` | 31 | 0.09% | 96.45% | 0.01% | 93.88% |
-| 92 | `none/h3/side/low-rise/in` | 30 | 0.09% | 96.54% | 0.32% | 94.20% |
-| 93 | `corner/h2/side/low-rise/in` | 28 | 0.08% | 96.62% | 0.09% | 94.28% |
-| 94 | `both/h3/side/mid-rise/in` | 27 | 0.08% | 96.69% | 0.07% | 94.35% |
+| 45 | `both/h2/main/house/in` | 104 | 0.29% | 88.98% | 0.14% | 80.64% |
+| 46 | `corner/h4/side/low-rise/in` | 102 | 0.29% | 89.27% | 0.46% | 81.10% |
+| 47 | `corner/h5/main/mid-rise/in` | 100 | 0.28% | 89.56% | 0.52% | 81.62% |
+| 48 | `one/h4/main/low-rise/in` | 97 | 0.28% | 89.83% | 0.48% | 82.11% |
+| 49 | `both/h4/side/house/in` | 94 | 0.27% | 90.10% | 0.17% | 82.27% |
+| 50 | `none/h1/main/house/in` | 89 | 0.25% | 90.35% | 0.11% | 82.38% |
+| 51 | `both/h2/side/low-rise/in` | 86 | 0.24% | 90.60% | 0.55% | 82.94% |
+| 52 | `none/h5/main/tower/in` | 84 | 0.24% | 90.83% | 1.46% | 84.39% |
+| 53 | `corner/h1/side/house/in` | 82 | 0.23% | 91.07% | 0.09% | 84.49% |
+| 54 | `corner/h4/side/mid-rise/in` | 80 | 0.23% | 91.29% | 0.27% | 84.76% |
+| 55 | `one/h5/side/tower/in` | 77 | 0.22% | 91.51% | 0.41% | 85.16% |
+| 56 | `one/h6/main/tower/in` | 77 | 0.22% | 91.73% | 0.78% | 85.94% |
+| 57 | `none/h5/side/civic/in` | 75 | 0.21% | 91.94% | 1.20% | 87.13% |
+| 58 | `corner/h6/main/tower/in` | 69 | 0.20% | 92.14% | 0.64% | 87.77% |
+| 59 | `one/h4/main/mid-rise/in` | 67 | 0.19% | 92.33% | 0.47% | 88.24% |
+| 60 | `one/h5/side/civic/in` | 66 | 0.19% | 92.52% | 0.34% | 88.59% |
+| 61 | `corner/h5/side/tower/in` | 61 | 0.17% | 92.69% | 0.25% | 88.83% |
+| 62 | `corner/h5/side/civic/in` | 60 | 0.17% | 92.86% | 0.25% | 89.09% |
+| 63 | `both/h3/main/house/in` | 59 | 0.17% | 93.03% | 0.10% | 89.19% |
+| 64 | `corner/h3/side/house/in` | 59 | 0.17% | 93.19% | 0.08% | 89.26% |
+| 65 | `corner/h4/side/civic/in` | 58 | 0.16% | 93.36% | 0.22% | 89.49% |
+| 66 | `none/h2/side/low-rise/in` | 58 | 0.16% | 93.52% | 0.47% | 89.95% |
+| 67 | `one/h1/side/shed/out` | 58 | 0.16% | 93.69% | 0.01% | 89.96% |
+| 68 | `corner/h4/side/house/in` | 51 | 0.14% | 93.83% | 0.07% | 90.04% |
+| 69 | `none/h1/side/house/out` | 49 | 0.14% | 93.97% | 0.02% | 90.06% |
+| 70 | `none/h2/main/low-rise/in` | 49 | 0.14% | 94.11% | 0.41% | 90.46% |
+| 71 | `corner/h4/main/low-rise/in` | 48 | 0.14% | 94.25% | 0.34% | 90.80% |
+| 72 | `one/h3/main/house/in` | 47 | 0.13% | 94.38% | 0.08% | 90.88% |
+| 73 | `none/h4/main/house/in` | 46 | 0.13% | 94.51% | 0.16% | 91.05% |
+| 74 | `one/h2/side/low-rise/in` | 45 | 0.13% | 94.64% | 0.22% | 91.26% |
+| 75 | `none/h4/side/civic/in` | 44 | 0.12% | 94.76% | 0.34% | 91.60% |
+| 76 | `one/h4/side/civic/in` | 44 | 0.12% | 94.89% | 0.22% | 91.82% |
+| 77 | `one/h5/main/tower/in` | 44 | 0.12% | 95.01% | 0.51% | 92.32% |
+| 78 | `both/h4/main/house/in` | 42 | 0.12% | 95.13% | 0.10% | 92.42% |
+| 79 | `corner/h4/main/mid-rise/in` | 41 | 0.12% | 95.25% | 0.27% | 92.69% |
+| 80 | `one/h1/side/house/out` | 40 | 0.11% | 95.36% | 0.01% | 92.70% |
+| 81 | `both/h5/side/worship/in` | 39 | 0.11% | 95.47% | 0.14% | 92.85% |
+| 82 | `corner/h2/main/house/in` | 39 | 0.11% | 95.58% | 0.06% | 92.90% |
+| 83 | `none/h1/side/shed/in` | 39 | 0.11% | 95.69% | 0.03% | 92.94% |
+| 84 | `none/h1/side/shed/out` | 39 | 0.11% | 95.80% | 0.01% | 92.94% |
+| 85 | `both/h2/main/low-rise/in` | 34 | 0.10% | 95.90% | 0.18% | 93.12% |
+| 86 | `both/h2/side/civic/in` | 34 | 0.10% | 96.00% | 0.08% | 93.20% |
+| 87 | `both/h5/main/civic/in` | 33 | 0.09% | 96.09% | 0.31% | 93.51% |
+| 88 | `none/h5/side/worship/in` | 33 | 0.09% | 96.18% | 0.17% | 93.68% |
+| 89 | `both/h1/side/low-rise/in` | 32 | 0.09% | 96.27% | 0.11% | 93.80% |
+| 90 | `one/h4/main/house/in` | 32 | 0.09% | 96.36% | 0.07% | 93.86% |
+| 91 | `none/h3/side/low-rise/in` | 31 | 0.09% | 96.45% | 0.33% | 94.19% |
+| 92 | `one/h1/side/shed/in` | 31 | 0.09% | 96.54% | 0.01% | 94.20% |
+| 93 | `corner/h2/side/low-rise/in` | 28 | 0.08% | 96.62% | 0.09% | 94.29% |
+| 94 | `both/h3/side/mid-rise/in` | 27 | 0.08% | 96.70% | 0.07% | 94.35% |
 | 95 | `none/h1/side/low-rise/in` | 27 | 0.08% | 96.77% | 0.25% | 94.60% |
 | 96 | `one/h2/side/civic/in` | 27 | 0.08% | 96.85% | 0.05% | 94.65% |
 | 97 | `corner/h1/side/shed/out` | 25 | 0.07% | 96.92% | 0.00% | 94.65% |
@@ -249,18 +249,18 @@ Classes ranked by count, with each class's share of records, its share of the ci
 | 101 | `corner/h1/side/house/out` | 21 | 0.06% | 97.17% | 0.01% | 94.90% |
 | 102 | `one/h1/main/house/in` | 21 | 0.06% | 97.23% | 0.03% | 94.93% |
 | 103 | `one/h2/main/low-rise/in` | 21 | 0.06% | 97.29% | 0.11% | 95.04% |
-| 104 | `both/h1/main/house/in` | 20 | 0.06% | 97.34% | 0.03% | 95.07% |
+| 104 | `both/h1/main/house/in` | 20 | 0.06% | 97.35% | 0.03% | 95.07% |
 | 105 | `both/h4/side/worship/in` | 20 | 0.06% | 97.40% | 0.05% | 95.12% |
 | 106 | `none/h5/side/shed/in` | 20 | 0.06% | 97.46% | 0.05% | 95.17% |
 | 107 | `corner/h2/side/civic/in` | 19 | 0.05% | 97.51% | 0.03% | 95.20% |
 | 108 | `corner/h4/main/house/in` | 19 | 0.05% | 97.57% | 0.03% | 95.23% |
 | 109 | `corner/h5/side/worship/in` | 19 | 0.05% | 97.62% | 0.07% | 95.30% |
 | 110 | `none/h5/main/worship/in` | 19 | 0.05% | 97.67% | 0.14% | 95.43% |
-| 111 | `both/h3/side/civic/in` | 18 | 0.05% | 97.72% | 0.03% | 95.46% |
+| 111 | `both/h3/side/civic/in` | 18 | 0.05% | 97.73% | 0.03% | 95.46% |
 | 112 | `both/h1/side/civic/in` | 17 | 0.05% | 97.77% | 0.03% | 95.50% |
 | 113 | `both/h3/main/mid-rise/in` | 17 | 0.05% | 97.82% | 0.19% | 95.68% |
 | 114 | `both/h6/main/civic/in` | 17 | 0.05% | 97.87% | 0.07% | 95.76% |
-| 115 | `one/h1/side/low-rise/in` | 17 | 0.05% | 97.92% | 0.06% | 95.81% |
+| 115 | `one/h1/side/low-rise/in` | 17 | 0.05% | 97.92% | 0.06% | 95.82% |
 | 116 | `both/h6/main/works/in` | 16 | 0.05% | 97.96% | 0.05% | 95.86% |
 | 117 | `corner/h1/main/house/in` | 16 | 0.05% | 98.01% | 0.02% | 95.88% |
 | 118 | `none/h1/main/low-rise/in` | 16 | 0.05% | 98.05% | 0.06% | 95.94% |
@@ -268,31 +268,31 @@ Classes ranked by count, with each class's share of records, its share of the ci
 | 120 | `none/h5/main/civic/in` | 15 | 0.04% | 98.14% | 0.27% | 96.48% |
 | 121 | `corner/h1/side/low-rise/in` | 14 | 0.04% | 98.18% | 0.02% | 96.50% |
 | 122 | `none/h3/main/mid-rise/in` | 14 | 0.04% | 98.22% | 0.16% | 96.66% |
-| 123 | `none/h3/side/mid-rise/in` | 14 | 0.04% | 98.26% | 0.09% | 96.75% |
-| 124 | `both/h5/main/worship/in` | 13 | 0.04% | 98.29% | 0.07% | 96.82% |
+| 123 | `none/h3/side/mid-rise/in` | 14 | 0.04% | 98.26% | 0.09% | 96.76% |
+| 124 | `both/h5/main/worship/in` | 13 | 0.04% | 98.30% | 0.07% | 96.83% |
 | 125 | `both/h6/side/works/in` | 13 | 0.04% | 98.33% | 0.03% | 96.85% |
 | 126 | `corner/h6/side/civic/in` | 13 | 0.04% | 98.37% | 0.06% | 96.92% |
 | 127 | `corner/h2/main/low-rise/in` | 12 | 0.03% | 98.40% | 0.04% | 96.95% |
 | 128 | `corner/h4/side/worship/in` | 12 | 0.03% | 98.44% | 0.01% | 96.97% |
 | 129 | `none/h1/main/shed/in` | 12 | 0.03% | 98.47% | 0.01% | 96.98% |
-| 130 | `one/h3/side/civic/in` | 12 | 0.03% | 98.50% | 0.02% | 97.00% |
+| 130 | `one/h3/side/civic/in` | 12 | 0.03% | 98.51% | 0.02% | 97.00% |
 | 131 | `one/h3/side/low-rise/in` | 12 | 0.03% | 98.54% | 0.10% | 97.10% |
-| 132 | `both/h1/main/low-rise/in` | 11 | 0.03% | 98.57% | 0.04% | 97.14% |
+| 132 | `both/h1/main/low-rise/in` | 11 | 0.03% | 98.57% | 0.04% | 97.15% |
 | 133 | `both/h1/side/shed/out` | 11 | 0.03% | 98.60% | 0.00% | 97.15% |
 | 134 | `corner/h1/side/civic/in` | 11 | 0.03% | 98.63% | 0.02% | 97.17% |
 | 135 | `corner/h1/side/shed/in` | 11 | 0.03% | 98.66% | 0.00% | 97.17% |
-| 136 | `corner/h3/side/civic/in` | 11 | 0.03% | 98.69% | 0.02% | 97.19% |
+| 136 | `corner/h3/side/civic/in` | 11 | 0.03% | 98.70% | 0.02% | 97.19% |
 | 137 | `none/h2/side/worship/in` | 11 | 0.03% | 98.73% | 0.04% | 97.23% |
 | 138 | `one/h1/main/low-rise/in` | 11 | 0.03% | 98.76% | 0.06% | 97.29% |
 | 139 | `one/h1/side/civic/in` | 11 | 0.03% | 98.79% | 0.02% | 97.30% |
 | 140 | `one/h5/side/worship/in` | 11 | 0.03% | 98.82% | 0.01% | 97.32% |
 | 141 | `both/h5/side/works/in` | 10 | 0.03% | 98.85% | 0.02% | 97.34% |
 | 142 | `none/h4/main/worship/in` | 10 | 0.03% | 98.88% | 0.05% | 97.39% |
-| 143 | `none/h4/side/shed/in` | 10 | 0.03% | 98.90% | 0.06% | 97.45% |
+| 143 | `none/h4/side/shed/in` | 10 | 0.03% | 98.91% | 0.06% | 97.45% |
 | 144 | `none/h4/side/worship/in` | 10 | 0.03% | 98.93% | 0.04% | 97.49% |
 | 145 | `none/h6/side/civic/in` | 10 | 0.03% | 98.96% | 0.42% | 97.91% |
 | 146 | `one/h6/side/civic/in` | 10 | 0.03% | 98.99% | 0.01% | 97.92% |
-| 147 | `none/h1/side/civic/in` | 9 | 0.03% | 99.01% | 0.01% | 97.93% |
+| 147 | `none/h1/side/civic/in` | 9 | 0.03% | 99.02% | 0.01% | 97.93% |
 | 148 | `none/h2/side/shed/in` | 9 | 0.03% | 99.04% | 0.01% | 97.94% |
 | 149 | `one/h2/side/worship/in` | 9 | 0.03% | 99.07% | 0.01% | 97.96% |
 | 150 | `one/h3/main/mid-rise/in` | 9 | 0.03% | 99.09% | 0.05% | 98.00% |
@@ -301,7 +301,7 @@ Classes ranked by count, with each class's share of records, its share of the ci
 | 153 | `both/h4/main/civic/in` | 8 | 0.02% | 99.16% | 0.22% | 98.29% |
 | 154 | `corner/h3/main/mid-rise/in` | 8 | 0.02% | 99.18% | 0.02% | 98.31% |
 | 155 | `both/h3/side/worship/in` | 7 | 0.02% | 99.20% | 0.01% | 98.32% |
-| 156 | `corner/h2/side/worship/in` | 7 | 0.02% | 99.22% | 0.00% | 98.32% |
+| 156 | `corner/h2/side/worship/in` | 7 | 0.02% | 99.22% | 0.00% | 98.33% |
 | 157 | `none/h2/side/civic/in` | 7 | 0.02% | 99.24% | 0.07% | 98.39% |
 | 158 | `none/h3/side/civic/in` | 7 | 0.02% | 99.26% | 0.04% | 98.43% |
 | 159 | `none/h4/main/civic/in` | 7 | 0.02% | 99.28% | 0.10% | 98.52% |
@@ -316,8 +316,8 @@ Classes ranked by count, with each class's share of records, its share of the ci
 | 168 | `corner/h4/main/worship/in` | 5 | 0.01% | 99.43% | 0.01% | 98.65% |
 | 169 | `none/h2/main/worship/in` | 5 | 0.01% | 99.45% | 0.01% | 98.66% |
 | 170 | `none/h4/side/works/in` | 5 | 0.01% | 99.46% | 0.02% | 98.68% |
-| 171 | `none/h5/side/works/in` | 5 | 0.01% | 99.47% | 0.05% | 98.73% |
-| 172 | `one/h3/side/mid-rise/in` | 5 | 0.01% | 99.49% | 0.02% | 98.75% |
+| 171 | `none/h5/side/works/in` | 5 | 0.01% | 99.48% | 0.05% | 98.73% |
+| 172 | `one/h3/side/mid-rise/in` | 5 | 0.01% | 99.49% | 0.02% | 98.76% |
 | 173 | `one/h4/main/civic/in` | 5 | 0.01% | 99.50% | 0.03% | 98.79% |
 | 174 | `one/h5/main/civic/in` | 5 | 0.01% | 99.52% | 0.06% | 98.84% |
 | 175 | `both/h5/main/works/in` | 4 | 0.01% | 99.53% | 0.04% | 98.88% |
@@ -325,13 +325,13 @@ Classes ranked by count, with each class's share of records, its share of the ci
 | 177 | `corner/h4/main/civic/in` | 4 | 0.01% | 99.55% | 0.01% | 98.92% |
 | 178 | `corner/h5/main/worship/in` | 4 | 0.01% | 99.56% | 0.02% | 98.94% |
 | 179 | `corner/h5/side/works/in` | 4 | 0.01% | 99.57% | 0.02% | 98.96% |
-| 180 | `none/h3/side/worship/in` | 4 | 0.01% | 99.58% | 0.01% | 98.97% |
+| 180 | `none/h3/side/worship/in` | 4 | 0.01% | 99.59% | 0.01% | 98.97% |
 | 181 | `none/h5/main/shed/in` | 4 | 0.01% | 99.60% | 0.04% | 99.01% |
 | 182 | `one/h3/main/low-rise/in` | 4 | 0.01% | 99.61% | 0.05% | 99.07% |
 | 183 | `one/h5/side/shed/in` | 4 | 0.01% | 99.62% | 0.01% | 99.08% |
 | 184 | `both/h1/side/civic/out` | 3 | 0.01% | 99.63% | 0.00% | 99.08% |
 | 185 | `both/h1/side/worship/in` | 3 | 0.01% | 99.64% | 0.00% | 99.08% |
-| 186 | `both/h2/main/worship/in` | 3 | 0.01% | 99.64% | 0.00% | 99.08% |
+| 186 | `both/h2/main/worship/in` | 3 | 0.01% | 99.65% | 0.00% | 99.08% |
 | 187 | `both/h3/main/worship/in` | 3 | 0.01% | 99.65% | 0.00% | 99.09% |
 | 188 | `both/h5/side/shed/in` | 3 | 0.01% | 99.66% | 0.01% | 99.10% |
 | 189 | `corner/h1/main/shed/in` | 3 | 0.01% | 99.67% | 0.00% | 99.10% |
@@ -344,37 +344,37 @@ Classes ranked by count, with each class's share of records, its share of the ci
 | 196 | `none/h6/main/civic/in` | 3 | 0.01% | 99.73% | 0.13% | 99.25% |
 | 197 | `none/h6/side/worship/in` | 3 | 0.01% | 99.74% | 0.03% | 99.28% |
 | 198 | `one/h2/side/shed/in` | 3 | 0.01% | 99.75% | 0.00% | 99.28% |
-| 199 | `one/h5/main/works/in` | 3 | 0.01% | 99.75% | 0.01% | 99.29% |
+| 199 | `one/h5/main/works/in` | 3 | 0.01% | 99.76% | 0.01% | 99.29% |
 | 200 | `one/h5/main/worship/in` | 3 | 0.01% | 99.76% | 0.00% | 99.29% |
 | 201 | `both/h1/main/shed/in` | 2 | 0.01% | 99.77% | 0.00% | 99.29% |
-| 202 | `both/h1/side/low-rise/out` | 2 | 0.01% | 99.77% | 0.00% | 99.29% |
+| 202 | `both/h1/side/low-rise/out` | 2 | 0.01% | 99.78% | 0.00% | 99.29% |
 | 203 | `both/h2/side/shed/in` | 2 | 0.01% | 99.78% | 0.00% | 99.29% |
 | 204 | `both/h4/main/shed/in` | 2 | 0.01% | 99.79% | 0.00% | 99.29% |
-| 205 | `both/h4/side/shed/in` | 2 | 0.01% | 99.79% | 0.01% | 99.30% |
+| 205 | `both/h4/side/shed/in` | 2 | 0.01% | 99.79% | 0.01% | 99.31% |
 | 206 | `both/h4/side/works/in` | 2 | 0.01% | 99.80% | 0.01% | 99.31% |
 | 207 | `both/h5/main/shed/in` | 2 | 0.01% | 99.80% | 0.01% | 99.32% |
 | 208 | `both/h6/main/shed/in` | 2 | 0.01% | 99.81% | 0.02% | 99.34% |
-| 209 | `both/h6/main/worship/in` | 2 | 0.01% | 99.81% | 0.02% | 99.36% |
+| 209 | `both/h6/main/worship/in` | 2 | 0.01% | 99.82% | 0.02% | 99.36% |
 | 210 | `both/h6/side/shed/in` | 2 | 0.01% | 99.82% | 0.00% | 99.36% |
 | 211 | `corner/h1/side/civic/out` | 2 | 0.01% | 99.83% | 0.00% | 99.36% |
 | 212 | `corner/h1/side/worship/in` | 2 | 0.01% | 99.83% | 0.00% | 99.36% |
 | 213 | `corner/h2/side/works/in` | 2 | 0.01% | 99.84% | 0.00% | 99.37% |
 | 214 | `corner/h3/side/worship/in` | 2 | 0.01% | 99.84% | 0.00% | 99.37% |
 | 215 | `corner/h4/main/works/in` | 2 | 0.01% | 99.85% | 0.01% | 99.38% |
-| 216 | `corner/h5/side/shed/in` | 2 | 0.01% | 99.85% | 0.03% | 99.41% |
+| 216 | `corner/h5/side/shed/in` | 2 | 0.01% | 99.86% | 0.03% | 99.41% |
 | 217 | `none/h1/side/works/in` | 2 | 0.01% | 99.86% | 0.00% | 99.41% |
 | 218 | `none/h2/main/civic/in` | 2 | 0.01% | 99.87% | 0.19% | 99.60% |
-| 219 | `none/h6/side/shed/in` | 2 | 0.01% | 99.87% | 0.03% | 99.62% |
+| 219 | `none/h6/side/shed/in` | 2 | 0.01% | 99.87% | 0.03% | 99.63% |
 | 220 | `one/h2/side/works/in` | 2 | 0.01% | 99.88% | 0.03% | 99.65% |
 | 221 | `one/h3/main/civic/in` | 2 | 0.01% | 99.88% | 0.00% | 99.66% |
 | 222 | `one/h4/side/shed/in` | 2 | 0.01% | 99.89% | 0.00% | 99.66% |
-| 223 | `one/h4/side/works/in` | 2 | 0.01% | 99.89% | 0.00% | 99.66% |
+| 223 | `one/h4/side/works/in` | 2 | 0.01% | 99.90% | 0.00% | 99.66% |
 | 224 | `one/h5/side/works/in` | 2 | 0.01% | 99.90% | 0.05% | 99.71% |
 | 225 | `one/h6/side/worship/in` | 2 | 0.01% | 99.91% | 0.01% | 99.72% |
 | 226 | `both/h2/main/civic/in` | 1 | 0.00% | 99.91% | 0.07% | 99.79% |
 | 227 | `both/h3/main/civic/in` | 1 | 0.00% | 99.91% | 0.00% | 99.79% |
-| 228 | `corner/h1/main/civic/in` | 1 | 0.00% | 99.91% | 0.00% | 99.79% |
-| 229 | `corner/h1/main/low-rise/in` | 1 | 0.00% | 99.92% | 0.02% | 99.81% |
+| 228 | `corner/h1/main/civic/in` | 1 | 0.00% | 99.92% | 0.00% | 99.79% |
+| 229 | `corner/h1/main/low-rise/in` | 1 | 0.00% | 99.92% | 0.02% | 99.82% |
 | 230 | `corner/h2/main/civic/in` | 1 | 0.00% | 99.92% | 0.00% | 99.82% |
 | 231 | `corner/h2/main/worship/in` | 1 | 0.00% | 99.92% | 0.00% | 99.82% |
 | 232 | `corner/h2/side/shed/in` | 1 | 0.00% | 99.93% | 0.00% | 99.82% |
@@ -386,19 +386,19 @@ Classes ranked by count, with each class's share of records, its share of the ci
 | 238 | `none/h1/main/works/in` | 1 | 0.00% | 99.94% | 0.00% | 99.87% |
 | 239 | `none/h1/main/worship/in` | 1 | 0.00% | 99.95% | 0.00% | 99.87% |
 | 240 | `none/h2/main/shed/in` | 1 | 0.00% | 99.95% | 0.00% | 99.87% |
-| 241 | `none/h3/main/worship/in` | 1 | 0.00% | 99.95% | 0.00% | 99.87% |
+| 241 | `none/h3/main/worship/in` | 1 | 0.00% | 99.95% | 0.00% | 99.88% |
 | 242 | `none/h3/side/shed/in` | 1 | 0.00% | 99.95% | 0.00% | 99.88% |
 | 243 | `none/h4/main/works/in` | 1 | 0.00% | 99.96% | 0.01% | 99.89% |
 | 244 | `none/h5/main/works/in` | 1 | 0.00% | 99.96% | 0.00% | 99.89% |
 | 245 | `none/h6/main/works/in` | 1 | 0.00% | 99.96% | 0.03% | 99.92% |
-| 246 | `none/h6/main/worship/in` | 1 | 0.00% | 99.96% | 0.01% | 99.94% |
+| 246 | `none/h6/main/worship/in` | 1 | 0.00% | 99.97% | 0.01% | 99.94% |
 | 247 | `none/h6/side/works/in` | 1 | 0.00% | 99.97% | 0.03% | 99.97% |
 | 248 | `one/h1/main/civic/in` | 1 | 0.00% | 99.97% | 0.02% | 99.98% |
 | 249 | `one/h1/side/civic/out` | 1 | 0.00% | 99.97% | 0.00% | 99.98% |
 | 250 | `one/h1/side/low-rise/out` | 1 | 0.00% | 99.98% | 0.00% | 99.98% |
 | 251 | `one/h1/side/worship/out` | 1 | 0.00% | 99.98% | 0.00% | 99.98% |
 | 252 | `one/h2/main/civic/in` | 1 | 0.00% | 99.98% | 0.00% | 99.99% |
-| 253 | `one/h3/main/works/in` | 1 | 0.00% | 99.98% | 0.00% | 99.99% |
+| 253 | `one/h3/main/works/in` | 1 | 0.00% | 99.99% | 0.00% | 99.99% |
 | 254 | `one/h3/main/worship/in` | 1 | 0.00% | 99.99% | 0.00% | 99.99% |
 | 255 | `one/h3/side/shed/in` | 1 | 0.00% | 99.99% | 0.00% | 99.99% |
 | 256 | `one/h4/main/shed/in` | 1 | 0.00% | 99.99% | 0.00% | 100.00% |
@@ -413,66 +413,66 @@ The same records classed by the group style (detached, pair, row end, row middle
 | # | class | records | share | cum. share | area share | cum. area share |
 |---|---|---|---|---|---|---|
 | 1 | `detached/h2/side/house/in` | 8,540 | 36.46% | 36.46% | 10.43% | 10.43% |
-| 2 | `detached/h5/side/mid-rise/in` | 3,591 | 14.70% | 51.16% | 10.69% | 21.12% |
-| 3 | `detached/h4/side/mid-rise/in` | 1,789 | 7.36% | 58.53% | 3.84% | 24.96% |
-| 4 | `detached/h4/side/low-rise/in` | 1,809 | 7.33% | 65.86% | 5.57% | 30.53% |
-| 5 | `detached/h3/side/house/in` | 1,267 | 5.28% | 71.14% | 1.78% | 32.31% |
-| 6 | `detached/h1/side/house/in` | 843 | 3.68% | 74.82% | 0.92% | 33.23% |
-| 7 | `detached/h2/main/house/in` | 819 | 3.48% | 78.30% | 1.18% | 34.41% |
-| 8 | `pair/h2/side/house/in` | 828 | 1.81% | 80.11% | 0.91% | 35.32% |
-| 9 | `detached/h5/main/mid-rise/in` | 530 | 1.71% | 81.82% | 3.37% | 38.69% |
-| 10 | `detached/h4/main/low-rise/in` | 428 | 1.43% | 83.25% | 2.14% | 40.83% |
-| 11 | `rowMiddle/h6/side/tower/in` | 3,041 | 1.10% | 84.35% | 11.32% | 52.15% |
-| 12 | `detached/h4/main/mid-rise/in` | 272 | 0.97% | 85.32% | 1.30% | 53.45% |
-| 13 | `pair/h5/side/mid-rise/in` | 444 | 0.97% | 86.30% | 0.84% | 54.29% |
-| 14 | `detached/h3/main/house/in` | 173 | 0.73% | 87.03% | 0.30% | 54.59% |
-| 15 | `detached/h4/side/house/in` | 169 | 0.67% | 87.70% | 0.50% | 55.09% |
-| 16 | `detached/h6/side/tower/in` | 281 | 0.56% | 88.26% | 1.92% | 57.00% |
-| 17 | `pair/h4/side/low-rise/in` | 246 | 0.54% | 88.80% | 0.49% | 57.49% |
-| 18 | `rowMiddle/h5/side/mid-rise/in` | 821 | 0.54% | 89.34% | 2.59% | 60.09% |
-| 19 | `rowMiddle/h6/main/tower/in` | 1,226 | 0.49% | 89.83% | 5.92% | 66.01% |
-| 20 | `pair/h4/side/mid-rise/in` | 208 | 0.46% | 90.29% | 0.32% | 66.33% |
-| 21 | `detached/h6/main/tower/in` | 210 | 0.39% | 90.68% | 1.97% | 68.29% |
-| 22 | `pair/h3/side/house/in` | 178 | 0.39% | 91.07% | 0.23% | 68.52% |
-| 23 | `detached/h1/main/house/in` | 83 | 0.36% | 91.43% | 0.10% | 68.62% |
-| 24 | `detached/h5/side/tower/in` | 116 | 0.36% | 91.79% | 1.07% | 69.69% |
-| 25 | `rowEnd/h5/side/mid-rise/in` | 366 | 0.32% | 92.12% | 0.94% | 70.63% |
-| 26 | `rowMiddle/h5/side/tower/in` | 582 | 0.30% | 92.41% | 1.96% | 72.59% |
-| 27 | `detached/h5/main/tower/in` | 127 | 0.29% | 92.70% | 1.25% | 73.85% |
-| 28 | `detached/h5/side/civic/in` | 126 | 0.25% | 92.95% | 1.22% | 75.06% |
-| 29 | `rowMiddle/h5/side/civic/in` | 377 | 0.21% | 93.16% | 2.07% | 77.13% |
-| 30 | `detached/h1/side/house/out` | 46 | 0.20% | 93.36% | 0.02% | 77.15% |
-| 31 | `detached/h2/side/low-rise/in` | 46 | 0.20% | 93.55% | 0.25% | 77.40% |
-| 32 | `rowMiddle/h4/side/low-rise/in` | 193 | 0.20% | 93.75% | 0.56% | 77.96% |
-| 33 | `rowEnd/h2/side/house/in` | 136 | 0.18% | 93.94% | 0.15% | 78.12% |
-| 34 | `detached/h4/main/house/in` | 42 | 0.18% | 94.12% | 0.15% | 78.26% |
-| 35 | `rowMiddle/h5/main/mid-rise/in` | 318 | 0.17% | 94.29% | 1.36% | 79.63% |
-| 36 | `detached/h1/side/shed/in` | 37 | 0.16% | 94.45% | 0.03% | 79.66% |
-| 37 | `corner/h5/side/mid-rise/in` | 179 | 0.16% | 94.61% | 0.88% | 80.54% |
-| 38 | `detached/h1/side/shed/out` | 36 | 0.16% | 94.76% | 0.01% | 80.54% |
-| 39 | `corner/h6/side/tower/in` | 310 | 0.15% | 94.92% | 1.30% | 81.84% |
-| 40 | `detached/h2/main/low-rise/in` | 37 | 0.15% | 95.07% | 0.17% | 82.01% |
-| 41 | `pair/h2/main/house/in` | 70 | 0.15% | 95.22% | 0.09% | 82.10% |
-| 42 | `rowEnd/h5/main/mid-rise/in` | 187 | 0.15% | 95.37% | 0.78% | 82.88% |
-| 43 | `detached/h4/side/civic/in` | 52 | 0.15% | 95.52% | 0.37% | 83.25% |
-| 44 | `rowMiddle/h4/side/mid-rise/in` | 163 | 0.15% | 95.67% | 0.47% | 83.72% |
-| 45 | `rowEnd/h6/side/tower/in` | 281 | 0.14% | 95.82% | 1.55% | 85.27% |
-| 46 | `rowEnd/h4/side/mid-rise/in` | 147 | 0.14% | 95.96% | 0.30% | 85.57% |
-| 47 | `detached/h5/side/worship/in` | 61 | 0.12% | 96.08% | 0.24% | 85.82% |
-| 48 | `rowEnd/h4/side/low-rise/in` | 98 | 0.11% | 96.19% | 0.24% | 86.05% |
-| 49 | `rowMiddle/h2/side/house/in` | 82 | 0.11% | 96.31% | 0.10% | 86.16% |
-| 50 | `detached/h3/side/low-rise/in` | 28 | 0.11% | 96.42% | 0.26% | 86.41% |
+| 2 | `detached/h5/side/mid-rise/in` | 3,591 | 14.70% | 51.15% | 10.69% | 21.12% |
+| 3 | `detached/h4/side/mid-rise/in` | 1,789 | 7.36% | 58.52% | 3.84% | 24.96% |
+| 4 | `detached/h4/side/low-rise/in` | 1,809 | 7.33% | 65.85% | 5.57% | 30.52% |
+| 5 | `detached/h3/side/house/in` | 1,267 | 5.28% | 71.13% | 1.78% | 32.30% |
+| 6 | `detached/h1/side/house/in` | 845 | 3.68% | 74.81% | 0.92% | 33.22% |
+| 7 | `detached/h2/main/house/in` | 819 | 3.48% | 78.30% | 1.18% | 34.40% |
+| 8 | `pair/h2/side/house/in` | 828 | 1.81% | 80.11% | 0.91% | 35.31% |
+| 9 | `detached/h5/main/mid-rise/in` | 530 | 1.71% | 81.82% | 3.37% | 38.68% |
+| 10 | `detached/h4/main/low-rise/in` | 428 | 1.43% | 83.25% | 2.14% | 40.82% |
+| 11 | `rowMiddle/h6/side/tower/in` | 3,041 | 1.10% | 84.35% | 11.32% | 52.14% |
+| 12 | `detached/h4/main/mid-rise/in` | 272 | 0.97% | 85.32% | 1.30% | 53.44% |
+| 13 | `pair/h5/side/mid-rise/in` | 444 | 0.97% | 86.29% | 0.84% | 54.28% |
+| 14 | `detached/h3/main/house/in` | 173 | 0.73% | 87.02% | 0.30% | 54.58% |
+| 15 | `detached/h4/side/house/in` | 169 | 0.67% | 87.70% | 0.50% | 55.08% |
+| 16 | `detached/h6/side/tower/in` | 281 | 0.56% | 88.26% | 1.92% | 56.99% |
+| 17 | `rowMiddle/h5/side/mid-rise/in` | 835 | 0.54% | 88.80% | 2.63% | 59.62% |
+| 18 | `pair/h4/side/low-rise/in` | 246 | 0.54% | 89.34% | 0.49% | 60.11% |
+| 19 | `rowMiddle/h6/main/tower/in` | 1,226 | 0.49% | 89.83% | 5.92% | 66.03% |
+| 20 | `pair/h4/side/mid-rise/in` | 208 | 0.46% | 90.29% | 0.32% | 66.35% |
+| 21 | `detached/h6/main/tower/in` | 210 | 0.39% | 90.68% | 1.97% | 68.32% |
+| 22 | `pair/h3/side/house/in` | 178 | 0.39% | 91.07% | 0.23% | 68.55% |
+| 23 | `detached/h1/main/house/in` | 83 | 0.36% | 91.43% | 0.10% | 68.65% |
+| 24 | `detached/h5/side/tower/in` | 116 | 0.36% | 91.79% | 1.07% | 69.72% |
+| 25 | `rowEnd/h5/side/mid-rise/in` | 366 | 0.32% | 92.12% | 0.94% | 70.65% |
+| 26 | `rowMiddle/h5/side/tower/in` | 582 | 0.30% | 92.41% | 1.96% | 72.62% |
+| 27 | `detached/h5/main/tower/in` | 127 | 0.29% | 92.70% | 1.25% | 73.87% |
+| 28 | `detached/h5/side/civic/in` | 126 | 0.25% | 92.95% | 1.22% | 75.09% |
+| 29 | `rowMiddle/h5/side/civic/in` | 377 | 0.21% | 93.16% | 2.07% | 77.16% |
+| 30 | `detached/h1/side/house/out` | 46 | 0.20% | 93.36% | 0.02% | 77.18% |
+| 31 | `detached/h2/side/low-rise/in` | 46 | 0.20% | 93.56% | 0.25% | 77.43% |
+| 32 | `rowMiddle/h4/side/low-rise/in` | 193 | 0.20% | 93.75% | 0.56% | 77.99% |
+| 33 | `rowEnd/h2/side/house/in` | 136 | 0.18% | 93.94% | 0.15% | 78.14% |
+| 34 | `detached/h4/main/house/in` | 42 | 0.18% | 94.12% | 0.15% | 78.28% |
+| 35 | `rowMiddle/h5/main/mid-rise/in` | 318 | 0.17% | 94.29% | 1.36% | 79.65% |
+| 36 | `detached/h1/side/shed/in` | 37 | 0.16% | 94.45% | 0.03% | 79.68% |
+| 37 | `corner/h5/side/mid-rise/in` | 179 | 0.16% | 94.61% | 0.88% | 80.56% |
+| 38 | `detached/h1/side/shed/out` | 36 | 0.16% | 94.76% | 0.01% | 80.57% |
+| 39 | `corner/h6/side/tower/in` | 310 | 0.15% | 94.92% | 1.30% | 81.86% |
+| 40 | `detached/h2/main/low-rise/in` | 37 | 0.15% | 95.07% | 0.17% | 82.03% |
+| 41 | `pair/h2/main/house/in` | 70 | 0.15% | 95.22% | 0.09% | 82.12% |
+| 42 | `detached/h4/side/civic/in` | 52 | 0.15% | 95.37% | 0.37% | 82.49% |
+| 43 | `rowEnd/h5/main/mid-rise/in` | 175 | 0.15% | 95.52% | 0.74% | 83.24% |
+| 44 | `rowMiddle/h4/side/mid-rise/in` | 163 | 0.15% | 95.67% | 0.47% | 83.71% |
+| 45 | `rowEnd/h6/side/tower/in` | 281 | 0.14% | 95.81% | 1.55% | 85.26% |
+| 46 | `rowEnd/h4/side/mid-rise/in` | 147 | 0.14% | 95.95% | 0.30% | 85.56% |
+| 47 | `detached/h5/side/worship/in` | 61 | 0.12% | 96.08% | 0.24% | 85.81% |
+| 48 | `detached/h3/side/low-rise/in` | 29 | 0.11% | 96.19% | 0.27% | 86.08% |
+| 49 | `rowEnd/h4/side/low-rise/in` | 98 | 0.11% | 96.30% | 0.24% | 86.31% |
+| 50 | `rowMiddle/h2/side/house/in` | 82 | 0.11% | 96.42% | 0.10% | 86.42% |
 | 51 | `corner/h6/main/tower/in` | 250 | 0.10% | 96.51% | 1.44% | 87.86% |
 | 52 | `detached/h1/side/low-rise/in` | 22 | 0.10% | 96.61% | 0.05% | 87.91% |
 | 53 | `rowMiddle/h4/main/mid-rise/in` | 158 | 0.10% | 96.71% | 0.61% | 88.52% |
 | 54 | `rowEnd/h3/side/house/in` | 79 | 0.09% | 96.80% | 0.09% | 88.61% |
 | 55 | `corner/h5/main/mid-rise/in` | 109 | 0.09% | 96.88% | 0.61% | 89.22% |
-| 56 | `detached/h5/side/shed/in` | 23 | 0.09% | 96.97% | 0.06% | 89.28% |
+| 56 | `detached/h5/side/shed/in` | 23 | 0.09% | 96.97% | 0.06% | 89.29% |
 | 57 | `pair/h4/main/low-rise/in` | 38 | 0.08% | 97.06% | 0.16% | 89.44% |
 | 58 | `pair/h5/main/mid-rise/in` | 36 | 0.08% | 97.13% | 0.16% | 89.60% |
 | 59 | `rowEnd/h4/main/mid-rise/in` | 96 | 0.08% | 97.21% | 0.24% | 89.84% |
 | 60 | `detached/h5/main/worship/in` | 30 | 0.07% | 97.29% | 0.16% | 90.01% |
-| 61 | `pair/h4/side/house/in` | 34 | 0.07% | 97.36% | 0.08% | 90.08% |
+| 61 | `pair/h4/side/house/in` | 34 | 0.07% | 97.36% | 0.08% | 90.09% |
 | 62 | `rowMiddle/h3/side/house/in` | 64 | 0.07% | 97.44% | 0.06% | 90.15% |
 | 63 | `rowMiddle/h5/main/tower/in` | 96 | 0.07% | 97.51% | 0.43% | 90.57% |
 | 64 | `corner/h4/side/low-rise/in` | 55 | 0.07% | 97.57% | 0.26% | 90.83% |
@@ -480,7 +480,7 @@ The same records classed by the group style (detached, pair, row end, row middle
 | 66 | `corner/h4/main/mid-rise/in` | 91 | 0.06% | 97.69% | 0.38% | 91.75% |
 | 67 | `detached/h3/main/low-rise/in` | 16 | 0.06% | 97.75% | 0.21% | 91.96% |
 | 68 | `detached/h3/side/mid-rise/in` | 13 | 0.06% | 97.81% | 0.09% | 92.05% |
-| 69 | `detached/h5/main/civic/in` | 28 | 0.06% | 97.86% | 0.25% | 92.29% |
+| 69 | `detached/h5/main/civic/in` | 28 | 0.06% | 97.86% | 0.25% | 92.30% |
 | 70 | `rowMiddle/h4/main/low-rise/in` | 96 | 0.06% | 97.92% | 0.26% | 92.55% |
 | 71 | `rowMiddle/h6/side/civic/in` | 237 | 0.06% | 97.98% | 1.11% | 93.67% |
 | 72 | `corner/h4/main/low-rise/in` | 48 | 0.05% | 98.03% | 0.18% | 93.84% |
@@ -489,17 +489,17 @@ The same records classed by the group style (detached, pair, row end, row middle
 | 75 | `detached/h3/main/mid-rise/in` | 13 | 0.05% | 98.19% | 0.05% | 94.20% |
 | 76 | `pair/h3/main/house/in` | 24 | 0.05% | 98.24% | 0.04% | 94.24% |
 | 77 | `rowEnd/h4/main/low-rise/in` | 41 | 0.05% | 98.29% | 0.11% | 94.34% |
-| 78 | `detached/h1/main/shed/in` | 11 | 0.05% | 98.34% | 0.01% | 94.35% |
+| 78 | `detached/h1/main/shed/in` | 11 | 0.05% | 98.34% | 0.01% | 94.36% |
 | 79 | `detached/h4/main/worship/in` | 10 | 0.04% | 98.39% | 0.05% | 94.41% |
 | 80 | `detached/h4/side/worship/in` | 10 | 0.04% | 98.43% | 0.04% | 94.45% |
-| 81 | `pair/h6/main/tower/in` | 20 | 0.04% | 98.47% | 0.29% | 94.74% |
+| 81 | `pair/h6/main/tower/in` | 20 | 0.04% | 98.47% | 0.29% | 94.75% |
 | 82 | `rowEnd/h3/main/house/in` | 37 | 0.04% | 98.52% | 0.06% | 94.81% |
 | 83 | `corner/h5/side/civic/in` | 46 | 0.04% | 98.56% | 0.20% | 95.01% |
 | 84 | `detached/h1/side/civic/in` | 9 | 0.04% | 98.60% | 0.01% | 95.02% |
-| 85 | `detached/h2/side/shed/in` | 10 | 0.04% | 98.64% | 0.02% | 95.04% |
-| 86 | `detached/h4/side/shed/in` | 9 | 0.04% | 98.67% | 0.04% | 95.07% |
+| 85 | `detached/h2/side/shed/in` | 10 | 0.04% | 98.63% | 0.02% | 95.04% |
+| 86 | `detached/h4/side/shed/in` | 9 | 0.04% | 98.67% | 0.04% | 95.08% |
 | 87 | `pair/h6/side/tower/in` | 18 | 0.04% | 98.71% | 0.14% | 95.22% |
-| 88 | `rowEnd/h5/side/tower/in` | 63 | 0.04% | 98.75% | 0.51% | 95.72% |
+| 88 | `rowEnd/h5/side/tower/in` | 63 | 0.04% | 98.75% | 0.51% | 95.73% |
 | 89 | `corner/h4/side/civic/in` | 34 | 0.03% | 98.79% | 0.16% | 95.88% |
 | 90 | `detached/h2/side/worship/in` | 8 | 0.03% | 98.82% | 0.02% | 95.90% |
 | 91 | `rowMiddle/h5/side/worship/in` | 32 | 0.03% | 98.86% | 0.09% | 95.99% |
@@ -507,30 +507,30 @@ The same records classed by the group style (detached, pair, row end, row middle
 | 93 | `rowEnd/h4/side/house/in` | 32 | 0.03% | 98.92% | 0.07% | 96.15% |
 | 94 | `rowEnd/h5/side/civic/in` | 67 | 0.03% | 98.95% | 0.15% | 96.30% |
 | 95 | `rowMiddle/h4/main/house/in` | 37 | 0.03% | 98.98% | 0.07% | 96.37% |
-| 96 | `rowMiddle/h4/side/house/in` | 25 | 0.03% | 99.01% | 0.05% | 96.41% |
+| 96 | `rowMiddle/h4/side/house/in` | 25 | 0.03% | 99.01% | 0.05% | 96.42% |
 | 97 | `corner/h5/side/tower/in` | 38 | 0.03% | 99.04% | 0.21% | 96.62% |
 | 98 | `detached/h3/side/civic/in` | 7 | 0.03% | 99.06% | 0.02% | 96.64% |
 | 99 | `detached/h6/side/civic/in` | 30 | 0.03% | 99.09% | 0.41% | 97.05% |
 | 100 | `pair/h1/side/house/in` | 12 | 0.03% | 99.12% | 0.01% | 97.06% |
 | 101 | `rowEnd/h2/main/house/in` | 28 | 0.03% | 99.14% | 0.03% | 97.09% |
 | 102 | `rowMiddle/h4/side/civic/in` | 34 | 0.03% | 99.17% | 0.09% | 97.18% |
-| 103 | `rowMiddle/h5/main/civic/in` | 59 | 0.03% | 99.20% | 0.35% | 97.53% |
+| 103 | `rowMiddle/h5/main/civic/in` | 59 | 0.03% | 99.19% | 0.35% | 97.53% |
 | 104 | `corner/h2/side/house/in` | 15 | 0.02% | 99.22% | 0.02% | 97.55% |
 | 105 | `detached/h2/main/worship/in` | 5 | 0.02% | 99.24% | 0.01% | 97.56% |
 | 106 | `detached/h2/side/civic/in` | 5 | 0.02% | 99.26% | 0.01% | 97.57% |
-| 107 | `pair/h4/main/house/in` | 10 | 0.02% | 99.28% | 0.03% | 97.60% |
-| 108 | `pair/h4/main/mid-rise/in` | 10 | 0.02% | 99.31% | 0.02% | 97.63% |
+| 107 | `pair/h4/main/house/in` | 10 | 0.02% | 99.28% | 0.03% | 97.61% |
+| 108 | `pair/h4/main/mid-rise/in` | 10 | 0.02% | 99.30% | 0.02% | 97.63% |
 | 109 | `pair/h4/side/civic/in` | 10 | 0.02% | 99.33% | 0.07% | 97.69% |
 | 110 | `pair/h5/main/tower/in` | 10 | 0.02% | 99.35% | 0.11% | 97.80% |
 | 111 | `rowMiddle/h3/main/house/in` | 22 | 0.02% | 99.37% | 0.05% | 97.85% |
 | 112 | `corner/h2/main/house/in` | 13 | 0.02% | 99.39% | 0.02% | 97.87% |
-| 113 | `corner/h3/main/house/in` | 14 | 0.02% | 99.41% | 0.02% | 97.89% |
+| 113 | `corner/h3/main/house/in` | 14 | 0.02% | 99.40% | 0.02% | 97.89% |
 | 114 | `detached/h4/side/works/in` | 4 | 0.02% | 99.42% | 0.02% | 97.91% |
 | 115 | `detached/h5/side/works/in` | 9 | 0.02% | 99.44% | 0.05% | 97.96% |
 | 116 | `pair/h5/side/tower/in` | 8 | 0.02% | 99.46% | 0.03% | 97.99% |
-| 117 | `rowEnd/h4/side/civic/in` | 16 | 0.02% | 99.48% | 0.05% | 98.04% |
+| 117 | `rowEnd/h4/side/civic/in` | 16 | 0.02% | 99.47% | 0.05% | 98.04% |
 | 118 | `rowEnd/h5/main/tower/in` | 24 | 0.02% | 99.49% | 0.10% | 98.13% |
-| 119 | `rowEnd/h5/side/worship/in` | 41 | 0.02% | 99.51% | 0.13% | 98.26% |
+| 119 | `rowEnd/h5/side/worship/in` | 41 | 0.02% | 99.51% | 0.13% | 98.27% |
 | 120 | `detached/h2/main/works/in` | 3 | 0.01% | 99.52% | 0.01% | 98.27% |
 | 121 | `detached/h3/main/works/in` | 3 | 0.01% | 99.54% | 0.01% | 98.28% |
 | 122 | `detached/h3/side/worship/in` | 6 | 0.01% | 99.55% | 0.02% | 98.30% |
@@ -538,76 +538,76 @@ The same records classed by the group style (detached, pair, row end, row middle
 | 124 | `detached/h6/side/worship/in` | 9 | 0.01% | 99.58% | 0.04% | 98.38% |
 | 125 | `pair/h5/side/civic/in` | 6 | 0.01% | 99.59% | 0.03% | 98.40% |
 | 126 | `rowEnd/h4/main/house/in` | 13 | 0.01% | 99.60% | 0.02% | 98.42% |
-| 127 | `rowEnd/h4/side/worship/in` | 21 | 0.01% | 99.62% | 0.04% | 98.46% |
+| 127 | `rowEnd/h4/side/worship/in` | 21 | 0.01% | 99.61% | 0.04% | 98.46% |
 | 128 | `rowMiddle/h2/main/low-rise/in` | 12 | 0.01% | 99.63% | 0.06% | 98.53% |
 | 129 | `rowMiddle/h4/main/worship/in` | 12 | 0.01% | 99.64% | 0.02% | 98.55% |
-| 130 | `rowMiddle/h4/side/worship/in` | 12 | 0.01% | 99.65% | 0.03% | 98.57% |
+| 130 | `rowMiddle/h4/side/worship/in` | 12 | 0.01% | 99.65% | 0.03% | 98.58% |
 | 131 | `rowMiddle/h5/main/worship/in` | 18 | 0.01% | 99.67% | 0.04% | 98.62% |
 | 132 | `corner/h4/main/worship/in` | 12 | 0.01% | 99.68% | 0.02% | 98.64% |
-| 133 | `corner/h4/side/worship/in` | 5 | 0.01% | 99.69% | 0.02% | 98.66% |
+| 133 | `corner/h4/side/worship/in` | 5 | 0.01% | 99.68% | 0.02% | 98.66% |
 | 134 | `corner/h5/side/worship/in` | 11 | 0.01% | 99.69% | 0.02% | 98.68% |
 | 135 | `corner/h6/side/civic/in` | 45 | 0.01% | 99.70% | 0.23% | 98.91% |
 | 136 | `detached/h1/side/works/in` | 2 | 0.01% | 99.71% | 0.00% | 98.91% |
 | 137 | `detached/h1/side/worship/in` | 2 | 0.01% | 99.72% | 0.00% | 98.92% |
 | 138 | `detached/h6/side/shed/in` | 5 | 0.01% | 99.73% | 0.03% | 98.94% |
 | 139 | `pair/h2/main/low-rise/in` | 4 | 0.01% | 99.74% | 0.00% | 98.95% |
-| 140 | `pair/h2/side/low-rise/in` | 4 | 0.01% | 99.75% | 0.06% | 99.01% |
-| 141 | `pair/h4/main/civic/in` | 4 | 0.01% | 99.76% | 0.02% | 99.03% |
+| 140 | `pair/h2/side/low-rise/in` | 4 | 0.01% | 99.74% | 0.06% | 99.01% |
+| 141 | `pair/h4/main/civic/in` | 4 | 0.01% | 99.75% | 0.02% | 99.03% |
 | 142 | `pair/h4/side/shed/in` | 4 | 0.01% | 99.76% | 0.03% | 99.06% |
 | 143 | `rowEnd/h5/main/civic/in` | 12 | 0.01% | 99.77% | 0.05% | 99.11% |
 | 144 | `rowMiddle/h2/main/house/in` | 7 | 0.01% | 99.78% | 0.01% | 99.12% |
 | 145 | `rowMiddle/h3/main/low-rise/in` | 6 | 0.01% | 99.79% | 0.03% | 99.15% |
 | 146 | `rowMiddle/h3/main/mid-rise/in` | 9 | 0.01% | 99.80% | 0.02% | 99.18% |
 | 147 | `rowMiddle/h6/main/civic/in` | 17 | 0.01% | 99.81% | 0.16% | 99.33% |
-| 148 | `rowMiddle/h6/main/works/in` | 25 | 0.01% | 99.82% | 0.09% | 99.42% |
+| 148 | `rowMiddle/h6/main/works/in` | 25 | 0.01% | 99.81% | 0.09% | 99.42% |
 | 149 | `corner/h2/main/low-rise/in` | 2 | 0.00% | 99.82% | 0.00% | 99.42% |
-| 150 | `corner/h3/main/mid-rise/in` | 3 | 0.00% | 99.83% | 0.01% | 99.43% |
+| 150 | `corner/h3/main/mid-rise/in` | 3 | 0.00% | 99.82% | 0.01% | 99.43% |
 | 151 | `corner/h3/side/house/in` | 6 | 0.00% | 99.83% | 0.01% | 99.43% |
-| 152 | `corner/h3/side/mid-rise/in` | 2 | 0.00% | 99.84% | 0.01% | 99.44% |
+| 152 | `corner/h3/side/mid-rise/in` | 2 | 0.00% | 99.83% | 0.01% | 99.44% |
 | 153 | `corner/h4/main/civic/in` | 2 | 0.00% | 99.84% | 0.00% | 99.44% |
 | 154 | `corner/h4/main/house/in` | 5 | 0.00% | 99.84% | 0.01% | 99.45% |
 | 155 | `corner/h4/main/works/in` | 2 | 0.00% | 99.85% | 0.01% | 99.46% |
-| 156 | `corner/h5/main/worship/in` | 4 | 0.00% | 99.85% | 0.02% | 99.48% |
-| 157 | `corner/h6/side/worship/in` | 3 | 0.00% | 99.86% | 0.01% | 99.50% |
+| 156 | `corner/h5/main/worship/in` | 4 | 0.00% | 99.85% | 0.02% | 99.49% |
+| 157 | `corner/h6/side/worship/in` | 3 | 0.00% | 99.85% | 0.01% | 99.50% |
 | 158 | `detached/h1/main/works/in` | 1 | 0.00% | 99.86% | 0.00% | 99.50% |
-| 159 | `detached/h1/main/worship/in` | 1 | 0.00% | 99.87% | 0.00% | 99.50% |
+| 159 | `detached/h1/main/worship/in` | 1 | 0.00% | 99.86% | 0.00% | 99.50% |
 | 160 | `detached/h2/main/civic/in` | 1 | 0.00% | 99.87% | 0.01% | 99.51% |
 | 161 | `detached/h2/main/shed/in` | 1 | 0.00% | 99.87% | 0.00% | 99.51% |
 | 162 | `detached/h3/main/worship/in` | 1 | 0.00% | 99.88% | 0.00% | 99.52% |
 | 163 | `detached/h3/side/shed/in` | 1 | 0.00% | 99.88% | 0.00% | 99.52% |
-| 164 | `detached/h5/main/works/in` | 1 | 0.00% | 99.89% | 0.00% | 99.52% |
-| 165 | `detached/h6/main/civic/in` | 1 | 0.00% | 99.89% | 0.01% | 99.53% |
-| 166 | `detached/h6/main/works/in` | 8 | 0.00% | 99.90% | 0.04% | 99.58% |
+| 164 | `detached/h5/main/works/in` | 1 | 0.00% | 99.88% | 0.00% | 99.52% |
+| 165 | `detached/h6/main/civic/in` | 1 | 0.00% | 99.89% | 0.01% | 99.54% |
+| 166 | `detached/h6/main/works/in` | 8 | 0.00% | 99.89% | 0.04% | 99.58% |
 | 167 | `detached/h6/main/worship/in` | 3 | 0.00% | 99.90% | 0.02% | 99.60% |
-| 168 | `detached/h6/side/works/in` | 1 | 0.00% | 99.91% | 0.03% | 99.63% |
+| 168 | `detached/h6/side/works/in` | 1 | 0.00% | 99.90% | 0.03% | 99.63% |
 | 169 | `pair/h1/main/house/in` | 2 | 0.00% | 99.91% | 0.00% | 99.63% |
 | 170 | `pair/h3/main/low-rise/in` | 2 | 0.00% | 99.91% | 0.02% | 99.65% |
 | 171 | `pair/h3/main/mid-rise/in` | 2 | 0.00% | 99.92% | 0.01% | 99.66% |
 | 172 | `pair/h3/side/low-rise/in` | 2 | 0.00% | 99.92% | 0.01% | 99.66% |
-| 173 | `pair/h4/side/worship/in` | 2 | 0.00% | 99.93% | 0.04% | 99.70% |
+| 173 | `pair/h4/side/worship/in` | 2 | 0.00% | 99.92% | 0.04% | 99.70% |
 | 174 | `rowEnd/h1/side/house/in` | 3 | 0.00% | 99.93% | 0.00% | 99.70% |
-| 175 | `rowEnd/h2/main/low-rise/in` | 3 | 0.00% | 99.94% | 0.01% | 99.71% |
-| 176 | `rowEnd/h3/main/mid-rise/in` | 4 | 0.00% | 99.94% | 0.01% | 99.71% |
-| 177 | `rowEnd/h3/side/mid-rise/in` | 3 | 0.00% | 99.95% | 0.02% | 99.74% |
+| 175 | `rowEnd/h2/main/low-rise/in` | 3 | 0.00% | 99.93% | 0.01% | 99.71% |
+| 176 | `rowEnd/h3/main/mid-rise/in` | 4 | 0.00% | 99.94% | 0.01% | 99.72% |
+| 177 | `rowEnd/h3/side/mid-rise/in` | 3 | 0.00% | 99.94% | 0.02% | 99.74% |
 | 178 | `rowEnd/h4/main/civic/in` | 4 | 0.00% | 99.95% | 0.02% | 99.76% |
-| 179 | `rowEnd/h4/main/shed/in` | 5 | 0.00% | 99.95% | 0.01% | 99.76% |
+| 179 | `rowEnd/h4/main/shed/in` | 5 | 0.00% | 99.95% | 0.01% | 99.77% |
 | 180 | `rowEnd/h5/main/works/in` | 5 | 0.00% | 99.96% | 0.02% | 99.78% |
 | 181 | `rowEnd/h5/main/worship/in` | 3 | 0.00% | 99.96% | 0.01% | 99.79% |
-| 182 | `rowEnd/h5/side/works/in` | 7 | 0.00% | 99.97% | 0.04% | 99.83% |
+| 182 | `rowEnd/h5/side/works/in` | 7 | 0.00% | 99.96% | 0.04% | 99.84% |
 | 183 | `rowEnd/h6/side/civic/in` | 7 | 0.00% | 99.97% | 0.04% | 99.87% |
-| 184 | `rowEnd/h6/side/shed/in` | 3 | 0.00% | 99.98% | 0.01% | 99.88% |
+| 184 | `rowEnd/h6/side/shed/in` | 3 | 0.00% | 99.97% | 0.01% | 99.88% |
 | 185 | `rowEnd/h6/side/works/in` | 5 | 0.00% | 99.98% | 0.02% | 99.90% |
 | 186 | `rowEnd/h6/side/worship/in` | 3 | 0.00% | 99.98% | 0.01% | 99.91% |
 | 187 | `rowMiddle/h2/side/low-rise/in` | 2 | 0.00% | 99.99% | 0.00% | 99.91% |
 | 188 | `rowMiddle/h3/side/mid-rise/in` | 4 | 0.00% | 99.99% | 0.01% | 99.92% |
-| 189 | `rowMiddle/h6/main/worship/in` | 3 | 0.00% | 100.00% | 0.01% | 99.93% |
+| 189 | `rowMiddle/h6/main/worship/in` | 3 | 0.00% | 100.00% | 0.01% | 99.94% |
 | 190 | `rowMiddle/h6/side/works/in` | 11 | 0.00% | 100.00% | 0.07% | 100.00% |
 
 ## Group-level classes (one entry per joined group)
 
 One entry per joined group: each group's class is `groupStyle/heightBand/mainStreet/kind/outbuilding`, with the style,
 height band, main street and outbuilding of the group's tallest record and the group's own kind. 190
-group classes; groups ranked by count (each group's share of the 22,855 groups):
+group classes; groups ranked by count (each group's share of the 22,858 groups):
 
 | # | class | groups | share of groups | records | share of area |
 |---|---|---|---|---|---|
@@ -616,7 +616,7 @@ group classes; groups ranked by count (each group's share of the 22,855 groups):
 | 3 | `detached/h4/side/mid-rise/in` | 1,683 | 7.36% | 1,789 | 3.84% |
 | 4 | `detached/h4/side/low-rise/in` | 1,676 | 7.33% | 1,809 | 5.57% |
 | 5 | `detached/h3/side/house/in` | 1,207 | 5.28% | 1,267 | 1.78% |
-| 6 | `detached/h1/side/house/in` | 840 | 3.68% | 843 | 0.92% |
+| 6 | `detached/h1/side/house/in` | 842 | 3.68% | 845 | 0.92% |
 | 7 | `detached/h2/main/house/in` | 796 | 3.48% | 819 | 1.18% |
 | 8 | `pair/h2/side/house/in` | 414 | 1.81% | 828 | 0.91% |
 | 9 | `detached/h5/main/mid-rise/in` | 391 | 1.71% | 530 | 3.37% |
@@ -627,8 +627,8 @@ group classes; groups ranked by count (each group's share of the 22,855 groups):
 | 14 | `detached/h3/main/house/in` | 167 | 0.73% | 173 | 0.30% |
 | 15 | `detached/h4/side/house/in` | 154 | 0.67% | 169 | 0.50% |
 | 16 | `detached/h6/side/tower/in` | 128 | 0.56% | 281 | 1.92% |
-| 17 | `pair/h4/side/low-rise/in` | 123 | 0.54% | 246 | 0.49% |
-| 18 | `rowMiddle/h5/side/mid-rise/in` | 123 | 0.54% | 821 | 2.59% |
+| 17 | `rowMiddle/h5/side/mid-rise/in` | 124 | 0.54% | 835 | 2.63% |
+| 18 | `pair/h4/side/low-rise/in` | 123 | 0.54% | 246 | 0.49% |
 | 19 | `rowMiddle/h6/main/tower/in` | 113 | 0.49% | 1,226 | 5.92% |
 | 20 | `pair/h4/side/mid-rise/in` | 104 | 0.46% | 208 | 0.32% |
 | 21 | `detached/h6/main/tower/in` | 89 | 0.39% | 210 | 1.97% |
@@ -645,18 +645,18 @@ The full group-class table is in `tools/building-classes.json` under `groupClass
 
 | party sides | under 1.5 | 1.5–2 | 2.5–3 | 3–4 | 5–12 | 13+ | total |
 |---|---|---|---|---|---|---|---|
-| none | 1,163 | 9,663 | 1,520 | 4,352 | 4,280 | 311 | 21,289 |
-| one | 365 | 1,868 | 399 | 992 | 1,032 | 260 | 4,916 |
-| both | 220 | 667 | 289 | 1,126 | 2,723 | 2,248 | 7,273 |
+| none | 1,165 | 9,663 | 1,521 | 4,352 | 4,280 | 311 | 21,292 |
+| one | 365 | 1,868 | 399 | 992 | 1,031 | 260 | 4,915 |
+| both | 220 | 667 | 289 | 1,126 | 2,726 | 2,248 | 7,276 |
 | corner | 195 | 262 | 130 | 422 | 527 | 240 | 1,776 |
 
 ### Kind by party sides
 
 | kind | none | one | both | corner | total |
 |---|---|---|---|---|---|
-| house | 12,168 | 2,472 | 971 | 462 | 16,073 |
-| low-rise | 2,283 | 554 | 623 | 212 | 3,672 |
-| mid-rise | 5,918 | 1,179 | 1,902 | 504 | 9,503 |
+| house | 12,170 | 2,472 | 971 | 462 | 16,075 |
+| low-rise | 2,284 | 554 | 623 | 212 | 3,673 |
+| mid-rise | 5,918 | 1,178 | 1,905 | 504 | 9,505 |
 | tower | 479 | 361 | 2,835 | 306 | 3,981 |
 | shed | 137 | 114 | 34 | 43 | 328 |
 | works | 23 | 11 | 45 | 9 | 88 |
@@ -667,19 +667,19 @@ The full group-class table is in `tools/building-classes.json` under `groupClass
 
 | attachment (group) | under 1.5 | 1.5–2 | 2.5–3 | 3–4 | 5–12 | 13+ | total |
 |---|---|---|---|---|---|---|---|
-| detached | 1,163 | 9,663 | 1,520 | 4,352 | 4,280 | 311 | 21,289 |
+| detached | 1,165 | 9,663 | 1,521 | 4,352 | 4,280 | 311 | 21,292 |
 | pair | 90 | 1,199 | 194 | 432 | 346 | 24 | 2,285 |
-| row end | 275 | 669 | 205 | 560 | 686 | 236 | 2,631 |
-| row middle | 220 | 667 | 289 | 1,126 | 2,723 | 2,248 | 7,273 |
+| row end | 275 | 669 | 205 | 560 | 685 | 236 | 2,630 |
+| row middle | 220 | 667 | 289 | 1,126 | 2,726 | 2,248 | 7,276 |
 | corner | 195 | 262 | 130 | 422 | 527 | 240 | 1,776 |
 
 ### Kind by group style
 
 | kind | detached | pair | row end | row middle | corner | total |
 |---|---|---|---|---|---|---|
-| house | 12,168 | 1,476 | 996 | 971 | 462 | 16,073 |
-| low-rise | 2,283 | 232 | 322 | 623 | 212 | 3,672 |
-| mid-rise | 5,918 | 508 | 671 | 1,902 | 504 | 9,503 |
+| house | 12,170 | 1,476 | 996 | 971 | 462 | 16,075 |
+| low-rise | 2,284 | 232 | 322 | 623 | 212 | 3,673 |
+| mid-rise | 5,918 | 508 | 670 | 1,905 | 504 | 9,505 |
 | tower | 479 | 36 | 325 | 2,835 | 306 | 3,981 |
 | shed | 137 | 11 | 103 | 34 | 43 | 328 |
 | works | 23 | 0 | 11 | 45 | 9 | 88 |
@@ -689,11 +689,11 @@ The full group-class table is in `tools/building-classes.json` under `groupClass
 ## Quantiles of area, height, shorter side and frontage
 
 Area and frontage in m² and m; height in m; shorter side is the shorter side of the oriented rectangle, m. City-wide
-(all 35,254 records):
+(all 35,259 records):
 
 | metric | p10 | median | p90 |
 |---|---|---|---|
-| area (m²) | 57.6 | 153.1 | 703.0 |
+| area (m²) | 57.6 | 153.1 | 703.2 |
 | height (m) | 5.9 | 11.9 | 39.2 |
 | shorter side (m) | 5.1 | 9.9 | 23.4 |
 | frontage (m) | 0.0 | 9.0 | 39.5 |
@@ -702,10 +702,10 @@ By group style:
 
 | group | n | area p10 | area med | area p90 | height p10 | height med | height p90 | short side med | front med |
 |---|---|---|---|---|---|---|---|---|---|
-| detached | 21,289 | 84.9 | 154.9 | 563.0 | 5.8 | 8.4 | 20.2 | 10.0 | 9.6 |
+| detached | 21,292 | 84.9 | 154.9 | 563.0 | 5.8 | 8.4 | 20.2 | 10.1 | 9.6 |
 | pair | 2,285 | 81.7 | 138.7 | 363.4 | 6.0 | 8.0 | 18.7 | 9.1 | 8.8 |
-| row end | 2,631 | 21.1 | 129.6 | 904.5 | 5.0 | 12.3 | 40.8 | 7.8 | 7.5 |
-| row middle | 7,273 | 21.8 | 160.7 | 925.4 | 7.6 | 27.0 | 92.7 | 10.3 | 5.0 |
+| row end | 2,630 | 20.9 | 129.5 | 904.5 | 5.0 | 12.3 | 40.8 | 7.8 | 7.4 |
+| row middle | 7,276 | 21.8 | 160.9 | 925.4 | 7.6 | 27.0 | 92.7 | 10.3 | 5.0 |
 | corner | 1,776 | 27.0 | 156.2 | 957.8 | 4.9 | 15.1 | 52.8 | 10.4 | 5.5 |
 
 ## Histograms
@@ -714,23 +714,23 @@ Records per area bucket (m²):
 
 | area (m²) | <10 | <20 | <30 | <40 | <60 | <80 | <120 | <200 | <400 | <1000 | <4000 | <10000 | ≥10000 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| records | 0 | 1,056 | 821 | 637 | 1,144 | 2,021 | 7,305 | 10,065 | 5,997 | 3,949 | 2,037 | 185 | 37 |
+| records | 0 | 1,056 | 821 | 637 | 1,144 | 2,021 | 7,305 | 10,066 | 6,000 | 3,949 | 2,038 | 185 | 37 |
 
 Records per height bucket (m):
 
 | height (m) | <3 | <4 | <5 | <6 | <8 | <10 | <12 | <15 | <20 | <30 | <60 | <100 | ≥100 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| records | 0 | 843 | 962 | 1,878 | 8,973 | 3,967 | 1,027 | 2,805 | 6,605 | 3,438 | 2,803 | 1,189 | 764 |
+| records | 0 | 843 | 964 | 1,878 | 8,973 | 3,968 | 1,027 | 2,805 | 6,605 | 3,439 | 2,804 | 1,189 | 764 |
 
 Records per shorter-side bucket (m):
 
 | shorter side (m) | <4 | <5 | <6 | <7 | <8 | <9 | <10 | <11 | <12 | <13 | <15 | <20 | <30 | ≥30 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| records | 2,095 | 1,139 | 2,656 | 3,184 | 3,492 | 2,497 | 2,670 | 3,484 | 1,962 | 1,518 | 2,540 | 3,215 | 2,708 | 2,094 |
+| records | 2,095 | 1,139 | 2,656 | 3,184 | 3,492 | 2,497 | 2,671 | 3,485 | 1,962 | 1,518 | 2,540 | 3,216 | 2,709 | 2,095 |
 
 ## House records with no party wall
 
-12,136 house records (kind 0) have no party wall at all (no party edges, or none 1.5 m or
+12,138 house records (kind 0) have no party wall at all (no party edges, or none 1.5 m or
 longer). Their shorter side has a median of 9.1 m, which is wide for one house in the old city. This
 section only states what the histograms show; it concludes nothing about whether a record is one house or a semi drawn
 as one outline.
@@ -739,39 +739,39 @@ Records per shorter-side bucket (m):
 
 | shorter side (m) | <4 | <5 | <6 | <7 | <8 | <9 | <10 | <11 | <12 | <13 | <14 | <15 | <16 | <18 | <20 | <25 | <30 | ≥30 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| records | 23 | 275 | 1,195 | 1,624 | 1,720 | 1,133 | 1,290 | 1,747 | 894 | 590 | 469 | 461 | 225 | 234 | 130 | 108 | 14 | 4 |
+| records | 23 | 275 | 1,195 | 1,624 | 1,720 | 1,133 | 1,290 | 1,748 | 894 | 590 | 469 | 461 | 225 | 234 | 130 | 109 | 14 | 4 |
 
 Records per area bucket (m²):
 
 | area (m²) | <40 | <60 | <80 | <100 | <120 | <140 | <160 | <180 | <200 | <240 | <280 | <320 | <400 | <500 | <700 | <1000 | ≥1000 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| records | 45 | 165 | 845 | 1,918 | 1,894 | 1,429 | 1,420 | 1,222 | 952 | 1,032 | 490 | 241 | 277 | 123 | 83 | 0 | 0 |
+| records | 45 | 165 | 845 | 1,918 | 1,894 | 1,430 | 1,420 | 1,222 | 952 | 1,032 | 490 | 241 | 278 | 123 | 83 | 0 | 0 |
 
-1,493 of them have a shorter side under 6 m (a single narrow house); 3,931 have a
+1,493 of them have a shorter side under 6 m (a single narrow house); 3,932 have a
 shorter side of 9 to 12 m.
 
 The 20 seeded examples with a shorter side of 9 to 12 m (latitude, longitude for a map):
 
 | id | x, z | lat, lon | shorter side (m) | height (m) | area (m²) |
 |---|---|---|---|---|---|
-| `to-3dmassing-2025:104972` | -2837.6, -1093.3 | 43.647440, -79.418175 | 9.9 | 6.6 | 133.9 |
+| `to-3dmassing-2025:104967` | -2859.2, -841.2 | 43.645210, -79.417539 | 9.5 | 5.6 | 136.9 |
 | `to-3dmassing-2025:81317` | -4066.4, -1877.0 | 43.651043, -79.435544 | 11.0 | 6.0 | 183.3 |
-| `to-3dmassing-2025:199714` | 3243.1, -2579.2 | 43.675881, -79.351203 | 10.0 | 8.6 | 148.8 |
-| `to-3dmassing-2025:102058` | -1919.7, -2479.6 | 43.661756, -79.412177 | 11.4 | 7.7 | 183.6 |
-| `to-3dmassing-2025:102251` | -2313.9, -2602.3 | 43.661802, -79.417293 | 10.1 | 6.9 | 137.7 |
+| `to-3dmassing-2025:199713` | 3530.8, -1950.9 | 43.671200, -79.345562 | 10.4 | 5.7 | 146.4 |
+| `to-3dmassing-2025:102056` | -2369.7, -2243.2 | 43.658561, -79.416685 | 10.8 | 8.0 | 183.5 |
+| `to-3dmassing-2025:102250` | -2327.7, -2424.7 | 43.660235, -79.416829 | 11.3 | 6.8 | 137.5 |
 | `to-3dmassing-2025:104182` | -2423.2, -1436.3 | 43.651463, -79.414466 | 9.8 | 6.6 | 170.4 |
 | `to-3dmassing-2025:101870` | -1865.5, -2474.0 | 43.661847, -79.411513 | 10.7 | 7.5 | 231.2 |
 | `to-3dmassing-2025:202503` | 3081.4, -2731.0 | 43.676775, -79.353660 | 9.2 | 6.3 | 97.6 |
-| `to-3dmassing-2025:203214` | 2903.3, -1695.3 | 43.667383, -79.352112 | 9.4 | 7.5 | 190.4 |
+| `to-3dmassing-2025:203189` | 3133.8, -1563.6 | 43.666839, -79.348908 | 10.5 | 7.9 | 135.4 |
 | `to-3dmassing-2025:104790` | -2392.0, -1270.0 | 43.650109, -79.413507 | 11.5 | 7.3 | 204.6 |
-| `to-3dmassing-2025:103901` | -2253.7, -1182.4 | 43.649709, -79.411554 | 11.1 | 8.2 | 253.3 |
-| `to-3dmassing-2025:203224` | 3274.9, -1846.6 | 43.669643, -79.348233 | 9.8 | 6.9 | 151.6 |
+| `to-3dmassing-2025:103898` | -2277.2, -1176.2 | 43.649595, -79.411811 | 9.9 | 7.5 | 258.9 |
+| `to-3dmassing-2025:203218` | 2994.7, -1745.0 | 43.668047, -79.351202 | 9.1 | 8.6 | 140.5 |
 | `to-3dmassing-2025:199825` | 3500.4, -1887.9 | 43.670579, -79.345700 | 9.1 | 6.4 | 124.9 |
 | `to-3dmassing-2025:203544` | 3451.5, -992.7 | 43.662731, -79.343114 | 10.1 | 9.7 | 162.5 |
 | `to-3dmassing-2025:199029` | 3649.1, -2554.0 | 43.676707, -79.346291 | 10.0 | 8.9 | 147.3 |
 | `to-3dmassing-2025:80469` | -5130.3, -1398.7 | 43.644183, -79.446489 | 10.5 | 6.2 | 181.6 |
-| `to-3dmassing-2025:101832` | -2025.5, -2007.4 | 43.657411, -79.411763 | 11.8 | 8.2 | 246.7 |
-| `to-3dmassing-2025:102771` | -2674.1, -2533.1 | 43.660280, -79.421327 | 9.3 | 7.9 | 137.5 |
+| `to-3dmassing-2025:101828` | -2024.8, -1876.1 | 43.656281, -79.411290 | 11.6 | 9.0 | 251.0 |
+| `to-3dmassing-2025:102769` | -2872.2, -2564.0 | 43.660037, -79.423789 | 9.0 | 7.9 | 139.0 |
 | `to-3dmassing-2025:64780` | -7547.9, -1987.7 | 43.643052, -79.477291 | 9.8 | 5.1 | 110.6 |
 | `to-3dmassing-2025:65902` | -7120.0, -1471.1 | 43.639696, -79.470380 | 9.0 | 3.4 | 134.5 |
 
@@ -790,23 +790,23 @@ Each class's examples are in the JSON, ten per class, seeded so reruns give the 
 
 ## Checks
 
-- **Every record in exactly one class.** 35,254 records; the record classes sum to
-  35,254, the group classes to 22,855; every durable ID appears
+- **Every record in exactly one class.** 35,259 records; the record classes sum to
+  35,259, the group classes to 22,858; every durable ID appears
   once: yes.
 - **Party sides against the coordinator's direct count** (`st-ndw9.1-census-fix1.md`):
 
 | side style | this run | coordinator | difference |
 |---|---|---|---|
-| none | 21,289 | 21,289 | 0 |
-| one | 4,916 | 4,891 | 25 |
-| both | 7,273 | 7,303 | -30 |
+| none | 21,292 | 21,289 | 3 |
+| one | 4,915 | 4,891 | 24 |
+| both | 7,276 | 7,303 | -27 |
 | corner | 1,776 | 1,771 | 5 |
 
 - **Houses (kind 0) against the coordinator's count:**
 
 | side style | this run | coordinator | difference |
 |---|---|---|---|
-| none | 12,168 | 12,168 | 0 |
+| none | 12,170 | 12,168 | 2 |
 | one | 2,472 | 2,474 | -2 |
 | both | 971 | 972 | -1 |
 | corner | 462 | 459 | 3 |
@@ -815,15 +815,15 @@ Each class's examples are in the JSON, ten per class, seeded so reruns give the 
 
 | group style | records | share |
 |---|---|---|
-| detached | 21,289 | 60.39% |
+| detached | 21,292 | 60.39% |
 | pair | 2,285 | 6.48% |
-| row end | 2,631 | 7.46% |
-| row middle | 7,273 | 20.63% |
+| row end | 2,630 | 7.46% |
+| row middle | 7,276 | 20.64% |
 | corner | 1,776 | 5.04% |
 
-- **Party edges.** 66,151 computed against the 66,151 in
+- **Party edges.** 66,164 computed against the 66,164 in
   `docs/massing-buildings.md` (equal).
-  Neighbours found behind 66,151 of them, none behind
+  Neighbours found behind 66,164 of them, none behind
   0.
 - **Kensington Market** (the pilot's boundary, `tests/massing.test.mjs`): 647 records,
   89 on a main street. Party sides: none 346, one 136, both 127, corner 38.

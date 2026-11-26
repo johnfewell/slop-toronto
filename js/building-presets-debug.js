@@ -11,7 +11,7 @@ import { unpackGeo } from './geodata-loader.js';
 import { builtFor } from './building-presets.js';
 import { PROTOTYPES, byId, FALLBACK_ID } from './building-prototypes.js';
 
-export const DEBUG_URL = './data/toronto-building-presets-debug.bin?v=43ae57f05b4b'; // (tools/build-building-presets.mjs sets the hash)
+export const DEBUG_URL = './data/toronto-building-presets-debug.bin?v=f5fc00422ed0'; // (tools/build-building-presets.mjs sets the hash)
 export const DEBUG_SCHEMA = 2; // (st-ndw9.16: adds the place-of-worship columns)
 
 const hex = (c) => `#${(c >>> 0).toString(16).padStart(6, '0')}`;

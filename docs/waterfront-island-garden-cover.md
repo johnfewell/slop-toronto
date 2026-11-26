@@ -97,7 +97,7 @@ garden?.update(camera.position);
 The candidate grid is sampled only where **all** hold, checked at **every** sub-sample of a 1 m cell footprint (not just
 its centre):
 
-- inside the **three accepted source-validated yard blocks 2901 / 2903 / 2905** (`js/waterfront-island-yard-materials.js`
+- inside the **three accepted source-validated yard blocks 2795 / 2797 / 2799** (`js/waterfront-island-yard-materials.js`
   `islandYardCoverageAt`), and
 - within **12 m** of the mapped **Oneida or Ojibway** centre line, and
 - **outside** every actual OSM building polygon AND every **rendered** building footprint plus **1 m**, and

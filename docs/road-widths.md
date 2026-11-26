@@ -225,7 +225,10 @@ All measurements are from the City of Toronto 2025 orthophoto. The full table of
 - **Lake Shore East at 22942636@300.** It is drawn 25.6 m both before and after: the City polygon there spans both
   carriageways and the median. `tools/fetch-roadway.mjs` keeps only each polygon's outer ring, so City medians become
   road everywhere. This is not changed here. (Later, st-ceg7 kept the holes: docs/road-medians.md. It did not change this
-  road: the City's polygon there has no hole.)
+  road: the City's polygon there has no hole. jf-4v9 looked at it again and left it: the 2025 orthophoto shows the
+  City's two polygons and the OSM line between them lying on a new roadway under construction, pale bare base with
+  tree pits along it, not a built carriageway. The traffic runs on the old Lake Shore beside it. There is no kerb to
+  survey, so a surveyed surface would be a guess. See docs/road-medians.md, "Lake Shore Boulevard East at the Don".)
 - **Villiers.** The City's polygon is about 2.75 m narrower than the orthophoto.
 - **The Commissioners eastbound lane where the carriageways split** (1418441608@95) was drawn 16 m in the first pass
   against 4.5 m measured. The grass island between the carriageways was drawn all along (a median, −7 to −2.5 m). The
@@ -350,7 +353,8 @@ work does not touch it.
 
 A block's id is its place in the build's list, so any change to the islands renumbers the ones after it. Three tests
 pin Toronto Island blocks by number; they now use the new numbers. Each island is identical in shape to main's:
-2893 → 2880, 2894 → 2881, 2902 → 2889, 2908 → 2895, 2914/2916/2917/2918 → 2901/2903/2904/2905. The island docs
+2893 → 2880, 2894 → 2881, 2902 → 2889, 2908 → 2895, 2914/2916/2917/2918 → 2901/2903/2904/2905. (They have moved
+twice since: docs/road-medians.md has the mapping to today's numbers.) The island docs
 (`docs/waterfront-island-*.md`) now quote the new numbers, with a note that ids change on any rebuild. The second
 pass's ground strip changed one island's shape (the park's) and renumbered none.
 

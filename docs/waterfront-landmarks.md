@@ -211,7 +211,7 @@ clock discs and a cresting/flagpole — no pyramid.
 
 The default desktop frame is **eglinton** (`explore.html`), served from `data/frames/eglinton/toronto-geodata.bin`. It
 shares the world projection and the building **centres** with the detail map, but its building table is a different size
-and order: the QQT rows are **131069..131079** in eglinton vs **33202..33212** in detail. So the module resolves each
+and order: the QQT rows are **131076..131086** in eglinton vs **33207..33217** in detail. So the module resolves each
 component from its key (mapped name + centre + height) in the active frame and caches the remap per GEO. It never uses a
 raw detail-frame row index in the active frame, and it can therefore never suppress an unrelated building.
 

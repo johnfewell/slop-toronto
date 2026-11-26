@@ -83,7 +83,7 @@ test('countPolygonsCentredInside counts a polygon once, at its centre', () => {
 
 test('the committed massing sidecar matches the geodata and the frame', async () => {
   const outlines = await loadMassing(G);
-  assert.equal(outlines.length, 35254);
+  assert.equal(outlines.length, 35259);
   assert.ok(outlines.every((o) => o.key && o.rings[0].length >= 3));
   const r = matchToMassing(G, outlines, G.buildings.map((b, i) => ({ id: i, x: b[0], z: b[1] })));
   assert.ok(r.matched > 35200, `only ${r.matched} row centres matched an outline`);

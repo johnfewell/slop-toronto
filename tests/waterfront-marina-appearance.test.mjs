@@ -2,12 +2,12 @@
 //
 // The st-sb3r.33 source-height correction removed three phantom towers at the Queen City Yacht Club marina but left them
 // as generic brown-brick flat boxes with home windows (an actual GPU capture: reject as appearance). The primary sources
-// (captain's 2024 City orthophoto review; the official 2019 renovation gallery) show row 32501 as a small low shed with
+// (captain's 2024 City orthophoto review; the official 2019 renovation gallery) show row 32506 as a small low shed with
 // white paneled plywood/timber walls, dark navy doors/shutters/trim, low eaves and a shallow dark pitched roof, and rows
-// 32502/32503 as pale low pads under canopy.
+// 32507/32508 as pale low pads under canopy.
 //
 // These tests prove the BOUNDED, photo-informed appearance for EXACTLY those three reviewed rows:
-//   * the committed data carries a `qcyc-shed` appearance on 32501 and a neutral `qcyc-storage` appearance on 32502/03;
+//   * the committed data carries a `qcyc-shed` appearance on 32506 and a neutral `qcyc-storage` appearance on 32507/03;
 //   * the runtime profile exposes it, and only those three rows carry it;
 //   * the renderer consumes it (buildings.js routes the reviewed rows to dedicated materials, never the city brick);
 //   * the shed roof is a sealed volume whose base is the low eave and whose apex is the profile total (no stacking above
@@ -33,7 +33,7 @@ const loadBin = async (rel) => {
 };
 
 const detail = await loadBin('data/toronto-geodata.bin');
-const TARGETS = [32501, 32502, 32503, 32139]; // (32139: the reviewed QCYC clubhouse, st-sb3r.39)
+const TARGETS = [32506, 32507, 32508, 32144]; // (32144: the reviewed QCYC clubhouse, st-sb3r.39)
 
 function city() {
   const C = { GEO: { ...detail.GEO, frame: { ...detail.GEO.frame, detail: { ...detail.GEO.frame.detail }, projection: { ...detail.GEO.frame.projection } } } };
@@ -62,8 +62,8 @@ async function realBuildings() {
 
 test('the committed data carries photo-informed appearance on exactly the three reviewed rows', () => {
   const D = city().ISLAND_BUILDINGS_DATA;
-  const shed = D.records.find((r) => r.row === 32501);
-  assert.ok(shed && shed.appearance, 'row 32501 carries an appearance');
+  const shed = D.records.find((r) => r.row === 32506);
+  assert.ok(shed && shed.appearance, 'row 32506 carries an appearance');
   assert.equal(shed.appearance.style, 'qcyc-shed');
   assert.equal(shed.appearance.roofType, 'gable');
   assert.equal(shed.appearance.wall, 0xf2f0ea, 'white paneled wall colour');
@@ -71,7 +71,7 @@ test('the committed data carries photo-informed appearance on exactly the three 
   assert.equal(shed.appearance.roof, 0x3a3d42, 'dark roof');
   assert.match(shed.appearance.note, /representative|approximation/i);
 
-  for (const row of [32502, 32503]) {
+  for (const row of [32507, 32508]) {
     const rec = D.massingRecords.find((r) => r.row === row);
     assert.ok(rec && rec.appearance, `row ${row} carries an appearance`);
     assert.equal(rec.appearance.style, 'qcyc-storage');
@@ -88,10 +88,10 @@ test('the committed data carries photo-informed appearance on exactly the three 
 
 test('the runtime profile exposes the appearance with provenance for the three rows only', () => {
   const C = city();
-  const p = C.islandBuildingProfile(detail.GEO.buildings[32501], 32501);
+  const p = C.islandBuildingProfile(detail.GEO.buildings[32506], 32506);
   assert.ok(p.appearance && p.appearance.style === 'qcyc-shed');
   assert.ok(p.appearance.source, 'the appearance names its source');
-  const s2 = C.islandBuildingProfile(detail.GEO.buildings[32502], 32502);
+  const s2 = C.islandBuildingProfile(detail.GEO.buildings[32507], 32507);
   assert.equal(s2.appearance.style, 'qcyc-storage');
   assert.equal(s2.osm, null, 'City-only row has no fabricated OSM way');
   // A normal cottage has no marina appearance.
@@ -191,14 +191,14 @@ test('the shed door/shutter trim is thin navy relief just OUTSIDE the opaque wal
 
 test('the storage rows keep the native flat envelope (no invented pitched roof)', () => {
   const D = city().ISLAND_BUILDINGS_DATA;
-  for (const row of [32502, 32503]) {
+  for (const row of [32507, 32508]) {
     const rec = D.massingRecords.find((r) => r.row === row);
     assert.equal(rec.roof, null, 'native roof kept');
     assert.equal(rec.appearance.roofType, 'flat');
     assert.equal(rec.appearance.roof, null, 'no roof colour claimed');
   }
   // The shed, by contrast, is a real pitched profile roof.
-  const shed = D.records.find((r) => r.row === 32501);
+  const shed = D.records.find((r) => r.row === 32506);
   assert.equal(shed.roof, 1);
   assert.equal(shed.appearance.roofType, 'gable');
 });

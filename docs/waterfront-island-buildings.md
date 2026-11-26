@@ -108,7 +108,7 @@ rows are `null`; lighthouse ways are absent from the records; explicit levels wi
 ## Ward's Island Park ground (st-sb3r.17)
 
 GPU raycasts on the ward view hit **Walkways at 0.22 m** over **Lawns at 0.218 m** across the park (e.g. 1750,2250),
-so the park was not a missing lawn or a masked sand strip: the fixed sidewalk band covered it. Cause: block 2880 is a
+so the park was not a missing lawn or a masked sand strip: the fixed sidewalk band covered it. Cause: block 2774 is a
 large concave island with no City sidewalk pieces, so `city-grid.js` built its fallback band as an `ExtrudeGeometry`
 of the island outline with the inward offset (`prop`, `SW = 4.6 m`) as a *hole*. For this outline the offset
 self-intersects (`ringSelfIntersects(prop) === true`), so THREE's hole triangulation filled the whole island with the
@@ -123,7 +123,7 @@ Minimal guarded fix in `js/city-grid.js`:
 - Simple islands keep the original extruded annulus; no blanket grass overlay, no hard-coded Ward coordinates, no
   change to park paths, curbs or unrelated blocks.
 
-`tests/city-grid-concave-walk-band.test.mjs` uses the committed block 2880 outline and proves the old extrusion
+`tests/city-grid-concave-walk-band.test.mjs` uses the committed block 2774 outline and proves the old extrusion
 covers four park points while the new band leaves them as lawn and still covers every band edge midpoint; a simple
 rectangular island still takes the original path.
 

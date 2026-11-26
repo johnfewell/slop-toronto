@@ -60,7 +60,7 @@ Primary:
 Geodata / mapped outlines:
 
 - Committed geodata (`js/toronto-geodata.js`, and the default desktop frame `data/frames/eglinton/toronto-geodata.bin`):
-  seven rows named **"Canada Malting Silos"** (detail `33097..33103`, eglinton `130964..130970`). Their City of Toronto
+  seven rows named **"Canada Malting Silos"** (detail `33102..33108`, eglinton `130971..130977`). Their City of Toronto
   3D Massing **LIDAR maxima are 50.6–65.6 m** — the tops of the marine leg and headhouses — and are **not** the
   measured silo-bin heights, so the bins use the heritage figures.
 - OpenStreetMap relation `21646938` "Canada Malting Silos", ways `43806399` (south) and `1568011088` (north), ©
@@ -79,7 +79,7 @@ inventory) left in place. Those are the forms implemented. The 44 / 48 / 55 m he
 ## 4. Frames: detail vs eglinton (the default desktop map)
 
 The default desktop frame is **eglinton** (`explore.html`), whose building table is a different size and order: the
-silos are rows **130964..130970** there vs **33097..33103** in detail. The module resolves each row from its **stable
+silos are rows **130971..130977** there vs **33102..33108** in detail. The module resolves each row from its **stable
 key** (mapped name + world centre + mapped height) in the active frame and caches the remap per GEO, so it never uses a
 raw detail-frame index and can never suppress an unrelated building. The integration test loads the **real unpacked
 eglinton bin** (`unpackGeo`) and a faithful **Mesh-returning** `createExtrudedPolygonMesh` shim, and asserts both the row

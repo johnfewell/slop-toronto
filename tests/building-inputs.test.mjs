@@ -87,7 +87,7 @@ test('the two st-ndw9.10 columns: a valid neighbourhood or null, and a construct
 test('one record per sidecar record, in sidecar record order; fid rebuilt from fidFirst and fidDelta', async () => {
   const { MASSING: M } = await unpackGeo(fs.readFileSync(path.join(ROOT, 'data/toronto-massing.bin')));
   assert.equal(inputs.records, M.fid.length);
-  assert.equal(inputs.records, 35254);
+  assert.equal(inputs.records, 35259);
   const fid = fids();
   assert.equal(inputs.fidFirst, M.fid[0]);
   for (let i = 0; i < M.fid.length; i++) {
@@ -138,9 +138,9 @@ test('the columns decode to finite lengths and heights, valid enums and 0/1 flag
 
 test('the join: every sidecar record matched a dataset row, and no row went to two records', () => {
   const c = inputs.checks;
-  assert.equal(c.sidecarRecords, 35254);
+  assert.equal(c.sidecarRecords, 35259);
   assert.equal(c.matchedByFidK + c.matchedByFidSinglePart + c.unmatched, c.sidecarRecords);
-  assert.equal(c.matchedByFidK, 35250);
+  assert.equal(c.matchedByFidK, 35255);
   assert.equal(c.matchedByFidSinglePart, 4);
   assert.equal(c.fallbackIds.length, c.matchedByFidSinglePart);
   assert.equal(c.unmatched, 0);
@@ -189,7 +189,7 @@ test('the address-point distribution over the 16,073 kind 0 records is within 1%
     const n = D.addressPoints[i];
     actual[n >= 5 ? '5+' : String(n)]++;
   }
-  assert.equal(kind0, 16073, 'the kind 0 records');
+  assert.equal(kind0, 16075, 'the kind 0 records');
   for (const b of Object.keys(expected)) {
     assert.ok(Math.abs(actual[b] - expected[b]) <= 0.01 * expected[b], `bucket ${b}: ${actual[b]} vs ${expected[b]}`);
   }

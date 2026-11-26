@@ -34,6 +34,7 @@ test('geodata builds with default paths in a checkout containing spaces and non-
     // the surveyed road surfaces the road build reads beside them (tools/road-surfaces.mjs)
     fs.mkdirSync(path.join(dir, 'tools/fixtures'));
     fs.copyFileSync(path.join(root, 'tools/fixtures/road-surfaces.json'), path.join(dir, 'tools/fixtures/road-surfaces.json'));
+    fs.copyFileSync(path.join(root, 'tools/fixtures/median-materials.json'), path.join(dir, 'tools/fixtures/median-materials.json'));
     // the default input folder is tools/data/ next to the build scripts
     fs.symlinkSync(path.resolve(GEO_DATA), path.join(dir, 'tools/data'), 'dir');
     // the mapped poles (tools/build-poles.mjs, from their own download) and the parked cars (tools/build-parked-cars.mjs)

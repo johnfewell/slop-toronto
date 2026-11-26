@@ -2,7 +2,7 @@
 // Toronto Terminal Warehouse block, its 1983 +4-level addition as two stepped perimeter blocks around an open courtyard,
 // the green-patina cornice, the Art Deco entrances and the genuine QQT clock tower) and the Redpath Sugar Refinery (the
 // mapped halls, the ship unloader anchored to the Jarvis Slip quay edge, and the whale mural / red sign on the Raw Sugar
-// Shed). Every solid must be a committed geodata footprint part: the QQT masses on rows 33202-33212, the Redpath masses
+// Shed). Every solid must be a committed geodata footprint part: the QQT masses on rows 33207-33212, the Redpath masses
 // inside the mapped "zone:industrial Redpath Sugar Refinery" zone and clear of the beach. The barrel silos and chimney
 // have no mapped footprint and are reported unresolved, not invented. Model evidence is source text, not images.
 import test from 'node:test';
@@ -57,11 +57,11 @@ test('nothing is built on load; the landmark records and exclusion hook are expo
   assert.equal(typeof C.waterfrontLandmarkExcludesBuilding, 'function');
 });
 
-test('the QQT warehouse shell is the mapped row 33202 footprint (simplified rectangle of the 420 x 200 ft block)', () => {
+test('the QQT warehouse shell is the mapped row 33207 footprint (simplified rectangle of the 420 x 200 ft block)', () => {
   const C = city();
   const qqt = C.waterfrontLandmarksLayout().qqt;
   assert.ok(qqt, 'QQT layout present');
-  const b = C.GEO.buildings[33202];
+  const b = C.GEO.buildings[33207];
   assert.equal(b[9], "Queen's Quay Terminal");
   assert.ok(Math.abs(qqt.box.cx - b[0]) < 1e-6 && Math.abs(qqt.box.cz - b[1]) < 1e-6);
   assert.ok(Math.abs(qqt.box.halfW - 70) < 0.2 && Math.abs(qqt.box.halfD - 30.66) < 0.2, `mapped 140 x 61.3 m`);
@@ -72,7 +72,7 @@ test('the QQT warehouse shell is the mapped row 33202 footprint (simplified rect
 test('the QQT addition is the mapped perimeter bands + end band at 43 m around an OPEN courtyard, not one box', () => {
   const C = city();
   const qqt = C.waterfrontLandmarksLayout().qqt;
-  // row 33204 splits into three mapped parts: two long bands (~120/112 x 10 m) and a short end band (~11.5 x 24 m)
+  // row 33209 splits into three mapped parts: two long bands (~120/112 x 10 m) and a short end band (~11.5 x 24 m)
   assert.equal(qqt.additionParts.length, 3, 'three mapped addition parts');
   const bands = qqt.additionParts.filter((p) => p.halfD < 6);
   assert.equal(bands.length, 2, 'two long perimeter bands');
@@ -82,21 +82,21 @@ test('the QQT addition is the mapped perimeter bands + end band at 43 m around a
   const cx = qqt.box.cx, cz = qqt.box.cz;
   assert.ok(!qqt.additionParts.some((p) => inBox(p, cx, cz)), 'the courtyard centre is open (no solid addition box there)');
   // the addition parts come from the mapped row, not a synthesised inset box
-  assert.ok(qqt.additionParts.every((p) => p.row === 33204));
+  assert.ok(qqt.additionParts.every((p) => p.row === 33209));
 });
 
-// The clock is the NORTH-front shaft (row 33203 per the captain's photo/map inference), NOT the east mid-roof 33212.
+// The clock is the NORTH-front shaft (row 33208 per the captain's photo/map inference), NOT the east mid-roof 33212.
 // The warehouse yaw is ~-pi/2, so the warehouse's SHORT north face is at z = cz - halfW (the north edge). This test
 // asserts ACTUAL world geometry: the clock centre lands within a few metres of that north edge (not mid-roof), and the
 // built dial is a genuinely BLACK rendered mesh with white hands (the old draft merged it into the cream shell).
-test('the QQT clock tower is the NORTH-front shaft (row 33203), black dial mesh at the warehouse north edge', () => {
+test('the QQT clock tower is the NORTH-front shaft (row 33208), black dial mesh at the warehouse north edge', () => {
   const C = city();
   const qqt = C.waterfrontLandmarksLayout().qqt;
   const clock = qqt.clockTower;
   assert.ok(clock, 'clock tower present');
-  // resolved to the north-front row 33203 (name+centre+height key), NOT 33212
-  assert.equal(clock.cx, C.GEO.buildings[33203][0], 'centred on the mapped north-front row 33203');
-  assert.ok(Math.abs(clock.cz - C.GEO.buildings[33203][1]) < 1e-6);
+  // resolved to the north-front row 33208 (name+centre+height key), NOT 33217
+  assert.equal(clock.cx, C.GEO.buildings[33208][0], 'centred on the mapped north-front row 33208');
+  assert.ok(Math.abs(clock.cz - C.GEO.buildings[33208][1]) < 1e-6);
   // real geography: the warehouse north/short edge is at z = box.cz - box.halfW (yaw ~-pi/2). The clock must hug it.
   const b = qqt.box;
   const northZ = b.cz - b.halfW;          // the north (Queens Quay) short face
@@ -327,10 +327,10 @@ test('the exclusion hook names the exact generic rows replaced, and only the sup
   // in the detail frame the resolved rows are the documented detail rows; everything excluded must be a named QQT row
   // or a mapped building inside the Redpath zone — never an unrelated building
   const R = C.waterfrontLandmarkResolveComponents();
-  assert.equal(R.warehouse, 33202, 'detail frame: warehouse resolves to row 33202');
-  assert.equal(R.clock, 33203, 'detail frame: clock resolves to the north-front row 33203 (photo/map inference)');
-  // 33212 is retained as a penthouse row (an east mid-roof core), NOT dropped
-  assert.ok(R.penthouses.includes(33212), 'the former clock row 33212 is kept as a penthouse core');
+  assert.equal(R.warehouse, 33207, 'detail frame: warehouse resolves to row 33207');
+  assert.equal(R.clock, 33208, 'detail frame: clock resolves to the north-front row 33208 (photo/map inference)');
+  // 33217 is retained as a penthouse row (an east mid-roof core), NOT dropped
+  assert.ok(R.penthouses.includes(33217), 'the former clock row 33217 is kept as a penthouse core');
   for (const r of [R.warehouse, R.addition, R.clock, R.longHall, R.shed, ...R.plants, ...R.penthouses]) assert.ok(rows.has(r), `row ${r} excluded`);
   const zone = C.GEO.areas.find((a) => a[0] === 'zone:industrial' && a[1] === 'Redpath Sugar Refinery');
   const zoneRing = [];
@@ -441,7 +441,7 @@ test('eglinton frame (the default desktop map): components resolve by key, build
   assert.equal(C.waterfrontLandmarksSupported(), true, 'eglinton frame is supported');
   const R = C.waterfrontLandmarkResolveComponents();
   assert.ok(R.warehouse !== null, 'QQT warehouse resolves in eglinton');
-  assert.notEqual(R.warehouse, 33202, 'the eglinton row index differs from the detail index (proves it is not hardcoded)');
+  assert.notEqual(R.warehouse, 33207, 'the eglinton row index differs from the detail index (proves it is not hardcoded)');
   const wb = GEO.buildings[R.warehouse];
   assert.equal(wb[9], "Queen's Quay Terminal");
   assert.ok(Math.abs(wb[0] + 206.4) < 1 && Math.abs(wb[1] - 692.4) < 1, 'the resolved warehouse is the real QQT block');

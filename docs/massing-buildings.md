@@ -361,7 +361,7 @@ a tower part's probes land on its own podium (a ground-standing neighbour), so e
 podium, and every tower wall beside a low block, came out as a blank lot line (the first city-wide captures: white
 slabs on Bay Street, windowless towers in the Financial District aerial). `buildings.js footprintEdges` now draws an
 edge as a party wall only when the neighbour covers at least half the wall above its own foot (`partyCover − base ≥
-(h − base) / 2`, and more than 0.5 m). Of the 66,151 party edges, 12,410 are covered only below their foot and 6,388
+(h − base) / 2`, and more than 0.5 m). Of the 66,164 party edges, 12,410 are covered only below their foot and 6,388
 less than half; 51,490 walls (slivers included) stay party walls. The exposed upper part of a party wall (ghost
 signs) is st-2nl.6's.
 
@@ -402,7 +402,7 @@ per-row rings 30–43 ms. On the Mac mini in the page: 26.5 ms and 34–41 ms (c
 | Courtyards | 199 (3 dropped: under 4 m², or not cleanly inside the outline) |
 | Parts on a podium (`base` > 0) | 1,823 |
 | Outer edges | 399,144 |
-| Party walls | 66,151 |
+| Party walls | 66,164 |
 | Hidden walls (another part's wall stands on the edge) | 11,326 |
 | Street fronts | 59,916 (10,187 on main streets), party edges included |
 | Corners after cleaning | 400,630; median 9 per outer ring, p90 20, max 280 |

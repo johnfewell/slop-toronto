@@ -9,14 +9,14 @@
       "bakedInto": [
         "js/lidar-trees-data.js"
       ],
-      "dataSha256": "d3d812e9214f53c4993e9ab575c17b3c2f13b0b556381a028ed9c1d2538041e5",
+      "dataSha256": "fc9ce9ea13e97ba788a4199948240b1982860575e49c1119305d3b1519d800e7",
       "eglinton": {
         "bakedInto": [
           "data/frames/eglinton/lidar-trees/"
         ],
-        "indexSha256": "9bd2fec7e50132adda0372239e9e2614c0ce88bda8d22b74102124b6c3f4c650",
+        "indexSha256": "0c2348f08c0fdf64396144ad6a99adf8585dfb2518a329d5cc8d0d0abb229cb2",
         "cells": 128,
-        "trees": 288921
+        "trees": 288941
       }
     },
     "ttc-gtfs-static": {
@@ -38,7 +38,7 @@
       "bakedInto": [
         "tools/data/building-inputs.json"
       ],
-      "dataSha256": "3d18bdcb4f9be59a313b86623659bdd24fa9435223abccfd0e4ee6e88f18b9dd"
+      "dataSha256": "b4d8c00416513f2a715a1fdf3b92bd639e07a25f0da8331bbd60f46c4f570d02"
     },
     "neighbourhood-era/1": {
       "manifestCommit": "ebbbfa2",
@@ -49,7 +49,7 @@
       "bakedInto": [
         "tools/data/building-inputs.json"
       ],
-      "dataSha256": "3d18bdcb4f9be59a313b86623659bdd24fa9435223abccfd0e4ee6e88f18b9dd"
+      "dataSha256": "b4d8c00416513f2a715a1fdf3b92bd639e07a25f0da8331bbd60f46c4f570d02"
     },
     "school-grounds/1": {
       "manifestCommit": "c19199a",

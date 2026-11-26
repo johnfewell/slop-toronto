@@ -19,7 +19,7 @@ import { geo, toWorld, toLonLat, log, load, osmRoads, pointInRing, bbox, centroi
 import { DETAIL, buildRoadGraph, deckOut, roadLines, roadCutOut } from './geo-roads.mjs';
 import { areas, streams, walls, isWater, waterRings, islandRings, lake } from './geo-land.mjs';
 import { Raster } from './geo-base.mjs';
-import { blocks, SIDEWALK, blockRaster, blockLabels } from './geo-blocks.mjs';
+import { blocks, gores, SIDEWALK, blockRaster, blockLabels } from './geo-blocks.mjs';
 import { buildings, buildingIds, buildingOsm, districts, districtBounds, landmarks, landmarkSources } from './geo-features.mjs';
 import { osmKey, byOsmKey, assertUnique, loadAliases, checkAliases } from './geo-ids.mjs';
 import { buildTerrain } from './geo-terrain.mjs';
@@ -263,8 +263,12 @@ const GEO = {
   // Road cuts, streets dipping under the railway (tools/geo-roads.mjs): [name, half width (carriageways & sidewalks),
   // [x, z, height, ...] the street's axis at each break of slope (heights below street level)]
   roadCuts: roadCutOut,
-  // Curb islands: [outline, lot rects [x0, x1, z0, z1], park share, park name, rectangular, median, wild share]
-  blocks: blocks.map((b) => [flat(b.poly), b.rects.map((r) => r.map(q)), b.park || 0, b.parkName || '', b.rect ? 1 : 0, b.median ? 1 : 0, b.wild || 0]),
+  // Curb islands: [outline, lot rects [x0, x1, z0, z1], park share, park name, rectangular, median (0 no, 1 planted lawn,
+  // 2 concrete), wild share]
+  blocks: blocks.map((b) => [flat(b.poly), b.rects.map((r) => r.map(q)), b.park || 0, b.parkName || '', b.rect ? 1 : 0, b.median ? (b.concrete ? 2 : 1) : 0, b.wild || 0]),
+  // Painted gores (tools/classify-medians.mjs, docs/road-medians.md): islands the City maps inside a road that are paint on
+  // the road, not raised: each an outline [x, z, ...], drawn as markings by js/road-paint.js, no curb island
+  gores: gores.map(flat),
   // Land cover: [kind, name, outline, holes (Lake Ontario's islands) [outline, ...]]
   // The paths through the small parks: [width, x, z, ...] (see parkPaths above)
   parkPaths,

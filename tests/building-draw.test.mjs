@@ -288,7 +288,7 @@ test('the flags: the draw module, the gallery and the groups load only behind th
 
 test('every downtown building: most house presets are drawn, the rest fall back and are counted by reason', async () => {
   const out = await runDraw();
-  assert.equal(out.records, 35254);
+  assert.equal(out.records, 35259);
   for (const id of Draw.DRAWN_PRESETS.filter((x) => ['house', 'main-street'].includes(byId[x].family))) {
     const p = out.per[id];
     assert.ok(p.records > 200, id);

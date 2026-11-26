@@ -258,7 +258,7 @@ function nearestRoads(x, z, radius = 60) {
 // Blocks: every curb island (raised verge & sidewalk around the plots) with its lot rectangles inside the property line
 //   poly: curb outline [{x, z}], rects: [[x0, x1, z0, z1], ...] (axis-aligned, inside the property line), park / wild:
 //   share covered by parkland / woods, scrub & rock, parkName, rect: the island is an axis-aligned rectangle, median:
-//   the strip between a dual carriageway's two roadways
+//   the strip between a dual carriageway's two roadways (2: concrete, raised and paved; 1: planted lawn)
 // ---------------------------------------------------------------------------------------------------------------------
 const BLOCKS = GEO.blocks.map(([flat, rects, park, parkName, isRect, median, wild], id) => {
   const poly = toPts(flat);
@@ -271,7 +271,7 @@ const BLOCKS = GEO.blocks.map(([flat, rects, park, parkName, isRect, median, wil
   a *= 0.5;
   const b = polyBounds(poly);
   return {
-    id, poly, rects, park, parkName, wild, rect: !!isRect, median: !!median, area: Math.abs(a), ...b,
+    id, poly, rects, park, parkName, wild, rect: !!isRect, median: !!median, concrete: median === 2, area: Math.abs(a), ...b,
     cx: a ? cx / (6 * a) : (b.minX + b.maxX) / 2,
     cz: a ? cz / (6 * a) : (b.minZ + b.maxZ) / 2
   };

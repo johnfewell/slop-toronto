@@ -42,7 +42,7 @@
 // - The north bins are CONCEALED: the north block is a single flat-walled extrusion; no north cylinders are drawn.
 //   Only the mapped count (14 = 2 rows x 7) is reported. The south bins are drawn as 15 cylinders (3 rows x 5).
 // - Components are keyed by stable identity (mapped name + world centre + mapped height), not by row index: detail
-//   rows 33097..33103 = eglinton rows 130964..130970, so the module resolves the active frame's rows every time.
+//   rows 33102..33108 = eglinton rows 130971..130977, so the module resolves the active frame's rows every time.
 // - The city-grid createExtrudedPolygonMesh helper returns a MESH; the module takes its .geometry before merging, so
 //   the integrated-runtime failure (a Mesh handed to mergeGeometries) cannot recur.
 // - The replacement is optional and gated: window.CITY.waterfrontBathurstEnabled (default true) and ?bathurst=0 both
@@ -113,7 +113,7 @@ const SOUTH_EAST_PEAKS = [
 ];
 
 // The seven committed rows to replace, keyed by stable identity (mapped name + centre + mapped height). The rows are
-// the same world centres in every frame but different indices (detail 33097..33103, eglinton 130964..130970).
+// the same world centres in every frame but different indices (detail 33102..33108, eglinton 130971..130977).
 const ROW_KEYS = {
   northBlock:      { name: 'Canada Malting Silos', cx: -1531.9, cz: 687.4, h: 50.6 }, // the 1944 north block massing
   marineLeg:       { name: 'Canada Malting Silos', cx: -1524.0, cz: 710.1, h: 65.6 }, // tall narrow marine leg

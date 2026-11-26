@@ -2,9 +2,11 @@
 // width over the land of the detailed city (minus lakes & reservoirs), then labelling what's left. Each block: its curb
 // outline, axis-aligned lot rects inside its property line (the curb less the sidewalk / verge), metadata.
 import { Raster, rdpRing, ringArea, log, load, toWorld, osmRoads } from './geo-base.mjs';
-import { loadRoadSurfaces, retireCityRoadway, surfaceNear, widthProfile, cycleTrackIndex, trackClearance, fillSurface, isMedianRing, MEDIAN_WIDTH, MEDIAN_AREA } from './road-surfaces.mjs';
+import { loadRoadSurfaces, retireCityRoadway, surfaceNear, widthProfile, cycleTrackIndex, trackClearance, fillSurface, MEDIAN_WIDTH, MEDIAN_AREA } from './road-surfaces.mjs';
 import { DETAIL, rasterRoads } from './geo-roads.mjs';
 import { waterRings, islandRings, lake } from './geo-land.mjs';
+import { loadMedianMaterials, medianMaterial } from './median-material.mjs';
+import { fileURLToPath } from 'node:url';
 
 export const SIDEWALK = 4.6; // property line in from the curb: walkway & planted verge with its drain
 const RES = 1;
@@ -39,12 +41,11 @@ if (cityRoadway) {
   surveyed.retire = here;
 }
 // (a City polygon keeps its holes, the medians and traffic islands inside it: `holes` are land, unless another surface
-// covers them; fillSurface. Only the holes that are medians by the test below are kept: a hole that is a whole block
-// (a lane polygon drawn round it) stays road, as before, for now: it would bring back buildings, and renumber the
-// building list and everything pinned to it. docs/road-medians.md)
+// covers them; fillSurface. Every hole is kept: the thin ones are medians, and a fat one (a whole block inside a lane
+// polygon) is a block like any other, with its buildings. docs/road-medians.md)
 const holesSeen = cityRoadway ? cityRoadway.reduce((n, [, , holes]) => n + (holes ? holes.length : 0), 0) : 0;
 const surfaceRings = cityRoadway ? [...cityRoadway.map(([kind, ring, holes]) => ({ ring, holes })), ...surveyed.surfaces.filter((s) => s.roadway).map((s) => ({ ring: s.ring }))]
-  .map(({ ring, holes }) => ({ ring: ring.map(([lon, lat]) => toWorld(lon, lat)), holes: (holes || []).map((h) => h.map(([lon, lat]) => toWorld(lon, lat))).filter(isMedianRing) })) : [];
+  .map(({ ring, holes }) => ({ ring: ring.map(([lon, lat]) => toWorld(lon, lat)), holes: (holes || []).map((h) => h.map(([lon, lat]) => toWorld(lon, lat))) })) : [];
 // the surveyed roadway, and the ground strips cut out of City polygons (filled back to ground, the surveyed roadway
 // over them again): in world metres
 const surveyedRings = cityRoadway ? surveyed.surfaces.filter((s) => s.roadway).map((s) => s.ring.map(([lon, lat]) => toWorld(lon, lat))) : [];
@@ -134,7 +135,7 @@ if (cityRoadway) {
   for (const ring of groundRings) R.fillRing(ring, 1);
   for (const ring of surveyedRings) R.fillRing(ring, 0);
   const openKm = roadCover.reduce((a, c) => a + c.openLength, 0) / 1000;
-  log(`City road surface: ${cityRoadway.length} polygons drawn as roadway, ${surfaceRings.reduce((n, r) => n + (r.holes ? r.holes.length : 0), 0)} of their ${holesSeen} holes kept as medians (${surveyed.retire.length} out-of-date ones retired), ` +
+  log(`City road surface: ${cityRoadway.length} polygons drawn as roadway, ${surfaceRings.reduce((n, r) => n + (r.holes ? r.holes.length : 0), 0)} of their ${holesSeen} holes kept as medians or blocks (${surveyed.retire.length} out-of-date ones retired), ` +
     `${surveyed.surfaces.filter((s) => s.roadway).length} surveyed surfaces, ${groundRings.length} ground strips, ${trackCapped.length} widened samples held back by a cycle track (of ${tracks.segments} track segments); ${openKm.toFixed(1)} km of road with no mapped surface drawn at its own width`);
 }
 // the raster's rim: no block runs off the detailed area (they'd have no streets on that side)
@@ -321,6 +322,11 @@ function lotRects(c, maxRects = 8) {
 // A median: a long thin island between the two carriageways of a dual road (its mean width, 2·area / perimeter, under 9 m)
 const blocks = [];
 let small = 0;
+// What each median is made of (tools/fixtures/median-materials.json, tools/classify-medians.mjs): lawn unless the fixture
+// says concrete (raised, paved) or paint (a gore on the road: no kerb, so no island at all; it is drawn as markings)
+export const medianMaterials = loadMedianMaterials(fileURLToPath(new URL('fixtures/median-materials.json', import.meta.url)));
+export const gores = []; // the painted islands' outlines, world metres
+const materialCount = { lawn: 0, concrete: 0, paint: 0 };
 // the specks dropped (land islands under 40 m², drawn as roadway): their cells' centre and area (tools/report-road-widths.mjs)
 export const specks = [];
 for (const c of comps) {
@@ -342,6 +348,14 @@ for (const c of comps) {
     per += Math.hypot(b[0] - a[0], b[1] - a[1]);
   }
   const median = (2 * area) / per < MEDIAN_WIDTH && area < MEDIAN_AREA;
+  const material = median ? medianMaterial(medianMaterials, poly, toWorld) : 'lawn';
+  if (median) materialCount[material]++;
+  if (material === 'paint') {
+    // flush paint: back to roadway, and outlined and hatched where the roads are painted (js/road-paint.js)
+    for (let j = c.j0; j <= c.j1; j++) for (let i = c.i0; i <= c.i1; i++) if (lab[j * W + i] === c.id) { D[j * W + i] = 0; lab[j * W + i] = 0; }
+    gores.push(poly);
+    continue;
+  }
   const bw = (c.i1 - c.i0 + 1) * RES, bd = (c.j1 - c.j0 + 1) * RES;
   const rectness = area / (bw * bd);
   const { rects } = area >= 300 && !median ? lotRects(c, area > 200000 ? 16 : 8) : { rects: [] };
@@ -353,9 +367,10 @@ for (const c of comps) {
     rect: rectness > 0.985,
     rects,
     median,
+    concrete: material === 'concrete',
     _lab: c.id
   });
 }
-log(`${blocks.length} blocks (${blocks.filter((b) => b.rect).length} rectangular, ${blocks.filter((b) => b.median).length} medians); ${small} specks dropped`);
+log(`${blocks.length} blocks (${blocks.filter((b) => b.rect).length} rectangular, ${blocks.filter((b) => b.median).length} medians: ${materialCount.lawn} lawn, ${materialCount.concrete} concrete, ${materialCount.paint} painted gores, left as road); ${small} specks dropped`);
 
 export { blocks, R as blockRaster, lab as blockLabels, covered as surfaceRaster, surfaceNear, surveyedRings };

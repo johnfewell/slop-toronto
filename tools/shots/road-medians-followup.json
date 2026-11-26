@@ -1,0 +1,50 @@
+[
+ {
+  "name": "b1-restored-building-1",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-1858.6, 139.9, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-1858.6, 18, 165.9], look: [-1858.6, 2, 139.9], fov: 55 });\n})()"
+ },
+ {
+  "name": "b2-restored-building-2",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-2258.6, -1568, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-2258.6, 22, -1538], look: [-2258.6, 2, -1568], fov: 55 });\n})()"
+ },
+ {
+  "name": "b3-restored-building-3",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-3065.3, -1246.1, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-3065.3, 30, -1206.1], look: [-3065.3, 2, -1246.1], fov: 55 });\n})()"
+ },
+ {
+  "name": "b4-restored-buildings-4-5",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-919.5, -683, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-919.5, 150, -600], look: [-919.5, 10, -683], fov: 55 });\n})()"
+ },
+ {
+  "name": "m1-remembrance-drive-gore",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-3093, 765, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-3093, 26, 795], look: [-3093, 0, 765], fov: 55 });\n})()"
+ },
+ {
+  "name": "m2-lake-shore-east-apron",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2002.7, 127.5, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2002.7, 60, 175], look: [2002.7, 0, 127.5], fov: 55 });\n})()"
+ },
+ {
+  "name": "m3-front-street-west-plaza",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(-66.8, -41.4, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [-66.8, 22, -15.399999999999999], look: [-66.8, 0, -41.4], fov: 55 });\n})()"
+ },
+ {
+  "name": "m4-lake-shore-at-the-don-gore",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { window.__CITY_APP.teleportTo(2000.8, 154.2, 0);\nwindow.__CITY_APP.cameraSystem.cinema = () => ({ pos: [2000.8, 26, 184.2], look: [2000.8, 0, 154.2], fov: 55 });\n})()"
+ }
+]

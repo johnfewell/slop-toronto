@@ -19,21 +19,21 @@ const committed = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/building-for
 const rule = houseRule(out.parameters);
 
 test('every massing record is in exactly one building, and the sums agree', () => {
-  assert.equal(out.city.records, 35254, 'the detailed city\'s massing records');
+  assert.equal(out.city.records, 35259, 'the detailed city\'s massing records');
   assert.equal(out.checks.recordSum, out.city.records, 'records in the buildings');
   assert.equal(out.checks.everyRecordOnce, true, 'every record once');
   assert.equal(out.checks.houseBuildings + out.checks.nonHouseBuildings, out.city.buildings);
   assert.equal(out.checks.houseRecords + out.checks.nonHouseRecords, out.city.records);
   assert.ok(Math.abs(out.checks.buildingShareSum - 1) < 1e-6, 'count shares sum to 1');
   assert.ok(Math.abs(out.checks.areaShareSum - 1) < 1e-6, 'area shares sum to 1');
-  assert.equal(out.city.buildings, 22737, 'the joined buildings');
-  assert.equal(out.city.houseBuildings, 18409);
-  assert.equal(out.city.nonHouseBuildings, 4328);
+  assert.equal(out.city.buildings, 22740, 'the joined buildings');
+  assert.equal(out.city.houseBuildings, 18410);
+  assert.equal(out.city.nonHouseBuildings, 4330);
 });
 
 test('house-scale, dwellings, form and the group come from the inputs file', () => {
   // (the dataset's own flag is the headline; the re-derived rule is the sensitivity control, within the 0.1 rounding)
-  assert.equal(out.checks.houseScaleRecords, 22530);
+  assert.equal(out.checks.houseScaleRecords, 22532);
   assert.ok(out.checks.datasetFlagDisagrees <= 20, `${out.checks.datasetFlagDisagrees} disagree by 0.1 rounding`);
   assert.ok(out.checks.datasetFlagAgrees > 35230);
   assert.equal(out.checks.formInconsistent, 0, 'one form per group');
@@ -41,7 +41,7 @@ test('house-scale, dwellings, form and the group come from the inputs file', () 
   assert.deepEqual(HOUSE_FORMS, ['detached', 'semi', 'row']);
   const formCount = (f) => out.forms.filter((x) => x.family === f).reduce((s, x) => s + x.count, 0);
   assert.equal(formCount('detached') + formCount('semi') + formCount('row'), out.checks.houseBuildings);
-  assert.equal(formCount('detached'), 9168);
+  assert.equal(formCount('detached'), 9169);
   assert.equal(formCount('semi'), 6291);
   assert.equal(formCount('row'), 2950);
   // (the dataset's own outbuilding form; the report's wider 'outbuilding' family also takes OSM sheds)
@@ -61,15 +61,15 @@ test('the inputs file is compact and its house thresholds are recorded', () => {
   assert.equal(out.inputs.checks.everySidecarRecordMatched, true);
   assert.equal(out.inputs.checks.rowsUnique, true);
   assert.equal(out.inputs.checks.unmatched, 0);
-  assert.equal(out.inputs.checks.matchedByFidK, 35250);
+  assert.equal(out.inputs.checks.matchedByFidK, 35255);
   assert.equal(out.inputs.checks.matchedByFidSinglePart, 4);
 });
 
 test('the cross-table of old kind against new form covers every record', () => {
   const total = Object.values(out.crossTotals).reduce((s, v) => s + v, 0);
   assert.equal(total, out.city.records, 'every record lands in a form family');
-  assert.equal(out.crossTotals['mid-rise'], 9503);
-  assert.equal(out.crossTotals['low-rise'], 3672);
+  assert.equal(out.crossTotals['mid-rise'], 9505);
+  assert.equal(out.crossTotals['low-rise'], 3673);
   assert.equal(out.houseScaleByKind['mid-rise'], 5169);
   assert.equal(out.houseScaleByKind['low-rise'], 1788);
   assert.ok(out.houseScaleByKind['mid-rise'] > 0 && out.houseScaleByKind['low-rise'] > 0, 'mid-rise and low-rise records are house-scale');
@@ -121,9 +121,9 @@ test('the threshold sensitivity re-derives buildings/3\'s three thresholds, with
 });
 
 test('the address-point distribution over the 16,073 kind 0 records is within 1%', () => {
-  assert.equal(out.addressCheck.kind0Records, 16073);
+  assert.equal(out.addressCheck.kind0Records, 16075);
   assert.equal(out.addressCheck.within1pct, true);
-  assert.equal(out.addressCheck.total, 16073);
+  assert.equal(out.addressCheck.total, 16075);
   for (const b of out.addressCheck.buckets) assert.ok(b.within1pct, `bucket ${b.bucket}: ${b.actual} vs ${b.expected}`);
 });
 
@@ -145,15 +145,15 @@ test('the three runs are beside each other', () => {
   assert.equal(c.buildings2.houseBuildings, 15922);
   assert.equal(c.buildings2.detached, 8850);
   assert.equal(c.buildings3.buildings, out.city.buildings);
-  assert.equal(c.buildings3.detached, 9168);
+  assert.equal(c.buildings3.detached, 9169);
   assert.equal(c.buildings3.semi, 6291);
   assert.equal(c.buildings3.row, 2950);
-  assert.equal(c.buildings3.houseScaleRecords, 22530);
+  assert.equal(c.buildings3.houseScaleRecords, 22532);
   assert.equal(c.buildings3.label, 'buildings/4');
   assert.deepEqual(c.buildings3.crossTotals, out.crossTotals);
   // (within 1% of the coordinator's count over the dataset)
   const expected = { detached: 9174, semi: 6291, row: 2950, outbuilding: 95, other: 4236, total: 22746, houseScaleRecords: 22538 };
-  const actual = { detached: 9168, semi: 6291, row: 2950, outbuilding: 95, other: 4328 - 95, total: out.city.buildings, houseScaleRecords: out.checks.houseScaleRecords };
+  const actual = { detached: 9169, semi: 6291, row: 2950, outbuilding: 95, other: 4330 - 95, total: out.city.buildings, houseScaleRecords: out.checks.houseScaleRecords };
   for (const k of Object.keys(expected)) assert.ok(Math.abs(actual[k] - expected[k]) <= 0.01 * expected[k], `${k}: ${actual[k]} vs ${expected[k]}`);
 });
 

@@ -14,7 +14,7 @@ const out = await run({ examples: 10 });
 const committed = JSON.parse(fs.readFileSync(new URL('../tools/building-classes.json', import.meta.url), 'utf8'));
 
 test('every massing record lands in exactly one class, and the record and group classes both sum to it', () => {
-  assert.equal(out.city.records, 35254, 'the detailed city\'s massing records');
+  assert.equal(out.city.records, 35259, 'the detailed city\'s massing records');
   assert.equal(out.checks.classSum.recordSum, out.city.records);
   assert.equal(out.checks.classSum.groupClassSum, out.city.groups.groups, 'group classes count groups');
   assert.equal(out.checks.classSum.groupClassRecords, out.city.records, 'and cover every record');
@@ -33,8 +33,8 @@ test('every massing record lands in exactly one class, and the record and group 
 test('the party sides reproduce the coordinator\'s direct count, and every group style adds up', () => {
   const a = out.checks.attachments;
   // none matches exactly; the rest agree to within 0.5% of the records (a different clustering of the same edges)
-  assert.equal(a.sides.none, 21289, 'none, as the coordinator counted');
-  assert.equal(a.house.none, 12168, 'house none, as the coordinator counted');
+  assert.equal(a.sides.none, 21292, 'none, as the coordinator counted');
+  assert.equal(a.house.none, 12170, 'house none, as the coordinator counted');
   for (const k of ['none', 'one', 'both', 'corner']) {
     assert.ok(Math.abs(a.sides[k] - a.expected.sides[k]) < 0.001 * out.city.records, `sides ${k}: ${a.sides[k]} vs ${a.expected.sides[k]}`);
     assert.ok(Math.abs(a.house[k] - a.expected.house[k]) < 0.001 * out.city.records, `house ${k}: ${a.house[k]} vs ${a.expected.house[k]}`);
@@ -47,10 +47,10 @@ test('the party sides reproduce the coordinator\'s direct count, and every group
   assert.equal(a.group.pair + a.group.rowEnd, a.sides.one, 'one splits into pair and row end');
 });
 
-test('the party-wall total is the 66,151 in docs/massing-buildings.md, and every edge finds its neighbour', () => {
-  assert.equal(out.checks.partyEdges.computed, 66151);
+test('the party-wall total is the 66,164 in docs/massing-buildings.md, and every edge finds its neighbour', () => {
+  assert.equal(out.checks.partyEdges.computed, 66164);
   assert.equal(out.checks.partyEdges.computed, out.checks.partyEdges.documented, 'the documented total');
-  assert.equal(out.checks.partyEdgeNeighbours.edgesResolved, 66151);
+  assert.equal(out.checks.partyEdgeNeighbours.edgesResolved, 66164);
   assert.equal(out.checks.partyEdgeNeighbours.edgesUnresolved, 0);
 });
 
@@ -82,7 +82,7 @@ test('every example carries lat and lon from the frame projection, and the origi
 
 test('the isolated-house measurement reports its numbers and 20 seeded 9 to 12 m examples', () => {
   const ih = out.checks.isolatedHouses;
-  assert.equal(ih.records, 12136, 'house records with no party wall');
+  assert.equal(ih.records, 12138, 'house records with no party wall');
   assert.ok(ih.shorterMedian > 5 && ih.shorterMedian < 15);
   assert.equal(ih.examples.length, 20);
   for (const e of ih.examples) assert.ok(e.shorter >= 9 && e.shorter < 12, `${e.id}: shorter side ${e.shorter}`);

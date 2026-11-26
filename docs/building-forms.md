@@ -19,8 +19,8 @@ from its output, `tools/building-forms.json`. Nothing the page loads was changed
   `buildings/4` dataset (manifest commit `3bcde19`, generated 2026-11-15T19:28:29Z;
   420 cells read, 102,065 dataset rows). It is **2.07 MB**: one array per
   column in sidecar order, lengths and heights in tenths, repeated strings as small integers, the group as an integer.
-  It holds **35,254 records, one per massing sidecar record, in sidecar order**.
-  **35,250** matched the dataset's `(fid, k)`; **4** are the one part the
+  It holds **35,259 records, one per massing sidecar record, in sidecar order**.
+  **35,255** matched the dataset's `(fid, k)`; **4** are the one part the
   dataset kept from a multi-polygon record whose other part it dropped upstream (`to-3dmassing-2025:66132.1`, `to-3dmassing-2025:171114.1`, `to-3dmassing-2025:198759.1`, `to-3dmassing-2025:361721.1`), joined by
   their one dataset row for the fid; **0** found no row. The sidecar's durable id is not stored: it
   is derived from `fid` and `k` (the 2 exceptions where the source ring index is
@@ -28,8 +28,8 @@ from its output, `tools/building-forms.json`. Nothing the page loads was changed
   dataset's manifest: per-dwelling footprint **< 250 m²**, total footprint
   **< 800 m²**, canopy-robust height **< 11 m**,
   use not business / worship / civic / industrial / shed / apartments, not a shop, not an outbuilding. Re-derived from the
-  dataset's own fields, it reproduces its `houseScale` flag on **35,241 of 35,254**
-  records (13 disagree). **6,503** records carry no maximum
+  dataset's own fields, it reproduces its `houseScale` flag on **35,246 of 35,259**
+  records (13 disagree). **6,505** records carry no maximum
   (`MAX_HEIGHT` 0); the top height is the average there, as the build does. No raw cache is read at report time.
 - **`js/toronto-geodata.js`** and **`js/toronto-geodata-ids.js`**: each record's geodata height, old `kind`, name and
   durable ID.
@@ -59,19 +59,19 @@ other; they are counted as non-house buildings here and named in Limits.
 
 | footprint area (m²) | <40 | <60 | <80 | <100 | <120 | <160 | <200 | <250 | <300 | <400 | <600 | <1000 | <2000 | <5000 | <10000 | <50000 | ≥50000 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 2,515 | 1,139 | 2,020 | 3,747 | 3,548 | 5,596 | 4,483 | 2,870 | 1,500 | 1,622 | 2,020 | 1,936 | 1,467 | 650 | 104 | 35 | 2 |
+| 2,515 | 1,139 | 2,020 | 3,747 | 3,548 | 5,597 | 4,483 | 2,870 | 1,500 | 1,624 | 2,021 | 1,936 | 1,468 | 650 | 104 | 35 | 2 |
 
 | average height (m) | <3 | <4 | <5 | <6 | <7 | <8 | <9 | <10 | <11 | <12 | <14 | <18 | <25 | <50 | <100 | ≥100 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 426 | 684 | 1,214 | 2,302 | 5,284 | 6,493 | 4,994 | 2,884 | 1,692 | 913 | 1,011 | 1,260 | 1,360 | 2,531 | 1,510 | 696 |
+| 426 | 684 | 1,216 | 2,303 | 5,284 | 6,493 | 4,994 | 2,884 | 1,692 | 913 | 1,011 | 1,260 | 1,360 | 2,533 | 1,510 | 696 |
 
 | maximum height (m) | <3 | <4 | <5 | <6 | <8 | <10 | <12 | <15 | <20 | <30 | <60 | <100 | <200 | <300 | ≥300 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 6,512 | 56 | 87 | 143 | 879 | 3,860 | 7,379 | 6,173 | 5,892 | 2,533 | 1,184 | 458 | 94 | 4 | 0 |
+| 6,514 | 56 | 87 | 143 | 881 | 3,861 | 7,379 | 6,173 | 5,892 | 2,533 | 1,184 | 458 | 94 | 4 | 0 |
 
-Use classes (records): none 786; house 25,455; business 2,304; worship 323; civic 1,762; industrial 131; shed 188; apartments 4,180; other 125.
+Use classes (records): none 786; house 25,460; business 2,304; worship 323; civic 1,762; industrial 131; shed 188; apartments 4,180; other 125.
 
-Joined groups by size (records in group → buildings): 1→19,151; 2→1,910; 3→517; 4→247; 5→184; 6→138; 7→94; 8→78; 9→56; 10→61; 11→37; 12→48; 13→33; 14→23; 15→28; 16→21; 17→15; 18→12; 19→9; 20→10; 21→8; 22→3; 23→5; 24→4; 25→4; 26→1; 27→4; 28→4; 29→2; 30→6; 31→2; 32→1; 33→1; 35→2; 36→2; 37→3; 38→2; 39→1; 40→1; 42→1; 45→1; 48→1; 56→1; 61→1; 63→1; 77→1; 116→1; 196→1.
+Joined groups by size (records in group → buildings): 1→19,154; 2→1,910; 3→517; 4→247; 5→184; 6→138; 7→94; 8→78; 9→56; 10→61; 11→37; 12→47; 13→33; 14→24; 15→28; 16→21; 17→15; 18→12; 19→9; 20→10; 21→8; 22→3; 23→5; 24→4; 25→4; 26→1; 27→4; 28→4; 29→2; 30→6; 31→2; 32→1; 33→1; 35→2; 36→2; 37→3; 38→2; 39→1; 40→1; 42→1; 45→1; 48→1; 56→1; 61→1; 63→1; 77→1; 116→1; 196→1.
 
 ## The three runs
 
@@ -82,22 +82,22 @@ the `buildings/2` run.
 
 | measure | st-ndw9.3 (PR #155) | buildings/2 (this bead, first run) | buildings/4 | buildings/3 − buildings/2 |
 |---|---|---|---|---|
-| Records | 35,254 | 35,254 | 35,254 | 0 |
-| Buildings | 22,855 | 22,737 | 22,737 | 0 |
-| House buildings | 16,095 | 15,922 | 18,409 | +2,487 |
-| House records | 17,723 | 17,634 | 20,712 | +3,078 |
-| Non-house buildings | 6,760 | 6,815 | 4,328 | -2,487 |
-| Detached | 9,050 | 8,850 | 9,168 | +318 |
+| Records | 35,254 | 35,254 | 35,259 | +5 |
+| Buildings | 22,855 | 22,737 | 22,740 | +3 |
+| House buildings | 16,095 | 15,922 | 18,410 | +2,488 |
+| House records | 17,723 | 17,634 | 20,713 | +3,079 |
+| Non-house buildings | 6,760 | 6,815 | 4,330 | -2,485 |
+| Detached | 9,050 | 8,850 | 9,169 | +319 |
 | Semi | 5,745 | 5,736 | 6,291 | +555 |
 | Row | 1,300 | 1,336 | 2,950 | +1,614 |
-| House-scale records | 19,638 | 19,468 | 22,530 | +3,062 |
-| Total footprint (m²) | 11,960,369 | 11,955,230 | 11,955,412 | +182 |
+| House-scale records | 19,638 | 19,468 | 22,532 | +3,064 |
+| Total footprint (m²) | 11,960,369 | 11,955,230 | 11,958,427 | +3,197 |
 
 The old height-only `kind` against the share of its records each run makes house-scale:
 
 | old kind | records | house-scale, st-ndw9.3 | house-scale, buildings/2 | house-scale, buildings/3 | 3 − 2 |
 |---|---|---|---|---|---|
-| house | 16,073 | 12,575 | 12,516 | 13,696 | +1,180 |
+| house | 16,073 | 12,575 | 12,516 | 13,697 | +1,181 |
 | low-rise | 3,672 | 1,282 | 1,277 | 1,788 | +511 |
 | mid-rise | 9,503 | 3,792 | 3,783 | 5,169 | +1,386 |
 | tower | 3,981 | 13 | 13 | 22 | +9 |
@@ -114,28 +114,28 @@ dataset's own frame check counts **22,746** joined groups over **35,274** parts,
 
 | measure | this report | coordinator's count | difference |
 |---|---|---|---|
-| House-scale records | 22,530 | 22,538 | -0.04% |
-| detached | 9,168 | 9,174 | -0.07% |
+| House-scale records | 22,532 | 22,538 | -0.03% |
+| detached | 9,169 | 9,174 | -0.05% |
 | semi | 6,291 | 6,291 | 0.00% |
 | row | 2,950 | 2,950 | 0.00% |
 | outbuilding | 95 | 95 | 0.00% |
-| other | 4,233 | 4,236 | -0.07% |
-| all buildings | 22,737 | 22,746 | -0.04% |
+| other | 4,235 | 4,236 | -0.02% |
+| all buildings | 22,740 | 22,746 | -0.03% |
 
 ## Headline: old `kind` against the new form, in records
 
 A record is one massing part; a building is one house building or one joined group. The rows are the old height-only
 kind; the columns are the new form family. **5,169** of the
-**9,503** "mid-rise" records and **1,788** of the
-**3,672** "low-rise" records are house-scale (detached, semi or row), not mid-rise or
-low-rise buildings. The old house kind has **13,696** of its
-**16,073** records house-scale; the rest are non-house groups.
+**9,505** "mid-rise" records and **1,788** of the
+**3,673** "low-rise" records are house-scale (detached, semi or row), not mid-rise or
+low-rise buildings. The old house kind has **13,697** of its
+**16,075** records house-scale; the rest are non-house groups.
 
 | old kind | detached | semi | row | low-rise | mid-rise | tower | outbuilding | industrial | worship | civic | other | total |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| house | 6,231 | 4,721 | 2,744 | 1,181 | 488 | 435 | 130 | 22 | 28 | 93 | 0 | 16,073 |
-| low-rise | 647 | 545 | 596 | 981 | 320 | 399 | 75 | 22 | 10 | 77 | 0 | 3,672 |
-| mid-rise | 2,251 | 1,698 | 1,220 | 611 | 2,197 | 1,232 | 29 | 75 | 12 | 178 | 0 | 9,503 |
+| house | 6,232 | 4,721 | 2,744 | 1,181 | 488 | 435 | 131 | 22 | 28 | 93 | 0 | 16,075 |
+| low-rise | 647 | 545 | 596 | 982 | 320 | 399 | 75 | 22 | 10 | 77 | 0 | 3,673 |
+| mid-rise | 2,251 | 1,698 | 1,220 | 611 | 2,199 | 1,232 | 29 | 75 | 12 | 178 | 0 | 9,505 |
 | tower | 12 | 1 | 9 | 0 | 499 | 3,346 | 23 | 12 | 0 | 79 | 0 | 3,981 |
 | shed | 22 | 1 | 2 | 60 | 46 | 53 | 120 | 2 | 7 | 15 | 0 | 328 |
 | works | 5 | 6 | 1 | 4 | 21 | 48 | 0 | 0 | 0 | 3 | 0 | 88 |
@@ -144,259 +144,259 @@ low-rise buildings. The old house kind has **13,696** of its
 
 ## Forms ranked by buildings
 
-A building is one joined group. **22,737 buildings** over **35,254 records**;
-**18,409** house buildings hold **20,712** records, and **4,328**
-non-house buildings hold **14,542** records. Total footprint **11,955,412 m²**.
+A building is one joined group. **22,740 buildings** over **35,259 records**;
+**18,410** house buildings hold **20,713** records, and **4,330**
+non-house buildings hold **14,546** records. Total footprint **11,958,427 m²**.
 
 The top of the list is the long tail's head: 40.32% of buildings in the largest form. The
 cumulative column is the share of buildings covered by all forms up to that row.
 
 | # | form | buildings | share | cum. share | area share | cum. area share | median width (m) | median area (m²) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `house detached` | 9,168 | 40.32% | 40.32% | 8.94% | 8.94% | 7.3 | 109.0 |
-| 2 | `house semi` | 6,291 | 27.67% | 67.99% | 9.66% | 18.61% | 10.9 | 176.6 |
-| 3 | `house row` | 2,950 | 12.97% | 80.96% | 9.53% | 28.14% | 24.6 | 330.5 |
-| 4 | `3–5 storeys, 200–500 m², side street, residential` | 221 | 0.97% | 81.94% | 0.65% | 28.79% | — | 342.4 |
-| 5 | `3–5 storeys, 500–1,500 m², side street, residential` | 196 | 0.86% | 82.80% | 1.44% | 30.23% | — | 853.0 |
-| 6 | `5–13 storeys, 500–1,500 m², side street, residential` | 168 | 0.74% | 83.54% | 1.25% | 31.48% | — | 853.9 |
-| 7 | `5–13 storeys, 500–1,500 m², side street, apartments` | 125 | 0.55% | 84.09% | 0.90% | 32.38% | — | 797.7 |
-| 8 | `3–5 storeys, 200–500 m², side street, apartments` | 109 | 0.48% | 84.57% | 0.30% | 32.68% | — | 322.8 |
-| 9 | `3–5 storeys, 500–1,500 m², main street, residential` | 107 | 0.47% | 85.04% | 0.81% | 33.49% | — | 869.2 |
-| 10 | `5–13 storeys, 200–500 m², side street, residential` | 100 | 0.44% | 85.48% | 0.28% | 33.77% | — | 317.7 |
-| 11 | `outbuilding` | 95 | 0.42% | 85.90% | 0.03% | 33.79% | — | 34.9 |
-| 12 | `5–13 storeys, 1,500–5,000 m², main street, residential` | 90 | 0.40% | 86.29% | 1.88% | 35.68% | — | 2136.8 |
-| 13 | `5–13 storeys, 1,500–5,000 m², side street, residential` | 81 | 0.36% | 86.65% | 1.73% | 37.41% | — | 2316.3 |
-| 14 | `5–13 storeys, 500–1,500 m², main street, residential` | 78 | 0.34% | 86.99% | 0.63% | 38.04% | — | 925.1 |
+| 1 | `house detached` | 9,169 | 40.32% | 40.32% | 8.94% | 8.94% | 7.3 | 109.0 |
+| 2 | `house semi` | 6,291 | 27.66% | 67.99% | 9.66% | 18.60% | 10.9 | 176.6 |
+| 3 | `house row` | 2,950 | 12.97% | 80.96% | 9.53% | 28.13% | 24.6 | 330.5 |
+| 4 | `3–5 storeys, 200–500 m², side street, residential` | 221 | 0.97% | 81.93% | 0.65% | 28.78% | — | 342.4 |
+| 5 | `3–5 storeys, 500–1,500 m², side street, residential` | 196 | 0.86% | 82.79% | 1.44% | 30.22% | — | 853.0 |
+| 6 | `5–13 storeys, 500–1,500 m², side street, residential` | 168 | 0.74% | 83.53% | 1.25% | 31.47% | — | 853.9 |
+| 7 | `5–13 storeys, 500–1,500 m², side street, apartments` | 125 | 0.55% | 84.08% | 0.90% | 32.37% | — | 797.7 |
+| 8 | `3–5 storeys, 200–500 m², side street, apartments` | 109 | 0.48% | 84.56% | 0.30% | 32.67% | — | 322.8 |
+| 9 | `3–5 storeys, 500–1,500 m², main street, residential` | 107 | 0.47% | 85.03% | 0.81% | 33.48% | — | 869.2 |
+| 10 | `5–13 storeys, 200–500 m², side street, residential` | 100 | 0.44% | 85.47% | 0.28% | 33.76% | — | 317.7 |
+| 11 | `outbuilding` | 95 | 0.42% | 85.89% | 0.03% | 33.79% | — | 34.9 |
+| 12 | `5–13 storeys, 1,500–5,000 m², main street, residential` | 90 | 0.40% | 86.28% | 1.89% | 35.67% | — | 2136.8 |
+| 13 | `5–13 storeys, 1,500–5,000 m², side street, residential` | 81 | 0.36% | 86.64% | 1.73% | 37.41% | — | 2316.3 |
+| 14 | `5–13 storeys, 500–1,500 m², main street, residential` | 78 | 0.34% | 86.98% | 0.63% | 38.04% | — | 925.1 |
 | 15 | `13+ storeys, 1,500–5,000 m², side street, apartments` | 69 | 0.30% | 87.29% | 1.41% | 39.45% | — | 2160.1 |
-| 16 | `13+ storeys, 500–1,500 m², side street, apartments` | 68 | 0.30% | 87.59% | 0.63% | 40.09% | — | 1197.0 |
+| 16 | `13+ storeys, 500–1,500 m², side street, apartments` | 68 | 0.30% | 87.59% | 0.63% | 40.08% | — | 1197.0 |
 | 17 | `5–13 storeys, 500–1,500 m², main street, apartments` | 66 | 0.29% | 87.88% | 0.50% | 40.58% | — | 847.4 |
-| 18 | `3–5 storeys, 200–500 m², main street, residential` | 63 | 0.28% | 88.16% | 0.19% | 40.78% | — | 367.9 |
-| 19 | `3–5 storeys, 500–1,500 m², side street, apartments` | 63 | 0.28% | 88.44% | 0.41% | 41.18% | — | 725.7 |
-| 20 | `3–5 storeys, 1,500–5,000 m², main street, residential` | 62 | 0.27% | 88.71% | 1.31% | 42.49% | — | 2256.1 |
+| 18 | `3–5 storeys, 200–500 m², main street, residential` | 63 | 0.28% | 88.15% | 0.19% | 40.77% | — | 367.9 |
+| 19 | `3–5 storeys, 500–1,500 m², side street, apartments` | 63 | 0.28% | 88.43% | 0.41% | 41.18% | — | 725.7 |
+| 20 | `3–5 storeys, 1,500–5,000 m², main street, residential` | 62 | 0.27% | 88.70% | 1.31% | 42.49% | — | 2256.1 |
 | 21 | `5–13 storeys, 1,500–5,000 m², side street, institutional` | 60 | 0.26% | 88.97% | 1.38% | 43.87% | — | 2502.0 |
-| 22 | `3–5 storeys, 1,500–5,000 m², side street, residential` | 56 | 0.25% | 89.22% | 1.17% | 45.04% | — | 2029.3 |
+| 22 | `3–5 storeys, 1,500–5,000 m², side street, residential` | 56 | 0.25% | 89.21% | 1.17% | 45.03% | — | 2029.3 |
 | 23 | `13+ storeys, 1,500–5,000 m², main street, apartments` | 53 | 0.23% | 89.45% | 1.30% | 46.33% | — | 2638.1 |
-| 24 | `3–5 storeys, under 200 m², side street, apartments` | 51 | 0.22% | 89.68% | 0.06% | 46.40% | — | 153.1 |
-| 25 | `3–5 storeys, 200–500 m², side street, shop front, commercial` | 46 | 0.20% | 89.88% | 0.13% | 46.52% | — | 286.1 |
-| 26 | `5–13 storeys, 1,500–5,000 m², side street, apartments` | 45 | 0.20% | 90.08% | 0.83% | 47.36% | — | 2056.1 |
+| 24 | `3–5 storeys, under 200 m², side street, apartments` | 51 | 0.22% | 89.67% | 0.06% | 46.39% | — | 153.1 |
+| 25 | `3–5 storeys, 200–500 m², side street, shop front, commercial` | 46 | 0.20% | 89.87% | 0.13% | 46.52% | — | 286.1 |
+| 26 | `5–13 storeys, 1,500–5,000 m², side street, apartments` | 45 | 0.20% | 90.07% | 0.83% | 47.35% | — | 2056.1 |
 | 27 | `13+ storeys, 1,500–5,000 m², podium, side street, apartments` | 42 | 0.18% | 90.26% | 1.09% | 48.45% | — | 3160.3 |
-| 28 | `5–13 storeys, 500–1,500 m², side street, institutional` | 42 | 0.18% | 90.45% | 0.35% | 48.80% | — | 971.6 |
-| 29 | `5–13 storeys, 200–500 m², side street, apartments` | 41 | 0.18% | 90.63% | 0.13% | 48.93% | — | 398.7 |
-| 30 | `3–5 storeys, 200–500 m², main street, shop front, commercial` | 40 | 0.18% | 90.80% | 0.11% | 49.04% | — | 332.2 |
-| 31 | `13+ storeys, 1,500–5,000 m², main street, shop front, commercial` | 38 | 0.17% | 90.97% | 0.87% | 49.91% | — | 2534.2 |
-| 32 | `5–13 storeys, 1,500–5,000 m², main street, apartments` | 38 | 0.17% | 91.14% | 0.81% | 50.73% | — | 2193.6 |
-| 33 | `3–5 storeys, 1,500–5,000 m², main street, shop front, commercial` | 36 | 0.16% | 91.30% | 0.75% | 51.48% | — | 2162.9 |
+| 28 | `5–13 storeys, 500–1,500 m², side street, institutional` | 42 | 0.18% | 90.44% | 0.35% | 48.80% | — | 971.6 |
+| 29 | `5–13 storeys, 200–500 m², side street, apartments` | 41 | 0.18% | 90.62% | 0.13% | 48.92% | — | 398.7 |
+| 30 | `3–5 storeys, 200–500 m², main street, shop front, commercial` | 40 | 0.18% | 90.80% | 0.11% | 49.03% | — | 332.2 |
+| 31 | `13+ storeys, 1,500–5,000 m², main street, shop front, commercial` | 38 | 0.17% | 90.96% | 0.87% | 49.91% | — | 2534.2 |
+| 32 | `5–13 storeys, 1,500–5,000 m², main street, apartments` | 38 | 0.17% | 91.13% | 0.81% | 50.72% | — | 2193.6 |
+| 33 | `3–5 storeys, 1,500–5,000 m², main street, shop front, commercial` | 36 | 0.16% | 91.29% | 0.75% | 51.48% | — | 2162.9 |
 | 34 | `3–5 storeys, 500–1,500 m², main street, shop front, commercial` | 36 | 0.16% | 91.45% | 0.28% | 51.76% | — | 877.3 |
 | 35 | `5–13 storeys, 1,500–5,000 m², main street, shop front, commercial` | 36 | 0.16% | 91.61% | 0.77% | 52.53% | — | 2310.1 |
-| 36 | `3–5 storeys, 200–500 m², main street, apartments` | 35 | 0.15% | 91.77% | 0.10% | 52.63% | — | 307.2 |
-| 37 | `3–5 storeys, 500–1,500 m², side street, shop front, commercial` | 34 | 0.15% | 91.92% | 0.28% | 52.91% | — | 952.4 |
-| 38 | `13+ storeys, 1,500–5,000 m², podium, main street, apartments` | 32 | 0.14% | 92.06% | 0.78% | 53.69% | — | 2833.1 |
-| 39 | `3–5 storeys, 500–1,500 m², side street, institutional` | 31 | 0.14% | 92.19% | 0.22% | 53.92% | — | 795.0 |
-| 40 | `5–13 storeys, 500–1,500 m², main street, shop front, commercial` | 30 | 0.13% | 92.33% | 0.23% | 54.15% | — | 859.4 |
-| 41 | `13+ storeys, 1,500–5,000 m², main street, residential` | 29 | 0.13% | 92.45% | 0.62% | 54.77% | — | 2191.9 |
-| 42 | `13+ storeys, 5,000–20,000 m², podium, main street, shop front, commercial` | 28 | 0.12% | 92.58% | 2.34% | 57.11% | — | 7659.3 |
+| 36 | `3–5 storeys, 200–500 m², main street, apartments` | 35 | 0.15% | 91.76% | 0.10% | 52.62% | — | 307.2 |
+| 37 | `3–5 storeys, 500–1,500 m², side street, shop front, commercial` | 34 | 0.15% | 91.91% | 0.28% | 52.90% | — | 952.4 |
+| 38 | `13+ storeys, 1,500–5,000 m², podium, main street, apartments` | 32 | 0.14% | 92.05% | 0.78% | 53.69% | — | 2833.1 |
+| 39 | `3–5 storeys, 500–1,500 m², side street, institutional` | 31 | 0.14% | 92.19% | 0.22% | 53.91% | — | 795.0 |
+| 40 | `5–13 storeys, 500–1,500 m², main street, shop front, commercial` | 30 | 0.13% | 92.32% | 0.23% | 54.15% | — | 859.4 |
+| 41 | `13+ storeys, 1,500–5,000 m², main street, residential` | 29 | 0.13% | 92.45% | 0.62% | 54.76% | — | 2191.9 |
+| 42 | `13+ storeys, 5,000–20,000 m², podium, main street, shop front, commercial` | 28 | 0.12% | 92.57% | 2.34% | 57.10% | — | 7659.3 |
 | 43 | `3–5 storeys, 200–500 m², side street, institutional` | 27 | 0.12% | 92.69% | 0.08% | 57.18% | — | 318.9 |
-| 44 | `13+ storeys, 5,000–20,000 m², podium, main street, apartments` | 26 | 0.11% | 92.81% | 1.82% | 59.00% | — | 7106.1 |
-| 45 | `2.5–3 storeys, 200–500 m², side street, residential` | 25 | 0.11% | 92.92% | 0.07% | 59.07% | — | 295.2 |
-| 46 | `3–5 storeys, 500–1,500 m², main street, apartments` | 25 | 0.11% | 93.03% | 0.16% | 59.23% | — | 722.7 |
+| 44 | `13+ storeys, 5,000–20,000 m², podium, main street, apartments` | 26 | 0.11% | 92.80% | 1.82% | 58.99% | — | 7106.1 |
+| 45 | `2.5–3 storeys, 200–500 m², side street, residential` | 25 | 0.11% | 92.91% | 0.07% | 59.06% | — | 295.2 |
+| 46 | `3–5 storeys, 500–1,500 m², main street, apartments` | 25 | 0.11% | 93.02% | 0.16% | 59.22% | — | 722.7 |
 | 47 | `5–13 storeys, 5,000–20,000 m², side street, institutional` | 24 | 0.11% | 93.13% | 1.68% | 60.91% | — | 7400.6 |
-| 48 | `5–13 storeys, 500–1,500 m², side street, worship` | 22 | 0.10% | 93.23% | 0.18% | 61.10% | — | 954.0 |
-| 49 | `1.5–2.5 storeys, 200–500 m², side street, residential` | 21 | 0.09% | 93.32% | 0.06% | 61.16% | — | 360.6 |
-| 50 | `3–5 storeys, under 200 m², side street, shop front, commercial` | 21 | 0.09% | 93.42% | 0.02% | 61.18% | — | 130.1 |
-| 51 | `5–13 storeys, 200–500 m², main street, residential` | 21 | 0.09% | 93.51% | 0.06% | 61.25% | — | 353.8 |
-| 52 | `3–5 storeys, 1,500–5,000 m², side street, institutional` | 20 | 0.09% | 93.60% | 0.42% | 61.67% | — | 2155.7 |
-| 53 | `5–13 storeys, 500–1,500 m², side street, shop front, commercial` | 20 | 0.09% | 93.68% | 0.16% | 61.83% | — | 917.1 |
-| 54 | `13+ storeys, 5,000–20,000 m², main street, shop front, commercial` | 19 | 0.08% | 93.77% | 1.44% | 63.27% | — | 8959.5 |
+| 48 | `1.5–2.5 storeys, 200–500 m², side street, residential` | 22 | 0.10% | 93.22% | 0.07% | 60.97% | — | 358.8 |
+| 49 | `5–13 storeys, 500–1,500 m², side street, worship` | 22 | 0.10% | 93.32% | 0.18% | 61.16% | — | 954.0 |
+| 50 | `3–5 storeys, under 200 m², side street, shop front, commercial` | 21 | 0.09% | 93.41% | 0.02% | 61.18% | — | 130.1 |
+| 51 | `5–13 storeys, 200–500 m², main street, residential` | 21 | 0.09% | 93.50% | 0.06% | 61.24% | — | 353.8 |
+| 52 | `3–5 storeys, 1,500–5,000 m², side street, institutional` | 20 | 0.09% | 93.59% | 0.42% | 61.66% | — | 2155.7 |
+| 53 | `5–13 storeys, 500–1,500 m², side street, shop front, commercial` | 20 | 0.09% | 93.68% | 0.16% | 61.82% | — | 917.1 |
+| 54 | `13+ storeys, 5,000–20,000 m², main street, shop front, commercial` | 19 | 0.08% | 93.76% | 1.44% | 63.26% | — | 8959.5 |
 | 55 | `5–13 storeys, 5,000–20,000 m², side street, residential` | 19 | 0.08% | 93.85% | 1.44% | 64.71% | — | 8192.6 |
-| 56 | `3–5 storeys, under 200 m², side street, outbuilding` | 18 | 0.08% | 93.93% | 0.02% | 64.73% | — | 100.1 |
-| 57 | `13+ storeys, 1,500–5,000 m², podium, main street, residential` | 17 | 0.07% | 94.01% | 0.45% | 65.17% | — | 2753.8 |
+| 56 | `3–5 storeys, under 200 m², side street, outbuilding` | 18 | 0.08% | 93.93% | 0.02% | 64.72% | — | 100.1 |
+| 57 | `13+ storeys, 1,500–5,000 m², podium, main street, residential` | 17 | 0.07% | 94.00% | 0.45% | 65.17% | — | 2753.8 |
 | 58 | `13+ storeys, 500–1,500 m², main street, apartments` | 17 | 0.07% | 94.08% | 0.16% | 65.33% | — | 1183.6 |
 | 59 | `2.5–3 storeys, 500–1,500 m², side street, residential` | 17 | 0.07% | 94.15% | 0.12% | 65.45% | — | 836.6 |
 | 60 | `3–5 storeys, under 200 m², side street, residential` | 17 | 0.07% | 94.23% | 0.02% | 65.47% | — | 139.7 |
 | 61 | `5–13 storeys, 200–500 m², main street, apartments` | 17 | 0.07% | 94.30% | 0.06% | 65.53% | — | 412.5 |
-| 62 | `3–5 storeys, 1,500–5,000 m², side street, shop front, commercial` | 16 | 0.07% | 94.37% | 0.36% | 65.89% | — | 2394.4 |
-| 63 | `5–13 storeys, 1,500–5,000 m², side street, shop front, commercial` | 16 | 0.07% | 94.45% | 0.36% | 66.25% | — | 2327.4 |
-| 64 | `5–13 storeys, 500–1,500 m², main street, institutional` | 16 | 0.07% | 94.52% | 0.12% | 66.37% | — | 860.6 |
+| 62 | `3–5 storeys, 1,500–5,000 m², side street, shop front, commercial` | 16 | 0.07% | 94.37% | 0.36% | 65.88% | — | 2394.4 |
+| 63 | `5–13 storeys, 1,500–5,000 m², side street, shop front, commercial` | 16 | 0.07% | 94.44% | 0.36% | 66.24% | — | 2327.4 |
+| 64 | `5–13 storeys, 500–1,500 m², main street, institutional` | 16 | 0.07% | 94.51% | 0.12% | 66.37% | — | 860.6 |
 | 65 | `13+ storeys, 1,500–5,000 m², podium, main street, shop front, commercial` | 15 | 0.07% | 94.58% | 0.42% | 66.79% | — | 3340.1 |
-| 66 | `5–13 storeys, 1,500–5,000 m², main street, institutional` | 15 | 0.07% | 94.65% | 0.39% | 67.18% | — | 3101.3 |
-| 67 | `13+ storeys, 1,500–5,000 m², side street, shop front, commercial` | 14 | 0.06% | 94.71% | 0.23% | 67.41% | — | 1770.4 |
-| 68 | `13+ storeys, 5,000–20,000 m², main street, apartments` | 14 | 0.06% | 94.77% | 0.81% | 68.22% | — | 6015.4 |
+| 66 | `5–13 storeys, 1,500–5,000 m², main street, institutional` | 15 | 0.07% | 94.64% | 0.39% | 67.17% | — | 3101.3 |
+| 67 | `13+ storeys, 1,500–5,000 m², side street, shop front, commercial` | 14 | 0.06% | 94.71% | 0.23% | 67.40% | — | 1770.4 |
+| 68 | `13+ storeys, 5,000–20,000 m², main street, apartments` | 14 | 0.06% | 94.77% | 0.81% | 68.21% | — | 6015.4 |
 | 69 | `13+ storeys, 500–1,500 m², main street, shop front, commercial` | 14 | 0.06% | 94.83% | 0.11% | 68.32% | — | 853.0 |
 | 70 | `3–5 storeys, 1,500–5,000 m², main street, shop front, residential` | 14 | 0.06% | 94.89% | 0.31% | 68.63% | — | 2259.4 |
-| 71 | `3–5 storeys, 500–1,500 m², main street, institutional` | 14 | 0.06% | 94.96% | 0.10% | 68.74% | — | 898.8 |
-| 72 | `5–13 storeys, 5,000–20,000 m², main street, residential` | 14 | 0.06% | 95.02% | 0.78% | 69.52% | — | 6145.2 |
-| 73 | `3–5 storeys, 200–500 m², side street, worship` | 13 | 0.06% | 95.07% | 0.04% | 69.56% | — | 375.6 |
-| 74 | `3–5 storeys, 500–1,500 m², side street, worship` | 13 | 0.06% | 95.13% | 0.10% | 69.66% | — | 935.2 |
-| 75 | `5–13 storeys, 1,500–5,000 m², main street, shop front, residential` | 13 | 0.06% | 95.19% | 0.28% | 69.94% | — | 2813.7 |
-| 76 | `5–13 storeys, 1,500–5,000 m², podium, main street, apartments` | 13 | 0.06% | 95.25% | 0.34% | 70.28% | — | 3357.3 |
-| 77 | `5–13 storeys, 200–500 m², side street, institutional` | 13 | 0.06% | 95.30% | 0.04% | 70.32% | — | 381.8 |
+| 71 | `3–5 storeys, 500–1,500 m², main street, institutional` | 14 | 0.06% | 94.95% | 0.10% | 68.73% | — | 898.8 |
+| 72 | `5–13 storeys, 5,000–20,000 m², main street, residential` | 14 | 0.06% | 95.01% | 0.78% | 69.51% | — | 6145.2 |
+| 73 | `3–5 storeys, 200–500 m², side street, worship` | 13 | 0.06% | 95.07% | 0.04% | 69.55% | — | 375.6 |
+| 74 | `3–5 storeys, 500–1,500 m², side street, worship` | 13 | 0.06% | 95.13% | 0.10% | 69.65% | — | 935.2 |
+| 75 | `5–13 storeys, 1,500–5,000 m², main street, shop front, residential` | 13 | 0.06% | 95.18% | 0.28% | 69.93% | — | 2813.7 |
+| 76 | `5–13 storeys, 1,500–5,000 m², podium, main street, apartments` | 13 | 0.06% | 95.24% | 0.34% | 70.27% | — | 3357.3 |
+| 77 | `5–13 storeys, 200–500 m², side street, institutional` | 13 | 0.06% | 95.30% | 0.04% | 70.31% | — | 381.8 |
 | 78 | `5–13 storeys, 5,000–20,000 m², main street, institutional` | 13 | 0.06% | 95.36% | 0.88% | 71.19% | — | 7099.5 |
-| 79 | `5–13 storeys, 500–1,500 m², main street, worship` | 13 | 0.06% | 95.42% | 0.09% | 71.29% | — | 763.1 |
-| 80 | `5–13 storeys, under 200 m², side street, residential` | 13 | 0.06% | 95.47% | 0.01% | 71.30% | — | 108.2 |
-| 81 | `1.5–2.5 storeys, under 200 m², side street, shop front, commercial` | 12 | 0.05% | 95.53% | 0.01% | 71.31% | — | 91.0 |
-| 82 | `13+ storeys, 1,500–5,000 m², side street, residential` | 12 | 0.05% | 95.58% | 0.27% | 71.58% | — | 2501.6 |
-| 83 | `13+ storeys, 500–1,500 m², side street, residential` | 12 | 0.05% | 95.63% | 0.10% | 71.68% | — | 975.8 |
-| 84 | `2.5–3 storeys, 500–1,500 m², main street, residential` | 12 | 0.05% | 95.69% | 0.08% | 71.76% | — | 786.6 |
-| 85 | `5–13 storeys, 200–500 m², side street, shop front, commercial` | 12 | 0.05% | 95.74% | 0.03% | 71.79% | — | 248.1 |
-| 86 | `1.5–2.5 storeys, 500–1,500 m², side street, residential` | 11 | 0.05% | 95.79% | 0.07% | 71.87% | — | 769.3 |
-| 87 | `1.5–2.5 storeys, under 200 m², side street, outbuilding` | 11 | 0.05% | 95.83% | 0.01% | 71.88% | — | 78.1 |
-| 88 | `13+ storeys, 500–1,500 m², main street, residential` | 11 | 0.05% | 95.88% | 0.09% | 71.97% | — | 1015.7 |
-| 89 | `3–5 storeys, 200–500 m², side street, unmapped` | 11 | 0.05% | 95.93% | 0.03% | 72.00% | — | 343.3 |
+| 79 | `5–13 storeys, 500–1,500 m², main street, worship` | 13 | 0.06% | 95.41% | 0.09% | 71.28% | — | 763.1 |
+| 80 | `5–13 storeys, under 200 m², side street, residential` | 13 | 0.06% | 95.47% | 0.01% | 71.29% | — | 108.2 |
+| 81 | `1.5–2.5 storeys, under 200 m², side street, shop front, commercial` | 12 | 0.05% | 95.52% | 0.01% | 71.30% | — | 91.0 |
+| 82 | `13+ storeys, 1,500–5,000 m², side street, residential` | 12 | 0.05% | 95.58% | 0.27% | 71.57% | — | 2501.6 |
+| 83 | `13+ storeys, 500–1,500 m², side street, residential` | 12 | 0.05% | 95.63% | 0.10% | 71.67% | — | 975.8 |
+| 84 | `2.5–3 storeys, 500–1,500 m², main street, residential` | 12 | 0.05% | 95.68% | 0.08% | 71.76% | — | 786.6 |
+| 85 | `5–13 storeys, 200–500 m², side street, shop front, commercial` | 12 | 0.05% | 95.73% | 0.03% | 71.79% | — | 248.1 |
+| 86 | `1.5–2.5 storeys, 500–1,500 m², side street, residential` | 11 | 0.05% | 95.78% | 0.07% | 71.86% | — | 769.3 |
+| 87 | `1.5–2.5 storeys, under 200 m², side street, outbuilding` | 11 | 0.05% | 95.83% | 0.01% | 71.87% | — | 78.1 |
+| 88 | `13+ storeys, 500–1,500 m², main street, residential` | 11 | 0.05% | 95.88% | 0.09% | 71.96% | — | 1015.7 |
+| 89 | `3–5 storeys, 200–500 m², side street, unmapped` | 11 | 0.05% | 95.93% | 0.03% | 71.99% | — | 343.3 |
 | 90 | `3–5 storeys, under 200 m², main street, apartments` | 11 | 0.05% | 95.98% | 0.02% | 72.01% | — | 162.7 |
-| 91 | `5–13 storeys, 5,000–20,000 m², podium, side street, institutional` | 11 | 0.05% | 96.03% | 0.84% | 72.86% | — | 9644.5 |
-| 92 | `5–13 storeys, under 200 m², side street, apartments` | 11 | 0.05% | 96.08% | 0.01% | 72.87% | — | 173.9 |
-| 93 | `3–5 storeys, 500–1,500 m², main street, shop front, residential` | 10 | 0.04% | 96.12% | 0.08% | 72.96% | — | 952.5 |
+| 91 | `5–13 storeys, 5,000–20,000 m², podium, side street, institutional` | 11 | 0.05% | 96.02% | 0.84% | 72.85% | — | 9644.5 |
+| 92 | `5–13 storeys, under 200 m², side street, apartments` | 11 | 0.05% | 96.07% | 0.01% | 72.86% | — | 173.9 |
+| 93 | `3–5 storeys, 500–1,500 m², main street, shop front, residential` | 10 | 0.04% | 96.12% | 0.08% | 72.95% | — | 952.5 |
 | 94 | `5–13 storeys, under 200 m², side street, outbuilding` | 10 | 0.04% | 96.16% | 0.01% | 72.96% | — | 77.4 |
-| 95 | `3–5 storeys, 1,500–5,000 m², main street, institutional` | 9 | 0.04% | 96.20% | 0.21% | 73.17% | — | 2348.9 |
+| 95 | `3–5 storeys, 1,500–5,000 m², main street, institutional` | 9 | 0.04% | 96.20% | 0.21% | 73.16% | — | 2348.9 |
 | 96 | `3–5 storeys, under 200 m², main street, shop front, commercial` | 9 | 0.04% | 96.24% | 0.01% | 73.18% | — | 166.7 |
 | 97 | `3–5 storeys, under 200 m², side street, institutional` | 9 | 0.04% | 96.28% | 0.01% | 73.19% | — | 130.0 |
-| 98 | `5–13 storeys, 1,500–5,000 m², podium, main street, residential` | 9 | 0.04% | 96.32% | 0.18% | 73.37% | — | 2094.9 |
-| 99 | `1.5–2.5 storeys, 200–500 m², main street, shop front, commercial` | 8 | 0.04% | 96.36% | 0.02% | 73.39% | — | 232.7 |
-| 100 | `1.5–2.5 storeys, 200–500 m², side street, institutional` | 8 | 0.04% | 96.39% | 0.02% | 73.41% | — | 328.2 |
-| 101 | `13+ storeys, 5,000–20,000 m², podium, side street, apartments` | 8 | 0.04% | 96.43% | 0.61% | 74.03% | — | 6544.5 |
-| 102 | `2.5–3 storeys, under 200 m², side street, apartments` | 8 | 0.04% | 96.46% | 0.01% | 74.04% | — | 140.0 |
+| 98 | `5–13 storeys, 1,500–5,000 m², podium, main street, residential` | 9 | 0.04% | 96.32% | 0.18% | 73.36% | — | 2094.9 |
+| 99 | `1.5–2.5 storeys, 200–500 m², main street, shop front, commercial` | 8 | 0.04% | 96.35% | 0.02% | 73.38% | — | 232.7 |
+| 100 | `1.5–2.5 storeys, 200–500 m², side street, institutional` | 8 | 0.04% | 96.39% | 0.02% | 73.40% | — | 328.2 |
+| 101 | `13+ storeys, 5,000–20,000 m², podium, side street, apartments` | 8 | 0.04% | 96.42% | 0.61% | 74.02% | — | 6544.5 |
+| 102 | `2.5–3 storeys, under 200 m², side street, apartments` | 8 | 0.04% | 96.46% | 0.01% | 74.03% | — | 140.0 |
 | 103 | `3–5 storeys, 200–500 m², main street, worship` | 8 | 0.04% | 96.50% | 0.03% | 74.06% | — | 391.2 |
-| 104 | `3–5 storeys, 500–1,500 m², main street, worship` | 8 | 0.04% | 96.53% | 0.06% | 74.12% | — | 814.9 |
-| 105 | `5–13 storeys, 1,500–5,000 m², podium, side street, residential` | 8 | 0.04% | 96.57% | 0.19% | 74.31% | — | 2476.0 |
-| 106 | `5–13 storeys, 5,000–20,000 m², side street, shop front, commercial` | 8 | 0.04% | 96.60% | 0.56% | 74.87% | — | 7477.4 |
-| 107 | `1.5–2.5 storeys, 200–500 m², side street, unmapped` | 7 | 0.03% | 96.64% | 0.02% | 74.89% | — | 405.5 |
-| 108 | `1.5–2.5 storeys, 500–1,500 m², main street, institutional` | 7 | 0.03% | 96.67% | 0.05% | 74.95% | — | 792.0 |
-| 109 | `13+ storeys, 1,500–5,000 m², podium, side street, residential` | 7 | 0.03% | 96.70% | 0.16% | 75.11% | — | 2590.7 |
-| 110 | `13+ storeys, 5,000–20,000 m², main street, residential` | 7 | 0.03% | 96.73% | 0.51% | 75.62% | — | 7128.1 |
-| 111 | `13+ storeys, 5,000–20,000 m², main street, shop front, residential` | 7 | 0.03% | 96.76% | 0.47% | 76.09% | — | 5672.3 |
-| 112 | `13+ storeys, 5,000–20,000 m², side street, apartments` | 7 | 0.03% | 96.79% | 0.61% | 76.70% | — | 9040.7 |
-| 113 | `2.5–3 storeys, 500–1,500 m², main street, shop front, commercial` | 7 | 0.03% | 96.82% | 0.04% | 76.74% | — | 578.9 |
-| 114 | `2.5–3 storeys, under 200 m², side street, shop front, commercial` | 7 | 0.03% | 96.85% | 0.01% | 76.75% | — | 170.0 |
-| 115 | `5–13 storeys, 1,500–5,000 m², main street, worship` | 7 | 0.03% | 96.88% | 0.14% | 76.89% | — | 2304.4 |
-| 116 | `5–13 storeys, 1,500–5,000 m², podium, side street, apartments` | 7 | 0.03% | 96.91% | 0.19% | 77.08% | — | 3406.3 |
-| 117 | `5–13 storeys, 200–500 m², side street, worship` | 7 | 0.03% | 96.94% | 0.02% | 77.10% | — | 399.6 |
-| 118 | `5–13 storeys, 500–1,500 m², podium, side street, apartments` | 7 | 0.03% | 96.97% | 0.06% | 77.16% | — | 1083.9 |
-| 119 | `under 1.5 storeys, 200–500 m², side street, residential` | 7 | 0.03% | 97.00% | 0.02% | 77.18% | — | 317.3 |
-| 120 | `1.5–2.5 storeys, 500–1,500 m², side street, shop front, commercial` | 6 | 0.03% | 97.03% | 0.04% | 77.22% | — | 719.3 |
-| 121 | `13+ storeys, 200–500 m², side street, apartments` | 6 | 0.03% | 97.06% | 0.02% | 77.24% | — | 434.1 |
-| 122 | `13+ storeys, 5,000–20,000 m², main street, shop front, apartments` | 6 | 0.03% | 97.08% | 0.46% | 77.70% | — | 6348.1 |
-| 123 | `13+ storeys, 5,000–20,000 m², podium, main street, shop front, apartments` | 6 | 0.03% | 97.11% | 0.48% | 78.18% | — | 9102.0 |
-| 124 | `13+ storeys, 5,000–20,000 m², side street, institutional` | 6 | 0.03% | 97.14% | 0.46% | 78.64% | — | 6769.8 |
-| 125 | `2.5–3 storeys, 200–500 m², main street, shop front, commercial` | 6 | 0.03% | 97.16% | 0.01% | 78.66% | — | 262.4 |
-| 126 | `2.5–3 storeys, under 200 m², main street, shop front, commercial` | 6 | 0.03% | 97.19% | 0.01% | 78.66% | — | 139.8 |
-| 127 | `3–5 storeys, 1,500–5,000 m², side street, apartments` | 6 | 0.03% | 97.22% | 0.13% | 78.80% | — | 2659.8 |
-| 128 | `3–5 storeys, 5,000–20,000 m², side street, residential` | 6 | 0.03% | 97.24% | 0.40% | 79.20% | — | 6423.1 |
-| 129 | `3–5 storeys, 500–1,500 m², main street, unmapped` | 6 | 0.03% | 97.27% | 0.05% | 79.25% | — | 876.6 |
-| 130 | `3–5 storeys, 500–1,500 m², side street, industrial` | 6 | 0.03% | 97.30% | 0.04% | 79.29% | — | 916.5 |
-| 131 | `3–5 storeys, 500–1,500 m², side street, shop front, residential` | 6 | 0.03% | 97.32% | 0.05% | 79.34% | — | 699.4 |
-| 132 | `3–5 storeys, 500–1,500 m², side street, unmapped` | 6 | 0.03% | 97.35% | 0.04% | 79.38% | — | 699.1 |
-| 133 | `5–13 storeys, 1,500–5,000 m², main street, unmapped` | 6 | 0.03% | 97.37% | 0.16% | 79.54% | — | 2797.0 |
-| 134 | `5–13 storeys, 1,500–5,000 m², side street, outbuilding` | 6 | 0.03% | 97.40% | 0.16% | 79.70% | — | 2964.3 |
-| 135 | `5–13 storeys, 1,500–5,000 m², side street, worship` | 6 | 0.03% | 97.43% | 0.13% | 79.83% | — | 2640.4 |
-| 136 | `5–13 storeys, 200–500 m², side street, unmapped` | 6 | 0.03% | 97.45% | 0.02% | 79.85% | — | 306.2 |
-| 137 | `1.5–2.5 storeys, 500–1,500 m², main street, residential` | 5 | 0.02% | 97.48% | 0.03% | 79.88% | — | 689.4 |
-| 138 | `1.5–2.5 storeys, under 200 m², main street, outbuilding` | 5 | 0.02% | 97.50% | 0.00% | 79.88% | — | 88.8 |
-| 139 | `1.5–2.5 storeys, under 200 m², main street, shop front, commercial` | 5 | 0.02% | 97.52% | 0.00% | 79.89% | — | 108.6 |
-| 140 | `13+ storeys, 1,500–5,000 m², main street, shop front, apartments` | 5 | 0.02% | 97.54% | 0.16% | 80.05% | — | 4461.2 |
-| 141 | `13+ storeys, 20,000+ m², podium, main street, shop front, commercial` | 5 | 0.02% | 97.56% | 1.84% | 81.89% | — | 31683.4 |
-| 142 | `13+ storeys, 5,000–20,000 m², main street, institutional` | 5 | 0.02% | 97.59% | 0.53% | 82.43% | — | 12663.1 |
-| 143 | `13+ storeys, 5,000–20,000 m², podium, main street, residential` | 5 | 0.02% | 97.61% | 0.31% | 82.73% | — | 5683.5 |
-| 144 | `13+ storeys, 5,000–20,000 m², side street, shop front, commercial` | 5 | 0.02% | 97.63% | 0.27% | 83.00% | — | 6438.1 |
-| 145 | `13+ storeys, 500–1,500 m², podium, side street, apartments` | 5 | 0.02% | 97.65% | 0.04% | 83.04% | — | 938.7 |
-| 146 | `2.5–3 storeys, 200–500 m², side street, shop front, commercial` | 5 | 0.02% | 97.67% | 0.02% | 83.06% | — | 388.1 |
-| 147 | `3–5 storeys, 1,500–5,000 m², main street, unmapped` | 5 | 0.02% | 97.70% | 0.09% | 83.14% | — | 2156.0 |
-| 148 | `5–13 storeys, 1,500–5,000 m², podium, main street, shop front, commercial` | 5 | 0.02% | 97.72% | 0.15% | 83.30% | — | 3754.8 |
-| 149 | `5–13 storeys, 200–500 m², main street, shop front, commercial` | 5 | 0.02% | 97.74% | 0.02% | 83.31% | — | 375.5 |
-| 150 | `5–13 storeys, 5,000–20,000 m², main street, shop front, commercial` | 5 | 0.02% | 97.76% | 0.35% | 83.66% | — | 8611.8 |
-| 151 | `5–13 storeys, 5,000–20,000 m², podium, main street, institutional` | 5 | 0.02% | 97.78% | 0.45% | 84.12% | — | 10562.1 |
-| 152 | `1.5–2.5 storeys, 200–500 m², main street, residential` | 4 | 0.02% | 97.80% | 0.01% | 84.13% | — | 302.0 |
-| 153 | `1.5–2.5 storeys, 200–500 m², side street, shop front, commercial` | 4 | 0.02% | 97.82% | 0.01% | 84.14% | — | 224.8 |
-| 154 | `1.5–2.5 storeys, 500–1,500 m², side street, unmapped` | 4 | 0.02% | 97.84% | 0.03% | 84.17% | — | 908.5 |
-| 155 | `13+ storeys, 1,500–5,000 m², podium, side street, shop front, commercial` | 4 | 0.02% | 97.85% | 0.11% | 84.28% | — | 3441.9 |
-| 156 | `13+ storeys, 1,500–5,000 m², side street, institutional` | 4 | 0.02% | 97.87% | 0.12% | 84.40% | — | 4038.6 |
-| 157 | `13+ storeys, 5,000–20,000 m², podium, side street, institutional` | 4 | 0.02% | 97.89% | 0.26% | 84.66% | — | 5841.8 |
-| 158 | `13+ storeys, 5,000–20,000 m², podium, side street, residential` | 4 | 0.02% | 97.91% | 0.27% | 84.93% | — | 6506.2 |
-| 159 | `13+ storeys, 5,000–20,000 m², side street, residential` | 4 | 0.02% | 97.92% | 0.37% | 85.31% | — | 6638.5 |
-| 160 | `13+ storeys, 500–1,500 m², podium, main street, apartments` | 4 | 0.02% | 97.94% | 0.04% | 85.34% | — | 1195.6 |
-| 161 | `13+ storeys, 500–1,500 m², podium, side street, residential` | 4 | 0.02% | 97.96% | 0.04% | 85.38% | — | 988.4 |
-| 162 | `13+ storeys, 500–1,500 m², side street, shop front, commercial` | 4 | 0.02% | 97.98% | 0.04% | 85.42% | — | 1249.1 |
-| 163 | `2.5–3 storeys, 200–500 m², side street, apartments` | 4 | 0.02% | 97.99% | 0.01% | 85.43% | — | 240.9 |
-| 164 | `2.5–3 storeys, 500–1,500 m², side street, shop front, commercial` | 4 | 0.02% | 98.01% | 0.03% | 85.46% | — | 602.0 |
-| 165 | `2.5–3 storeys, 500–1,500 m², side street, unmapped` | 4 | 0.02% | 98.03% | 0.02% | 85.48% | — | 659.3 |
-| 166 | `3–5 storeys, 1,500–5,000 m², main street, apartments` | 4 | 0.02% | 98.05% | 0.08% | 85.56% | — | 1982.0 |
-| 167 | `3–5 storeys, 1,500–5,000 m², side street, unmapped` | 4 | 0.02% | 98.06% | 0.11% | 85.67% | — | 3281.0 |
-| 168 | `3–5 storeys, 200–500 m², main street, unmapped` | 4 | 0.02% | 98.08% | 0.01% | 85.69% | — | 304.6 |
-| 169 | `3–5 storeys, 200–500 m², side street, industrial` | 4 | 0.02% | 98.10% | 0.01% | 85.70% | — | 305.0 |
-| 170 | `3–5 storeys, 200–500 m², side street, outbuilding` | 4 | 0.02% | 98.12% | 0.01% | 85.71% | — | 289.4 |
-| 171 | `3–5 storeys, 5,000–20,000 m², main street, residential` | 4 | 0.02% | 98.14% | 0.20% | 85.90% | — | 5431.0 |
-| 172 | `5–13 storeys, 1,500–5,000 m², side street, industrial` | 4 | 0.02% | 98.15% | 0.09% | 85.99% | — | 1835.6 |
-| 173 | `5–13 storeys, 1,500–5,000 m², side street, shop front, residential` | 4 | 0.02% | 98.17% | 0.10% | 86.09% | — | 2562.0 |
-| 174 | `5–13 storeys, 5,000–20,000 m², main street, shop front, residential` | 4 | 0.02% | 98.19% | 0.24% | 86.33% | — | 6196.5 |
-| 175 | `5–13 storeys, 5,000–20,000 m², side street, apartments` | 4 | 0.02% | 98.21% | 0.26% | 86.59% | — | 6517.9 |
-| 176 | `5–13 storeys, 5,000–20,000 m², side street, other` | 4 | 0.02% | 98.22% | 0.30% | 86.90% | — | 6245.9 |
-| 177 | `5–13 storeys, 500–1,500 m², podium, side street, residential` | 4 | 0.02% | 98.24% | 0.04% | 86.93% | — | 847.1 |
-| 178 | `5–13 storeys, 500–1,500 m², side street, unmapped` | 4 | 0.02% | 98.26% | 0.04% | 86.97% | — | 1067.2 |
-| 179 | `5–13 storeys, under 200 m², side street, shop front, commercial` | 4 | 0.02% | 98.28% | 0.00% | 86.98% | — | 118.4 |
-| 180 | `under 1.5 storeys, under 200 m², side street, institutional` | 4 | 0.02% | 98.29% | 0.00% | 86.98% | — | 74.9 |
-| 181 | `under 1.5 storeys, under 200 m², side street, outbuilding` | 4 | 0.02% | 98.31% | 0.00% | 86.98% | — | 111.7 |
-| 182 | `1.5–2.5 storeys, 500–1,500 m², side street, industrial` | 3 | 0.01% | 98.32% | 0.03% | 87.01% | — | 1275.3 |
-| 183 | `1.5–2.5 storeys, under 200 m², side street, apartments` | 3 | 0.01% | 98.34% | 0.00% | 87.01% | — | 86.0 |
-| 184 | `13+ storeys, 1,500–5,000 m², main street, worship` | 3 | 0.01% | 98.35% | 0.05% | 87.06% | — | 1738.7 |
-| 185 | `13+ storeys, 1,500–5,000 m², podium, main street, shop front, apartments` | 3 | 0.01% | 98.36% | 0.09% | 87.15% | — | 3881.8 |
-| 186 | `13+ storeys, 200–500 m², main street, shop front, commercial` | 3 | 0.01% | 98.38% | 0.01% | 87.16% | — | 427.3 |
-| 187 | `13+ storeys, 5,000–20,000 m², podium, main street, shop front, residential` | 3 | 0.01% | 98.39% | 0.25% | 87.41% | — | 5921.3 |
-| 188 | `13+ storeys, 500–1,500 m², podium, main street, residential` | 3 | 0.01% | 98.40% | 0.03% | 87.43% | — | 1048.2 |
-| 189 | `2.5–3 storeys, 1,500–5,000 m², main street, residential` | 3 | 0.01% | 98.42% | 0.08% | 87.51% | — | 2417.8 |
-| 190 | `2.5–3 storeys, 1,500–5,000 m², main street, unmapped` | 3 | 0.01% | 98.43% | 0.06% | 87.56% | — | 2149.0 |
-| 191 | `2.5–3 storeys, 200–500 m², main street, residential` | 3 | 0.01% | 98.44% | 0.01% | 87.57% | — | 264.8 |
-| 192 | `2.5–3 storeys, 200–500 m², side street, industrial` | 3 | 0.01% | 98.46% | 0.01% | 87.58% | — | 376.5 |
-| 193 | `2.5–3 storeys, 200–500 m², side street, institutional` | 3 | 0.01% | 98.47% | 0.01% | 87.59% | — | 345.6 |
-| 194 | `2.5–3 storeys, 500–1,500 m², side street, institutional` | 3 | 0.01% | 98.48% | 0.03% | 87.62% | — | 1166.2 |
-| 195 | `2.5–3 storeys, under 200 m², side street, outbuilding` | 3 | 0.01% | 98.50% | 0.00% | 87.62% | — | 80.3 |
-| 196 | `3–5 storeys, 1,500–5,000 m², side street, industrial` | 3 | 0.01% | 98.51% | 0.07% | 87.68% | — | 2051.4 |
-| 197 | `3–5 storeys, 1,500–5,000 m², side street, outbuilding` | 3 | 0.01% | 98.52% | 0.07% | 87.76% | — | 2955.9 |
-| 198 | `3–5 storeys, 1,500–5,000 m², side street, shop front, residential` | 3 | 0.01% | 98.54% | 0.05% | 87.81% | — | 2123.6 |
-| 199 | `3–5 storeys, 200–500 m², main street, institutional` | 3 | 0.01% | 98.55% | 0.01% | 87.82% | — | 384.5 |
-| 200 | `3–5 storeys, 200–500 m², main street, shop front, residential` | 3 | 0.01% | 98.56% | 0.01% | 87.83% | — | 406.5 |
-| 201 | `3–5 storeys, 5,000–20,000 m², main street, shop front, commercial` | 3 | 0.01% | 98.58% | 0.16% | 87.99% | — | 6134.8 |
-| 202 | `3–5 storeys, 5,000–20,000 m², main street, shop front, residential` | 3 | 0.01% | 98.59% | 0.25% | 88.23% | — | 9079.3 |
-| 203 | `3–5 storeys, 5,000–20,000 m², side street, shop front, commercial` | 3 | 0.01% | 98.60% | 0.21% | 88.44% | — | 6380.1 |
-| 204 | `3–5 storeys, 500–1,500 m², podium, side street, residential` | 3 | 0.01% | 98.61% | 0.03% | 88.47% | — | 922.0 |
-| 205 | `3–5 storeys, 500–1,500 m², side street, other` | 3 | 0.01% | 98.63% | 0.02% | 88.49% | — | 980.6 |
-| 206 | `3–5 storeys, 500–1,500 m², side street, outbuilding` | 3 | 0.01% | 98.64% | 0.03% | 88.52% | — | 1190.5 |
-| 207 | `5–13 storeys, 1,500–5,000 m², main street, outbuilding` | 3 | 0.01% | 98.65% | 0.08% | 88.59% | — | 2898.3 |
-| 208 | `5–13 storeys, 1,500–5,000 m², side street, other` | 3 | 0.01% | 98.67% | 0.04% | 88.63% | — | 1524.6 |
-| 209 | `5–13 storeys, 200–500 m², side street, industrial` | 3 | 0.01% | 98.68% | 0.01% | 88.64% | — | 469.5 |
-| 210 | `5–13 storeys, 200–500 m², side street, outbuilding` | 3 | 0.01% | 98.69% | 0.01% | 88.65% | — | 425.1 |
-| 211 | `5–13 storeys, 5,000–20,000 m², main street, apartments` | 3 | 0.01% | 98.71% | 0.24% | 88.89% | — | 9790.5 |
-| 212 | `5–13 storeys, 5,000–20,000 m², podium, side street, apartments` | 3 | 0.01% | 98.72% | 0.19% | 89.08% | — | 6734.0 |
-| 213 | `5–13 storeys, 5,000–20,000 m², podium, side street, residential` | 3 | 0.01% | 98.73% | 0.18% | 89.26% | — | 7012.4 |
-| 214 | `5–13 storeys, 500–1,500 m², main street, shop front, residential` | 3 | 0.01% | 98.75% | 0.02% | 89.28% | — | 1009.0 |
-| 215 | `5–13 storeys, 500–1,500 m², main street, unmapped` | 3 | 0.01% | 98.76% | 0.03% | 89.31% | — | 1183.9 |
-| 216 | `5–13 storeys, 500–1,500 m², podium, main street, apartments` | 3 | 0.01% | 98.77% | 0.02% | 89.34% | — | 786.9 |
-| 217 | `5–13 storeys, 500–1,500 m², podium, main street, residential` | 3 | 0.01% | 98.79% | 0.03% | 89.36% | — | 1117.3 |
-| 218 | `5–13 storeys, 500–1,500 m², podium, side street, worship` | 3 | 0.01% | 98.80% | 0.03% | 89.40% | — | 1416.7 |
-| 219 | `5–13 storeys, 500–1,500 m², side street, outbuilding` | 3 | 0.01% | 98.81% | 0.02% | 89.41% | — | 644.9 |
-| 220 | `5–13 storeys, under 200 m², side street, unmapped` | 3 | 0.01% | 98.83% | 0.00% | 89.41% | — | 16.7 |
-| 221 | `5–13 storeys, under 200 m², side street, worship` | 3 | 0.01% | 98.84% | 0.00% | 89.41% | — | 61.4 |
-| 222 | `1.5–2.5 storeys, 1,500–5,000 m², main street, residential` | 2 | 0.01% | 98.85% | 0.05% | 89.46% | — | 1695.3 |
-| 223 | `1.5–2.5 storeys, 200–500 m², main street, outbuilding` | 2 | 0.01% | 98.86% | 0.00% | 89.46% | — | 249.5 |
-| 224 | `1.5–2.5 storeys, 200–500 m², side street, apartments` | 2 | 0.01% | 98.87% | 0.01% | 89.47% | — | 396.7 |
-| 225 | `1.5–2.5 storeys, 200–500 m², side street, outbuilding` | 2 | 0.01% | 98.87% | 0.01% | 89.48% | — | 266.5 |
-| 226 | `1.5–2.5 storeys, under 200 m², side street, residential` | 2 | 0.01% | 98.88% | 0.00% | 89.48% | — | 95.3 |
-| 227 | `13+ storeys, 1,500–5,000 m², main street, institutional` | 2 | 0.01% | 98.89% | 0.04% | 89.52% | — | 2010.2 |
-| 228 | `13+ storeys, 1,500–5,000 m², podium, main street, shop front, residential` | 2 | 0.01% | 98.90% | 0.05% | 89.57% | — | 2603.3 |
-| 229 | `13+ storeys, 1,500–5,000 m², podium, main street, unmapped` | 2 | 0.01% | 98.91% | 0.06% | 89.64% | — | 2931.9 |
-| 230 | `13+ storeys, 1,500–5,000 m², side street, outbuilding` | 2 | 0.01% | 98.92% | 0.04% | 89.67% | — | 1655.4 |
-| 231 | `13+ storeys, 1,500–5,000 m², side street, shop front, apartments` | 2 | 0.01% | 98.93% | 0.06% | 89.73% | — | 1889.2 |
-| 232 | `13+ storeys, 1,500–5,000 m², side street, shop front, residential` | 2 | 0.01% | 98.94% | 0.05% | 89.78% | — | 2476.4 |
-| 233 | `13+ storeys, 1,500–5,000 m², side street, unmapped` | 2 | 0.01% | 98.94% | 0.04% | 89.81% | — | 1873.4 |
-| 234 | `13+ storeys, 20,000+ m², main street, shop front, commercial` | 2 | 0.01% | 98.95% | 0.42% | 90.23% | — | 23383.2 |
-| 235 | `13+ storeys, 5,000–20,000 m², podium, main street, institutional` | 2 | 0.01% | 98.96% | 0.16% | 90.39% | — | 7941.2 |
-| 236 | `13+ storeys, 5,000–20,000 m², podium, side street, shop front, apartments` | 2 | 0.01% | 98.97% | 0.11% | 90.49% | — | 6197.5 |
-| 237 | `13+ storeys, 5,000–20,000 m², podium, side street, shop front, commercial` | 2 | 0.01% | 98.98% | 0.18% | 90.67% | — | 5972.1 |
-| 238 | `13+ storeys, 5,000–20,000 m², podium, side street, shop front, residential` | 2 | 0.01% | 98.99% | 0.18% | 90.86% | — | 8908.8 |
-| 239 | `13+ storeys, 500–1,500 m², side street, worship` | 2 | 0.01% | 99.00% | 0.02% | 90.88% | — | 1422.1 |
-| 240 | `13+ storeys, under 200 m², side street, residential` | 2 | 0.01% | 99.01% | 0.00% | 90.88% | — | 98.8 |
-| 241 | `2.5–3 storeys, 1,500–5,000 m², side street, residential` | 2 | 0.01% | 99.01% | 0.03% | 90.92% | — | 1890.3 |
-| 242 | `2.5–3 storeys, 1,500–5,000 m², side street, unmapped` | 2 | 0.01% | 99.02% | 0.06% | 90.97% | — | 2914.5 |
+| 104 | `3–5 storeys, 500–1,500 m², main street, worship` | 8 | 0.04% | 96.53% | 0.06% | 74.11% | — | 814.9 |
+| 105 | `5–13 storeys, 1,500–5,000 m², podium, side street, residential` | 8 | 0.04% | 96.57% | 0.19% | 74.30% | — | 2476.0 |
+| 106 | `5–13 storeys, 5,000–20,000 m², side street, shop front, commercial` | 8 | 0.04% | 96.60% | 0.56% | 74.86% | — | 7477.4 |
+| 107 | `1.5–2.5 storeys, 200–500 m², side street, unmapped` | 7 | 0.03% | 96.63% | 0.02% | 74.89% | — | 405.5 |
+| 108 | `1.5–2.5 storeys, 500–1,500 m², main street, institutional` | 7 | 0.03% | 96.66% | 0.05% | 74.94% | — | 792.0 |
+| 109 | `13+ storeys, 1,500–5,000 m², podium, side street, residential` | 7 | 0.03% | 96.69% | 0.16% | 75.10% | — | 2590.7 |
+| 110 | `13+ storeys, 5,000–20,000 m², main street, residential` | 7 | 0.03% | 96.72% | 0.51% | 75.61% | — | 7128.1 |
+| 111 | `13+ storeys, 5,000–20,000 m², main street, shop front, residential` | 7 | 0.03% | 96.75% | 0.47% | 76.08% | — | 5672.3 |
+| 112 | `13+ storeys, 5,000–20,000 m², side street, apartments` | 7 | 0.03% | 96.79% | 0.61% | 76.69% | — | 9040.7 |
+| 113 | `2.5–3 storeys, 500–1,500 m², main street, shop front, commercial` | 7 | 0.03% | 96.82% | 0.04% | 76.73% | — | 578.9 |
+| 114 | `2.5–3 storeys, under 200 m², side street, shop front, commercial` | 7 | 0.03% | 96.85% | 0.01% | 76.74% | — | 170.0 |
+| 115 | `5–13 storeys, 1,500–5,000 m², main street, worship` | 7 | 0.03% | 96.88% | 0.14% | 76.88% | — | 2304.4 |
+| 116 | `5–13 storeys, 1,500–5,000 m², podium, side street, apartments` | 7 | 0.03% | 96.91% | 0.19% | 77.07% | — | 3406.3 |
+| 117 | `5–13 storeys, 200–500 m², side street, worship` | 7 | 0.03% | 96.94% | 0.02% | 77.09% | — | 399.6 |
+| 118 | `5–13 storeys, 500–1,500 m², podium, side street, apartments` | 7 | 0.03% | 96.97% | 0.06% | 77.15% | — | 1083.9 |
+| 119 | `under 1.5 storeys, 200–500 m², side street, residential` | 7 | 0.03% | 97.00% | 0.02% | 77.17% | — | 317.3 |
+| 120 | `1.5–2.5 storeys, 500–1,500 m², side street, shop front, commercial` | 6 | 0.03% | 97.03% | 0.04% | 77.21% | — | 719.3 |
+| 121 | `13+ storeys, 200–500 m², side street, apartments` | 6 | 0.03% | 97.05% | 0.02% | 77.23% | — | 434.1 |
+| 122 | `13+ storeys, 5,000–20,000 m², main street, shop front, apartments` | 6 | 0.03% | 97.08% | 0.46% | 77.69% | — | 6348.1 |
+| 123 | `13+ storeys, 5,000–20,000 m², podium, main street, shop front, apartments` | 6 | 0.03% | 97.11% | 0.48% | 78.17% | — | 9102.0 |
+| 124 | `13+ storeys, 5,000–20,000 m², side street, institutional` | 6 | 0.03% | 97.13% | 0.46% | 78.63% | — | 6769.8 |
+| 125 | `2.5–3 storeys, 200–500 m², main street, shop front, commercial` | 6 | 0.03% | 97.16% | 0.01% | 78.65% | — | 262.4 |
+| 126 | `2.5–3 storeys, under 200 m², main street, shop front, commercial` | 6 | 0.03% | 97.19% | 0.01% | 78.65% | — | 139.8 |
+| 127 | `3–5 storeys, 1,500–5,000 m², side street, apartments` | 6 | 0.03% | 97.21% | 0.13% | 78.79% | — | 2659.8 |
+| 128 | `3–5 storeys, 5,000–20,000 m², side street, residential` | 6 | 0.03% | 97.24% | 0.40% | 79.19% | — | 6423.1 |
+| 129 | `3–5 storeys, 500–1,500 m², main street, unmapped` | 6 | 0.03% | 97.26% | 0.05% | 79.24% | — | 876.6 |
+| 130 | `3–5 storeys, 500–1,500 m², side street, industrial` | 6 | 0.03% | 97.29% | 0.04% | 79.28% | — | 916.5 |
+| 131 | `3–5 storeys, 500–1,500 m², side street, shop front, residential` | 6 | 0.03% | 97.32% | 0.05% | 79.33% | — | 699.4 |
+| 132 | `3–5 storeys, 500–1,500 m², side street, unmapped` | 6 | 0.03% | 97.34% | 0.04% | 79.38% | — | 699.1 |
+| 133 | `5–13 storeys, 1,500–5,000 m², main street, unmapped` | 6 | 0.03% | 97.37% | 0.16% | 79.53% | — | 2797.0 |
+| 134 | `5–13 storeys, 1,500–5,000 m², side street, outbuilding` | 6 | 0.03% | 97.40% | 0.16% | 79.69% | — | 2964.3 |
+| 135 | `5–13 storeys, 1,500–5,000 m², side street, worship` | 6 | 0.03% | 97.42% | 0.13% | 79.82% | — | 2640.4 |
+| 136 | `5–13 storeys, 200–500 m², side street, unmapped` | 6 | 0.03% | 97.45% | 0.02% | 79.84% | — | 306.2 |
+| 137 | `1.5–2.5 storeys, 500–1,500 m², main street, residential` | 5 | 0.02% | 97.47% | 0.03% | 79.87% | — | 689.4 |
+| 138 | `1.5–2.5 storeys, under 200 m², main street, outbuilding` | 5 | 0.02% | 97.49% | 0.00% | 79.87% | — | 88.8 |
+| 139 | `1.5–2.5 storeys, under 200 m², main street, shop front, commercial` | 5 | 0.02% | 97.52% | 0.00% | 79.88% | — | 108.6 |
+| 140 | `13+ storeys, 1,500–5,000 m², main street, shop front, apartments` | 5 | 0.02% | 97.54% | 0.16% | 80.04% | — | 4461.2 |
+| 141 | `13+ storeys, 20,000+ m², podium, main street, shop front, commercial` | 5 | 0.02% | 97.56% | 1.84% | 81.88% | — | 31683.4 |
+| 142 | `13+ storeys, 5,000–20,000 m², main street, institutional` | 5 | 0.02% | 97.58% | 0.53% | 82.42% | — | 12663.1 |
+| 143 | `13+ storeys, 5,000–20,000 m², podium, main street, residential` | 5 | 0.02% | 97.60% | 0.31% | 82.72% | — | 5683.5 |
+| 144 | `13+ storeys, 5,000–20,000 m², side street, shop front, commercial` | 5 | 0.02% | 97.63% | 0.27% | 82.99% | — | 6438.1 |
+| 145 | `13+ storeys, 500–1,500 m², podium, side street, apartments` | 5 | 0.02% | 97.65% | 0.04% | 83.03% | — | 938.7 |
+| 146 | `2.5–3 storeys, 200–500 m², side street, shop front, commercial` | 5 | 0.02% | 97.67% | 0.02% | 83.05% | — | 388.1 |
+| 147 | `3–5 storeys, 1,500–5,000 m², main street, unmapped` | 5 | 0.02% | 97.69% | 0.09% | 83.13% | — | 2156.0 |
+| 148 | `5–13 storeys, 1,500–5,000 m², podium, main street, shop front, commercial` | 5 | 0.02% | 97.71% | 0.15% | 83.29% | — | 3754.8 |
+| 149 | `5–13 storeys, 200–500 m², main street, shop front, commercial` | 5 | 0.02% | 97.74% | 0.02% | 83.30% | — | 375.5 |
+| 150 | `5–13 storeys, 5,000–20,000 m², main street, shop front, commercial` | 5 | 0.02% | 97.76% | 0.35% | 83.65% | — | 8611.8 |
+| 151 | `5–13 storeys, 5,000–20,000 m², podium, main street, institutional` | 5 | 0.02% | 97.78% | 0.45% | 84.11% | — | 10562.1 |
+| 152 | `1.5–2.5 storeys, 200–500 m², main street, residential` | 4 | 0.02% | 97.80% | 0.01% | 84.12% | — | 302.0 |
+| 153 | `1.5–2.5 storeys, 200–500 m², side street, shop front, commercial` | 4 | 0.02% | 97.81% | 0.01% | 84.13% | — | 224.8 |
+| 154 | `1.5–2.5 storeys, 500–1,500 m², side street, unmapped` | 4 | 0.02% | 97.83% | 0.03% | 84.16% | — | 908.5 |
+| 155 | `13+ storeys, 1,500–5,000 m², podium, side street, shop front, commercial` | 4 | 0.02% | 97.85% | 0.11% | 84.27% | — | 3441.9 |
+| 156 | `13+ storeys, 1,500–5,000 m², side street, institutional` | 4 | 0.02% | 97.87% | 0.12% | 84.39% | — | 4038.6 |
+| 157 | `13+ storeys, 5,000–20,000 m², podium, side street, institutional` | 4 | 0.02% | 97.88% | 0.26% | 84.65% | — | 5841.8 |
+| 158 | `13+ storeys, 5,000–20,000 m², podium, side street, residential` | 4 | 0.02% | 97.90% | 0.27% | 84.92% | — | 6506.2 |
+| 159 | `13+ storeys, 5,000–20,000 m², side street, residential` | 4 | 0.02% | 97.92% | 0.37% | 85.29% | — | 6638.5 |
+| 160 | `13+ storeys, 500–1,500 m², podium, main street, apartments` | 4 | 0.02% | 97.94% | 0.04% | 85.33% | — | 1195.6 |
+| 161 | `13+ storeys, 500–1,500 m², podium, side street, residential` | 4 | 0.02% | 97.96% | 0.04% | 85.37% | — | 988.4 |
+| 162 | `13+ storeys, 500–1,500 m², side street, shop front, commercial` | 4 | 0.02% | 97.97% | 0.04% | 85.41% | — | 1249.1 |
+| 163 | `2.5–3 storeys, 200–500 m², side street, apartments` | 4 | 0.02% | 97.99% | 0.01% | 85.42% | — | 240.9 |
+| 164 | `2.5–3 storeys, 500–1,500 m², side street, shop front, commercial` | 4 | 0.02% | 98.01% | 0.03% | 85.45% | — | 602.0 |
+| 165 | `2.5–3 storeys, 500–1,500 m², side street, unmapped` | 4 | 0.02% | 98.03% | 0.02% | 85.47% | — | 659.3 |
+| 166 | `3–5 storeys, 1,500–5,000 m², main street, apartments` | 4 | 0.02% | 98.04% | 0.08% | 85.55% | — | 1982.0 |
+| 167 | `3–5 storeys, 1,500–5,000 m², side street, unmapped` | 4 | 0.02% | 98.06% | 0.11% | 85.66% | — | 3281.0 |
+| 168 | `3–5 storeys, 200–500 m², main street, unmapped` | 4 | 0.02% | 98.08% | 0.01% | 85.68% | — | 304.6 |
+| 169 | `3–5 storeys, 200–500 m², side street, industrial` | 4 | 0.02% | 98.10% | 0.01% | 85.69% | — | 305.0 |
+| 170 | `3–5 storeys, 200–500 m², side street, outbuilding` | 4 | 0.02% | 98.11% | 0.01% | 85.70% | — | 289.4 |
+| 171 | `3–5 storeys, 5,000–20,000 m², main street, residential` | 4 | 0.02% | 98.13% | 0.20% | 85.89% | — | 5431.0 |
+| 172 | `5–13 storeys, 1,500–5,000 m², side street, industrial` | 4 | 0.02% | 98.15% | 0.09% | 85.98% | — | 1835.6 |
+| 173 | `5–13 storeys, 1,500–5,000 m², side street, shop front, residential` | 4 | 0.02% | 98.17% | 0.10% | 86.08% | — | 2562.0 |
+| 174 | `5–13 storeys, 5,000–20,000 m², main street, shop front, residential` | 4 | 0.02% | 98.18% | 0.24% | 86.32% | — | 6196.5 |
+| 175 | `5–13 storeys, 5,000–20,000 m², side street, apartments` | 4 | 0.02% | 98.20% | 0.26% | 86.58% | — | 6517.9 |
+| 176 | `5–13 storeys, 5,000–20,000 m², side street, other` | 4 | 0.02% | 98.22% | 0.30% | 86.89% | — | 6245.9 |
+| 177 | `5–13 storeys, 500–1,500 m², podium, side street, residential` | 4 | 0.02% | 98.24% | 0.04% | 86.92% | — | 847.1 |
+| 178 | `5–13 storeys, 500–1,500 m², side street, unmapped` | 4 | 0.02% | 98.25% | 0.04% | 86.96% | — | 1067.2 |
+| 179 | `5–13 storeys, under 200 m², side street, shop front, commercial` | 4 | 0.02% | 98.27% | 0.00% | 86.97% | — | 118.4 |
+| 180 | `under 1.5 storeys, under 200 m², side street, institutional` | 4 | 0.02% | 98.29% | 0.00% | 86.97% | — | 74.9 |
+| 181 | `under 1.5 storeys, under 200 m², side street, outbuilding` | 4 | 0.02% | 98.31% | 0.00% | 86.97% | — | 111.7 |
+| 182 | `1.5–2.5 storeys, 500–1,500 m², side street, industrial` | 3 | 0.01% | 98.32% | 0.03% | 87.00% | — | 1275.3 |
+| 183 | `1.5–2.5 storeys, under 200 m², side street, apartments` | 3 | 0.01% | 98.33% | 0.00% | 87.00% | — | 86.0 |
+| 184 | `13+ storeys, 1,500–5,000 m², main street, worship` | 3 | 0.01% | 98.35% | 0.05% | 87.05% | — | 1738.7 |
+| 185 | `13+ storeys, 1,500–5,000 m², podium, main street, shop front, apartments` | 3 | 0.01% | 98.36% | 0.09% | 87.14% | — | 3881.8 |
+| 186 | `13+ storeys, 200–500 m², main street, shop front, commercial` | 3 | 0.01% | 98.37% | 0.01% | 87.15% | — | 427.3 |
+| 187 | `13+ storeys, 5,000–20,000 m², podium, main street, shop front, residential` | 3 | 0.01% | 98.39% | 0.25% | 87.39% | — | 5921.3 |
+| 188 | `13+ storeys, 500–1,500 m², podium, main street, residential` | 3 | 0.01% | 98.40% | 0.03% | 87.42% | — | 1048.2 |
+| 189 | `2.5–3 storeys, 1,500–5,000 m², main street, residential` | 3 | 0.01% | 98.41% | 0.08% | 87.50% | — | 2417.8 |
+| 190 | `2.5–3 storeys, 1,500–5,000 m², main street, unmapped` | 3 | 0.01% | 98.43% | 0.06% | 87.55% | — | 2149.0 |
+| 191 | `2.5–3 storeys, 1,500–5,000 m², side street, residential` | 3 | 0.01% | 98.44% | 0.05% | 87.60% | — | 1890.3 |
+| 192 | `2.5–3 storeys, 200–500 m², main street, residential` | 3 | 0.01% | 98.45% | 0.01% | 87.61% | — | 264.8 |
+| 193 | `2.5–3 storeys, 200–500 m², side street, industrial` | 3 | 0.01% | 98.47% | 0.01% | 87.62% | — | 376.5 |
+| 194 | `2.5–3 storeys, 200–500 m², side street, institutional` | 3 | 0.01% | 98.48% | 0.01% | 87.63% | — | 345.6 |
+| 195 | `2.5–3 storeys, 500–1,500 m², side street, institutional` | 3 | 0.01% | 98.49% | 0.03% | 87.65% | — | 1166.2 |
+| 196 | `2.5–3 storeys, under 200 m², side street, outbuilding` | 3 | 0.01% | 98.50% | 0.00% | 87.66% | — | 80.3 |
+| 197 | `3–5 storeys, 1,500–5,000 m², side street, industrial` | 3 | 0.01% | 98.52% | 0.07% | 87.72% | — | 2051.4 |
+| 198 | `3–5 storeys, 1,500–5,000 m², side street, outbuilding` | 3 | 0.01% | 98.53% | 0.07% | 87.80% | — | 2955.9 |
+| 199 | `3–5 storeys, 1,500–5,000 m², side street, shop front, residential` | 3 | 0.01% | 98.54% | 0.05% | 87.85% | — | 2123.6 |
+| 200 | `3–5 storeys, 200–500 m², main street, institutional` | 3 | 0.01% | 98.56% | 0.01% | 87.86% | — | 384.5 |
+| 201 | `3–5 storeys, 200–500 m², main street, shop front, residential` | 3 | 0.01% | 98.57% | 0.01% | 87.87% | — | 406.5 |
+| 202 | `3–5 storeys, 5,000–20,000 m², main street, shop front, commercial` | 3 | 0.01% | 98.58% | 0.16% | 88.02% | — | 6134.8 |
+| 203 | `3–5 storeys, 5,000–20,000 m², main street, shop front, residential` | 3 | 0.01% | 98.60% | 0.25% | 88.27% | — | 9079.3 |
+| 204 | `3–5 storeys, 5,000–20,000 m², side street, shop front, commercial` | 3 | 0.01% | 98.61% | 0.21% | 88.48% | — | 6380.1 |
+| 205 | `3–5 storeys, 500–1,500 m², podium, side street, residential` | 3 | 0.01% | 98.62% | 0.03% | 88.50% | — | 922.0 |
+| 206 | `3–5 storeys, 500–1,500 m², side street, other` | 3 | 0.01% | 98.64% | 0.02% | 88.53% | — | 980.6 |
+| 207 | `3–5 storeys, 500–1,500 m², side street, outbuilding` | 3 | 0.01% | 98.65% | 0.03% | 88.55% | — | 1190.5 |
+| 208 | `5–13 storeys, 1,500–5,000 m², main street, outbuilding` | 3 | 0.01% | 98.66% | 0.08% | 88.63% | — | 2898.3 |
+| 209 | `5–13 storeys, 1,500–5,000 m², side street, other` | 3 | 0.01% | 98.68% | 0.04% | 88.67% | — | 1524.6 |
+| 210 | `5–13 storeys, 200–500 m², side street, industrial` | 3 | 0.01% | 98.69% | 0.01% | 88.68% | — | 469.5 |
+| 211 | `5–13 storeys, 200–500 m², side street, outbuilding` | 3 | 0.01% | 98.70% | 0.01% | 88.69% | — | 425.1 |
+| 212 | `5–13 storeys, 5,000–20,000 m², main street, apartments` | 3 | 0.01% | 98.72% | 0.24% | 88.93% | — | 9790.5 |
+| 213 | `5–13 storeys, 5,000–20,000 m², podium, side street, apartments` | 3 | 0.01% | 98.73% | 0.19% | 89.12% | — | 6734.0 |
+| 214 | `5–13 storeys, 5,000–20,000 m², podium, side street, residential` | 3 | 0.01% | 98.74% | 0.18% | 89.29% | — | 7012.4 |
+| 215 | `5–13 storeys, 500–1,500 m², main street, shop front, residential` | 3 | 0.01% | 98.76% | 0.02% | 89.32% | — | 1009.0 |
+| 216 | `5–13 storeys, 500–1,500 m², main street, unmapped` | 3 | 0.01% | 98.77% | 0.03% | 89.35% | — | 1183.9 |
+| 217 | `5–13 storeys, 500–1,500 m², podium, main street, apartments` | 3 | 0.01% | 98.78% | 0.02% | 89.37% | — | 786.9 |
+| 218 | `5–13 storeys, 500–1,500 m², podium, main street, residential` | 3 | 0.01% | 98.80% | 0.03% | 89.40% | — | 1117.3 |
+| 219 | `5–13 storeys, 500–1,500 m², podium, side street, worship` | 3 | 0.01% | 98.81% | 0.03% | 89.43% | — | 1416.7 |
+| 220 | `5–13 storeys, 500–1,500 m², side street, outbuilding` | 3 | 0.01% | 98.82% | 0.02% | 89.45% | — | 644.9 |
+| 221 | `5–13 storeys, under 200 m², side street, unmapped` | 3 | 0.01% | 98.83% | 0.00% | 89.45% | — | 16.7 |
+| 222 | `5–13 storeys, under 200 m², side street, worship` | 3 | 0.01% | 98.85% | 0.00% | 89.45% | — | 61.4 |
+| 223 | `1.5–2.5 storeys, 1,500–5,000 m², main street, residential` | 2 | 0.01% | 98.86% | 0.05% | 89.50% | — | 1695.3 |
+| 224 | `1.5–2.5 storeys, 200–500 m², main street, outbuilding` | 2 | 0.01% | 98.87% | 0.00% | 89.50% | — | 249.5 |
+| 225 | `1.5–2.5 storeys, 200–500 m², side street, apartments` | 2 | 0.01% | 98.87% | 0.01% | 89.51% | — | 396.7 |
+| 226 | `1.5–2.5 storeys, 200–500 m², side street, outbuilding` | 2 | 0.01% | 98.88% | 0.01% | 89.51% | — | 266.5 |
+| 227 | `1.5–2.5 storeys, under 200 m², side street, residential` | 2 | 0.01% | 98.89% | 0.00% | 89.52% | — | 95.3 |
+| 228 | `13+ storeys, 1,500–5,000 m², main street, institutional` | 2 | 0.01% | 98.90% | 0.04% | 89.56% | — | 2010.2 |
+| 229 | `13+ storeys, 1,500–5,000 m², podium, main street, shop front, residential` | 2 | 0.01% | 98.91% | 0.05% | 89.61% | — | 2603.3 |
+| 230 | `13+ storeys, 1,500–5,000 m², podium, main street, unmapped` | 2 | 0.01% | 98.92% | 0.06% | 89.67% | — | 2931.9 |
+| 231 | `13+ storeys, 1,500–5,000 m², side street, outbuilding` | 2 | 0.01% | 98.93% | 0.04% | 89.71% | — | 1655.4 |
+| 232 | `13+ storeys, 1,500–5,000 m², side street, shop front, apartments` | 2 | 0.01% | 98.94% | 0.06% | 89.76% | — | 1889.2 |
+| 233 | `13+ storeys, 1,500–5,000 m², side street, shop front, residential` | 2 | 0.01% | 98.94% | 0.05% | 89.81% | — | 2476.4 |
+| 234 | `13+ storeys, 1,500–5,000 m², side street, unmapped` | 2 | 0.01% | 98.95% | 0.04% | 89.85% | — | 1873.4 |
+| 235 | `13+ storeys, 20,000+ m², main street, shop front, commercial` | 2 | 0.01% | 98.96% | 0.42% | 90.27% | — | 23383.2 |
+| 236 | `13+ storeys, 5,000–20,000 m², podium, main street, institutional` | 2 | 0.01% | 98.97% | 0.16% | 90.42% | — | 7941.2 |
+| 237 | `13+ storeys, 5,000–20,000 m², podium, side street, shop front, apartments` | 2 | 0.01% | 98.98% | 0.11% | 90.53% | — | 6197.5 |
+| 238 | `13+ storeys, 5,000–20,000 m², podium, side street, shop front, commercial` | 2 | 0.01% | 98.99% | 0.18% | 90.71% | — | 5972.1 |
+| 239 | `13+ storeys, 5,000–20,000 m², podium, side street, shop front, residential` | 2 | 0.01% | 99.00% | 0.18% | 90.89% | — | 8908.8 |
+| 240 | `13+ storeys, 500–1,500 m², side street, worship` | 2 | 0.01% | 99.01% | 0.02% | 90.92% | — | 1422.1 |
+| 241 | `13+ storeys, under 200 m², side street, residential` | 2 | 0.01% | 99.01% | 0.00% | 90.92% | — | 98.8 |
+| 242 | `2.5–3 storeys, 1,500–5,000 m², side street, unmapped` | 2 | 0.01% | 99.02% | 0.06% | 90.98% | — | 2914.5 |
 | 243 | `2.5–3 storeys, 200–500 m², main street, worship` | 2 | 0.01% | 99.03% | 0.00% | 90.98% | — | 256.7 |
-| 244 | `2.5–3 storeys, 200–500 m², side street, unmapped` | 2 | 0.01% | 99.04% | 0.01% | 90.98% | — | 253.4 |
+| 244 | `2.5–3 storeys, 200–500 m², side street, unmapped` | 2 | 0.01% | 99.04% | 0.01% | 90.99% | — | 253.4 |
 | 245 | `2.5–3 storeys, 200–500 m², side street, worship` | 2 | 0.01% | 99.05% | 0.00% | 90.99% | — | 246.6 |
 | 246 | `2.5–3 storeys, under 200 m², main street, apartments` | 2 | 0.01% | 99.06% | 0.00% | 90.99% | — | 174.3 |
 | 247 | `3–5 storeys, 1,500–5,000 m², main street, industrial` | 2 | 0.01% | 99.07% | 0.04% | 91.03% | — | 2112.2 |
@@ -405,9 +405,9 @@ cumulative column is the share of buildings covered by all forms up to that row.
 | 250 | `3–5 storeys, 5,000–20,000 m², main street, apartments` | 2 | 0.01% | 99.09% | 0.10% | 91.21% | — | 5833.7 |
 | 251 | `3–5 storeys, 5,000–20,000 m², podium, main street, residential` | 2 | 0.01% | 99.10% | 0.10% | 91.31% | — | 5055.2 |
 | 252 | `3–5 storeys, 5,000–20,000 m², side street, institutional` | 2 | 0.01% | 99.11% | 0.11% | 91.41% | — | 5195.3 |
-| 253 | `3–5 storeys, 5,000–20,000 m², side street, unmapped` | 2 | 0.01% | 99.12% | 0.17% | 91.58% | — | 6199.1 |
-| 254 | `3–5 storeys, 500–1,500 m², main street, industrial` | 2 | 0.01% | 99.13% | 0.01% | 91.59% | — | 512.7 |
-| 255 | `3–5 storeys, 500–1,500 m², main street, shop front, apartments` | 2 | 0.01% | 99.14% | 0.01% | 91.60% | — | 593.1 |
+| 253 | `3–5 storeys, 5,000–20,000 m², side street, unmapped` | 2 | 0.01% | 99.12% | 0.17% | 91.59% | — | 6199.1 |
+| 254 | `3–5 storeys, 500–1,500 m², main street, industrial` | 2 | 0.01% | 99.13% | 0.01% | 91.60% | — | 512.7 |
+| 255 | `3–5 storeys, 500–1,500 m², main street, shop front, apartments` | 2 | 0.01% | 99.14% | 0.01% | 91.61% | — | 593.1 |
 | 256 | `3–5 storeys, 500–1,500 m², podium, side street, institutional` | 2 | 0.01% | 99.15% | 0.01% | 91.62% | — | 600.6 |
 | 257 | `3–5 storeys, under 200 m², side street, worship` | 2 | 0.01% | 99.16% | 0.00% | 91.62% | — | 89.8 |
 | 258 | `5–13 storeys, 1,500–5,000 m², main street, industrial` | 2 | 0.01% | 99.16% | 0.06% | 91.68% | — | 2240.0 |
@@ -416,12 +416,12 @@ cumulative column is the share of buildings covered by all forms up to that row.
 | 261 | `5–13 storeys, 1,500–5,000 m², side street, unmapped` | 2 | 0.01% | 99.19% | 0.04% | 91.83% | — | 2046.3 |
 | 262 | `5–13 storeys, 200–500 m², main street, institutional` | 2 | 0.01% | 99.20% | 0.01% | 91.83% | — | 318.3 |
 | 263 | `5–13 storeys, 200–500 m², main street, other` | 2 | 0.01% | 99.21% | 0.01% | 91.84% | — | 224.1 |
-| 264 | `5–13 storeys, 200–500 m², main street, unmapped` | 2 | 0.01% | 99.22% | 0.01% | 91.84% | — | 279.2 |
+| 264 | `5–13 storeys, 200–500 m², main street, unmapped` | 2 | 0.01% | 99.22% | 0.01% | 91.85% | — | 279.2 |
 | 265 | `5–13 storeys, 200–500 m², main street, worship` | 2 | 0.01% | 99.23% | 0.01% | 91.85% | — | 414.6 |
 | 266 | `5–13 storeys, 200–500 m², side street, shop front, residential` | 2 | 0.01% | 99.23% | 0.01% | 91.86% | — | 311.6 |
 | 267 | `5–13 storeys, 5,000–20,000 m², main street, industrial` | 2 | 0.01% | 99.24% | 0.17% | 92.03% | — | 6968.8 |
 | 268 | `5–13 storeys, 5,000–20,000 m², podium, main street, residential` | 2 | 0.01% | 99.25% | 0.13% | 92.16% | — | 6815.7 |
-| 269 | `5–13 storeys, 5,000–20,000 m², side street, shop front, residential` | 2 | 0.01% | 99.26% | 0.13% | 92.29% | — | 7569.8 |
+| 269 | `5–13 storeys, 5,000–20,000 m², side street, shop front, residential` | 2 | 0.01% | 99.26% | 0.13% | 92.30% | — | 7569.8 |
 | 270 | `5–13 storeys, 5,000–20,000 m², side street, unmapped` | 2 | 0.01% | 99.27% | 0.15% | 92.44% | — | 6507.6 |
 | 271 | `5–13 storeys, 500–1,500 m², side street, industrial` | 2 | 0.01% | 99.28% | 0.02% | 92.46% | — | 1282.1 |
 | 272 | `5–13 storeys, 500–1,500 m², side street, other` | 2 | 0.01% | 99.29% | 0.02% | 92.48% | — | 937.1 |
@@ -435,11 +435,11 @@ cumulative column is the share of buildings covered by all forms up to that row.
 | 280 | `1.5–2.5 storeys, 1,500–5,000 m², side street, outbuilding` | 1 | 0.00% | 99.34% | 0.02% | 92.60% | — | 2300.3 |
 | 281 | `1.5–2.5 storeys, 1,500–5,000 m², side street, residential` | 1 | 0.00% | 99.34% | 0.01% | 92.61% | — | 1530.5 |
 | 282 | `1.5–2.5 storeys, 200–500 m², main street, industrial` | 1 | 0.00% | 99.35% | 0.00% | 92.61% | — | 259.9 |
-| 283 | `1.5–2.5 storeys, 200–500 m², main street, worship` | 1 | 0.00% | 99.35% | 0.00% | 92.61% | — | 265.6 |
+| 283 | `1.5–2.5 storeys, 200–500 m², main street, worship` | 1 | 0.00% | 99.35% | 0.00% | 92.62% | — | 265.6 |
 | 284 | `1.5–2.5 storeys, 200–500 m², side street, industrial` | 1 | 0.00% | 99.36% | 0.00% | 92.62% | — | 351.0 |
 | 285 | `1.5–2.5 storeys, 200–500 m², side street, other` | 1 | 0.00% | 99.36% | 0.00% | 92.62% | — | 289.6 |
 | 286 | `1.5–2.5 storeys, 5,000–20,000 m², side street, residential` | 1 | 0.00% | 99.37% | 0.06% | 92.68% | — | 7133.5 |
-| 287 | `1.5–2.5 storeys, 500–1,500 m², main street, outbuilding` | 1 | 0.00% | 99.37% | 0.00% | 92.68% | — | 579.4 |
+| 287 | `1.5–2.5 storeys, 500–1,500 m², main street, outbuilding` | 1 | 0.00% | 99.37% | 0.00% | 92.69% | — | 579.4 |
 | 288 | `1.5–2.5 storeys, 500–1,500 m², main street, shop front, commercial` | 1 | 0.00% | 99.38% | 0.01% | 92.69% | — | 620.0 |
 | 289 | `1.5–2.5 storeys, 500–1,500 m², main street, shop front, residential` | 1 | 0.00% | 99.38% | 0.01% | 92.70% | — | 991.4 |
 | 290 | `1.5–2.5 storeys, 500–1,500 m², podium, main street, residential` | 1 | 0.00% | 99.38% | 0.01% | 92.71% | — | 1141.3 |
@@ -447,19 +447,19 @@ cumulative column is the share of buildings covered by all forms up to that row.
 | 292 | `1.5–2.5 storeys, 500–1,500 m², side street, outbuilding` | 1 | 0.00% | 99.39% | 0.01% | 92.72% | — | 993.3 |
 | 293 | `1.5–2.5 storeys, under 200 m², main street, unmapped` | 1 | 0.00% | 99.40% | 0.00% | 92.72% | — | 169.6 |
 | 294 | `1.5–2.5 storeys, under 200 m², side street, industrial` | 1 | 0.00% | 99.40% | 0.00% | 92.72% | — | 83.0 |
-| 295 | `1.5–2.5 storeys, under 200 m², side street, institutional` | 1 | 0.00% | 99.41% | 0.00% | 92.72% | — | 161.2 |
+| 295 | `1.5–2.5 storeys, under 200 m², side street, institutional` | 1 | 0.00% | 99.41% | 0.00% | 92.73% | — | 161.2 |
 | 296 | `13+ storeys, 1,500–5,000 m², main street, other` | 1 | 0.00% | 99.41% | 0.02% | 92.74% | — | 1904.9 |
 | 297 | `13+ storeys, 1,500–5,000 m², main street, shop front, residential` | 1 | 0.00% | 99.42% | 0.03% | 92.77% | — | 3242.5 |
 | 298 | `13+ storeys, 1,500–5,000 m², main street, unmapped` | 1 | 0.00% | 99.42% | 0.03% | 92.80% | — | 3935.4 |
 | 299 | `13+ storeys, 1,500–5,000 m², podium, main street, institutional` | 1 | 0.00% | 99.42% | 0.03% | 92.83% | — | 3901.2 |
-| 300 | `13+ storeys, 1,500–5,000 m², podium, main street, other` | 1 | 0.00% | 99.43% | 0.04% | 92.87% | — | 4944.2 |
+| 300 | `13+ storeys, 1,500–5,000 m², podium, main street, other` | 1 | 0.00% | 99.43% | 0.04% | 92.88% | — | 4944.2 |
 | 301 | `13+ storeys, 1,500–5,000 m², podium, main street, worship` | 1 | 0.00% | 99.43% | 0.01% | 92.89% | — | 1615.6 |
 | 302 | `13+ storeys, 1,500–5,000 m², podium, side street, institutional` | 1 | 0.00% | 99.44% | 0.04% | 92.93% | — | 4634.7 |
-| 303 | `13+ storeys, 1,500–5,000 m², podium, side street, shop front, apartments` | 1 | 0.00% | 99.44% | 0.02% | 92.94% | — | 2155.3 |
+| 303 | `13+ storeys, 1,500–5,000 m², podium, side street, shop front, apartments` | 1 | 0.00% | 99.44% | 0.02% | 92.95% | — | 2155.3 |
 | 304 | `13+ storeys, 1,500–5,000 m², podium, side street, shop front, residential` | 1 | 0.00% | 99.45% | 0.04% | 92.99% | — | 4933.6 |
 | 305 | `13+ storeys, 1,500–5,000 m², podium, side street, unmapped` | 1 | 0.00% | 99.45% | 0.02% | 93.00% | — | 1935.0 |
 | 306 | `13+ storeys, 1,500–5,000 m², side street, industrial` | 1 | 0.00% | 99.45% | 0.01% | 93.02% | — | 1659.2 |
-| 307 | `13+ storeys, 1,500–5,000 m², side street, other` | 1 | 0.00% | 99.46% | 0.03% | 93.04% | — | 3484.1 |
+| 307 | `13+ storeys, 1,500–5,000 m², side street, other` | 1 | 0.00% | 99.46% | 0.03% | 93.05% | — | 3484.1 |
 | 308 | `13+ storeys, 1,500–5,000 m², side street, worship` | 1 | 0.00% | 99.46% | 0.01% | 93.06% | — | 1668.6 |
 | 309 | `13+ storeys, 20,000+ m², main street, residential` | 1 | 0.00% | 99.47% | 0.21% | 93.27% | — | 24888.7 |
 | 310 | `13+ storeys, 20,000+ m², podium, main street, apartments` | 1 | 0.00% | 99.47% | 0.20% | 93.47% | — | 24351.2 |
@@ -473,7 +473,7 @@ cumulative column is the share of buildings covered by all forms up to that row.
 | 318 | `13+ storeys, 20,000+ m², side street, residential` | 1 | 0.00% | 99.51% | 0.21% | 95.35% | — | 25681.3 |
 | 319 | `13+ storeys, 20,000+ m², side street, shop front, commercial` | 1 | 0.00% | 99.51% | 0.27% | 95.62% | — | 31732.2 |
 | 320 | `13+ storeys, 200–500 m², main street, residential` | 1 | 0.00% | 99.52% | 0.00% | 95.62% | — | 472.0 |
-| 321 | `13+ storeys, 200–500 m², side street, shop front, commercial` | 1 | 0.00% | 99.52% | 0.00% | 95.62% | — | 364.8 |
+| 321 | `13+ storeys, 200–500 m², side street, shop front, commercial` | 1 | 0.00% | 99.52% | 0.00% | 95.63% | — | 364.8 |
 | 322 | `13+ storeys, 5,000–20,000 m², main street, other` | 1 | 0.00% | 99.53% | 0.04% | 95.67% | — | 5378.0 |
 | 323 | `13+ storeys, 5,000–20,000 m², main street, unmapped` | 1 | 0.00% | 99.53% | 0.05% | 95.72% | — | 6041.1 |
 | 324 | `13+ storeys, 5,000–20,000 m², podium, main street, other` | 1 | 0.00% | 99.53% | 0.04% | 95.76% | — | 5236.6 |
@@ -487,7 +487,7 @@ cumulative column is the share of buildings covered by all forms up to that row.
 | 332 | `13+ storeys, 500–1,500 m², main street, institutional` | 1 | 0.00% | 99.57% | 0.01% | 96.28% | — | 1435.1 |
 | 333 | `13+ storeys, 500–1,500 m², podium, main street, institutional` | 1 | 0.00% | 99.57% | 0.01% | 96.28% | — | 1012.9 |
 | 334 | `13+ storeys, 500–1,500 m², podium, main street, shop front, commercial` | 1 | 0.00% | 99.58% | 0.01% | 96.30% | — | 1382.8 |
-| 335 | `13+ storeys, 500–1,500 m², side street, industrial` | 1 | 0.00% | 99.58% | 0.01% | 96.30% | — | 1063.6 |
+| 335 | `13+ storeys, 500–1,500 m², side street, industrial` | 1 | 0.00% | 99.58% | 0.01% | 96.31% | — | 1063.6 |
 | 336 | `13+ storeys, 500–1,500 m², side street, institutional` | 1 | 0.00% | 99.59% | 0.01% | 96.31% | — | 1137.5 |
 | 337 | `13+ storeys, 500–1,500 m², side street, outbuilding` | 1 | 0.00% | 99.59% | 0.01% | 96.32% | — | 796.9 |
 | 338 | `13+ storeys, 500–1,500 m², side street, shop front, residential` | 1 | 0.00% | 99.60% | 0.01% | 96.33% | — | 1420.7 |
@@ -497,15 +497,15 @@ cumulative column is the share of buildings covered by all forms up to that row.
 | 342 | `2.5–3 storeys, 1,500–5,000 m², podium, main street, residential` | 1 | 0.00% | 99.61% | 0.02% | 96.39% | — | 2085.0 |
 | 343 | `2.5–3 storeys, 1,500–5,000 m², side street, industrial` | 1 | 0.00% | 99.62% | 0.01% | 96.40% | — | 1547.8 |
 | 344 | `2.5–3 storeys, 1,500–5,000 m², side street, shop front, commercial` | 1 | 0.00% | 99.62% | 0.02% | 96.42% | — | 2863.6 |
-| 345 | `2.5–3 storeys, 200–500 m², main street, apartments` | 1 | 0.00% | 99.63% | 0.00% | 96.42% | — | 275.8 |
+| 345 | `2.5–3 storeys, 200–500 m², main street, apartments` | 1 | 0.00% | 99.63% | 0.00% | 96.43% | — | 275.8 |
 | 346 | `2.5–3 storeys, 200–500 m², main street, industrial` | 1 | 0.00% | 99.63% | 0.00% | 96.43% | — | 434.6 |
-| 347 | `2.5–3 storeys, 200–500 m², main street, institutional` | 1 | 0.00% | 99.63% | 0.00% | 96.43% | — | 442.8 |
-| 348 | `2.5–3 storeys, 200–500 m², main street, outbuilding` | 1 | 0.00% | 99.64% | 0.00% | 96.43% | — | 350.0 |
+| 347 | `2.5–3 storeys, 200–500 m², main street, institutional` | 1 | 0.00% | 99.64% | 0.00% | 96.43% | — | 442.8 |
+| 348 | `2.5–3 storeys, 200–500 m², main street, outbuilding` | 1 | 0.00% | 99.64% | 0.00% | 96.44% | — | 350.0 |
 | 349 | `2.5–3 storeys, 200–500 m², main street, unmapped` | 1 | 0.00% | 99.64% | 0.00% | 96.44% | — | 342.9 |
 | 350 | `2.5–3 storeys, 200–500 m², side street, outbuilding` | 1 | 0.00% | 99.65% | 0.00% | 96.44% | — | 459.8 |
 | 351 | `2.5–3 storeys, 5,000–20,000 m², main street, unmapped` | 1 | 0.00% | 99.65% | 0.05% | 96.49% | — | 5706.1 |
 | 352 | `2.5–3 storeys, 5,000–20,000 m², side street, shop front, commercial` | 1 | 0.00% | 99.66% | 0.05% | 96.54% | — | 6082.6 |
-| 353 | `2.5–3 storeys, 500–1,500 m², main street, shop front, residential` | 1 | 0.00% | 99.66% | 0.00% | 96.54% | — | 537.4 |
+| 353 | `2.5–3 storeys, 500–1,500 m², main street, shop front, residential` | 1 | 0.00% | 99.66% | 0.00% | 96.55% | — | 537.4 |
 | 354 | `2.5–3 storeys, 500–1,500 m², podium, main street, residential` | 1 | 0.00% | 99.67% | 0.01% | 96.55% | — | 1097.6 |
 | 355 | `2.5–3 storeys, 500–1,500 m², side street, shop front, residential` | 1 | 0.00% | 99.67% | 0.01% | 96.56% | — | 686.6 |
 | 356 | `2.5–3 storeys, 500–1,500 m², side street, worship` | 1 | 0.00% | 99.67% | 0.01% | 96.57% | — | 1039.9 |
@@ -523,31 +523,31 @@ cumulative column is the share of buildings covered by all forms up to that row.
 | 368 | `3–5 storeys, 200–500 m², main street, industrial` | 1 | 0.00% | 99.73% | 0.00% | 96.94% | — | 398.8 |
 | 369 | `3–5 storeys, 200–500 m², main street, shop front, unmapped` | 1 | 0.00% | 99.73% | 0.00% | 96.94% | — | 380.7 |
 | 370 | `3–5 storeys, 200–500 m², podium, main street, residential` | 1 | 0.00% | 99.74% | 0.00% | 96.94% | — | 472.8 |
-| 371 | `3–5 storeys, 200–500 m², podium, side street, apartments` | 1 | 0.00% | 99.74% | 0.00% | 96.94% | — | 252.9 |
+| 371 | `3–5 storeys, 200–500 m², podium, side street, apartments` | 1 | 0.00% | 99.74% | 0.00% | 96.95% | — | 252.9 |
 | 372 | `3–5 storeys, 200–500 m², side street, shop front, apartments` | 1 | 0.00% | 99.74% | 0.00% | 96.95% | — | 493.7 |
 | 373 | `3–5 storeys, 200–500 m², side street, shop front, residential` | 1 | 0.00% | 99.75% | 0.00% | 96.95% | — | 484.2 |
 | 374 | `3–5 storeys, 5,000–20,000 m², main street, institutional` | 1 | 0.00% | 99.75% | 0.05% | 97.00% | — | 6015.6 |
 | 375 | `3–5 storeys, 5,000–20,000 m², podium, main street, shop front, residential` | 1 | 0.00% | 99.76% | 0.05% | 97.05% | — | 5800.2 |
-| 376 | `3–5 storeys, 5,000–20,000 m², podium, side street, residential` | 1 | 0.00% | 99.76% | 0.07% | 97.12% | — | 8708.2 |
+| 376 | `3–5 storeys, 5,000–20,000 m², podium, side street, residential` | 1 | 0.00% | 99.76% | 0.07% | 97.13% | — | 8708.2 |
 | 377 | `3–5 storeys, 5,000–20,000 m², side street, other` | 1 | 0.00% | 99.77% | 0.08% | 97.20% | — | 9026.2 |
 | 378 | `3–5 storeys, 500–1,500 m², main street, other` | 1 | 0.00% | 99.77% | 0.01% | 97.21% | — | 1431.9 |
 | 379 | `3–5 storeys, 500–1,500 m², main street, outbuilding` | 1 | 0.00% | 99.78% | 0.01% | 97.22% | — | 712.8 |
 | 380 | `3–5 storeys, 500–1,500 m², main street, shop front, worship` | 1 | 0.00% | 99.78% | 0.01% | 97.23% | — | 1230.8 |
-| 381 | `3–5 storeys, 500–1,500 m², podium, main street, institutional` | 1 | 0.00% | 99.78% | 0.01% | 97.23% | — | 783.7 |
+| 381 | `3–5 storeys, 500–1,500 m², podium, main street, institutional` | 1 | 0.00% | 99.78% | 0.01% | 97.24% | — | 783.7 |
 | 382 | `3–5 storeys, 500–1,500 m², podium, main street, unmapped` | 1 | 0.00% | 99.79% | 0.01% | 97.24% | — | 937.6 |
 | 383 | `3–5 storeys, 500–1,500 m², side street, shop front, institutional` | 1 | 0.00% | 99.79% | 0.01% | 97.25% | — | 935.2 |
 | 384 | `3–5 storeys, under 200 m², main street, residential` | 1 | 0.00% | 99.80% | 0.00% | 97.25% | — | 149.1 |
 | 385 | `3–5 storeys, under 200 m², main street, shop front, residential` | 1 | 0.00% | 99.80% | 0.00% | 97.25% | — | 164.3 |
 | 386 | `3–5 storeys, under 200 m², main street, worship` | 1 | 0.00% | 99.81% | 0.00% | 97.25% | — | 82.3 |
 | 387 | `3–5 storeys, under 200 m², podium, side street, apartments` | 1 | 0.00% | 99.81% | 0.00% | 97.25% | — | 16.6 |
-| 388 | `3–5 storeys, under 200 m², side street, industrial` | 1 | 0.00% | 99.82% | 0.00% | 97.25% | — | 77.0 |
+| 388 | `3–5 storeys, under 200 m², side street, industrial` | 1 | 0.00% | 99.82% | 0.00% | 97.26% | — | 77.0 |
 | 389 | `3–5 storeys, under 200 m², side street, shop front, residential` | 1 | 0.00% | 99.82% | 0.00% | 97.26% | — | 181.7 |
 | 390 | `5–13 storeys, 1,500–5,000 m², main street, shop front, institutional` | 1 | 0.00% | 99.82% | 0.02% | 97.28% | — | 2395.3 |
 | 391 | `5–13 storeys, 1,500–5,000 m², main street, shop front, unmapped` | 1 | 0.00% | 99.83% | 0.02% | 97.30% | — | 2967.7 |
 | 392 | `5–13 storeys, 1,500–5,000 m², podium, main street, other` | 1 | 0.00% | 99.83% | 0.02% | 97.32% | — | 2047.6 |
 | 393 | `5–13 storeys, 1,500–5,000 m², podium, main street, shop front, apartments` | 1 | 0.00% | 99.84% | 0.03% | 97.35% | — | 3895.7 |
 | 394 | `5–13 storeys, 1,500–5,000 m², podium, main street, shop front, residential` | 1 | 0.00% | 99.84% | 0.04% | 97.39% | — | 4432.7 |
-| 395 | `5–13 storeys, 1,500–5,000 m², podium, side street, shop front, commercial` | 1 | 0.00% | 99.85% | 0.02% | 97.40% | — | 2066.3 |
+| 395 | `5–13 storeys, 1,500–5,000 m², podium, side street, shop front, commercial` | 1 | 0.00% | 99.85% | 0.02% | 97.41% | — | 2066.3 |
 | 396 | `5–13 storeys, 1,500–5,000 m², podium, side street, worship` | 1 | 0.00% | 99.85% | 0.02% | 97.42% | — | 1929.4 |
 | 397 | `5–13 storeys, 1,500–5,000 m², side street, shop front, apartments` | 1 | 0.00% | 99.85% | 0.03% | 97.45% | — | 3765.8 |
 | 398 | `5–13 storeys, 1,500–5,000 m², side street, shop front, institutional` | 1 | 0.00% | 99.86% | 0.02% | 97.47% | — | 2167.0 |
@@ -592,7 +592,7 @@ edges), or the widest record's narrow side when it has no street edge. Area is t
 | form | storeys | buildings | records | width p10 | width median | width p90 | area p10 | area median | area p90 |
 |---|---|---|---|---|---|---|---|---|---|
 | detached | 1 | 613 | 613 | 5.1 | 8.3 | 15.9 | 60.3 | 97.6 | 161.6 |
-| detached | 1.5 | 1,239 | 1,239 | 4.9 | 7.3 | 14.9 | 70.3 | 102.6 | 162.5 |
+| detached | 1.5 | 1,240 | 1,240 | 4.9 | 7.3 | 14.9 | 70.3 | 102.6 | 162.5 |
 | detached | 2 | 3,422 | 3,422 | 4.9 | 7.0 | 13.3 | 77.1 | 107.1 | 164.1 |
 | detached | 2.5 | 2,752 | 2,752 | 5.1 | 7.4 | 14.4 | 81.1 | 114.2 | 176.0 |
 | detached | 3+ | 1,142 | 1,142 | 5.0 | 7.7 | 18.0 | 75.5 | 114.8 | 184.4 |
@@ -607,7 +607,7 @@ edges), or the widest record's narrow side when it has no street edge. Area is t
 | row | 2.5 | 1,092 | 1,716 | 13.8 | 25.9 | 55.8 | 213.3 | 342.6 | 647.1 |
 | row | 3+ | 440 | 614 | 13.5 | 27.9 | 61.4 | 200.6 | 341.4 | 666.8 |
 
-House-scale outlines with no address point: **1,752**. They are counted as detached
+House-scale outlines with no address point: **1,753**. They are counted as detached
 when they have no shared wall, but the address count says nothing about how many dwellings they hold.
 
 ## How the counts move when each threshold moves 20%
@@ -616,24 +616,24 @@ Each row re-derives `buildings/3`'s house-scale flag from the dataset's own per-
 canopy-robust height, use class, shop flag and outbuilding flag, with the three numeric thresholds moved by the factor
 named. The thresholds are the inputs file's `parameters` (the dataset's manifest), not constants here. The dataset's
 group ids and forms do not move, so detached, semi and row move only where a group's every part crosses the line. The
-base row re-derives 22,517 house-scale records, 13 fewer than
-the dataset's own flag (22,530), because the compact file stores footprints and heights to 0.1 m
+base row re-derives 22,519 house-scale records, 13 fewer than
+the dataset's own flag (22,532), because the compact file stores footprints and heights to 0.1 m
 and 13 records sit on a threshold. "House buildings" here counts every joined group whose
 parts are all house-scale, 15 more than the report's house buildings,
 which also require the dataset's form to be detached, semi or row; at the base row detached + semi + row total
-18,408, 1 from the report's, by the same rounding.
+18,409, 1 from the report's, by the same rounding.
 
 | change | max per dwelling (m²) | max total area (m²) | max canopy height (m) | house-scale records | house buildings | detached | semi | row | non-house buildings |
 |---|---|---|---|---|---|---|---|---|---|
-| base | 250.0 | 800.0 | 11.0 | 22,517 | 18,424 | 9,167 | 6,291 | 2,950 | 4,313 |
-| per-dwelling +20% | 300.0 | 800.0 | 11.0 | 22,787 | 18,610 | 9,167 | 6,291 | 2,950 | 4,127 |
-| per-dwelling −20% | 200.0 | 800.0 | 11.0 | 21,916 | 17,966 | 8,791 | 6,249 | 2,911 | 4,771 |
-| total area +20% | 250.0 | 960.0 | 11.0 | 22,624 | 18,499 | 9,167 | 6,291 | 2,950 | 4,238 |
-| total area −20% | 250.0 | 640.0 | 11.0 | 22,303 | 18,258 | 9,167 | 6,291 | 2,784 | 4,479 |
-| canopy height +20% | 250.0 | 800.0 | 13.2 | 22,674 | 18,470 | 9,168 | 6,291 | 2,950 | 4,267 |
-| canopy height −20% | 250.0 | 800.0 | 8.8 | 20,643 | 16,993 | 8,621 | 5,810 | 2,551 | 5,744 |
-| all three +20% | 300.0 | 960.0 | 13.2 | 23,075 | 18,746 | 9,168 | 6,291 | 2,950 | 3,991 |
-| all three −20% | 200.0 | 640.0 | 8.8 | 19,996 | 16,500 | 8,303 | 5,779 | 2,407 | 6,237 |
+| base | 250.0 | 800.0 | 11.0 | 22,519 | 18,425 | 9,168 | 6,291 | 2,950 | 4,315 |
+| per-dwelling +20% | 300.0 | 800.0 | 11.0 | 22,789 | 18,611 | 9,168 | 6,291 | 2,950 | 4,129 |
+| per-dwelling −20% | 200.0 | 800.0 | 11.0 | 21,917 | 17,967 | 8,792 | 6,249 | 2,911 | 4,773 |
+| total area +20% | 250.0 | 960.0 | 11.0 | 22,626 | 18,500 | 9,168 | 6,291 | 2,950 | 4,240 |
+| total area −20% | 250.0 | 640.0 | 11.0 | 22,305 | 18,259 | 9,168 | 6,291 | 2,784 | 4,481 |
+| canopy height +20% | 250.0 | 800.0 | 13.2 | 22,676 | 18,471 | 9,169 | 6,291 | 2,950 | 4,269 |
+| canopy height −20% | 250.0 | 800.0 | 8.8 | 20,644 | 16,994 | 8,622 | 5,810 | 2,551 | 5,746 |
+| all three +20% | 300.0 | 960.0 | 13.2 | 23,077 | 18,747 | 9,169 | 6,291 | 2,950 | 3,993 |
+| all three −20% | 200.0 | 640.0 | 8.8 | 19,997 | 16,501 | 8,304 | 5,779 | 2,407 | 6,239 |
 
 ## Top 25 forms and the preset they most resemble
 
@@ -642,7 +642,7 @@ suggestion is form-only and is a starting point for the prototype list, not an a
 
 | # | form | buildings | worker's suggestion |
 |---|---|---|---|
-| 1 | `house detached` | 9,168 | Wartime one-and-a-half-storey house |
+| 1 | `house detached` | 9,169 | Wartime one-and-a-half-storey house |
 | 2 | `house semi` | 6,291 | Edwardian semi |
 | 3 | `house row` | 2,950 | Modern townhouse row |
 | 4 | `3–5 storeys, 200–500 m², side street, residential` | 221 | Interwar walk-up apartment |
@@ -675,7 +675,7 @@ are six decimals from `js/city-config.js` `latLonFromWorld` (the frame's own inv
 part's MAX_HEIGHT, average height its AVG_HEIGHT, area the building's total footprint, address points the building's
 total.
 
-**house detached** (9,168 buildings)
+**house detached** (9,169 buildings)
 
 | durable ID | lat, lon | height | avg height | area | address points | records |
 |---|---|---|---|---|---|---|
@@ -687,9 +687,9 @@ total.
 | `to-3dmassing-2025:47905` | 43.640746, -79.480561 | 19.9 | 4.7 | 204.8 | 1 | 1 |
 | `to-3dmassing-2025:79221` | 43.654237, -79.453381 | 16.1 | 9.6 | 108.0 | 1 | 1 |
 | `to-3dmassing-2025:105778` | 43.653422, -79.423765 | 11.4 | 8.8 | 126.1 | 1 | 1 |
-| `to-3dmassing-2025:102241` | 43.655395, -79.415596 | 12.4 | 8.5 | 140.9 | 1 | 1 |
+| `to-3dmassing-2025:102239` | 43.661485, -79.412055 | 9.6 | 5.0 | 141.4 | 1 | 1 |
 | `to-3dmassing-2025:101920` | 43.656711, -79.410117 | 12.4 | 6.4 | 214.8 | 1 | 1 |
-| `to-3dmassing-2025:106825` | 43.658435, -79.428640 | 11.1 | 8.7 | 149.6 | 1 | 1 |
+| `to-3dmassing-2025:106824` | 43.656696, -79.427928 | 11.9 | 8.2 | 120.8 | 1 | 1 |
 | `to-3dmassing-2025:79157` | 43.646969, -79.456302 | 10.8 | 7.6 | 110.1 | 1 | 1 |
 
 **house semi** (6,291 buildings)
@@ -934,7 +934,7 @@ total.
 
 ### Every record in exactly one building
 
-Records **35,254**; buildings **22,737**; records in the buildings **35,254**;
+Records **35,259**; buildings **22,740**; records in the buildings **35,259**;
 every record once: **yes**. Building count shares sum to
 **1.000000**; area shares sum to **1.000000**.
 
@@ -943,7 +943,7 @@ every record once: **yes**. Building count shares sum to
 Every sidecar record matched a dataset row: **yes**; no dataset row went to
 two records: **yes**; every group's parts carry one form: **yes**.
 
-### The address-point distribution over the 16,073 kind 0 records
+### The address-point distribution over the 16,075 kind 0 records
 
 The brief's expected distribution (0, 1, 2, 3, 4, 5 or more) is reproduced to within 1% of each expected bucket, now
 from the dataset's address-point counts. The residual is points on shared walls and overlapping outlines: a point
@@ -951,8 +951,8 @@ inside two outlines counts for both, which is what "inside its outline" means.
 
 | address points | expected | actual | difference | within 1% |
 |---|---|---|---|---|
-| 0 | 1,918 | 1,916 | -2 | yes |
-| 1 | 7,983 | 7,986 | +3 | yes |
+| 0 | 1,918 | 1,917 | -1 | yes |
+| 1 | 7,983 | 7,987 | +4 | yes |
 | 2 | 4,800 | 4,797 | -3 | yes |
 | 3 | 703 | 705 | +2 | yes |
 | 4 | 319 | 321 | +2 | yes |
@@ -977,7 +977,7 @@ Records by old kind: house 372; low-rise 103; mid-rise 136; tower 6; shed 11; wo
 - **Address points are dwellings, not households.** A second unit in one house and both halves of a semi both add a
   point; a rooming house may add several. A house-scale outline with no address point is reported separately and
   called detached when it has no shared wall.
-- **A house-scale outline with no address point** (1,752 of them) is called detached
+- **A house-scale outline with no address point** (1,753 of them) is called detached
   when it has no shared wall, but the address count says nothing about how many dwellings it holds; the city's own
   civic addresses may simply not reach it. They are reported separately in the house table.
 - **2 records are the source ring index `.0`.** `to-3dmassing-2025:101713.0`, `to-3dmassing-2025:354892.0`: the source

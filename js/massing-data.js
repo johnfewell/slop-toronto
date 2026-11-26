@@ -29,11 +29,11 @@
 
 import { unpackGeo } from './geodata-loader.js';
 
-export const MASSING_URL = './data/toronto-massing.bin?v=42491c9e73fe'; // (tools/build-massing.mjs sets the hash)
+export const MASSING_URL = './data/toronto-massing.bin?v=cd4be0d95925'; // (tools/build-massing.mjs sets the hash)
 export const MASSING_SCHEMA = 2;
 // each record's MAX_HEIGHT (the lidar maximum: a pitched roof's ridge) and AVG_HEIGHT (its mean) for js/roof-skeleton.js (st-2nl.5): a file of
 // its own, one TGB1 layer HEIGHTS { schema, records, fid, part, maxH, avgH } in the sidecar's record order; only the pages that draw roofs fetch it
-export const HEIGHTS_URL = './data/toronto-massing-heights.bin?v=8928f8c1a865'; // (tools/build-massing.mjs sets the hash)
+export const HEIGHTS_URL = './data/toronto-massing-heights.bin?v=15385fda0b92'; // (tools/build-massing.mjs sets the hash)
 
 /** Attaches each loaded record its `maxH` and `avgH` (m) from the heights file's HEIGHTS layer; false (nothing attached) when it is not this sidecar's */
 export function attachHeights(out, MASSING, HEIGHTS) {

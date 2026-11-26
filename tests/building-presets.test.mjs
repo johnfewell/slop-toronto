@@ -73,7 +73,7 @@ test('eraOfYear: the five periods', () => {
 test('every sidecar record has a valid preset, and every record of a building shares it', () => {
   assert.equal(out.checks.everySidecarRecordHasPreset, true);
   assert.equal(out.perRecord.length, P.inputs.records);
-  assert.equal(out.perRecord.length, 35254);
+  assert.equal(out.perRecord.length, 35259);
   for (const v of out.perRecord) assert.ok(v >= 0 && v < PROTOTYPES.length, String(v));
   for (const g of P.buildings) {
     const first = out.perRecord[g.records[0].index];

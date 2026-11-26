@@ -11,7 +11,7 @@
 import { unpackGeo } from './geodata-loader.js';
 import { rowCheck, fetchData } from './massing-data.js';
 
-export const PRESETS_URL = './data/toronto-building-presets.bin?v=427a531071be'; // (tools/build-building-presets.mjs sets the hash)
+export const PRESETS_URL = './data/toronto-building-presets.bin?v=54581c4c06fc'; // (tools/build-building-presets.mjs sets the hash)
 export const PRESETS_SCHEMA = 1;
 
 /**

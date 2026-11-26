@@ -155,16 +155,16 @@ test('the exclusion hook resolves the exact seven named rows before the builder 
   const R = C.waterfrontBathurstResolveRows();
   assert.deepEqual(
     [R.northBlock, R.marineLeg, R.northHeadhouse, R.southHeadhouse, R.southBatteryA, R.southBatteryB, R.southBatteryC],
-    [33100, 33097, 33099, 33098, 33101, 33102, 33103]
+    [33105, 33102, 33104, 33103, 33106, 33107, 33108]
   );
   const rows = C.waterfrontBathurstExcludedRowsFor();
   assert.equal(rows.length, 7);
   for (const r of rows) assert.equal(C.GEO.buildings[r][9], 'Canada Malting Silos', `excluded row ${r} is a named silo row`);
   // pre-builder (as buildings.js calls it)
   for (const r of rows) assert.equal(C.waterfrontBathurstExcludesBuilding(r), true);
-  // the neighbouring Corleck Building (rows 32974/32976) and unrelated rows are untouched
-  assert.equal(C.waterfrontBathurstExcludesBuilding(32974), false);
-  assert.equal(C.waterfrontBathurstExcludesBuilding(32976), false);
+  // the neighbouring Corleck Building (rows 32979/32981) and unrelated rows are untouched
+  assert.equal(C.waterfrontBathurstExcludesBuilding(32979), false);
+  assert.equal(C.waterfrontBathurstExcludesBuilding(32981), false);
   assert.equal(C.waterfrontBathurstExcludesBuilding(999999), false);
   const out = C.createWaterfrontBathurst(THREE, new THREE.Scene());
   assert.equal([...C.waterfrontBathurstExcludedRows].sort((a, b) => a - b).join(','), rows.slice().sort((a, b) => a - b).join(','));
@@ -224,9 +224,9 @@ test('eglinton frame: rows resolve by key (index differs), build with the real M
   const R = C.waterfrontBathurstResolveRows();
   assert.deepEqual(
     [R.northBlock, R.marineLeg, R.northHeadhouse, R.southHeadhouse, R.southBatteryA, R.southBatteryB, R.southBatteryC],
-    [130967, 130964, 130966, 130965, 130968, 130969, 130970]
+    [130974, 130971, 130973, 130972, 130975, 130976, 130977]
   );
-  assert.notEqual(R.northBlock, 33100, 'the eglinton index differs from the detail index (proves it is not hardcoded)');
+  assert.notEqual(R.northBlock, 33105, 'the eglinton index differs from the detail index (proves it is not hardcoded)');
   for (const bi of Object.values(R)) assert.equal(GEO.buildings[bi][9], 'Canada Malting Silos');
   const out = C.createWaterfrontBathurst(THREE, new THREE.Scene());
   assert.ok(out.group.children.length > 0);

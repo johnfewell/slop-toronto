@@ -448,7 +448,7 @@ export async function run({ examples = EXAMPLES } = {}) {
     groupClassRecords: groupClasses.reduce((s, c) => s + c.count, 0),
     everyRecordOnce: classes.reduce((s, c) => s + c.count, 0) === recs.length && new Set(recs.map((r) => r.id)).size === recs.length
   };
-  checks.partyEdges = { computed: recs.reduce((s, r) => s + r.party.partyEdges, 0), documented: 66151 };
+  checks.partyEdges = { computed: recs.reduce((s, r) => s + r.party.partyEdges, 0), documented: 66164 };
   checks.partyEdgeNeighbours = parties;
   checks.outbuildingThresholds = Object.fromEntries([['base', 1, 1], ['area+20%', 1.2, 1], ['area-20%', 0.8, 1], ['height+20%', 1, 1.2], ['height-20%', 1, 0.8]].map(([name, am, hm]) => {
     const a = OUTBUILDING.maxArea * am, hh = OUTBUILDING.maxHeight * hm;

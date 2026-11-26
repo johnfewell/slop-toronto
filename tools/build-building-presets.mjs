@@ -435,12 +435,12 @@ const ll = (p) => `${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}`;
 
 // The phase-1a committed output (st-ndw9.10, docs/building-presets.md at PR #157): the before column. Buildings, per preset.
 export const PHASE1A = {
-  'victorian-detached': 2873, 'edwardian-detached': 3378, 'interwar-detached': 1733, 'postwar-detached': 561, 'recent-detached': 623,
+  'victorian-detached': 2873, 'edwardian-detached': 3378, 'interwar-detached': 1733, 'postwar-detached': 561, 'recent-detached': 624,
   'victorian-semi': 2750, 'edwardian-semi': 2223, 'interwar-semi': 678, 'postwar-semi': 284, 'recent-semi': 356,
   'victorian-row': 1552, 'edwardian-row': 1169, 'modern-townhouse-row': 229, garage: 95,
   'walk-up-apartment': 334, 'mid-rise-block': 1067, 'slab-tower': 247, 'glass-tower-podium': 132,
   'low-masonry-block': 320, 'dark-curtain-wall-tower': 156, 'contemporary-glass': 146,
-  'main-street-shop': 38, 'plain-low-block': 947, tower: 154, school: 35, 'small-civic': 137,
+  'main-street-shop': 38, 'plain-low-block': 949, tower: 154, school: 35, 'small-civic': 137,
   'institutional-block': 221, church: 127, 'brick-warehouse': 48, 'low-shed': 97, fallback: 27
 };
 

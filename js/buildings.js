@@ -938,9 +938,9 @@ function createIslandCottageMaterial() {
 // --- Reviewed QCYC marina structures (st-sb3r.34) -------------------------------------------------------------------
 // Three reviewed island rows (`islandBuildingProfile(...).appearance`) at the Queen City Yacht Club marina. The primary
 // sources (the captain's 2024 City orthophoto review and the official 2019 renovation gallery) show:
-//   * 32501: a small low shed with WHITE paneled plywood/timber walls, DARK NAVY doors/shutters/trim, low eaves, a
+//   * 32506: a small low shed with WHITE paneled plywood/timber walls, DARK NAVY doors/shutters/trim, low eaves, a
 //     shallow overhang and a dark pitched roof.
-//   * 32502 / 32503: pale low storage under leafless canopy; function and roof uncertain, so a neutral flat-envelope
+//   * 32507 / 32508: pale low storage under leafless canopy; function and roof uncertain, so a neutral flat-envelope
 //     storage treatment (no invented brick or home windows).
 // These are representative typology colours and forms, not per-row measurements; door counts/positions are
 // approximations. The total height stays the profile's (4 m) envelope, so the eaves and roof never stack above the

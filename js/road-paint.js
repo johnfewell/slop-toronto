@@ -191,6 +191,44 @@ function buildRoadPaint(scene, network) {
     }
   }
 
+  // Painted gores (GEO.gores, tools/classify-medians.mjs): islands the City maps inside a road that are paint on the road, not
+  // a raised island (docs/road-medians.md). Ontario marks a gore with a solid white edge line and diagonal hatching
+  // (a 0.2 m edge, 0.3 m bars every 1.6 m at 45 degrees to the gore's long side)
+  for (const flat of (window.CITY.GEO && window.CITY.GEO.gores) || []) {
+    const ring = [];
+    for (let i = 0; i + 1 < flat.length; i += 2) ring.push([flat[i], flat[i + 1]]);
+    if (ring.length < 3) continue;
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length];
+      strip(a[0], 0, a[1], b[0], 0, b[1], 0.2, WHITE);
+    }
+    let ux = 1, uz = 0, best = 0;
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (L > best) { best = L; ux = (b[0] - a[0]) / L; uz = (b[1] - a[1]) / L; }
+    }
+    const hx = (ux - uz) * Math.SQRT1_2, hz = (ux + uz) * Math.SQRT1_2; // the bars' direction; their spacing runs across it
+    const nx = -hz, nz = hx;
+    let t0 = Infinity, t1 = -Infinity;
+    for (const [x, z] of ring) { const t = x * nx + z * nz; t0 = Math.min(t0, t); t1 = Math.max(t1, t); }
+    for (let t = t0 + 0.8; t < t1; t += 1.6) {
+      const hits = [];
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i], b = ring[(i + 1) % ring.length];
+        const ta = a[0] * nx + a[1] * nz, tb = b[0] * nx + b[1] * nz;
+        if ((ta > t) === (tb > t)) continue;
+        const k = (t - ta) / (tb - ta);
+        hits.push((a[0] + (b[0] - a[0]) * k) * hx + (a[1] + (b[1] - a[1]) * k) * hz);
+      }
+      hits.sort((p, q) => p - q);
+      for (let k = 0; k + 1 < hits.length; k += 2) {
+        const s0 = hits[k] + 0.4, s1 = hits[k + 1] - 0.4;
+        if (s1 - s0 < 0.5) continue;
+        strip(nx * t + hx * s0, 0, nz * t + hz * s0, nx * t + hx * s1, 0, nz * t + hz * s1, 0.3, WHITE);
+      }
+    }
+  }
+
   // At a simple bend, corresponding offset lines meet at a bounded mitre, without an intersection-sized gap
   // (line ends are [x, y, z])
   for (const roadsAtBend of bends.values()) {

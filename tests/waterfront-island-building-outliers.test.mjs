@@ -43,7 +43,7 @@ function city({ geo = detail.GEO, withData = true, withModule = true, dataOverri
 }
 
 const rowOf = (geo, idx) => geo.buildings[idx];
-const TARGETS = [32501, 32502, 32503];
+const TARGETS = [32506, 32507, 32508];
 const CATEGORY = 'service (reviewed marina low structure, st-sb3r.33)';
 
 test('the committed data carries the reviewed marina outliers with real source provenance', () => {
@@ -51,9 +51,9 @@ test('the committed data carries the reviewed marina outliers with real source p
   const D = C.ISLAND_BUILDINGS_DATA;
   assert.ok(D, 'data module loads');
 
-  // 32501 has a bare OSM building=yes footprint; it stays OSM-attributed.
-  const osmRow = D.records.find((r) => r.row === 32501);
-  assert.ok(osmRow, 'row 32501 is an OSM-attributed record');
+  // 32506 has a bare OSM building=yes footprint; it stays OSM-attributed.
+  const osmRow = D.records.find((r) => r.row === 32506);
+  assert.ok(osmRow, 'row 32506 is an OSM-attributed record');
   assert.deepEqual({ ...osmRow.osm }, { type: 'way', id: 795796083, version: null });
   assert.equal(osmRow.height, 4);
   assert.equal(osmRow.kind, 1);
@@ -64,8 +64,8 @@ test('the committed data carries the reviewed marina outliers with real source p
   assert.equal(osmRow.massing.id, 'to-3dmassing-2025:354314');
   assert.equal(osmRow.marina.id, 193043084);
 
-  // 32502 and 32503 have no OSM footprint: they live in the separate City-massing array with `osm: null`.
-  for (const row of [32502, 32503]) {
+  // 32507 and 32508 have no OSM footprint: they live in the separate City-massing array with `osm: null`.
+  for (const row of [32507, 32508]) {
     const rec = D.massingRecords.find((r) => r.row === row);
     assert.ok(rec, `row ${row} is a City-only reviewed record`);
     assert.equal(rec.osm, null, 'no fabricated OSM way');
@@ -75,14 +75,14 @@ test('the committed data carries the reviewed marina outliers with real source p
     assert.equal(rec.category, CATEGORY);
     assert.deepEqual({ ...rec.marina }, { type: 'way', id: 193043084 });
     assert.ok(rec.massing.id.startsWith('to-3dmassing-2025:35431'));
-    assert.equal(rec.native.height, row === 32502 ? 28.7 : 28.5);
+    assert.equal(rec.native.height, row === 32507 ? 28.7 : 28.5);
   }
 
   // The review metadata is recorded as inference, not an established classification.
   const recorded = D.summary.massing.reviewedOutliers;
   assert.equal(recorded.length, 3);
   assert.equal(D.summary.massing.edition, '3DMassingShapefile_2025_WGS84');
-  for (const r of [osmRow, ...D.massingRecords.filter((x) => [32502, 32503].includes(x.row))]) {
+  for (const r of [osmRow, ...D.massingRecords.filter((x) => [32507, 32508].includes(x.row))]) {
     assert.equal(r.massing.canopyExplanation, 'inference, not established source classification');
   }
 });
@@ -112,19 +112,19 @@ test('all three rows resolve through the runtime lookup to a low service profile
     assert.ok(p, `row ${idx} resolves`);
     assert.equal(p.height, 4);
     assert.equal(p.kind, 1);
-    assert.equal(p.roof, idx === 32501 ? 1 : null, idx === 32501 ? 'shed pitched roof' : 'storage native flat roof');
+    assert.equal(p.roof, idx === 32506 ? 1 : null, idx === 32506 ? 'shed pitched roof' : 'storage native flat roof');
     assert.equal(p.typology, 'service');
     assert.equal(p.category, CATEGORY);
     assert.equal(p.heightSource, 'conservative island estimate');
     assert.equal(p.marina.id, 193043084);
-    if (idx === 32501) {
+    if (idx === 32506) {
       assert.deepEqual({ ...p.osm }, { type: 'way', id: 795796083, version: null });
     } else {
       assert.equal(p.osm, null, 'massing-only rows do not fabricate an OSM way');
       assert.ok(p.massing && p.massing.id, 'massing-only rows expose their City record');
     }
     // The row itself is never mutated.
-    assert.equal(row[4], idx === 32501 ? 31.9 : idx === 32502 ? 28.7 : 28.5, 'native height preserved on the row');
+    assert.equal(row[4], idx === 32506 ? 31.9 : idx === 32507 ? 28.7 : 28.5, 'native height preserved on the row');
   }
 });
 
@@ -164,13 +164,13 @@ test('a reshaped or moved footprint at the same centre disables the override', (
 
 test('a mismatched OSM binding string disables the OSM-attributed override', () => {
   const D = JSON.parse(JSON.stringify(city().ISLAND_BUILDINGS_DATA));
-  const rec = D.records.find((r) => r.row === 32501);
+  const rec = D.records.find((r) => r.row === 32506);
   rec.osm = { type: 'way', id: 999, version: null };
   // (The runtime keys the review on the record identity; a wrong OSM way on the record is still a reviewed row here.
   //  The builder is what binds provenance, exercised by the source tests. This asserts the record still resolves and
   //  that its provenance is the record's own, not a re-derived OSM way.)
   const C = city({ dataOverride: D });
-  const p = C.islandBuildingProfile(rowOf(detail.GEO, 32501), 32501);
+  const p = C.islandBuildingProfile(rowOf(detail.GEO, 32506), 32506);
   assert.ok(p);
   assert.equal(p.osm.id, 999);
 });
@@ -185,13 +185,13 @@ test('the curated list does not leak to other marina rows, cottages or explicit-
   }
   // Every reviewed row is one of the three bound massing records.
   const bound = [...new Set((D.massingRecords || []).map((r) => r.row).concat(D.records.filter((r) => r.category === CATEGORY).map((r) => r.row)))];
-  assert.deepEqual(bound.sort((a, b) => a - b), [32501, 32502, 32503]);
+  assert.deepEqual(bound.sort((a, b) => a - b), [32506, 32507, 32508]);
 });
 
 test('explicit OSM height still wins on an ordinary island row and the airport/mainland are null', () => {
   const C = city();
   const D = C.ISLAND_BUILDINGS_DATA;
-  const explicitLevels = D.records.find((r) => r.heightSource === 'OSM building:levels' && r.row !== 32501);
+  const explicitLevels = D.records.find((r) => r.heightSource === 'OSM building:levels' && r.row !== 32506);
   assert.ok(explicitLevels, 'an explicit-levels row exists');
   const p = C.islandBuildingProfile(rowOf(detail.GEO, explicitLevels.row), explicitLevels.row);
   assert.equal(p.height, explicitLevels.height);
