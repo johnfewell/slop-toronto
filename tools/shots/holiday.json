@@ -1,0 +1,38 @@
+[
+ {
+  "name": "holiday-nps-tree",
+  "mode": "person",
+  "js": "(() => {const C=window.CITY,a=window.__CITY_APP;\nwindow.__hv=(from,at,fov=55)=>{a.cameraSystem.cinema=()=>({pos:from,look:at,fov});};\n\nwindow.__nps=()=>{const r=C.RINKS.records.find(q=>q.assetId==='43599'),rect=C.outlineRectangle(r.polygons[0].outer),site=C.rinkStats.sites.find(q=>q.assetId==='43599');return {rect,tree:[rect.x+rect.ax*(rect.length/2+11),rect.z+rect.az*(rect.length/2+11)],y:site?site.y:0.2};};\nconsole.log('[holiday-check] '+JSON.stringify(C.holidayStats));})();(()=>{const {rect,tree,y}=window.__nps(),dx=rect.x-tree[0],dz=rect.z-tree[1],L=Math.hypot(dx,dz),ux=dx/L,uz=dz/L;window.__hv([tree[0]+ux*30-uz*6,y+7,tree[1]+uz*30+ux*6],[tree[0],y+7,tree[1]],58);})()",
+  "wait": 1800
+ },
+ {
+  "name": "holiday-nps-arches",
+  "mode": "person",
+  "js": "(()=>{const {rect,y}=window.__nps();window.__hv([rect.x-rect.ax*(rect.length/2+8),y+2.4,rect.z-rect.az*(rect.length/2+8)],[rect.x+rect.ax*10,y+3.2,rect.z+rect.az*10],60);})()",
+  "wait": 900
+ },
+ {
+  "name": "holiday-nps-wide",
+  "mode": "person",
+  "js": "(()=>{const {rect,tree,y}=window.__nps(),px=-rect.az,pz=rect.ax;window.__hv([rect.x+px*38-rect.ax*6,y+14,rect.z+pz*38-rect.az*6],[(rect.x+tree[0])/2,y+5,(rect.z+tree[1])/2],62);})()",
+  "wait": 900
+ },
+ {
+  "name": "holiday-distillery-tree",
+  "mode": "person",
+  "js": "(()=>{const L=window.CITY.HOLIDAY_LANES,[tx,tz]=L.tree,y=0.2;window.__hv([tx-14,y+3.2,tz-14],[tx,y+4,tz],60);})()",
+  "wait": 1800
+ },
+ {
+  "name": "holiday-distillery-lane",
+  "mode": "person",
+  "js": "(()=>{const L=window.CITY.HOLIDAY_LANES,[tx,tz]=L.tree;const s=L.strings.reduce((b,q)=>{const d=Math.hypot((q[0]+q[2])/2-tx,(q[1]+q[3])/2-tz);return !b||d<b.d?{q,d}:b;},null).q,mx=(s[0]+s[2])/2,mz=(s[1]+s[3])/2,dx=s[2]-s[0],dz=s[3]-s[1],l=Math.hypot(dx,dz),px=-dz/l,pz=dx/l;window.__hv([mx-px*16,2.2,mz-pz*16],[mx+px*8,3.6,mz+pz*8],64);})()",
+  "wait": 900
+ },
+ {
+  "name": "holiday-distillery-over",
+  "mode": "person",
+  "js": "(()=>{const L=window.CITY.HOLIDAY_LANES,[tx,tz]=L.tree;window.__hv([tx-30,24,tz+30],[tx+4,2,tz-4],62);})()",
+  "wait": 900
+ }
+]
