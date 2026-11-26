@@ -16,5 +16,11 @@
   "mode": "person",
   "wait": 1500,
   "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-7, -785, 0); a.cameraSystem.cinema = () => ({ pos: [12, 1.9, -808], look: [6, 1.9, -821.7], fov: 40 }); })()"
+ },
+ {
+  "name": "sign4-R",
+  "mode": "person",
+  "wait": 1500,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-7, -772, 0); a.cameraSystem.cinema = () => ({ pos: [-11, 2.2, -812], look: [-11, 1.9, -821.7], fov: 36 }); })()"
  }
 ]

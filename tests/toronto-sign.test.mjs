@@ -56,7 +56,8 @@ test('the medicine wheel has four quarters in the white, yellow, red, black orde
   const r = TS.SPEC.wheel.d / 2;
   const centroid = (p) => { const n = p.outer.length; return [p.outer.reduce((s, q) => s + q[0], 0) / n - r, p.outer.reduce((s, q) => s + q[1], 0) / n - r]; };
   const quad = Object.fromEntries(wp.slice(1).map((p) => [p.kind, centroid(p)]));
-  assert.ok(quad.white[0] < 0 && quad.white[1] > 0 && quad.yellow[0] > 0 && quad.yellow[1] > 0 && quad.red[0] > 0 && quad.red[1] < 0 && quad.black[0] < 0 && quad.black[1] < 0, 'top left white, top right yellow, bottom right red, bottom left black');
+  const wedge = (q) => Math.abs(q[0]) < Math.abs(q[1]) ? (q[1] > 0 ? 'top' : 'bottom') : (q[0] > 0 ? 'right' : 'left');
+  assert.equal(`${wedge(quad.white)} ${wedge(quad.yellow)} ${wedge(quad.red)} ${wedge(quad.black)}`, 'top right bottom left', 'an X divides the wheel: white top, yellow right, red bottom, black left');
   assert.equal(wp[0].holes.length, 1);
   // 11 points: the outline's sharp tips (interior angle under 80 degrees, not the stem's two square corners at about 86)
   const ol = TS.leafOutline(), n = ol.length; let tips = 0;
@@ -75,10 +76,20 @@ test('the medicine wheel has four quarters in the white, yellow, red, black orde
   assert.ok(w(rim.outer) > w(face.outer) && w(rim.outer) < w(face.outer) * 1.12, 'a thin silver rim all round');
 });
 
+test('the R has a big round bowl over the top half and a diagonal leg, the O a thicker ring than the stems', () => {
+  const [stem, bowl, leg] = TS.letterPieces('R'), h = TS.SPEC.height;
+  const ys = bowl.outer.map((q) => q[1]);
+  assert.ok((h - Math.min(...ys)) / h > 0.55 && (h - Math.min(...ys)) / h < 0.64, 'the bowl is the top 55 to 60 percent');
+  const hole = bowl.holes[0], hh = Math.max(...hole.map((q) => q[1])) - Math.min(...hole.map((q) => q[1]));
+  assert.ok(hh > 0.85 && hh < 1.2, 'a counter with room in it, not a slot: ' + hh);
+  assert.ok(Math.min(...leg.outer.map((q) => q[1])) === 0 && Math.max(...leg.outer.map((q) => q[0])) === TS.SPEC.widths.R, 'the leg runs to the bottom right');
+  assert.ok(TS.SPEC.strokeO > TS.SPEC.stroke);
+});
+
 test('the fountain: 40 jets along the sign, on in the water season only (spring to autumn), never on the ice', () => {
   const jets = TS.jetSites();
   assert.equal(jets.length, 40);
-  assert.ok(jets[0].x < -17 && jets.at(-1).x > 6 && jets.every((j) => j.z > bbox.z0 + 7 && j.z < bbox.z0 + 11 && j.h > 0.8 && j.h < 2.1));
+  assert.ok(jets[0].x < -17 && jets.at(-1).x > 6 && jets.every((j) => j.z > bbox.z0 + 7 && j.z < bbox.z0 + 11 && j.h > 1.7 && j.h < 3.1));
   for (let i = 1; i < jets.length; i++) assert.ok(jets[i].x > jets[i - 1].x);
   assert.equal(TS.colorAt(jets[0].x), TS.SPEC.colors[0], 'a jet takes the lit colour of the letter behind it');
   for (const m of [4, 5, 7, 8, 10]) assert.equal(TS.fountainOn({ season: 'off', month: m }), true, 'month ' + m);
@@ -133,7 +144,7 @@ test('in the water season the builder adds the reflected colour, the jets and th
   const r = C.buildTorontoSign(new THREE.Scene());
   for (const n of ['TorontoSignReflection', 'TorontoSignFountainJets', 'TorontoSignFountainLights']) assert.ok(r.group.getObjectByName(n), n);
   assert.equal(C.torontoSignStats.jets, 40);
-  assert.ok(C.torontoSignStats.waterTriangles < 700);
+  assert.ok(C.torontoSignStats.waterTriangles < 1100);
   const winterWater = load({ ...env, rinkStats: { season: 'off', forced: false }, SITE_DATE: { month: 11, day: 26 } });
   const w = winterWater.buildTorontoSign(new THREE.Scene());
   assert.ok(w.group.getObjectByName('TorontoSignReflection') && !w.group.getObjectByName('TorontoSignFountainJets'), 'late November: still water, the fountain is off');

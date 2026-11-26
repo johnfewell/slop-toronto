@@ -32,3 +32,7 @@ node --test tests/toronto-sign.test.mjs
 ```
 
 Captures: `tools/capture-toronto-sign.sh` (summer night with the fountain, 12 December night with the rink and the holiday lights, summer day), the same view as the photograph from the pool's south side.
+
+## v2 (2026-11-26, after John's review of the first capture)
+
+The R has a big round bowl over the top 58% with a round-ended counter and a diagonal leg (the first R's counter was a slot); the O's ring is 0.7 m, the stems 0.58 m. The wheel's quarters are split by an X (white top, yellow right, red bottom, black left), as in the photograph. At night every letter, the wheel and the leaf glow (emissive above 1, so the bloom takes them). The leaf's silver rim is a full-outline plate with the red face inset. The jets are 40 plumes of three crossed soft quads, 1.8 to 3 m, lavender at night with a little of the letter's colour, and the water glow under each letter is three times brighter.

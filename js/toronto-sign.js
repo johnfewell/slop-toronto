@@ -22,18 +22,19 @@ const SPEC = Object.freeze({
   zc: -821.7, // the middle of the letters' depth
   height: 3.0, // the letters ("three metres tall", City page), on a 0.45 m plinth
   depth: 0.9,
-  stroke: 0.62,
+  stroke: 0.58,
+  strokeO: 0.7, // the O's ring is a little thicker than the stems (photograph)
   plinth: Object.freeze({ x0: -22.6, x1: 8.8, depth: 1.5, h: 0.45 }),
-  widths: Object.freeze({ T: 2.5, O: 3.1, R: 2.55, N: 2.8 }),
+  widths: Object.freeze({ T: 2.5, O: 3.1, R: 2.3, N: 2.8 }),
   wheel: Object.freeze({ x: -22.3, d: 3.2, depth: 0.6, rim: 0.12 }),
   leaf: Object.freeze({ x: 4.2, w: 3.9, h: 3.3, depth: 0.7 }),
   // the lit colours of the night photograph (the City's sign changes colour; this is its default): T cyan, O violet, R magenta,
   // O red, N orange, T yellow, O white
-  colors: Object.freeze([0x14d6ff, 0xa24dff, 0xff2fd0, 0xff2418, 0xff8a14, 0xffe414, 0xffffff]),
+  colors: Object.freeze([0x14d6ff, 0x9a2bff, 0xff1fc8, 0xff2418, 0xff8a14, 0xffe414, 0xffffff]),
   leafColor: 0xff2030,
   wheelColors: Object.freeze({ white: 0xfff1d8, yellow: 0xffbd1a, red: 0xff1c1c, black: 0x060606 }),
   rimColor: 0xc9ced4, // the silver edge of the leaf and the wheel's thin rim
-  fountain: Object.freeze({ count: 40, x0: -18.5, x1: 7.0, dz: 9, hMin: 0.9, hMax: 2.0, width: 0.24 }), // dz: the row's distance from the pool's north edge (in the photograph the jets stand well out in the pool, the letters' reflections between)
+  fountain: Object.freeze({ count: 40, x0: -18.5, x1: 7.0, dz: 9, hMin: 1.8, hMax: 3.0, width: 0.8 }), // dz: the row's distance from the pool's north edge (in the photograph the jets stand well out in the pool, the letters' reflections between)
   reflectionLength: 8, // how far the sign's colours run out over the water (m)
   waterMonths: Object.freeze([4, 10]) // the fountain's months (assumption, below)
 });
@@ -50,14 +51,17 @@ function letterPieces(ch, w = SPEC.widths[ch], h = SPEC.height, s = SPEC.stroke)
     case 'T': return [{ outer: [[0, h - s], [w, h - s], [w, h], [0, h]], holes: [] }, { outer: [[w / 2 - s / 2, 0], [w / 2 + s / 2, 0], [w / 2 + s / 2, h - s + 0.01], [w / 2 - s / 2, h - s + 0.01]], holes: [] }];
     case 'O': {
       const r = Math.min(w, h) / 2;
-      return [{ outer: arcPts(w / 2, h / 2, r, 0, Math.PI * 2, 48).slice(0, -1), holes: [arcPts(w / 2, h / 2, r - s, 0, Math.PI * 2, 48).slice(0, -1).reverse()] }];
+      const so = SPEC.strokeO;
+      return [{ outer: arcPts(w / 2, h / 2, r, 0, Math.PI * 2, 48).slice(0, -1), holes: [arcPts(w / 2, h / 2, r - so, 0, Math.PI * 2, 48).slice(0, -1).reverse()] }];
     }
     case 'R': {
-      const r = h * 0.27, cu = w - r, cv = h - r;
+      // the photograph's R: a big round bowl over the top 58% with a round-ended counter (the stroke the O's, thinner than
+      // the stem would make a slot), a stem, and a straight diagonal leg from where the bowl meets the stem to the bottom right
+      const bs = 0.42, r = h * 0.3, cu = w - r, cv = h - r, hb = h - 2 * r;
       return [
         { outer: [[0, 0], [s, 0], [s, h], [0, h]], holes: [] },
-        { outer: [[0, h - 2 * r], [cu, h - 2 * r], ...arcPts(cu, cv, r, -Math.PI / 2, Math.PI / 2), [0, h]], holes: [[[s, h - 2 * r + s], [s, h - s], ...arcPts(cu, cv, r - s, Math.PI / 2, -Math.PI / 2), [cu, h - 2 * r + s]]] },
-        { outer: [[w * 0.3, h - 2 * r + 0.05], [w * 0.3 + s * 1.15, h - 2 * r + 0.05], [w, 0], [w - s * 1.15, 0]], holes: [] }
+        { outer: [[0, hb], [cu, hb], ...arcPts(cu, cv, r, -Math.PI / 2, Math.PI / 2), [0, h]], holes: [[[s, hb + bs], [s, h - bs], ...arcPts(cu, cv, r - bs, Math.PI / 2, -Math.PI / 2), [cu, hb + bs]]] },
+        { outer: [[w * 0.36, hb + 0.2], [w * 0.36 + s * 1.2, hb + 0.2], [w, 0], [w - s * 1.2, 0]], holes: [] }
       ];
     }
     case 'N': return [
@@ -88,8 +92,8 @@ function leafOutline(w = SPEC.leaf.w, h = SPEC.leaf.h, grow = 1) {
 }
 function leafPieces() {
   return [
-    { outer: leafOutline(SPEC.leaf.w, SPEC.leaf.h, 1.055), holes: [], kind: 'rim', depth: SPEC.leaf.depth },
-    { outer: leafOutline(), holes: [], kind: 'leaf', depth: SPEC.leaf.depth + 0.04 }
+    { outer: leafOutline(SPEC.leaf.w, SPEC.leaf.h, 1.03), holes: [], kind: 'rim', depth: SPEC.leaf.depth },
+    { outer: leafOutline(SPEC.leaf.w, SPEC.leaf.h, 0.935), holes: [], kind: 'leaf', depth: SPEC.leaf.depth + 0.04 }
   ];
 }
 // The medicine wheel: a silver rim and four quarters (white top left, yellow top right, red bottom right, black bottom left)
@@ -99,10 +103,10 @@ function wheelPieces(d = SPEC.wheel.d) {
     const arc = arcPts(r, r, ri, a0, a1, 24);
     return { outer: [[r + cut * Math.cos((a0 + a1) / 2), r + cut * Math.sin((a0 + a1) / 2)], ...arc], holes: [], kind, depth: SPEC.wheel.depth + 0.03 };
   };
-  const q = Math.PI / 2;
+  const q = Math.PI / 2, e = Math.PI / 4; // an X, not a +: white at the top, yellow right, red bottom, black left
   return [
     { outer: arcPts(r, r, r, 0, Math.PI * 2, 48).slice(0, -1), holes: [arcPts(r, r, ri - 0.02, 0, Math.PI * 2, 48).slice(0, -1).reverse()], kind: 'rim', depth: SPEC.wheel.depth },
-    quarter(q, 2 * q, 'white'), quarter(0, q, 'yellow'), quarter(-q, 0, 'red'), quarter(2 * q, 3 * q, 'black')
+    quarter(e, e + q, 'white'), quarter(-e, e, 'yellow'), quarter(-e - q, -e, 'red'), quarter(e + q, e + 2 * q, 'black')
   ];
 }
 
@@ -207,9 +211,9 @@ function buildTorontoSign(scene) {
   const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.55 });
   // the colour is read once, here (no vertexColors flag: the guard in tests/material-colour-once.test.mjs); the lit sign's own
   // colour takes over from the pale daytime face as the night comes on
-  mat.colorNode = attribute('color', 'vec3').mul(float(1).sub(night.mul(0.8)));
+  mat.colorNode = attribute('color', 'vec3').mul(float(1).sub(night.mul(0.85)));
   // lit from inside: a quiet glow by day, the full colour at night (on the windows' night ramp), bright enough for the bloom
-  mat.emissiveNode = attribute('glow', 'vec3').mul(night.mul(1.15).add(0.08));
+  mat.emissiveNode = attribute('glow', 'vec3').mul(night.mul(1.1).add(0.08));
   const lettersMesh = new THREE.Mesh(letters, mat);
   lettersMesh.name = 'TorontoSignLetters';
   lettersMesh.castShadow = shadowOn; lettersMesh.receiveShadow = true;
@@ -258,7 +262,7 @@ function buildTorontoSign(scene) {
     const rm = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }); // (the quads wind face-down: both sides draw)
     const fade = float(1).sub(uv().y).pow(1.5).mul(smoothstep(float(0), float(0.12), uv().y)).mul(smoothstep(float(0), float(0.12), uv().x)).mul(smoothstep(float(0), float(0.12), float(1).sub(uv().x))); // soft all round, strongest at the coping, gone 8 m out
     const ripple = sin(uv().y.mul(38).sub(time.mul(0.8)).add(uv().x.mul(11))).mul(0.12).add(0.88);
-    rm.colorNode = vertexColor().mul(fade).mul(ripple).mul(night).mul(0.4);
+    rm.colorNode = vertexColor().mul(fade).mul(ripple).mul(night).mul(1.5);
     rm.opacityNode = float(1);
     const reflection = new THREE.Mesh(rg, rm); reflection.name = 'TorontoSignReflection'; reflection.renderOrder = 3;
     group.add(reflection);
@@ -268,7 +272,7 @@ function buildTorontoSign(scene) {
     const pos = [], uvs = [], attr = [], cols = [], bpos = [], buv = [], bcols = [];
     for (const s of sites) {
       const c = new THREE.Color(s.color), hw = F.width / 2;
-      for (const [dx, dz] of [[1, 0], [0, 1]]) { // two crossed quads
+      for (const [dx, dz] of [[1, 0], [0.5, 0.866], [-0.5, 0.866]]) { // three crossed quads: a round, misty column from any side
         const a = [s.x - dx * hw, 0, s.z - dz * hw], b = [s.x + dx * hw, 0, s.z + dz * hw];
         const t = [b[0], s.h, b[2]], u = [a[0], s.h, a[2]];
         pos.push(...a, ...b, ...t, ...a, ...t, ...u);
@@ -294,13 +298,14 @@ function buildTorontoSign(scene) {
     const pulse = sin(time.mul(2.1).add(ph.mul(6.2832))).mul(0.12).add(0.88); // each jet breathes a little
     const v = uv().y, u = uv().x;
     // a jet is a narrow column that flares into spray at its top; the quad's width grows with height
-    const flare = smoothstep(float(0.72), float(1), v).mul(0.8).add(0.6);
+    const flare = smoothstep(float(0.3), float(1), v).mul(0.9).add(0.45); // slim at the nozzle, a soft plume above
     jm.positionNode = vec3(jet.x.add(positionLocal.x.sub(jet.x).mul(flare)), positionLocal.y.sub(poolY + 0.02).mul(pulse).add(poolY + 0.02), jet.y.add(positionLocal.z.sub(jet.y).mul(flare)));
     // water by day (white spray, a little shaded blue); at night the jet is lit from its base in the sign's colour
-    jm.colorNode = mix(vec3(0.86, 0.9, 0.95), mix(vec3(1, 1, 1), vertexColor(), 0.5).mul(1.1), night);
-    const column = smoothstep(float(0), float(0.6), float(1).sub(abs(u.mul(2).sub(1)))); // soft edges
-    const grain = sin(v.mul(hgt).mul(5).sub(time.mul(7)).add(ph.mul(40))).mul(0.3).add(0.7); // spray running up it
-    jm.opacityNode = column.mul(grain).mul(smoothstep(float(0), float(0.06), v)).mul(float(1).sub(smoothstep(float(0.88), float(1), v))).mul(0.85);
+    jm.colorNode = mix(vec3(0.86, 0.9, 0.95), mix(vec3(0.8, 0.62, 1), vertexColor(), 0.3).mul(1.5), night); // lavender at night, a little of the letter's colour in it
+    const edge = float(1).sub(abs(u.mul(2).sub(1)));
+    const column = smoothstep(float(0), float(1), edge).pow(1.4); // soft gaussian-like body
+    const strands = sin(u.mul(31).add(ph.mul(50)).add(v.mul(hgt).mul(3)).sub(time.mul(6))).mul(0.25).add(0.75).mul(sin(v.mul(hgt).mul(6).sub(time.mul(8)).add(ph.mul(40))).mul(0.2).add(0.8)); // spray running up it
+    jm.opacityNode = column.mul(strands).mul(smoothstep(float(0), float(0.05), v)).mul(float(1).sub(smoothstep(float(0.8), float(1), v))).mul(0.62);
     const jetMesh = new THREE.Mesh(jg, jm); jetMesh.name = 'TorontoSignFountainJets'; jetMesh.renderOrder = 4;
     group.add(jetMesh);
     const bg = new THREE.BufferGeometry();
