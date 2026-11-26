@@ -1,0 +1,350 @@
+(function () {
+// js/roadworks-layout.js
+// The City of Toronto's Road Restrictions (worker/roadworks.js: the compact records /live/roadworks serves) laid out on the
+// city's roads: which records are in effect on the scene's day, and where each one's barrels, cones, barriers, barricades
+// and signs stand. Pure functions: tests/roadworks.test.mjs runs them on real records against the real road network;
+// js/roadworks.js draws what they place.
+//
+// The records have no lane geometry: a centre-line polyline of the stretch, its dates, a daily schedule and a description,
+// submitted by the permit applicant and not field verified. So the layout is a rule, not a survey:
+// - CONSTRUCTION: the kerb lane on one side of the road is closed: a line of barrels along its inner edge down the stretch
+//   (a gap of at most BARREL_STEP m), a taper of cones across the lane at each end and a "ROAD WORK" / "LANE CLOSED" sign
+//   ahead of it; a work zone on an arterial gets an arrow board too. The side is the one the record's own points lie on
+//   where they are off the centre line, else a fixed hash of its id (the feed does not say).
+// - ROAD_CLOSED: a row of barricades (jersey barriers across an arterial) across the whole roadway, kerb to kerb, at each
+//   end of the stretch (one end when it is short), a "ROAD CLOSED" sign on the row and cones in front. ONE_DIRECTION on a
+//   two-way street closes the half on the hash's side.
+// Everything stands on the roadway (blockAt: no curb island), never in a junction, on a crossing, on a streetcar track,
+// on a parked car or inside another solid thing. A record's name must match the road it is snapped to.
+
+const BARREL_STEP = 8; // m between barrels down a closed lane
+const TAPER_LEN = 9; // m, the cones' diagonal across the lane at an end
+const MIN_ZONE = 8; // m, a stretch shorter than this is drawn as this long, about its middle
+const ZONE_CAP = 130; // m: a longer stretch has a work zone at each end (ZONE_END m long) and nothing between
+const ZONE_END = 60;
+const MAX_HALF_WIDTH = 11; // m: a kerb farther than this from the centre line is not a street's (a plaza, a junction)
+const MIN_GAP = 0.7; // m between two placed things
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Dates: the records' start & end are epoch ms; a day is Toronto's
+// ---------------------------------------------------------------------------------------------------------------------
+const TZ = 'America/Toronto';
+function tzOffsetMin(ms) {
+  const part = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'shortOffset' }).formatToParts(new Date(ms)).find((p) => p.type === 'timeZoneName');
+  const m = /GMT([+-])(\d+)(?::(\d+))?/.exec(part ? part.value : '');
+  return m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3] || 0)) : 0;
+}
+/** Toronto's calendar day of an instant: { year, month, day } */
+function torontoDayOf(ms) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  return { year: Number(p.year), month: Number(p.month), day: Number(p.day) };
+}
+const startOfDay = (y, m, d) => { const noon = Date.UTC(y, m - 1, d, 12); return Date.UTC(y, m - 1, d) - tzOffsetMin(noon) * 60000 + 0; };
+/** The Toronto day { year, month, day } as { from, to (ms, to exclusive), dow (0 = Sunday) } */
+function dayRange({ year, month, day }) {
+  const next = new Date(Date.UTC(year, month - 1, day + 1));
+  return { from: startOfDay(year, month, day), to: startOfDay(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate()), dow: new Date(Date.UTC(year, month - 1, day)).getUTCDay() };
+}
+/** Is the record in effect on the day: the City's dates span it, and its schedule has work that weekday (no schedule: any) */
+function activeOn(rec, range) {
+  if (!(rec.s < range.to && rec.e >= range.from)) return false;
+  return !rec.sc || rec.sc[range.dow] !== '';
+}
+/** The scene's day: the day the city opened on (seasons.js SITE_DATE) when that is a real day (live, ?liveDate=, ?liveClock=);
+ *  the presets' stand-in summer day is not one, so a preset opens on today's road works */
+function sceneDay(siteDate, now = Date.now()) {
+  const today = torontoDayOf(now);
+  if (!siteDate || siteDate.source === 'preset' || !Number.isInteger(siteDate.month) || !Number.isInteger(siteDate.day)) return { ...today, source: 'today' };
+  return { year: Number.isInteger(siteDate.year) ? siteDate.year : today.year, month: siteDate.month, day: siteDate.day, source: siteDate.source };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Names: the City's "Yonge St" and OSM's "Yonge Street" are one road
+// ---------------------------------------------------------------------------------------------------------------------
+const FULL = { st: 'street', ave: 'avenue', av: 'avenue', rd: 'road', blvd: 'boulevard', dr: 'drive', cres: 'crescent', ct: 'court', pl: 'place', pkwy: 'parkway',
+  hwy: 'highway', ter: 'terrace', terr: 'terrace', ln: 'lane', cir: 'circle', sq: 'square', gdns: 'gardens', trl: 'trail', expy: 'expressway', blv: 'boulevard', cl: 'close', gt: 'gate', hts: 'heights', cr: 'crescent', rdwy: 'roadway' };
+const DIRECTION = new Set(['north', 'south', 'east', 'west', 'n', 's', 'e', 'w']);
+/** A road name as its tokens without the compass word, abbreviations spelled out ("St Clair Ave W" -> saint clair avenue) */
+function nameKey(name) {
+  const t = String(name || '').toLowerCase().replace(/[.,']/g, ' ').replace(/-/g, ' ').split(/\s+/).filter(Boolean);
+  if (t[0] === 'st' && t.length > 2) t[0] = 'saint';
+  return t.map((w) => FULL[w] || w).filter((w) => !DIRECTION.has(w)).join(' ');
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Geometry helpers
+// ---------------------------------------------------------------------------------------------------------------------
+const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 100000) / 100000; };
+function polyLength(pts) { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z); return L; }
+/** The point `s` m along a polyline (clamped), and its direction there */
+function along(pts, s) {
+  let rest = Math.max(0, s);
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], l = Math.hypot(b.x - a.x, b.z - a.z);
+    if (rest <= l || i === pts.length - 1) {
+      const u = l > 1e-9 ? Math.min(1, rest / l) : 0;
+      return { x: a.x + (b.x - a.x) * u, z: a.z + (b.z - a.z) * u, dx: l > 1e-9 ? (b.x - a.x) / l : 1, dz: l > 1e-9 ? (b.z - a.z) / l : 0 };
+    }
+    rest -= l;
+  }
+  return { x: pts[0].x, z: pts[0].z, dx: 1, dz: 0 };
+}
+function cellGrid(points, cell = 32) {
+  const m = new Map();
+  for (const p of points) { const k = Math.floor(p.x / cell) * 100003 + Math.floor(p.z / cell); (m.get(k) || m.set(k, []).get(k)).push(p); }
+  return { near(x, z, r) {
+    for (let a = Math.floor((x - r) / cell); a <= Math.floor((x + r) / cell); a++) for (let b = Math.floor((z - r) / cell); b <= Math.floor((z + r) / cell); b++)
+      for (const p of m.get(a * 100003 + b) || []) if (Math.hypot(p.x - x, p.z - z) < (p.r || 0) + r) return true;
+    return false;
+  } };
+}
+
+// The kinds a site can be (js/roadworks.js builds one instanced mesh for each)
+const KINDS = ['cone', 'barrel', 'barrier', 'barricade', 'signClosed', 'signWork', 'signLane', 'arrow'];
+
+/**
+ * Lays the active records out. `deps`:
+ *   toWorld(lat, lon) -> { x, z }; inFrame(x, z); nearestRoads; blockAt; isOnLand
+ *   blocked(x, z, r) -> true where something solid stands (buildings, furniture); parkedAt(x, z, pad)
+ *   tramNear(x, z, r); crossings: [{ x, z, len }] (pedestrian crossings); sites of nothing else
+ * Returns { sites: [{ kind, x, z, yaw, rec (index into `records`), w? (a barricade's or barrier's width) }], plans: per
+ * record { rec, placed, kind }, rejected: { reason: count }, counts }
+ */
+function roadworksSites(records, deps, { day = null, now = Date.now(), siteDate = null } = {}) {
+  const dayInfo = day || sceneDay(siteDate, now);
+  const range = dayRange(dayInfo);
+  const counts = { records: records.length, inFrame: 0, active: 0, placed: 0, placedClosed: 0, placedLane: 0, notActive: 0 };
+  const rejected = {};
+  const rej = (why) => { rejected[why] = (rejected[why] || 0) + 1; };
+  const sites = [], plans = [];
+  const crossGrid = cellGrid((deps.crossings || []).map((c) => ({ x: c.x, z: c.z, r: Math.min(10, (c.len || 8) / 2) })));
+  const placedGrid = new Map();
+  const taken = (x, z) => {
+    for (let a = Math.floor((x - MIN_GAP) / 4); a <= Math.floor((x + MIN_GAP) / 4); a++) for (let b = Math.floor((z - MIN_GAP) / 4); b <= Math.floor((z + MIN_GAP) / 4); b++)
+      for (const s of placedGrid.get(a * 100003 + b) || []) if (Math.hypot(s.x - x, s.z - z) < MIN_GAP) return true;
+    return false;
+  };
+  const add = (s) => { sites.push(s); const k = Math.floor(s.x / 4) * 100003 + Math.floor(s.z / 4); (placedGrid.get(k) || placedGrid.set(k, []).get(k)).push(s); };
+
+  records.forEach((rec, index) => {
+    const pts = rec.ll.map(([lat, lon]) => deps.toWorld(lat, lon));
+    if (!pts.some((p) => deps.inFrame(p.x, p.z))) return;
+    counts.inFrame++;
+    if (!activeOn(rec, range)) { counts.notActive++; return; }
+    counts.active++;
+    const plan = placeRecord(rec, index, pts);
+    plans.push(plan);
+    if (plan.placed) { counts.placed++; if (rec.t === 'R') counts.placedClosed++; else counts.placedLane++; }
+    else rej(plan.why);
+    for (const [why, n] of Object.entries(plan.items || {})) rejected['item:' + why] = (rejected['item:' + why] || 0) + n;
+  });
+  return { sites, plans, rejected, counts, day: dayInfo };
+
+  function placeRecord(rec, index, pts) {
+    const key = nameKey(rec.r);
+    const L = polyLength(pts);
+    const mid = along(pts, L / 2);
+    if (!key) return { rec: index, placed: false, why: 'no-road-name' };
+    const match = (x, z, r = 30) => deps.nearestRoads(x, z, r).find((n) => nameKey(n.road.name) === key);
+    let anchor = match(mid.x, mid.z) || match(pts[0].x, pts[0].z) || match(pts[pts.length - 1].x, pts[pts.length - 1].z);
+    if (!anchor) return { rec: index, placed: false, why: 'no-road-match' };
+    const road = anchor.road;
+    if (road.raised) return { rec: index, placed: false, why: 'elevated-road' };
+    if (road.highway) return { rec: index, placed: false, why: 'expressway' };
+    const rejectedItems = {};
+    const bad = (why) => { rejectedItems[why] = (rejectedItems[why] || 0) + 1; };
+
+    // the road at a point near the stretch: the centre line's nearest point & its direction, turned the way the stretch runs
+    const dirX = pts[pts.length - 1].x - pts[0].x, dirZ = pts[pts.length - 1].z - pts[0].z;
+    const snap = (x, z, flip = 1) => {
+      const n = match(x, z, 25);
+      if (!n || n.road !== road && n.road.name !== road.name) return null;
+      let dx = n.dx, dz = n.dz;
+      const ref = Math.hypot(dirX, dirZ) > 3 ? dx * dirX + dz * dirZ : dx * mid.dx + dz * mid.dz;
+      if (ref < 0) { dx = -dx; dz = -dz; }
+      return { px: n.px, pz: n.pz, dx: dx * flip, dz: dz * flip };
+    };
+    // the kerbs either side of a centre-line point: the distances to the first curb island along the right normal (+) and
+    // the left (-); null where there is none (a junction's mouth, a plaza)
+    const curbs = (s) => {
+      if (deps.blockAt(s.px, s.pz)) return null;
+      const nx = -s.dz, nz = s.dx, out = [];
+      for (const sign of [1, -1]) {
+        let d = 0, hit = null;
+        for (d = 0.5; d <= MAX_HALF_WIDTH + 2; d += 0.5) if (deps.blockAt(s.px + nx * sign * d, s.pz + nz * sign * d) || !deps.isOnLand(s.px + nx * sign * d, s.pz + nz * sign * d, 0)) { hit = d - 0.25; break; }
+        if (hit === null || hit > MAX_HALF_WIDTH) return null;
+        out.push(hit);
+      }
+      return { right: out[0], left: out[1], nx, nz };
+    };
+    const standable = (x, z, r, kind) => {
+      if (!deps.inFrame(x, z)) { bad('outside-frame'); return false; }
+      if (deps.blockAt(x, z)) { bad('not-roadway'); return false; }
+      if (!deps.isOnLand(x, z, 0)) { bad('water'); return false; }
+      if (crossGrid.near(x, z, 1.5)) { bad('crossing'); return false; }
+      if (deps.tramNear && deps.tramNear(x, z, kind === 'cone' ? 2.4 : 3.2)) { bad('streetcar-track'); return false; }
+      for (const o of deps.nearestRoads(x, z, 22)) {
+        if (o.road.name === road.name || o.road.raised || o.road.cls === 'service') continue;
+        if (o.dist < (o.road.w || 7) / 2 + 1.5) { bad('junction'); return false; }
+      }
+      if (deps.parkedAt && deps.parkedAt(x, z, 0.5)) { bad('parked-car'); return false; }
+      if (deps.blocked && deps.blocked(x, z, r)) { bad('obstruction'); return false; }
+      if (taken(x, z)) { bad('overlap'); return false; }
+      return true;
+    };
+    // zones: where along the stretch the things stand
+    const zones = L <= ZONE_CAP ? [[Math.max(0, L / 2 - Math.max(L, MIN_ZONE) / 2), L / 2 + Math.max(L, MIN_ZONE) / 2]] : [[0, ZONE_END], [L - ZONE_END, L]];
+    const placedBefore = sites.length;
+    const rand = hash(String(rec.i));
+    // the side the record's own points favour
+    let side = rand < 0.5 ? 1 : -1;
+    const m0 = snap(mid.x, mid.z);
+    if (m0) {
+      const off = (mid.x - m0.px) * -m0.dz + (mid.z - m0.pz) * m0.dx; // + : to the right of the road's way
+      if (Math.abs(off) > 1.2 && L > 0) side = off > 0 ? 1 : -1;
+    }
+    const arterial = /Arterial|Expressway/.test(rec.k || '');
+    const closed = rec.t === 'R';
+    let hasSign = false, allFull = true;
+
+    const emit = (kind, x, z, yaw, extra = {}) => { add({ kind, x, z, yaw, rec: index, ...extra }); };
+    const clearSpot = (x, z, r, kind) => standable(x, z, r, kind);
+
+    for (const [z0, z1] of zones) {
+      const ends = [{ s: z0, out: -1 }, { s: z1, out: 1 }];
+      if (!closed) {
+        // CONSTRUCTION: barrels down the closed kerb lane, a taper & a sign at each end
+        for (let s = z0; s <= z1 + 0.01; s += Math.max(BARREL_STEP, (z1 - z0) / 12)) {
+          const q = along(pts, s), r = snap(q.x, q.z), c = r && curbs(r);
+          if (!r) { bad('off-road'); continue; }
+          if (!c) { bad('no-kerb'); continue; }
+          const curb = side > 0 ? c.right : c.left, width = c.right + c.left;
+          const lanes = Math.max(1, Math.round(width / 3.4)), lane = Math.min(3.6, Math.max(2.5, width / lanes));
+          const lat = side * Math.max(0.6, curb - lane + 0.4);
+          const x = r.px + c.nx * lat, z = r.pz + c.nz * lat;
+          if (clearSpot(x, z, 0.35, 'barrel')) emit('barrel', x, z, hash(x + ':' + z) * 6.28);
+        }
+        for (const e of ends) {
+          const q = along(pts, e.s), r0 = snap(q.x, q.z);
+          if (!r0) continue;
+          // the taper: cones from the lane's inner edge, back along the road to the kerb, outwards of the stretch
+          for (let k = 0; k <= 3; k++) {
+            const back = 1.2 + (TAPER_LEN * k) / 3;
+            const px = r0.px + r0.dx * e.out * back, pz = r0.pz + r0.dz * e.out * back;
+            const r = snap(px, pz), c = r && curbs(r);
+            if (!r || !c) { bad('no-kerb'); continue; }
+            const curb = side > 0 ? c.right : c.left, width = c.right + c.left;
+            const lanes = Math.max(1, Math.round(width / 3.4)), lane = Math.min(3.6, Math.max(2.5, width / lanes));
+            const lat = side * Math.max(0.5, curb - lane + 0.4 + (lane - 0.8) * (k / 3));
+            const x = r.px + c.nx * lat, z = r.pz + c.nz * lat;
+            if (clearSpot(x, z, 0.25, 'cone')) emit('cone', x, z, hash(x + ':' + z) * 6.28);
+          }
+          // the sign at the far end of the taper, in the closed lane, facing the traffic that comes to it
+          const sx = r0.px + r0.dx * e.out * (TAPER_LEN + 6), sz = r0.pz + r0.dz * e.out * (TAPER_LEN + 6);
+          const r = snap(sx, sz), c = r && curbs(r);
+          if (r && c) {
+            const curb = side > 0 ? c.right : c.left;
+            const x = r.px + c.nx * side * Math.max(0.5, curb - 1.0), z = r.pz + c.nz * side * Math.max(0.5, curb - 1.0);
+            const kind = rec.i && hash(rec.i + 'sign') < 0.5 ? 'signWork' : 'signLane';
+            const yaw = Math.atan2(r.dx * e.out, r.dz * e.out); // its face (+z) toward the way it is read from: outwards
+            if (clearSpot(x, z, 0.3, kind)) { emit(kind, x, z, yaw); hasSign = true; }
+          }
+        }
+        // an arrow board where the road is a big one and the work is long
+        if (arterial && L > 25) {
+          const q0 = along(pts, z0), r0 = snap(q0.x, q0.z);
+          if (r0) {
+            const r = snap(r0.px - r0.dx * (TAPER_LEN + 14), r0.pz - r0.dz * (TAPER_LEN + 14)), c = r && curbs(r);
+            if (r && c) {
+              const curb = side > 0 ? c.right : c.left;
+              const x = r.px + c.nx * side * Math.max(0.8, curb - 1.3), z = r.pz + c.nz * side * Math.max(0.8, curb - 1.3);
+              if (clearSpot(x, z, 1.2, 'arrow')) emit('arrow', x, z, Math.atan2(-r.dx, -r.dz), { side });
+            }
+          }
+        }
+      } else {
+        // ROAD_CLOSED: a row across the roadway at each end (one for a short stretch)
+        const rows = z1 - z0 < 14 ? [{ s: (z0 + z1) / 2, out: 1 }] : ends;
+        for (const e of rows) {
+          const q = along(pts, e.s), r = snap(q.x, q.z), c = r && curbs(r);
+          if (!r) { bad('off-road'); continue; }
+          if (!c) { bad('no-kerb'); continue; }
+          const oneWay = road.dir !== 0 && road.dir !== undefined;
+          const half = rec.d === 1 && !oneWay && c.right + c.left > 6.5;
+          if (half) allFull = false;
+          const from = half ? (side > 0 ? 0 : -c.left) : -c.left, to = half ? (side > 0 ? c.right : 0) : c.right;
+          const span = to - from;
+          if (span < 2) { bad('narrow'); continue; }
+          const yaw = Math.atan2(-c.nz, c.nx) + (e.out < 0 ? 0 : Math.PI); // the row's x along the normal, its face to the traffic
+          const kind = arterial ? 'barrier' : 'barricade';
+          const unit = kind === 'barrier' ? 3.0 : 2.4;
+          const n = Math.max(1, Math.round(span / unit));
+          const w = span / n;
+          let rowSigns = 0;
+          for (let i = 0; i < n; i++) {
+            const lat = from + w * (i + 0.5);
+            const x = r.px + c.nx * lat, z = r.pz + c.nz * lat;
+            if (clearSpot(x, z, w / 2, kind)) {
+              emit(kind, x, z, yaw, { w });
+              // the sign on the middle of the row (a barrier row's stands behind it on a post)
+              if (i === Math.floor(n / 2)) { rowSigns++; emit('signClosed', x, z, yaw, { w, onBarrier: kind === 'barrier' }); hasSign = true; }
+            }
+          }
+          // cones in front of the row, out to either side
+          for (const lat of [from + 0.6, (from + to) / 2, to - 0.6]) {
+            const x = r.px + c.nx * lat + r.dx * e.out * 2.2, z = r.pz + c.nz * lat + r.dz * e.out * 2.2;
+            if (clearSpot(x, z, 0.25, 'cone')) emit('cone', x, z, hash(x + ':' + z) * 6.28);
+          }
+        }
+      }
+    }
+    const placed = sites.length - placedBefore;
+    return { rec: index, placed: placed > 0, why: placed > 0 ? '' : 'nothing-clear', sites: placed, items: rejectedItems, hasSign, line: pts, full: closed && allFull };
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The traffic: the roads a full closure shuts to cars (traffic.js edges: a closed edge is busOnly, as High Park's park roads
+// are; js/high-park-features.js closeHighParkRoads)
+// ---------------------------------------------------------------------------------------------------------------------
+/** Closes the traffic edges lying along the closed stretches: `lines` [{ pts: [{x, z}], half: m }]. An edge whose points at
+ *  a quarter, a half and three quarters of its length all lie within `half` m of a line is closed, then the open edges near
+ *  them that no longer reach (or are reached from) the rest of the network are too. Returns { closed, stubs } */
+function closeEdges(network, lines, { reach = 160 } = {}) {
+  const edges = (network && network.edges) || [];
+  const segDist = (x, z, ax, az, bx, bz) => {
+    const ex = bx - ax, ez = bz - az, L2 = ex * ex + ez * ez || 1e-9;
+    const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / L2));
+    return Math.hypot(ax + ex * t - x, az + ez * t - z);
+  };
+  const near = (x, z) => lines.some((l) => l.pts.some((p, i) => i > 0 && segDist(x, z, l.pts[i - 1].x, l.pts[i - 1].z, p.x, p.z) < l.half));
+  let closed = 0;
+  const shut = [];
+  for (const e of edges) {
+    if (e.busOnly) continue;
+    if ([0.25, 0.5, 0.75].every((t) => near(e.sx + e.dx * e.len * t, e.sz + e.dz * e.len * t))) { e.busOnly = true; e.roadClosed = true; closed++; shut.push(e); }
+  }
+  if (!closed) return { closed: 0, stubs: 0 };
+  // the region round the closures: open edges inside it that cannot reach the open edges outside it, nor be reached from them
+  const inRegion = (e) => shut.some((s) => Math.hypot(e.sx - s.sx, e.sz - s.sz) < reach);
+  const open = edges.filter((e) => !e.busOnly);
+  const spread = (forward) => {
+    const seen = new Set(open.filter((e) => !inRegion(e)));
+    const into = new Map();
+    if (!forward) for (const e of open) for (const m of e.moves || []) if (!m.to.busOnly) (into.get(m.to) || into.set(m.to, []).get(m.to)).push(e);
+    const stack = [...seen];
+    while (stack.length) {
+      const e = stack.pop();
+      const next = forward ? (e.moves || []).map((m) => m.to).filter((f) => !f.busOnly) : into.get(e) || [];
+      for (const f of next) if (!seen.has(f)) { seen.add(f); stack.push(f); }
+    }
+    return seen;
+  };
+  const from = spread(true), to = spread(false);
+  let stubs = 0;
+  for (const e of open) if (inRegion(e) && !(from.has(e) && to.has(e))) { e.busOnly = true; e.roadClosed = true; stubs++; }
+  return { closed, stubs };
+}
+
+Object.assign(window.CITY, { roadworksSites, roadworks: { KINDS, nameKey, dayRange, activeOn, sceneDay, torontoDayOf, closeEdges, along, polyLength, BARREL_STEP, TAPER_LEN } });
+})();

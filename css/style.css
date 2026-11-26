@@ -2826,3 +2826,27 @@ body.riding-transit .touch-actions { visibility: hidden; }
 body.in-subway .ride-num { background: #007f3e; }
 
 body.in-subway:not(.riding-transit) [data-touch-action="up"] { visibility: hidden; }
+
+/* The City's road works card (js/roadworks.js): a small panel near the barrels, clear of the controls */
+.roadworks-card {
+  position: fixed;
+  left: var(--edge);
+  bottom: calc(var(--edge) + 210px);
+  z-index: 30;
+  width: min(360px, calc(100vw - 2 * var(--edge)));
+  max-height: 42vh;
+  overflow: auto;
+  padding: 12px 14px;
+  background: var(--grain), var(--glass-strong);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.roadworks-card[hidden] { display: none; }
+.roadworks-card .rw-head { display: flex; align-items: flex-start; gap: 8px; }
+.roadworks-card .rw-title { flex: 1; margin: 0; font-size: 15px; font-weight: 650; border-left: 4px solid #f26a10; padding-left: 8px; }
+.roadworks-card .rw-body p { margin: 6px 0 0; }
+.roadworks-card .rw-body p:last-child { opacity: 0.72; font-size: 12px; }
+.roadworks-card .pc-source { color: #9cc4ff; display: inline-block; margin-top: 8px; font-size: 12px; }
+@media (pointer: coarse) {
+  .roadworks-card { top: calc(var(--edge) + 56px); bottom: auto; max-height: 34vh; left: var(--edge); }
+}

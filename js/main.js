@@ -406,6 +406,13 @@ async function initApp() {
     trafficSystem.network.parkedAt = parkedCars.parkedAt;
   }
   markInit('parkedCars');
+  // the City's reported road works & closures, on the roads they are reported on (roadworks.js; ?roadworks=0 leaves them out;
+  // a feed that is down or late draws none)
+  const roadworks = window.CITY.buildRoadworks
+    ? await window.CITY.buildRoadworks(scene, { trafficSystem, parkedAt: parkedCars?.parkedAt, colliders: allColliders })
+    : null;
+  if (roadworks) pushAll(allColliders, roadworks.colliders);
+  markInit('roadworks');
   // the people's heads at every crosswalk, the midblock signals & the pedestrian crossovers (pedestrian-signals.js)
   if (window.CITY.buildPedestrianSignals) pushAll(propColliders, (window.CITY.buildPedestrianSignals(scene, trafficSystem, streetDetails.signalClock)?.colliders || []));
   const highwayTraffic = createHighwayTraffic(scene, cityGrid.highwayLanes);
@@ -561,7 +568,7 @@ async function initApp() {
   // (scene-culling.js). The cycle tracks' flexi-posts and the CaféTO patios set their own cull distances for it; left
   // out of this list, each drew every post and patio in the city in every frame (~430k triangles, st-z51b). The TTC
   // pylons keep their reach (no cull distance) and are cut into kilometre cells the view frustum skips
-  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios', 'TtcPylons', 'WaterfrontDetails', 'WaterfrontBeachGround', 'WaterfrontPublicRealm', 'WaterfrontLandmarks', 'WaterfrontMusicGarden', 'WaterfrontHarbourfront', 'WaterfrontMainBuilding', 'WaterfrontConcertStage', 'BiidaasigePark', 'PortLands', 'BiidaasigeAmenities', 'BiidaasigeLighting', 'WaterfrontFerries', 'WaterfrontIslandArrivals', 'WaterfrontSherbourne', 'WaterfrontBathurst', 'WaterfrontBeachLandscape', 'WaterfrontHtoLandscape', 'WaterfrontHtoFirehall', 'WaterfrontIslandAccess', 'WaterfrontDinghies', 'SchoolFences']
+  const cullingRoots = ['CityGround', 'CityBuildings', 'CityStreetDetails', 'CityStreetProps', 'CityRoadworks', 'CityParkSigns', 'CityBikeShare', 'CityLandmarks', 'Terrain', 'RoadMarkings', 'PedestrianSignalPoles', 'BikePosts', 'CafeTOPatios', 'TtcPylons', 'WaterfrontDetails', 'WaterfrontBeachGround', 'WaterfrontPublicRealm', 'WaterfrontLandmarks', 'WaterfrontMusicGarden', 'WaterfrontHarbourfront', 'WaterfrontMainBuilding', 'WaterfrontConcertStage', 'BiidaasigePark', 'PortLands', 'BiidaasigeAmenities', 'BiidaasigeLighting', 'WaterfrontFerries', 'WaterfrontIslandArrivals', 'WaterfrontSherbourne', 'WaterfrontBathurst', 'WaterfrontBeachLandscape', 'WaterfrontHtoLandscape', 'WaterfrontHtoFirehall', 'WaterfrontIslandAccess', 'WaterfrontDinghies', 'SchoolFences']
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean);
   // ?massing=1: the polygon cells, built in a worker since `blocks` (their near tier gives the shadow stand-ins)
@@ -1773,6 +1780,7 @@ async function initApp() {
     if (warmedUp && bikeShare) bikeShare.update(cameraSystem.camera.position); // the nearby stations' bikes
     if (warmedUp && highParkFeatures?.zoo) highParkFeatures.zoo.update(cameraSystem.camera.position, cameraSystem.camera); // (the zoo's models, near it)
     if (warmedUp && wayfindingMaps) wayfindingMaps.update(cameraSystem.camera.position,dt);
+    if (warmedUp && roadworks) roadworks.update(cameraSystem.camera.position, dt); // (the card of the road works near)
 
     // The pooled street, head & police lights that are off (intensity 0, parked underground) leave the clustered
     // lighting's list, so by day its per-frame cluster pass has no lights to sort and test

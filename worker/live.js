@@ -6,6 +6,10 @@
 //   to the vehicles within the city as compact JSON:
 //   { t: feed time (s), v: [[route, direction (0/1, -1 unknown), lat, lon, bearing (deg, -1 unknown), time (s), id], ...] }
 //   (the TTC's feed has no CORS header, so the browser can't read it itself)
+// - /live/roadworks: the City of Toronto's Road Restrictions feed (open data, Open Government Licence – Toronto) cut down to
+//   compact records inside the playable frames (worker/roadworks.js), read from the City at most once every 15 minutes
+//   whatever the number of visitors (the Cache API, then a module-level copy): { t: fetch time (ms), counts, records }.
+//   js/roadworks.js draws what it reports; a feed that is down is a 502 and the page draws nothing.
 // - the landing page's clips (assets/site/clips/*, also run_worker_first): the asset with byte-range (206) support,
 //   which the assets binding lacks and Safari needs to play a <video> (worker/range.js); on every host, no redirect
 // - the pages (wrangler.jsonc run_worker_first) on the old workers.dev address: a permanent redirect to the same path
@@ -13,6 +17,7 @@
 // - everything else: the assets binding (its 404s).
 
 import { isClip, serveClip } from './range.js';
+import { FEED as RESTRICTIONS_FEED, parseRestrictions } from './roadworks.js';
 
 const OLD_HOST = 'slop-toronto.cloud6711.workers.dev', SITE = 'https://sloptoronto.ca';
 const FEED = 'https://bustime.ttc.ca/gtfsrt/vehicles';
@@ -114,11 +119,36 @@ async function vehicles(ctx) {
   return body;
 }
 
+const ROADWORKS_TTL = 900; // s
+let lastRoadworks = null; // { at: ms, body }
+async function roadworks(ctx) {
+  const now = Date.now();
+  if (lastRoadworks && now - lastRoadworks.at < ROADWORKS_TTL * 1000) return lastRoadworks.body;
+  const cache = caches.default;
+  const key = new Request('https://live.cache/city-road-restrictions');
+  const hit = await cache.match(key);
+  if (hit) {
+    const body = await hit.text();
+    const at = Number(hit.headers.get('x-fetched-at')) || now;
+    if (now - at < ROADWORKS_TTL * 1000) {
+      lastRoadworks = { at, body };
+      return body;
+    }
+  }
+  const res = await fetch(RESTRICTIONS_FEED, { cf: { cacheTtl: 0 }, headers: { 'user-agent': 'SlopToronto/1.0 (+https://sloptoronto.ca)' } });
+  if (!res.ok) throw new Error('feed ' + res.status);
+  const { records, counts } = parseRestrictions(await res.json(), { now });
+  const body = JSON.stringify({ t: now, counts, records });
+  lastRoadworks = { at: now, body };
+  ctx.waitUntil(cache.put(key, new Response(body, { headers: { 'cache-control': `max-age=${ROADWORKS_TTL}`, 'x-fetched-at': String(now) } })));
+  return body;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (isClip(url.pathname)) return serveClip(request, env);
-    if (url.hostname === OLD_HOST && url.pathname !== '/live/vehicles') {
+    if (url.hostname === OLD_HOST && url.pathname !== '/live/vehicles' && url.pathname !== '/live/roadworks') {
       return new Response(null, { status: 301, headers: { location: SITE + url.pathname + url.search, 'cache-control': 'public, max-age=3600' } });
     }
     if (url.pathname === '/live/vehicles') {
@@ -133,6 +163,21 @@ export default {
         });
       } catch (e) {
         // (the client falls back to the timetable)
+        return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 502, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+      }
+    }
+    if (url.pathname === '/live/roadworks') {
+      try {
+        return new Response(await roadworks(ctx), {
+          headers: {
+            'content-type': 'application/json',
+            'cache-control': `public, max-age=${ROADWORKS_TTL}`,
+            'x-content-type-options': 'nosniff',
+            'x-data-source': 'City of Toronto Road Restrictions, Open Government Licence - Toronto'
+          }
+        });
+      } catch (e) {
+        // (the page draws no road works)
         return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 502, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
       }
     }

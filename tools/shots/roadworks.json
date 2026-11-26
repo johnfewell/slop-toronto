@@ -1,0 +1,33 @@
+[
+ {
+  "name": "roadworks-0-count",
+  "mode": "person",
+  "time": "midday",
+  "wait": 2500,
+  "js": "(() => {const C=window.CITY,s=C.roadworksStats;if(!s||!s.sites)throw new Error('road works not drawn: '+JSON.stringify(s));console.log('[ride-check] roadworks '+JSON.stringify({feed:s.feed,records:s.records,inFrame:s.inFrame,active:s.active,notActive:s.notActive,placed:s.placed,placedClosed:s.placedClosed,placedLane:s.placedLane,sites:s.sites,byKind:s.byKind,rejected:s.rejected,closedEdges:s.closedEdges,closedStubs:s.closedStubs,day:s.day,ms:s.ms}));const g=window.__CITY_APP.scene.getObjectByName('CityRoadworks');if(!g||g.children.length<4)throw new Error('road works group missing');})()"
+ },
+ {
+  "name": "roadworks-1-lane-closure-king",
+  "mode": "person",
+  "js": "(() => {const L=window.CITY.roadworksLive,a=window.__CITY_APP;const ok=(p)=>p.placed&&L.records[p.rec].t==='C';const n=(p)=>L.sites.filter(s=>s.rec===p.rec&&s.kind==='barrel').length;const pref=['Bloor St W','Queen St W','Dundas St W','Bay St','Yonge St','University Ave','College St'];let pl=null;for(const r of pref){pl=L.plans.filter(p=>ok(p)&&L.records[p.rec].r===r&&n(p)>=5).sort((x,y)=>n(y)-n(x))[0];if(pl)break;}pl=pl||L.plans.filter(p=>ok(p)&&n(p)>=5)[0];const b=L.sites.filter(s=>s.rec===pl.rec&&s.kind==='barrel');const s0=b[0],s1=b[b.length-1];const dx=s1.x-s0.x,dz=s1.z-s0.z,l=Math.hypot(dx,dz)||1;const x=s0.x-dx/l*11,z=s0.z-dz/l*11;a.teleportTo(x,z,Math.atan2(dx,dz));a.selectCamera('pov',true);console.log('[ride-check] lane closure '+JSON.stringify(L.records[pl.rec]).slice(0,300));})()",
+  "wait": 3500
+ },
+ {
+  "name": "roadworks-4-lane-closure-queen",
+  "mode": "person",
+  "js": "(() => {const L=window.CITY.roadworksLive,a=window.__CITY_APP;const ok=(p)=>p.placed&&L.records[p.rec].t==='C';const n=(p)=>L.sites.filter(s=>s.rec===p.rec&&s.kind==='barrel').length;const pref=['Queen St W','Dundas St W','King St W','Queen St E','Richmond St W','Adelaide St W'];let pl=null;for(const r of pref){pl=L.plans.filter(p=>ok(p)&&L.records[p.rec].r===r&&n(p)>=5).sort((x,y)=>n(y)-n(x))[0];if(pl)break;}pl=pl||L.plans.filter(p=>ok(p)&&n(p)>=5)[0];const b=L.sites.filter(s=>s.rec===pl.rec&&s.kind==='barrel');const s0=b[0],s1=b[b.length-1];const dx=s1.x-s0.x,dz=s1.z-s0.z,l=Math.hypot(dx,dz)||1;const x=s0.x-dx/l*11,z=s0.z-dz/l*11;a.teleportTo(x,z,Math.atan2(dx,dz));a.selectCamera('pov',true);console.log('[ride-check] lane closure '+JSON.stringify(L.records[pl.rec]).slice(0,300));})()",
+  "wait": 3500
+ },
+ {
+  "name": "roadworks-2-full-closure",
+  "mode": "person",
+  "js": "(() => {const L=window.CITY.roadworksLive,a=window.__CITY_APP;const pl=L.plans.find(p=>p.placed&&L.records[p.rec].t==='R'&&L.sites.filter(s=>s.rec===p.rec&&s.kind==='barricade').length>=3);const sign=L.sites.find(s=>s.rec===pl.rec&&s.kind==='signClosed');const px=sign.x+Math.sin(sign.yaw)*7,pz=sign.z+Math.cos(sign.yaw)*7;a.teleportTo(px,pz,Math.atan2(sign.x-px,sign.z-pz));a.selectCamera('pov',true);console.log('[ride-check] full closure '+JSON.stringify(L.records[pl.rec]).slice(0,300));})()",
+  "wait": 3500
+ },
+ {
+  "name": "roadworks-3-card",
+  "mode": "person",
+  "js": "(() => {const c=document.getElementById('roadworks-card');console.log('[ride-check] card '+(c?(c.hidden?'hidden':c.innerText.slice(0,400)):'missing'));})()",
+  "wait": 800
+ }
+]
