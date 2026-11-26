@@ -114,11 +114,17 @@ test('placement keeps each footprint where mapped, rejecting roads, grade and ob
   const ok=C.rinkSites([r],{blockAt:()=>block,groundAt:()=>.22,overlapArea:()=>0});
   assert.equal(ok.sites.length,1);assert.equal(ok.sites[0].y,.22);assert.deepEqual(ok.sites[0].polygons,r.polygons);
   const cx=ok.sites[0].bounds.x0;
-  assert.equal(C.rinkSites([r],{blockAt:(x)=>x<cx+1?null:block,groundAt:()=>.22,overlapArea:()=>0}).rejected[0].reason,'road');
+  assert.equal(C.rinkSites([r],{blockAt:(x)=>x>ok.sites[0].bounds.x1-4?null:block,groundAt:()=>.22,overlapArea:()=>0}).rejected[0].reason,'road');
+  // one stray vertex on a neighbouring curb island (the Greenwood and Dieppe skate trails) is registration noise, not a road
+  const [vx0,vz0]=r.polygons[0].outer[0];
+  assert.equal(C.rinkSites([r],{blockAt:(x,z)=>x===vx0&&z===vz0?null:block,groundAt:()=>.22,overlapArea:()=>0}).sites.length,1,'a stray vertex on a footpath tolerated');
   assert.equal(C.rinkSites([r],{blockAt:()=>block,groundAt:(x)=>x<cx+1?.6:.22,overlapArea:()=>0}).rejected[0].reason,'grade');
   assert.equal(C.rinkSites([r],{blockAt:()=>block,groundAt:()=>.22,overlapArea:()=>.75}).sites.length,1,'sub-metre edge contact tolerated');
-  const blocked=C.rinkSites([r],{blockAt:()=>block,groundAt:()=>.22,overlapArea:()=>4}).rejected[0];
-  assert.equal(blocked.reason,'obstruction');assert.equal(blocked.overlap,4);
+  const area=r.polygons.reduce((sum,p)=>sum+Math.abs(p.outer.reduce((a,[x,z],i)=>{const [u,w]=p.outer[(i+1)%p.outer.length];return a+x*w-u*z;},0))/2,0);
+  assert.equal(C.rinkSites([r],{blockAt:()=>block,groundAt:()=>.22,overlapArea:()=>area*.09}).sites.length,1,'a 9% clip of the outline (TMU Square) is tolerated, in proportion to the rink');
+  const blocked=C.rinkSites([r],{blockAt:()=>block,groundAt:()=>.22,overlapArea:()=>area*.4}).rejected[0];
+  assert.equal(blocked.reason,'obstruction');assert.equal(blocked.overlap,area*.4);
+  assert.equal(C.rinkSites([r],{blockAt:()=>block,groundAt:()=>.22,overlapArea:()=>area*.99}).rejected[0].reason,'roofed','a rink under a roof (Greenwood Park)');
   // holes are not rink floor; margins reach just outside the outline
   const trail=byAsset('74082'),hole=trail.polygons[0].holes[0],hx=hole.reduce((s,p)=>s+p[0],0)/hole.length,hz=hole.reduce((s,p)=>s+p[1],0)/hole.length;
   assert.ok(!C.inRecord(trail,hx,hz));

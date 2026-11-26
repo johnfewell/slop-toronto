@@ -1,0 +1,68 @@
+[
+ {
+  "name": "f1-queen-w-street",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1472.9, -711.3, 0); app.cameraSystem.cinema = () => ({ pos: [-1472.9, 9, -711.3], look: [-1508.8, 12.1, -711.5], fov: 60 }); })()"
+ },
+ {
+  "name": "f2-queen-w-large-street",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3132.3, -659.4, 0); app.cameraSystem.cinema = () => ({ pos: [-3132.3, 1.7, -659.4], look: [-3131.4, 16.0, -703.4], fov: 60 }); })()"
+ },
+ {
+  "name": "f3-queen-w-above",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-3658.3, -769.0, 0); app.cameraSystem.cinema = () => ({ pos: [-3658.3, 38, -769.0], look: [-3658.8, 37.2, -746.0], fov: 60 }); })()"
+ },
+ {
+  "name": "f4-spadina-large-street",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1143.1, -630.5, 0); app.cameraSystem.cinema = () => ({ pos: [-1143.1, 1.7, -630.5], look: [-1143.1, 16.0, -616.5], fov: 60 }); })()"
+ },
+ {
+  "name": "f5-spadina-street",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1069.8, -1210.2, 0); app.cameraSystem.cinema = () => ({ pos: [-1069.8, 1.7, -1210.2], look: [-1069.8, 15.9, -1130.2], fov: 60 }); })()"
+ },
+ {
+  "name": "f6-spadina-above",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app = window.__CITY_APP; app.teleportTo(-1189.2, -710.2, 0); app.cameraSystem.cinema = () => ({ pos: [-1189.2, 38, -710.2], look: [-1153.3, 9.3, -710.4], fov: 60 }); })()"
+ },
+ {
+  "name": "rink-tmu-square-above",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app=window.__CITY_APP; app.teleportTo(454, -1272, 0); app.cameraSystem.cinema = () => ({ pos:[454, 110, -1272+0.01], look:[454, 0, -1272], fov:55 }); })()"
+ },
+ {
+  "name": "rink-greenwood-park-above",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app=window.__CITY_APP; app.teleportTo(4715, -1375, 0); app.cameraSystem.cinema = () => ({ pos:[4715, 110, -1375+0.01], look:[4715, 0, -1375], fov:55 }); })()"
+ },
+ {
+  "name": "rink-dieppe-park-above",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app=window.__CITY_APP; app.teleportTo(4907, -3951, 0); app.cameraSystem.cinema = () => ({ pos:[4907, 110, -3951+0.01], look:[4907, 0, -3951], fov:55 }); })()"
+ },
+ {
+  "name": "rink-north-toronto-memorial-above",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app=window.__CITY_APP; app.teleportTo(96, -7070, 0); app.cameraSystem.cinema = () => ({ pos:[96, 110, -7070+0.01], look:[96, 0, -7070], fov:55 }); })()"
+ },
+ {
+  "name": "rink-tmu-square-street",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const app=window.__CITY_APP; app.teleportTo(470, -1300, 0); app.cameraSystem.cinema = () => ({ pos:[480, 6, -1310], look:[454, 0, -1280], fov:60 }); })()"
+ }
+]

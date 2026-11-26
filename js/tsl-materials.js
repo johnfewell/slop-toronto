@@ -1794,12 +1794,22 @@ function createRenderedFacadeMaterial(opts = {}) {
         );
         const t = texture(ghostSignAtlas(), cuv).level(lod);
         const pal = fract(tone.mul(17.9).add(boxSeed.mul(0.21)));
-        const ground = mix(mix(mix(color(0xd6c9a4), color(0x2f4a3a), step(0.25, pal)), color(0x7a2e24), step(0.5, pal)), color(0x2b3445), step(0.75, pal));
-        const ink = mix(mix(mix(color(0x6e2c22), color(0xd9ceb0), step(0.25, pal)), color(0xd8cba8), step(0.5, pal)), color(0xd1c28a), step(0.75, pal));
-        const flake = smoothstep(0.5, 0.74, noise2D(vec2(wallS.mul(0.7), fromTop.mul(1.1)).add(tone.mul(31.0))));
-        const wear = float(1.0).sub(flake.mul(0.85));
-        const cover = mix(float(0.42), float(0.72), fract(pick.mul(5.9))).mul(wear);
-        signPaint.assign(vec4(mix(ground, ink, t.x), t.y.mul(cover)));
+        // Chalky, washed-out paints (off-white, faded ochre, dull red / green / blue), each pulled toward the chalk of old lime paint
+        const chalk = color(0xcfc9b9);
+        const ground = mix(mix(mix(color(0xcbbf99), color(0x6f8573), step(0.25, pal)), color(0x9a6a5e), step(0.5, pal)), color(0x65728a), step(0.75, pal));
+        const ink = mix(mix(mix(color(0x9a5a4c), color(0xd6cfbc), step(0.25, pal)), color(0xd3c9ac), step(0.5, pal)), color(0xc9bf94), step(0.75, pal));
+        const gCol = mix(ground, chalk, 0.18), iCol = mix(ink, chalk, 0.2);
+        // Uneven wear: big missing patches, fine flaking, whole bricks that lost their paint, and joints the paint never held
+        const patches = smoothstep(0.22, 0.5, noise2D(vec2(wallS.mul(0.23), fromTop.mul(0.33)).add(tone.mul(17.0))));
+        const flake = smoothstep(0.3, 0.72, noise2D(vec2(wallS.mul(0.9), fromTop.mul(1.3)).add(tone.mul(31.0))));
+        const brickKeep = mix(float(0.3), float(1.0), step(0.25, hash2D(vec2(floor(colC), row).add(vec2(uSeed, 9.3)))));
+        const wear = patches.mul(mix(float(0.45), float(1.0), flake)).mul(brickKeep).mul(float(1.0).sub(mortar.mul(0.8)));
+        const cover = mix(float(0.7), float(1.0), fract(pick.mul(5.9))).mul(wear);
+        // The panel's ground is nearly gone; the lettering keeps a little more paint; the top of the panel is dulled with soot
+        const sootTop = smoothstep(0.55, 0.0, sv).mul(mix(float(0.5), float(1.0), flake));
+        const alpha = t.y.mul(mix(float(0.2), float(0.62), t.x)).mul(cover);
+        const paintCol = mix(mix(gCol, iCol, t.x), color(0x4a443d), sootTop.mul(0.4));
+        signPaint.assign(vec4(paintCol, alpha));
       });
       wall = mix(wall, signPaint.xyz, signPaint.w);
     }

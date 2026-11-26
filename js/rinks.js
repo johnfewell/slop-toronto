@@ -12,6 +12,11 @@
 // under floodlight at night only in the ice season; no light pole positions are mapped, so none are drawn.
 const C=window.CITY;
 const BOARD_HEIGHT=1.07,BOARD_HALF=.045,GATE_WIDTH=2,SURFACE_LIFT=.024,LINE_LIFT=.028,MAX_OVERLAP=1,WALL_STEP=.45;
+// Placement tolerances grow with the rink: the City's outlines and the game's footprints are each good to a few metres, so a
+// sliver of contact is registration noise, not an obstruction. Up to 15% of the area under buildings/props (TMU Square's outline
+// clips three building edges by 9%), and 3% of the sample points off the curb island (a few metres where the loop crosses a footpath), are accepted;
+// a footprint under a roof (90% or more covered, Greenwood Park) is reported as roofed.
+const MAX_OVERLAP_SHARE=.15,ROOFED_SHARE=.9,MAX_OFF_BLOCK_SHARE=.03;
 const COLOURS={pad:'#7f817c',path:'#6f7270',water:'#1c2c2e',ice:'#dde8ec',board:'#e6e8e2',cap:'#3a4245',wall:'#9c9a92',
   red:{ice:'#c0443c',off:'#8f5e57'},blue:{ice:'#3b6cb5',off:'#5f7590'}};
 const ROUGH={pad:.95,path:.93,water:.07,ice:.16,line:.6};
@@ -160,13 +165,16 @@ function rinkSites(records,{blockAt,groundAt,overlapArea}) {
     if(!interior.length){rejected.push({id:record.id,reason:'empty'});continue;}
     const block=blockAt(...interior[0]),y=groundAt(...interior[0]);
     if(!block||!Number.isFinite(y)){rejected.push({id:record.id,reason:'ground'});continue;}
-    let reason='';
-    for(const [x,z]of [...interior,...record.polygons.flatMap((p)=>p.outer)]) {
-      if(blockAt(x,z)!==block){reason='road';break;}
+    let reason='',offBlock=0;
+    const samples=[...interior,...record.polygons.flatMap((p)=>p.outer)];
+    for(const [x,z]of samples) {
+      if(blockAt(x,z)!==block){offBlock++;continue;}
       const h=groundAt(x,z);if(!Number.isFinite(h)||Math.abs(h-y)>.15){reason='grade';break;}
     }
+    if(!reason&&offBlock>Math.max(1,samples.length*MAX_OFF_BLOCK_SHARE))reason='road';
     const overlap=reason?0:overlapArea(record,y);
-    if(!reason&&overlap>MAX_OVERLAP)reason='obstruction';
+    const area=record.polygons.reduce((sum,p)=>sum+Math.abs(ringArea(p.outer))-p.holes.reduce((h,r)=>h+Math.abs(ringArea(r)),0),0);
+    if(!reason&&overlap>Math.max(MAX_OVERLAP,area*MAX_OVERLAP_SHARE))reason=overlap>area*ROOFED_SHARE?'roofed':'obstruction';
     if(reason)rejected.push({id:record.id,reason,...(overlap?{overlap}:{})});else sites.push({...record,y,overlap});
   }
   return {sites,rejected};

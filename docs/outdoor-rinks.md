@@ -28,9 +28,9 @@ In the ice season the pads, trails and both squares' pools are ice, with bright 
 
 `js/rinks.js` runs once at start-up, after tennis (`js/main.js`). It never moves a footprint. A record is rejected and reported in `CITY.rinkStats.rejected` in any of these cases:
 
-- a 2 m interior sample or an outline vertex falls on another curb island or road;
+- more than 3% of the 2 m interior samples and outline vertices (and more than one) fall on another curb island or road;
 - the prepared ground differs by more than 15 cm across the footprint;
-- more than 1 m² of the footprint lies under a building, landmark or prop collider between ankle and head height.
+- more than 15% of the footprint's area (and more than 1 m²) lies under a building, landmark or prop collider between ankle and head height; at 90% or more the reason is `roofed` (Greenwood Park's rink under its roof). The tolerances scale with the rink because the City's outlines and the game's footprints are each good to a few metres.
 
 What it draws:
 
