@@ -2308,6 +2308,61 @@ class PersonRig {
   }
 
   /**
+   * Skating (rinks, skaters.js): glides along heading `yaw` at (x, z), crouched and leaning into the turn (`roll`), with
+   * the legs on a two-foot stroke cycle: each foot in turn pushes back and out on the ice, then lifts and returns. The same
+   * leg IK and arm posing as walking. `stroke` is the cycle (whole turns), `ground` the ice height there.
+   */
+  skate(dt, x, z, yaw, ground, stroke, roll = 0, crouch = 0.9) {
+    const s = this.s;
+    this.time += dt;
+    this.x = x;
+    this.z = z;
+    this.yaw = yaw;
+    this.placed = true;
+    const sinY = Math.sin(yaw);
+    const cosY = Math.cos(yaw);
+    for (let i = 0; i < 2; i++) {
+      const foot = this.feet[i];
+      const side = foot.side;
+      const u = (stroke + i * 0.5) % 1;
+      let f, l, lift, out;
+      if (u < 0.45) {
+        const k = u / 0.45;
+        f = lerp(0.05, -0.3, k);
+        l = lerp(0.1, 0.3, smooth(0, 1, k));
+        lift = 0;
+        out = 0.12 + 0.5 * k;
+      } else {
+        const k = (u - 0.45) / 0.55;
+        const e = smooth(0, 1, k);
+        f = lerp(-0.3, 0.05, e);
+        l = lerp(0.3, 0.1, e);
+        lift = 0.07 * Math.sin(Math.PI * k);
+        out = lerp(0.62, 0.12, e);
+      }
+      foot.swing = false;
+      foot.px = x + (sinY * f + cosY * side * l) * s;
+      foot.pz = z + (cosY * f - sinY * side * l) * s;
+      foot.py = ground + lift * s;
+      foot.yaw = yaw + side * out;
+      foot.contact = lift > 0 ? 0 : 1;
+      foot.toe = 0;
+      this.plant(foot, 0, HEEL);
+    }
+    _qOwner = null;
+    this.gait = 0.3;
+    this.run = this.sprint = this.sway = this.back = this.yawRate = this.bank = this.headTurn = 0;
+    this.airBlend = this.airVel = this.jumpPrep = this.landDrop = 0;
+    this.wasAirborne = false;
+    this.arm = 0.5 * Math.sin(stroke * Math.PI * 2);
+    this.pelvisYaw = 0.1 * Math.sin(stroke * Math.PI * 2);
+    this.pelvisRoll = roll;
+    this.pelvisTilt = 0.26;
+    this.pelvisY = ground + ANKLE_H * s + this.legLength * crouch + (PELVIS_Y - HIP_Y) * s;
+    this.solve();
+  }
+
+  /**
    * Riding a bicycle: `root` (Object3D) is the bike frame (pose in its parent's space, e.g. the scene), `crank` the
    * pedal crank angle. Seat, bars and bottom bracket in the frame's space (metres, +Z forward).
    */

@@ -945,6 +945,13 @@ async function initApp() {
   // minutes (ECCC observes hourly). A capture fixture (?liveClock=, ?liveWeather=, or liveSky.inject) holds both still.
   const liveSky = { active: false, start: { ...liveStart }, reading: null, readingAt: 0, weather: LIVE.weatherFor(null), hour: null };
   const liveNow = () => (liveSky.start.fixedClock ? new Date(liveSky.start.fixedClock.getTime()) : new Date());
+  // People on the ice (skaters.js): only in the ice season, within the rinks' hours (the clock, live or a preset's hour), and after
+  // dusk only on rinks the City lists with lights
+  const skaters = window.CITY.buildSkaters?.(scene, {
+    sites: rinks?.sites || [],
+    getHour: () => (liveSky.active ? LIVE.torontoClock(liveNow()).hour : window.CITY.SUN_HOURS[lightingSystem.activePresetId] ?? 13),
+    getDark: () => (window.CITY.cityUniforms?.uInteriorGlow?.value ?? 0) > 0.9
+  });
   function liveWeather() {
     if (liveSky.start.fixedCondition != null) {
       const { key, look } = LIVE.weatherFromCondition(liveSky.start.fixedCondition);
@@ -1747,6 +1754,7 @@ async function initApp() {
         cameraSystem.camera
       );
       highwayTraffic.update(dt, cameraSystem.camera, playerEnt, controllerManager.activeMode);
+      skaters?.update(dt, elapsed, cameraSystem.currentPos, playerEnt?.position);
       if (!document.hidden && now >= nextPlayerSave) {
         savePlayerState();
         nextPlayerSave = now + 5000;

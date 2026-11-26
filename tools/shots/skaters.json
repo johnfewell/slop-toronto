@@ -1,0 +1,18 @@
+[
+  {
+    "name": "skaters-nps",
+    "mode": "person",
+    "js": "(() => {const C=window.CITY,a=window.__CITY_APP;window.__skSite=(asset)=>{const s=C.rinkStats.sites.find(q=>q.assetId===asset),r=C.RINKS.records.find(q=>q.assetId===asset);if(!s||!r)throw new Error('Rink not drawn '+asset);return {s,r,rect:C.outlineRectangle(r.polygons[0].outer)};};window.__skView=(asset,{side=1,along=.3,dist=1,height=1,fov=55}={})=>{const {s,rect}=window.__skSite(asset),px=-rect.az,pz=rect.ax,d=(rect.width/2+rect.length*.3+8)*dist,x=rect.x+px*d*side+rect.ax*rect.length*along,z=rect.z+pz*d*side+rect.az*rect.length*along;a.cameraSystem.cinema=()=>({pos:[x,s.y+9*height+rect.length*.12*height,z],look:[rect.x,s.y+.8,rect.z],fov});};console.log('[skaters-check] '+JSON.stringify({rinkStats:{season:C.rinkStats.season,placed:C.rinkStats.placed},skaters:C.skaterStats,sceneDate:C.rinkStats.sceneDate,ids:C.rinkStats.sites.map(x=>x.assetId+':'+x.name)}));window.__skView('43599');})()",
+    "wait": 4000
+  },
+  {
+    "name": "skaters-nps-close",
+    "js": "window.__skView('43599',{side:1,along:.2,dist:.5,height:.35,fov:60})",
+    "wait": 1800
+  },
+  {
+    "name": "skaters-hood",
+    "js": "(() => {const id=window.CITY.rinkStats.sites.find(x=>x.assetId==='970547')?'970547':'71802';window.__skView(id,{side:-1,along:.1,dist:.8,height:.6});console.log('[skaters-check] '+JSON.stringify(window.CITY.skaterStats));})()",
+    "wait": 1800
+  }
+]

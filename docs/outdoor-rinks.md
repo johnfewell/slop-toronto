@@ -116,3 +116,16 @@ that the game draws as another curb island). Their cards say "Outline not drawn"
 **Season.** Unchanged: `?rinks=ice` / `?rinks=off`, ice from 1 December to 15 March, the squares' pools off-season. Checked on the
 Mac mini on the Eglinton map on 26 November (no ice; trees bare) and 15 January (ice), Monarch Park `43593`, Giovanni Caboto `43583` and
 `14276`, Wallace-Emerson `43609`, Kew Gardens `44162`.
+
+## Skaters (bead jf-9vp)
+
+`js/skaters.js` puts people on the ice, instanced (`PersonCrowd`, one draw per level of detail) and posed by `PersonRig.skate()` in `js/pedestrians.js`: a crouched glide with a lean into the turn and a two-foot push-and-recover stroke on the existing leg IK. Nothing is built unless the scene's rink season is `ice`, so every summer preset and off-season day pays nothing.
+
+- **Season and hours.** The City publishes no per-rink 2026-27 opening dates or daily hours. Its [Drop-in Skating page](https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/ice-snow-activities/public-leisure-skating/) (modified 16 September 2026) says outdoor artificial ice rinks "typically open in late November and close for the season in March", that "Schedules and hours of operation vary", and that they close after heavy snow and on warm days. The City's 2025 advisory, [gradual opening of the outdoor rinks](https://www.toronto.ca/news/city-of-toronto-to-begin-opening-artificial-ice-rinks-and-skating-trails/) (28 November 2025), puts last season's start at 29 November. The game keeps the ice season above (1 December to 15 March) and a representative 9 am to 10 pm day on the scene clock (the live Toronto clock, a `?liveClock=` fixture, or a preset's hour). It is an approximation, not a status.
+- **Night.** A rink the City lists with `Lighting: Yes` stays busy until 10 pm; an unlit rink is empty once the scene is dark (`uInteriorGlow` above 0.9, dusk).
+- **Crowd.** One person per 70 m² at the busiest, 4 to 26 a rink, times a share by hour that differs on weekdays (busiest 6 to 8 pm, few at 9 am) and weekends (busy from 10 am to 4 pm). People arrive and leave only while more than 50 m from the camera.
+- **Movement.** Counter-clockwise loops (seen from above): a rounded rectangle fitted to each pad, shrunk until it clears the outline by 1.2 m. Lanes follow speed; kids, slower adults, regular adults and the odd adult pair differ in speed, size and stroke. A skater's place is a closed-form function of time, so rinks out of range (over 110 m) cost nothing. Skate trails (rings with islands) are not populated.
+- **The player.** Skaters are not colliders. Within 3.2 m of the player, a skater's path is pushed away (eased, kept inside the rink), so the player is never held by them.
+- **Not done.** Hockey sticks and shinny games, trail skaters, skate blades.
+
+Tests: `tests/skaters.test.mjs` (gating, crowd sizing, loops inside every outline and counter-clockwise). Captures: `node tools/check-skaters.mjs` on the mini (2026-12-12, a Saturday: 14:00, 18:30, 23:00, and a summer date). Contended-mini frame rates were the same with skaters (day 52/52/44 fps) as with the rinks closed (52/56/45 fps).
