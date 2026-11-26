@@ -1,0 +1,26 @@
+[
+ {
+  "name": "count",
+  "mode": "person",
+  "time": "midday",
+  "wait": 3000,
+  "record": true,
+  "js": "(async () => {\nawait new Promise((done) => { const t0 = Date.now(), f = () => (window.__CITY_APP.streetcars.liveCars.size > 0 && Date.now() - t0 > 4000) || Date.now() - t0 > 70000 ? done() : setTimeout(f, 500); f(); });\nconst app = window.__CITY_APP, C = window.CITY, sc = app.streetcars;\nconst feed = window.__LIVE_FEED_RAW.v.filter((r) => /^4[4-6]\\d\\d$/.test(String(r[6])));\nconst drawn = [...sc.liveCars.entries()].map(([id, c]) => { const pat = c.track.pattern; const m = c.sections[2]; return { id, drawnOn: pat.route + ' ' + c.track.sign.join(' / '), x: Math.round(m.x), z: Math.round(m.z), placed: !!c.placed, signRow: c.signRow ?? null }; });\nconst ids = new Set(drawn.map((d) => d.id));\nconst missing = feed.filter((r) => !ids.has(String(r[6]))).map((r) => ({ id: r[6], route: r[0], lat: r[2], lon: r[3], xy: (({ x, z }) => [Math.round(x), Math.round(z)])(C.worldFromLatLon(r[2], r[3])) }));\nconst feedRoutes = Object.fromEntries(feed.map((r) => [String(r[6]), r[0]]));\nconst offPattern = drawn.filter((d) => !d.drawnOn.startsWith(feedRoutes[d.id] + ' '));\nconsole.log('[st-1aqy] feed streetcars ' + feed.length + ', drawn ' + drawn.length + ', off their route pattern ' + offPattern.length + ', missing ' + missing.length);\nreturn { feedStreetcars: feed.length, drawn: drawn.length, offPattern, missing, all: drawn };\n})()"
+ },
+ {
+  "name": "f4472-king-west",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => {\nawait new Promise((done) => { const t0 = Date.now(), f = () => (window.__CITY_APP.streetcars.liveCars.size > 0 && Date.now() - t0 > 4000) || Date.now() - t0 > 70000 ? done() : setTimeout(f, 500); f(); });\nconst app = window.__CITY_APP, C = window.CITY, sc = app.streetcars;\nconst car = sc.liveCars.get('4472');\nif (!car) { console.log('[st-1aqy] f4472-king-west: car 4472 not drawn'); return { drawn: false }; }\nconst m0 = sc.sample(car.track, car.s, {});\napp.teleportTo(m0.x + 30, m0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = sc.sample(car.track, car.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 24 + rx * 6, (m.y || 0) + 5.5, m.z + fz * 24 + rz * 6], look: [m.x, (m.y || 0) + 1.8, m.z], fov: 50 }; };\nconst r = (C.nearestRoads ? C.nearestRoads(m0.x, m0.z, 25) : [])[0];\nreturn { drawn: true, id: '4472', street: r ? r.road.name : null, trackRoute: car.track.pattern.route, trackSign: car.track.sign, signRow: car.signRow, x: Math.round(m0.x), z: Math.round(m0.z) };\n})()"
+ },
+ {
+  "name": "f4472-king-west-wide",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6000,
+  "record": true,
+  "js": "(async () => {\nawait new Promise((done) => { const t0 = Date.now(), f = () => (window.__CITY_APP.streetcars.liveCars.size > 0 && Date.now() - t0 > 4000) || Date.now() - t0 > 70000 ? done() : setTimeout(f, 500); f(); });\nconst app = window.__CITY_APP, C = window.CITY, sc = app.streetcars;\nconst car = sc.liveCars.get('4472');\nif (!car) { console.log('[st-1aqy] f4472-king-west-wide: car 4472 not drawn'); return { drawn: false }; }\nconst m0 = sc.sample(car.track, car.s, {});\napp.teleportTo(m0.x + 30, m0.z + 30, 0);\napp.cameraSystem.cinema = () => { const m = sc.sample(car.track, car.s, {}); const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), rx = -fz, rz = fx;\nreturn { pos: [m.x + fx * 60 + rx * 18, (m.y || 0) + 16, m.z + fz * 60 + rz * 18], look: [m.x, (m.y || 0) + 1.8, m.z], fov: 50 }; };\nconst r = (C.nearestRoads ? C.nearestRoads(m0.x, m0.z, 25) : [])[0];\nreturn { drawn: true, id: '4472', street: r ? r.road.name : null, trackRoute: car.track.pattern.route, trackSign: car.track.sign, signRow: car.signRow, x: Math.round(m0.x), z: Math.round(m0.z) };\n})()"
+ }
+]

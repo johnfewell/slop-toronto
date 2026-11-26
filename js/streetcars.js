@@ -666,6 +666,125 @@ function snapToTracks(tracks, pat) {
   }
 }
 
+// A live vehicle's place on the streetcar routes: `grid` holds { t: route, i: point index } by 25 m cell. Its own route's
+// rails within 30 m first; if it is on none of them, any route's rails within OFF_PATTERN_M (a car the TTC has turned off
+// its scheduled pattern, running on the tracks of another's), carrying `sign`: the destination row of its own route's
+// run (same direction) so its sign still reads its route. Not near any rails: null (never drawn off its street).
+const OFF_PATTERN_M = 7;
+// the TTC's streetcars are numbered 4400-4699; a bus of the same route number (504C on King) is not one
+const isStreetcarId = (id) => /^4[4-6]\d\d$/.test(String(id));
+function snapLiveVehicle(v, grid, LG, runsOf) {
+  if (!isStreetcarId(v.id)) return null;
+  let best = null, bd = 30, off = null, od = OFF_PATTERN_M;
+  const ix = Math.floor(v.x / LG), iz = Math.floor(v.z / LG);
+  for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const { t, i } of grid.get((ix + a) * 100000 + iz + c) || []) {
+    if (t.pts[i].y < -3.5) continue;
+    const own = t.pattern.route === v.route;
+    const p = t.pts[i], d = Math.hypot(p.x - v.x, p.z - v.z);
+    if (d > (own ? 30 : od)) continue;
+    if (v.h) {
+      const q = t.pts[i + 1], o = t.pts[i - 1], L = Math.hypot(q.x - o.x, q.z - o.z) || 1;
+      if (((q.x - o.x) * v.h.x + (q.z - o.z) * v.h.z) / L < 0.3) continue;
+    }
+    if (own) {
+      const score = d + (Number.isFinite(t.headway) ? 0 : 12);
+      if (score < bd) {
+        bd = score;
+        best = { t, s: t.cum[i] };
+      }
+    } else if (d < od) {
+      od = d;
+      off = { t, s: t.cum[i] };
+    }
+  }
+  if (best) return best;
+  if (!off) return null;
+  // its own route's destination sign: the run (of its route) that runs its way (the feed's `dir` is not the pattern's)
+  let sign = null;
+  const runs = runsOf(v.route);
+  let bestDot = -Infinity;
+  for (const r of runs) {
+    const a = r.pts[0], b = r.pts[r.pts.length - 1], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+    const dot = v.h ? ((b.x - a.x) * v.h.x + (b.z - a.z) * v.h.z) / L : 0;
+    if (dot > bestDot) {
+      bestDot = dot;
+      sign = r.signRow;
+    }
+  }
+  off.sign = sign;
+  return off;
+}
+
+// The track no pattern of the timetable runs on, as runs of its own (st-1aqy: the TTC puts cars on track the schedule
+// leaves empty: the 504 along King St West while the timetable has it on Queen): chains of the graph's pieces, in their
+// direction of travel, each straight on through junctions (a turn of at most 50 degrees), where no route's run lies
+// within 6 m going the same way. Nothing is scheduled on them (headway Infinity, no stops); only a live car the TTC
+// has on that track is placed there (snapLiveVehicle), with its own route's sign.
+function freeRuns(G, routes) {
+  const CELL = 10, COVER = 6;
+  const grid = new Map();
+  for (const t of routes) {
+    for (let i = 1; i + 1 < t.pts.length; i++) {
+      const p = t.pts[i], q = t.pts[i + 1], o = t.pts[i - 1], L = Math.hypot(q.x - o.x, q.z - o.z) || 1;
+      const k = Math.floor(p.x / CELL) * 100000 + Math.floor(p.z / CELL);
+      if (!grid.has(k)) grid.set(k, []);
+      grid.get(k).push({ x: p.x, z: p.z, dx: (q.x - o.x) / L, dz: (q.z - o.z) / L });
+    }
+  }
+  const covered = (x, z, dx, dz) => {
+    const ix = Math.floor(x / CELL), iz = Math.floor(z / CELL);
+    for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const q of grid.get((ix + a) * 100000 + iz + c) || []) {
+      if (Math.hypot(q.x - x, q.z - z) < COVER && q.dx * dx + q.dz * dz > 0.3) return true;
+    }
+    return false;
+  };
+  const free = new Set();
+  for (const a of G.arcs) {
+    if (a.k >= 10) continue; // (against the tracks' direction of travel)
+    const mx = (a.a.x + a.b.x) / 2, mz = (a.a.z + a.b.z) / 2;
+    if (!covered(mx, mz, a.dx, a.dz) || !covered(a.a.x, a.a.z, a.dx, a.dz) || !covered(a.b.x, a.b.z, a.dx, a.dz)) free.add(a);
+  }
+  const into = new Set();
+  for (const a of free) into.add(a.b);
+  const runs = [];
+  const follow = (first) => {
+    const seq = [first];
+    free.delete(first);
+    for (let a = first; ;) {
+      let nx = null, best = 0.64;
+      for (const o of a.b.out) {
+        if (!free.has(o)) continue;
+        const dot = o.dx * a.dx + o.dz * a.dz;
+        if (dot > best) {
+          best = dot;
+          nx = o;
+        }
+      }
+      if (!nx) break;
+      free.delete(nx);
+      seq.push(nx);
+      a = nx;
+    }
+    return seq;
+  };
+  // (from the ends of the free track first, then what is left: loops)
+  const starts = [...free].filter((a) => !a.a.out.some((o) => o.rev !== undefined && free.has(o.rev)));
+  for (const first of [...starts, ...free]) {
+    if (!free.has(first)) continue;
+    const seq = follow(first);
+    const len = seq.reduce((n, a) => n + a.len, 0);
+    if (len < 30) continue;
+    const src = [{ x: seq[0].a.x, z: seq[0].a.z, f: seq[0].f }, ...seq.map((a) => ({ x: a.b.x, z: a.b.z, f: a.f }))];
+    for (const a of seq) if (!a.w.drawn) G.used.add(a.w);
+    const t = makeTrack(src, 4);
+    t.sign = ['', 'NOT IN SERVICE'];
+    t.pattern = { route: '', dir: -1, speed: 4, perHour: new Array(24).fill(0), stops: [], sign: t.sign, free: true };
+    t.free = true;
+    runs.push(t);
+  }
+  return runs;
+}
+
 // Each pattern's route: on the track graph (or, failing that, snapped onto the tracks), its stops (the timetable's, in
 // order along it; the nose pulls up a few metres past the stop's pole) and its signals (as the tracks')
 function buildRoutes(tracks, network) {
@@ -711,10 +830,12 @@ function buildRoutes(tracks, network) {
     routes.push(t);
     }
   }
+  const free = freeRuns(G, routes);
+  routes.push(...free);
   assignSignals(routes, network);
   // the curves & sidings the routes run on, to be drawn with the rest of the trackwork
   routes.extraTrack = [...G.used].map((w) => makeTrack(w.pts.map((p) => ({ x: p.x, z: p.z, f: w.f }))));
-  console.info(`[streetcars] ${routes.length} routes from the TTC's timetable on the tracks (${G.arcs.length / 2} pieces of track)${cut.length ? `; cut where the tracks don't go on: ${cut.join(', ')}` : ''}${snapped.length ? `; snapped (no way through): ${snapped.join(', ')}` : ''}`);
+  console.info(`[streetcars] ${routes.length} routes (${routes.length - free.length} from the TTC's timetable, ${free.length} runs of track it leaves empty, ${Math.round(free.reduce((n, t) => n + t.len, 0) / 1000)} km) on the tracks (${G.arcs.length / 2} pieces of track)${cut.length ? `; cut where the tracks don't go on: ${cut.join(', ')}` : ''}${snapped.length ? `; snapped (no way through): ${snapped.join(', ')}` : ''}`);
   return routes;
 }
 
@@ -1167,26 +1288,9 @@ function createStreetcars(scene, trafficSystem) {
       lgrid.get(k).push({ t, i });
     }
   }
-  // a live vehicle's spot on a route of its number (heading its way, the routes running this hour first)
-  function snapLive(v) {
-    let best = null, bd = 30;
-    const ix = Math.floor(v.x / LG), iz = Math.floor(v.z / LG);
-    for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const { t, i } of lgrid.get((ix + a) * 100000 + iz + c) || []) {
-      if (t.pattern.route !== v.route || t.pts[i].y < -3.5) continue;
-      const p = t.pts[i], d = Math.hypot(p.x - v.x, p.z - v.z);
-      if (d > 30) continue;
-      if (v.h) {
-        const q = t.pts[i + 1], o = t.pts[i - 1], L = Math.hypot(q.x - o.x, q.z - o.z) || 1;
-        if (((q.x - o.x) * v.h.x + (q.z - o.z) * v.h.z) / L < 0.3) continue;
-      }
-      const score = d + (Number.isFinite(t.headway) ? 0 : 12);
-      if (score < bd) {
-        bd = score;
-        best = { t, s: t.cum[i] };
-      }
-    }
-    return best;
-  }
+  // a live vehicle's spot on a route of its number (heading its way, the routes running this hour first); failing that
+  // (the TTC running a car off its published pattern, st-1aqy), on any route's rails it is within a few metres of
+  const snapLive = (v) => snapLiveVehicle(v, lgrid, LG, (r) => routes.filter((t) => t.pattern.route === r));
   if (routed && T.onLive) {
     T.onLive((L) => {
       const now = Date.now();
@@ -1220,6 +1324,7 @@ function createStreetcars(scene, trafficSystem) {
         }
         // (the feed's own time for the position, at most 2 minutes back)
         car.live = { s: m.s, at: now - Math.min(120000, Math.max(0, now - v.ts)) };
+        car.signRow = m.sign ?? null; // (off its pattern: its own route's sign, not the track's)
       }
       // gone from the feed: on to the end of the run
       for (const [id, car] of liveCars) {
@@ -1407,7 +1512,7 @@ function createStreetcars(scene, trafficSystem) {
           gangways.setMatrixAt(n * 4 + k, dummy.matrix);
         }
       });
-      for (const a of signRows) a.array[n] = t.signRow || 0;
+      for (const a of signRows) a.array[n] = car.signRow ?? t.signRow ?? 0;
       for (const a of doorData) a.array[n] = car.doorProgress || 0;
       n++;
     }
