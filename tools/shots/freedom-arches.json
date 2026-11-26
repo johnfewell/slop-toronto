@@ -1,0 +1,26 @@
+[
+ {
+  "name": "arches-wide",
+  "mode": "person",
+  "js": "(()=>{const a=window.__CITY_APP;window.__hv=(from,at,fov=55)=>{a.cameraSystem.cinema=()=>({pos:from,look:at,fov});};window.__hv([-14,17,-752],[21,4,-804],62);})()",
+  "wait": 1800
+ },
+ {
+  "name": "arches-along",
+  "mode": "person",
+  "js": "(()=>{window.__hv([-12,2.4,-803.5],[26,4.2,-803.9],64);})()",
+  "wait": 900
+ },
+ {
+  "name": "arches-side",
+  "mode": "person",
+  "js": "(()=>{window.__hv([20.7,2.2,-770],[20.7,5.5,-806],58);})()",
+  "wait": 900
+ },
+ {
+  "name": "arches-with-tree",
+  "mode": "person",
+  "js": "(()=>{const C=window.CITY,t=C.holidayStats?.sites?.nathanPhillips?.tree;const tx=t?t[0]:48,tz=t?t[1]:-804;window.__hv([-2,10,-760],[(21+tx)/2,6,-804],64);})()",
+  "wait": 900
+ }
+]

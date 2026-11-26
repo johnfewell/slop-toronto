@@ -8,14 +8,14 @@ Bead `jf-hcu`. Toronto's holiday-season installations appear in the scene only o
 
 | Installation | Dates | Source |
 | --- | --- | --- |
-| Nathan Phillips Square: the holiday tree and light arches over the reflecting pool | **28 Nov 2026 to 7 Jan 2027** | City of Toronto, [Cavalcade of Lights](https://www.toronto.ca/explore-enjoy/festivals-events/cavalcade-of-lights/) ("November 28 to January 7", opening night Saturday 28 November, tree lighting 6:30 p.m.); the City's [sponsor page](https://www.toronto.ca/business-economy/partnerships-sponsorships-donations/sponsor/major-festivals-events/cavalcade-of-lights/) gives the same range; the City's [news release](https://www.toronto.ca/news/cavalcade-of-lights-to-brighten-nathan-phillips-square-this-holiday-season/) says the lighting elements and select installations stay until 7 January |
+| Nathan Phillips Square: the holiday tree and the Cavalcade's lights on the Freedom Arches over the reflecting pool | **28 Nov 2026 to 7 Jan 2027** | City of Toronto, [Cavalcade of Lights](https://www.toronto.ca/explore-enjoy/festivals-events/cavalcade-of-lights/) ("November 28 to January 7", opening night Saturday 28 November, tree lighting 6:30 p.m.); the City's [sponsor page](https://www.toronto.ca/business-economy/partnerships-sponsorships-donations/sponsor/major-festivals-events/cavalcade-of-lights/) gives the same range; the City's [news release](https://www.toronto.ca/news/cavalcade-of-lights-to-brighten-nathan-phillips-square-this-holiday-season/) says the lighting elements and select installations stay until 7 January |
 | Distillery District Winter Village (Toronto Christmas Market): its tree, overhead light strings over the lanes, stalls | **12 Nov 2026 to 3 Jan 2027** | The organiser, [thedistillerywintervillage.com](https://thedistillerywintervillage.com/) ("will run from November 12, 2026 to January 3, 2027", tree lighting Thursday 12 November, 6 p.m.); the same dates in [NOW Toronto](https://nowtoronto.com/news/toronto-distillery-winter-village-2026/) and [To-Do Canada](https://www.todocanada.ca/distillery-district-sets-dates-for-2026-season-of-iconic-toronto-christmas-market/) |
 
 The windows are month-day ranges that run over the new year (`HOLIDAY_WINDOWS` in `js/holiday.js`). **Only the 2026-27 dates are published.** For any other year the game reuses the same days, which is an assumption (the festival's date moves with the calendar; the 2025 Village ran 13 November to 4 January). Opening night, tree lighting times and a Christmas Day closure are not modelled: an installation stands for its whole window.
 
 ### What the sources do not say
 
-- The City page names illuminated art installations at the Square (ECHO and Ripples in Time) and the tree and Square lighting. It does **not** describe light arches. The arches over the pool are a generic stand-in for the Cavalcade's lit installations, drawn as plain hoops of steel and bulbs. They copy no artwork and nothing is claimed about the real installations' form.
+- The City page names illuminated art installations at the Square (ECHO and Ripples in Time) and the tree and Square lighting. It does **not** describe how the arches are lit. The arches themselves are the Square's permanent Freedom Arches ([freedom-arches.md](freedom-arches.md), drawn all year from the City's 3D massing); the bulb lines along them are a game choice for the Cavalcade's lighting. They copy no artwork, and nothing is claimed about the real lighting's pattern. (The first version drew a row of generic hoops here; they were removed once the real arches were modelled.)
 - No source places the tree at either site, and no source maps the village's stalls or light strings. The Square's tree stands just beyond the east end of the City's mapped rink and pool polygon (asset `43599`), on the open paving. The Village's tree stands in the open spot with 7 m clear all round nearest the district's centre. Its height is a game choice (17 m and 9 m).
 - No source gives the stall count. Stalls (32) and the overhead strings (45) are a game layout derived from the mapped building footprints inside the district's outline (`tools/build-holiday-lanes.mjs` writes `js/toronto-holiday.js`): a string spans an open gap of 6 to 18 m between walls at least 5.5 m high, and stalls hug the walls of lanes beside those strings.
 
@@ -25,12 +25,13 @@ Lights on the trees in Yorkville and the Bloor-Yorkville BIA, the Eaton Centre /
 
 ## Look and cost
 
-- Low poly. One merged mesh per site (tree tiers, trunk, arch bars, wires, stall bodies and gabled roofs, vertex-coloured) and one `InstancedMesh` per bulb colour (warm, cool, red, green, gold). No lights are created per bulb.
+- Low poly. One merged mesh per site (trunk, wires, stall bodies and gabled roofs, vertex-coloured), one separate mesh per site for the evergreen's body, and one `InstancedMesh` per bulb colour (warm, cool, red, green, gold). No lights are created per bulb.
 - Bulbs are emissive. By day they show at about a third of their colour, readable but not glowing. At night they use the same ramp as the windows (`cityUniforms.uInteriorGlow`, as the rinks' floodlit ice does) and a gentle per-bulb twinkle driven by `time` and the instance index.
+- The evergreens' bodies are not black at night: their own material has a faint emissive term of the needle colour on the same night ramp (a stand-in for their bulbs lighting them) and a slow ripple with height, a little under the needle colour at full night, brighter on upward faces. No light is created and the rest of the scene is untouched.
 - Colours are a restrained warm white, cool white, red, green and gold. There are no logos, brand marks or artwork.
 - The trees are evergreens; the surrounding street trees follow the season and are bare on these dates.
-- The tree trunks and stalls have colliders (`obb` footprints, as the rinks' boards do); the string and arch bulbs and wires do not.
-- When off, nothing is built (no meshes, no materials). When on, about 6 draw calls per site, about 1,500 bulbs and about 39,000 triangles in all.
+- The tree trunks and stalls have colliders (`obb` footprints, as the rinks' boards do); the string and arch bulbs and wires do not (the Freedom Arches' own leg colliders are in `js/freedom-arches.js`).
+- When off, nothing is built (no meshes, no materials). When on, about 7 draw calls per site, about 1,700 bulbs and about 41,000 triangles in all (the Freedom Arches' own mesh, about 1,300 triangles, is a separate draw call, built all year).
 
 ## Checks
 

@@ -1,7 +1,8 @@
 (function () {
 // js/holiday.js
 // Toronto's holiday-season installations (docs/holiday-installations.md), shown only on their real dates:
-//   - Nathan Phillips Square: the City Hall holiday tree and the Cavalcade of Lights' lit arches over the reflecting pool
+//   - Nathan Phillips Square: the City Hall holiday tree and the Cavalcade of Lights' bulb lines along the Freedom Arches
+//     (js/freedom-arches.js draws the arches themselves, all year)
 //     (28 November 2026 to 7 January 2027, toronto.ca)
 //   - the Distillery District's Winter Village (Toronto Christmas Market): its tree, overhead light strings over the lanes
 //     and wooden stalls (12 November 2026 to 3 January 2027, thedistillerywintervillage.com)
@@ -73,10 +74,11 @@ function buildHoliday(scene, staticColliders = []) {
 
   // One site's parts: static solid geometry (merged) and bulbs by colour (instanced)
   function makeSite(name) {
-    const parts = [], bulbs = {};
+    const parts = [], bodyParts = [], bulbs = {};
     return {
       name, bulbs,
-      part(geo, hex, x, y, z, ry = 0, sx = 1, sy = 1, sz = 1, rx = 0, rz = 0) {
+      // `into` is the list a part joins: the structure (default) or the evergreen body, which has its own faint glow at night
+      part(geo, hex, x, y, z, ry = 0, sx = 1, sy = 1, sz = 1, rx = 0, rz = 0, into = parts) {
         const g = geo.index ? geo.toNonIndexed() : geo.clone();
         g.deleteAttribute('uv');
         col.setHex(hex);
@@ -85,8 +87,9 @@ function buildHoliday(scene, staticColliders = []) {
         g.setAttribute('color', new THREE.BufferAttribute(c, 3));
         q.setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ'));
         g.applyMatrix4(m4.compose(vp.set(x, y, z), q, vs.set(sx, sy, sz)));
-        parts.push(g);
+        into.push(g);
       },
+      body(geo, hex, x, y, z, ry = 0) { this.part(geo, hex, x, y, z, ry, 1, 1, 1, 0, 0, bodyParts); },
       // a thin bar from a to b ([x, y, z])
       bar(a, b, w, hex) {
         const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], len = Math.hypot(dx, dy, dz);
@@ -101,7 +104,8 @@ function buildHoliday(scene, staticColliders = []) {
         parts.push(g);
       },
       bulb(kind, x, y, z, s = 1) { (bulbs[kind] ||= []).push([x, y, z, s]); },
-      merged() { return parts.length ? Addons.mergeGeometries(parts, false) : null; }
+      merged() { return parts.length ? Addons.mergeGeometries(parts, false) : null; },
+      mergedBody() { return bodyParts.length ? Addons.mergeGeometries(bodyParts, false) : null; }
     };
   }
   const BOX = new THREE.BoxGeometry(1, 1, 1);
@@ -118,7 +122,7 @@ function buildHoliday(scene, staticColliders = []) {
     site.part(CYL, 0x4a3426, x, y, z, 0, height * 0.035, height * 0.18, height * 0.035);
     for (let i = 0; i < tiers; i++) {
       const t0 = i / tiers, h = height * (0.36 - i * 0.02), r = R * (1 - t0 * 0.78);
-      site.part(CONE(r, h), i % 2 ? 0x244d36 : 0x1d4430, x, y + height * 0.12 + height * 0.78 * t0 + h / 2, z, i * 0.4);
+      site.body(CONE(r, h), i % 2 ? 0x275c3b : 0x1f5034, x, y + height * 0.12 + height * 0.78 * t0 + h / 2, z, i * 0.4);
     }
     for (const [bx, by, bz] of spiralBulbs({ radius: R * 0.86, height: height * 0.92, turns: 9, spacing: spiralSpacing })) {
       const k = Math.round((bx * 7.1 + bz * 3.7 + by) * 10);
@@ -138,26 +142,33 @@ function buildHoliday(scene, staticColliders = []) {
       const site = makeSite('NathanPhillipsHoliday');
       const rect = C.outlineRectangle(rec.polygons[0].outer); // { x, z, ax, az, length, width }
       const y = placed ? placed.y : groundAt(rect.x, rect.z);
-      const ax = rect.ax, az = rect.az, px = -az, pz = ax;
+      const ax = rect.ax, az = rect.az;
       // the City Hall tree stands just beyond the pool's east end (the square's open paving)
       const tx = rect.x + ax * (rect.length / 2 + 11), tz = rect.z + az * (rect.length / 2 + 11);
       const ty = groundAt(tx, tz);
       const T = tree(site, tx, ty, tz, 17, 0.32);
       solid(T.x, T.z, 0.7, ty, ty + 4);
-      // the arches: a row of lit hoops over the pool, spanning its width, 4.6 m high
-      const n = 9, span = rect.length - 6, rad = Math.min(4.2, rect.width / 2 - 1.5);
-      for (let i = 0; i < n; i++) {
-        const along = -span / 2 + (span * i) / (n - 1), cx = rect.x + ax * along, cz = rect.z + az * along;
-        const segs = 14, pts = [];
-        for (let s = 0; s <= segs; s++) {
-          const a = (s / segs) * Math.PI, o = Math.cos(a) * rad, h = Math.sin(a) * 4.6;
-          pts.push([cx + px * o, y + 0.05 + h, cz + pz * o]);
-        }
-        for (let s = 0; s < segs; s++) site.bar(pts[s], pts[s + 1], 0.09, 0xb9bfc4);
-        pts.forEach((p, s) => { site.bulb(i % 2 ? 'cool' : 'warm', ...p, 1.1); if (s < segs) site.bulb(i % 2 ? 'cool' : 'warm', (p[0] + pts[s + 1][0]) / 2, (p[1] + pts[s + 1][1]) / 2 + 0.02, (p[2] + pts[s + 1][2]) / 2, 0.8); });
-      }
       sites.push(site);
-      C.holidayStats.sites.nathanPhillips = { tree: [+tx.toFixed(1), +tz.toFixed(1)], arches: n, y };
+      C.holidayStats.sites.nathanPhillips = { tree: [+tx.toFixed(1), +tz.toFixed(1)], arches: 0, y };
+    }
+    // the Cavalcade's lights on the Freedom Arches (freedom-arches.js, drawn all year): a bulb line along the crown and one
+    // under the soffit of each arch; the arches alternate warm and cool white with a gold bulb now and then
+    const FA = C.FREEDOM_ARCHES;
+    if (FA) {
+      const site = rec ? sites[sites.length - 1] : makeSite('NathanPhillipsHoliday');
+      if (!rec) sites.push(site);
+      const lines = { top: FA.archLinePoints('top', 0.9), under: FA.archLinePoints('under', 1.0) };
+      let count = 0;
+      FA.SPEC.xs.forEach((ax, i) => {
+        const y0 = groundAt(ax, FA.SPEC.zc), base = i % 2 ? 'cool' : 'warm';
+        for (const [side, pts] of Object.entries(lines)) {
+          pts.forEach(([py, pz], k) => {
+            site.bulb(k % 9 === 4 ? 'gold' : base, ax, y0 + py, pz, side === 'top' ? 1.15 : 0.95);
+            count++;
+          });
+        }
+      });
+      C.holidayStats.sites.nathanPhillips = { ...(C.holidayStats.sites.nathanPhillips || {}), arches: FA.SPEC.xs.length, archBulbs: count };
     }
   }
 
@@ -192,7 +203,7 @@ function buildHoliday(scene, staticColliders = []) {
   if (!sites.length) return null;
 
   // ---- meshes
-  const { float, smoothstep, sin, fract, instanceIndex, time, color } = TSL;
+  const { float, smoothstep, sin, fract, instanceIndex, time, color, vertexColor, positionWorld, normalWorld } = TSL;
   const night = C.cityUniforms?.uInteriorGlow ? smoothstep(float(0.7), float(1.45), C.cityUniforms.uInteriorGlow) : float(0);
   const bulbMaterial = (hex) => {
     const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.5 });
@@ -202,6 +213,11 @@ function buildHoliday(scene, staticColliders = []) {
     mat.emissiveNode = color(hex).mul(night.mul(twinkle).mul(2.4).add(0.34));
     return mat;
   };
+  // The evergreen's body: its own bulbs light it, so at night it keeps a faint green of its own (on the windows' night ramp)
+  // instead of going black between the strings. A slow ripple of the glow with height stands for the bulbs' twinkle on the
+  // needles; no light is created, and nothing else in the scene is brightened.
+  const bodyMat = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.9 });
+  bodyMat.emissiveNode = vertexColor().mul(night.mul(sin(time.mul(0.9).add(positionWorld.y.mul(0.8))).mul(0.1).add(0.9)).mul(normalWorld.y.mul(0.5).add(0.5).mul(0.35).add(0.4)).mul(0.9));
   const bulbGeo = new THREE.IcosahedronGeometry(0.13, 0);
   const structMat = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85 });
   const group = new THREE.Group(); group.name = 'HolidayInstallations'; scene.add(group);
@@ -214,6 +230,13 @@ function buildHoliday(scene, staticColliders = []) {
       const mesh = new THREE.Mesh(geo, structMat); mesh.name = site.name + 'Structure';
       mesh.castShadow = shadowOn; mesh.receiveShadow = true; sg.add(mesh);
       triangles += geo.attributes.position.count / 3;
+    }
+    const body = site.mergedBody();
+    if (body) {
+      body.computeVertexNormals(); body.computeBoundingSphere();
+      const mesh = new THREE.Mesh(body, bodyMat); mesh.name = site.name + 'Evergreen';
+      mesh.castShadow = shadowOn; mesh.receiveShadow = true; sg.add(mesh);
+      triangles += body.attributes.position.count / 3;
     }
     for (const [kind, list] of Object.entries(site.bulbs)) {
       const mesh = new THREE.InstancedMesh(bulbGeo, bulbMaterial(BULB[kind]), list.length); mesh.name = `${site.name}Bulbs_${kind}`;

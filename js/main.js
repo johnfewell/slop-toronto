@@ -275,6 +275,9 @@ async function initApp() {
   // The City's rink and skate-trail outlines in their scene-date season (rinks.js); after tennis, whose paving one meets
   const rinks = window.CITY.buildRinks?.(scene, allColliders);
   if (rinks) pushAll(allColliders, rinks.colliders);
+  // Nathan Phillips Square's three Freedom Arches over the reflecting pool, all year (freedom-arches.js)
+  const freedomArches = window.CITY.buildFreedomArches?.(scene);
+  if (freedomArches) pushAll(allColliders, freedomArches.colliders);
   // Toronto's holiday installations on their real dates (holiday.js): the City Hall tree & Cavalcade arches, the Distillery's Winter Village
   const holiday = window.CITY.buildHoliday?.(scene, allColliders);
   if (holiday) pushAll(allColliders, holiday.colliders);
