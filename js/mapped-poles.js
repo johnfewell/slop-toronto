@@ -64,7 +64,10 @@ function decode(data) {
 function mappedPoleSites(data, { blockAt, nearestRoads, deckHeightAt = () => 0, cutAt = () => 0, SW_Y = 0.22 }) {
   const sites = [], rejected = { roadway: 0, deck: 0 };
   let nudged = 0;
+  // City poles the 2025 orthophoto shows are not there, inside Biidaasige Park (js/biidaasige-lighting.js); only while the park is on
+  const stale = window.CITY.biidaasigeParkStats ? new Set(window.CITY.BIIDAASIGE_STALE_CITY_POLE_IDS || []) : null;
   for (const p of decode(data)) {
+    if (stale && stale.has(p.id)) { rejected.stale = (rejected.stale || 0) + 1; continue; }
     const roads = nearestRoads(p.x, p.z, 40).filter((r) => !r.road.raised);
     const road = roads[0] || null;
     let x = p.x, z = p.z, block = blockAt(x, z);

@@ -254,3 +254,53 @@ test('fixture provenance: ODbL, a timestamp, the 3 in-park guideposts, 0 in-park
     assert.equal(e.inPark, pointInRing(e.lat, e.lon, poly), `fixture inPark matches the polygon for ${e.id}`);
   }
 });
+
+// --- timber luminaires: no verified source position, the wiring is ready (bead st-bmyv.10) ---------------------------
+test('timber luminaires: none placed (no verified position), recorded unplaced with the reason', () => {
+  const C = city();
+  const out = C.buildBiidaasigeLighting(new THREE.Scene(), []);
+  assert.equal(out.stats.source.timberSites, 0, 'no orthophoto/photo-verified timber site is embedded');
+  assert.equal(out.stats.counts.timberLuminaire || 0, 0);
+  assert.ok(out.stats.unplaced.some((u) => /timberLuminaires/.test(u)), 'timber luminaires are listed as unplaced');
+  assert.equal(out.stats.lampSites, 0, 'nothing joins the street light pool');
+});
+
+test('timber luminaires: a registered site is placed, collides as a pole and joins the street light pool (not a light of its own)', () => {
+  const C = city();
+  const centroid = C.BIIDAASIGE_PARK.park.polygon[0];
+  const poly = C.BIIDAASIGE_PARK.park.polygon;
+  // a point known to be inside: the mean of the three guideposts
+  const g = C.BIIDAASIGE_LIGHTING_SITES;
+  const lat = g.reduce((a, s) => a + s.lat, 0) / g.length, lon = g.reduce((a, s) => a + s.lon, 0) / g.length;
+  assert.ok(pointInRing(lat, lon, poly) && centroid);
+  const pool = [];
+  const out = C.buildBiidaasigeLighting(new THREE.Scene(), [], {
+    extraSites: [{ id: 'test-timber', kind: 'timberLuminaire', lat, lon }],
+    addLampSites: (sites) => pool.push(...sites)
+  });
+  assert.equal(out.stats.counts.timberLuminaire, 1);
+  assert.equal(pool.length, 1, 'one pool entry per luminaire');
+  const s = pool[0], placed = out.placedSites.find((p) => p.kind === 'timberLuminaire');
+  assert.ok(Number.isFinite(s.x + s.y + s.z + s.tx + s.tz) && s.k > 0);
+  assert.ok(Math.hypot(s.x - placed.x, s.z - placed.z) > 0.3 && Math.hypot(s.x - placed.x, s.z - placed.z) < 0.8, 'the lens sits at the arm end (.7 m)');
+  assert.ok(s.y > placed.y + 4.5 && s.y < placed.y + 5.5, 'at the arm height');
+  let lights = 0; out.group.traverse((o) => { if (o.isLight) lights++; });
+  assert.equal(lights, 0, 'no THREE light per pole');
+  assert.equal(out.colliders.filter((c) => c.kind === 'timberLuminaire').length, 1);
+});
+
+test('timber poles fixture: 36 City poles in the polygon, none corroborated by the 2025 orthophoto', () => {
+  const f = JSON.parse(read('tools/fixtures/biidaasige-timber-poles.json'));
+  assert.equal(f.counts.inPark, 36);
+  assert.equal(f.poles.length, 36);
+  assert.match(f.verdict, /none is placed/);
+  assert.ok(f.orthoCheck.inWater.length >= 10 && f.orthoCheck.bridgeDeckRoadLight.length >= 5);
+  for (const p of f.poles) assert.ok(['signal', 'roadside', 'positionTestOnly'].includes(p.class));
+});
+
+test('stale City poles: the ids the generic pole layer skips are exactly the fixture\'s in-water and bare-ground poles', () => {
+  const C = city();
+  const f = JSON.parse(read('tools/fixtures/biidaasige-timber-poles.json')).orthoCheck;
+  assert.deepEqual([...C.BIIDAASIGE_STALE_CITY_POLE_IDS].sort((a, b) => a - b), [...f.inWater, ...f.bareGroundOrVegetation].sort((a, b) => a - b));
+  for (const id of f.bridgeDeckRoadLight.concat(f.notChecked)) assert.ok(!C.BIIDAASIGE_STALE_CITY_POLE_IDS.includes(id), `${id} is kept`);
+});

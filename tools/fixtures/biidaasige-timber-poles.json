@@ -1,0 +1,428 @@
+{
+ "version": 1,
+ "source": {
+  "package": "topographic-mapping-poles",
+  "url": "https://open.toronto.ca/dataset/topographic-mapping-poles/",
+  "resourceId": "5504d484-1bd6-4330-b43c-d562b74a175d",
+  "resource": "Poles - 4326.gpkg",
+  "updatedAt": "2026-02-20T20:59:40.165957",
+  "sha256": "1b4722aadff160569874c587ce918469850831e86ea72765f119689c4557b8ec",
+  "fetchedAt": "2026-10-29",
+  "licence": "open-government-licence-toronto",
+  "note": "Digitized from aerial imagery, +-30 cm; poles beside tall buildings or in deep shadow may be missing. No heights in the source."
+ },
+ "parkRef": "OSM way/813717630 (js/biidaasige-park-data.js)",
+ "rule": "Street Light Pole or Pedestrian Light Pole inside the park polygon and at least 12 m from every at-grade named road centre line; poles carrying a signal (6005, 6008) and roadside lights stay generic",
+ "roadMin": 12,
+ "counts": {
+  "inPark": 36,
+  "signal": 5,
+  "positionTestOnly": 22,
+  "roadside": 9
+ },
+ "verdict": "no City pole inside the park is corroborated by the 2025 orthophoto; none is placed",
+ "orthoCheck": {
+  "imagery": "City of Toronto 2025 aerial imagery, 8 cm",
+  "inWater": [
+   142451,
+   142452,
+   142453,
+   142461,
+   142462,
+   142490,
+   142599,
+   142600,
+   142601,
+   142616,
+   142618
+  ],
+  "bareGroundOrVegetation": [
+   142458,
+   142463,
+   142464,
+   142483,
+   142485,
+   142486,
+   142488,
+   142489
+  ],
+  "bridgeDeckRoadLight": [
+   142449,
+   142487,
+   142596,
+   142597,
+   142598,
+   142602,
+   142603,
+   142617,
+   142619
+  ],
+  "notChecked": [
+   142190,
+   142448,
+   142559
+  ]
+ },
+ "poles": [
+  {
+   "id": 142459,
+   "type": 6005,
+   "typeName": "Street Light and Traffic Signal Pole",
+   "x": 2172.7,
+   "z": 664,
+   "roadDist": 17.3,
+   "road": "Commissioners Street",
+   "class": "signal"
+  },
+  {
+   "id": 142190,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 1821.2,
+   "z": 650.2,
+   "roadDist": 234.2,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142448,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2001,
+   "z": 767.6,
+   "roadDist": 94,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142449,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2184.5,
+   "z": 811.1,
+   "roadDist": 11.4,
+   "road": "Cherry Street",
+   "class": "roadside"
+  },
+  {
+   "id": 142451,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2194.6,
+   "z": 751.2,
+   "roadDist": 62.2,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142452,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2201.4,
+   "z": 779.3,
+   "roadDist": 46.2,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142453,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2213.4,
+   "z": 747.4,
+   "roadDist": 77.8,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142458,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2179.5,
+   "z": 694.1,
+   "roadDist": 48.2,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142461,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2187.1,
+   "z": 722.9,
+   "roadDist": 77.9,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142462,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2205.6,
+   "z": 716.2,
+   "roadDist": 75.3,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142463,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2198.4,
+   "z": 687.6,
+   "roadDist": 45.9,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142464,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2193.4,
+   "z": 665.7,
+   "roadDist": 23.4,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142483,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2215.8,
+   "z": 837.4,
+   "roadDist": 13.6,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142485,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2242.1,
+   "z": 862.5,
+   "roadDist": 14.8,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142486,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2234.6,
+   "z": 832.2,
+   "roadDist": 30.4,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142487,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2249.2,
+   "z": 890.6,
+   "roadDist": 7.9,
+   "road": "Cherry Street",
+   "class": "roadside"
+  },
+  {
+   "id": 142488,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2208.2,
+   "z": 807.8,
+   "roadDist": 29.9,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142489,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2227.6,
+   "z": 803.9,
+   "roadDist": 46,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142490,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2220.1,
+   "z": 774.6,
+   "roadDist": 62.4,
+   "road": "Cherry Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142559,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2436.6,
+   "z": 599.8,
+   "roadDist": 16.7,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142596,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2665.5,
+   "z": 532.8,
+   "roadDist": 11.5,
+   "road": "Commissioners Street",
+   "class": "roadside"
+  },
+  {
+   "id": 142597,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2664.8,
+   "z": 511.4,
+   "roadDist": 9.2,
+   "road": "Commissioners Street",
+   "class": "roadside"
+  },
+  {
+   "id": 142598,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2696,
+   "z": 503.3,
+   "roadDist": 7.6,
+   "road": "Commissioners Street",
+   "class": "roadside"
+  },
+  {
+   "id": 142599,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2701.1,
+   "z": 524,
+   "roadDist": 13.7,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142600,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2725.6,
+   "z": 517.6,
+   "roadDist": 14.9,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142601,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2755.1,
+   "z": 510.3,
+   "roadDist": 16.7,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142602,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2725,
+   "z": 496,
+   "roadDist": 5.9,
+   "road": "Commissioners Street",
+   "class": "roadside"
+  },
+  {
+   "id": 142603,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2752.3,
+   "z": 489.4,
+   "roadDist": 4.1,
+   "road": "Commissioners Street",
+   "class": "roadside"
+  },
+  {
+   "id": 142616,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2787.2,
+   "z": 502.2,
+   "roadDist": 18.4,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142617,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2778.2,
+   "z": 482.8,
+   "roadDist": 2.8,
+   "road": "Commissioners Street",
+   "class": "roadside"
+  },
+  {
+   "id": 142618,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2815.2,
+   "z": 495.2,
+   "roadDist": 20,
+   "road": "Commissioners Street",
+   "class": "positionTestOnly"
+  },
+  {
+   "id": 142619,
+   "type": 6006,
+   "typeName": "Street Light Pole",
+   "x": 2805,
+   "z": 476.3,
+   "roadDist": 1.1,
+   "road": "Commissioners Street",
+   "class": "roadside"
+  },
+  {
+   "id": 142460,
+   "type": 6008,
+   "typeName": "Traffic Signal Pole",
+   "x": 2181.8,
+   "z": 665.5,
+   "roadDist": 21.1,
+   "road": "Commissioners Street",
+   "class": "signal"
+  },
+  {
+   "id": 142621,
+   "type": 6008,
+   "typeName": "Traffic Signal Pole",
+   "x": 2839.9,
+   "z": 489.8,
+   "roadDist": 21.3,
+   "road": "Commissioners Street",
+   "class": "signal"
+  },
+  {
+   "id": 142623,
+   "type": 6008,
+   "typeName": "Traffic Signal Pole",
+   "x": 2846.7,
+   "z": 488.2,
+   "roadDist": 21.4,
+   "road": "Commissioners Street",
+   "class": "signal"
+  },
+  {
+   "id": 142628,
+   "type": 6008,
+   "typeName": "Traffic Signal Pole",
+   "x": 2855.5,
+   "z": 492.2,
+   "roadDist": 27.6,
+   "road": "Commissioners Street",
+   "class": "signal"
+  }
+ ]
+}

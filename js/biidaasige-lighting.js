@@ -99,6 +99,27 @@ const SOURCE_LAMPS = Object.freeze([]);
 const SOURCE_BOLLARDS = Object.freeze([]);
 const CONTEXT = Object.freeze({ streetLampsOutside: 47, bollardsOutside: 1 });
 
+// The park's timber luminaires: NO verified source position exists yet, so this list is empty on purpose. The City's
+// pole dataset puts 36 poles inside the polygon, but the 2025 8 cm orthophoto shows them in water, on bare ground or on
+// the bridge deck (tools/fixtures/biidaasige-timber-poles.json); an automatic read of pole shadows on that photograph
+// found hundreds of candidates it could not tell from other tall posts. A site goes here, as { id, lat, lon,
+// uncertaintyM }, only once it is confirmed against a photograph. The adapter below places, lights and collides whatever
+// is listed. BEGIN TIMBER_SITES
+const TIMBER_SITES = Object.freeze([]);
+// END TIMBER_SITES
+// City pole OBJECTIDs inside the park polygon that the 2025 orthophoto shows are not there (in the river and its basins,
+// or on bare ground; tools/fixtures/biidaasige-timber-poles.json orthoCheck). The generic street light layer would
+// otherwise draw each as a 9 m light, because the dataset predates the park. Skipped by js/mapped-poles.js while the park
+// is on. The bridge-deck lights (real) and the 3 poles not checked are left alone.
+const STALE_CITY_POLE_IDS = Object.freeze([142451, 142452, 142453, 142458, 142461, 142462, 142463, 142464, 142483, 142485, 142486, 142488, 142489, 142490, 142599, 142600, 142601, 142616, 142618]);
+const TIMBER_SOURCE = Object.freeze({
+  imagery: 'City of Toronto 2025 aerial imagery, 8 cm (basemap/cot_ortho_2025_color_8cm)',
+  fixture: 'tools/fixtures/biidaasige-timber-poles.json',
+  cityPolesInPolygon: 36, cityPolesVerified: 0
+});
+const TIMBER_ARM_REACH = 40;   // the nearest path further than this leaves the arm's heading at its default
+const TIMBER_LAMP_K = 0.45;    // x the street light pool's strength (the promenade post's)
+
 const DEDUPE_RADIUS = 1.5;
 const CULL_CELL = 60;
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
@@ -111,6 +132,13 @@ function material(THREE, color, roughness = 0.85, metalness = 0.0, emissive = nu
   const opts = { color, roughness, metalness };
   if (emissive != null) { opts.emissive = emissive; opts.emissiveIntensity = emissiveIntensity; }
   return new Mat(opts);
+}
+
+// The lens glows with the city's night (the same uInteriorGlow the street lights' lenses follow), not all day.
+function nightGlow(mat) {
+  const TSL = C && C.TSL, U = C && C.cityUniforms;
+  if (!TSL || !U || !U.uInteriorGlow || !('emissiveNode' in mat)) return;
+  mat.emissiveNode = TSL.color(0xffe6b0).mul(2.2).mul(TSL.smoothstep(0.4, 1.1, U.uInteriorGlow));
 }
 
 function box(THREE, w, h, d, x = 0, y = 0, z = 0) {
@@ -153,6 +181,7 @@ function buildTimberLuminaire(THREE = C?.THREE) {
   const timber = material(THREE, 0x9a8a72, 0.95, 0.0);
   const charcoal = material(THREE, 0x2f3337, 0.6, 0.3);
   const lens = material(THREE, 0xfff2d0, 0.4, 0.0, 0xffe6b0, 1.2);
+  nightGlow(lens);
   // Slim round weathered timber post.
   group.add(new THREE.Mesh(cyl(THREE, S.postDia / 2, S.postDia / 2, S.postH, 10), timber));
   // Short dark charcoal horizontal arm along +z, near the top.
@@ -283,6 +312,53 @@ function pointInRing(lat, lon, ring) {
   return inside;
 }
 
+
+// The nearest point on the park's mapped paths (OSM footway / path / cycleway lines, js/biidaasige-path-network-data.js)
+// to a world point: { x, z, d } | null. Used only for the heading of a luminaire's arm.
+function nearestPathPoint(x, z, within) {
+  const ways = C && C.BIIDAASIGE_PATH_NETWORK && C.BIIDAASIGE_PATH_NETWORK.ways;
+  if (!Array.isArray(ways) || !projectionAvailable()) return null;
+  let best = null;
+  for (const w of ways) {
+    if (!w || !Array.isArray(w.polyline) || w.bridge || (w.highway !== 'footway' && w.highway !== 'path' && w.highway !== 'cycleway')) continue;
+    let prev = null;
+    for (const q of w.polyline) {
+      const a = project(q[0], q[1]);
+      if (prev && a) {
+        const ex = a.x - prev.x, ez = a.z - prev.z, L2 = ex * ex + ez * ez;
+        const u = L2 > 0 ? Math.max(0, Math.min(1, ((x - prev.x) * ex + (z - prev.z) * ez) / L2)) : 0;
+        const px = prev.x + ex * u, pz = prev.z + ez * u, d = Math.hypot(px - x, pz - z);
+        if (d < within && (!best || d < best.d)) best = { x: px, z: pz, d };
+      }
+      prev = a;
+    }
+  }
+  return best;
+}
+
+// The verified timber sites inside the park polygon, projected, with the arm's heading and the lamp's spot position.
+// `yaw` turns local +z (the arm) to (sin yaw, cos yaw).
+function timberSites(poly) {
+  const sites = [], skipped = [];
+  for (const s of TIMBER_SITES) {
+    if (!pointInRing(s.lat, s.lon, poly)) { skipped.push({ id: s.id, reason: 'source point outside park polygon' }); continue; }
+    const w = project(s.lat, s.lon);
+    if (!w) { skipped.push({ id: s.id, reason: 'projection failed' }); continue; }
+    const p = nearestPathPoint(w.x, w.z, TIMBER_ARM_REACH);
+    const yaw = p ? Math.atan2(p.x - w.x, p.z - w.z) : 0;
+    sites.push({ id: s.id, kind: 'timberLuminaire', x: w.x, z: w.z, yaw, headingFromPath: !!p, uncertaintyM: s.uncertaintyM });
+  }
+  return { sites, skipped };
+}
+
+// The street light pool's entry for a placed luminaire: the lens at the arm's end, its spot aimed at the ground a little
+// beyond it. { x, y, z, tx, tz, k }
+function timberLampSite(s, y0) {
+  const S = SIZE.luminaire, reach = S.armLen - S.headD / 2, yaw = isNum(s.yaw) ? s.yaw : 0, dx = Math.sin(yaw), dz = Math.cos(yaw);
+  const hx = s.x + dx * reach, hz = s.z + dz * reach;
+  return { x: hx, y: y0 + S.armY - S.headH - 0.1, z: hz, tx: hx + dx * 1.2, tz: hz + dz * 1.2, k: TIMBER_LAMP_K };
+}
+
 const groundY = (x = 0, z = 0) => (C?.CITY_BOUNDS?.sidewalkHeight ?? 0.22) + 0.004 + (C?.cutAt ? (C.cutAt(x, z) || 0) : 0);
 
 // The dedupe contract, exported so a test and a reviewer can check it: which source sites this layer may place, given
@@ -354,6 +430,13 @@ function buildBiidaasigeLighting(scene = null, allColliders = null, opts = {}) {
     bollardsOutside: CONTEXT.bollardsOutside
   };
 
+  // 1b. The orthophoto-read timber luminaires (kind 'timberLuminaire', the same factory as the OSM lamp kind).
+  const timber = timberSites(poly);
+  for (const s of timber.skipped) stats.skipped.push(s);
+  for (const s of timber.sites) sourceSites.push(s);
+  stats.source.timberSites = timber.sites.length;
+  stats.source.timber = TIMBER_SOURCE;
+
   // 2. Spatial dedupe against already-rendered same-kind sites.
   const { kept, skipped } = dedupe({ sourceSites, renderedSites, radius: DEDUPE_RADIUS });
   for (const s of skipped) stats.skipped.push(s);
@@ -368,19 +451,23 @@ function buildBiidaasigeLighting(scene = null, allColliders = null, opts = {}) {
   const FACTORY = {
     wayfinding: () => buildWayfindingGuidepost(THREE),
     streetLamp: () => buildTimberLuminaire(THREE),
+    timberLuminaire: () => buildTimberLuminaire(THREE),
     bollard: () => buildBollard(THREE)
   };
   const COLLIDER_R = {
     wayfinding: SIZE.guidepost.postDia / 2 + 0.02,
     streetLamp: SIZE.luminaire.postDia / 2 + 0.02,
+    timberLuminaire: SIZE.luminaire.postDia / 2 + 0.02,
     bollard: SIZE.bollard.dia / 2 + 0.02
   };
   const HEIGHT = {
     wayfinding: SIZE.guidepost.postH,
     streetLamp: SIZE.luminaire.postH,
+    timberLuminaire: SIZE.luminaire.postH,
     bollard: SIZE.bollard.h
   };
   const placedSites = [];
+  const lampSites = [];
   for (const [kind, sites] of byKind) {
     const factory = FACTORY[kind];
     if (!factory) { stats.unplaced.push(kind); continue; }
@@ -402,10 +489,18 @@ function buildBiidaasigeLighting(scene = null, allColliders = null, opts = {}) {
       });
       placedSites.push({ id: s.id, kind, x: s.x, z: s.z, y: y0, yaw: isNum(s.yaw) ? s.yaw : 0 });
     }
+    // The luminaires light the night through the street light pool (street-details.js): the nearest few around the
+    // camera get one spot light each, so a pole costs no light of its own.
+    if ((kind === 'timberLuminaire' || kind === 'streetLamp') && typeof opts.addLampSites === 'function') {
+      lampSites.push(...sites.map((s) => timberLampSite(s, groundY(s.x, s.z))));
+    }
   }
+  if (lampSites.length) opts.addLampSites(lampSites);
+  stats.lampSites = lampSites.length;
 
   // 4. Honest unplaced record: no mapped lamp or bollard lies inside the park polygon.
-  if (!byKind.has('streetLamp')) stats.unplaced.push('streetLamps (0 mapped inside the park polygon; factory only)');
+  if (!byKind.has('timberLuminaire')) stats.unplaced.push('timberLuminaires (no photograph-verified position yet: 36 City poles inside the polygon are stale, 0 OSM lamps)');
+  if (!byKind.has('streetLamp')) stats.unplaced.push('streetLamps (0 OSM lamps inside the park polygon)');
   if (!byKind.has('bollard')) stats.unplaced.push('bollards (0 mapped inside the park polygon; factory only)');
 
   stats.colliders = colliders.length;
@@ -427,6 +522,7 @@ if (C) {
     BIIDAASIGE_LIGHTING_SIZES: SIZE,
     BIIDAASIGE_LIGHTING_SOURCE: SOURCE_META,
     BIIDAASIGE_LIGHTING_SITES: SOURCE_SITES,
+    BIIDAASIGE_STALE_CITY_POLE_IDS: STALE_CITY_POLE_IDS,
     BIIDAASIGE_LIGHTING_DEDUPE_RADIUS: DEDUPE_RADIUS,
     buildBiidaasigeLighting,
     biidaasigeLightingFactories: {

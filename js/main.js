@@ -340,7 +340,7 @@ async function initApp() {
   if (biidaasigePark && window.CITY.buildBiidaasigeLighting) {
     const renderedSites = (streetProps.colliders || []).filter(c => c.kind === 'wayfinding')
       .map(c => ({x:(c.minX+c.maxX)/2,z:(c.minZ+c.maxZ)/2,kind:'wayfinding'}));
-    const parkLighting=window.CITY.buildBiidaasigeLighting(scene,null,{renderedSites});
+    const parkLighting=window.CITY.buildBiidaasigeLighting(scene,null,{renderedSites,addLampSites:streetDetails.addLampSites});
     if(parkLighting)pushAll(propColliders,parkLighting.colliders);
   }
 

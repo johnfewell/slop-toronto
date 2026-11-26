@@ -881,10 +881,14 @@ function buildStreetDetails(scene) {
   // 4. STREETLIGHT POOLS AT NIGHT: the nearest luminaires around the camera get a spot light each
   // =========================================================================
   const lampCells = new Map();
-  for (const s of lampSites) {
+  const addLampSite = (s) => {
     const k = Math.floor(s.x / 60) * 100000 + Math.floor(s.z / 60);
     (lampCells.get(k) || lampCells.set(k, []).get(k)).push(s);
-  }
+  };
+  for (const s of lampSites) addLampSite(s);
+  // Luminaires another layer draws (the park's timber ones, biidaasige-lighting.js) join the same pool afterwards:
+  // sites { x, y, z, tx, tz, k }
+  const addLampSites = (sites) => { for (const s of sites) addLampSite(s); };
   const STREETLIGHT_SPOT_POOL = Math.round(40 * window.CITY.QUALITY.lightPool);
   const STREETLIGHT_DIST = 120;
   const streetLightsGroup = new THREE.Group();
@@ -952,7 +956,7 @@ function buildStreetDetails(scene) {
     for (const a of [poleMatrices, armMatrices, headMatrices, lensMatrices, pedHeadMatrices, lampHeadMatrices, solarMatrices, lampSites]) a.length = 0;
     for (const k in modelMatrices) modelMatrices[k].length = 0;
   };
-  return { group, footprints, colliders, signalClock, audioSignals, update, treePositions, addFallbackTrees, releaseBuildIndexes };
+  return { group, footprints, colliders, signalClock, audioSignals, update, treePositions, addFallbackTrees, releaseBuildIndexes, addLampSites };
 }
 
 Object.assign(window.CITY, { buildStreetDetails });

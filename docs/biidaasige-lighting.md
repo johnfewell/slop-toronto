@@ -28,6 +28,27 @@ downward luminaire; the top of the timber continues about **.3 m** above the arm
 or a generic metal streetlight. That fixture is modelled as `buildTimberLuminaire` with a small **emissive** head for
 night — **never a point light per pole**.
 
+## Timber luminaire positions: second pass (2026-11-26)
+
+Result: **0 verified positions, so 0 timber luminaires placed.** What was tried:
+
+| Source | Finding |
+| --- | --- |
+| OSM `highway=street_lamp` | 0 inside the polygon; 47 outside (unchanged). 29 of the 47 sit in two lines north-west of the park and are newer than the City's pole layer; they are road or trail lights, not park lights. |
+| City of Toronto, Topographic Mapping - Poles (`js/toronto-poles.js`, 2026-10-29) | 36 poles lie inside the polygon (31 street light, 5 carrying a signal). 22 are 12 m or more from any road, 9 are roadside, 5 carry signals (`node tools/build-biidaasige-timber-poles.mjs`). Drawn on the City's 2025 8 cm orthophoto, the 33 checked by eye stand in the river and its basins (11), on bare ground or planting (8) or on the Cherry Street bridge deck (9, bridge road lights); 3 were not checked. The layer was digitised before the park's built form existed. **None is used.** The record is `tools/fixtures/biidaasige-timber-poles.json`. |
+| 2025 orthophoto, pole shadows | The photo was taken with a low sun and every tall post throws a long thin shadow. An automatic line search over the whole polygon returned about 340 candidates along paths. Play-structure masts, the Commissioners Street lights and the timber luminaires cannot be told apart from the shadow alone, and the base end of a shadow is not certain, so none is accepted. A shadow with a base read to 2 m needs a photograph of the pole beside it. |
+| Waterfront Toronto / City drawings, John's photos | Not in the repository or the shared data folder; the earlier captain photo folder is no longer on disk. |
+
+What is wired and ready, so a confirmed site only needs adding:
+
+- `TIMBER_SITES` in `js/biidaasige-lighting.js` (empty) takes `{ id, lat, lon, uncertaintyM }`; `opts.extraSites` with `kind: 'timberLuminaire'` does the same. Each is checked against the polygon, projected, placed as an instanced timber pole with its arm turned towards the nearest mapped path, given a pole-sized collider, and added to the **street light pool** (`addLampSites` from `js/street-details.js`): the nearest luminaires around the camera share the pool's 40 spot lights, so no pole carries a light of its own.
+- The lens glow follows `uInteriorGlow` like the street lights' lenses, so it is off by day.
+- Generic lights on the same paths: the generic layer drew 20 of those City poles (the ones on a sidewalk block) as 9 m lights, including poles that stand in the river on the photograph. `js/mapped-poles.js` now skips the 19 poles the photograph shows are not there (`BIIDAASIGE_STALE_CITY_POLE_IDS`, only while the park is on). The 9 bridge-deck lights and the 3 unchecked poles stay generic.
+
+Checks (2026-11-26): `npm test` 1,692 tests, 0 fail. On the Mac mini (`tools/capture-biidaasige-lighting.sh`): with the park on, 31 City street light poles lie inside the polygon, 20 were drawn as generic lights before and 9 are now (19 skipped as stale, `poleStats.rejected.stale`); frame time before and after is identical (median 16.7 ms, p95 16.7 to 33.3 ms in three alternating pairs, contended mini); late-November frames (`?liveDate=2026-11-26&liveClock=...`, no preset, which is summer) show bare trees at midday, twilight and midnight, and a July frame shows leaves. A preset always renders summer, so season checks must use `liveClock`.
+
+Open: a photograph of a luminaire with a position (or a lamp schedule from Waterfront Toronto), and the placement of the three unchecked City poles.
+
 ## Sources (current, official)
 
 | Source | URL | Use | Claims limit |
