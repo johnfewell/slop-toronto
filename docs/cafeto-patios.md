@@ -207,6 +207,12 @@ and it laid the patios out at startup (about 350 ms on the mini). `--frame eglin
 (`tools/cafeto-world.mjs` `PATIO_FRAMES`). The two maps place the same 199 cafés; two sidewalk cafés on the Danforth sit
 about 2 cm apart between them. Re-record **both** whenever an input changes.
 
+**The whole Eglinton frame (`jf-e8y`).** The café records of that map are now every sidewalk and curb café in its frame (875: 590 and 285,
+`js/frames/eglinton/toronto-cafeto.js`, `node tools/build-cafeto.mjs --frame eglinton`), not only the detail map's 577, and the benches, pay
+stations and signs its layout keeps clear of are the whole frame's. Both Eglinton layouts were recorded again: **308 sites** on the boxes page
+(113 sidewalk, 195 curb) and **316** on the drawn page (121 and 195), against 200 and 209 before; 288 / 296 records are rejected as `narrow`
+(the sidewalk is too narrow), the same rules as the detail map. The detail map's layout is unchanged.
+
 **The drawn-buildings page has its own layout too (`st-ndw9.23`).** Since the default desktop page draws the downtown buildings
 from their polygons (`st-ndw9.21`; also `?massing=1`), its solid colliders are those polygons, not the turned boxes, so the Eglinton
 map's boxes layout no longer matched its fingerprint and the page laid the patios out at startup again (about 320 ms on the mini,

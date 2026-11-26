@@ -2,7 +2,77 @@
 
 Beads: `st-26p.1`, `st-26p.5`, `st-26p.16`. Snapshots fetched 2026-10-28.
 
+## Frame coverage: the City's layers on the Eglinton map
+
+Bead `jf-e8y`. The page opens one of two maps (`explore.html`): the detail map (the Humber to Cherry Beach, the lake to Bloor,
+`x` −7900..3700, `z` −3000..3600) and the bigger Eglinton map (`?map=eglinton`, the desktop default, `x` −7900..9600, `z` −7300..3600).
+Several City layers were clipped to the detail map when they were imported, so on the Eglinton map the benches, pay stations and the
+rest stopped at Bloor and the Don. Each of them now has a file of its own for the Eglinton map in `js/frames/eglinton/`, built from the
+same dated snapshot by the same tool with `--frame eglinton` (`node tools/build-frame-city-data.mjs --frame eglinton ...` runs them all).
+`explore.html` swaps the file in under `?map=eglinton`, so the detail map's files, and its download, are exactly as they were. No source
+was clipped when it was fetched (every snapshot holds the City's whole dataset), so nothing was fetched again; the only new snapshot is
+the Bike Share station feed, kept as it was on 2026-10-26 (`tools/data/bike-share-stations-20261026.json`, the whole system).
+`node tools/audit-frame-coverage.mjs` prints the source counts of the table's "in frame" columns.
+
+Counts are records in the layer's file (source records inside the frame, after the layer's own rules for duplicates and status); the
+placed number is what the page puts on the street after the placement rules and clearances (`CITY.*Stats` on the Eglinton map).
+
+| Layer | Detail map | Eglinton map before | Eglinton map after |
+| --- | ---: | ---: | ---: |
+| **Extended here (a file per frame)** | | | |
+| Benches (Existing) | 315 (258 placed) | 315 | **860** (723 placed) |
+| Wayfinding: TO360 signs and information pillars | 272 | 272 | **330** (231 signs, 48 pillars placed) |
+| Parking pay stations (TPA S5 machines) | 776 | 776 | **1,007** (872 placed; 7 more lie beyond the frame) |
+| CaféTO sidewalk and curb cafés | 577 (386 + 191) | 577 | **875** (590 + 285; 488 private patios counted, never placed) |
+| CaféTO patios laid out in season (boxes / drawn buildings) | 200 / 209 on its own map | 200 / 209 | **308 / 316** |
+| Washrooms | 78 | 78 | **161** |
+| Parks and recreation centres | 276 | 276 | **660** |
+| Drinking water | 248 | 248 | **468** |
+| Outdoor rinks (cards) | 17 | 17 | **37** |
+| Tennis listings (cards) | 11 | 11 | **39** |
+| Public art records | 308 | 308 | **314** |
+| Heritage Register places | 7,241 | 7,241 | **7,472** |
+| Bike Share stations | 481 | 481 | **772** |
+| **Already per frame (no change)** | | | |
+| Poster columns | 278 (226 placed) | 413 | 413 (344 placed) |
+| Publication corrals | 90 (70 placed) | 187 | 187 (150 placed) |
+| Litter bins | 2,277 | 4,445 | 4,445 (4,392 placed) |
+| Hydrants / bike rings / shelters / post boxes | 4,187 / 11,574 / 561 / 347 | 12,513 / 15,444 / 1,572 / 645 | same |
+| Mapped poles (streetlight, signal, hydro) | 38,534 | 100,739 | same |
+| **Not extended** | | | |
+| Parked cars (by-law curb schedule, pay stations) | 11,040 | 11,040, none beyond the detail map | same |
+| Tennis court footprints (reviewed OSM courts) | 43 | 43 | same: each group is checked by hand on the aerial |
+| Rink polygons (City Outdoor Recreation Areas) | 17 | 17 | same: the 37 rink cards give the other 20 a place card, no model |
+| Storefront signs (Queen West corridor, OSM names) | 1 corridor | 1 corridor | same: an OSM list for one curated corridor, not City data |
+
+Why the poster columns and corrals fell by two and six against `docs/mapped-street-furniture.md`'s 346 and 152 on the Eglinton map:
+the benches, pay stations and signs of the whole frame are now placed first, and the columns keep clear of them like every furniture
+kind. The litter bins' count changed in the same way (4,405 to 4,392).
+
+The places each file holds are the Eglinton database's own rows, not the detail database's: a facility's matched building or park
+(`match.index`), an art record's OpenStreetMap place (`osm.row`, which search uses to show one result for a work) and a heritage
+place's building (`b`) were all rows of the detail geodata, so a record copied over would point at another building. The builders take
+the frame's packed binary (`tools/frame-geo.mjs`); building and place IDs (`to-3dmassing-2025:...`, `osm:...`) come from the
+sidecar that `tools/frames/build-frame.mjs` writes beside a frame's geodata, matched row by row to the installed binary by building
+centre and plan or place point and name. Seven buildings of the binary are not in that sidecar's script (they were added later, island
+buildings), and their records carry no massing ID. The detail map's facilities file was out of step with its geodata for 62 building
+rows (the geodata was rebuilt after the file was written); it is rebuilt here, so its matches are right again. Nothing else in a detail
+file changed.
+
 Poster columns, publication corrals and the litter receptacle audit, in both frames: [mapped street furniture](mapped-street-furniture.md).
+
+### Frame coverage: cost on the Eglinton map
+
+Download: the seven swapped scripts go from 0.87 MB to 1.49 MB raw (139 KB to 211 KB Brotli), the lazily loaded heritage register from
+269 KB to 277 KB Brotli; the frame's patio layouts grow by 18 KB. The detail map's files are identical. On the Mac mini
+(`tools/capture-eglinton-furniture.sh perf`, five alternating pairs, `?map=eglinton`, 1600 × 900, uncapped, the main build 9731c7e
+against this one, shared machine, so relative evidence only): city ready 24.7–32.4 s (median 26.0) before and 24.9–26.6 s (median 25.7)
+after; JS heap 2,785–2,861 MB before and 2,819–2,887 MB after (mean 2,825 to 2,840, +0.5%); frame time at the start 13.71 ms to 13.87 ms,
+on Danforth Ave 19.75 ms to 19.91 ms, on St Clair Ave W 18.52 ms to 18.28 ms. All within the run-to-run spread. Placement
+adds no draw calls (the same instanced kinds, culled in chunks by `scene-culling.js`).
+
+Captures (late November, `liveDate=2026-11-26`, no season preset, trees bare): `tools/shots/eglinton-furniture.json` at Danforth Ave
+(837), St Clair Ave W (510), Heath St W at Yonge and Eglinton Ave W.
 
 ## Benches
 

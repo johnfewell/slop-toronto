@@ -1,0 +1,8 @@
+[
+ {
+  "name": "stats",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(() => { const C=window.CITY; const pick=(s)=>s&&({sourceCount:s.sourceCount,accepted:s.accepted,rejected:s.rejected}); const out={map:new URLSearchParams(location.search).get('map')||'default',bench:pick(C.benchStats),meter:pick(C.parkingMeterStats),wayfinding:pick(C.wayfindingStats),info:pick(C.infoPillarStats),poster:pick(C.posterStats),corral:pick(C.publicationStats),litter:C.litterStats,cafeto:C.CAFETO&&{records:C.CAFETO.records.length,counts:C.CAFETO.counts},patios:C.patioStats&&{placed:C.patioStats.placed,layout:C.patioStats.layout},art:C.PUBLIC_ART&&C.PUBLIC_ART.records.length,bikeShareStations:C.BIKE_SHARE&&C.BIKE_SHARE.stations.length,facilities:C.CITY_FACILITIES&&C.CITY_FACILITIES.records.length,season:C.SEASON&&(C.SEASON.name||C.SEASON.id||null),date:C.SITE_DATE||null}; console.log('[ride-check] eglinton-furniture '+JSON.stringify(out)); })()"
+ }
+]

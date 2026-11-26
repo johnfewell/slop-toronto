@@ -3,19 +3,23 @@
 // map-frame station without one)], plus the live station_status address js/bike-share.js polls. Positions stay lat/lon:
 // the page turns them into the world with CITY.worldFromLatLon, the city's own projection. Its own file, apart from
 // js/toronto-geodata.js, so a station refresh never rebuilds (or conflicts with) the city database.
-// usage: node tools/fetch-bikeshare.mjs && node tools/geo-bikeshare.mjs
+// usage: node tools/fetch-bikeshare.mjs && node tools/geo-bikeshare.mjs [--frame eglinton]  (a frame's file is js/frames/<name>/bike-share-stations.js)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { frameArgs, layerFile, loadFrameGeo } from './frame-geo.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const RAW = process.env.PROPS_DATA || path.join(process.env.HOME, '.cache/slop-toronto/raw');
-const info = JSON.parse(fs.readFileSync(path.join(RAW, 'bike-share-station-information.json'), 'utf8'));
-const gbfs = JSON.parse(fs.readFileSync(path.join(RAW, 'bike-share-gbfs.json'), 'utf8'));
-// the detailed city's frame & box, from the city database (the same projection as CITY.worldFromLatLon)
-const geo = fs.readFileSync(path.join(ROOT, 'js/toronto-geodata.js'), 'utf8');
-const P = JSON.parse(/"projection":(\{[^}]*\})/.exec(geo)[1]);
-const D = JSON.parse(/"detail":(\{[^}]*\})/.exec(geo)[1]);
+// the committed snapshot of the system's station list (tools/data/bike-share-stations-20261026.json, the whole feed); with
+// BIKE_SHARE_RAW=<dir> the cache tools/fetch-bikeshare.mjs wrote is read instead (a refresh)
+const { frame } = frameArgs();
+const raw = process.env.BIKE_SHARE_RAW;
+const snap = raw ? null : JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/data/bike-share-stations-20261026.json'), 'utf8'));
+const info = snap ? snap.stationInformation : JSON.parse(fs.readFileSync(path.join(raw, 'bike-share-station-information.json'), 'utf8'));
+const gbfs = snap ? snap.gbfs : JSON.parse(fs.readFileSync(path.join(raw, 'bike-share-gbfs.json'), 'utf8'));
+// the frame's box and projection, from its city database (the same projection as CITY.worldFromLatLon)
+const { GEO } = await loadFrameGeo(frame);
+const P = GEO.frame.projection, D = GEO.frame.detail;
 const world = (lat, lon) => {
   const e = (lon - P.lon0) * P.kx, n = (lat - P.lat0) * P.ky, c = Math.cos(P.theta), s = Math.sin(P.theta);
   return [e * c - n * s - P.ox, -(e * s + n * c) - P.oz];
@@ -44,5 +48,6 @@ window.CITY = window.CITY || {};
 window.CITY.BIKE_SHARE = ${JSON.stringify(out)};
 })();
 `;
-fs.writeFileSync(path.join(ROOT, 'js/bike-share-stations.js'), file);
-console.log(`[bikeshare] ${rows.length} stations, ${docks} docks in the detailed city (of ${info.data.stations.length}) -> js/bike-share-stations.js (${(file.length / 1024).toFixed(1)} KB)`);
+fs.mkdirSync(path.dirname(layerFile(frame, 'x')), { recursive: true });
+fs.writeFileSync(layerFile(frame, 'bike-share-stations.js'), file);
+console.log(`[bikeshare] ${frame}: ${rows.length} stations, ${docks} docks (of ${info.data.stations.length}) -> ${path.relative(ROOT, layerFile(frame, 'bike-share-stations.js'))} (${(file.length / 1024).toFixed(1)} KB)`);

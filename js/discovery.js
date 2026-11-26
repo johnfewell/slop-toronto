@@ -50,7 +50,8 @@ function loadHeritage() {
   if (window.CITY.HERITAGE) return Promise.resolve(window.CITY.HERITAGE);
   if (!heritage) heritage = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = './js/toronto-heritage.js';
+    // (the map's own register: explore.html's cityAppScripts.cityMap, the Eglinton map's rows are its own geodata's)
+    s.src = typeof cityAppScripts !== 'undefined' && cityAppScripts.cityMap === 'eglinton' ? './js/frames/eglinton/toronto-heritage.js' : './js/toronto-heritage.js';
     s.async = true;
     s.onload = () => {
       window.CITY.Navigation?.resetIndex?.();

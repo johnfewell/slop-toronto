@@ -1,0 +1,32 @@
+[
+ {
+  "name": "perf-start",
+  "mode": "person",
+  "wait": 3000,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);const ts=[];let last=performance.now();const t0=last;await new Promise(res=>{(function f(){const n=performance.now();ts.push(n-last);last=n;if(n-t0<6000)requestAnimationFrame(f);else res()})()});ts.sort((a,b)=>a-b);const m=ts.reduce((a,b)=>a+b,0)/ts.length;const mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null;console.log('[perf] perf-start mean '+m.toFixed(2)+' ms median '+ts[ts.length>>1].toFixed(2)+' p95 '+ts[Math.floor(ts.length*0.95)].toFixed(2)+' n '+ts.length+' readyAt '+window.__mapScaleReadyAt+' heapMB '+mem+' res '+performance.getEntriesByType('resource').filter(e=>/toronto-|bike-share-stations/.test(e.name)).reduce((s,e)=>s+(e.transferSize||0),0))})()"
+ },
+ {
+  "name": "perf-danforth",
+  "mode": "person",
+  "wait": 3500,
+  "js": "(() => { const C=window.CITY,a=window.__CITY_APP;const b={x:4177.31,z:-2741.72};const r=C.nearestRoads(b.x,b.z,40)[0];const L=Math.hypot(r.px-b.x,r.pz-b.z)||1;const x=b.x+(r.px-b.x)/L*7,z=b.z+(r.pz-b.z)/L*7;a.cameraSystem.cinema=null;a.teleportTo(x,z,Math.atan2(b.x-x,b.z-z));a.selectCamera('pov',true);})()"
+ },
+ {
+  "name": "perf-danforth-frame",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);const ts=[];let last=performance.now();const t0=last;await new Promise(res=>{(function f(){const n=performance.now();ts.push(n-last);last=n;if(n-t0<6000)requestAnimationFrame(f);else res()})()});ts.sort((a,b)=>a-b);const m=ts.reduce((a,b)=>a+b,0)/ts.length;const mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null;console.log('[perf] perf-danforth mean '+m.toFixed(2)+' ms median '+ts[ts.length>>1].toFixed(2)+' p95 '+ts[Math.floor(ts.length*0.95)].toFixed(2)+' n '+ts.length+' readyAt '+window.__mapScaleReadyAt+' heapMB '+mem+' res '+performance.getEntriesByType('resource').filter(e=>/toronto-|bike-share-stations/.test(e.name)).reduce((s,e)=>s+(e.transferSize||0),0))})()"
+ },
+ {
+  "name": "perf-stclair",
+  "mode": "person",
+  "wait": 3500,
+  "js": "(() => { const C=window.CITY,a=window.__CITY_APP;const b={x:-1740.66,z:-4910.12};const r=C.nearestRoads(b.x,b.z,40)[0];const L=Math.hypot(r.px-b.x,r.pz-b.z)||1;const x=b.x+(r.px-b.x)/L*7,z=b.z+(r.pz-b.z)/L*7;a.cameraSystem.cinema=null;a.teleportTo(x,z,Math.atan2(b.x-x,b.z-z));a.selectCamera('pov',true);})()"
+ },
+ {
+  "name": "perf-stclair-frame",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(async()=>{const sleep=ms=>new Promise(r=>setTimeout(r,ms));await sleep(2500);const ts=[];let last=performance.now();const t0=last;await new Promise(res=>{(function f(){const n=performance.now();ts.push(n-last);last=n;if(n-t0<6000)requestAnimationFrame(f);else res()})()});ts.sort((a,b)=>a-b);const m=ts.reduce((a,b)=>a+b,0)/ts.length;const mem=performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null;console.log('[perf] perf-stclair mean '+m.toFixed(2)+' ms median '+ts[ts.length>>1].toFixed(2)+' p95 '+ts[Math.floor(ts.length*0.95)].toFixed(2)+' n '+ts.length+' readyAt '+window.__mapScaleReadyAt+' heapMB '+mem+' res '+performance.getEntriesByType('resource').filter(e=>/toronto-|bike-share-stations/.test(e.name)).reduce((s,e)=>s+(e.transferSize||0),0))})()"
+ }
+]

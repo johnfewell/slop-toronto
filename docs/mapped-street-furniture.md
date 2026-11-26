@@ -99,5 +99,5 @@ change: 200 / 200 / 208).
 ## Not done
 
 - No survey of true sizes, colours or the five litter types; the models are approximations in Slop's low-poly look.
-- The benches, wayfinding and the other Open Data furniture still cover only the detail map on `?map=eglinton`; only
-  the new layers are imported for both frames.
+- (done in `jf-e8y`: the benches, wayfinding, pay stations, cafés, facilities, art, heritage and Bike Share stations now
+  cover the whole Eglinton frame too, see `docs/city-open-data-layers.md` "Frame coverage").

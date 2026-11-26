@@ -16,16 +16,20 @@ const THREE = new Proxy({}, { get: () => Any });
 // The maps the page can open (explore.html ?map=): the detail frame's city data is the default files; another frame
 // (tools/frames/build-frame.mjs --install) swaps in its own scripts and its own geodata binary, which the page decodes
 // into CITY.GEO and CITY.POLES (js/geodata-loader.js) where node runs js/toronto-geodata.js
+// (the frame's own copies of the scripts the layout reads: the streets and the City's furniture and cafés of the whole frame)
+const FRAME_SCRIPTS = ['toronto-sidewalks.js', 'toronto-traffic-data.js', 'toronto-transit.js', 'toronto-subway.js', 'toronto-benches.js',
+  'toronto-parking-meters.js', 'toronto-wayfinding.js', 'toronto-cafeto.js',
+  'bike-share-stations.js'];
 export const PATIO_FRAMES = {
   detail: { name: 'detail', bin: null, scripts: {} },
   eglinton: { name: 'eglinton', bin: 'data/frames/eglinton/toronto-geodata.bin',
-    scripts: Object.fromEntries(['toronto-sidewalks.js', 'toronto-traffic-data.js', 'toronto-transit.js', 'toronto-subway.js']
+    scripts: Object.fromEntries(FRAME_SCRIPTS
       .map((f) => [`js/${f}`, `js/frames/eglinton/${f}`])) },
   // the same map with the buildings drawn from their polygons (the default desktop page since st-ndw9.21; ?massing=1): its
   // colliders include the massing polygons, so it has its own layout (st-ndw9.23). `sources` are files beyond the data
   // scripts that its colliders come from
   'eglinton-drawn': { name: 'eglinton', variant: 'drawn', bin: 'data/frames/eglinton/toronto-geodata.bin', sources: ['data/toronto-massing.bin'],
-    scripts: Object.fromEntries(['toronto-sidewalks.js', 'toronto-traffic-data.js', 'toronto-transit.js', 'toronto-subway.js']
+    scripts: Object.fromEntries(FRAME_SCRIPTS
       .map((f) => [`js/${f}`, `js/frames/eglinton/${f}`])) }
 };
 /** A frame's file for one of the detail frame's (its own script, its binary for the geodata and the poles) */
