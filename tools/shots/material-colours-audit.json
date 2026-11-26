@@ -1,0 +1,9 @@
+[
+ {
+  "name": "audit-here",
+  "mode": "person",
+  "wait": 8000,
+  "record": true,
+  "js": "(() => { const a = window.__CITY_APP; const seen = new Set(); const out = { doubled: [], vertexAndColorNode: [], vertexColoured: 0, materials: 0, instanced: [], mapPlusColorNode: [] }; const reads = (root, test) => { let hit = false; root.traverse((n) => { if (test(n)) hit = true; }); return hit; }; a.scene.traverse((o) => { if (!o.material) return; for (const m of [].concat(o.material)) { if (seen.has(m.uuid)) continue; seen.add(m.uuid); out.materials++; const g = o.geometry; const hasColor = !!(g && g.attributes && g.attributes.color); if (m.vertexColors) out.vertexColoured++; const readsColor = m.colorNode ? reads(m.colorNode, (n) => n.isVertexColorNode || (n.isAttributeNode && (n._attributeName === 'color' || n.attributeName === 'color'))) : false; if (m.vertexColors && hasColor && m.colorNode) out.vertexAndColorNode.push({ mesh: o.name || o.type, material: m.name || m.type, readsColorInGraph: readsColor }); if (m.vertexColors && hasColor && readsColor) out.doubled.push({ mesh: o.name || o.type, material: m.name || m.type }); if (o.isInstancedMesh && o.instanceColor && m.colorNode && reads(m.colorNode, (n) => n.isInstanceNode || (n.isAttributeNode && /instanceColor/.test(n._attributeName || '')))) out.instanced.push({ mesh: o.name || o.type, material: m.name || m.type }); if (m.map && m.colorNode && reads(m.colorNode, (n) => n.isTextureNode && n.value === m.map)) out.mapPlusColorNode.push({ mesh: o.name || o.type, material: m.name || m.type }); } }); return out; })()"
+ }
+]

@@ -1,0 +1,22 @@
+[
+ {
+  "name": "mat1-lodge-roof-near",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { window.__mc = window.__mc || (() => { const a = window.__CITY_APP; const box = (name) => { let b = null; a.scene.traverse((o) => { if (o.name === name && o.geometry) { o.geometry.computeBoundingBox(); b = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld); } }); return b; }; const hedgeNear = (x, z) => { let best = null, bd = 1e12; a.scene.traverse((o) => { if (o.name !== 'HighParkHedges' || !o.geometry) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 3) { const d = (p.getX(i) - x) ** 2 + (p.getZ(i) - z) ** 2; if (d < bd) { bd = d; best = [p.getX(i), p.getY(i), p.getZ(i)]; } } }); return best; }; return { a, box, hedgeNear }; })(); const m = window.__mc, b = m.box('ColborneLodgeRoof'); if (!b) return { err: 'no lodge roof' }; const cx = (b.min.x + b.max.x) / 2, cz = (b.min.z + b.max.z) / 2; m.a.teleportTo(cx, cz + 40, 0); m.a.cameraSystem.cinema = () => ({ pos: [cx - 6, b.max.y + 6, b.max.z + 26], look: [cx, b.max.y - 2, cz], fov: 55 }); return { cx, cz, top: b.max.y }; })()",
+  "record": true
+ },
+ {
+  "name": "mat2-lodge-roof-far",
+  "mode": "person",
+  "wait": 3000,
+  "js": "(() => { window.__mc = window.__mc || (() => { const a = window.__CITY_APP; const box = (name) => { let b = null; a.scene.traverse((o) => { if (o.name === name && o.geometry) { o.geometry.computeBoundingBox(); b = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld); } }); return b; }; const hedgeNear = (x, z) => { let best = null, bd = 1e12; a.scene.traverse((o) => { if (o.name !== 'HighParkHedges' || !o.geometry) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 3) { const d = (p.getX(i) - x) ** 2 + (p.getZ(i) - z) ** 2; if (d < bd) { bd = d; best = [p.getX(i), p.getY(i), p.getZ(i)]; } } }); return best; }; return { a, box, hedgeNear }; })(); const m = window.__mc, b = m.box('ColborneLodgeRoof'); if (!b) return { err: 'no lodge roof' }; const cx = (b.min.x + b.max.x) / 2, cz = (b.min.z + b.max.z) / 2; m.a.cameraSystem.cinema = () => ({ pos: [cx + 34, b.max.y + 22, b.max.z + 52], look: [cx, b.max.y - 3, cz], fov: 50 }); })()"
+ },
+ {
+  "name": "mat3-hedge",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { window.__mc = window.__mc || (() => { const a = window.__CITY_APP; const box = (name) => { let b = null; a.scene.traverse((o) => { if (o.name === name && o.geometry) { o.geometry.computeBoundingBox(); b = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld); } }); return b; }; const hedgeNear = (x, z) => { let best = null, bd = 1e12; a.scene.traverse((o) => { if (o.name !== 'HighParkHedges' || !o.geometry) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 3) { const d = (p.getX(i) - x) ** 2 + (p.getZ(i) - z) ** 2; if (d < bd) { bd = d; best = [p.getX(i), p.getY(i), p.getZ(i)]; } } }); return best; }; return { a, box, hedgeNear }; })(); const m = window.__mc, b = m.box('ColborneLodgeRoof'); if (!b) return { err: 'no lodge roof' }; const cx = (b.min.x + b.max.x) / 2, cz = (b.min.z + b.max.z) / 2; const h = m.hedgeNear(cx, cz); if (!h) return { err: 'no hedge' }; m.a.teleportTo(h[0], h[2] + 12, 0); m.a.cameraSystem.cinema = () => ({ pos: [h[0] + 5, h[1] + 3.2, h[2] + 9], look: [h[0], h[1] - 0.3, h[2]], fov: 55 }); return { hedge: h }; })()",
+  "record": true
+ }
+]

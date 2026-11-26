@@ -299,8 +299,9 @@ function materials() {
   }, { bias: -2 });
   // the 3D pieces: vertex colours; the fences' chain-link a see-through grey; glass; the fountains' water
   M.solid = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
-  M.solidSnow = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.82, metalness: 0 });
-  // (roofs, hedges' tops: snow lies on what faces up)
+  // (roofs, hedges' tops: snow lies on what faces up. No `vertexColors`: the colorNode below reads the colour attribute itself, and three
+  // multiplies a node material's colour by the vertex colour when the flag is set, which squared every roof and hedge colour, jf-xql)
+  M.solidSnow = new THREE.MeshStandardNodeMaterial({ roughness: 0.82, metalness: 0 });
   M.solidSnow.colorNode = Fn(() => {
     const c = attribute('color', 'vec3');
     return C.snowOver ? C.snowOver(c, positionWorld.xz, smoothstep(0.6, 0.95, T.normalWorld.y)) : c;
@@ -626,7 +627,7 @@ function flatLayers(group, M, top) {
 function barriers(group, M, top) {
   const { THREE } = C;
   const solid = makeBuf(), green = makeBuf(), mesh = makeBuf();
-  const GALV = RGB(0x8d9092), WOOD = RGB(0x6b5136), RAIL = RGB(0x2f3233), HEDGE = RGB(0x4f7a3c), HEDGE_TOP = RGB(0x5f8c45), STONE = RGB(0x8d877b);
+  const GALV = RGB(0x8d9092), WOOD = RGB(0x6b5136), RAIL = RGB(0x2f3233), HEDGE = RGB(0x2f5230), HEDGE_TOP = RGB(0x3a6035), STONE = RGB(0x8d877b);
   let posts = 0;
   for (const b of BARRIERS) {
     // the line in pieces of at most `step` m, each end on the ground

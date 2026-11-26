@@ -779,7 +779,8 @@ function buildStreetDetails(scene) {
   // Palms: two instanced meshes (trunk, fronds)
   if (palms.length) {
     const { trunk, fronds } = buildPalmGeometries();
-    const trunkMat = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.85 });
+    // (no `vertexColors`: the colorNode reads the colour attribute itself; with the flag set three multiplies it in again, jf-xql)
+    const trunkMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.85 });
     trunkMat.colorNode = Fn(() => {
       const c = window.CITY.TSL.attribute('color', 'vec3');
       const rings = smoothstep(0.3, 0.5, abs(fract(positionWorld.y.mul(2.6)).sub(0.5))).mul(0.18).add(0.82);
