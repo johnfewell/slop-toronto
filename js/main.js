@@ -64,6 +64,11 @@ async function initApp() {
   // just before the buildings are built. The bigger map only (the rows are its own); ?rosedaleHeights=0 keeps the City's heights
   const rosedaleHeightsReq = loader && loader.cityMap === 'eglinton' && new URLSearchParams(location.search).get('rosedaleHeights') !== '0'
     ? import('./rosedale-heights.js').then(async (rh) => ({ rh, layer: await rh.readRosedaleHeights(await fetch(rh.ROSEDALE_HEIGHTS_URL)) })).catch(() => null) : null;
+  // The Rosedale-Moore Park pilot (js/rosedale-houses.js, jf-abm): the houses from their own outlines with lidar roofs, in place of their boxes. A 0.6 MB file
+  // asked for now; merged into the massing rows just before the buildings are built. The bigger map on a desktop only (the drawn buildings' page);
+  // ?rosedalePilot=0 keeps the boxes
+  const rosedalePilotReq = drawnByDefault && new URLSearchParams(location.search).get('rosedalePilot') !== '0'
+    ? import('./rosedale-houses.js').then(async (rp) => ({ rp, layer: await rp.readRosedaleHouses(await fetch(rp.ROSEDALE_HOUSES_URL)) })).catch(() => null) : null;
   // Live sky (live-sky.js, docs/live-sky.md): the mode the city opens in, and Pearson's latest reading, asked for now so
   // it arrives while the city builds (never waited on: 4 s at most, and the sky starts without it)
   const LIVE = window.CITY.LIVE_SKY;
@@ -276,6 +281,13 @@ async function initApp() {
     window.CITY.ROSEDALE_HEIGHTS = r;
     if (r && r.error) console.warn(`[rosedale] heights not applied: ${r.error}`);
     else if (r) console.info(`[rosedale] lidar heights: ${r.applied} box rows (${r.lowered} lower, ${r.raised} higher than the City's)`);
+  }
+  if (rosedalePilotReq) {
+    const got = await rosedalePilotReq;
+    const M = window.CITY.MASSING;
+    const r = got && got.layer && M && !M.error ? got.rp.mergeRosedaleHouses(M, window.CITY.GEO.buildings, got.layer) : null;
+    if (r && !r.error) { window.CITY.rosedaleHouses = got.rp; window.CITY.rosedaleSkips = r.skip; window.CITY.ROSEDALE_PILOT = r; console.info(`[rosedale] pilot: ${r.merged} houses from their outlines (${r.lidar} lidar roofs, ${r.planner} roof planner, ${r.flat} flat), ${r.skip.size} more box rows skipped`); }
+    else if (r) console.warn(`[rosedale] pilot not applied: ${r.error}`);
   }
   const cityBlocks = buildCityBlocks(scene);
   markInit('blocks');

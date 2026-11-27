@@ -1319,7 +1319,7 @@ function buildCityBlocks(scene) {
     const tr = performance.now();
     const groups = new Map();
     for (const [bi, foot] of massing.rows) {
-      if (bi >= realRows || !roofEligible(bi, foot)) continue;
+      if (bi >= realRows || foot.rosedale || !roofEligible(bi, foot)) continue; // (a Rosedale house's roof is its lidar one, below)
       if (presetDraw && foot.preset && window.CITY.BuildingPrototypes.byId[foot.preset]?.draw) continue; // (drawn houses have their own roof, js/building-draw.js)
       const facts = foot.drawFacts || (drawFacts && drawFacts.get(foot.index)) || null;
       const gid = facts && facts.groupId;
@@ -1358,6 +1358,7 @@ function buildCityBlocks(scene) {
     if (window.CITY.waterfrontConcertStageExcludesBuilding?.(bi)) continue;
     if (window.CITY.biidaasigeParkExcludesBuilding?.(bi)) continue;
     if (window.CITY.portLandsExcludesBuilding?.(bi)) continue;
+    if (window.CITY.rosedaleSkips?.has(bi)) continue; // (jf-abm: another box row inside a Rosedale house's outline, which js/rosedale-houses.js draws once)
     if (window.CITY.waterfrontBathurst?.stats.meshes > 0 && window.CITY.waterfrontBathurstExcludesBuilding?.(bi)) continue;
     if (window.CITY.waterfrontFerriesEnabled && b[9] === 'Jack Layton Ferry Terminal') continue;
     if (window.CITY.htoFirehallReplacesBuilding?.(b)) continue;
@@ -1431,6 +1432,10 @@ function buildCityBlocks(scene) {
     const stone = victorian && !!nearAny(DISTILLERY.stone, cx, cz);
     if (victorian) { mat = VICTORIAN; brick = true; paintHex = weighted(stone ? DISTILLERY.limestone : DISTILLERY.brick, rnd()); }
     else if (nearAny(DISTILLERY.brickTowers, cx, cz) && inDistillery(cx, cz)) { mat = 1; brick = true; paintHex = weighted(DISTILLERY.brick, rnd()); }
+    // (jf-abm, js/rosedale-houses.js: a Rosedale house takes its style's brick or render and roof colours from its era and style code)
+    const rdFoot = foot && foot.rosedale && !victorian ? window.CITY.rosedaleHouses : null;
+    const rdLook = rdFoot ? rdFoot.lookOf(foot.rosedale.style, rnd(), rnd(), rnd()) : null;
+    if (rdLook) { brick = !rdLook.render; paintHex = rdLook.wall; }
     // (the island cottages: clapboard siding, never the city's brick; a small documented typology palette, not a
     // per-house colour claim. The facade material is the dedicated cottage style below.)
     if (cottage) { mat = 0; brick = false; paintHex = ISLAND_COTTAGE_PAINT[Math.floor(rnd() * ISLAND_COTTAGE_PAINT.length)]; }
@@ -1494,7 +1499,12 @@ function buildCityBlocks(scene) {
       }
       // ?massing=1 roofs from the data: this house's plan (the pre-pass's, or its own where a drawn house fell back to today's look); the
       // walls then stop at its eave and the roof carries on to the ridge at the City's MAX_HEIGHT
-      if (RS && !drawPlan && !victorian && roof === 1 && kind !== 3 && roofEligible(bi, foot)) {
+      if (rdFoot && !drawPlan && kind !== 3) {
+        // a Rosedale house: its lidar roof (js/rosedale-houses.js); where the lidar fit was poor, the roof planner on the lidar's own heights; flat by the lidar, the cap
+        roofPlan = rdFoot.lidarRoofPlan(foot.rosedale);
+        if (!roofPlan && RS) { roofPlan = RS.planRoof(foot.rings[0], roofOpts(foot, false)); if (!roofPlan.ok && !/^(flat|no room)/.test(roofPlan.reason)) roofPlan = null; }
+        massingStats.rosedale = (massingStats.rosedale || 0) + 1;
+      } else if (RS && !drawPlan && !victorian && roof === 1 && kind !== 3 && roofEligible(bi, foot)) {
         const tr = performance.now();
         roofPlan = roofPlans.get(bi) || RS.planRoof(foot.rings[0], roofOpts(foot, false));
         roofStats.houses++;
@@ -1660,8 +1670,14 @@ function buildCityBlocks(scene) {
           const facts = foot.drawFacts || (drawFacts && drawFacts.get(foot.index)) || null;
           let hex = roofPaint;
           if (facts && facts.group && facts.group.n > 1) { let hh = 2166136261; for (const ch of String(facts.groupId)) hh = Math.imul(hh ^ ch.charCodeAt(0), 16777619); hex = weighted(ROOF_PAINT, mulberry32(hh)()); }
+          if (rdLook) hex = rdLook.roof;
           const rgbRoof = debugRoofRgb || linear(hex);
-          stats.roofTris = (stats.roofTris || 0) + RS.pushRoofPlan(roofTiles, roofPlan, y0, rgbRoof, linear(paintHex));
+          if (roofPlan.lidar) {
+            // (a lidar roof stands in its 500 m cell: the whole roof within ROOF_NEAR, its big facets beyond)
+            const rc = roofCellOf(cx, cz), wallRgb = linear(paintHex);
+            massingStats.rosedaleRoofTris = (massingStats.rosedaleRoofTris || 0) + rdFoot.pushLidarRoof(rc.near, roofPlan, y0, rgbRoof, wallRgb);
+            rdFoot.pushLidarRoof(rc.far, roofPlan, y0, rgbRoof, wallRgb, true);
+          } else stats.roofTris = (stats.roofTris || 0) + RS.pushRoofPlan(roofTiles, roofPlan, y0, rgbRoof, linear(paintHex));
           stats.hip++;
         }
       } else if (roofPlan) {

@@ -68,7 +68,7 @@ export function selfCrosses(r) {
 }
 
 // ---- ear clipping of one face (counter-clockwise, a handful of corners): index triples ------------------------------------
-function earClip(P) {
+export function earClip(P) {
   const n = P.length;
   if (n < 3) return [];
   if (n === 3) return [[0, 1, 2]];
