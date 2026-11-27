@@ -34,9 +34,26 @@ function mulberry32(seed) {
 const inDetail = (x, z, m = 0) => x > DETAIL.x0 - m && x < DETAIL.x1 + m && z > DETAIL.z0 - m && z < DETAIL.z1 + m;
 
 // =====================================================================================================================
-// 1. LAND-USE MAP (R = park / woods, G = industry / rail / port, B = low-density leafy suburb), ~31 m texels
+// 1. LAND-USE MAP (R = park / woods, G = industry / rail / port, B = low-density leafy suburb), 52 km x 52 km
+//    Base layer from real OpenStreetMap GTA land use (js/toronto-surroundings-data.js, st-bz1o.10: Etobicoke,
+//    Mississauga, North York, York Region, Scarborough), overlaid with the fine downtown/midtown strokes.
 // =====================================================================================================================
-const LU = { minX: -16000, maxX: 16000, minZ: -16000, maxZ: 16000, w: 1024, h: 1024 };
+const LU = { minX: -26000, maxX: 26000, minZ: -26000, maxZ: 26000, w: 1024, h: 1024 };
+function unpackOsmLandUse(lu) {
+  if (!lu || !lu.data || !lu.size) return null;
+  const raw = atob(lu.data);
+  const n = lu.size * lu.size;
+  if (raw.length < n) return null;
+  const rgba = new Uint8ClampedArray(n * 4);
+  for (let i = 0; i < n; i++) {
+    const v = raw.charCodeAt(i);
+    rgba[i * 4] = Math.round(((v >> 5) & 7) * (255 / 7));
+    rgba[i * 4 + 1] = Math.round(((v >> 2) & 7) * (255 / 7));
+    rgba[i * 4 + 2] = Math.round((v & 3) * (180 / 3));
+    rgba[i * 4 + 3] = 255;
+  }
+  return rgba;
+}
 function paintLandUse() {
   const c = document.createElement('canvas');
   c.width = LU.w;
@@ -44,6 +61,15 @@ function paintLandUse() {
   const ctx = c.getContext('2d');
   ctx.fillStyle = 'rgb(0,0,40)';
   ctx.fillRect(0, 0, LU.w, LU.h);
+  const osmLu = window.CITY.SURROUNDINGS_DATA && window.CITY.SURROUNDINGS_DATA.landUse;
+  const rgba = unpackOsmLandUse(osmLu);
+  if (rgba) {
+    const src = document.createElement('canvas');
+    src.width = osmLu.size;
+    src.height = osmLu.size;
+    src.getContext('2d').putImageData(new ImageData(rgba, osmLu.size, osmLu.size), 0, 0);
+    ctx.drawImage(src, 0, 0, LU.w, LU.h);
+  }
   const px = (p) => [((p.x - LU.minX) / (LU.maxX - LU.minX)) * LU.w, ((p.z - LU.minZ) / (LU.maxZ - LU.minZ)) * LU.h];
   const m = LU.w / (LU.maxX - LU.minX); // texels per metre
   ctx.globalCompositeOperation = 'lighter';
@@ -325,6 +351,10 @@ const EXCLUSIONS = [];
 const exclude = (x, z, r) => EXCLUSIONS.push({ x, z, r });
 const excluded = (x, z, r = 0) => EXCLUSIONS.some((e) => Math.hypot(x - e.x, z - e.z) < e.r + r);
 const MAX_BUILD_DIST = 10000;
+const EDGE_COLLAR = 4200; // m past the detailed frame's edges where procedural surrounding blocks continue (st-bz1o.10)
+const STYLE_PALETTE = ['brick', 'glass', 'industrial', 'modern', 'light'];
+// Distance outside the detailed frame (0 inside DETAIL)
+const detailEdgeDist = (x, z) => Math.hypot(Math.max(DETAIL.x0 - x, 0, x - DETAIL.x1), Math.max(DETAIL.z0 - z, 0, z - DETAIL.z1));
 // dry land outside the detailed city (and 60 m clear of it): not in the lake, not in the terrain's water cells
 // (a bigger map's far band, city-config.js FAR_BAND: the far city stands there too, shown only where scene-culling.js
 // has hidden the band's own city in the distance)
@@ -336,15 +366,43 @@ const groundAt = (x, z) => Math.max(0, terrainRawAt(x, z)) + (window.CITY.DON_VA
 function generateBuildings(density) {
   const rand = mulberry32(416);
   const list = [];
-  const stats = { houses: 0, midrise: 0, towers: 0, industry: 0 };
-  const add = (x, z, w, d, h, palette, rot = 0) => {
+  const osmList = [];
+  const stats = { houses: 0, midrise: 0, towers: 0, industry: 0, osm: 0 };
+  const addTo = (arr, x, z, w, d, h, palette, rot = 0) => {
     // stand on the lowest ground under the footprint (the terrain slopes)
     const y = Math.min(groundAt(x - w / 2, z - d / 2), groundAt(x + w / 2, z - d / 2), groundAt(x - w / 2, z + d / 2), groundAt(x + w / 2, z + d / 2)) - 0.5;
-    list.push({ x, y, z, w, d, h: h + 0.5, rot, seed: Math.floor(rand() * 10000) + 0.5, tint: pickFrom(PALETTE[palette], rand), style: PALETTE_STYLE[palette] });
+    arr.push({ x, y, z, w, d, h: h + 0.5, rot, seed: Math.floor(rand() * 10000) + 0.5, tint: pickFrom(PALETTE[palette], rand), style: PALETTE_STYLE[palette] });
   };
-  const R = MAX_BUILD_DIST;
-  for (let bx = Math.floor(-R / BLOCK_U); bx <= Math.ceil(R / BLOCK_U); bx++) {
-    for (let bz = Math.floor(-R / BLOCK_V); bz <= Math.ceil(R / BLOCK_V); bz++) {
+  const add = (x, z, w, d, h, palette, rot = 0) => addTo(list, x, z, w, d, h, palette, rot);
+
+  // Real OpenStreetMap tall and major buildings outside the detailed frame (Mississauga, Etobicoke, North York,
+  // York Region, Scarborough; js/toronto-surroundings-data.js, st-bz1o.10). Indexed in 120 m cells so procedural
+  // blocks don't overlap them.
+  const osmCells = new Set();
+  const osmFlat = window.CITY.SURROUNDINGS_DATA && window.CITY.SURROUNDINGS_DATA.buildings;
+  if (osmFlat && osmFlat.length) {
+    for (let i = 0; i + 6 < osmFlat.length; i += 7) {
+      const x = osmFlat[i], z = osmFlat[i + 1], w = osmFlat[i + 2], d = osmFlat[i + 3], h = osmFlat[i + 4], rot = osmFlat[i + 5] / 10, st = osmFlat[i + 6];
+      if (inDetail(x, z, 20)) continue;
+      if (terrainRawAt(x, z) <= -1 || waterAt(x, z)) continue;
+      if (excluded(x, z, 40)) continue;
+      const pal = STYLE_PALETTE[st] || 'brick';
+      addTo(osmList, x, z, w, d, h, pal, rot);
+      stats.osm++;
+      const rad = Math.max(w, d) / 2 + 25;
+      const ix0 = Math.floor((x - rad) / 120), ix1 = Math.floor((x + rad) / 120);
+      const iz0 = Math.floor((z - rad) / 120), iz1 = Math.floor((z + rad) / 120);
+      for (let ix = ix0; ix <= ix1; ix++) for (let iz = iz0; iz <= iz1; iz++) osmCells.add(ix * 100000 + iz);
+    }
+  }
+  const nearOsm = (x, z) => osmCells.has(Math.floor(x / 120) * 100000 + Math.floor(z / 120));
+
+  const minX = Math.max(LU.minX + 200, Math.min(-MAX_BUILD_DIST, DETAIL.x0 - EDGE_COLLAR));
+  const maxX = Math.min(LU.maxX - 200, Math.max(MAX_BUILD_DIST, DETAIL.x1 + EDGE_COLLAR));
+  const minZ = Math.max(LU.minZ + 200, Math.min(-MAX_BUILD_DIST, DETAIL.z0 - EDGE_COLLAR));
+  const maxZ = Math.min(LU.maxZ - 200, Math.max(MAX_BUILD_DIST, DETAIL.z1 + 1000));
+  for (let bx = Math.floor(minX / BLOCK_U); bx <= Math.ceil(maxX / BLOCK_U); bx++) {
+    for (let bz = Math.floor(minZ / BLOCK_V); bz <= Math.ceil(maxZ / BLOCK_V); bz++) {
       const x0 = bx * BLOCK_U + 7.2;
       const x1 = (bx + 1) * BLOCK_U - 7.2;
       const z0 = bz * BLOCK_V + 7.2;
@@ -352,9 +410,11 @@ function generateBuildings(density) {
       const cx = (x0 + x1) / 2;
       const cz = (z0 + z1) / 2;
       const dist = Math.hypot(cx, cz);
-      if (dist > R) continue;
+      const eDist = detailEdgeDist(cx, cz);
+      if (dist > MAX_BUILD_DIST && eDist > EDGE_COLLAR) continue;
       if (!onLand(cx, cz) || !onLand(x0, z0) || !onLand(x1, z1) || !onLand(x0, z1) || !onLand(x1, z0)) continue;
       if (excluded(cx, cz, 60)) continue;
+      if (nearOsm(cx, cz)) continue;
       // a steep block (a ravine side, the bluffs): left to the trees
       if (Math.abs(groundAt(x0, z0) - groundAt(x1, z1)) > 12) continue;
       const nearArt = (v, stepM) => {
@@ -366,7 +426,8 @@ function generateBuildings(density) {
       if (lu.park > 0.4) continue;
       const cl = clusterAt(cx, cz);
       // keep a share of the far blocks only (the ground shader carries the grid on)
-      const keep = (dist < 4000 ? 1 : dist < 7000 ? 0.75 : 0.45) * density;
+      const nearEdge = eDist > 0 && eDist < 1800;
+      const keep = (nearEdge ? 0.85 : dist < 4000 ? 1 : dist < 7000 ? 0.75 : 0.45) * density;
       if (!cl && rand() > keep) continue;
       if (lu.industry > 0.4) {
         // warehouses & sheds
@@ -413,7 +474,7 @@ function generateBuildings(density) {
       }
     }
   }
-  return { list, stats };
+  return { list, osmList, stats };
 }
 
 function buildBuildingChunks(list, material, chunkSize, name) {
@@ -527,11 +588,15 @@ function buildSurroundings(scene, terrain, quality = {}) {
   if (terrain) terrain.traverse((o) => { if (o.isMesh) o.material = landMat; });
 
   buildLandmarks(group);
-  const { list, stats } = generateBuildings(quality.farCity ?? 1);
+  const { list, osmList, stats } = generateBuildings(quality.farCity ?? 1);
   const mat = createBuildingMaterial();
   const band = BAND ? list.filter((b) => inDetail(b.x, b.z)) : [];
   const beyond = BAND ? list.filter((b) => !inDetail(b.x, b.z)) : list;
-  for (const mesh of buildBuildingChunks(beyond, mat, 1200 * (quality.staticCell || 1), 'SurroundingBuildings')) group.add(mesh);
+  const nearOsm = osmList.filter((b) => detailEdgeDist(b.x, b.z) <= EDGE_COLLAR);
+  const farOsm = osmList.filter((b) => detailEdgeDist(b.x, b.z) > EDGE_COLLAR);
+  for (const mesh of buildBuildingChunks([...beyond, ...nearOsm], mat, 1200 * (quality.staticCell || 1), 'SurroundingBuildings')) group.add(mesh);
+  // Distant GTA skylines (Mississauga City Centre, North York Centre, York Region, Scarborough Centre): coarse 3 km chunks
+  for (const mesh of buildBuildingChunks(farOsm, mat, 3000, 'SurroundingSkyline')) group.add(mesh);
   // the band's stand-ins in the band's own 1 km cells (scene-culling.js shows each where it hides that cell's city)
   for (const mesh of buildBuildingChunks(band, mat, BAND ? BAND.cell : 1, 'SurroundingBandBuildings')) {
     const [i, j] = mesh.name.split(':')[1].split(',').map(Number);
@@ -540,7 +605,7 @@ function buildSurroundings(scene, terrain, quality = {}) {
   }
 
   scene.add(group);
-  console.info(`[surroundings] ${list.length} buildings ${JSON.stringify(stats)}, built in ${(performance.now() - t0).toFixed(0)} ms`);
+  console.info(`[surroundings] ${list.length + osmList.length} buildings ${JSON.stringify(stats)}, built in ${(performance.now() - t0).toFixed(0)} ms`);
   return { group };
 }
 

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "leaside-north-sidewalks",
+    "mode": "person",
+    "x": 2150,
+    "z": -7220,
+    "heading": 0,
+    "wait": 4500,
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [2025, 52, -7145], look: [2170, 0, -7275], fov: 50 }); })()"
+  },
+  {
+    "name": "cemetery-park-sidewalks",
+    "mode": "person",
+    "x": 780,
+    "z": -5430,
+    "heading": 0,
+    "wait": 4500,
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [895, 68, -5305], look: [780, 0, -5430], fov: 50 }); })()"
+  },
+  {
+    "name": "edge-nw-etobicoke-mississauga",
+    "mode": "person",
+    "x": -7500,
+    "z": -6000,
+    "heading": 0,
+    "wait": 4500,
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [-7400, 145, -6000], look: [-11200, 15, -5200], fov: 55 }); })()"
+  },
+  {
+    "name": "edge-ne-scarborough-north",
+    "mode": "person",
+    "x": 8900,
+    "z": -6500,
+    "heading": 0,
+    "wait": 4500,
+    "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [8900, 145, -6500], look: [12800, 15, -9600], fov: 55 }); })()"
+  }
+]

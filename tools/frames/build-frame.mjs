@@ -98,7 +98,7 @@ step('poles', [o('toronto-poles.js')], node, [heap, 'tools/build-poles.mjs', '--
 step('pack', [o('toronto-geodata.bin')], node, [heap, 'tools/pack-geodata.mjs', '--geo', o('toronto-geodata.js'), '--poles', o('toronto-poles.js'),
   '--bin', o('toronto-geodata.bin')]);
 step('sidewalks', [o('toronto-sidewalks.js')], node, [heap, 'tools/build-sidewalks.mjs', '--geo', o('toronto-geodata.js'),
-  '--out', o('toronto-sidewalks.js')], { SLOP_FRAME: FRAME });
+  '--osm', c('osm_roads.json'), '--out', o('toronto-sidewalks.js')], { SLOP_FRAME: FRAME });
 step('traffic', [o('toronto-traffic-data.js')], node, [heap, 'tools/build-traffic-data.mjs', '--geo', o('toronto-geodata.js'),
   '--out', o('toronto-traffic-data.js')], { SLOP_FRAME: FRAME });
 step('transit', [o('toronto-transit.js')], node, [heap, 'tools/build-transit.mjs', '--geo', o('toronto-geodata.js'),

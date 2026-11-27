@@ -283,6 +283,30 @@ sidewalks". Toronto's walks are poured in place, not laid in flags, and now look
 - Corners are split along the bisector between two runs; real corners have a ramp and radial joints.
 - The curb material's joints are still square to the world axes.
 
+## Fallback sidewalks on bigger frames (st-bz1o.9)
+
+On the Eglinton frame (`data/frames/eglinton/toronto-geodata.bin`, 6,572 eligible islands), 6,029 islands carry City
+sidewalk polygons and 543 (8.3%) have none: parks, cemeteries, highway ramp loops, service yards, streets with no
+sidewalk, and blocks built or missed since the 2021 aerial digitization. Previously all 543 fell back to the fixed
+4.6 m concrete band around every edge.
+
+When `tools/build-sidewalks.mjs` runs with `--osm <osm_roads.json>` (or `--synthesize`), every eligible island without
+City polygons is handled in three steps:
+
+1. **OpenStreetMap mapped sidewalks (`highway=footway` + `footway=sidewalk`)** overlapping the island are buffered to
+   their mapped width (1.8 m default, clamped 1.2–4.5 m) and clipped to the island's 0.25 m slab in GEOS.
+2. **Walkable bordering road edges** (`primary`, `secondary`, `tertiary`, `unclassified`, `residential` in `GEO.roads`)
+   get a Toronto-width strip (2.1 m curb-adjacent on arterials; 1.8 m with a 1.0 m grass boulevard setback on local
+   streets where clear of buildings), skipping the frame rim, highway/service/living-street edges, park/wild edges off
+   arterials, and any side explicitly tagged `sidewalk=no` / `sidewalk=none` in OpenStreetMap.
+3. **Sidewalk-free islands** (parks, cemeteries, highway loops, service yards and `sidewalk=no` blocks that yield zero
+   pieces, leaving Toronto Island `living_street` blocks untouched for the Island flush-verge handler) are listed in
+   `SIDEWALKS.noWalk`. `js/city-grid.js` draws their yard cleanly out to the slab edge instead of wrapping them in the
+   4.6 m concrete band.
+
+On Eglinton this synthesizes 186 pieces across 124 islands (6,153 walked islands total), marks 403 sidewalk-free
+islands as `noWalk`, and leaves only the 16 Toronto Island `living_street` islands on the native fallback.
+
 ### Verification (2026-10-29)
 
 - `npm test`: 338 tests, 337 pass, 1 opt-in skip (as `main`). New `tests/sidewalk-sections.test.mjs`: the joints run across

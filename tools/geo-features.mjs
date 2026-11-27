@@ -436,6 +436,84 @@ for (const f of massing) {
 }
 log(`${buildings.length} buildings from the 3D Massing (${stats.joined} with an OSM type or name, ${stats.multi} multi-part plans); ${stats.dropped} off the blocks dropped`);
 
+// Outside the City of Toronto boundary (e.g. corners of the City-wide frame in Mississauga, Vaughan, Markham or
+// Pickering, st-bz1o.10), City 3D Massing has no records: fall back to OpenStreetMap footprints and height/levels tags
+// (or estimateLevels when unmapped) so those corners carry buildings matching what stands there. Inside the City
+// boundary this emits nothing, keeping detail and Eglinton builds unchanged.
+export function osmBuildingFromFootprint(f, { district = '', maskRectsFn = maskRects } = {}) {
+  const t = f.t || {};
+  const type = t.building || 'yes';
+  if (type === 'no' || f.area < 12) return null;
+  const ring = rdpRing(f.ring, 0.25);
+  if (ring.length < 3) return null;
+  const r = minRect(ring);
+  let parts = [[-r.w / 2, r.w / 2, -r.d / 2, r.d / 2]];
+  if (f.area / r.area < 0.86 && r.w > 6 && r.d > 6) {
+    const C = r.w * r.d > 20000 ? 1 : 0.5;
+    const nw = Math.ceil(r.w / C), nd = Math.ceil(r.d / C);
+    if (nw * nd < 400000) {
+      const local = ring.map(([x, z]) => [(x - r.cx) * r.ux + (z - r.cz) * r.uz, -(x - r.cx) * r.uz + (z - r.cz) * r.ux]);
+      const m = new Uint8Array(nw * nd);
+      for (let j = 0; j < nd; j++) for (let i = 0; i < nw; i++) m[j * nw + i] = pointInRing(-r.w / 2 + (i + 0.5) * C, -r.d / 2 + (j + 0.5) * C, local) ? 1 : 0;
+      const { rects } = maskRectsFn(m, nw, nd, 5, 6);
+      if (rects.length) parts = rects.map(([i0, i1, j0, j1]) => [-r.w / 2 + i0 * C, -r.w / 2 + (i1 + 1) * C, -r.d / 2 + j0 * C, -r.d / 2 + (j1 + 1) * C]);
+    }
+  }
+  const seed = Number(f.e?.id) || Math.abs(Math.round(r.cx * 31 + r.cz * 17));
+  const rnd = hash(seed + 11);
+  const rawH = parseFloat(t.height || '');
+  const mappedLevels = parseLevels(t['building:levels']);
+  const estimated = !(Number.isFinite(rawH) && rawH >= 2.5) && mappedLevels === null ? 1 : 0;
+  const levels = Number.isFinite(rawH) && rawH >= 2.5 ? Math.max(1, Math.round(rawH / 3.4))
+    : mappedLevels !== null ? mappedLevels : estimateLevels(type, f.area, district, rnd);
+  const h = Number.isFinite(rawH) && rawH >= 2.5 ? rawH : Math.max(3, levels * 3.4);
+  let kind;
+  if (type === 'construction') kind = 5;
+  else if (SMALL.test(type) || (f.area < 30 && levels <= 1)) kind = 4;
+  else if (/^(church|cathedral|chapel|temple|mosque|synagogue|religious)$/.test(type) || /^place_of_worship$/.test(t.amenity || '')) kind = 6;
+  else if (/^(school|university|college|hospital|kindergarten|public|government|civic)$/.test(type)) kind = 7;
+  else if (levels >= 10) kind = 3;
+  else if (levels >= 5 || (BUSINESS.test(type) && levels >= 3)) kind = 2;
+  else if (levels <= 3 && f.area < 650 && !BUSINESS.test(type)) kind = 0;
+  else kind = 1;
+  const roof = kind === 4 ? 2 : kind === 0 ? (hash(seed + 7) < 0.65 ? 1 : 0) : 0;
+  return {
+    r,
+    estimated,
+    row: [
+      q(r.cx), q(r.cz), q3(r.ang),
+      parts.map((p) => p.map(q)),
+      q(h), kind, roof,
+      Math.floor(hash(seed + 3) * 256),
+      estimated,
+      t.name || ''
+    ]
+  };
+}
+{
+  let cityRings = [];
+  try {
+    const fctEl = load('osm_fct.json').elements?.[0];
+    if (fctEl) cityRings = elemRings(fctEl);
+  } catch {}
+  if (cityRings.length) {
+    const inCity = (x, z) => cityRings.some((ring) => pointInRing(x, z, ring));
+    let osmAdded = 0, osmEst = 0;
+    for (const f of footprints) {
+      if (!inDetail(f.cx, f.cz) || inCity(f.cx, f.cz)) continue;
+      if ([...landmarkFootprints].some((l) => pointInRing(f.cx, f.cz, l.ring))) continue;
+      const built = osmBuildingFromFootprint(f, { district: districtAt(f.cx, f.cz) });
+      if (!built || offBlocks(built.r) > 0.6) continue;
+      buildings.push(built.row);
+      buildingIds.push(`osm:${f.key}`);
+      buildingOsm.push(f.key);
+      osmAdded++;
+      if (built.estimated) osmEst++;
+    }
+    if (osmAdded) log(`${osmAdded} OSM buildings added outside the City of Toronto boundary (${osmEst} estimated heights)`);
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Parkland & wild ground on every block (share of the block covered, and the largest named park on it)
 // ---------------------------------------------------------------------------------------------------------------------

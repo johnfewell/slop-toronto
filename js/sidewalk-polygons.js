@@ -133,5 +133,15 @@ function sidewalkWalkIndex(map) {
   return { has: (bid) => map.has(bid), inside, size: map.size };
 }
 
-Object.assign(CITY, { sidewalkBlocksKey, sidewalkPieces, sidewalkWalkIndex, decodeSidewalkRing, encodeSidewalkRing });
+// Eligible islands verified to have no sidewalk (parks, highway loops, service/rail yards): no fake 4.6 m band
+function sidewalkNoWalk(data, blocks) {
+  if (!data || !Array.isArray(data.noWalk) || !blocks) return null;
+  const key = sidewalkBlocksKey(blocks);
+  if (data.blocks !== key) return null;
+  const set = new Set();
+  for (const bid of data.noWalk) if (bid >= 0 && bid < blocks.length) set.add(bid);
+  return set;
+}
+
+Object.assign(CITY, { sidewalkBlocksKey, sidewalkPieces, sidewalkNoWalk, sidewalkWalkIndex, decodeSidewalkRing, encodeSidewalkRing });
 })();

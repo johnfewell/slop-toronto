@@ -165,8 +165,11 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
 - **OpenStreetMap**: streets, places, water and land use, the streetcar & railway tracks and the streetcar stops, and
   which side of the street each bikeway is on (cycleway tags). © OpenStreetMap contributors, under the Open Database
   License (ODbL). https://www.openstreetmap.org/copyright
-  The city database built from it, `data/toronto-geodata.bin` and `js/toronto-geodata.js` (by `tools/build-geodata.mjs`), is a derivative database
-  and is made available under the ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/), not the MIT License.
+  The city database built from it, `data/toronto-geodata.bin` and `js/toronto-geodata.js` (by `tools/build-geodata.mjs`),
+  the outer GTA land-use and skyline file `js/toronto-surroundings-data.js` (by `tools/build-surroundings.mjs`), and the
+  synthesized fallback sidewalks in `js/frames/eglinton/toronto-sidewalks.js` (by `tools/build-sidewalks.mjs`) are
+  derivative databases and are made available under the ODbL 1.0 (https://opendatacommons.org/licenses/odbl/1-0/), not
+  the MIT License.
 - **AWS Terrain Tiles** (Mapzen "terrarium" tiles, SRTM-derived elevation). https://registry.opendata.aws/terrain-tiles/
 - **Ontario Elevation Mapping Program, GTA 2023 lidar** (Ontario Ministry of Natural Resources), under the Open
   Government Licence – Ontario (https://www.ontario.ca/page/open-government-licence-ontario). The Don Valley terrain

@@ -1338,8 +1338,10 @@ function buildCityGrid(scene) {
   // (?sidewalks=0: the fixed band everywhere, for comparison)
   const cityWalks = window.CITY.sidewalkPieces && new URLSearchParams(location.search).get('sidewalks') !== '0'
     ? window.CITY.sidewalkPieces(window.CITY.SIDEWALKS, GEO.blocks) : null;
+  const noWalkIslands = cityWalks && window.CITY.sidewalkNoWalk
+    ? window.CITY.sidewalkNoWalk(window.CITY.SIDEWALKS, GEO.blocks) : null;
   window.CITY.sidewalkPieceMap = cityWalks; // (patio-layout.js keeps the CaféTO cafés on them)
-  let walkIslands = 0, walkBands = 0, walkTris = 0, walkMs = 0;
+  let walkIslands = 0, walkBands = 0, walkNone = 0, walkTris = 0, walkMs = 0;
   // the slab's sides alone (its top is the yard's), facing out, in the walkway's concrete
   const slabSides = (pts, y0, y1, keep = null) => {
     const A = makeAcc();
@@ -1479,6 +1481,20 @@ function buildCityGrid(scene) {
         if (pk.paths) geos.paved.push(pk.paths);
         if (pk.beds) geos.rail.push(pk.beds);
       }
+    } else if (noWalkIslands && noWalkIslands.has(b.id) && !verge) {
+      // Eligible island verified to have no sidewalk (park, cemetery, highway loop, service/rail yard): draw its yard
+      // cleanly out to the slab edge rather than wrapping it in a 4.6 m concrete band (st-bz1o.9).
+      walkNone++;
+      const sides = slabSides(inner, 0.03, SW_TOP);
+      if (sides) geos.walk.push(framed(sides, runs, [], seeds, downtown));
+      const top = yardGeometry(inner, SW_TOP, ponds);
+      if (top) geos[yard].push(top);
+      const pk = prop && (yard === 'paved' || yard === 'plot') ? parkettesOf(b, prop, ponds) : null;
+      if (pk) {
+        geos.lawn.push(pk.lawn);
+        if (pk.paths) geos.paved.push(pk.paths);
+        if (pk.beds) geos.rail.push(pk.beds);
+      }
     } else if (prop) {
       if (cityWalks) walkBands++;
       if (verge) {
@@ -1564,7 +1580,7 @@ function buildCityGrid(scene) {
   mergeInto(geos.rail, new THREE.MeshStandardNodeMaterial({ color: 0x5f5850, roughness: 0.97 }), false, 'RailLands'); // Toronto layer
   window.CITY.parketteTrees = parketteTrees; // (street-details.js plants them)
   console.info(`[cityGrid] ${parketteCount} small parks laid in lawn, ${parketteTrees.length} trees in their beds; ponds cut out of ${pondYards} island yards`);
-  console.info(cityWalks ? `[cityGrid] City sidewalks on ${walkIslands} islands (${walkTris} triangles, ${walkMs.toFixed(0)} ms), the fixed ${SW} m band on ${walkBands}; walk frames ${frameMs.toFixed(0)} ms` : `[cityGrid] no City sidewalks: the fixed ${SW} m band on every island; walk frames ${frameMs.toFixed(0)} ms`);
+  console.info(cityWalks ? `[cityGrid] City sidewalks on ${walkIslands} islands (${walkTris} triangles, ${walkMs.toFixed(0)} ms), no-walk on ${walkNone}, the fixed ${SW} m band on ${walkBands}; walk frames ${frameMs.toFixed(0)} ms` : `[cityGrid] no City sidewalks: the fixed ${SW} m band on every island; walk frames ${frameMs.toFixed(0)} ms`);
 
   // ===================================================================================================================
   // 3. STREAMS & RIVERS (the Wupa, the Jabi, Lobito Creek...): water channels across the islands (culverted under
