@@ -14,7 +14,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { unpackGeo } from '../js/geodata-loader.js';
 import { buildSidewalks, osmSidewalkPolicy, runtimeInset, ringArea, INSET } from '../tools/build-sidewalks.mjs';
-import { packLandUse, unpackLandUse, classifyLandUse, classifyBuildingStyle, parseOsmHeight, edgeDistBox, EGLINTON } from '../tools/build-surroundings.mjs';
+import { packLandUse, unpackLandUse, classifyLandUse, classifyBuildingStyle, parseOsmHeight, fitFootprintBox, edgeDistBox, EGLINTON } from '../tools/build-surroundings.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const inset = runtimeInset();
@@ -194,7 +194,12 @@ test('land-use pack/unpack and OSM tag helpers behave deterministically', () => 
   assert.equal(classifyLandUse({ aeroway: 'runway' }), 1);
   assert.equal(classifyLandUse({ landuse: 'residential' }), 2);
   assert.equal(parseOsmHeight({ height: '48.5 m' }), 48.5);
-  assert.equal(parseOsmHeight({ 'building:levels': '10' }), 33);
-  assert.equal(classifyBuildingStyle({ building: 'office' }, 45, 500), 1);
-  assert.equal(classifyBuildingStyle({ building: 'warehouse' }, 10, 3000), 2);
+  assert.equal(parseOsmHeight({ 'building:levels': '10' }), 30);
+  assert.equal(parseOsmHeight({ 'building:levels': '20' }), 60);
+  assert.equal(classifyBuildingStyle({ building: 'office' }, 45, 500, 30, 25), 1);
+  assert.equal(classifyBuildingStyle({ building: 'apartments' }, 60, 1973, 99, 20), 3);
+  assert.equal(classifyBuildingStyle({ building: 'apartments' }, 90, 1100, 40, 28), 1);
+  assert.equal(classifyBuildingStyle({ building: 'warehouse' }, 10, 3000, 80, 40), 2);
+  const fitted = fitFootprintBox({ w: 99, d: 34 }, 1973);
+  assert.ok(fitted.d < 22 && fitted.d > 18, `cranked slab depth fitted to ${fitted.d.toFixed(1)} m`);
 });

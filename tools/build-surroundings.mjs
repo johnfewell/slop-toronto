@@ -109,12 +109,18 @@ export function classifyLandUse(t) {
 const IND_BLD = /^(industrial|warehouse|retail|supermarket|hangar|manufacture|factory|commercial)$/;
 const LIGHT_BLD = /^(school|university|college|hospital|civic|public|government|train_station|transportation)$/;
 
-export function classifyBuildingStyle(t, h, area) {
+export function classifyBuildingStyle(t, h, area, w = 40, d = 40) {
   const b = t.building || 'yes';
-  if (h >= 40 || ((b === 'office' || b === 'commercial') && h >= 22)) return 1; // glass
+  const maxSpan = Math.max(w, d);
+  if (b === 'apartments' || b === 'residential') {
+    if (h >= 75 && maxSpan <= 55) return 1; // slender modern condo point tower
+    return h >= 24 ? 3 : 0; // precast/modern slab or brick walk-up, never blue office curtain wall
+  }
+  if ((b === 'office' || b === 'commercial') && h >= 24) return 1; // glass
+  if (h >= 55 && maxSpan <= 65) return 1; // slender tall tower
   if (IND_BLD.test(b) || (area >= 2200 && h < 18)) return 2; // industrial
   if (LIGHT_BLD.test(b)) return 4; // light
-  if (h >= 24 || b === 'apartments') return 3; // modern
+  if (h >= 24) return 3; // modern
   return 0; // brick
 }
 
@@ -123,14 +129,24 @@ export function parseOsmHeight(t) {
   const hm = /^(\d+(?:\.\d+)?)/.exec(String(t.height || '').trim());
   if (hm) {
     const v = parseFloat(hm[1]);
-    if (v >= 3 && v <= 400) return v;
+    if (v >= 3 && v <= 300) return v;
   }
   const lm = /^(\d+(?:\.\d+)?)/.exec(String(t['building:levels'] || '').trim());
   if (lm) {
-    const v = parseFloat(lm[1]) * 3.3;
-    if (v >= 3 && v <= 400) return v;
+    const v = parseFloat(lm[1]) * 3.0;
+    if (v >= 3 && v <= 300) return v;
   }
   return null;
+}
+
+export function fitFootprintBox(r, polyArea) {
+  const fill = Math.min(1, polyArea / Math.max(1, r.w * r.d));
+  const scaleD = fill < 0.85 ? Math.max(0.45, fill) : 1;
+  const scaleW = fill < 0.55 ? Math.max(0.75, Math.sqrt(fill / scaleD)) : 1;
+  return {
+    w: Math.max(8, Math.min(240, r.w * scaleW)),
+    d: Math.max(8, Math.min(240, r.d * scaleD))
+  };
 }
 
 function rasterizeRing(grid, N, minX, maxX, minZ, maxZ, ring) {
@@ -248,7 +264,7 @@ export async function buildSurroundingsData(pbfPath) {
       else landCounts.residential++;
     }
 
-    if (!t.building || t.building === 'no' || t.building === 'roof' || t.building === 'shed') continue;
+    if (!t.building || t.building === 'no' || t.building === 'roof' || t.building === 'shed' || t.building === 'construction') continue;
     for (const poly of polys) {
       const outer = poly[0];
       if (!outer || outer.length < 4) continue;
@@ -265,17 +281,18 @@ export async function buildSurroundingsData(pbfPath) {
       const ring = outer.slice(0, -1).map(([lon, lat]) => toWorld(lon, lat));
       const area = Math.abs(ringArea(ring));
       if (area < 120) continue;
+      // Skip oversized generic building=yes footprints that lack an explicit height/levels tag (often site/campus polygons)
+      if (t.building === 'yes' && parsedH === null && area > 10000) continue;
       const r = minRect(ring);
       if (!r || Math.abs(r.cx) > BLD_LIMIT || Math.abs(r.cz) > BLD_LIMIT) continue;
       const ed = edgeDistBox(r.cx, r.cz, EGLINTON);
       if (ed < 25) continue; // stay cleanly outside Eglinton frame edge
 
-      const w = Math.max(8, Math.min(260, r.w));
-      const d = Math.max(8, Math.min(260, r.d));
+      const { w, d } = fitFootprintBox(r, area);
       const isTall = parsedH !== null && parsedH >= 18;
       if (isTall) {
         const h = Math.round(parsedH);
-        const style = classifyBuildingStyle(t, h, area);
+        const style = classifyBuildingStyle(t, h, area, w, d);
         const [lon, lat] = toLonLat(r.cx, r.cz);
         if (lon < -79.55) regionCounts.mississauga++;
         else if (r.cx < EGLINTON.x0 && r.cz > -15000) regionCounts.etobicoke++;
@@ -284,8 +301,8 @@ export async function buildSurroundingsData(pbfPath) {
         else regionCounts.northYork++;
         tallBuildings.push([Math.round(r.cx), Math.round(r.cz), Math.round(w), Math.round(d), h, Math.round(r.ang * 10), style]);
       } else if (ed <= COLLAR_DIST && ((parsedH !== null && parsedH >= 10) || area >= 1600)) {
-        const h = parsedH !== null ? Math.round(parsedH) : (t.building === 'apartments' ? 14 : 9);
-        const style = classifyBuildingStyle(t, h, area);
+        const h = parsedH !== null ? Math.round(parsedH) : (t.building === 'apartments' ? 12 : 9);
+        const style = classifyBuildingStyle(t, h, area, w, d);
         collarExtra.push({ score: h * 80 + area, row: [Math.round(r.cx), Math.round(r.cz), Math.round(w), Math.round(d), h, Math.round(r.ang * 10), style] });
       }
     }

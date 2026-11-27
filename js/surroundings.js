@@ -49,7 +49,9 @@ function unpackOsmLandUse(lu) {
     const v = raw.charCodeAt(i);
     rgba[i * 4] = Math.round(((v >> 5) & 7) * (255 / 7));
     rgba[i * 4 + 1] = Math.round(((v >> 2) & 7) * (255 / 7));
-    rgba[i * 4 + 2] = Math.round((v & 3) * (180 / 3));
+    // Keep OSM residential canopy below the 0.4 detached-house split threshold so outer suburban blocks stay compact
+    // rowhouse bars instead of multiplying instanced boxes 5x; named leafy neighbourhoods are overlaid at 180 below.
+    rgba[i * 4 + 2] = Math.round((v & 3) * (90 / 3));
     rgba[i * 4 + 3] = 255;
   }
   return rgba;
@@ -426,8 +428,8 @@ function generateBuildings(density) {
       if (lu.park > 0.4) continue;
       const cl = clusterAt(cx, cz);
       // keep a share of the far blocks only (the ground shader carries the grid on)
-      const nearEdge = eDist > 0 && eDist < 1800;
-      const keep = (nearEdge ? 0.85 : dist < 4000 ? 1 : dist < 7000 ? 0.75 : 0.45) * density;
+      const nearEdge = eDist > 0 && eDist < 1600;
+      const keep = (nearEdge ? 0.65 : dist < 4000 ? 1 : dist < 7000 ? 0.75 : 0.45) * density;
       if (!cl && rand() > keep) continue;
       if (lu.industry > 0.4) {
         // warehouses & sheds
