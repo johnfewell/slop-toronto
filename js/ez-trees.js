@@ -33,7 +33,8 @@ const MID_SHADOW = Number(new URLSearchParams(location.search).get('treeshadow')
 // The wooded parks' woods (park-woods.js: High Park, Toronto Island): their trees stand 50-70 to the hectare and hide each other, so they are a class
 // of their own (WOODS_CLASS) handing over to the coarser levels nearer, at these shares of the distances above
 const WOODS_CLASS = 6, IMP_CLASS = 7, CLASSES = 8;
-const WOODS_SHARE = { near: 0.55, mid: 0.42, shadow: 0.5 };
+const WOODS_SHARE = { near: 0.35, mid: 0.42, shadow: 0.5 }; // (near was 0.55 until 2026-11-26: -0.8 ms on foot in the woods, no change from the air; st-aeg2)
+if (new URLSearchParams(location.search).has('woodsnear')) WOODS_SHARE.near = Number(new URLSearchParams(location.search).get('woodsnear')); // (?woodsnear=0.55: the old share, for A/B)
 // The High Park pilot's woods trees (IMP_CLASS: docs/park-cover.md, st-annt.4) hand over from the mid mesh to a baked,
 // lit impostor (tree-impostors.js) at IMP_MID instead of to the crown cards at the woods' mid distance: one quad a tree
 // from there out. ?treeimp=0: the woods as before; ?treeimp=all: every park's woods (the Island's too); ?treeimpmid=<m>
