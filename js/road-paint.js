@@ -23,6 +23,13 @@ const PAINT_CELL = 1200; // m (the paint's cells)
 const SURFACE_CELL = 2400; // m (the trails' surfaces: kept at any distance, cells for the view frustum alone)
 const PAINT_CULL = 1650 * window.CITY.QUALITY.cull; // m: the paint's cells go beyond this (x the tier's cull distances)
 const MAX_SEGMENT = 200; // m: longer strips are cut, so no cell's bounds reach far past it
+// Local streets carry no centre line (jf-qw7): Toronto paints one on its collectors and arterials, not on local residential streets (Rosedale's, as in John's photos of
+// Chestnut Park, are unmarked). A street whose OSM class is residential, unclassified or a living street (road-network.js rank 1 or less) and whose carriageway is
+// under 10 m (half under 5) is local. Of 12,000 sampled residential points the City's Centreline calls 87% Local and 9% Collector. The streets the grid draws itself
+// (no rank) keep theirs, and so does a wide residential road.
+const LOCAL_MAX_RANK = 1;
+const LOCAL_MAX_HALF = 5; // m
+const isLocalStreet = (e) => e.rank !== undefined && e.rank <= LOCAL_MAX_RANK && e.half < LOCAL_MAX_HALF;
 const WIDEN = 16; // createRoadPaintMaterial widens a thin strip up to 16x its width on screen (the bounds allow for it)
 
 // The vertex arrays of one cell's mesh
@@ -136,6 +143,7 @@ function buildRoadPaint(scene, network) {
 
     // Dashed white between lanes going the same way; between opposing ones yellow, broken where each way has one lane
     // and a solid double yellow on the wider roads (nothing across a median or a lane closed off by an obstacle)
+    const local = isLocalStreet(e);
     const multiLane = lanes.filter((l) => l.dir === 1).length > 1 || lanes.filter((l) => l.dir === -1).length > 1;
     for (let k = 0; k + 1 < lanes.length; k++) {
       const p = lanes[k];
@@ -144,6 +152,8 @@ function buildRoadPaint(scene, network) {
       if (q.o - p.o > 4.5 && (p.dir === q.dir || !clearCentre(e, mid))) continue;
       if (p.dir === q.dir) {
         along(e, mid, 0.13, WHITE, 12, 0.25);
+      } else if (local) {
+        // (opposing lanes on a local street: no line)
       } else if (multiLane) {
         if (!omitIslandCentre(e, mid - 0.11)) along(e, mid - 0.11, 0.1, YELLOW);
         if (!omitIslandCentre(e, mid + 0.11)) along(e, mid + 0.11, 0.1, YELLOW);

@@ -126,3 +126,33 @@ test('scene culling hides the paint cells beyond their distance, ignoring the qu
   }
   assert.ok(visibleAt(9000, 1.7, 9000).every((m) => m.name === 'RoadMarkingsSurfaces'), 'nothing of the paint 9 km away');
 });
+
+// Local streets carry no centre line (jf-qw7): rank 1 or less and a carriageway under 10 m. Collectors, wider residential roads and the grid's own streets keep theirs.
+test('no yellow centre line on a local street, one on a collector, a wide residential road and a street with no rank', () => {
+  const yellow = new CORE.Color(0xe0b12e);
+  const countYellow = (rank, half) => {
+    const CITY = {
+      THREE: CORE, CROSSWALK: 2.5, QUALITY: { cull: 1 },
+      createRoadPaintMaterial: () => new CORE.MeshBasicMaterial(),
+      edgeY: () => 0
+    };
+    new Function('window', 'console', paintSource)({ CITY }, { info() {} });
+    const A = { id: 0, x: 0, z: 0, shape: false }, B = { id: 1, x: 120, z: 0, shape: false };
+    const edge = (from, to, o) => {
+      const L = Math.hypot(to.x - from.x, to.z - from.z), dx = (to.x - from.x) / L, dz = (to.z - from.z) / L;
+      return { from, to, x0: from.x, z0: from.z, sx: from.x, sz: from.z, dx, dz, rx: -dz, rz: dx, span: L, len: L, half, lanes: [o], rank };
+    };
+    const group = CITY.buildRoadPaint(new CORE.Scene(), { edges: [edge(A, B, half / 2), edge(B, A, half / 2)], isRoadClear: () => true });
+    let n = 0;
+    for (const mesh of group.children) {
+      const col = mesh.geometry.attributes.color;
+      for (let i = 0; i < col.count; i++) if (Math.abs(col.getX(i) - yellow.r) < 1e-3 && Math.abs(col.getY(i) - yellow.g) < 1e-3) n++;
+    }
+    return n;
+  };
+  assert.equal(countYellow(1, 3.7), 0, 'residential, 7.4 m: unmarked');
+  assert.equal(countYellow(0, 3.7), 0, 'living street: unmarked');
+  assert.ok(countYellow(2, 3.9) > 0, 'a tertiary road (a collector) keeps its centre line');
+  assert.ok(countYellow(1, 5.45) > 0, 'a wide residential road keeps its centre line');
+  assert.ok(countYellow(undefined, 3.7) > 0, 'a street with no rank (the downtown grid) keeps its centre line');
+});

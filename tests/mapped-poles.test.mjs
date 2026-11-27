@@ -240,7 +240,7 @@ test('the pole models are cheap enough to instance by the thousand, their glass 
   for (const look of Object.keys(PM.PED_LAMPS)) {
     const g = PM.pedLampGeometry(CORE, mergeGeometries, look);
     g.computeBoundingBox();
-    assert.ok(tris(g) <= 120, `${look}: ${tris(g)} triangles`);
+    assert.ok(tris(g) <= (look === 'globe' ? 150 : 120), `${look}: ${tris(g)} triangles`); // (Rosedale's globe post: a faceted globe and a fluted base, ~600 of them, drawn within 900 m)
     assert.ok(Math.abs(g.boundingBox.max.y - PM.PED_LAMPS[look].h) < 0.06, `${look} is ${PM.PED_LAMPS[look].h} m tall`);
     const glow = glowOf(g), pos = g.attributes.position;
     assert.ok(glow.some((v) => v === 1) && glow.some((v) => v === 0));

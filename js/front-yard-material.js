@@ -12,6 +12,7 @@
 //   8 leaf card   a card of leaf discs (a fringe of a hedge or shrub, the crown of a small tree), evergreen: 9 the same, deciduous (bare in winter)
 //   10 twig       a thin stem of a shrub or a branch of a small tree: bark, no snow
 //   11 needle card  a tapering fan of needles (a dwarf conifer's whorl)
+//   12 boulder    a rough rock at the curb (grey granite, reddish sandstone) with a snow cap in winter (jf-qw7)
 // Vertex attributes: position, normal, color (linear rgb), uv = (kind, random 0..1), aux = (metres along the run, height over its foot). Cards: aux = the card's own (s, t) 0..1.
 // A lawn or bed rectangle: aux = the metres from its centre, color = (half width, half depth, tone 0..1).
 
@@ -161,8 +162,16 @@ function createFrontYardMaterial() {
       out.assign(vec4(vcol.mul(fine.mul(0.3).add(0.85)), 1.0));
     });
 
+    // 12 boulder (jf-qw7): a flat-shaded rock, grey granite or reddish sandstone by its vertex colour, speckled and streaked, snow on its top in winter
+    If(k.greaterThan(12.0).and(k.lessThan(13.0)), () => {
+      const g1 = n3(wp.mul(7.0).add(rnd.mul(17.0))), g2 = n3(wp.mul(26.0).add(2.7)), spk = hash3(floor(wp.mul(55.0)));
+      const streak = n3(vec3(wp.x.mul(2.0), wp.y.mul(9.0), wp.z.mul(2.0)).add(rnd.mul(9.0)));
+      const tone = g1.mul(0.35).add(g2.mul(0.25)).add(streak.mul(0.2)).add(0.62).add(spk.sub(0.5).mul(0.1));
+      out.assign(vec4(snowOver(vcol.mul(tone), wp.xz, up.mul(1.7)), 1.0));
+    });
+
     // 11 needle card: a tapering fan of needles, dark blue-green, a snow cap in winter
-    If(k.greaterThan(11.0), () => {
+    If(k.greaterThan(11.0).and(k.lessThan(12.0)), () => {
       const taper = step(abs(aux.x.sub(0.5)).mul(2.0), float(1.0).sub(aux.y.mul(0.85)));
       const needles = step(abs(fract(aux.x.mul(15.0)).sub(0.5)), float(0.3).add(aux.y.mul(0.15)).add(hash2(vec2(floor(aux.x.mul(15.0)), rnd.mul(19.0))).mul(0.12)));
       const stip = step(hash3(floor(wp.mul(48.0))), 0.6);

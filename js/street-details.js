@@ -262,7 +262,7 @@ function buildStreetDetails(scene) {
   const poleStats = {
     mapped: useMapped, source: window.CITY.POLES?.source || null, counts: window.CITY.POLES?.counts || null,
     placed: { light: 0, lightSignal: 0, signal: 0, pedestrian: 0, hydro: 0, hydroBlocked: 0, tram: 0, tramWood: 0, tramCentre: 0, tramBlocked: 0 },
-    looks: { wood: 0, lantern: 0, promenade: 0, park: 0, spans: 0 }, rejected: mappedLayout.rejected, nudged: mappedLayout.nudged,
+    looks: { wood: 0, lantern: 0, promenade: 0, park: 0, globe: 0, spans: 0 }, rejected: mappedLayout.rejected, nudged: mappedLayout.nudged,
     fallback: { median: 0, roadside: 0 }, signals: { approaches: 0, mapped: 0, procedural: 0 }
   };
   window.CITY.poleStats = poleStats;
@@ -496,7 +496,7 @@ function buildStreetDetails(scene) {
   // out towards the nearest road; down a median 11 m with an arm over each roadway
   // The pole models (mapped-poles.js): per model, its instances' matrices
   const PM = window.CITY.poleModels;
-  const modelMatrices = { wood: [], woodTransformer: [], lantern: [], promenade: [], park: [], trolley: [], trolleyCentre: [] };
+  const modelMatrices = { wood: [], woodTransformer: [], lantern: [], promenade: [], park: [], globe: [], trolley: [], trolleyCentre: [] };
   const placeModel = (kind, s, yaw) => {
     dummy.position.set(s.x, s.y0, s.z);
     dummy.rotation.set(0, yaw, 0);
@@ -521,8 +521,8 @@ function buildStreetDetails(scene) {
     }
     if (s.type !== LIGHT && s.type !== LIGHT_SIGNAL) continue;
     const yaw = Math.atan2(-s.az, s.ax); // (the luminaire's long side along its arm)
-    if (s.type === LIGHT && s.look === 'lantern') {
-      placeLampPost(s, 'lantern');
+    if (s.type === LIGHT && (s.look === 'lantern' || s.look === 'globe')) {
+      placeLampPost(s, s.look);
       poleStats.placed.light++;
       continue;
     }
@@ -564,6 +564,8 @@ function buildStreetDetails(scene) {
   // The procedural lights fill the gaps: none within this of a mapped light (the City's spacing is ~30-40 m)
   const MAPPED_GAP = { median: 30, roadside: 25 };
   const mappedLightNear = (x, z, r) => !!mappedIndex.nearest(x, z, r, [LIGHT, LIGHT_SIGNAL]);
+  // (South and North Rosedale's streets have the black globe posts only, js/rosedale-zone.js: where the City mapped none the street goes without, not a tall grey pole; ?rosedaleStreet=0 keeps the fill)
+  const rosedaleOnly = new URLSearchParams(location.search).get('rosedaleStreet') !== '0' && window.CITY.rosedaleZoneAt ? window.CITY.rosedaleZoneAt : () => false;
   let medianPoles = 0, roadPoles = 0;
   // (down a road cut's sidewalks too: city-config.js cutAt, Strachan Ave under the railway)
   const cutAt = window.CITY.cutAt || (() => 0);
@@ -609,7 +611,7 @@ function buildStreetDetails(scene) {
       if (across && across.median) return;
       const px = x + inx * 0.8, pz = z + inz * 0.8;
       if (blockAt(px, pz) !== b || !isClearOfPoles(px, pz, 20)) return;
-      if (mappedLightNear(px, pz, MAPPED_GAP.roadside)) return;
+      if (mappedLightNear(px, pz, MAPPED_GAP.roadside) || rosedaleOnly(px, pz)) return;
       addPole(px, pz, 0.1, SW_Y + cutAt(px, pz), 9);
       addFootprint(px, pz, 0.4, 0.4);
       dummy.rotation.set(0, 0, 0);
@@ -852,6 +854,7 @@ function buildStreetDetails(scene) {
       lantern: () => PM.pedLampGeometry(THREE, mergeGeometries, 'lantern'),
       promenade: () => PM.pedLampGeometry(THREE, mergeGeometries, 'promenade'),
       park: () => PM.pedLampGeometry(THREE, mergeGeometries, 'park'),
+      globe: () => PM.pedLampGeometry(THREE, mergeGeometries, 'globe'),
       trolley: () => PM.trolleyPoleGeometry(THREE, mergeGeometries),
       trolleyCentre: () => PM.trolleyPoleGeometry(THREE, mergeGeometries, { centre: true })
     };

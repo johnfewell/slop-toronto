@@ -1,0 +1,38 @@
+[
+ {
+  "name": "chestnut-park-fall-view",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; const p = { x: 800, z: -3770 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [800, 1.55, -3770], look: [866, 3.0, -3750], fov: 66 }); })()"
+ },
+ {
+  "name": "chestnut-park-snow-view",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; const p = { x: 850, z: -3764 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [850, 1.55, -3764], look: [886, 3.0, -3720], fov: 66 }); })()"
+ },
+ {
+  "name": "chestnut-park-boulevard",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; const p = { x: 700, z: -3781 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [700, 1.55, -3781], look: [790, 2.0, -3770], fov: 70 }); })()"
+ },
+ {
+  "name": "rock-close",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; const p = { x: 729, z: -3772 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [729, 1.5, -3772], look: [738, 0.6, -3779], fov: 60 }); })()"
+ },
+ {
+  "name": "crescent-street",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67784023050961, -79.38417442413164), q = C.worldFromLatLon(43.67793545062343, -79.38300167565279); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "roxborough-street",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.68263482453741, -79.37552632696033), q = C.worldFromLatLon(43.683036274085154, -79.37448296496858); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ }
+]

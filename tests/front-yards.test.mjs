@@ -67,7 +67,7 @@ test('every Rosedale house plans a yard of finite triangles in the layout the ma
     const tris = plan.pushYard(A);
     assert.ok(A.pos.length === tris * 9 && A.nor.length === tris * 9 && A.col.length === tris * 9 && A.uv.length === tris * 6 && A.aux.length === tris * 6, `${rec.id}: layout`);
     assert.ok(A.pos.every(Number.isFinite) && A.nor.every(Number.isFinite) && A.col.every(Number.isFinite) && A.aux.every(Number.isFinite), `${rec.id}: finite`);
-    for (let i = 0; i < A.uv.length; i += 2) { total.kinds.add(A.uv[i]); assert.ok(Number.isInteger(A.uv[i]) && A.uv[i] >= 0 && A.uv[i] <= 11 && A.uv[i + 1] >= 0 && A.uv[i + 1] <= 1, `${rec.id}: kind ${A.uv[i]} rnd ${A.uv[i + 1]}`); }
+    for (let i = 0; i < A.uv.length; i += 2) { total.kinds.add(A.uv[i]); assert.ok(Number.isInteger(A.uv[i]) && A.uv[i] >= 0 && A.uv[i] <= 12 && A.uv[i + 1] >= 0 && A.uv[i + 1] <= 1, `${rec.id}: kind ${A.uv[i]} rnd ${A.uv[i + 1]}`); }
     // the same on every plan
     const B = newA(); Draw.planHouse(inp).pushYard(B);
     assert.deepEqual(B.pos, A.pos, `${rec.id}: a yard is the same on every load`);
@@ -177,4 +177,39 @@ test('lawn and bed rectangles, leafy hedges and shrubs, small trees: the layout 
     void kindsOf;
   }
   assert.ok(sawLawn > 0 && sawBed > 0 && sawCard > 0 && sawTwig > 0, JSON.stringify({ sawLawn, sawBed, sawCard, sawTwig, sawNeedle }));
+});
+
+// jf-qw7: boulders at the curb. A road whose pavement edge stands 4.5 m beyond the lot line: edgeAt(u, v) = metres from the pavement's edge
+test('Rosedale yards set boulders in the boulevard: at the curb, the same on every plan, none in the road, none where the style has none', () => {
+  const edgeAt = (u, v) => v + 7 + 4.5; // (the lot line is at v = -7; the road's edge at v = -11.5)
+  const rocks = (id, over = {}) => {
+    const p = planYard(ctxFor(id, { edgeAt, drive: null, ...over }));
+    const A = newA(); p.push(A);
+    const F = frame(), pts = [];
+    for (let i = 0; i < A.uv.length / 2; i++) if (A.uv[i * 2] === KIND.rock) pts.push(F.uv(A.pos[i * 3], A.pos[i * 3 + 2]).concat(A.pos[i * 3 + 1]));
+    return { p, A, pts };
+  };
+  let withRocks = 0, total = 0, rows = 0, tris = 0;
+  for (let i = 0; i < 300; i++) {
+    const { p, pts } = rocks(`to-3dmassing-2025:${500000 + i}`, { drive: i % 3 === 0 ? { u0: 10.4, u1: 13.4, to: 5, rgb: lin(0x56565a) } : null });
+    total += p.stats.rocks;
+    if (p.stats.rocks) withRocks++;
+    if (p.stats.rocks >= 3) rows++;
+    tris += pts.length / 3;
+    // every rock vertex: behind the curb (the road's edge at v = -11.5, a rock stands at least 0.35 m off it) and not across the lot line; never below the ground by more than a third of its height
+    for (const [, v, y] of pts) { assert.ok(v > -11.5 + 0.1 && v < -7 + 2.4, `rock at v ${v}`); assert.ok(y > -0.6 && y < 1.2, `rock at height ${y}`); }
+  }
+  assert.ok(withRocks > 80 && withRocks < 270, `${withRocks} of 300 Rosedale yards have a boulder`);
+  assert.ok(rows > 8 && rows < 110, `${rows} rows of boulders`);
+  assert.ok(total > 150, `${total} boulders`);
+  assert.ok(tris / total <= 20.5 && tris / total >= 19.5, `20 triangles a boulder, got ${(tris / total).toFixed(1)}`);
+  const a = rocks('to-3dmassing-2025:500007'), b = rocks('to-3dmassing-2025:500007');
+  assert.deepEqual(a.A.pos, b.A.pos, 'the same on every plan');
+  // no edge function, no rocks; a style with none, none
+  assert.equal(planYard(ctxFor('to-3dmassing-2025:500008', { edgeAt: null })).stats.rocks, 0);
+  const n = (style) => { let c = 0; for (let i = 0; i < 100; i++) { const p = planYard(ctxFor(`to-3dmassing-2025:${600000 + i}`, { edgeAt, style })); p.push(newA()); c += p.stats.rocks; } return c; };
+  assert.equal(n('city'), 0);
+  assert.ok(n('rosedaleGrand') > 0);
+  // a road at the lot line (no boulevard): nothing
+  assert.equal((() => { const p = planYard(ctxFor('to-3dmassing-2025:500009', { edgeAt: () => 0 })); p.push(newA()); return p.stats.rocks; })(), 0);
 });

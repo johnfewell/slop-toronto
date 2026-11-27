@@ -681,7 +681,7 @@ export function planHouse(inp) {
       for (const v of vestibules) avoid.push([v.c - v.vw / 2 - 0.1, v.c + v.vw / 2 + 0.1]);
       for (const q of stoops) avoid.push([q.c - q.sw / 2 - 0.1, q.c + q.sw / 2 + 0.1]);
       for (const q of porticoes) avoid.push([q.c - q.w / 2 - 0.1, q.c + q.w / 2 + 0.1]);
-      yard = planYard({ F, id, y0, u0, u1, partyL, partyR, yd, lotW, extra, gap: [c - 0.7, c + 0.7], avoid, drive, style: inp.yard.style || 'rosedale', canopy: inp.yard.canopy, veg: inp.yard.veg, lift: inp.yard.lift || 0, brickRgb, lin, steps: porch ? { c, depth: porch.depth } : null });
+      yard = planYard({ F, id, y0, u0, u1, partyL, partyR, yd, lotW, extra, edgeAt: inp.edgeDist ? (uu, vv) => inp.edgeDist(...F.xz(uu, vv)) : null, gap: [c - 0.7, c + 0.7], avoid, drive, style: inp.yard.style || 'rosedale', canopy: inp.yard.canopy, veg: inp.yard.veg, lift: inp.yard.lift || 0, brickRgb, lin, steps: porch ? { c, depth: porch.depth } : null });
       stats.yards = 1;
     }
   }

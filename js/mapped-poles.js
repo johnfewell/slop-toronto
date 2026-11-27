@@ -9,7 +9,8 @@
 //   wherever the City mapped one near the spot the procedural layout wanted; the procedural pole is the fallback.
 // - Each pole's look (tools/build-poles.mjs poleLooks): the street lights of the older residential streets hang on
 //   wooden hydro poles (a crossarm with the line's insulators, some with a transformer, the LED head on a bracket
-//   below; the lines strung between them on the high tier), the Distillery's on black heritage lantern posts; the
+//   below; the lines strung between them on the high tier), the Distillery's on black heritage lantern posts and, in South and North Rosedale
+//   (js/rosedale-zone.js, jf-qw7), a street light on a street no bigger than a collector is Rosedale's short black cast-iron post with a white globe (look 'globe'); the
 //   pedestrian light poles are lantern posts, the waterfront's slim promenade posts or park lamps (pole models below)
 // - Miscellaneous poles: the unlit poles of the overhead hydro lines (tools/build-poles.mjs miscPoles tells them from
 //   the bollards, railway and park poles, which are not shipped) are the wooden hydro pole without its light; down a
@@ -64,12 +65,17 @@ function decode(data) {
 function mappedPoleSites(data, { blockAt, nearestRoads, deckHeightAt = () => 0, cutAt = () => 0, SW_Y = 0.22 }) {
   const sites = [], rejected = { roadway: 0, deck: 0 };
   let nudged = 0;
+  const zoneAt = window.CITY.rosedaleZoneAt || (() => false);
+  const globesOn = typeof location === 'undefined' || typeof URLSearchParams === 'undefined' || new URLSearchParams(location.search).get('rosedaleStreet') !== '0';
   // City poles the 2025 orthophoto shows are not there, inside Biidaasige Park (js/park-detail.js); only while the park is on
   const stale = window.CITY.biidaasigeBaseEditsOn?.() ? new Set(window.CITY.BIIDAASIGE_STALE_CITY_POLE_IDS || []) : null;
   for (const p of decode(data)) {
     if (stale && stale.has(p.id)) { rejected.stale = (rejected.stale || 0) + 1; continue; }
     const roads = nearestRoads(p.x, p.z, 40).filter((r) => !r.road.raised);
     const road = roads[0] || null;
+    // Rosedale's street lights (the City maps them as ordinary street light and pedestrian light poles, with no height or look): the black cast-iron globe post, on the streets
+    // of South and North Rosedale that are not arterials. ?rosedaleStreet=0 keeps the old poles.
+    if (globesOn && (p.type === LIGHT || p.type === PEDESTRIAN) && zoneAt(p.x, p.z) && (!road || (road.road.rank || 0) <= 2)) p.look = 'globe';
     let x = p.x, z = p.z, block = blockAt(x, z);
     if (!block && road && road.dist > 0.05) {
       // off the curb island: step straight away from the road's centre line onto it
@@ -191,7 +197,9 @@ const PED_LAMPS = {
   // the waterfront's slim charcoal post with a flat round LED head (Queens Quay, CityPlace, Liberty Village)
   promenade: { h: 5.85, r: 0.1, lampY: 5.75, k: 0.45 },
   // the parks' dark green post with an acorn globe
-  park: { h: 4.5, r: 0.14, lampY: 4.0, k: 0.3 }
+  park: { h: 4.5, r: 0.14, lampY: 4.0, k: 0.3 },
+  // Rosedale's black cast-iron post (jf-qw7; John's photos of Chestnut Park, 2020): a fluted base, a tapering shaft with collars, a cup and a white opal globe, about 4 m
+  globe: { h: 4.02, r: 0.17, lampY: 3.55, k: 0.32 }
 };
 
 // The TTC's span pole: a 9.6 m tapered galvanised steel pole (0.34 m across at the foot, 0.17 m at the top) on a base
@@ -276,6 +284,18 @@ function pedLampGeometry(THREE, merge, look) {
       [new THREE.CircleGeometry(0.3, 12).rotateX(Math.PI / 2).translate(0, 5.715, 0), glass, 1]
     ]);
   }
+  if (look === 'globe') {
+    const iron = [0.045, 0.047, 0.05];
+    return colourParts(THREE, merge, [
+      [cyl(THREE, 0.14, 0.2, 0.34, 8, 0), iron, 0], // the base, flared at the foot
+      [cyl(THREE, 0.09, 0.14, 0.3, 8, 0.34), iron, 0], // its shoulder
+      [cyl(THREE, 0.052, 0.07, 2.4, 6, 0.64), iron, 0], // the shaft, tapering
+      [cyl(THREE, 0.09, 0.09, 0.07, 6, 1.4), iron, 0], // a ring on the shaft
+      [cyl(THREE, 0.19, 0.06, 0.22, 8, 3.12), iron, 0], // the cup the globe sits in
+      [new THREE.SphereGeometry(0.235, 8, 5).translate(0, 3.34 + 0.2, 0), glass, 1], // the opal globe
+      [cyl(THREE, 0.03, 0.1, 0.14, 6, 3.88), iron, 0] // the cap over it
+    ]);
+  }
   const green = [0.11, 0.2, 0.14];
   return colourParts(THREE, merge, [
     [cyl(THREE, 0.11, 0.14, 0.45, 8, 0, false), green, 0],
@@ -297,6 +317,7 @@ function shadowStandIn(THREE, merge, kind) {
     : kind === 'trolley' ? [prism(0.13, TROLLEY.h, 0)]
     : kind === 'trolleyCentre' ? [prism(0.13, TROLLEY.h, 0), new THREE.PlaneGeometry(2 * TROLLEY.arm, 0.08).translate(0, TROLLEY.spanY + 0.1, 0).toNonIndexed()]
     : kind === 'lantern' ? [prism(0.08, 3.66, 0), prism(0.2, 0.8, 3.66)]
+      : kind === 'globe' ? [prism(0.08, 3.4, 0), prism(0.24, 0.65, 3.35)]
       : kind === 'promenade' ? [prism(0.08, 5.72, 0), prism(0.34, 0.12, 5.72)]
         : [prism(0.08, 3.82, 0), prism(0.18, 0.5, 3.82)];
   for (const g of parts) for (const k of Object.keys(g.attributes)) if (k !== 'position') g.deleteAttribute(k);

@@ -953,8 +953,8 @@ function buildRoadNetwork(sidewalks, obstacles) {
   // (mrdoob's 30096be). Snapshot their geometry before routing moves stop lines, drops edges and renumbers the
   // surviving junctions (`src` is the node itself, for what is only known later: its signal)
   const paintNodes = new Map(nodes.map((n, id) => [n, { id, x: n.x, z: n.z, shape: n.shape, src: n }]));
-  const paintEdges = edges.map(({ from, to, axis, x0, z0, sx, sz, dx, dz, rx, rz, span, len, half, lanes, h0, h1, b0 }) => ({
-    from: paintNodes.get(from), to: paintNodes.get(to), axis, x0, z0, sx, sz, dx, dz, rx, rz, span, len, half, lanes, h0, h1, b0
+  const paintEdges = edges.map(({ from, to, axis, x0, z0, sx, sz, dx, dz, rx, rz, span, len, half, lanes, h0, h1, b0, rank }) => ({
+    from: paintNodes.get(from), to: paintNodes.get(to), axis, x0, z0, sx, sz, dx, dz, rx, rz, span, len, half, lanes, h0, h1, b0, rank // (rank: the OSM class's, undefined on the downtown grid's own streets; js/road-paint.js keeps the centre line off local streets by it)
   }));
 
   // 6. Movements at each intersection (no U-turns) and the lane each lane leads to, along obstacle-free curves:

@@ -13,20 +13,20 @@
 //   no two neighbours match, and a house is the same on every load.
 import { stream, weighted, lerp, clamp, shade } from './building-draw-kit.js';
 
-export const KIND = { solid: 0, evergreen: 1, deciduous: 2, lawn: 3, bed: 4, iron: 5, picket: 6, chain: 7, cardEv: 8, cardDec: 9, twig: 10, needle: 11 };
+export const KIND = { solid: 0, evergreen: 1, deciduous: 2, lawn: 3, bed: 4, iron: 5, picket: 6, chain: 7, cardEv: 8, cardDec: 9, twig: 10, needle: 11, rock: 12 };
 
 // The yard styles by neighbourhood and era. Weights of the lot line's treatment: [hedge, stone wall, brick wall, iron fence (on a low stone base), picket, chain-link, nothing].
 // A source: the streets of each neighbourhood from the photographs John named (Rosedale: stone walls with piers, cedar hedges, wrought iron; the Annex and Cabbagetown:
 // wrought iron and low pickets on narrow lots; Leslieville and Riverdale: pickets, chain-link, low brick; the Beaches: pickets and hedges).
 export const YARD_STYLES = {
-  rosedale: { line: [30, 22, 2, 14, 3, 0, 29], lawn: 0.88, beds: 0.7, shrubs: 0.8, tree: 0.1, lamp: 0.1, hedgeH: [1.2, 2.1], wallH: [0.6, 1.0] },
-  rosedaleGrand: { line: [30, 28, 2, 16, 1, 0, 23], lawn: 0.92, beds: 0.75, shrubs: 0.85, tree: 0.14, lamp: 0.16, hedgeH: [1.4, 2.3], wallH: [0.7, 1.1] },
+  rosedale: { line: [30, 22, 2, 14, 3, 0, 29], lawn: 0.88, beds: 0.7, shrubs: 0.8, tree: 0.1, lamp: 0.1, rocks: 1, hedgeH: [1.2, 2.1], wallH: [0.6, 1.0] },
+  rosedaleGrand: { line: [30, 28, 2, 16, 1, 0, 23], lawn: 0.92, beds: 0.75, shrubs: 0.85, tree: 0.14, lamp: 0.16, rocks: 1.25, hedgeH: [1.4, 2.3], wallH: [0.7, 1.1] },
   annex: { line: [12, 6, 14, 30, 8, 0, 30], lawn: 0.6, beds: 0.65, shrubs: 0.7, tree: 0.04, lamp: 0.03, hedgeH: [0.8, 1.4], wallH: [0.4, 0.7] },
   cabbagetown: { line: [10, 4, 16, 34, 8, 0, 28], lawn: 0.5, beds: 0.7, shrubs: 0.7, tree: 0.03, lamp: 0.02, hedgeH: [0.7, 1.2], wallH: [0.35, 0.6] },
   eastEnd: { line: [10, 2, 10, 4, 34, 18, 22], lawn: 0.65, beds: 0.55, shrubs: 0.6, tree: 0.03, lamp: 0.0, hedgeH: [0.7, 1.3], wallH: [0.3, 0.55] },
   beaches: { line: [22, 4, 2, 3, 38, 6, 25], lawn: 0.75, beds: 0.6, shrubs: 0.65, tree: 0.05, lamp: 0.02, hedgeH: [0.8, 1.6], wallH: [0.3, 0.5] },
   postwar: { line: [22, 2, 6, 4, 8, 12, 46], lawn: 0.92, beds: 0.5, shrubs: 0.6, tree: 0.05, lamp: 0.02, hedgeH: [0.7, 1.3], wallH: [0.3, 0.5] },
-  city: { line: [16, 3, 8, 8, 14, 10, 41], lawn: 0.7, beds: 0.55, shrubs: 0.6, tree: 0.04, lamp: 0.02, hedgeH: [0.7, 1.4], wallH: [0.3, 0.6] }
+  city: { line: [16, 3, 8, 8, 14, 10, 41], lawn: 0.7, beds: 0.55, shrubs: 0.6, tree: 0.04, lamp: 0.02, rocks: 0, hedgeH: [0.7, 1.4], wallH: [0.3, 0.6] }
 };
 const LINES = ['hedge', 'stone', 'brick', 'iron', 'picket', 'chain', null];
 
@@ -86,6 +86,27 @@ function post(W, F, u, v, hw, yb, yt, rgb, capRgb, kind = KIND.solid, rnd = 0) {
   const ch = hw * 0.25, cap = capRgb || shade(rgb, 1.12), e = hw * 1.25;
   W.quad(P(u - e, v - e, yt), P(u + e, v - e, yt), P(u + e, v + e, yt), P(u - e, v + e, yt), cap, kind, rnd, up, [0, yt - yb], [0, yt - yb], [0, yt - yb], [0, yt - yb]);
   void ch;
+}
+
+// a boulder at (u, v) in the house's frame (jf-qw7: the big rough rocks Rosedale sets along its curbs and at its drive mouths): a 20-faced icosahedron pushed about (each corner 0.78 to 1.22 of
+// the radius, longer along the curb than across it), flat-shaded so the faces read as cut stone, sunk a third into the ground. o = { r (m), hf (height over width), yb, rgb, rnd, sx (stretch along u) }
+const PHI = (1 + Math.sqrt(5)) / 2;
+const ICO = [[-1, PHI, 0], [1, PHI, 0], [-1, -PHI, 0], [1, -PHI, 0], [0, -1, PHI], [0, 1, PHI], [0, -1, -PHI], [0, 1, -PHI], [PHI, 0, -1], [PHI, 0, 1], [-PHI, 0, -1], [-PHI, 0, 1]].map(unitV);
+const ICO_FACES = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+function unitV(v) { const l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; }
+function boulder(W, F, u, v, o) {
+  const { r, hf, yb, rgb, rnd, sx = 1.2 } = o, sd = Math.round(u * 40) * 13 + Math.round(v * 40) * 3;
+  const cy = yb + r * hf * 0.62, P = F.P;
+  const pts = ICO.map((d, i) => {
+    const k = 0.78 + hsh(sd, i, 61) * 0.44;
+    return P(u + d[0] * r * sx * k, v + d[2] * r * k, cy + d[1] * r * hf * k);
+  });
+  const c = P(u, v, cy);
+  for (let f = 0; f < ICO_FACES.length; f++) {
+    const [a, b, d] = ICO_FACES[f], cx = (pts[a][0] + pts[b][0] + pts[d][0]) / 3, cyy = (pts[a][1] + pts[b][1] + pts[d][1]) / 3, cz = (pts[a][2] + pts[b][2] + pts[d][2]) / 3;
+    const tone = 0.86 + hsh(sd, f, 71) * 0.28;
+    W.tri(pts[a], pts[b], pts[d], shade(rgb, tone), KIND.rock, rnd, [cx - c[0], cyy - c[1], cz - c[2]], [[0, 0], [0, 0], [0, 0]]);
+  }
 }
 
 // a flat sheet at height y over the ring of [u, v] corners (a quad)
@@ -335,7 +356,7 @@ export function planYard(ctx) {
   const uA = partyL ? u0 : u0 - extra, uB = partyR ? u1 : u1 + extra;
   const gap = ctx.gap || [(u0 + u1) / 2 - 0.7, (u0 + u1) / 2 + 0.7];
   const mid = F.xz((u0 + u1) / 2, 0);
-  const stats = { site: { x: mid[0], z: mid[1], ox: F.out[0], oz: F.out[2], yd, style: ctx.style || 'city' }, hedges: 0, hedgeM: 0, lidarHedges: 0, lidarShrubs: 0, shrubs: 0, fence: null, beds: 0, lawn: 0, trees: 0, lamps: 0 };
+  const stats = { site: { x: mid[0], z: mid[1], ox: F.out[0], oz: F.out[2], yd, style: ctx.style || 'city' }, hedges: 0, hedgeM: 0, lidarHedges: 0, lidarShrubs: 0, shrubs: 0, fence: null, beds: 0, lawn: 0, trees: 0, lamps: 0, rocks: 0 };
   const yb = y0; // (the lot line's things stand on the house's ground height, sunk SKIRT into it)
   const veg = ctx.veg || null;
 
@@ -543,6 +564,39 @@ export function planYard(ctx) {
         smallTree(W, F, u, v, { type, h: 2.8 + rt() * 1.4, yb: y0 - 0.05, rgb, rnd: rt() });
         stats.trees++;
       }
+      // ---- boulders at the curb (jf-qw7): grey granite and reddish sandstone, set in the boulevard at the drive's mouth and at the lot's corner, now and then a row of four or five. The
+      // curb is found by marching out from the lot line until the road's edge is 0.2 m away (ctx.edgeAt(u, v), metres from the pavement's edge); a stable seed per lot
+      const rk = R('rocks');
+      if (ctx.edgeAt && S.rocks > 0) {
+        const curbV = (uu) => {
+          if (ctx.edgeAt(uu, -yd) <= 0.2) return null;
+          for (let vv = -yd - 0.25; vv > -yd - 9; vv -= 0.25) if (ctx.edgeAt(uu, vv) <= 0.2) return vv;
+          return null;
+        };
+        const rockRgb = (kind) => kind === 'sand' ? lin(weighted([[0x9c5a3c, 3], [0xa8654a, 2], [0x8a4e36, 2]], rk())) : lin(weighted([[0x85827a, 3], [0x6f6d68, 2], [0x9a968c, 2]], rk()));
+        const put = (uu, kind, r, rowTone) => {
+          const vc = curbV(uu);
+          if (vc == null) return;
+          const rr = r * (0.8 + rk() * 0.4);
+          const rv = vc + 0.4 + rr * 0.9;
+          if (rv > -yd + 2.2) return; // (a curb too near the house: the road's edge is mis-measured, not a boulevard)
+          boulder(W, F, uu, rv, { r: rr, hf: 0.55 + rk() * 0.25, yb: y0 - 0.02, rgb: rockRgb(kind || (rowTone != null ? rowTone : rk() < 0.4 ? 'sand' : 'grey')), rnd: rk(), sx: 1.05 + rk() * 0.4 });
+          stats.rocks++;
+        };
+        const row = rk() < 0.16 * S.rocks && !partyL && !partyR; // (a row of boulders along the curb: one lot in ten or so)
+        if (row) {
+          const kind = rk() < 0.6 ? 'sand' : 'grey', n = 3 + Math.floor(rk() * 3), c0 = (uA + uB) / 2 + (rk() - 0.5) * Math.max(0, uB - uA - 4);
+          for (let i = 0; i < n; i++) put(c0 + (i - (n - 1) / 2) * (1.0 + rk() * 0.35), kind, 0.5 + rk() * 0.2);
+        } else {
+          if (drive) { // (either side of the drive's mouth)
+            if (rk() < 0.65 * S.rocks) put(drive.u0 - 0.9 - rk() * 0.5, null, 0.5 + rk() * 0.3);
+            if (rk() < 0.65 * S.rocks) put(drive.u1 + 0.9 + rk() * 0.5, null, 0.5 + rk() * 0.3);
+          }
+          if (!partyL && rk() < 0.45 * S.rocks) put(uA + 0.3 + rk() * 1.5, null, 0.48 + rk() * 0.3); // (the lot's corner)
+          if (rk() < 0.2 * S.rocks) put((uA + uB) / 2 + (rk() - 0.5) * (uB - uA) * 0.6, null, 0.4 + rk() * 0.25); // (and one in the middle of its frontage)
+        }
+      }
+
       if (rg() < S.lamp && yd >= 3.6) {
         const u = gap[1] + 0.45, v = -yd + 0.55;
         post(W, F, u, v, 0.05, y0, y0 + 2.2, lin(0x1d1e20), lin(0x1d1e20));

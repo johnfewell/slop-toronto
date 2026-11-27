@@ -1491,6 +1491,7 @@ function buildCityBlocks(scene) {
           h, style: FOOTPRINT_STYLE[mat][0], variant: FOOTPRINT_STYLE[mat][1], holes: foot.rings.length - 1, frontShift: frontShifts ? frontShifts.get(foot.id) : undefined,
           index: foot.index, base: Math.min(foot.base, h - 0.5), group: facts && facts.group, hint: foot.rosedale ? foot.rosedale.hint : undefined, yard: foot.rosedale && !yardsOff ? { lotW: foot.rosedale.lotW, park: foot.rosedale.park, style: window.CITY.BuildingDraw.rosedaleYardStyle(foot.rosedale), canopy: foot.rosedale.veg ? foot.rosedale.veg.canopy : -1, veg: foot.rosedale.veg || null, lift: yardGround(cx, cz) } : houseYard(foot, cx, cz), chimneys: foot.rosedale ? foot.rosedale.chim : undefined, variants: foot.variants, roofHex: foot.roofHex, fillMin: foot.fillMin,
           roadDist: (x, z) => { const r = nearestRoads(x, z, 40)[0]; return r ? r.dist : Infinity; },
+          edgeDist: (x, z) => { const r = nearestRoads(x, z, 40)[0]; return r ? r.dist - r.road.w / 2 : Infinity; }, // (m from the nearest road's pavement edge: the yards' boulders stand at the curb, jf-qw7)
           nearRoad: near.length ? { x: near[0].px, z: near[0].pz } : null
         });
         const bp = drawStats.byPreset[foot.preset] || (drawStats.byPreset[foot.preset] = { drawn: 0, fallback: 0 });
