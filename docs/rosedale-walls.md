@@ -59,23 +59,27 @@ file (`lotW`, in decimetres) and bounds the side yards; a side drive (3 m, 3 hou
 ## 5. Cost
 
 Same camera, Mac mini (Apple M4) through `gpu2`, 2026-11-27, 1600 x 900, uncapped, 20 s recordings (`tools/frame-time-chart.mjs --overlay`), **today's pilot** (origin/main `76b5bd4`) against
-this branch, alternating (pilot, walls, pilot, walls) in four jobs on a mini shared with other agents, so relative figures, not budgets. Median frame interval, ms (round 1 / round 2):
+this branch, alternating (pilot, walls, pilot, walls) in four jobs on a mini shared with other agents, so relative figures, not budgets. Median and mean frame interval, ms (round 1 / round 2):
 
-| Place | Today's pilot | Walls | Difference |
+| Place | Today's pilot (median, mean) | Walls (median, mean) | Difference in the mean |
 |---|---|---|---|
-| Crescent Rd, street level | 16.9 / 16.7 (p95 20.3 / 20.8) | 16.4 / 16.6 (p95 18.9 / 19.2) | -0.5 / -0.1 |
-| South Rosedale, 160 m up | 12.7 / 12.8 (p95 20.7 / 20.7) | 15.0 / 15.2 (p95 16.7 / 17.1) | +2.3 / +2.4 |
-| Whole neighbourhood, 520 m up | 14.4 / 14.3 (p95 18.1 / 17.5) | 13.9 / 13.9 (p95 15.8 / 15.6) | -0.5 / -0.4 |
+| Crescent Rd, street level | 16.9, 16.9 / 16.7, 16.9 | 16.4, 16.4 / 16.6, 16.7 | -0.5 / -0.2 |
+| South Rosedale, 160 m up | 12.7, 15.3 / 12.8, 15.4 | 15.0, 15.1 / 15.2, 15.2 | -0.2 / -0.2 |
+| Whole neighbourhood, 520 m up | 14.4, 14.6 / 14.3, 14.4 | 13.9, 14.0 / 13.9, 14.0 | -0.6 / -0.4 |
 
-The budget was no worse than +1 ms at street level: met (the street is a little faster, the 95th percentile clearly so). From 160 m up the pilot was already the dearest view and the walls add 2.3 ms:
-the near roof batch now holds a roof, porch, chimney and yard shapes for 2,449 houses where the pilot's lidar roofs held about 50 triangles a house (roof triangles in the page: 1.70 M to 2.00 M, near and far;
-near-tier wall triangles 1.44 M to 1.48 M; 8.4 k more bay, porch and pier records). The view over the whole neighbourhood is dominated by the far tier and is not slower. Start-up cost is
+The budget was no worse than +1 ms at street level: met (the street is a little faster, the 95th percentile clearly so). **From 160 m up there is no slowdown.** This page first reported +2.3 ms there
+from the medians (12.7 to 15.0). That was an artefact: before the walls the 160 m view alternates fast and slow frames (median 12.6 to 12.9 ms, mean 15.2 to 15.5 ms), after them the frames are even at
+about 15.0 ms, mean and median alike. The mean is the same, and the perf pass re-measured it: reverting the walls on current main changes nothing (-0.11 ms; chart below). The walls still add
+work in the near tier (the near roof batch holds a roof, porch, chimney and yard shapes for 2,449 houses where the pilot's lidar roofs held about 50 triangles a house; roof triangles in the page: 1.70 M to 2.00 M, near and far;
+near-tier wall triangles 1.44 M to 1.48 M; 8.4 k more bay, porch and pier records), but on this machine it does not show in the frame interval. Start-up cost is
 not measurable in the `[init]` lines (`blocks` 3,223 and 3,194 ms; a node run plans and writes all 2,449 houses in about 0.12 s). Data: the houses file is 0.49 MB gzip (0.48 before: lots and chimneys).
 Houses the page draws with curtain-wall glass: 15,624 to 13,364; shop fronts: 7,691 to 7,577.
 
 ![Frame time at street level](images/rosedale-walls-frame-time-crescent.png)
 
 ![Frame time from 160 m up](images/rosedale-walls-frame-time-above-south.png)
+
+![Frame time from 160 m up, 20 s, before the walls against current main with them: the medians differ, the means do not](images/rosedale-walls-160m-overlay.png)
 
 ![Frame time over the whole neighbourhood](images/rosedale-walls-frame-time-above-all.png)
 
