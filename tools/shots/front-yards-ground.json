@@ -1,0 +1,62 @@
+[
+ {
+  "name": "115-park-rd-sidewalk",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const q = C.worldFromLatLon(43.675356, -79.3822634); const r = C.nearestRoads(q.x, q.z, 70)[0]; if (!r) return 'no road'; const dx = q.x - r.px, dz = q.z - r.pz, d = Math.hypot(dx, dz) || 1; const p = { x: r.px - (dx / d) * 9 + r.dx * 10, z: r.pz - (dz / d) * 9 + r.dz * 10 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.8, p.z], look: [q.x, 2.6, q.z], fov: 62 }); })()"
+ },
+ {
+  "name": "112-roxborough-dr-bike",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const q = C.worldFromLatLon(43.6826103, -79.3764436); const r = C.nearestRoads(q.x, q.z, 70)[0]; if (!r) return 'no road'; const p = { x: r.px + r.dx * 24, z: r.pz + r.dz * 24 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.45, p.z], look: [q.x, 2.4, q.z], fov: 70 }); })()"
+ },
+ {
+  "name": "crescent-street",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67784023050961, -79.38417442413164), q = C.worldFromLatLon(43.67793545062343, -79.38300167565279); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "highland-street",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.6819041750357, -79.37862423766825), q = C.worldFromLatLon(43.68176384735167, -79.37746006054195); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "roxborough-street",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.68263482453741, -79.37552632696033), q = C.worldFromLatLon(43.683036274085154, -79.37448296496858); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "inglewood-street",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.68991484682547, -79.38331608646355), q = C.worldFromLatLon(43.68981200478808, -79.38214455199345); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "annex-side",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; const p = { x: -918.881131, z: -2995.071352 }; const t = { x: -935.293406, z: -2995.320022 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [t.x, 2.0, t.z], fov: 62 }); })()"
+ },
+ {
+  "name": "annex-bike",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; const p = { x: -910.018512, z: -2985.936037 }; const t = { x: -935.293406, z: -2995.320022 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.45, p.z], look: [t.x, 2.0, t.z], fov: 70 }); })()"
+ },
+ {
+  "name": "cabbagetown-side",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; const p = { x: 1898.548860, z: -1583.526058 }; const t = { x: 1911.548865, z: -1583.654771 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [t.x, 2.0, t.z], fov: 62 }); })()"
+ },
+ {
+  "name": "cabbagetown-bike",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; const p = { x: 1889.460196, z: -1592.436512 }; const t = { x: 1911.548865, z: -1583.654771 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.45, p.z], look: [t.x, 2.0, t.z], fov: 70 }); })()"
+ }
+]

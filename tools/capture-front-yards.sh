@@ -3,6 +3,8 @@
 #   ARM before   origin/main's build, in dist-before/ (npm run build in a worktree of origin/main, copied here)      WINTER: today's date, bare trees
 #   ARM after    this branch's build, dist/                                                                       WINTER
 #   ARM beforeJul / afterJul   the same two builds on 2026-07-15 (summer: leaves, flowers, lawns)
+# JOB=ground  the ground pictures (jf-aru: tools/shots/front-yards-ground*.json, four Rosedale streets and the Annex and Cabbagetown)
+# JOB=framesC  frame times at Crescent Rd's street level only (winter and, with the *Jul arms, July), ROUND=<n> in the file names
 # JOB=rosedale  the six houses' sidewalk and bike views (tools/shots/front-yards-rosedale.json, from the walls shot list); JOB=others  the four other neighbourhoods
 # (tools/shots/front-yards-others.json); JOB=frames  frame-time recordings (tools/shots/front-yards-frame-times.json), FT_SECONDS (default 20)
 # usage: GPU2_LOCK_WAIT=3600 ~/.local/bin/gpu2-local front-yards -- env CAPTURE_PORT=8881 CAPTURE_CDN_CACHE=1 CAPTURE_NAVIGATION_TIMEOUT_MS=180000 CAPTURE_SEED=6711 JOB="rosedale" ARMS="before after" bash tools/capture-front-yards.sh
@@ -26,8 +28,10 @@ for ARM in ${ARMS:-before after}; do
     rosedale) run "$ROOTD" "$Q" "$ARM-" $SH/front-yards-rosedale$SUF.json ;;
     find)     run "$ROOTD" "$Q" "find$ARM-" $SH/front-yards-others-find.json ;;
     others)   run "$ROOTD" "$Q" "o$ARM-" $SH/front-yards-others$SUF.json ;;
+    ground)   run "$ROOTD" "$Q" "g$ARM-" $SH/front-yards-ground$SUF.json ;;
     debug)    run "$ROOTD" "$Q" "dbg$ARM-" $SH/front-yards-debug.json ;;
     framesO)  run "$ROOTD" "$Q" "fto${ROUND:-}-$ARM-" $SH/front-yards-frame-times-others.json CAPTURE_UNCAPPED=1 CAPTURE_FT_SECONDS=${FT_SECONDS:-20} ;;
+    framesC)  run "$ROOTD" "$Q" "ftc${ROUND:-}-$ARM-" $SH/front-yards-frame-times-crescent.json CAPTURE_UNCAPPED=1 CAPTURE_FT_SECONDS=${FT_SECONDS:-20} ;;
     frames)   run "$ROOTD" "$Q" "ft${ROUND:-}-$ARM-" $SH/front-yards-frame-times.json CAPTURE_UNCAPPED=1 CAPTURE_FT_SECONDS=${FT_SECONDS:-20} ;;
   esac
 done

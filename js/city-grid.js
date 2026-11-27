@@ -6,6 +6,12 @@
 
 const { THREE } = window.CITY;
 const { mergeGeometries } = window.CITY.Addons;
+
+// (test: tests/block-paving.test.mjs) Does a block's built footprint make it downtown (concrete to the building line) outside the downtown box? s = { n, area, top, tallArea, towerArea }:
+// the buildings' count, footprint area, tallest height, and the footprint at 28 m or over and at 40 m or over
+function blockStandsDowntown(s) {
+  return s.tallArea >= 0.15 * s.area || s.towerArea >= 0.06 * s.area || (s.top >= 14 && s.area / s.n >= 1500);
+}
 const {
   CITY_BOUNDS,
   BLOCKS,
@@ -1081,7 +1087,7 @@ function buildCityGrid(scene) {
     if (!b) continue;
     let area = 0;
     for (const [u0, u1, v0, v1] of bl[3]) area += (u1 - u0) * (v1 - v0);
-    const s = blockBuilt.get(b) || { n: 0, area: 0, top: 0, matchedN: 0, matchedArea: 0, matchedTop: 0, matchedResidentialN: 0 };
+    const s = blockBuilt.get(b) || { n: 0, area: 0, top: 0, tallArea: 0, towerArea: 0, matchedN: 0, matchedArea: 0, matchedTop: 0, matchedResidentialN: 0 };
     s.n++;
     s.area += area;
     // Use the same sourced island height as the building renderer; inherited
@@ -1097,6 +1103,9 @@ function buildCityGrid(scene) {
     } else {
       s.top = Math.max(s.top, bl[4]);
     }
+    const hgt = prof ? prof.height : bl[4];
+    if (hgt >= 28) s.tallArea += area; // (the footprint that stands 28 m or more: a tree adds up to about 20 m to a house in the City's heights, so under that a box may be a house)
+    if (hgt >= 40) s.towerArea += area; // (40 m or more is a tower whatever the trees)
     blockBuilt.set(b, s);
   }
   const isPaved = (b) => {
@@ -1110,7 +1119,10 @@ function buildCityGrid(scene) {
       return s.matchedTop >= 20 || (s.matchedTop >= 14 && s.matchedArea / s.matchedN >= 1500);
     }
     // (the massing merges a row of houses into one long footprint: only height tells them from a block of offices)
-    return s.top >= 20 || (s.top >= 14 && s.area / s.n >= 1500);
+    // The City's heights include tree canopy (docs/rosedale-heights.md: half of Rosedale's houses stand 8 m too tall, and the old test, any box of 20 m, made 42 of South Rosedale's 46
+    // blocks downtown concrete), so one tall box does not make a block downtown: it takes 15% of the block's built footprint at 28 m or over, 6% at 40 m or over (a tower), or big
+    // footprints at 14 m (houses keep their front yards). 1,652 of the 2,877 blocks the old test paved outside the downtown box are plots now
+    return blockStandsDowntown(s);
   };
   const extrude = (shape, y0, h) => {
     const g = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false, curveSegments: 1 });
