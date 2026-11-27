@@ -175,6 +175,62 @@ test('?liveDate= and ?liveSnow= are capture-only, as ?liveClock= and ?liveWeathe
   assert.match(read('explore.html'), /'\.\/js\/live-sky\.js',\s*'\.\/js\/seasons\.js',/);
 });
 
+test('snow that arrives while photo or film owns the scene stays cached, then the newest record applies once', () => {
+  const cm = (n) => ({ snowOnGround: n });
+  const owned = { live: true, owned: true };
+  const free = { live: true, owned: false };
+  const slot = { record: null };
+  let snow = 0, applies = 0;
+  const write = () => { snow = slot.record.snowOnGround; applies++; };
+  const arrive = (record, generation, view) => {
+    if (S.noteSnowRecord(slot, record, { ...view, generation })) write();
+  };
+
+  // photo framing, then a capture that still owns the picture: the uniform does not move
+  arrive(cm(4), 1, owned);
+  assert.equal(slot.record.snowOnGround, 4);
+  assert.equal(snow, 0);
+  arrive(cm(12), 2, owned); // a later record replaces the cached one
+  arrive(cm(4), 1, free); // the older reply cannot write, even after a cancel
+  assert.equal(slot.record.snowOnGround, 12);
+  assert.equal(snow, 0);
+  assert.equal(S.releaseSnowPresentation(slot, owned), false);
+  assert.equal(S.releaseSnowPresentation(slot, free), true);
+  write();
+  assert.equal(snow, 12);
+  assert.equal(applies, 1);
+  assert.equal(S.releaseSnowPresentation(slot, free), false, 'the release applies once');
+
+  // cancel: the reply lands after the owner has gone, so it applies immediately
+  const cancelled = {};
+  assert.equal(S.noteSnowRecord(cancelled, cm(3), { ...free, generation: 1 }), true);
+  assert.equal(S.releaseSnowPresentation(cancelled, free), false);
+
+  // preset: the cache may update, and nothing puts the live snow back
+  const preset = {};
+  assert.equal(S.noteSnowRecord(preset, cm(9), { live: false, owned: false, generation: 1 }), false);
+  assert.equal(preset.record.snowOnGround, 9);
+  assert.equal(S.releaseSnowPresentation(preset, { live: false, owned: false }), false);
+
+  // film owns the scene until stop, then one apply while live is still on
+  const film = {};
+  assert.equal(S.noteSnowRecord(film, cm(7), { ...owned, generation: 1 }), false);
+  assert.equal(S.releaseSnowPresentation(film, free), true);
+  assert.equal(film.record.snowOnGround, 7);
+  assert.equal(S.noteSnowRecord(film, null, { ...free, generation: 2 }), false, 'a failed reply keeps the stored record');
+  assert.equal(film.record.snowOnGround, 7);
+
+  assert.equal(S.liveReadingArrived({ live: true, owned: true }), 'defer');
+  assert.equal(S.liveReadingArrived({ live: true, owned: false }), 'apply');
+  assert.equal(S.liveReadingArrived({ live: false, owned: true }), 'cache');
+  assert.equal(S.liveReadingArrived({ live: true, fixed: true }), 'cache');
+
+  const main = read('js/main.js');
+  assert.match(main, /noteSnowRecord\(season, r, \{ live: liveSky\.active, owned: presentationOwned\(\), generation \}\)/);
+  assert.match(main, /flushDeferredPresentation\(\)/);
+  assert.doesNotMatch(main, /if \(liveSky\.active\) applySeason\(true, liveSky\.weather\)/);
+});
+
 // ---- the shaders: uniform-driven, identical WGSL whatever the date, built in node as tests/storefronts.test.mjs does --
 async function seasonShaders() {
   const THREE = await import('../vendor/three/three.webgpu.js');

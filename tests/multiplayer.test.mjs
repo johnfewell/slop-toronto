@@ -2,6 +2,7 @@
 // a slip in the format freezes every ghost; a slip in privacy publishes where someone lives.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import '../js/mp-protocol.js';
 
 const P = globalThis.MP_PROTOCOL;
@@ -71,4 +72,57 @@ test('#at: x,z as before, x,z,bearing also faces that way, anything else is igno
   for (const bad of [null, undefined, '', '5', '1,2,3,4', 'a,b', '1,NaN', '1,2,x', 'Infinity,0']) assert.equal(P.parseAt(bad), null, String(bad));
   // as Number() reads each part (the old reader's rule): a blank part is 0
   assert.deepEqual(P.parseAt(',4'), { x: 0, z: 4, heading: undefined });
+});
+
+test('a terminal socket refusal finishes the invitation and does not connect again', () => {
+  const pending = { invite: 'pending', room: 'abcdef', fromLink: false, wasWelcomed: false, toldUnreachable: false, backoff: 1000 };
+  for (const code of [4000, 4003, 4008]) {
+    const plan = P.planSocketClose(pending, { code });
+    assert.equal(plan.invite, null, String(code));
+    assert.equal(plan.givenUp, true);
+    assert.equal(plan.action, 'stop');
+    assert.equal(plan.publicMessage, null, 'a ban or a version refusal does not fall back to the public room');
+    assert.ok(plan.toast, String(code));
+  }
+  const joined = P.planSocketClose({ ...pending, invite: null, room: 'public-1' }, { code: 4008 });
+  assert.equal(joined.action, 'stop');
+  assert.equal(joined.givenUp, true);
+  assert.ok(joined.toast);
+
+  const full = P.planSocketClose(pending, { code: 4001, reply: { type: 'full', next: null } });
+  assert.equal(full.action, 'public');
+  assert.equal(full.invite, null);
+  assert.equal(full.room, 'public-1');
+  assert.match(full.publicMessage, /full/);
+
+  const next = P.planSocketClose({ ...pending, invite: null, room: 'public-1' }, { code: 4001, reply: { next: 'public-2' } });
+  assert.equal(next.action, 'now');
+  assert.equal(next.room, 'public-2');
+  assert.equal(next.givenUp, false);
+
+  const limited = P.planSocketClose(pending, { code: 4005, reply: { type: 'limited', why: 'rate' } });
+  assert.equal(limited.action, 'delay');
+  assert.equal(limited.delay, 60000);
+  assert.equal(limited.invite, 'pending');
+  assert.equal(limited.givenUp, false);
+
+  const dropped = P.planSocketClose(pending, { code: 1006 });
+  assert.equal(dropped.action, 'public');
+  assert.match(dropped.publicMessage, /public room/);
+
+  const welcome = P.planWelcome({ invite: 'pending' });
+  assert.deepEqual(welcome, { invite: null, copy: true, hash: true });
+  assert.equal(P.planWelcome({ invite: welcome.invite }).copy, false, 'the link is copied once');
+
+  assert.equal(P.planResume({ hidden: false, connected: false, givenUp: true }), null);
+  assert.deepEqual(P.planResume({ hidden: false, connected: false, givenUp: false }), { backoff: 1000 });
+  assert.equal(P.planResume({ hidden: false, connected: true, givenUp: false }), null);
+
+  const src = fs.readFileSync(new URL('../js/multiplayer.js', import.meta.url), 'utf8');
+  const handler = src.slice(src.indexOf('socket.onclose'), src.indexOf('function onControl'));
+  assert.match(handler, /if \(socket !== ws\) return/);
+  assert.ok(handler.indexOf('planSocketClose') < handler.indexOf('renderHud()'), 'the HUD renders after the invitation is settled');
+  assert.match(handler, /plan\.action === 'stop'/);
+  assert.match(src, /planResume/);
+  assert.match(src, /planWelcome/);
 });

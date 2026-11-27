@@ -1045,13 +1045,36 @@ async function initApp() {
     for (const [k, name] of Object.entries(SEASON_UNIFORMS)) if (cu[name].value !== values[k]) cu[name].value = values[k];
     if (window.CITY.SkyOcclusion) window.CITY.SkyOcclusion.setLeaf(values.leaf); // (the trees' crowns are in the sky occlusion's map while in leaf)
     season.state = { live, month: day.month, day: day.day, phase: snow >= 0.5 ? 'snow' : s.phase, ...values };
+    season.snowPending = false;
+    season.weatherPending = false;
+  }
+  // Photo framing, a photo capture, or film mode owns the picture (st-7dey). A snow record or a
+  // weather reading that finishes then stays in the cache. The uniforms move once the owner lets go.
+  function presentationOwned() {
+    return !!(rideSession.held || photoCapture || window.__CITY_APP?.film?.active);
+  }
+  function flushDeferredPresentation() {
+    const weather = !!season.weatherPending && !presentationOwned();
+    if (weather) season.weatherPending = false;
+    const snow = SEASONS.releaseSnowPresentation(season, {
+      live: liveSky.active && !liveSky.start.fixedClock, owned: presentationOwned()
+    });
+    if (!liveSky.active || liveSky.start.fixedClock || presentationOwned()) return;
+    if (weather) applyVisualTime('live');
+    else if (snow) applySeason(true, liveSky.weather);
+  }
+  function acceptWeatherReading(r) {
+    if (r) liveSky.reading = r;
+    const gate = SEASONS.liveReadingArrived({ live: liveSky.active, owned: presentationOwned(), fixed: !!liveSky.start.fixedClock });
+    if (gate === 'apply') applyVisualTime('live');
+    else if (gate === 'defer') season.weatherPending = true;
   }
   function refreshSnowRecord() {
+    const generation = (season.snowNext = (season.snowNext || 0) + 1);
     season.recordAt = Date.now();
     SEASONS.fetchSnowRecord().then((r) => {
-      if (!r) return;
-      season.record = r;
-      if (liveSky.active) applySeason(true, liveSky.weather);
+      if (!SEASONS.noteSnowRecord(season, r, { live: liveSky.active, owned: presentationOwned(), generation })) return;
+      applySeason(true, liveSky.weather);
     });
   }
   const liveBtn = document.getElementById('time-live');
@@ -1082,7 +1105,7 @@ async function initApp() {
     toastTimer = setTimeout(() => elToast.classList.remove('show'), ms);
   }
   function liveTick() {
-    if (!liveSky.active || rideSession.held || window.__CITY_APP?.film?.active || document.hidden) return;
+    if (!liveSky.active || rideSession.held || photoCapture || window.__CITY_APP?.film?.active || document.hidden) return;
     if (liveSky.start.fixedClock) return; // (a capture fixture holds still)
     if (!liveSky.start.capture && Date.now() - liveSky.readingAt > 30 * 60 * 1000) refreshReading();
     const before = lightingSystem.activePresetId;
@@ -1092,10 +1115,11 @@ async function initApp() {
     if (window.CITY.TRANSIT && lightingSystem.activePresetId !== before) window.CITY.TRANSIT.setTime(lightingSystem.activePresetId);
   }
   function refreshReading() {
+    const generation = (liveSky.readingGeneration = (liveSky.readingGeneration || 0) + 1);
     liveSky.readingAt = Date.now();
     LIVE.fetchReading().then((r) => {
-      if (r) liveSky.reading = r;
-      if (liveSky.active && !rideSession.held && !liveSky.start.fixedClock) applyVisualTime('live');
+      if (generation !== liveSky.readingGeneration) return;
+      acceptWeatherReading(r);
     });
   }
   setInterval(liveTick, 60 * 1000);
@@ -1106,12 +1130,13 @@ async function initApp() {
       if (r == null || liveSky.start.lateCondition !== r) return;
       liveSky.start.fixedCondition = r;
       liveSky.start.lateCondition = null;
-      if (liveSky.active && !rideSession.held) applyVisualTime('live');
+      // The fixture's condition is the sky. Apply it unless photo or film currently owns the picture.
+      if (presentationOwned()) season.weatherPending = true;
+      else if (liveSky.active) applyVisualTime('live');
       return;
     }
-    liveSky.reading = r;
     liveSky.readingAt = Date.now();
-    if (liveSky.active && !rideSession.held && !liveSky.start.fixedClock) applyVisualTime('live');
+    acceptWeatherReading(r);
   });
 
   // Popovers (native [popover]: light dismiss & Esc for free) open against the control that toggles them: data-anchor
@@ -1445,6 +1470,7 @@ async function initApp() {
       lastTime = performance.now();
       window.CITY.TRANSIT?.setPresentationHeld(false);
       cityAudio?.system.setPresentationPaused(false);
+      flushDeferredPresentation();
     }
     measurements?.markDiscontinuity(current?.hold || previous?.hold ? 'paused' : 'discontinuity');
     updateInputAvailability();
@@ -2170,6 +2196,7 @@ async function initApp() {
       cameraSystem.cinema = null;
       lastTime = performance.now();
       renderer.setAnimationLoop(frame);
+      flushDeferredPresentation();
       return true;
     }
   };

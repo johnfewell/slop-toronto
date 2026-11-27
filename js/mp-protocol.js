@@ -160,9 +160,80 @@
     };
   }
 
+  // What a socket close does to the invitation and the reconnect (st-mq3b). A terminal refusal
+  // (4000 version, 4003 malformed, 4008 flood or ban) ends the invitation and does not connect again,
+  // including not falling back to the public room. Other closes keep the behaviour they had.
+  // action: 'stop' (no retry), 'now', 'delay', 'backoff', 'public' (back to public-1 with publicMessage).
+  function planSocketClose(state, { code, reply } = {}) {
+    const invite = state.invite;
+    const room = state.room;
+    const backoff = state.backoff ?? 1000;
+    const out = {
+      invite, room, givenUp: false, toldUnreachable: !!state.toldUnreachable, backoff,
+      toast: null, action: 'backoff', delay: null, publicMessage: null
+    };
+    if (code === 4000 || code === 4003 || code === 4008) {
+      out.invite = null;
+      out.givenUp = true;
+      out.action = 'stop';
+      out.toast = code === 4000
+        ? (invite === 'pending' ? 'Couldn’t start your room: this page is out of date, so you’re riding solo' : 'This page is out of date: riding solo')
+        : (invite === 'pending' ? 'Couldn’t start your room: riding solo for now' : 'Riding solo for now');
+      return out;
+    }
+    if (code === 4001) {
+      if (reply && reply.next) { out.room = reply.next; out.action = 'now'; return out; }
+      if (invite === 'pending') {
+        out.invite = null;
+        out.room = 'public-1';
+        out.action = 'public';
+        out.publicMessage = 'Couldn’t start a room right now: rooms are full';
+        return out;
+      }
+      out.givenUp = true;
+      out.action = 'stop';
+      out.toast = room && !String(room).startsWith('public-') ? 'Your friend’s room is full' : 'Rooms are full: riding solo for now';
+      return out;
+    }
+    if (code === 4005) {
+      out.action = 'delay';
+      out.delay = 60000;
+      out.toast = 'Too many connections from your network: riding solo for a minute';
+      return out;
+    }
+    if (invite === 'pending') {
+      out.invite = null;
+      out.room = 'public-1';
+      out.action = 'public';
+      out.publicMessage = 'Couldn’t start your room: back in the public room';
+      return out;
+    }
+    if (state.fromLink && !state.wasWelcomed && !state.toldUnreachable) {
+      out.toldUnreachable = true;
+      out.toast = 'Couldn’t reach your friend’s room: retrying';
+    }
+    out.action = 'backoff';
+    out.delay = backoff;
+    out.backoff = Math.min(30000, backoff * 2);
+    return out;
+  }
+
+  // Welcome finishes a pending invitation once: the hash updates and the link is copied one time.
+  function planWelcome(state) {
+    if (state.invite !== 'pending') return { invite: state.invite ?? null, copy: false, hash: false };
+    return { invite: null, copy: true, hash: true };
+  }
+
+  // A tab becoming visible reconnects only when the page has not given up.
+  function planResume({ hidden = false, connected = false, givenUp = false } = {}) {
+    if (hidden || connected || givenUp) return null;
+    return { backoff: 1000 };
+  }
+
   root.MP_PROTOCOL = {
     VERSION, STATE, SNAPSHOT, HIDE, STATE_BYTES, HIDE_BYTES, HEADER_BYTES, RECORD_BYTES, MAX_RECORDS, MODES, HIDE_REASONS,
     FLAG_BOOST, FLAG_MAP_ONLY, BOUNDS, FRESH,
-    encodeState, encodeHide, decodeClient, encodeSnapshot, decodeSnapshot, isRoomName, parseAt, createPrivacy
+    encodeState, encodeHide, decodeClient, encodeSnapshot, decodeSnapshot, isRoomName, parseAt, createPrivacy,
+    planSocketClose, planWelcome, planResume
   };
 })(typeof window !== 'undefined' ? (window.CITY = window.CITY || {}) : globalThis);

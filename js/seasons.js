@@ -237,10 +237,41 @@ function siteDay({ startup = null, capture = null, now = new Date() } = {}) {
   return { month: d.month, day: d.day, source: 'live' };
 }
 
+// A snow record arrived (st-7dey). The cache keeps the newest valid record. The uniforms change
+// only while live is showing and photo or film does not own the scene. generation is the request's
+// number: a later request wins, and an older reply is ignored. Returns whether to apply the season now.
+function noteSnowRecord(slot, record, { live = false, owned = false, generation = 0 } = {}) {
+  if (!(generation > (slot.snowSeen || 0))) return false;
+  slot.snowSeen = generation;
+  if (!record) return false;
+  slot.record = record;
+  if (!live || owned) {
+    slot.snowPending = !!(live && owned);
+    return false;
+  }
+  slot.snowPending = false;
+  return true;
+}
+
+// Photo or film released the scene. Apply the stored record once, and only if live is still showing.
+function releaseSnowPresentation(slot, { live = false, owned = false } = {}) {
+  if (!slot.snowPending || owned) return false;
+  slot.snowPending = false;
+  return !!live;
+}
+
+// Where a finished weather reading goes. 'cache' keeps it without touching the picture.
+// 'defer' keeps it and applies once the owner lets go. 'apply' writes it now.
+function liveReadingArrived({ live = false, owned = false, fixed = false } = {}) {
+  if (!live || fixed) return 'cache';
+  if (owned) return 'defer';
+  return 'apply';
+}
+
 const SEASONS = {
   TZ, SUMMER_DATE, SUMMER, CURVES, CLIMATE_URL, CLIMATE_CACHE_KEY, CLIMATE_CACHE_MS, CLIMATE_MAX_AGE_DAYS, FETCH_TIMEOUT_MS,
   dayOfYear, torontoDate, curveAt, seasonFor, snowSeason, parseClimate, snowCover, fetchSnowRecord, parseDay, resolveCapture,
-  fixtureRecord, siteDay
+  fixtureRecord, siteDay, noteSnowRecord, releaseSnowPresentation, liveReadingArrived
 };
 if (typeof window !== 'undefined' && window.CITY) {
   window.CITY.SEASONS = SEASONS;

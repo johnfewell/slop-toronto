@@ -170,26 +170,27 @@ function createMultiplayer({ scene, controllerManager, privateZone = null }) {
       cpu.handlers += performance.now() - t0;
     };
     socket.onclose = (e) => {
-      if (socket !== ws) return;
+      if (socket !== ws) return; // a socket this page already replaced
       ws = null;
       me = null;
       remotes.clear();
       riding = 0;
+      const plan = P.planSocketClose(
+        { invite, room, fromLink, wasWelcomed: welcomed, toldUnreachable, backoff },
+        { code: e.code, reply }
+      );
+      invite = plan.invite;
+      room = plan.room;
+      givenUp = plan.givenUp;
+      toldUnreachable = plan.toldUnreachable;
+      backoff = plan.backoff;
+      if (plan.action === 'public') return backToPublic(plan.publicMessage);
+      if (plan.toast) toast(plan.toast);
       renderHud();
-      const wasWelcomed = welcomed;
-      if (e.code === 4000 || e.code === 4003 || e.code === 4008) { givenUp = true; return; } // old page, banned: alone
-      if (e.code === 4001) {
-        if (reply && reply.next) { room = reply.next; return connect(); }
-        if (invite === 'pending') return backToPublic('Couldn’t start a room right now: rooms are full');
-        toast(isPrivate(room) ? 'Your friend’s room is full' : 'Rooms are full: riding solo for now');
-        givenUp = true;
-        return;
-      }
-      if (e.code === 4005) { toast('Too many connections from your network: riding solo for a minute'); return connect(60000); }
-      if (invite === 'pending') return backToPublic('Couldn’t start your room: back in the public room');
-      if (fromLink && !wasWelcomed && !toldUnreachable) { toldUnreachable = true; toast('Couldn’t reach your friend’s room: retrying'); }
-      connect(backoff + Math.random() * 2000); // (jittered, so a deploy doesn't bring everyone back at once)
-      backoff = Math.min(30000, backoff * 2);
+      if (plan.action === 'stop') return;
+      if (plan.action === 'now') return connect();
+      if (plan.action === 'delay') return connect(plan.delay);
+      connect(plan.delay + Math.random() * 2000); // (jittered, so a deploy doesn't bring everyone back at once)
     };
   }
 
@@ -205,11 +206,10 @@ function createMultiplayer({ scene, controllerManager, privateZone = null }) {
       clockOffset = null;
       lastRoomTime = -1;
       lastSent = null;
-      if (invite === 'pending') {
-        invite = null;
-        setRoomInHash(room);
-        copyLink(true);
-      }
+      const welcome = P.planWelcome({ invite });
+      invite = welcome.invite;
+      if (welcome.hash) setRoomInHash(room);
+      if (welcome.copy) copyLink(true);
       renderHud();
     } else if (m.type === 'join') addRemote(m);
     else if (m.type === 'leave') remotes.delete(m.id);
@@ -323,7 +323,10 @@ function createMultiplayer({ scene, controllerManager, privateZone = null }) {
     if (!ctx) return;
     if (document.hidden) {
       if (ws && ws.readyState === 1 && me) { ws.send(P.encodeHide('background')); lastSent = { hidden: true }; lastHide = performance.now(); }
-    } else if (!ws && !givenUp) { backoff = 1000; connect(); }
+    } else {
+      const resume = P.planResume({ hidden: false, connected: !!ws, givenUp });
+      if (resume) { backoff = resume.backoff; connect(); }
+    }
   });
 
   // --- drawing, within the tier's budget
