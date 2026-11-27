@@ -798,7 +798,8 @@ const rgb = (hex) => {
 // The street level's material with its asphalt dropped over the water: GEO.waterMask's row runs (dry / wet, from dry)
 // decoded into a linear-filtered texture over the city, discarded above one half
 function maskedByWater(mat, M) {
-  const { Fn, If, Discard, texture, positionWorld, vec2 } = window.CITY.TSL;
+  const { guardedInside, TSL } = window.CITY;
+  const { texture, positionWorld, vec2 } = TSL;
   const bin = atob(M.runs);
   const runs = new Uint16Array(bin.length / 2);
   for (let i = 0; i < runs.length; i++) runs[i] = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
@@ -818,20 +819,19 @@ function maskedByWater(mat, M) {
   tex.magFilter = THREE.LinearFilter;
   tex.minFilter = THREE.LinearFilter;
   tex.needsUpdate = true;
-  const base = mat.colorNode;
   // the box of the wet cells, a texel and a bit over (the texture is filtered): a fragment outside it never reads the mask (st-aeg2.4)
   let wi0 = M.w, wi1 = -1, wj0 = M.h, wj1 = -1;
   for (let j = 0; j < M.h; j++) for (let i = 0; i < M.w; i++) if (data[j * M.w + i]) { if (i < wi0) wi0 = i; if (i > wi1) wi1 = i; if (j < wj0) wj0 = j; if (j > wj1) wj1 = j; }
   if (wi1 < 0) return mat; // (no water: nothing to drop)
   const wet = { x0: M.x0 + (wi0 - 2) * M.res, x1: M.x0 + (wi1 + 3) * M.res, z0: M.z0 + (wj0 - 2) * M.res, z1: M.z0 + (wj1 + 3) * M.res };
-  mat.colorNode = Fn(() => {
+  // Apply the coverage test before shading. The mask has one mip level, so explicitly sample it inside the bounds
+  // guard. Implicit sampling in the conditional colour discard left street depth covering the single-sample lake.
+  const buildWet = () => {
     const uv = positionWorld.xz.sub(vec2(M.x0, M.z0)).div(vec2(M.w * M.res, M.h * M.res));
-    const p = positionWorld.xz;
-    If(p.x.greaterThanEqual(wet.x0).and(p.x.lessThanEqual(wet.x1)).and(p.y.greaterThanEqual(wet.z0)).and(p.y.lessThanEqual(wet.z1)), () => {
-      If(texture(tex, uv).r.greaterThan(0.5), () => { Discard(); });
-    });
-    return base;
-  })();
+    return texture(tex, uv).level(0).r.greaterThan(0.5);
+  };
+  const dry = (guardedInside ? guardedInside([wet], buildWet) : buildWet()).not();
+  mat.maskNode = mat.maskNode ? mat.maskNode.and(dry) : dry;
   return mat;
 }
 

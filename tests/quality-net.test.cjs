@@ -65,9 +65,9 @@ test('no flicker: a rung left again soon after stepping up is held for a minute,
   assert.equal(n.state().rung, 0);
 });
 
-test('low uses the multisampled render path that draws the lake', () => {
+test('low uses FXAA with a single-sample scene', () => {
   const { Q } = net('?quality=low');
-  assert.equal(Q.aa, 'msaa');
+  assert.equal(Q.aa, 'fxaa');
   assert.equal(Q.ssr, false);
   assert.equal(net('?quality=low&q.aa=none').Q.aa, 'none');
 });

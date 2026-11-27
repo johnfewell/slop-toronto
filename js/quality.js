@@ -103,9 +103,7 @@ const TIERS = {
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
-    // The single-sample scene renders Lake Ontario black on WebGPU, with both water materials and with FXAA off.
-    // Use the medium tier's multisampled scene for low too (jf-dua).
-    scale: 1, aa: 'msaa', ssr: false, coat: false, bloom: true, bloomScale: 0.5, clouds: 'low', cloudScale: 0.5, // (0.35 measured no faster on this tier: st-iq0v.5)
+    scale: 1, aa: 'fxaa', ssr: false, coat: false, bloom: true, bloomScale: 0.5, clouds: 'low', cloudScale: 0.5, // (0.35 measured no faster on this tier: st-iq0v.5)
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7, treeImpMid: 35,
     massingLimits: [300, 1000], // (the full outlines only close by on a phone)

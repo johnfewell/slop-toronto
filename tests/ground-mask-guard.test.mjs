@@ -81,7 +81,22 @@ test('every ground mask site runs its test behind its own footprint box', () => 
   // the lake: the water mask's lookup sits behind the box of the wet cells
   const grid = read('city-grid.js');
   assert.match(grid, /const wet = \{ x0: M\.x0 \+ \(wi0 - 2\) \* M\.res/);
-  assert.match(grid, /If\(p\.x\.greaterThanEqual\(wet\.x0\)/);
+  assert.match(grid, /guardedInside\(\[wet\], buildWet\)/);
+});
+
+test('the street water mask uses explicit LOD coverage without changing the road colour', () => {
+  const grid = read('city-grid.js');
+  const source = grid.slice(grid.indexOf('function maskedByWater('), grid.indexOf('// The road cuts', grid.indexOf('function maskedByWater(')));
+  const { guardedInside } = make(TSL);
+  const mask = new Function('window', 'THREE', `${source}\nreturn maskedByWater;`)({ CITY: { TSL, guardedInside } }, THREE);
+  const mat = new THREE.MeshStandardNodeMaterial();
+  mat.colorNode = TSL.color(0x343434);
+  const colour = mat.colorNode;
+  const runs = Buffer.from([1, 0, 2, 0, 1, 0]).toString('base64');
+  mask(mat, { runs, w: 4, h: 1, x0: 0, z0: 0, res: 4 });
+  assert.equal(mat.colorNode, colour);
+  assert.ok(mat.maskNode.isNode, 'coverage applies before colour shading');
+  assert.match(source, /texture\(tex, uv\)\.level\(0\)/);
 });
 
 test('the road-cut oblongs: every corner of every oblong lies inside the boxes the guard uses', () => {
