@@ -27,7 +27,7 @@ import { WALL, hash32, stream, weighted, lerp, rad, clamp, writer, shade, makeFr
 // (the helpers the planners share live in js/building-draw-kit.js; re-exported here for the tests and the tools)
 export { WALL, hash32, stream, weighted, lerp, rad, clamp, writer, shade, makeFrame, gableRoof, hipRoof, slab, tarRgb };
 
-export { rosedaleYardStyle } from './front-yards.js';
+export { rosedaleYardStyle, yardStyleOfPlace } from './front-yards.js';
 export const DRAWN_PRESETS = Object.keys(DRAW);
 export const ROSEDALE_PRESETS = Object.keys(ROSEDALE_DRAW); // (jf-bya: drawn too, but not catalogue entries; the gallery and the presets file know only DRAWN_PRESETS)
 export const FALLBACK_REASONS = ['house-sized', 'too-low', 'bad-height', 'no-nave', 'landmark', 'no-front', 'shop-front', 'too-small', 'too-irregular', 'front-bulge', 'front-short', 'unfit-roof', 'other-facade', 'one-storey', 'too-tall'];

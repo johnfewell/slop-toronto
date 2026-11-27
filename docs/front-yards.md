@@ -83,10 +83,28 @@ bare trees, 2026-11-26) and July (2026-07-15, leaves, no snow record), are in Jo
 What reads wrong: the page's own ground in these blocks is a pale concrete colour (not snow: `uSnow` reads 0 in the July frames), so in July the lawn is a green patch on a pale plot; hedges are clean boxes with flat shading; bare shrubs are a speckled cut-out;
 the shot cameras are the walls shot list's, and two of the old list's houses (338 Douglas Dr, 4 Beaumont Rd) look onto park grass, so they are replaced by the four street views.
 
+## 5. Every other drawn house (citywide)
+
+The same planner now draws a yard for every detached, semi and row house the preset machinery draws (`isHousePreset`: the downtown frame, 17,210 front yards in all with the Rosedale pilot's 2,490), in the style of its neighbourhood: `yardStyleOfPlace` maps
+the City neighbourhood `districtAt` names (Rosedale, Annex, Cabbagetown, Leslieville and Riverdale, the Beaches, post-war Leaside and the like) to a `YARD_STYLES` entry, cached per 100 m. No lot width or lidar is known there, so the side yards are a metre
+each and hedges and shrubs are the rule's; a house whose road leaves under 2.2 m of yard has none (most downtown rows). `?frontYards=0` turns them all off. Pictures (before = origin/main) of four streets from the sidewalk and from a bike, in winter and July, in
+`slop-toronto-updates/2026-11-27-front-yards/other-neighbourhoods/` (cameras at the page's own yard sites, `CITY.frontYardSites`, fixed per arm):
+
+![Cabbagetown: white pickets in front of the rows, winter](images/front-yards-cabbagetown-side-winter.jpg)
+
+![Leslieville: pickets and chain-link, winter](images/front-yards-leslieville-bike-winter.jpg)
+
+![The Annex: a clipped hedge and a lawn, July](images/front-yards-annex-side-july.jpg)
+
+**The Beaches get none**: the house presets are drawn only inside the downtown detail frame (x up to 3,700 m) and the Beaches lie outside it, so no house there is a drawn house and has no yard to give. The same holds for every house on the bigger map outside the frame and outside the Rosedale pilot.
+
+Cost (Mac mini, shared, winter, paired against origin/main, two rounds, alternating, street level in three drawn neighbourhoods; mean ms before -> after): Cabbagetown 18.64 -> 19.01 (+0.38) and 18.56 -> 18.73 (+0.17); Leslieville 14.66 -> 14.71 (+0.05) and 14.33 -> 13.91 (-0.42);
+the Annex 18.71 -> 19.43 (+0.72) and 18.59 -> 18.75 (+0.16). Within the +1 ms budget in every pair (`tools/capture-front-yards.sh JOB=framesO`).
+
 ## What is still wrong
 
 - Fences and walls are a rule, not data; hedges the lidar could not see (under crowns) are the rule's too.
-- No yard is drawn for a house the preset machinery does not draw, or whose yard is under 2.2 m deep.
+- No yard is drawn for a house the preset machinery does not draw (the Beaches, anything outside the downtown frame and the pilot), or whose yard is under 2.2 m deep.
 - The yard stands at the house's ground height: a lot that falls steeply to the street shows the hedge and wall skirts (0.4 m) rather than following the slope.
 - Bare deciduous shrubs are a speckled cut-out, not individual twigs.
 

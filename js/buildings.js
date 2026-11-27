@@ -1237,6 +1237,7 @@ function buildCityBlocks(scene) {
   // far one beyond (no dormers, bargeboards, attic windows, timbering, bay roofs: js/building-draw.js pushRoof's lod). They replaced one mesh
   // of 1.3 M triangles over the whole city that the frustum could never skip and that no distance thinned
   const roofCells = new Map();
+  const yardStyleCache = new Map(); // (100 m cells -> a yard style, houseYard)
   // (the plots stand a sidewalk's height above the road, city-grid.js: a yard's flat things (the walk, the lawn, the beds) lie on that, not on the house's y0)
   const yardsOff = urlFlag('frontYards') === '0'; // (?frontYards=0: no front yards, for A/B)
   const yardGround = (x, z) => ((window.CITY.CITY_BOUNDS && window.CITY.CITY_BOUNDS.sidewalkHeight) || 0.22) + (window.CITY.cutAt ? window.CITY.cutAt(x, z) || 0 : 0);
@@ -1379,6 +1380,15 @@ function buildCityBlocks(scene) {
     const h = fixH && inDistillery(cx, cz) ? fixH[2] : h0;
     const y0 = baseOf(cx, cz);
     const foot = massing ? massing.rows.get(bi) : null;
+    // (jf-ugq, docs/front-yards.md) every drawn detached, semi or row house outside the Rosedale pilot has a front yard too, in its neighbourhood's style: a hedge, wall or fence on
+    // the lot line, beds, shrubs and a lawn, where the road leaves it room (planHouse draws none under 2.2 m deep); no lot width or lidar is known there
+    const houseYard = (f, x, z) => {
+      if (!f || !f.preset || !window.CITY.BuildingPrototypes?.isHousePreset?.(f.preset) || yardsOff) return undefined;
+      const key = Math.floor(x / 100) * 100003 + Math.floor(z / 100);
+      let st = yardStyleCache.get(key);
+      if (!st) yardStyleCache.set(key, st = window.CITY.BuildingDraw.yardStyleOfPlace(window.CITY.districtAt ? window.CITY.districtAt(x, z) : ''));
+      return { lotW: 0, park: 0, style: st, canopy: -1, veg: null, lift: yardGround(x, z) };
+    };
     // (jf-bya, docs/rosedale-walls.md) A detached, semi or row house is never a glass curtain wall or a storefront. The City's kind column calls 1,457 of
     // the Rosedale pilot's houses mid-rise and 86 tall (a third of the mid-rise and all of the tall were drawn as curtain-wall glass, the ground floor a
     // shop front beside a shop), so the pilot's houses (js/rosedale-houses.js isHouse) are low-rise houses whatever it says; a downtown house keeps its
@@ -1479,7 +1489,7 @@ function buildCityBlocks(scene) {
           preset: foot.preset, id: foot.id, groupId: facts && facts.groupId, dwellings: facts ? facts.dwellings : 1,
           ring: foot.rings[0], edges: fr.edges, covered: foot.covered, y0, lin: linear,
           h, style: FOOTPRINT_STYLE[mat][0], variant: FOOTPRINT_STYLE[mat][1], holes: foot.rings.length - 1, frontShift: frontShifts ? frontShifts.get(foot.id) : undefined,
-          index: foot.index, base: Math.min(foot.base, h - 0.5), group: facts && facts.group, hint: foot.rosedale ? foot.rosedale.hint : undefined, yard: foot.rosedale && !yardsOff ? { lotW: foot.rosedale.lotW, park: foot.rosedale.park, style: window.CITY.BuildingDraw.rosedaleYardStyle(foot.rosedale), canopy: foot.rosedale.veg ? foot.rosedale.veg.canopy : -1, veg: foot.rosedale.veg || null, lift: yardGround(cx, cz) } : undefined, chimneys: foot.rosedale ? foot.rosedale.chim : undefined, variants: foot.variants, roofHex: foot.roofHex, fillMin: foot.fillMin,
+          index: foot.index, base: Math.min(foot.base, h - 0.5), group: facts && facts.group, hint: foot.rosedale ? foot.rosedale.hint : undefined, yard: foot.rosedale && !yardsOff ? { lotW: foot.rosedale.lotW, park: foot.rosedale.park, style: window.CITY.BuildingDraw.rosedaleYardStyle(foot.rosedale), canopy: foot.rosedale.veg ? foot.rosedale.veg.canopy : -1, veg: foot.rosedale.veg || null, lift: yardGround(cx, cz) } : houseYard(foot, cx, cz), chimneys: foot.rosedale ? foot.rosedale.chim : undefined, variants: foot.variants, roofHex: foot.roofHex, fillMin: foot.fillMin,
           roadDist: (x, z) => { const r = nearestRoads(x, z, 40)[0]; return r ? r.dist : Infinity; },
           nearRoad: near.length ? { x: near[0].px, z: near[0].pz } : null
         });
@@ -2219,7 +2229,7 @@ function buildCityBlocks(scene) {
   if (drawStats) {
     window.CITY.presetDrawStats = drawStats;
     console.info(`[presets] drawn: ${drawStats.drawn} records (${Object.entries(drawStats.byPreset).map(([k, v]) => `${k} ${v.drawn} of ${v.drawn + v.fallback}`).join(', ')}), ` +
-      `${drawStats.extras} bay, porch and pier records, ${drawStats.roofTris} roof triangles; kept today's look: ${JSON.stringify(drawStats.fallback)}`);
+      `${drawStats.extras} bay, porch and pier records, ${drawStats.roofTris} roof triangles, ${drawStats.yards || 0} front yards; kept today's look: ${JSON.stringify(drawStats.fallback)}`);
   }
   window.CITY.storefrontBuildingStats = { storefronts: stats.storefronts, strip: stats.strip, signed: stats.signed };
   return {

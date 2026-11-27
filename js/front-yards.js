@@ -431,3 +431,17 @@ export function rosedaleYardStyle(h) {
   if (h.lotW >= 15 && (h.style === 2 || h.style === 3 || h.style === 5)) return 'rosedaleGrand';
   return 'rosedale';
 }
+
+// The yard style of a place by the neighbourhood's name (js/city-config.js districtAt): the lot line's odds (YARD_STYLES) follow the streets John named
+const STYLE_BY_NAME = [
+  [/Rosedale|Moore Park|Summerhill|Casa Loma|Forest Hill|Lawrence Park|Governor/, 'rosedale'],
+  [/Leaside|Bennington|Thorncliffe|Flemingdon|Victoria Village|Davisville|Eglinton|Yonge-Doris|North Toronto|Mount Pleasant|Don Mills|Wynford/, 'postwar'],
+  [/Cabbagetown|Regent Park|Moss Park|Church-Wellesley|St\.? ?James|Corktown|Trefann/, 'cabbagetown'],
+  [/Beaches|Birchcliff|Balmy|Kingston/, 'beaches'],
+  [/Riverdale|Blake-Jones|Greenwood|Leslieville|East End|Danforth|Playter|Broadview|Woodbine|Pape|Greektown|East York|Gerrard/, 'eastEnd'],
+  [/Annex|Wychwood|Palmerston|Little Italy|Dufferin|Dovercourt|Trinity|Bellwoods|High Park|Roncesvalles|Parkdale|Seaton|Christie|Harbord|Humewood|Davenport|Yonge-St|Brockton|Bloor|Runnymede|Junction|Swansea|Lansing|Old Mill|Kensington|Little Portugal|Mirvish/, 'annex']
+];
+export function yardStyleOfPlace(name) {
+  for (const [re, style] of STYLE_BY_NAME) if (re.test(name || '')) return style;
+  return 'city';
+}

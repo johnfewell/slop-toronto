@@ -138,3 +138,16 @@ test('winter, summer: the material reads the layout the writer makes (kinds 0 to
   const src = fs.readFileSync(new URL('../js/front-yard-material.js', import.meta.url), 'utf8');
   for (const w of ["attribute('uv', 'vec2')", "attribute('aux', 'vec2')", "attribute('color', 'vec3')", 'uSnow', 'uLeaf', 'uAutumn', 'uSpring', 'seasonalGrass', 'leafStays']) assert.ok(src.includes(w), w);
 });
+
+test('a neighbourhood name picks its yard style', async () => {
+  const { yardStyleOfPlace } = await import('../js/front-yards.js');
+  assert.equal(yardStyleOfPlace('Rosedale-Moore Park'), 'rosedale');
+  assert.equal(yardStyleOfPlace('The Annex'), 'annex');
+  assert.equal(yardStyleOfPlace('Cabbagetown'), 'cabbagetown');
+  assert.equal(yardStyleOfPlace('Leslieville'), 'eastEnd');
+  assert.equal(yardStyleOfPlace('North Riverdale'), 'eastEnd');
+  assert.equal(yardStyleOfPlace('The Beaches'), 'beaches');
+  assert.equal(yardStyleOfPlace('Leaside'), 'postwar');
+  assert.equal(yardStyleOfPlace('Liberty Village'), 'city');
+  assert.equal(yardStyleOfPlace(undefined), 'city');
+});

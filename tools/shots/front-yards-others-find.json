@@ -1,0 +1,14 @@
+[
+ {
+  "name": "riverdale-side",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const q = C.worldFromLatLon(43.671500, -79.347000); const S = (C.frontYardSites || []).filter((s) => s.style === 'eastEnd' && s.yd >= 3.5 && s.yd <= 8); if (!S.length) return 'no yards'; const near = (s) => S.filter((t) => Math.hypot(t.x - s.x, t.z - s.z) < 45).length; let best = null, bs = 1e9; for (const s of S) { const d = Math.hypot(s.x - q.x, s.z - q.z); if (d > 2500) continue; const sc = d - 120 * Math.min(near(s), 6); if (sc < bs) { bs = sc; best = s; } } if (!best) return 'no site'; const s = best; const px = -s.oz, pz = s.ox; const p = { x: s.x + s.ox * (s.yd + 11) + px * 0, z: s.z + s.oz * (s.yd + 11) + pz * 0 }; const t = { x: s.x + s.ox * 2, z: s.z + s.oz * 2 }; console.log('CAMSITE riverdale-side ' + JSON.stringify({ p, t, h: 1.7, fov: 62, s })); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [t.x, 2.0, t.z], fov: 62 }); })()"
+ },
+ {
+  "name": "riverdale-bike",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const q = C.worldFromLatLon(43.671500, -79.347000); const S = (C.frontYardSites || []).filter((s) => s.style === 'eastEnd' && s.yd >= 3.5 && s.yd <= 8); if (!S.length) return 'no yards'; const near = (s) => S.filter((t) => Math.hypot(t.x - s.x, t.z - s.z) < 45).length; let best = null, bs = 1e9; for (const s of S) { const d = Math.hypot(s.x - q.x, s.z - q.z); if (d > 2500) continue; const sc = d - 120 * Math.min(near(s), 6); if (sc < bs) { bs = sc; best = s; } } if (!best) return 'no site'; const s = best; const px = -s.oz, pz = s.ox; const p = { x: s.x + s.ox * (s.yd + 11) + px * 0, z: s.z + s.oz * (s.yd + 11) + pz * 0 }; const t = { x: s.x + s.ox * 2, z: s.z + s.oz * 2 }; console.log('CAMSITE riverdale-bike ' + JSON.stringify({ p, t, h: 1.7, fov: 62, s })); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [t.x, 2.0, t.z], fov: 62 }); })()"
+ }
+]

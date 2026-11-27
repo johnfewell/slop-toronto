@@ -24,8 +24,10 @@ for ARM in ${ARMS:-before after}; do
   SUF=""; case "$ARM" in *Jul) SUF="-jul" ;; esac # (July: the shots call seasons.inject('07-15', 0) first, so no snow lies)
   case "$J" in
     rosedale) run "$ROOTD" "$Q" "$ARM-" $SH/front-yards-rosedale$SUF.json ;;
+    find)     run "$ROOTD" "$Q" "find$ARM-" $SH/front-yards-others-find.json ;;
     others)   run "$ROOTD" "$Q" "o$ARM-" $SH/front-yards-others$SUF.json ;;
     debug)    run "$ROOTD" "$Q" "dbg$ARM-" $SH/front-yards-debug.json ;;
+    framesO)  run "$ROOTD" "$Q" "fto${ROUND:-}-$ARM-" $SH/front-yards-frame-times-others.json CAPTURE_UNCAPPED=1 CAPTURE_FT_SECONDS=${FT_SECONDS:-20} ;;
     frames)   run "$ROOTD" "$Q" "ft${ROUND:-}-$ARM-" $SH/front-yards-frame-times.json CAPTURE_UNCAPPED=1 CAPTURE_FT_SECONDS=${FT_SECONDS:-20} ;;
   esac
 done
