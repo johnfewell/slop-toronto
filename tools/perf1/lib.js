@@ -27,6 +27,11 @@
     hpa: { x: -6240, z: -2350, cam: { pos: [-6120, 70, -2230], look: [-6280, 10, -2400], fov: 55 } },
     egl: { x: egw.x, z: egw.z, cam: { pos: [egw.x, 1.7, egw.z], look: [ege.x, 6, ege.z], fov: 62 } },
     rom: { x: -300, z: -2640, cam: { pos: [-300, 20, -2640], look: [-349, 12, -2699], fov: 60 } },
+    // (the island lane review cameras, tools/shots/waterfront-island-road-material-review.json)
+    ion: { x: 1116.4, z: 2405.3, cam: { pos: [1116.4, 1.8, 2405.3], look: [1103.79, 0.15, 2388.0099999999998], fov: 64 } },
+    ionp: { x: 1116.4, z: 2405.3, cam: { pos: [1116.4, 1.1, 2405.3], look: [1113.49, 0.15, 2401.31], fov: 64 } },
+    ioj: { x: 1173.7, z: 2350.6, cam: { pos: [1173.7, 1.8, 2350.6], look: [1162.4550000000002, 0.15, 2334.8050000000003], fov: 64 } },
+    iojp: { x: 1173.7, z: 2350.6, cam: { pos: [1173.7, 1.1, 2350.6], look: [1171.105, 0.15, 2346.955], fov: 64 } },
     // (perf2 sheets: the same cameras at golden hour, a look at the sidewalk's dapple from 2 m up, one aerial, the Island at golden hour)
     cabg: { x: 1800, z: -1601, time: 'golden', cam: { pos: [1800, 1.7, -1601], look: [1650, 5, -1606], fov: 60 } },
     cabc: { x: 1800, z: -1601, cam: { pos: [1800, 2.2, -1601], look: [1797, 0, -1604], fov: 60 } },

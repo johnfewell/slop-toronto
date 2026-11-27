@@ -658,6 +658,18 @@ async function initApp() {
     markInit('skyOcclusion');
   }
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
+  // The island lanes' look (city-grid.js): the street-level pieces over the island take the material that carries it, the rest of the city's asphalt does not run it
+  {
+    const ground = scene.getObjectByName('CityGround'), islandMat = ground?.userData.islandStreetMat, ib = window.CITY.islandRoadSourceBox?.();
+    if (islandMat && ib) {
+      ground.traverse((m) => {
+        if (!m.isMesh || m.name !== 'StreetLevel') return;
+        if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+        const b = m.geometry.boundingBox;
+        if (b.max.x >= ib.x0 - 20 && b.min.x <= ib.x1 + 20 && b.max.z >= ib.z0 - 20 && b.min.z <= ib.z1 + 20) m.material = islandMat;
+      });
+    }
+  }
   // The ground is drawn after the other opaque objects (renderOrder 1): its fragment work is the heaviest in the city (the street-level asphalt
   // alone is about 2 ms at the Eglinton street) and what the buildings, props and cars hide is then turned away by the depth test before it
   // is shaded. ?groundorder=0 draws it in the scene's order (for A/B; st-aeg2)

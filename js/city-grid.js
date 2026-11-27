@@ -964,7 +964,18 @@ function buildCityGrid(scene) {
     return c;
   };
   const streetMat = GEO.waterMask ? maskedByWater(createRoadSurfaceMaterial(), GEO.waterMask) : roadMat;
-  window.CITY.applyIslandLaneRoadMaterial?.(streetMat);
+  // The island lanes' paving and shoulder look is a second material for the street-level pieces over the island only (main.js
+  // swaps it in after the culling cuts the street level into cells): applied to the one city-wide material it ran its terms on
+  // every asphalt fragment of the city (0.3 to 0.7 ms a frame). ?islandroad=all brings back the single material (for A/B).
+  const islandRoadAll = typeof location !== 'undefined' && new URLSearchParams(location.search).get('islandroad') === 'all';
+  let islandStreetMat = null;
+  if (islandRoadAll || !GEO.waterMask) window.CITY.applyIslandLaneRoadMaterial?.(streetMat);
+  else {
+    const candidate = maskedByWater(createRoadSurfaceMaterial(), GEO.waterMask);
+    window.CITY.applyIslandLaneRoadMaterial?.(candidate);
+    if (candidate.userData && candidate.userData.islandLaneRoadMaterial) islandStreetMat = candidate;
+  }
+  group.userData.islandStreetMat = islandStreetMat;
   {
     const shape = createWorldXZShape(rectPolygon(CITY_BOUNDS.minX, CITY_BOUNDS.maxX, CITY_BOUNDS.minZ, CITY_BOUNDS.maxZ));
     for (const w of lakes) shape.holes.push(new THREE.Path(w.pts.map((p) => new THREE.Vector2(p.x, -p.z))));
