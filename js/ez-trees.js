@@ -326,7 +326,9 @@ async function buildEzTrees(scene, generated) {
   const impMaterial = impostors ? impostors.material(viewer, FADE ? lodKeep : null) : null;
   const impGeometry = impostors ? impostors.geometry() : null;
   // (the shadow-only stand-in: the impostor's quad facing the sun, in the shadow maps only; PROXY)
-  const impShadowMaterial = impostors && PROXY ? impostors.material(viewer, lodKeep, { shadowProxy: true }) : null;
+  const impShadowFit = !!impostors && window.CITY.treeImpostors.STRIPS > 0 && window.CITY.treeImpostors.SHADOW_FIT; // (?impstrips=N: the proxy's quad fitted too; ?impstripsshadow=0: it stays whole)
+  const impShadowMaterial = impostors && PROXY ? impostors.material(viewer, lodKeep, { shadowProxy: true, fitted: impShadowFit }) : null;
+  const impShadowGeometry = impostors ? (impShadowFit ? impGeometry : impostors.geometry(false)) : null;
 
   // mrdoob's whole-crown cards for the far level, one per species, scaled to each tree's height
   const atlas = createLeafAtlas();
@@ -510,7 +512,7 @@ async function buildEzTrees(scene, generated) {
   const idxMidFar = models.map((m) => make(m.mid, m.material, `Trees_${m.id}_mid_noshadow`, false, true));
   const idxFar = farGeos.map((g, s) => make(g, farMaterial, `Trees_far_${TREE_SPECIES[s].name}`, true));
   const idxImp = models.map((m, k) => (impOf[k] >= 0 ? make(impGeometry, impMaterial, `Trees_${m.id}_impostor`, false, true, true) : -1));
-  const idxImpShadow = models.map((m, k) => (impOf[k] >= 0 && impShadowMaterial ? make(impGeometry, impShadowMaterial, `Trees_${m.id}_impostor_shadow`, false, false, true) : -1));
+  const idxImpShadow = models.map((m, k) => (impOf[k] >= 0 && impShadowMaterial ? make(impShadowGeometry, impShadowMaterial, `Trees_${m.id}_impostor_shadow`, false, false, true) : -1));
   let impTrees = 0;
   const dummy = new THREE.Object3D();
   const tint = new THREE.Color();
@@ -991,7 +993,7 @@ async function buildEzTrees(scene, generated) {
   if (FRUSTUM_CULL) scene.add(twinGroup);
   if (impostors) {
     // (main.js: once the renderer can draw, before the shader warm-up)
-    window.CITY.bakeTreeImpostors = (renderer) => impostors.bake(renderer);
+    window.CITY.bakeTreeImpostors = (renderer) => { impostors.bake(renderer); return impostors.fit ? impostors.fit(renderer) : null; }; // (a promise: the fitted strips' bounds from the atlas, ?impstrips=N; main.js awaits it)
     window.CITY.treeImpostorAtlases = impostors.atlases; // (captures: the baked atlases)
     stats.impostors = { trees: impTrees, models: impostors.models.length, state: impostors.state, mid: IMP_MID };
   }

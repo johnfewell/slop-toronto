@@ -25,6 +25,9 @@
     // (st-perf heavy views, 2026-11-26: High Park's densest woods on foot and from above, and a busy Eglinton street at Yonge looking east)
     hpw: { x: -6240, z: -2350, cam: { pos: [-6240, hpG(-6240, -2350) + 1.7, -2350], look: [-6200, hpG(-6200, -2440) + 4, -2440], fov: 62 } },
     hpa: { x: -6240, z: -2350, cam: { pos: [-6120, 70, -2230], look: [-6280, 10, -2400], fov: 55 } },
+    // (jf-baa, fitted impostor strips: High Park's woods from 300 m, and a view along the canopy from 35 m up where the far impostors fill much of the screen)
+    hp3: { x: -6480, z: -1500, cam: { pos: [-6480, 300, -1500], look: [-6480, 0, -2300], fov: 60 } },
+    hpf: { x: -6100, z: -1650, cam: { pos: [-6100, 35, -1650], look: [-6400, 18, -2400], fov: 70 } },
     egl: { x: egw.x, z: egw.z, cam: { pos: [egw.x, 1.7, egw.z], look: [ege.x, 6, ege.z], fov: 62 } },
     rom: { x: -300, z: -2640, cam: { pos: [-300, 20, -2640], look: [-349, 12, -2699], fov: 60 } },
     // (the island lane review cameras, tools/shots/waterfront-island-road-material-review.json)

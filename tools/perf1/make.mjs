@@ -62,6 +62,15 @@ if (job === 'disc') {
   const ftjs = JSON.parse(fs.readFileSync(dir + '../shots/frame-times.json', 'utf8'))[0].js;
   const names = (process.env.PLACES || 'hpw egl').split(' ');
   names.forEach((n) => place(n, `window.__captureShot = { ftSeconds: ${Number(process.env.FTSECONDS || 20)} }; const R = await (${ftjs}); R.place = ${JSON.stringify(n)}; return R;`, { settle: Number(process.env.FTSETTLE || 8000) }));
+} else if (job === 'orbit') {
+  // jf-baa: a slow orbit round High Park's woods as FRAMES stills (default 96), one a few degrees on, the camera climbing from 15 m to 110 m over the
+  // turn so the view's elevation sweeps through every cross-fade of the impostors' elevations; one page per arm (a query), the frames joined with ffmpeg
+  const N = Number(process.env.FRAMES || 96), R = Number(process.env.ORBIT_R || 100), cx = -6240, cz = -2350;
+  place('hpw', 'return { ok: true };', { settle: 9000, name: 'orbit-start' });
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2, h = 15 + (95 * i) / (N - 1);
+    shots.push({ name: `orbit-${String(i).padStart(3, '0')}`, wait: 150, js: `(async () => { const A = window.__CITY_APP; A.cameraSystem.cinema = () => ({ pos: [${(cx + R * Math.cos(a)).toFixed(2)}, ${h.toFixed(2)}, ${(cz + R * Math.sin(a)).toFixed(2)}], look: [${cx}, 14, ${cz}], fov: 55 }); await __P.sleep(${Number(process.env.ORBIT_SETTLE || 700)}); return { i: ${i} }; })()` });
+  }
 } else if (job === 'groundx') {
   // the ground's cost by cause, at PLACES: every visible CityGround mesh given a flat unlit material (the shader), made invisible (shader + geometry),
   // and its shadow off, each against the frame measured before and after (3 rounds)

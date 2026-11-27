@@ -22,7 +22,7 @@ for SPEC in $JOB; do
   Q2=${Q2//%26/&}
   echo "=== job $J$SUF $(date +%T) ==="
   env "${JENV[@]:-X=1}" node tools/perf1/make.mjs "$J" > "$OUT/${TAG}${J}$SUF-shots.json" || { echo "job $J$SUF: no shots"; continue; }
-  env "${JENV[@]:-X=1}" CAPTURE_QUERY="?${Q2}${Q2:+&}$BASEQ" CAPTURE_TAG="${TAG}${J}$SUF" CAPTURE_VIEWPORT=1600x900 \
+  env "${JENV[@]:-X=1}" CAPTURE_QUERY="?${Q2}${Q2:+&}$BASEQ" CAPTURE_TAG="${TAG}${J}$SUF" CAPTURE_VIEWPORT="${CAPTURE_VIEWPORT:-1600x900}" \
     node tools/capture.mjs "$OUT/${TAG}${J}$SUF-shots.json" || echo "job $J$SUF failed (kept whatever it wrote)"
 done
 echo "=== done $JOB $(date +%T) ==="

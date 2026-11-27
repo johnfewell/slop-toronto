@@ -145,3 +145,65 @@ Per-material test at the Eglinton street (`groundgrp` job: each group of ground 
 Shipped (#237, main 4d018be, live 8f287bf4-26e5-4391-ae72-190ab2eedef2): the ground is drawn after the other opaque objects (`renderOrder` 1), so what buildings, props and cars hide of it is rejected by the depth test before the asphalt shader runs. Paired: Eglinton street -0.55 ms, downtown from 300 m -1.05 ms, Eglinton and Queen West at night -0.3 ms, High Park woods 0.0; frames identical apart from moving traffic (`?groundorder=0` is the old order). Draw order tried as only the asphalt last (`StreetLevel` renderOrder 1 or 10) was inconsistent at Eglinton (-1.4, then +0.15) and nothing from 300 m, so the whole ground went last.
 
 Left: the asphalt's own fill at street level (about 2 ms, mostly near pixels where the full wear, puddle and noise terms are on), and the walkway material. Ideas, each a look change: a cheaper asphalt shader beyond 25 to 40 m; lower-resolution puddle and wear noise; one shared material for the walkway bands.
+
+## Fitted impostor strips (27 November, jf-baa)
+
+John asked for view-dependent multi-quad ("fitted strip") impostors for the woods' far trees: each impostor's single quad becomes N horizontal
+strips, each as wide as the occupied span of its band of the silhouette, so far fewer transparent fragments are rasterised (the build is in
+[park-cover.md](park-cover.md#fitted-strips-the-quads-empty-corners-are-not-drawn-2026-11-27-impstripsn-jf-baa)). The idea is the general technique of
+fitting several quads to a silhouette; the code and every number here are our own.
+
+**Method.** One build (main `6ffefd4` plus the strips, commit `6106567`, build `f5854edbcf51`), the switch flipped by query on each page load
+(`?impstrips=0` the old quad, 1, 2, 4, 8, 16). Each page visited four places in High Park (`hpw` on foot in the densest woods, `hpa` from 70 m,
+`hp3` from 300 m over the wide woods, `hpf` from 35 m up looking along the canopy, where impostors fill the screen) and took two 3-second frame
+windows at each. Pages of one round are every arm once, the order rotated each round; the difference is arm minus the quad **of the same round**
+(`tools/perf1/strips.sh`, report `tools/perf1/strips-report.mjs`). Mac mini (M4) through `gpu2-local`, headless Chromium, uncapped, `autoscale=0`, midday
+lighting from the live clock. The mini is shared and its load average was 4 to 40 during these runs, so the figures are relative evidence, not budgets.
+Cells: 26 November (bare) and 15 July (full leaf), 1600 x 900 and 2560 x 1440, and the phone profile (412 x 915 at x2.625, `quality=low`,
+`q.maxFps=0`). 3 rounds for 26 Nov at 1600 x 900, 2 for the rest. Raw records: `$GPU2_REVIEW_DIR/fitted-impostors/` (`<cell>-<arm>-r<round>-visit-<place>.json`).
+
+**Area saved (measured from the atlas, not the screen).** 12.2% of an impostor's quad is covered texels. The strips' area as a share of the quad
+(the elevation pairs' unions, mean over the 10 models): 1 strip 90.4%, 2 strips 78.1%, 4 strips 55.8%, 8 strips 44.5%, 16 strips 38.8%. There is no
+fragment counter in the browser here, so the fraction of fragments saved is this area share, and the frame time is the check that it matters.
+
+**Frame time, 4 strips against the quad** (mean over the four places of the paired change, ms; each place's change in brackets, `hpw hpa hp3 hpf`):
+
+| Cell | Quad frame | 2 strips | 4 strips | 8 strips | 16 strips |
+| --- | ---: | --- | --- | --- | --- |
+| 26 Nov, 1600 x 900 | 16.8 | -0.27 | **-0.29** (-0.18 -0.48 -0.08 -0.39) | -0.19 | -0.14 |
+| 15 Jul, 1600 x 900 | 14.6 | -0.18 | **-0.13** (-0.12 -0.26 0.00 -0.15) | -0.09 | +0.05 |
+| 26 Nov, 2560 x 1440 | 27.1 | -0.88 | **-0.83** (-0.66 -1.51 -0.49 -0.69) | -0.32 | -0.27 |
+| 15 Jul, 2560 x 1440 | 23.9 | -0.65 | **-0.60** (-0.53 -0.77 -0.23 -0.86) | -0.43 | -0.34 |
+| 26 Nov, phone tier | 6.0 | -0.20 | **-0.24** (-0.23 -0.37 -0.13 -0.20) | -0.18 | |
+| 15 Jul, phone tier | 5.4 | +0.12 | +0.07 | +0.13 | |
+
+Reading: the win is real but small. It is consistent in sign (4 strips ahead of the quad in the same round in 42 of 52 place-rounds: `hpw` 11 of 13, `hpa` 11 of 13, `hpf` 12 of 13, `hp3`, from 300 m, where
+impostors are a few pixels each, 8 of 13), proportional to pixels (about 3 times the saving at 2560 x 1440 as at
+1600 x 900) and largest from the air and on the phone tier in the bare woods (4%). 1 strip (a quad trimmed to the silhouette's width) is
+worth almost nothing; 2 and 4 strips are a tie within 0.05 ms; 8 and 16 give back what they save in vertex work, and from 300 m cost more than
+the quad. On the phone tier in full leaf (July) there is nothing: +0.07 ms, inside the noise. Triangles per frame rise by 0.1% (4 strips) to 0.8% (16).
+Draw calls do not change.
+
+**The shadow proxy.** Fitting the sun-facing proxy quad too (`?impstripsshadow=1`, arms `s2`/`s4`) against its plain quad (`s2ns`/`s4ns`), 3 rounds at
+1600 x 900 on 26 Nov: no difference beyond 0.1 ms either way (4 strips, fitted 0.29, plain 0.42 ahead of the quad). Left plain.
+
+**Frame-time series** (every frame's interval over 20 s, quad against 4 strips, 26 Nov, 1600 x 900, two rounds, under a mini load of 2 to 41):
+`hpw` p50 19.0 to 18.8 ms in both rounds, `hpa` 16.7 to 15.7 and 16.3 to 16.2; charts `frametime-hpw-quad-vs-4-strips.png` and
+`frametime-hpa-quad-vs-4-strips.png` in John's `slop-toronto-updates/2026-11-27-impostor-strips/` folder.
+
+**Start-up.** The atlas readback is 42 to 125 ms and the spans another 6 to 9 ms, once, on the desktop and the phone profile alike (the impostor
+bake itself is 60 to 90 ms); the page's ready time is 26 s.
+
+**Looks.** Same camera, quad against 4 strips (`still-*-quad-vs-4-strips-diff.png`, left quad, middle strips, right difference x4): the
+differences are isolated single pixels and fine leaf speckle, no clipped crown and no change at any silhouette (the share of pixels differing by
+more than 24 of 255 in the woods is 0.3 to 0.4% from the air, against 0.1 to 0.15% for two pages of the quad; on foot both are 1 to 3% from the moving
+people and the dissolve's dither). A 96-frame orbit round the woods at 100 m, the camera climbing from 15 m to 110 m so the view sweeps through every
+elevation cross-fade (`orbit-left-quad-right-4-strips.mp4`, `orbit-sheet.png`): mean difference 3.0 RMSE (worst 6.4), the frame-to-frame change is
+identical for both arms (mean 44.2, worst 62.8), so no pop or clipped crown belongs to the strips.
+
+**Where else it would apply, not built.** Only quads that are mostly empty and alpha-tested, drawn many times: (1) **the pilot's trees at other
+parks** (the Island's woods with `?treeimp=all`): the same code, free, an estimated 0.1 to 0.3 ms where those impostors are in view; (2) **the street-tree far
+level and the park-cover crown cards** are mrdoob's whole-crown card meshes (many small cards a tree, already tight), so fitting does not apply; a
+quad impostor for them would come first, and the saving is under 0.3 ms at the Eglinton and downtown views where far trees fill little of the screen; (3) **cloud
+cards**: the clouds are ray-marched volumes, not cards; (4) **snow and rain**: small discs and streaks, quads already close to their shape; (5) **massing far
+cards**: none exist. So the gain stays in the woods.

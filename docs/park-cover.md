@@ -193,12 +193,44 @@ replaces mrdoob's crown cards from there out:
 
 - **The bake:** each broadleaf model is baked once at start-up, seen from 0, 30, 60 and 90 degrees, into an albedo
   atlas and a normal atlas (128 x 256 tiles; 2048 x 768).
-- **The quad:** each impostor is one quad facing the viewer. It cross-fades between the two baked elevations nearest
+- **The quad:** each impostor is one quad facing the viewer (four fitted strips since 2026-11-27, below). It cross-fades between the two baked elevations nearest
   the view, and is lit by the scene's own lights with its baked normals turned to the view.
 - **Seasons:** the leaves turn and fall on it as on the meshes.
 - **From the air:** the higher views are a little darker, since a crown seen from above is all sunlit leaves on the
   impostor where the mesh shades itself, and each tree takes its own shade.
 - **Hand-over:** the trees' screen-door dissolve hands over to it.
+
+### Fitted strips: the quad's empty corners are not drawn (2026-11-27, `?impstrips=N`, jf-baa)
+
+Seen from the front, a crown fills about an eighth of its quad (12.2% of the atlas texels are covered), so the rest of every
+impostor's two triangles is fragments that run the whole lit shader and are then thrown away by the alpha test. Each impostor is
+now **4 horizontal strips** instead of one quad: each strip is as wide as the occupied span of its band of the picture, so the
+corners are never rasterised. The uv stays in the tile's own coordinates, so nothing stretches, and the fragment shader is
+unchanged.
+
+- **The spans:** `fit()` in `js/tree-impostors.js` reads the albedo atlas back once, right after the bake (an async readback,
+  45 to 125 ms on the mini, then about 8 ms to scan 40 tiles; `main.js` waits for it before the first frame). Per tile and
+  band it takes the first and last texel with coverage above 0.08 (the shader's cut-out is 0.5, which its mip boost lowers to
+  about 0.12 at the far end), pads by 3 texels sideways and 2 rows up and down for the bilinear and mip filtering, and keeps the union of
+  the two tiles the shader cross-fades, so a strip never clips either elevation. The result is a small float texture (strips x
+  elevation pair x model); the vertex shader reads one texel per strip corner (`textureLoad`) and spreads the corners over
+  it. A tree flipped for variety stands over the mirrored span.
+- **Geometry:** one shared `BufferGeometry` of N quads (`aCorner` is x, y and the strip's index: the pipeline allows eight vertex
+  buffers and a fourth attribute broke it), instanced exactly as before. No draw calls, per-frame CPU work or uploads were added.
+- **Area left of the quad** (the elevation pairs' unions, the 10 broadleaf models): 1 strip 90.4%, 2 strips 78.1%, **4 strips
+  55.8%**, 8 strips 44.5%, 16 strips 38.8%. More strips take less fragment work and more vertex work (the placement maths runs per
+  vertex); the frame times turn over at 2 to 4.
+- **The shadow proxy keeps its plain quad** (`?impstripsshadow=1` fits it too): fitting it measured no better, within 0.1 ms
+  either way.
+- **Switches:** `?impstrips=0` the old single quad, `1`, `2`, `4` (default), `8`, `16`; `?impstripspad=<texels>`;
+  `?impstripsdebug=1` tints each strip; `?impstripsstats=1` logs the area figures with the quad.
+- **Result** ([perf-heavy-views-20261126.md](perf-heavy-views-20261126.md#fitted-impostor-strips-27-november-jf-baa)): paired on the
+  mini, 4 strips against the quad take 0.1 to 0.3 ms off a 15 to 17 ms frame in the woods at 1600 x 900 (1 to 2%), 0.6 to 0.8 ms off a
+  24 to 27 ms frame at 2560 x 1440 (3%), and 0.24 ms off a 6 ms frame on the phone tier in the bare woods (4%; no gain in full leaf). The frames differ from the quad's only in
+  fine leaf speckle, never at a silhouette (`2026-11-27-impostor-strips/` in the updates folder).
+- **The idea** is the general one of fitting several quads to a silhouette's occupied span instead of one bounding quad
+  (view-dependent multi-quad, "fitted strip" impostors, described in the games literature for far vegetation). This is our own
+  build, measured on our own scene.
 
 ### The seasons (2026-11-06)
 
@@ -255,6 +287,7 @@ Where it goes, desktop, the same walk. These are knockouts in the pilot's build,
 | Draw calls, woods walk, desktop | 833 | 855 |
 | Start-up: the cover's maps and meshes (`parkCover`) | | ~250 ms |
 | Start-up: the impostor bake | | 20–70 ms |
+| Start-up: the fitted strips' atlas readback and spans (2026-11-27) | | 50–135 ms |
 | Data, every visit (`js/high-park-cover-data.js`) | | 56 KB (19 KB gzip) |
 
 Outside the pilot's box nothing is drawn or changed: the Island walk, Queen St W and Parkside Drive frames are

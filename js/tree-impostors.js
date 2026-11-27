@@ -21,6 +21,40 @@ const STEP = ELEV[1] - ELEV[0];
 const TILE_W = 128, TILE_H = 256;
 const COLS = 16;
 
+// Fitted strips (jf-baa): each impostor is N horizontal strips (4 by default), each as wide as the silhouette's occupied span in its band
+// of the tile (measured once from the albedo atlas at start-up, fit()), so the transparent corners of the quad are never rasterised.
+// ?impstrips=N (1, 2, 4, 8, 16; 0: the plain quad as before); ?impstripsshadow=1: the shadow proxy's quad fitted too (off by default: it
+// measured no better, jf-baa); ?impstripspad=<texels> widens each band's span (default 3); ?impstripsdebug=1 tints the strips.
+const QS = new URLSearchParams(location.search);
+const STRIPS = QS.has('impstrips') ? Math.min(32, Math.max(0, Math.floor(Number(QS.get('impstrips')) || 0))) : 4;
+const SHADOW_FIT = QS.get('impstripsshadow') === '1';
+const FIT_PAD = QS.has('impstripspad') ? Number(QS.get('impstripspad')) : 3; // (texels, each side: bilinear and mip filtering reach past the cut-out)
+const FIT_DEBUG = QS.get('impstripsdebug') === '1';
+const FIT_ALPHA = 0.08; // (the albedo's coverage kept: well under the shader's 0.5, which its mip boost lowers to ~0.12 at the far end)
+
+// half-float bits of a small positive number (the albedo atlas is read back as raw 16-bit floats)
+const toHalf = (v) => { const e = Math.floor(Math.log2(v)); return ((e + 15) << 10) | Math.round((v / 2 ** e - 1) * 1024); };
+
+/**
+ * The occupied horizontal span of each of `strips` bands of one tile, from its rows' first and last covered texel.
+ * `lo`/`hi`: per tile row (0 = the tile's top in memory, the picture's top), the first covered column and the last (-1 when
+ * the row is empty). Band b covers the tile's v from b/strips (the bottom: the trunk's foot) to (b+1)/strips, so memory rows
+ * tileH * (1 - (b+1)/strips) to tileH * (1 - b/strips). Returns [min, max] x in tile uv per band, padded by padX texels
+ * and padY rows, a band with no coverage a zero-width span in the middle.
+ */
+function bandSpans(lo, hi, strips, tileW, tileH, padX, padY) {
+  const out = new Float32Array(strips * 2);
+  for (let b = 0; b < strips; b++) {
+    const y0 = Math.max(0, Math.floor(tileH * (1 - (b + 1) / strips)) - padY), y1 = Math.min(tileH, Math.ceil(tileH * (1 - b / strips)) + padY);
+    let a = Infinity, z = -1;
+    for (let y = y0; y < y1; y++) if (lo[y] >= 0) { if (lo[y] < a) a = lo[y]; if (hi[y] > z) z = hi[y]; }
+    if (z < 0) { out[b * 2] = out[b * 2 + 1] = 0.5; continue; }
+    out[b * 2] = Math.max(0, a - padX) / tileW;
+    out[b * 2 + 1] = Math.min(tileW, z + 1 + padX) / tileW;
+  }
+  return out;
+}
+
 /**
  * An atlas for `models` ({ id, mid: geometry, src: the glTF material }); `byId` maps each model's id to its tile
  * column block. Returns { models, frames, bake(renderer), material(fade, keepShadow), geometry(), baked }
@@ -44,7 +78,17 @@ function createImpostors(models, grade = null, treeRndNode = null) {
     const fw = Math.max(2 * r, h / 2) * 1.04;
     return { w: fw, h: fw * 2, treeH: h };
   });
-  const state = { baked: false, ms: 0 };
+  const state = { baked: false, ms: 0, strips: STRIPS, fit: null };
+  // The strips' spans: a texel per (strip, elevation pair x model), (min x, max x) of the union of the pair's two tiles (the
+  // shader cross-fades two elevations: conservative), in tile uv. Whole width until fit() has read the atlas
+  const PAIRS = ELEV.length - 1;
+  const boundsData = new Float32Array(Math.max(1, STRIPS) * PAIRS * n * 4);
+  for (let i = 0; i < boundsData.length; i += 4) { boundsData[i] = 0; boundsData[i + 1] = 1; }
+  const boundsTex = new THREE.DataTexture(boundsData, Math.max(1, STRIPS), PAIRS * n, THREE.RGBAFormat, THREE.FloatType);
+  boundsTex.minFilter = boundsTex.magFilter = THREE.NearestFilter;
+  boundsTex.generateMipmaps = false;
+  boundsTex.needsUpdate = true;
+  boundsTex.name = 'TreeImpostorStripBounds';
 
   function bake(renderer) {
     if (state.baked) return;
@@ -105,14 +149,75 @@ function createImpostors(models, grade = null, treeRndNode = null) {
     console.info(`[treeImpostors] ${n} models baked at ${ELEV.join(', ')} degrees into ${W} x ${H} atlases in ${Math.round(state.ms)} ms`);
   }
 
+
+  /**
+   * Reads the albedo atlas back once (after bake) and measures each tile's rows' covered span: the strips' bounds for
+   * STRIPS (the shader's table, boundsTex), and the figures of how much of the quad they leave out for 1, 2, 4, 8 and 16 strips
+   * (state.fit). Async: the readback waits for the GPU; main.js awaits it before the first frame.
+   */
+  async function fit(renderer) {
+    if (state.fit || !state.baked || !(STRIPS > 0 || QS.get('impstripsstats') === '1')) return state.fit;
+    const t0 = performance.now();
+    const px = await renderer.readRenderTargetPixelsAsync(albedoRT, 0, 0, W, H);
+    const t1 = performance.now();
+    const thr = toHalf(FIT_ALPHA);
+    const lo = [], hi = [];
+    let covered = 0;
+    for (let t = 0; t < tiles; t++) {
+      const col = t % COLS, row = Math.floor(t / COLS), l = new Int16Array(TILE_H).fill(-1), h = new Int16Array(TILE_H).fill(-1);
+      for (let y = 0; y < TILE_H; y++) {
+        let o = ((row * TILE_H + y) * W + col * TILE_W) * 4 + 3;
+        for (let x = 0; x < TILE_W; x++, o += 4) {
+          const a = px[o];
+          if (a > thr && a < 0x7c00) { if (l[y] < 0) l[y] = x; h[y] = x; if (a >= 0x3800) covered++; } // (0x3800: 0.5)
+        }
+      }
+      lo.push(l); hi.push(h);
+    }
+    // the spans at each count: the area of the strips as a share of the quad, per tile, then the mean over the tiles and over
+    // the elevation pairs' unions (what the shader draws)
+    const figures = {};
+    for (const N of [1, 2, 4, 8, 16, STRIPS].filter((v, i, a) => v > 0 && a.indexOf(v) === i)) {
+      const span = []; // [tile] -> Float32Array(N * 2)
+      for (let t = 0; t < tiles; t++) span.push(bandSpans(lo[t], hi[t], N, TILE_W, TILE_H, FIT_PAD, 2));
+      let own = 0, uni = 0, pairs = 0;
+      for (let k = 0; k < n; k++) for (let j = 0; j < PAIRS; j++) {
+        const a = span[j * n + k], b = span[(j + 1) * n + k];
+        for (let s = 0; s < N; s++) {
+          const u0 = Math.min(a[s * 2], b[s * 2]), u1 = Math.max(a[s * 2 + 1], b[s * 2 + 1]);
+          uni += Math.max(0, u1 - u0) / N;
+          if (N === STRIPS) { const at = ((j * n + k) * STRIPS + s) * 4; boundsData[at] = u0; boundsData[at + 1] = Math.max(u0, u1); }
+        }
+        pairs++;
+      }
+      for (let t = 0; t < tiles; t++) for (let s = 0; s < N; s++) own += (span[t][s * 2 + 1] - span[t][s * 2]) / N;
+      figures[N] = { tileArea: +(own / tiles).toFixed(4), pairUnionArea: +(uni / pairs).toFixed(4) };
+    }
+    boundsTex.needsUpdate = true;
+    state.fit = { readbackMs: +(t1 - t0).toFixed(1), ms: +(performance.now() - t0).toFixed(1), tiles, coveredShare: +(covered / (tiles * TILE_W * TILE_H)).toFixed(4), figures, lo, hi };
+    console.info(`[treeImpostors] strips ${STRIPS}: atlas read back in ${state.fit.readbackMs} ms, spans in ${state.fit.ms} ms; the strips' area as a share of the quad (elevation pairs' unions): ` +
+      Object.entries(figures).map(([k, f]) => `${k}: ${(f.pairUnionArea * 100).toFixed(1)}%`).join(', ') + `; covered ${(state.fit.coveredShare * 100).toFixed(1)}%`);
+    return state.fit;
+  }
+
   // The quad: 4 corners (aCorner: 0/1, 0/1) at the instance's origin (the instance matrix moves (0, 0, 0) to the tree's
   // base); the material spreads them
-  function geometry() {
+  // With ?impstrips=N, N quads (4N vertices; the third of aCorner: which) stacked over the frame's height, their widths fitted in the shader.
+  // geometry(false): the plain quad whatever the switch says (the shadow proxy, ?impstripsshadow=0)
+  function geometry(fitted = STRIPS > 0) {
     const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(12), 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
-    g.setAttribute('aCorner', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
-    g.setIndex([0, 1, 2, 0, 2, 3]);
+    const N = fitted ? STRIPS : 1;
+    const corner = [], index = [];
+    for (let s = 0; s < N; s++) {
+      if (fitted) corner.push(0, 0, s, 1, 0, s, 1, 1, s, 0, 1, s); else corner.push(0, 0, 1, 0, 1, 1, 0, 1);
+      index.push(s * 4, s * 4 + 1, s * 4 + 2, s * 4, s * 4 + 2, s * 4 + 3);
+    }
+    g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(12 * N), 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(new Array(4 * N).fill([0, 1, 0]).flat(), 3));
+    // (aCorner: x, y; and with the strips the strip's index as a third: the pipeline allows eight vertex buffers, and the
+    // instance matrix, colour and aImp take three of them)
+    g.setAttribute('aCorner', new THREE.Float32BufferAttribute(corner, fitted ? 3 : 2));
+    g.setIndex(index);
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e5);
     return g;
   }
@@ -122,14 +227,15 @@ function createImpostors(models, grade = null, treeRndNode = null) {
    * random 0..1); instanceColor its tint; `viewer` the view camera's position (ez-trees.js), `lodKeep` the hand-over
    * dissolve's mask
    */
-  function material(viewer, lodKeep, { shadowProxy = false } = {}) {
+  function material(viewer, lodKeep, { shadowProxy = false, fitted = STRIPS > 0 } = {}) {
     const T = C.TSL;
     const { attribute, positionLocal, vec2, vec3, vec4, float, normalize, cross, asin, clamp, smoothstep, mix, texture, varying,
-      cameraViewMatrix, uniform, fract, sin, dot, max, abs, dFdx, dFdy, log2, select } = T;
+      cameraViewMatrix, uniform, fract, sin, dot, max, abs, dFdx, dFdy, log2, select, textureLoad, ivec2, int } = T;
     const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.9, metalness: 0, side: THREE.DoubleSide });
     mat.name = 'TreeImpostor';
-    const imp = attribute('aImp', 'vec4'), corner = attribute('aCorner', 'vec2');
+    const imp = attribute('aImp', 'vec4'), cornerIn = attribute('aCorner', fitted ? 'vec3' : 'vec2'), corner = cornerIn.xy;
     const vUv = varying(vec2(0), 'vImpUv'), vBand = varying(vec2(0), 'vImpBand'), vModel = varying(float(0), 'vImpModel');
+    const vStrip = fitted ? varying(float(0), 'vImpStrip') : null;
     const vRight = varying(vec3(1, 0, 0), 'vImpRight'), vDir = varying(vec3(0, 0, 1), 'vImpDir'), vRnd = varying(float(0), 'vImpRnd');
     // (the tree's own random as its meshes read it, ez-trees.js treeRndNode: the canopy grade and the seasons match at the hand-over)
     const vTree = varying(float(0), 'vImpTree');
@@ -156,10 +262,21 @@ function createImpostors(models, grade = null, treeRndNode = null) {
       if (treeRndNode) vTree.assign(treeRndNode());
       // (a mirrored picture for half the trees, so neighbours don't read as copies)
       const flip = imp.w.greaterThan(0.5);
-      const cx = select(flip, float(1).sub(corner.x), corner.x);
-      vUv.assign(vec2(cx, corner.y));
       vRight.assign(select(flip, right.negate(), right));
       vDir.assign(dir);
+      if (fitted) {
+        // (the strip's span in tile uv: the union of the two tiles the shader cross-fades, the table fit() wrote; a flipped
+        // tree's picture is mirrored, so its strip stands over the mirrored span)
+        const strip = cornerIn.z;
+        const span = textureLoad(boundsTex, ivec2(int(strip), int(j.mul(nModels).add(imp.z))), int(0));
+        const ux = mix(span.x, span.y, corner.x), uy = strip.add(corner.y).div(STRIPS);
+        vUv.assign(vec2(ux, uy));
+        vStrip.assign(strip);
+        const wx = select(flip, float(1).sub(ux), ux);
+        return pivot.add(right.mul(wx.sub(0.5).mul(fw))).add(up.mul(uy.sub(0.5).mul(fh)));
+      }
+      const cx = select(flip, float(1).sub(corner.x), corner.x);
+      vUv.assign(vec2(cx, corner.y));
       return pivot.add(right.mul(corner.x.sub(0.5).mul(fw))).add(up.mul(corner.y.sub(0.5).mul(fh)));
     })();
     if (shadowProxy) {
@@ -227,7 +344,7 @@ function createImpostors(models, grade = null, treeRndNode = null) {
       if (inSeason) T.If(inSeason, () => seasonBranch(colorOut, keepOut));
       return vec4(colorOut.mul(topShade), keepOut);
     })();
-    mat.colorNode = vec4(shade.rgb, 1);
+    mat.colorNode = vec4(FIT_DEBUG && fitted ? mix(shade.rgb, vec3(vStrip.mul(0.37).fract(), vStrip.mul(0.61).add(0.3).fract(), vStrip.mul(0.83).add(0.6).fract()), 0.45) : shade.rgb, 1);
     const shape = alpha.greaterThan(0.5);
     let mask = shape.and(shade.a.greaterThan(0.5));
     if (lodKeep) mask = mask.and(lodKeep);
@@ -260,8 +377,8 @@ function createImpostors(models, grade = null, treeRndNode = null) {
     return mat;
   }
 
-  return { models, frames, bake, geometry, material, state, atlases: [albedoRT, normalRT] };
+  return { models, frames, bake, fit, geometry, material, state, atlases: [albedoRT, normalRT], boundsTexture: boundsTex };
 }
 
-C.treeImpostors = { createImpostors, ELEV, TILE_W, TILE_H };
+C.treeImpostors = { createImpostors, ELEV, TILE_W, TILE_H, STRIPS, SHADOW_FIT, bandSpans, toHalf };
 })();

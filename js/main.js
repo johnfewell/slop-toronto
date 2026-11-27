@@ -369,7 +369,10 @@ async function initApp() {
   let ezTrees = null;
   if (treeMode === 'slop' || !(ezTrees = await window.CITY.buildEzTrees(scene, streetDetails.treePositions))) streetDetails.addFallbackTrees(allColliders);
   // (the woods' impostors, tree-impostors.js: their atlases drawn once, before the shader warm-up sees them)
-  if (window.CITY.bakeTreeImpostors) window.CITY.bakeTreeImpostors(renderer);
+  if (window.CITY.bakeTreeImpostors) {
+    const fitted = window.CITY.bakeTreeImpostors(renderer);
+    if (window.CITY.treeImpostors?.STRIPS > 0) await fitted; // (?impstrips=N reads the atlas back for the strips' spans before the first frame)
+  }
   streetDetails.releaseBuildIndexes();
   markInit('trees');
   // John's hydrants, bike rings & post boxes where the City says they stand (street-props.js)
