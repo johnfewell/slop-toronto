@@ -134,7 +134,13 @@ export const FACADE_VARIANTS = [
   { name: 'midrise-regular', windowWidth: 2.5, floorHeight: 3.0, windowRatioX: 0.56, windowRatioY: 0.58, litProbability: 0.45, warmth: 0.8, seed: 119.0, cornerPier: 0.6 },
   { name: 'slab-ribbon', windowWidth: 3.4, floorHeight: 2.9, windowRatioX: 0.8, windowRatioY: 0.46, litProbability: 0.45, warmth: 0.8, seed: 121.0, cornerPier: 0.4 },
   { name: 'podium-glazed', windowWidth: 3.2, floorHeight: 4.2, windowRatioX: 0.74, windowRatioY: 0.62, litProbability: 0.5, warmth: 0.7, seed: 123.0, cornerPier: 0.5 },
-  { name: 'church-tall', windowWidth: 1.9, floorHeight: 5.5, windowRatioX: 0.42, windowRatioY: 0.68, litProbability: 0.3, warmth: 0.95, seed: 127.0, cornerPier: 1.1 }
+  { name: 'church-tall', windowWidth: 1.9, floorHeight: 5.5, windowRatioX: 0.42, windowRatioY: 0.68, litProbability: 0.3, warmth: 0.95, seed: 127.0, cornerPier: 1.1 },
+  // (jf-bya, the Rosedale houses) 11: Georgian and Colonial revival: sash windows in a regular rhythm, each narrow and tall, wide piers at the corners;
+  // 12: Tudor revival and English cottage: low storeys with small casements set close together under the eaves
+  { name: 'georgian-sash', windowWidth: 1.7, floorHeight: 3.3, windowRatioX: 0.42, windowRatioY: 0.6, litProbability: 0.42, warmth: 0.9, seed: 143.0, cornerPier: 0.95 },
+  { name: 'tudor-casement', windowWidth: 1.5, floorHeight: 3.0, windowRatioX: 0.58, windowRatioY: 0.42, litProbability: 0.42, warmth: 0.92, seed: 149.0, cornerPier: 0.6 },
+  // 13: the Edwardian house's window as a house has it, one sash about a metre wide (the downtown pair-window styles are 1.5 to 1.8 m, an office's)
+  { name: 'edwardian-sash', windowWidth: 2.1, floorHeight: 3.2, windowRatioX: 0.46, windowRatioY: 0.54, litProbability: 0.42, warmth: 0.88, seed: 151.0, cornerPier: 0.7 }
 ];
 // (st-ndw9.20) the curtain-wall styles the drawn towers add to the merged curtain-wall material, after the page's three (blue-grey,
 // dark and silver-blue: variants 0 to 2, 3.8 m storeys). The material shares its mullions and spandrels, so a style here is a
@@ -436,6 +442,88 @@ export const DRAW = {
   }
 };
 
+// ---- the Rosedale houses (jf-bya, docs/rosedale-walls.md) ---------------------------------------------------------------------------
+// The presets the downtown catalogue lacks, in the order of how many Rosedale-Moore Park houses each covers. They are not catalogue entries (the
+// presets file's ids are the catalogue's): js/building-draw.js planHouse reads DRAW[preset] || ROSEDALE_DRAW[preset], and js/rosedale-houses.js
+// assigns them from each house's derived style code. A house takes its storeys, roof form and pitch from the lidar where it has them (planHouse's `hint`).
+const GEORGIAN_BRICK = [[0x8a4a3a, 30], [0x7a4538, 20], [0x9b5a41, 14], [0x6c3d33, 8], [0xb4673f, 6], [0xcfc8b6, 8], [0xd9d4c4, 6], [0xb9b0a0, 4]]; // red brick; some stucco and stone
+const GEORGIAN_ROOF = [[0x4b4e52, 5], [0x3b3b3d, 4], [0x5d6368, 3], [0x2c2d30, 3], [0x6b4c3a, 2]]; // slate and dark asphalt
+const TUDOR_WALL = [[0xe4d9bd, 22], [0xd9cdb0, 14], [0xcfccc4, 10], [0x7a4538, 18], [0x6c3d33, 12], [0x5f3b32, 10], [0x8a6a52, 8], [0xb0a898, 6]]; // stucco, brown and clinker brick
+const TUDOR_ROOF = [[0x3b3b3d, 4], [0x4e4035, 4], [0x5a4a40, 3], [0x4b4e52, 3], [0x6b4c3a, 2], [0x3f5a4a, 1]]; // slate, cedar shake
+const QUEEN_ANNE_BRICK = [[0x8e4333, 24], [0x7a3b30, 18], [0xa24a37, 16], [0x6c3d33, 12], [0xb35c3e, 8], [0xcdb78c, 6], [0x5a463f, 10]];
+const QUEEN_ANNE_ROOF = [[0x3f4448, 5], [0x4b4e52, 4], [0x5d4a3a, 3], [0x3f5a4a, 2], [0x6e3b32, 2]]; // slate, a green or red band now and then
+const CRAFTSMAN_WALL = [[0x7c5044, 22], [0x6e473c, 18], [0x8a5a48, 16], [0x5a463f, 12], [0xa8845a, 10], [0xcfc8b6, 8], [0x9c7a62, 10]]; // clinker and brown brick, some stucco
+const CRAFTSMAN_ROOF = [[0x5d4a3a, 5], [0x4e4035, 4], [0x6b4c3a, 3], [0x3f4448, 2], [0x4f6b58, 1]];
+const ANNEX_BRICK = [[0x7a4538, 24], [0x6c3d33, 20], [0x8a4a3a, 16], [0x5f3b32, 14], [0x9b5a41, 10], [0x4f3a33, 8], [0xb4673f, 6]];
+export const ROSEDALE_DRAW = {
+  // Georgian and Colonial revival (488): a symmetrical block, a centre door under a small gabled portico, shuttered sash windows in rows, a hip or a side gable
+  // with a chimney at each end
+  'rosedale-georgian': {
+    kind: 'detached', storeys: 2, variants: [11], fillMin: 0.8, centreDoor: true,
+    wall: GEORGIAN_BRICK, brickShare: 0.9,
+    trim: [[0xf0ede4, 6], [0xe9e0c8, 4], [0x3b4a3a, 1]],
+    roof: { forms: [['sideGable', 0.55], ['hip', 0.45]], pitch: [30, 40], eave: [0.45, 0.6], colors: GEORGIAN_ROOF, patch: 0.06 },
+    parts: { windowTrim: { sill: true, lintel: true }, shutters: { p: 0.8 }, portico: { p: 0.9, width: [2.6, 3.2], depth: [1.2, 1.6], height: [2.7, 3.0], minRoad: 7 },
+      chimney: { p: 0.95, mode: 'ends', size: [0.7, 0.9], rise: [0.9, 1.3] },
+      dormer: { p: 0.35, width: [1.2, 1.5], wall: [1.0, 1.2] } }
+  },
+  // Tudor revival, English cottage and Jacobethan (310): a steep cross gable over the front, half-timber and stucco in the gables, a tall front chimney,
+  // a small gabled entrance, small casements under deep eaves
+  'rosedale-tudor': {
+    kind: 'detached', storeys: [[2, 0.7], [1, 0.3]], variants: [12], fillMin: 0.78,
+    wall: TUDOR_WALL, brickShare: 0.6,
+    trim: [[0xe4d9bd, 5], [0xd9cdb0, 3], [0xe9e0c8, 2]],
+    roof: { forms: [['crossGable', 0.6], ['frontGable', 0.25], ['sideGable', 0.15]], pitch: [44, 54], eave: [0.4, 0.6], colors: TUDOR_ROOF, patch: 0.08 },
+    parts: { windowTrim: { sill: true, lintel: false },
+      vestibule: { p: 0.75, width: [2.0, 2.6], depth: [1.0, 1.5], wall: [2.5, 2.8] },
+      timber: { p: 0.8 }, gableAccent: { p: 0.0 }, bargeboard: { p: 0.6, width: [0.14, 0.2] },
+      chimney: { p: 0.95, mode: 'front', size: [0.8, 1.1], rise: [1.4, 2.1] },
+      dormer: { p: 0.3, width: [1.2, 1.6], wall: [1.0, 1.2] } }
+  },
+  // Victorian and Queen Anne (258): asymmetry, a corner turret under a cone, a steep front gable, a porch across the front, patterned slate, tall chimneys
+  'rosedale-queen-anne': {
+    kind: 'detached', storeys: 2, variants: [0, 1], fillMin: 0.75,
+    wall: QUEEN_ANNE_BRICK, brickShare: 1,
+    trim: [[0xe9e0c8, 5], [0xf0ede4, 2], [0x2f4a3c, 2], [0x4a3426, 1], [0xc8a45a, 1]],
+    roof: { forms: [['crossGable', 0.5], ['frontGable', 0.5]], pitch: [44, 54], eave: [0.35, 0.5], colors: QUEEN_ANNE_ROOF, patch: 0.1 },
+    parts: { windowTrim: { sill: true, lintel: true },
+      porch: { p: 0.85, depth: [1.8, 2.2], slab: [2.5, 2.75], pier: [0.42, 0.52], minRoad: 7.5, columns: true },
+      bay: { p: 0.6, width: [2.2, 2.8], depth: [0.75, 1.0], cant: [0.4, 0.5], roof: [0.9, 1.3], minRoad: 6.5 },
+      turret: { p: 0.6, radius: [1.25, 1.6], rise: [1.8, 2.6], minRoad: 7 },
+      bargeboard: { p: 0.9, width: [0.2, 0.3] }, gableAccent: { p: 0.8 }, gableBands: 5, gableTones: GABLE_TONES,
+      atticWindow: { p: 0.9, width: [0.7, 0.9], height: [0.95, 1.3] },
+      chimney: { p: 0.9, mode: 'ridge', size: [0.7, 0.95], rise: [1.2, 1.9] } }
+  },
+  // Arts and Crafts (scattered 1900 to 1930): a broad low roof with deep eaves, a big front gable, a porch on heavy tapered piers, clinker brick over stucco or shingle
+  'rosedale-arts-crafts': {
+    kind: 'detached', storeys: [[2, 0.75], [1, 0.25]], variants: [3, 13], fillMin: 0.78,
+    wall: CRAFTSMAN_WALL, brickShare: 0.8,
+    trim: [[0xe4d9bd, 5], [0xd9cdb0, 3], [0x3a2a20, 2]],
+    roof: { forms: [['frontGable', 0.55], ['crossGable', 0.45]], pitch: [24, 32], eave: [0.9, 1.25], colors: CRAFTSMAN_ROOF, patch: 0.06 },
+    parts: { windowTrim: { sill: true, lintel: false },
+      porch: { p: 0.9, depth: [2.0, 2.6], slab: [2.4, 2.7], pier: [0.6, 0.78], minRoad: 7.5, columns: false },
+      bargeboard: { p: 0.8, width: [0.18, 0.26] }, timber: { p: 0.25 }, gableAccent: { p: 0.0 },
+      chimney: { p: 0.8, mode: 'ridge', size: [0.75, 1.0], rise: [1.0, 1.5] },
+      dormer: { p: 0.35, width: [1.4, 1.9], wall: [1.0, 1.3] } }
+  },
+  // Edwardian and Annex (the biggest group): dark brick, a two-storey bay beside the porch, a hip or a front gable, stone sills and lintels
+  'rosedale-annex': {
+    kind: 'detached', storeys: 2, variants: [13, 3], fillMin: 0.8,
+    wall: ANNEX_BRICK, brickShare: 1,
+    trim: [[0xe9e0c8, 6], [0xf0ede4, 3], [0x3b4a3a, 1], [0x4a3426, 1]],
+    roof: { forms: [['frontGable', 0.5], ['hip', 0.5]], pitch: [30, 40], eave: [0.55, 0.8], colors: ROOF_EDW, patch: 0.1 },
+    parts: { windowTrim: { sill: true, lintel: true },
+      porch: { p: 0.85, depth: [1.9, 2.4], slab: [2.5, 2.75], pier: [0.42, 0.52], minRoad: 8.0, columns: true },
+      bay: { p: 0.85, width: [2.4, 3.0], depth: [0.7, 0.95], cant: [0.4, 0.5], roof: [0.7, 1.1], minRoad: 7 },
+      dormer: { p: 0.45, width: [1.5, 2.0], wall: [1.0, 1.3] }, bargeboard: { p: 0.5, width: [0.16, 0.22] },
+      chimney: { p: 0.9, mode: 'ridge', size: [0.7, 0.9], rise: [1.0, 1.5] } }
+  }
+};
+/** A preset id that is a house standing alone, a semi or a row (never a shop, a block or a tower): such a house is never drawn as curtain-wall glass or with a shop front (js/buildings.js) */
+export const isHousePreset = (id) => /^(rosedale-.+|[a-z-]+-(detached|semi|row))$/.test(id || '') && !/^main-street/.test(id);
+/** The drawing parameters of a preset: the catalogue's, or a Rosedale one's (null for a preset that is not drawn) */
+export const drawOf = (id) => (byId[id] && byId[id].draw) || ROSEDALE_DRAW[id] || null;
+
 export const PROTOTYPES = (() => {
   const n = new Map(), k = new Map();
   for (const [, , family] of DEF) n.set(family, (n.get(family) || 0) + 1);
@@ -455,4 +543,4 @@ export function presetOf(id) {
   return byId[id] || byId[FALLBACK_ID];
 }
 
-export default { PROTOTYPES, byId, FALLBACK_ID, ERAS, FAMILY_HUES, ERA_LIGHT, DRAW, FACADE_VARIANTS, CURTAIN_VARIANTS, CURTAIN_FLOORS, FIRST_DRAW_VARIANT, debugColor, eraOfYear, presetOf };
+export default { PROTOTYPES, byId, FALLBACK_ID, ERAS, FAMILY_HUES, ERA_LIGHT, DRAW, ROSEDALE_DRAW, drawOf, isHousePreset, FACADE_VARIANTS, CURTAIN_VARIANTS, CURTAIN_FLOORS, FIRST_DRAW_VARIANT, debugColor, eraOfYear, presetOf };

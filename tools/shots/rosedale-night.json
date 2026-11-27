@@ -1,0 +1,20 @@
+[
+{
+"name": "night-115-park-rd-across",
+"mode": "person",
+"wait": 14000,
+"js": "(() => { const C = window.CITY, a = window.__CITY_APP; const q = C.worldFromLatLon(43.675356, -79.3822634); const r = C.nearestRoads(q.x, q.z, 70)[0]; if (!r) return 'no road'; const dx = q.x - r.px, dz = q.z - r.pz, d = Math.hypot(dx, dz) || 1; const p = { x: r.px - (dx / d) * 9 + r.dx * 10, z: r.pz - (dz / d) * 9 + r.dz * 10 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.8, p.z], look: [q.x, 4.5, q.z], fov: 55 }); })()"
+},
+{
+"name": "night-83-roxborough-dr-street",
+"mode": "person",
+"wait": 14000,
+"js": "(() => { const C = window.CITY, a = window.__CITY_APP; const q = C.worldFromLatLon(43.6806936, -79.3788232); const r = C.nearestRoads(q.x, q.z, 70)[0]; if (!r) return 'no road'; const p = { x: r.px + r.dx * 30, z: r.pz + r.dz * 30 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.8, p.z], look: [q.x, 4.5, q.z], fov: 55 }); })()"
+},
+{
+"name": "night-crescent",
+"mode": "person",
+"wait": 14000,
+"js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67784023050961, -79.38417442413164), q = C.worldFromLatLon(43.67793545062343, -79.38300167565279); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+}
+]

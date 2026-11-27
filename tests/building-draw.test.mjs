@@ -55,7 +55,7 @@ test('the catalogue: the three drawn presets carry parameters, every other prese
   assert.ok(FIRST_DRAW_VARIANT + FACADE_VARIANTS.length <= 16, 'within the rendered material variant limit');
   assert.ok(CURTAIN_FLOORS.length <= 16, 'within the curtain-wall material variant limit');
   assert.equal(FIRST_DRAW_VARIANT, 2);
-  assert.equal(FIRST_DRAW_VARIANT + FACADE_VARIANTS.length, 13, 'st-ndw9.20 adds five');
+  assert.equal(FIRST_DRAW_VARIANT + FACADE_VARIANTS.length, 16, 'st-ndw9.20 adds five, jf-bya three (the Rosedale Georgian, Tudor and Edwardian sash facades)');
 });
 
 test('a house is the same every time and is a pure function of its inputs', () => {

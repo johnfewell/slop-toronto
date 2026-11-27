@@ -1,5 +1,7 @@
 # Rosedale-Moore Park pilot: houses from their outlines with lidar roofs
 
+> Part 2, [rosedale-walls.md](rosedale-walls.md) (2026-11-27): the houses are now drawn as house presets (porches, bays, chimneys, yards), never as curtain walls or shop fronts. The "walls are plain facade-shader walls" notes below describe this first pilot.
+
 Bead `jf-abm`, 2026-11-26. Phases 1 and 2 of [the Rosedale plan](rosedale-spike.md#8-a-phased-plan), on by default on the bigger (Eglinton) desktop map, after
 [the box heights](rosedale-heights.md). `?rosedalePilot=0` keeps the boxes (with the lidar heights; add `&rosedaleHeights=0` for the City's).
 
@@ -72,8 +74,7 @@ the Rosedale pilot data changes, re-record it.
 
 ## Not done
 
-- Porches, bays and per-style window rhythm: the downtown presets draw these from the massing sidecar's groups and dwelling counts, which Rosedale has not got; the
-  houses here have the facade shader's windows only.
+- Porches, bays, chimneys, yards and per-style facades: done in [rosedale-walls.md](rosedale-walls.md) (the houses are drawn as house presets, no curtain walls or shop fronts).
 - The 227 downtown-frame parts, the 95 parts the lidar did not fit and the 123 with no box row keep what they had.
 - Joined houses (semis, rows) do not share one roof colour or one eave as the presets' groups do.
 

@@ -14,12 +14,14 @@
 //   corners, start, step    the outline (counter-clockwise in x, z), as the massing sidecar: first corner, then each corner from the one before
 //   partyN/partyEdge/partyCover, hiddenN/hiddenEdge, streetN/streetEdge   as js/massing-data.js
 //   eave, maxH, avgH   the wall height (the roof stands on it), the lidar roof top and its mean height
+//   chimN, chimX/Z/Top/Base/W   (jf-bya) the chimneys the lidar shows over the roof: per house their count, then each one's world x and z, its top and the roof under it (above the ground) and its width, decimetres
+//   lotW, park         (jf-bya) the lot's frontage (its short side, decimetres) and the front-yard parking the City licenses (0 none, 1 front yard, 2 widened driveway, 3 boulevard)
 //   era, style         derived codes (ERA_NAMES, STYLE_NAMES); fit: 0 roof planner on maxH and avgH, 1 lidar roof, 2 flat by the lidar
 //   polyN, polyKind, polyVerts, vx, vz, vy   the roof: polygons (kind 0 a roof facet, 1 a gable wall above the eave), their corners in x, z and height above the ground
 import { unpackGeo } from './geodata-loader.js';
 import { earClip, area2 } from './roof-skeleton.js';
 
-export const ROSEDALE_HOUSES_URL = './data/frames/eglinton/rosedale-houses.bin?v=d36e8376e595'; // (tools/build-rosedale-houses.mjs sets the hash)
+export const ROSEDALE_HOUSES_URL = './data/frames/eglinton/rosedale-houses.bin?v=6d4d887602d1'; // (tools/build-rosedale-houses.mjs sets the hash)
 export const ROSEDALE_HOUSES_SCHEMA = 1;
 const FAR_FACET_M2 = 10;
 export const ERA_NAMES = ['before 1900', '1900 to 1916', '1917 to 1929', '1930 to 1945', '1946 to 1967', '1968 on'];
@@ -37,8 +39,8 @@ export function rowsCheck(buildings, rows) {
 // Wall and roof colours by style, from the page's own palettes (js/buildings.js TORONTO_MASONRY, TORONTO_RENDER and ROOF_PAINT): brick, [hex, weight]
 // pairs; `render` is the share of houses of the style in stucco or painted render instead of brick; roof, [hex, weight] pairs.
 const SLATE = [[0x2c2d30, 4], [0x3b3b3d, 3], [0x4b4e52, 2]];
-const ASPHALT = [[0x3b3b3d, 5], [0x2c2d30, 3], [0x4e4035, 3], [0x6a6762, 1]];
-const CEDAR = [[0x4e4035, 4], [0x5a4a40, 2], [0x3b3b3d, 2]];
+const ASPHALT = [[0x3b3b3d, 5], [0x2c2d30, 3], [0x3f3a35, 3], [0x5a5753, 1]]; // (greys and a dark brown: a brown lit by the low sun turns salmon)
+const CEDAR = [[0x3f372f, 4], [0x4a403a, 2], [0x3b3b3d, 2]];
 export const LOOKS = {
   0: { brick: [[0x7c6154, 37], [0x5a463f, 26], [0x9c7a62, 21], [0xae987e, 14]], render: 0.1, roof: ASPHALT },
   1: { brick: [[0x7c6154, 5], [0x9c7a62, 3], [0x8a5a48, 3], [0xc07e55, 1]], render: 0.05, roof: ASPHALT }, // Edwardian: red and red-brown brick
@@ -56,7 +58,7 @@ export function decodeHouses(H, buildings) {
   if (!H || H.schema !== ROSEDALE_HOUSES_SCHEMA) return { error: `schema ${H && H.schema}, not ${ROSEDALE_HOUSES_SCHEMA}` };
   const g = H.grid || 10, n = H.houses;
   const houses = [], all = [];
-  let row = 0, er = 0, st = 0, pe = 0, he = 0, se = 0, pn = 0, pv = 0, v = 0;
+  let row = 0, er = 0, st = 0, pe = 0, he = 0, se = 0, pn = 0, pv = 0, v = 0, ch = 0;
   for (let i = 0; i < n; i++) {
     row += H.row[i];
     const rows = [row];
@@ -70,6 +72,8 @@ export function decodeHouses(H, buildings) {
     for (let k = 0; k < H.partyN[i]; k++, pe++) covered.set(H.partyEdge[pe], H.partyCover[pe] / g);
     for (let k = 0; k < H.hiddenN[i]; k++, he++) hidden.add(H.hiddenEdge[he]);
     for (let k = 0; k < H.streetN[i]; k++, se++) street.set(H.streetEdge[se] >> 1, (H.streetEdge[se] & 1) === 1);
+    const chim = [];
+    for (let k = 0; H.chimN && k < H.chimN[i]; k++, ch++) chim.push({ x: H.chimX[ch] / g, z: H.chimZ[ch] / g, top: H.chimTop[ch] / g, base: H.chimBase[ch] / g, w: H.chimW[ch] / g });
     const polys = [];
     for (let k = 0; k < H.polyN[i]; k++, pn++) {
       const verts = [];
@@ -77,10 +81,86 @@ export function decodeHouses(H, buildings) {
       polys.push({ kind: H.polyKind[pn], v: verts });
       void pv;
     }
-    houses.push({ fid: H.fid[i], part: H.part[i], rows, ring, covered, hidden, street, eave: H.eave[i] / g, maxH: H.maxH[i] / g, avgH: H.avgH[i] / g, era: H.era[i], style: H.style[i], fit: H.fit[i], polys });
+    houses.push({ fid: H.fid[i], part: H.part[i], rows, ring, covered, hidden, street, eave: H.eave[i] / g, maxH: H.maxH[i] / g, avgH: H.avgH[i] / g, era: H.era[i], style: H.style[i], fit: H.fit[i], lotW: H.lotW ? H.lotW[i] / g : 0, park: H.park ? H.park[i] : 0, chim, polys });
   }
   if (rowsCheck(buildings, all) !== H.check) return { error: 'built for other geodata' };
   return { houses };
+}
+
+// ---- walls (jf-bya, docs/rosedale-walls.md): which parts are houses, what roof the lidar says, which drawn preset each house takes ------------------
+const ringArea = (r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return Math.abs(a / 2); };
+// The pilot holds the neighbourhood's low-rise buildings: the City's kind column calls 1,457 of them mid-rise and 86 tall (a third of those
+// came out as curtain wall, with storefront ground floors beside a shop on the street), but they are houses. A house stands at most 16 m
+// to the lidar roof top on at most 450 m2, and is not a building the City calls industrial or worship (kinds 4, 6).
+export const HOUSE_MAX_TOP_M = 16, HOUSE_MAX_AREA_M2 = 450;
+// the share of the main block's rectangle the outline must fill for the house to be drawn as a preset (the catalogue's is 0.8): a Rosedale house with a notch or
+// an L is drawn as its own outline with the lidar roof instead of the rectangle the preset composes
+export const ROSEDALE_FILL_MIN = 0.86;
+export function isHouse(h, kind) {
+  return h.maxH <= HOUSE_MAX_TOP_M && ringArea(h.ring) <= HOUSE_MAX_AREA_M2 && kind !== 4 && kind !== 6;
+}
+
+/**
+ * What the lidar's roof facets say about the roof: { form: 'gable' | 'hip' | 'cross' | 'flat', ridge: [x, z] (unit, the ridge's direction), pitch (degrees,
+ * the pitched facets' mean slope), eave }, or null where the lidar fit was poor (the roof planner's houses). `coherence` near 1 is two opposite slopes
+ * (a gable), near 0 four slopes round a point (a hip), between a gable with a cross gable or a hip with a gable.
+ */
+export function roofHint(h) {
+  if (h.fit === 2) return { form: 'flat', ridge: [1, 0], pitch: 0, eave: h.eave };
+  if (h.fit !== 1) return null;
+  let wTot = 0, wFlat = 0, c2 = 0, s2 = 0, wP = 0, slopeSum = 0, pitched = 0;
+  for (const poly of h.polys) {
+    if (poly.kind !== 0 || poly.v.length < 3) continue;
+    // the facet's Newell normal (the vertices are [x, z, height]): its length is twice the facet's area
+    let nx = 0, ny = 0, nz = 0;
+    const V = poly.v;
+    for (let i = 0; i < V.length; i++) {
+      const [x1, z1, y1] = V[i], [x2, z2, y2] = V[(i + 1) % V.length];
+      nx += (y1 - y2) * (z1 + z2);
+      ny += (z1 - z2) * (x1 + x2);
+      nz += (x1 - x2) * (y1 + y2);
+    }
+    const l = Math.hypot(nx, ny, nz);
+    if (!(l > 1e-6)) continue;
+    if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; }
+    const w = l / 2, slope = Math.acos(Math.min(1, ny / l)) * 180 / Math.PI;
+    wTot += w;
+    if (slope < 8) { wFlat += w; continue; }
+    const th = Math.atan2(nz, nx);
+    c2 += w * Math.cos(2 * th); s2 += w * Math.sin(2 * th); wP += w; slopeSum += w * slope; pitched++;
+  }
+  if (!(wTot > 0) || wP < wTot * 0.3 || !pitched) return { form: 'flat', ridge: [1, 0], pitch: 0, eave: h.eave };
+  const coherence = Math.hypot(c2, s2) / wP;
+  const phi = 0.5 * Math.atan2(s2, c2); // the slopes' common axis (the normals' direction); the ridge runs across it
+  const ridge = [-Math.sin(phi), Math.cos(phi)];
+  const form = coherence > 0.78 ? 'gable' : coherence < 0.4 ? 'hip' : 'cross';
+  return { form, ridge, pitch: slopeSum / wP, eave: h.eave, coherence };
+}
+
+// Rosedale presets by derived style code (STYLE_NAMES), as [preset, share] tables drawn by the house's own hash: the catalogue's presets where it has
+// them (js/building-prototypes.js DRAW) and the Rosedale ones (ROSEDALE_DRAW) it lacks, in the order of how many houses each covers (docs/rosedale-spike.md section 6).
+const DETACHED = {
+  0: [['edwardian-detached', 5], ['rosedale-annex', 2], ['rosedale-arts-crafts', 2]],
+  1: [['edwardian-detached', 5], ['rosedale-annex', 3], ['rosedale-arts-crafts', 2]], // Edwardian (1,552)
+  11: [['postwar-detached', 1]], // post-war (534)
+  3: [['rosedale-georgian', 1]], // Georgian and Colonial revival (488)
+  12: [['rosedale-georgian', 4], ['rosedale-tudor', 4], ['recent-detached', 1]], // revival infill (329)
+  2: [['rosedale-tudor', 7], ['rosedale-georgian', 1], ['rosedale-arts-crafts', 2]], // Tudor, English cottage, Jacobethan (310)
+  5: [['rosedale-queen-anne', 7], ['victorian-detached', 3]], // Victorian and Queen Anne (258)
+  10: [['interwar-detached', 1]] // Moderne
+};
+const SEMI = { 0: 'edwardian-semi', 1: 'edwardian-semi', 2: 'interwar-semi', 3: 'interwar-semi', 5: 'victorian-semi', 10: 'interwar-semi', 11: 'postwar-semi', 12: 'interwar-semi' };
+const hashOf = (fid, part) => { let x = (Math.imul(fid | 0, 2654435761) ^ Math.imul((part | 0) + 1, 40503)) >>> 0; x ^= x >>> 15; x = Math.imul(x, 2246822519) >>> 0; x ^= x >>> 13; return (x >>> 0) / 4294967296; };
+// the Edwardian presets' windows are an office's width (1.8 m): a Rosedale house of them takes the sash window instead
+const EDWARDIAN_PRESETS = new Set(['edwardian-detached', 'edwardian-semi']);
+export const variantsOfPreset = (id) => (EDWARDIAN_PRESETS.has(id) ? [13, 3] : undefined);
+/** The drawn preset id of a house (deterministic from its City id) */
+export function presetOfHouse(h) {
+  if (h.covered.size > 0) return SEMI[h.style] || 'edwardian-semi';
+  const T = DETACHED[h.style] || DETACHED[1];
+  let t = hashOf(h.fid, h.part) * T.reduce((s, [, w]) => s + w, 0);
+  for (const [id, w] of T) { t -= w; if (t < 0) return id; }
+  return T[T.length - 1][0];
 }
 
 /**
@@ -88,7 +168,7 @@ export function decodeHouses(H, buildings) {
  * A row the sidecar already draws is never replaced.
  */
 export function mergeRosedaleHouses(massing, buildings, H) {
-  const out = { merged: 0, skip: new Set(), error: null, houses: 0, lidar: 0, planner: 0, flat: 0, roofTriangles: 0 };
+  const out = { merged: 0, skip: new Set(), error: null, houses: 0, houseRows: 0, lidar: 0, planner: 0, flat: 0, roofTriangles: 0 };
   if (!massing || !(massing.rows instanceof Map) || massing.error) { out.error = 'no massing sidecar is loaded'; return out; }
   const d = decodeHouses(H, buildings);
   if (d.error) { out.error = d.error; return out; }
@@ -96,7 +176,20 @@ export function mergeRosedaleHouses(massing, buildings, H) {
   for (const h of d.houses) {
     if (h.rows.some((r) => massing.rows.has(r))) continue;
     const id = `to-3dmassing-2025:${h.fid}${h.part ? '.' + (h.part - 1) : ''}`;
-    massing.rows.set(h.rows[0], { id, index: -1, base: 0, rings: [h.ring], covered: h.covered, hidden: h.hidden, street: h.street, maxH: h.maxH, avgH: h.avgH, rosedale: h });
+    const b = buildings[h.rows[0]];
+    h.house = isHouse(h, b ? b[5] : 0);
+    const rec = { id, index: -1, base: 0, rings: [h.ring], covered: h.covered, hidden: h.hidden, street: h.street, maxH: h.maxH, avgH: h.avgH, rosedale: h };
+    if (h.house) {
+      // (jf-bya: the house is drawn as a preset, js/building-draw.js planHouse, from its style and its lidar roof; the facts the downtown rows take from the sidecar's groups are its own)
+      h.hint = roofHint(h);
+      rec.preset = presetOfHouse(h);
+      rec.variants = variantsOfPreset(rec.preset);
+      rec.roofHex = lookOf(h.style, hashOf(h.fid + 1, h.part), hashOf(h.fid + 2, h.part), hashOf(h.fid + 3, h.part)).roof;
+      rec.fillMin = ROSEDALE_FILL_MIN;
+      rec.drawFacts = { groupId: id, dwellings: h.covered.size > 0 ? 2 : 1, group: null };
+      out.houseRows++;
+    }
+    massing.rows.set(h.rows[0], rec);
     for (const r of h.rows.slice(1)) if (!first.has(r)) out.skip.add(r);
     out.merged++;
     if (h.fit === 1) { out.lidar++; for (const p of h.polys) out.roofTriangles += p.v.length - 2; } else if (h.fit === 2) out.flat++; else out.planner++;

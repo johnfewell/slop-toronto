@@ -23,7 +23,8 @@ import { packGeo } from './geo-pack.mjs';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const OUT = path.join(ROOT, 'data/frames/eglinton/rosedale-houses.bin');
 const args = process.argv.slice(2);
-const [roofsFile, housesCsv] = args.filter((a) => !a.startsWith('--') && a !== args[args.indexOf('--stats') + 1]);
+const statsAt = args.indexOf('--stats');
+const [roofsFile, housesCsv] = args.filter((a, i) => !a.startsWith('--') && (statsAt < 0 || i !== statsAt + 1));
 if (!roofsFile || !housesCsv) { console.error('usage: node tools/build-rosedale-houses.mjs <roofs.json> <houses.csv> [--stats out.json]'); process.exit(2); }
 const statsOut = args.includes('--stats') ? args[args.indexOf('--stats') + 1] : null;
 
@@ -123,6 +124,14 @@ function parseCsv(text) {
   return rows.filter((r) => r.length === head.length).map((r) => Object.fromEntries(head.map((h, i) => [h, r[i]])));
 }
 const meta = new Map(parseCsv(fs.readFileSync(housesCsv, 'utf8')).map((r) => [r.id, r]));
+// (jf-bya) the lots next to houses.csv (lots.json of rosedale-houses/1, build/rosedale-houses/lots.py): each house's lot frontage (the lot's short side) and
+// whether the City licenses front-yard parking there; the file carries only these two numbers, for the yard the page draws (docs/rosedale-walls.md)
+const lotsFile = path.join(path.dirname(path.resolve(housesCsv)), 'lots.json');
+const lots = fs.existsSync(lotsFile) ? JSON.parse(fs.readFileSync(lotsFile, 'utf8')) : {};
+// (jf-bya) the chimneys the lidar shows over each roof (build/rosedale-houses/chimneys.py: returns standing above the fitted planes), next to roofs.json
+const chimFile = path.join(path.dirname(path.resolve(roofsFile)), 'chimneys.json');
+const chimneys = fs.existsSync(chimFile) ? JSON.parse(fs.readFileSync(chimFile, 'utf8')) : {};
+const PARKING = { 'Front Yard': 1, 'Widened Driveway': 2, 'Boulevard Parking': 3 };
 const eraOfYear = (y) => (y < 1900 ? 0 : y <= 1916 ? 1 : y <= 1929 ? 2 : y <= 1945 ? 3 : y <= 1967 ? 4 : 5);
 // Moore Park, Summerhill and the Gore lands have no inventory. The neighbourhood's own mix (the census period of construction, the
 // presets' table in docs/building-presets.md: 55% before 1920, 35% 1920 to 1945, 5% 1946 to 1960, then newer) is the prior: a house
@@ -479,7 +488,7 @@ const polysOf = (h) => {
   return out;
 };
 const cols = { fid: [], part: [], row: [], extraN: [], extraRow: [], corners: [], start: [], step: [], partyN: [], partyEdge: [], partyCover: [], hiddenN: [], hiddenEdge: [], streetN: [], streetEdge: [],
-  eave: [], maxH: [], avgH: [], era: [], style: [], fit: [], polyN: [], polyKind: [], polyVerts: [], vx: [], vz: [], vy: [] };
+  eave: [], maxH: [], avgH: [], era: [], style: [], fit: [], lotW: [], park: [], chimN: [], chimX: [], chimZ: [], chimTop: [], chimBase: [], chimW: [], polyN: [], polyKind: [], polyVerts: [], vx: [], vz: [], vy: [] };
 let prevRow = 0;
 const allRows = [];
 for (const h of houses) {
@@ -493,6 +502,11 @@ for (const h of houses) {
   cols.hiddenN.push(h.hidden.length); cols.hiddenEdge.push(...h.hidden);
   cols.streetN.push(h.street.length); cols.streetEdge.push(...h.street);
   cols.eave.push(h.eave === null ? 0 : dm(h.eave)); cols.maxH.push(dm(h.top)); cols.avgH.push(dm(h.avgH)); cols.era.push(h.era); cols.style.push(h.style); cols.fit.push(h.fit);
+  const stacks = chimneys[h.id] || [];
+  cols.chimN.push(stacks.length);
+  for (const [e, n, top, base, size] of stacks) { const [dx, dz] = off(e, n); cols.chimX.push(dm(h.X0 + dx)); cols.chimZ.push(dm(h.Z0 + dz)); cols.chimTop.push(dm(top)); cols.chimBase.push(dm(base)); cols.chimW.push(dm(size)); }
+  stats.chimneys = (stats.chimneys || 0) + stacks.length; if (stacks.length) stats.housesWithChimneys = (stats.housesWithChimneys || 0) + 1;
+  const lot = lots[h.id]; cols.lotW.push(lot && Number.isFinite(lot.lotShort) ? dm(Math.min(lot.lotShort, 60)) : 0); cols.park.push(lot && lot.frontYardParking ? (PARKING[lot.frontYardParking] || 1) : 0);
   const ps = polysOf(h); cols.polyN.push(ps.length);
   for (const p of ps) { cols.polyKind.push(p.kind); cols.polyVerts.push(p.v.length); for (const [x, z, y] of p.v) { cols.vx.push(dm(x)); cols.vz.push(dm(z)); cols.vy.push(dm(y)); } if (p.kind === 0) stats.roofTris += p.v.length - 2; else stats.gableTris += p.v.length - 2; }
   stats.polys += ps.length;

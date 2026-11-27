@@ -4,6 +4,8 @@ Bead `jf-5i1`, 2026-11-26. John: "Rosedale's houses are like really wrong ... ea
 measurement and small prototypes, then a plan with numbers. **No game change is shipped by default.** The prototype (`?rosedale=lidar`,
 `?rosedale=skeleton`) lives on its own branch and pull request and is not merged; this document is the deliverable that is.
 
+**Status (2026-11-27):** the pilot's houses are drawn as house presets from their style and lidar roof, with chimneys and front yards: [rosedale-walls.md](rosedale-walls.md).
+
 **Status (2026-11-26, after John's decisions):** phase 0 (box heights from lidar) shipped on by default: [rosedale-heights.md](rosedale-heights.md). The outlines and lidar
 roofs pilot (phases 1 and 2) follows in its own pull request. The 15 empty 0.5 m tiles the shared fetcher stored as valid are fixed in the shared data repo
 (investigation `lidar-fetcher-empty-tiles`). How widespread the canopy-in-height problem is in the other house neighbourhoods of the Eglinton map:

@@ -18,15 +18,16 @@
 // Frame. The front edge A -> B (an outline edge looking onto a street) gives u along it from A, w out of the wall
 // (v = -w, into the building) and y up. Everything is placed in (u, v, y) and turned to world by `F.P`.
 
-import { DRAW, FACADE_VARIANTS, FIRST_DRAW_VARIANT, SHOP_SIGN_BOARDS, SHOP_SIGN } from './building-prototypes.js';
+import { DRAW, ROSEDALE_DRAW, FACADE_VARIANTS, FIRST_DRAW_VARIANT, SHOP_SIGN_BOARDS, SHOP_SIGN } from './building-prototypes.js';
 import { planBlock } from './building-draw-tall.js';
 import { planWorship } from './building-draw-worship.js';
-import { windowOpenings, sillsAndLintels, porchDetail } from './building-draw-detail.js';
+import { windowOpenings, sillsAndLintels, porchDetail, chimneyBox, porticoDetail, shutterBoards, turretDetail, yardDetail } from './building-draw-detail.js';
 import { WALL, hash32, stream, weighted, lerp, rad, clamp, writer, shade, makeFrame, gableRoof, hipRoof, slab, tarRgb } from './building-draw-kit.js';
 // (the helpers the planners share live in js/building-draw-kit.js; re-exported here for the tests and the tools)
 export { WALL, hash32, stream, weighted, lerp, rad, clamp, writer, shade, makeFrame, gableRoof, hipRoof, slab, tarRgb };
 
 export const DRAWN_PRESETS = Object.keys(DRAW);
+export const ROSEDALE_PRESETS = Object.keys(ROSEDALE_DRAW); // (jf-bya: drawn too, but not catalogue entries; the gallery and the presets file know only DRAWN_PRESETS)
 export const FALLBACK_REASONS = ['house-sized', 'too-low', 'bad-height', 'no-nave', 'landmark', 'no-front', 'shop-front', 'too-small', 'too-irregular', 'front-bulge', 'front-short', 'unfit-roof', 'other-facade', 'one-storey', 'too-tall'];
 
 const polyArea = (ring) => {
@@ -269,7 +270,7 @@ const weightedStoreys = (st, r) => (typeof st === 'number' ? st : weighted(st, r
  */
 export function planHouse(inp) {
   const { preset, id, ring, edges, y0 = 0, roadDist = () => Infinity, nearRoad = null, lin } = inp; // (inp.covered: the record's covered edges, edge -> neighbour's roof height)
-  const D = DRAW[preset];
+  const D = DRAW[preset] || ROSEDALE_DRAW[preset];
   if (!D) return { ok: false, reason: 'not-drawn' };
   if (D.kind === 'shop') return planShop(inp, D);
   if (D.kind === 'block') return planBlock(inp, D);
@@ -375,7 +376,7 @@ export function planHouse(inp) {
       if (c) inside++;
     }
   }
-  if (!total || inside / total < D.fillMin) return fail('too-irregular');
+  if (!total || inside / total < (inp.fillMin ?? D.fillMin)) return fail('too-irregular');
   const Dp = dMain;
   // the rear wing: the outline behind the block, if it is one piece and big enough to see
   let wingPts = null;
@@ -422,24 +423,35 @@ export function planHouse(inp) {
   //      the older ones keep their values.
   const g = R('group');
   const gr = { variant: g(), brick: g(), glass: g(), roofCol: g(), patch: g(), trim: g(), pitch: g(), eave: g(), deck: g(), mrise: g(), side: g(), form: g(), accent: g(), barge: g(), attic: g(), atticH: g(), bay: g(), bayW: g(), bayD: g(), bayC: g(), bayR: g(), porch: g(), porchD: g(), pier: g(), slab: g(), dorm: g(), dormW: g(), dormH: g(),
-    stor: g(), ridge: g(), dRise: g(), shell: g(), timber: g(), vest: g(), vestW: g(), vestD: g(), vestH: g(), stoop: g(), stoopW: g(), stoopD: g(), garage: g(), garW: g(), garH: g(), pic: g(), picW: g(), picH: g(), xg: g(), xgW: g(), doorW: g(), cornice: g(), corD: g(), corH: g(), sillC: g(), lintC: g() };
-  const variantIdx = D.variants[Math.floor(gr.variant * D.variants.length) % D.variants.length];
+    stor: g(), ridge: g(), dRise: g(), shell: g(), timber: g(), vest: g(), vestW: g(), vestD: g(), vestH: g(), stoop: g(), stoopW: g(), stoopD: g(), garage: g(), garW: g(), garH: g(), pic: g(), picW: g(), picH: g(), xg: g(), xgW: g(), doorW: g(), cornice: g(), corD: g(), corH: g(), sillC: g(), lintC: g(),
+    chim: g(), chimW: g(), chimR: g(), chimSide: g(), shut: g(), shutC: g(), tur: g(), turR: g(), turH: g(), turSide: g(), port: g(), portW: g(), portD: g(), portH: g(), yKind: g(), yHed: g(), yDrive: g(), yHedH: g(), yWall: g() };
+  const vlist = inp.variants || D.variants; // (a Rosedale house's facade styles: smaller windows than the downtown presets')
+  const variantIdx = vlist[Math.floor(gr.variant * vlist.length) % vlist.length];
   const variant = FIRST_DRAW_VARIANT + variantIdx;
   const floorH = FACADE_VARIANTS[variantIdx].floorHeight;
-  const storeys = weightedStoreys(D.storeys, gr.stor);
+  // (jf-bya: a Rosedale house's storeys, roof form and pitch come from the lidar's roof, `inp.hint` = js/rosedale-houses.js roofHint; its eave from the lidar's eave)
+  const hint = inp.hint || null;
+  const storeys = hint && hint.eave > 0 ? clamp(Math.round(hint.eave / floorH), 1, 3) : weightedStoreys(D.storeys, gr.stor);
   const eaveH = storeys * floorH;
   const wingH = storeys >= 2 ? Math.min(2, storeys - 1) * floorH : Math.min(eaveH, 2.7);
   const brickHex = weighted(D.wall, gr.brick);
   const brick = D.brickShare == null ? true : gr.shell < D.brickShare;
   const trimHex = weighted(D.trim, gr.trim);
-  const roofHex = weighted(D.roof.colors, gr.roofCol);
+  const roofHex = inp.roofHex != null ? inp.roofHex : weighted(D.roof.colors, gr.roofCol); // (a Rosedale house's roof colour is its style's, js/rosedale-houses.js LOOKS)
   const roofRgb = lin(roofHex), trimRgb = lin(trimHex), brickRgb = lin(brickHex), glassRgb = lin(0x1d262b);
   // a patched roof (a repaired slope in another tone), now and then; the group's, so joined houses agree
-  const patched = gr.patch < (D.roof.patch || 0);
+  const patched = inp.roofHex == null && gr.patch < (D.roof.patch || 0);
   const roofRgbL = patched ? lin(weighted(D.roof.colors, (gr.roofCol * 5.17) % 1)) : null;
-  const pitch = rad(lerp(gr.pitch, D.roof.pitch));
+  const pitch = rad(hint && hint.pitch >= 14 ? clamp(hint.pitch, 18, 58) : lerp(gr.pitch, D.roof.pitch));
   const eave = lerp(gr.eave, D.roof.eave);
   let form = weighted(D.roof.forms, gr.form);
+  if (hint && hint.form) {
+    // (the ridge across the front = the street sees the eave and a side gable; along it = the gable faces the street)
+    const across = Math.abs(hint.ridge[0] * F.tx + hint.ridge[1] * F.tz) > 0.7;
+    const hf = hint.form === 'flat' ? 'flat' : hint.form === 'hip' ? 'hip' : hint.form === 'gable' ? (across ? 'sideGable' : 'frontGable') : (across ? 'crossGable' : 'hipGable');
+    if (hf !== 'flat' || D.roof.parapet || D.roof.forms.some(([f]) => f === 'flat')) form = hf;
+    else if (hf === 'flat') form = 'hip';
+  }
   // a hip stands alone: against a party wall the group's roof carries on as a side gable, so a pair of outlines has no seam
   if (form === 'hip' && (partyL || partyR)) form = 'sideGable';
   if (form === 'hipGable' && (partyL || partyR)) form = 'crossGable';
@@ -448,6 +460,7 @@ export function planHouse(inp) {
   const acc = D.parts.gableAccent && gr.accent < D.parts.gableAccent.p;
   const accentRgb = acc ? lin(weighted(D.parts.gableTones || D.trim, (gr.accent * 7.31) % 1)) : brickRgb;
   const bayOn = D.parts.bay && gr.bay < D.parts.bay.p;
+  const chimSpec = D.parts.chimney || (inp.yard ? { p: 0.75, mode: 'ridge', size: [0.7, 0.9], rise: [1.0, 1.4] } : null); // (a Rosedale house with a preset that draws none still shows one)
   const tw = [lerp(gr.bayW, D.parts.bay ? D.parts.bay.width : [0, 0]), lerp(gr.bayD, D.parts.bay ? D.parts.bay.depth : [0, 0])];
   const stats = { N, form, viaRoad, bays: 0, porches: 0, dormers: 0, gables: 0, bargeboards: 0, wings: 0, vestibules: 0, stoops: 0, garages: 0, pictureWindows: 0, timbered: 0, crossGables: 0, parapets: 0, roofTris: 0, storeys, wingArea: 0, sills: 0, lintels: 0, columns: 0, detailTris: 0, depthRefused: depthRefused ? 1 : 0 };
 
@@ -503,13 +516,13 @@ export function planHouse(inp) {
   // door stretches. The first three presets: beside the bay, nearest the party wall for a semi (the doors paired), else the
   // free stretch. The later presets (a vestibule, a stoop or a garage): a door-wide stretch of its own, so the door, the
   // vestibule or stoop and the garage sit where they are drawn; windows on the rest of the front
-  const narrow = !!(D.parts.vestibule || D.parts.stoop);
+  const narrow = !!(D.parts.vestibule || D.parts.stoop || D.parts.portico || D.centreDoor);
   const doorW = lerp(gr.doorW, D.kind === 'row' || D.parts.garage ? [1.8, 2.0] : [2.0, 2.2]);
   for (let k = 0; k < N; k++) {
     const [a, b] = dwellingSpan(k);
     if (narrow) {
       const side = outerSide(k), inner = N === 2 ? -side : (gr.side < 0.5 ? -1 : 1) * -1; // (semi: next to the party wall; else by the group's side)
-      const d0 = inner > 0 ? b - 0.55 - doorW : a + 0.55, d1 = d0 + doorW;
+      const d0 = D.centreDoor ? (a + b) / 2 - doorW / 2 : inner > 0 ? b - 0.55 - doorW : a + 0.55, d1 = d0 + doorW; // (a Georgian front door stands in the middle)
       doors.push([d0, d1, k]);
       continue;
     }
@@ -610,10 +623,68 @@ export function planHouse(inp) {
     }
   }
 
+  // a portico (Georgian): the stoop's slab under a gabled roof on two columns
+  const porticoes = [];
+  if (D.parts.portico && gr.port < D.parts.portico.p) {
+    for (const [d0, d1] of doors) {
+      const pw = Math.max(doorW + 0.5, lerp(gr.portW, D.parts.portico.width)), pd = lerp(gr.portD, D.parts.portico.depth), c = (d0 + d1) / 2;
+      if (!fenced({ u: c, out: pd }, D.parts.portico.minRoad)) continue;
+      const hw = pw / 2;
+      records.push({ kind: 'stoop', rings: [[F.xz(c - hw, 0), F.xz(c - hw, -pd), F.xz(c + hw, -pd), F.xz(c + hw, 0)]], kinds: [WALL.lotLine, WALL.lotLine, WALL.lotLine, -1], base: y0, h: y0 + 0.36, capY: y0 + 0.36, brick: false, hex: 0xbdb9b0, variant, glass: 0, nearOnly: true });
+      porticoes.push({ c, w: pw, depth: pd, h: lerp(gr.portH, D.parts.portico.height) });
+      stats.porticoes = (stats.porticoes || 0) + 1;
+    }
+  }
+  // a corner turret (Queen Anne): a six-sided drum standing out of the front corner, a record of its own (the facade shader draws its windows), under a cone
+  let turret = null;
+  if (D.parts.turret && gr.tur < D.parts.turret.p && Wd >= 6.5) {
+    const tr = lerp(gr.turR, D.parts.turret.radius), side = gr.turSide < 0.5 ? -1 : 1;
+    // (on the street side of a joined house: never against a party wall)
+    const left = side < 0 ? !partyL : !partyR;
+    const uc = left ? (side < 0 ? u0 + tr * 0.55 : u1 - tr * 0.55) : null;
+    if (uc != null && fenced({ u: uc, out: tr * 1.2 }, D.parts.turret.minRoad) && !bays.some((b) => b.b1 > uc - tr - 0.3 && b.b0 < uc + tr + 0.3)) {
+      const vc = -tr * 0.45, n = 6, rise = lerp(gr.turH, D.parts.turret.rise);
+      const ringT = [];
+      for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2 + Math.PI / 6; ringT.push(F.xz(uc + Math.cos(a) * tr, vc + Math.sin(a) * tr)); }
+      records.push({ kind: 'turret', rings: [ringT], kinds: ringT.map(() => WALL.rear), base: y0, h: topH + rise, capY: topH + rise - 0.05, brick, hex: brickHex, variant, glass: gr.glass, nearOnly: true });
+      turret = { u: uc, v: vc, r: tr, n, y: topH + rise, h: tr * 1.9 };
+      stats.turrets = (stats.turrets || 0) + 1;
+    }
+  }
+
+  // the front yard of a Rosedale house (inp.yard = { lotW (m, 0 unknown), park (0 none, else the City licenses parking in the front yard) }): the walk to the door, a
+  // hedge or a low wall along the lot line, a drive where the lot allows
+  let yard = null;
+  if (inp.yard && doors.length) {
+    const dMid = roadDist(...F.xz((u0 + u1) / 2, -2));
+    const yd = Math.min(12, dMid + 2 - 8.2); // (the lot line stands about 8 m from the road's centreline: half the road, the boulevard and the sidewalk)
+    if (Number.isFinite(yd) && yd >= 2.2) {
+      const lotW = inp.yard.lotW || 0, extra = lotW > 0 ? clamp((lotW - Wd) / 2, 0.3, 6) : 1.0;
+      const uA = partyL ? u0 : u0 - extra, uB = partyR ? u1 : u1 + extra;
+      const c = (doors[0][0] + doors[0][1]) / 2;
+      const kind = gr.yKind < 0.42 ? 'hedge' : gr.yKind < 0.66 ? 'wall' : null;
+      let drive = null;
+      const room = (side) => (side < 0 ? (partyL ? 0 : extra) : (partyR ? 0 : extra));
+      const side = outerSide(0), dw = 3.0;
+      if (inp.yard.park && yd >= 4) { // a licensed front-yard pad: beside the walk, at the street end of the yard
+        const a = side < 0 ? u0 + 0.4 : u1 - 0.4 - dw;
+        drive = { u0: a, u1: a + dw, to: -0.5, rgb: lin(0x6c6b68) };
+      } else if (lotW > 0 && room(side) >= dw + 0.6 && gr.yDrive < 0.3) { // a side drive, along the house to the back
+        const a = side < 0 ? u0 - 0.3 - dw : u1 + 0.3, to = Math.min(Dp, 8);
+        drive = { u0: a, u1: a + dw, to, rgb: lin(0x56565a) };
+      }
+      const stone = kind === 'wall' && gr.yWall < 0.55;
+      const green = weighted([[0x24392a, 4], [0x2b4630, 3], [0x1f3324, 3]], gr.yHedH);
+      yard = { y0, uA, uB, yd, gap: [c - 0.7, c + 0.7], kind, hh: kind === 'wall' ? 0.7 + gr.yHedH * 0.3 : 0.8 + gr.yHedH * 0.5,
+        rgb: kind === 'hedge' ? lin(green) : stone ? lin(0x9a968c) : shade(brickRgb, 0.85), pier: stone ? lin(0xb5b0a4) : shade(brickRgb, 1.1), walk: lin(0xb4b0a6), drive };
+      stats.yards = 1;
+    }
+  }
+
   // ---- parapets and the front cornice of a flat roof: small records, near tier only (as the bays and porches are)
   const tar = tarRgb(lin, gid, id, preset);
   if (form === 'flat') {
-    const ph = lerp(gr.mrise, D.roof.parapet), t = 0.18;
+    const ph = lerp(gr.mrise, D.roof.parapet || [0.3, 0.5]), t = 0.18;
     const sidesP = [[[u0, 0], [u1, 0], F.out, false]]; // (the front only: the sides and back are not seen from the street, and a record costs about 9 near-tier triangles)
     for (const [a, b, o, skip] of sidesP) {
       if (skip) continue;
@@ -637,6 +708,7 @@ export function planHouse(inp) {
     const W = writer(A);
     const yE = y0 + eaveH;
     let info = null; // (the roof's own lines, for tools/report-row-steps.mjs)
+    let rg = null; // (the main ridge, for the chimneys: { alongU, c (its other coordinate), a, b (its ends), top })
     const sides = (k) => ({ eL: (k === 0 && partyL) ? cL : (N > 1 && k > 0) ? 0 : eave, eR: (k === N - 1 && partyR) ? cR : (N > 1 && k < N - 1) ? 0 : eave });
     const hipDormers = (hr) => {
       if (lod || !(D.parts.dormer && gr.dorm < D.parts.dormer.p)) return;
@@ -656,7 +728,7 @@ export function planHouse(inp) {
       const bandA = acc ? accentRgb : shade(brickRgb, 1.0), bandB = acc ? shade(accentRgb, 0.8) : shade(brickRgb, 0.78);
       const timber = !lod && D.parts.timber && gr.timber < D.parts.timber.p ? { face: lin(weighted(TIMBER, (gr.timber * 3.7) % 1)), beam: lin(0x3a2a20) } : null;
       const gab = gableRoof(W, F, { u0: a, u1: b, v0: z0, v1: z1, y: yE, pitch, rise, eL: sd.eL, eR: sd.eR, eF: eave, eB: eave, rgb: roofRgb, rgbL: roofRgbL, endRgb: accentRgb, timber,
-        bands: !lod && !timber && D.parts.gableBands ? { n: D.parts.gableBands, a: bandA, b: bandB, trim: trimRgb } : null });
+        bands: !timber && ((!lod && D.parts.gableBands) || inp.yard) ? { n: lod ? 4 : (D.parts.gableBands || 7), a: bandA, b: bandB, trim: trimRgb } : null }); // (a Rosedale house's front gable is in courses: a flat sheet of brick colour lit by the sun reads salmon)
       stats.gables++; if (timber) stats.timbered++;
       if (!lod && D.parts.bargeboard && gr.barge < D.parts.bargeboard.p) { bargeboard(W, F, gab, lerp(gr.barge, D.parts.bargeboard.width), trimRgb); stats.bargeboards++; }
       if (!lod && D.parts.atticWindow && gr.attic < D.parts.atticWindow.p) atticWindow(W, F, gab, lerp(gr.attic, D.parts.atticWindow.width), lerp(gr.atticH, D.parts.atticWindow.height), trimRgb, glassRgb);
@@ -668,12 +740,14 @@ export function planHouse(inp) {
         const [a, b] = dwellingSpan(k);
         const sd = sides(k);
         const fg = frontGable(a, b, sd, clampRise((b - a) + sd.eL + sd.eR, ridgeR));
+        if (k === 0) rg = { alongU: false, c: fg.uc, a: fg.vF, b: fg.vB, top: yE + fg.rise };
         if (!lod && k === 0) info = { form, y: yE, ridge: yE + fg.rise, vc: (fg.vF + fg.vB) / 2, vF: fg.vF, vB: fg.vB, uL: fg.uL, uR: fg.uR };
       }
       for (const pts of (lod ? [] : bayExtras)) bayRoof(W, F, pts, lerp(gr.bayR, D.parts.bay.roof), yE, roofRgb);
     } else if (form === 'sideGable' || form === 'crossGable') {
       const depth = z1 + 2 * eave;
       const sg = sideGableRoof(W, F, { u0, u1, v0: z0, v1: z1, y: yE, pitch, rise: ridgeR == null ? null : clamp(ridgeR, (depth / 2) * Math.tan(rad(18)), (depth / 2) * Math.tan(rad(45))), eL: partyL ? cL : eave, eR: partyR ? cR : eave, eF: eave, eB: eave, rgb: roofRgb, rgbL: roofRgbL, endRgb: brickRgb, partyL, partyR });
+      rg = { alongU: true, c: sg.vc, a: sg.uL, b: sg.uR, top: yE + sg.rise, ends: true };
       if (!lod) info = { form, y: yE, ridge: yE + sg.rise, vc: sg.vc, vF: sg.vF, vB: sg.vB, uL: sg.uL, uR: sg.uR };
       if (form === 'crossGable') {
         // a front gable over part of the front: flush with the wall, its ridge a little under the main one, its back end
@@ -700,12 +774,14 @@ export function planHouse(inp) {
       for (const pts of (lod ? [] : bayExtras)) bayRoof(W, F, pts, lerp(gr.bayR, D.parts.bay.roof), yE, roofRgb);
     } else if (form === 'hip') {
       const hr = hipRoof(W, F, { u0, u1, v0: z0, v1: z1, y: yE, pitch, eL: eave, eR: eave, eF: eave, eB: eave, rgb: roofRgb });
+      rg = hr.alongU ? { alongU: true, c: hr.vc, a: hr.uL + hr.half, b: hr.uR - hr.half, top: yE + hr.rise } : { alongU: false, c: hr.uc, a: hr.vF + hr.half, b: hr.vB - hr.half, top: yE + hr.rise };
       if (!lod) info = { form, y: yE, ridge: yE + hr.rise, vc: hr.vc, vF: hr.vF, vB: hr.vB, uL: hr.uL, uR: hr.uR };
       hipDormers({ ...hr });
       for (const pts of (lod ? [] : bayExtras)) bayRoof(W, F, pts, lerp(gr.bayR, D.parts.bay.roof), yE, roofRgb);
     } else if (form === 'hipGable') {
       // a hip with one front gable over the middle of the front (over the party wall of a pair in one outline)
       const hr = hipRoof(W, F, { u0, u1, v0: z0, v1: z1, y: yE, pitch, eL: eave, eR: eave, eF: eave, eB: eave, rgb: roofRgb });
+      rg = hr.alongU ? { alongU: true, c: hr.vc, a: hr.uL + hr.half, b: hr.uR - hr.half, top: yE + hr.rise } : { alongU: false, c: hr.uc, a: hr.vF + hr.half, b: hr.vB - hr.half, top: yE + hr.rise };
       if (!lod) info = { form, y: yE, ridge: yE + hr.rise, vc: hr.vc, vF: hr.vF, vB: hr.vB, uL: hr.uL, uR: hr.uR };
       if (hr.alongU && Wd >= 6) {
         const gw = clamp(Wd * 0.3, 2.8, 4.2), c = (u0 + u1) / 2, ridge = Math.min(hr.rise * 0.9, (gw / 2 + eave) * Math.tan(rad(55)));
@@ -735,6 +811,33 @@ export function planHouse(inp) {
       if (!lod) info = { form, y: yE, ridge: yE, vc: (z0 + z1) / 2, vF: z0, vB: z1, uL: u0, uR: u1 };
       for (const pts of (lod ? [] : bayExtras)) bayRoof(W, F, pts, lerp(gr.bayR, D.parts.bay.roof), yE, roofRgb);
     }
+    // chimneys, a turret's cone, a portico's roof: the silhouette a house shows from the street (near tier only)
+    // (the lidar's chimneys, where its returns show a stack over the roof: drawn where they stand, to the height they reach; they replace the preset's own)
+    const seen = !lod && inp.chimneys && inp.chimneys.length ? inp.chimneys.map((q) => { const [u, v] = F.uv(q.x, q.z); return { u, v, q }; }).filter((q) => q.u > u0 - 0.6 && q.u < u1 + 0.6 && q.v > -0.8 && q.v < Dp + 0.8) : [];
+    for (const { u, v, q } of seen) {
+      const w = clamp(q.w * 0.85, 0.55, 1.3);
+      chimneyBox(W, F, { u, v, w, d: w * 0.85, yb: y0 + q.base - 0.6, yt: y0 + Math.min(q.top, q.base + 3.0), rgb: shade(brickRgb, 0.9), capRgb: lin(0xbdb9b0) });
+      stats.chimneys = (stats.chimneys || 0) + 1; stats.lidarChimneys = (stats.lidarChimneys || 0) + 1;
+    }
+    if (!lod && !seen.length && chimSpec && rg && gr.chim < chimSpec.p * (inp.chimneys ? 0.6 : 1)) {
+      const w = lerp(gr.chimW, chimSpec.size), d = w * 0.85, rise = lerp(gr.chimR, chimSpec.rise);
+      const brickC = shade(brickRgb, 0.9), capC = lin(0xbdb9b0);
+      const stacks = []; // { u, v, yb, yt }
+      if (chimSpec.mode === 'front') {
+        stacks.push({ u: gr.chimSide < 0.5 ? u0 + 1.4 : u1 - 1.4, v: -d / 2 + 0.15, yb: y0 + 0.3, yt: Math.max(yE + 1.8, rg.top - 0.2) });
+      } else if (rg.alongU) {
+        const lo = rg.a + (rg.ends ? eave + w / 2 + 0.15 : w / 2 + 0.1), hi = rg.b - (rg.ends ? eave + w / 2 + 0.15 : w / 2 + 0.1);
+        const at = chimSpec.mode === 'ends' ? (hi - lo > 2.4 ? [lo, hi] : [(lo + hi) / 2]) : [lo + (hi - lo) * (gr.chimSide < 0.5 ? 0.3 : 0.7)];
+        for (const u of at) stacks.push({ u, v: rg.c, yb: rg.top - 0.9, yt: rg.top + rise });
+      } else {
+        const v = chimSpec.mode === 'ends' ? rg.b - 1.0 - d / 2 : rg.a + (rg.b - rg.a) * (gr.chimSide < 0.5 ? 0.4 : 0.6);
+        stacks.push({ u: rg.c, v, yb: rg.top - 0.9, yt: rg.top + rise });
+      }
+      for (const q of stacks) { chimneyBox(W, F, { u: q.u, v: q.v, w, d, yb: q.yb, yt: q.yt, rgb: brickC, capRgb: capC }); stats.chimneys = (stats.chimneys || 0) + 1; }
+    }
+    if (!lod && turret) turretDetail(W, F, { ...turret, rgb: roofRgb, capRgb: trimRgb });
+    if (!lod && yard) stats.yardTris = yardDetail(W, F, yard);
+    if (!lod) for (const q of porticoes) porticoDetail(W, F, { c: q.c, w: q.w, depth: q.depth, y0, h: q.h, colRgb: lin(0xf0ede4), roofRgb, endRgb: trimRgb, pitch: rad(30) });
     // vestibule roofs: a small front gable over each
     for (const v of (lod ? [] : vestibules)) {
       const hw = v.vw / 2 + 0.12;
@@ -780,6 +883,7 @@ export function planHouse(inp) {
         const keep = vestibules.length ? ops.filter((q) => !(q.f === 0 && vestibules.some((v) => q.u1 > v.c - v.vw / 2 - 0.1 && q.u0 < v.c + v.vw / 2 + 0.1))) : ops;
         sillsAndLintels(W, F, keep, { sillRgb: stone, lintelRgb: lintel, sill: wt.sill !== false, lintel: wt.lintel !== false });
         stats.sills += wt.sill !== false ? keep.length : 0; stats.lintels += wt.lintel !== false ? keep.length : 0;
+        if (D.parts.shutters && gr.shut < D.parts.shutters.p) { stats.shutters = (stats.shutters || 0) + keep.length; shutterBoards(W, F, keep, lin(weighted([[0x2f4a3c, 4], [0x1f2023, 4], [0x3b4a6a, 2], [0x6e2b2b, 1]], gr.shutC))); }
       }
       if (porch && porch.plinth) {
         const col = lin(weighted(D.parts.porch.columnTrim || D.trim, gr.lintC));

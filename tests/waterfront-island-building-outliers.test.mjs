@@ -226,7 +226,7 @@ test('the renderer consumes the reviewed height (buildings.js applies profile.he
   const buildings = readJs('buildings.js');
   assert.match(buildings, /const h0 = islandProfile\?\.height \?\? sourceHeight;/);
   assert.match(buildings, /const islandProfile = window\.CITY\.islandBuildingProfile\?\.\(b, bi\);/);
-  assert.match(buildings, /const kind = islandProfile\?\.kind \?\? sourceKind;/);
+  assert.match(buildings, /(const|let) kind = islandProfile\?\.kind \?\? sourceKind;/);
   // The cottage extension is gated on typology === 'cottage', so these service rows never take the cottage path.
   assert.match(buildings, /islandProfile\.typology === 'cottage'/);
 });

@@ -1215,6 +1215,7 @@ function buildCityBlocks(scene) {
   const urlFlag = (k) => (massing && typeof location !== 'undefined' ? new URLSearchParams(location.search).get(k) ?? (k === 'presets' && window.CITY.PRESETS_DRAW_BY_DEFAULT ? 'draw' : null) : null); // (only ?massing=1 reads the flags; main.js says the presets are drawn when the address has no presets parameter)
   const gallery = !!massing && urlFlag('gallery') === 'presets' && !!window.CITY.BUILDING_GALLERY;
   const presetDraw = !!massing && !!window.CITY.BuildingDraw && !!window.CITY.BuildingPrototypes && (urlFlag('presets') === 'draw' || gallery);
+  const drawOfPreset = (id) => { const P = window.CITY.BuildingPrototypes; return P ? (P.drawOf ? P.drawOf(id) : P.byId[id]?.draw) : null; }; // (the catalogue's drawing parameters, or a Rosedale preset's)
   const drawFacts = presetDraw ? window.CITY.BUILDING_DRAW_FACTS || null : null;
   const drawStats = presetDraw ? { drawn: 0, extras: 0, roofTris: 0, fallback: {}, byPreset: {}, parts: { bays: 0, porches: 0, dormers: 0, gables: 0, bargeboards: 0, wings: 0, vestibules: 0, stoops: 0, garages: 0, pictureWindows: 0, timbered: 0, crossGables: 0, parapets: 0, cornices: 0, balconyBands: 0, penthouses: 0, crowns: 0, towers: 0, spires: 0, domes: 0, minarets: 0 }, viaRoad: 0 } : null;
   if (gallery) { // (the synthetic lots join the rows the loop reads: the very same path draws them)
@@ -1265,7 +1266,7 @@ function buildCityBlocks(scene) {
     const first = [];
     for (const [bi, foot] of massing.rows) {
       if (!foot.preset || bi >= realRows) continue;
-      const Dp = window.CITY.BuildingPrototypes.byId[foot.preset]?.draw;
+      const Dp = drawOfPreset(foot.preset);
       if (!Dp || Dp.kind === 'shop' || Dp.kind === 'block' || Dp.kind === 'worship') continue; // (the houses' fronts only)
       const facts = drawFacts.get(foot.index);
       if (!facts) continue;
@@ -1320,7 +1321,7 @@ function buildCityBlocks(scene) {
     const groups = new Map();
     for (const [bi, foot] of massing.rows) {
       if (bi >= realRows || foot.rosedale || !roofEligible(bi, foot)) continue; // (a Rosedale house's roof is its lidar one, below)
-      if (presetDraw && foot.preset && window.CITY.BuildingPrototypes.byId[foot.preset]?.draw) continue; // (drawn houses have their own roof, js/building-draw.js)
+      if (presetDraw && foot.preset && drawOfPreset(foot.preset)) continue; // (drawn houses have their own roof, js/building-draw.js)
       const facts = foot.drawFacts || (drawFacts && drawFacts.get(foot.index)) || null;
       const gid = facts && facts.groupId;
       const g = gid && facts.group && facts.group.n > 1 ? gid : null;
@@ -1368,12 +1369,18 @@ function buildCityBlocks(scene) {
     // native footprint, renderer batching and source row identity.
     const islandProfile = window.CITY.islandBuildingProfile?.(b, bi);
     const h0 = islandProfile?.height ?? sourceHeight;
-    const kind = islandProfile?.kind ?? sourceKind;
+    let kind = islandProfile?.kind ?? sourceKind;
     const roof = islandProfile?.roof ?? sourceRoof;
     const fixH = nearAny(DISTILLERY.height, cx, cz, 2); // (Toronto layer: a massing height that is a chimney's)
     const h = fixH && inDistillery(cx, cz) ? fixH[2] : h0;
     const y0 = baseOf(cx, cz);
     const foot = massing ? massing.rows.get(bi) : null;
+    // (jf-bya, docs/rosedale-walls.md) A detached, semi or row house is never a glass curtain wall or a storefront. The City's kind column calls 1,457 of
+    // the Rosedale pilot's houses mid-rise and 86 tall (a third of the mid-rise and all of the tall were drawn as curtain-wall glass, the ground floor a
+    // shop front beside a shop), so the pilot's houses (js/rosedale-houses.js isHouse) are low-rise houses whatever it says; a downtown house keeps its
+    // kind (its roofs and the rest) but never takes the glass or a shop front
+    const houseWalls = !!foot && (foot.rosedale ? !!foot.rosedale.house : !!foot.preset && !!window.CITY.BuildingPrototypes?.isHousePreset?.(foot.preset));
+    if (houseWalls && foot.rosedale) kind = 0;
     // Scoped island cottage extension: only confirmed source-matched cottages, only on their box path (the ?massing=1
     // polygon path keeps the native footprint material untouched).
     const cottage = !!(islandProfile && islandProfile.typology === 'cottage' && !foot && !inDistillery(cx, cz));
@@ -1403,7 +1410,7 @@ function buildCityBlocks(scene) {
     // which wall looks onto the street: the nearest road seen in the building's frame; a signed building fronts the
     // street its sign is on (its rear, for the fire escapes, is the other side). buildingFront is pure, so the preset
     // assignment (tools/build-building-presets.mjs) calls the same function and gets the same front.
-    const signed = signWalls.get(bi);
+    const signed = foot && foot.rosedale && foot.rosedale.house ? undefined : signWalls.get(bi); // (a Rosedale house has no sign: the signs' rows are the shops')
     const memo = frontMemo.get(bi);
     const { front, near } = memo ? memo.bf : buildingFront(cx, cz, ang, signed, nearestRoads);
     // material & paint
@@ -1413,8 +1420,10 @@ function buildCityBlocks(scene) {
     // (Toronto layer: storefronts on selected buildings only, storefrontSelection above. The draw that used to pick
     // a quarter of the low-rise as shops is still made, so every building keeps its colours)
     if (kind === 1) rnd();
+    if (houseWalls && mat >= 2) mat = 0;
+    else if (foot && foot.rosedale && mat >= 2) mat = 1; // (Rosedale's apartments and institutions are brick and render too, none of it curtain wall)
     const shop = memo ? memo.shp : shopFrontRule({ signed, own: retail.own.has(bi), kind, front, parts, cx, cz, ang, near, retail, nearestRoads });
-    let shopFront = shop.shopFront || (gallery && !!foot && bi >= realRows && /^main-street-shop/.test(foot.preset || '')); // (the gallery's shop lots stand with a shop front, as the page gives a retail street's)
+    let shopFront = !houseWalls && shop.shopFront || (gallery && !!foot && bi >= realRows && /^main-street-shop/.test(foot.preset || '')); // (the gallery's shop lots stand with a shop front, as the page gives a retail street's)
     if (shop.strip) stats.strip++;
     if (cottage) shopFront = false; // (the cottage extension gives it a native entrance, not a city storefront)
     if (shopFront) stats.storefronts++;
@@ -1460,13 +1469,13 @@ function buildCityBlocks(scene) {
       const tf = performance.now();
       const fr = footprintEdges(foot.rings[0], foot.covered, foot.hidden, foot.street, faces[front], shopFront, Math.min(foot.base, h - 0.5), h);
       edges = fr.edges;
-      if (presetDraw && !victorian && foot.preset && window.CITY.BuildingPrototypes.byId[foot.preset]?.draw) {
+      if (presetDraw && !victorian && foot.preset && drawOfPreset(foot.preset)) {
         const facts = foot.drawFacts || (drawFacts && drawFacts.get(foot.index)) || null;
         const plan = window.CITY.BuildingDraw.planHouse({
           preset: foot.preset, id: foot.id, groupId: facts && facts.groupId, dwellings: facts ? facts.dwellings : 1,
           ring: foot.rings[0], edges: fr.edges, covered: foot.covered, y0, lin: linear,
           h, style: FOOTPRINT_STYLE[mat][0], variant: FOOTPRINT_STYLE[mat][1], holes: foot.rings.length - 1, frontShift: frontShifts ? frontShifts.get(foot.id) : undefined,
-          index: foot.index, base: Math.min(foot.base, h - 0.5), group: facts && facts.group,
+          index: foot.index, base: Math.min(foot.base, h - 0.5), group: facts && facts.group, hint: foot.rosedale ? foot.rosedale.hint : undefined, yard: foot.rosedale ? { lotW: foot.rosedale.lotW, park: foot.rosedale.park } : undefined, chimneys: foot.rosedale ? foot.rosedale.chim : undefined, variants: foot.variants, roofHex: foot.roofHex, fillMin: foot.fillMin,
           roadDist: (x, z) => { const r = nearestRoads(x, z, 40)[0]; return r ? r.dist : Infinity; },
           nearRoad: near.length ? { x: near[0].px, z: near[0].pz } : null
         });

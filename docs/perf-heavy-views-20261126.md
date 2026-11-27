@@ -137,3 +137,11 @@ Not shipped, measured (Mac mini, relative, 26 Nov):
 - **Sun shadows drawn less often do not pay.** Skipping the far cascade every 2nd or 4th frame, or the near one every 2nd, changed the frame by -0.2 to +0.1 ms (noise); `QUALITY.shadowEvery = 2` for both cascades made it 1.4 to 1.7 ms slower. Caching static casters across frames is therefore not worth building on this evidence.
 
 Probe additions in `tools/perf1`: `groundx` (flat, lit-flat, hidden, no-mask, no-receive arms per mesh set), `shadowfreq`, `ft`, `groundmats`, and `ab.sh` takes `ROOTA` and `ROOTB`.
+
+## The ground, per material (27 November)
+
+Per-material test at the Eglinton street (`groundgrp` job: each group of ground meshes given a flat material, and hidden, against the frame before and after): the 9 `StreetLevel` asphalt meshes cost 2.0 ms for 95 triangles (hidden and flat agree, so it is pure fill), the walkways (225k and 29k triangles) about 0.9 ms together, kerbs, lawns, forecourts, bike separators and the rest under 0.3 ms each. Every ground group carries a mask node, and the asphalt is drawn under everything else.
+
+Shipped (#237, main 4d018be, live 8f287bf4-26e5-4391-ae72-190ab2eedef2): the ground is drawn after the other opaque objects (`renderOrder` 1), so what buildings, props and cars hide of it is rejected by the depth test before the asphalt shader runs. Paired: Eglinton street -0.55 ms, downtown from 300 m -1.05 ms, Eglinton and Queen West at night -0.3 ms, High Park woods 0.0; frames identical apart from moving traffic (`?groundorder=0` is the old order). Draw order tried as only the asphalt last (`StreetLevel` renderOrder 1 or 10) was inconsistent at Eglinton (-1.4, then +0.15) and nothing from 300 m, so the whole ground went last.
+
+Left: the asphalt's own fill at street level (about 2 ms, mostly near pixels where the full wear, puddle and noise terms are on), and the walkway material. Ideas, each a look change: a cheaper asphalt shader beyond 25 to 40 m; lower-resolution puddle and wear noise; one shared material for the walkway bands.
