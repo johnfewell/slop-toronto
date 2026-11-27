@@ -101,12 +101,58 @@ each and hedges and shrubs are the rule's; a house whose road leaves under 2.2 m
 Cost (Mac mini, shared, winter, paired against origin/main, two rounds, alternating, street level in three drawn neighbourhoods; mean ms before -> after): Cabbagetown 18.64 -> 19.01 (+0.38) and 18.56 -> 18.73 (+0.17); Leslieville 14.66 -> 14.71 (+0.05) and 14.33 -> 13.91 (-0.42);
 the Annex 18.71 -> 19.43 (+0.72) and 18.59 -> 18.75 (+0.16). Within the +1 ms budget in every pair (`tools/capture-front-yards.sh JOB=framesO`).
 
+## 6. Polish (jf-aru, 2026-11-27)
+
+John looked at the shipped pictures and chose "polish, and fix the July ground". The pale ground was a separate bug, [block paving](block-paving.md) (shipped first). The rest:
+
+| Was | Now |
+|---|---|
+| Hedges: flat dark boxes with a pixelated texture | A rounded loaf (vertical sides, a rounded shoulder, a flat crown) in sections about 1.1 m long with a little wobble of the surface and the crown's height; smooth normals; the material gives it leaf-sized speckle (smooth 3D noise at 11 cm and 4 cm, fading to a plain tone where a leaf is under a pixel, so it does not shimmer), lighter new growth in spring and summer, and breaks the silhouette into leaf-sized bites where the surface turns away from the eye; a fringe of leaf cards (kind 8, 9 for a deciduous hedge) leans out of the shoulders every 0.4 m; a snow cap in winter; a privet hedge is bare twigs in winter |
+| Bare shrubs: a speckled brown cut-out heap | A deciduous shrub is a rounded shell (four rings, nine sides, low) that is leafy in summer and, when the leaves drop, a lattice of thin twigs: three families of warped lines in 3D with dropouts and clumps, so most of the shell is sky, over 3 to 5 thin stems with a fork; a line is never thinner than about a pixel. Evergreen shrubs (yew, boxwood, juniper) keep their green, rounded, with leaf cards and snow on top |
+| Ornamental tree: a green cone | `smallTree`: a Japanese maple (deep red), a crab apple, a magnolia (evergreen) or a dwarf conifer. A trunk and five branches with forks (thin stems, the winter tree), 44 leaf cards of leaf discs in the crown (bare in winter, in autumn colour on the way), a conifer's six whorls of needle fans. It is built in the yard mesh, not from `js/ez-trees.js`: the page's tree kit has only ash, aspen, oak and pine models and another agent owns that file |
+| Lawn: a bright flat green sheet with hard edges | The lawn is the plot ground's own grass (the same colour function, `createPlotGroundMaterial`, with `fbm2` and `noise2D` now on `window.CITY`), a ragged soft edge from noise, gone under snow. Mulch beds have the same ragged edge, bark-chip grain and a tone per bed |
+
+The twigs, cards and needle fans are kinds 8 to 11 of the one yard material (`js/front-yard-material.js`); the lawn and bed rectangles carry their half sizes in `color` and the metres from their centre in `aux`. A yard is 434 triangles on average (135 before), at most 1,768.
+
+Pictures, same cameras as before, before = origin/main `c47f766`, winter (today: bare trees, no snow on record), July and (after only) 8 cm of snow, in John's review folder `slop-toronto-updates/2026-11-27-front-yards-polish/`:
+
+![Crescent Rd, July](images/front-yards-polish-crescent-street-july.jpg)
+
+![112 Roxborough Dr, winter](images/front-yards-polish-112-roxborough-dr-bike-winter.jpg)
+
+![112 Roxborough Dr, 8 cm of snow](images/front-yards-polish-112-roxborough-dr-bike-snow.jpg)
+
+![The Annex, July](images/front-yards-polish-annex-side-july.jpg)
+
+![Cabbagetown, July](images/front-yards-polish-cabbagetown-side-july.jpg)
+
+Against photographs: Wikimedia Commons has a CC photo of Cabbagetown and of the Annex front gardens (side by side in the review folder, `photo-comparison/`); none of a Rosedale house frontage on the four streets, and Street View's terms do not allow keeping its images. The photographs show what is still missing: porches and steps with planting, tall perennials and flowers, dense layered beds.
+
+**Cost** (Mac mini, Apple M4, shared with a production transcription job, 1600 x 900, uncapped, 20 s recordings, origin/main `29066ca` against this branch, alternated, mean / median ms, before -> after; budget +0.5 ms at street level):
+
+| Place | Round 1 | Round 2 (after first) |
+|---|---|---|
+| Crescent Rd, winter | 15.98 -> 16.25 (+0.26) / 16.00 -> 16.30 | 15.97 -> 16.24 (+0.27) / 16.00 -> 16.30 |
+| Crescent Rd, July | 15.62 -> 15.83 (+0.21) / 15.60 -> 15.80 | 15.63 -> 15.88 (+0.25) / 15.60 -> 15.90 |
+| Annex, winter | 18.02 -> 18.18 (+0.16) / 18.00 -> 18.20 | 18.03 -> 18.17 (+0.14) / 18.00 -> 18.20 |
+| Cabbagetown, winter | 18.11 -> 18.18 (+0.08) / 18.10 -> 18.10 | 18.15 -> 18.00 (-0.15) / 18.10 -> 18.00 |
+| Leslieville, winter | 13.49 -> 13.42 (-0.08) / 13.50 -> 13.30 | 13.36 -> 13.39 (+0.03) / 13.30 -> 13.40 |
+
+Within +0.3 ms everywhere.
+
+![Frame time at Crescent Rd, winter](images/front-yards-polish-frame-time-crescent-winter.png)
+
+![Frame time at Crescent Rd, July](images/front-yards-polish-frame-time-crescent-july.png)
+
+![Frame time in the Annex](images/front-yards-polish-frame-time-annex.png)
+
 ## What is still wrong
 
 - Fences and walls are a rule, not data; hedges the lidar could not see (under crowns) are the rule's too.
 - No yard is drawn for a house the preset machinery does not draw (the Beaches, anything outside the downtown frame and the pilot), or whose yard is under 2.2 m deep.
 - The yard stands at the house's ground height: a lot that falls steeply to the street shows the hedge and wall skirts (0.4 m) rather than following the slope.
-- Bare deciduous shrubs are a speckled cut-out, not individual twigs.
+- Bare shrubs are a twig lattice on a shell plus a few stems, not a grown branch structure; beds are mulch with plant dots, not layered planting with perennials, porches and steps.
+- Highland Ave's shot camera in the shared shot list stands inside a house (it was before this work too).
 
 ## Notes
 

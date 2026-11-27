@@ -17,7 +17,7 @@ var __copyProps = (to4, from, except, desc) => {
 };
 var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
 
-// node_modules/three-clouds-webgpu/build/index.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/three-clouds-webgpu/build/index.js
 var build_exports2 = {};
 __export(build_exports2, {
   CLOUD_SHAPE_DETAIL_TEXTURE_SIZE: () => Ht5,
@@ -145,7 +145,7 @@ var WebGLCubeRenderTarget = class {
 var WebGLRenderer = class {
 };
 
-// node_modules/three-clouds-webgpu/build/shared.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/three-clouds-webgpu/build/shared.js
 import { int as k3, uniform as v3, Fn as w5, dFdx as Qo2, dFdy as $o3, max as B3, dot as U6, float as c4, log2 as Hs2, normalize as Se5, abs as Re2, greaterThan as Rt4, select as $3, sqrt as Te3, sign as mn5, vec2 as A5, mix as P4, pow as et4, mul as er3, varying as Me5, remapClamp as ie5, struct as ve4, If as M2, vec4 as x4, vec3 as N4, Var as tr3, texture as se4, cross as Ms3, smoothstep as de2, clamp as ye2, saturate as it3, getCurrentStack as sr3, mx_noise_float as pn4, fract as us3, add as Ws3, step as ke3, sin as ar3, remap as Os3, instanceIndex as fn4, textureStore as ht4, ivec3 as gn4, storageTexture as wn4, ivec2 as oe4, length as je4, exp as fe4, distance as nr3, min as we4, Loop as Ne4, Break as Qe5, screenCoordinate as Fe4, screenSize as Bt4, wgslFn as or3, uv as te4, mod as Sn4, floor as ha2, texture3D as Bs3, bool as dt4, viewZToOrthographicDepth as rr3, mrt as Us3, pmremTexture as ir3, positionGeometry as lr3, textureLoad as Ee5, textureSize as yn3, workgroupBarrier as vn4, workgroupId as Ut4, uint as Gs2, localId as Gt5, workgroupArray as cr3, nodeObject as ur2, uniformArray as Dt4 } from "three/tsl";
 import { Storage3DTexture as hr3, LinearFilter as Es3, StorageTexture as xn4, RepeatWrapping as hs3, NoColorSpace as dr2, LinearMipMapLinearFilter as mr3, Vector4 as pr2, Node as js3, NodeMaterial as ot3, TextureNode as fr3, NodeUpdateType as Tn4, NodeUtils as bn4, MathNode as gr3, RenderTarget as qs3, StorageArrayTexture as wr3, QuadMesh as Mt4, RendererUtils as Sr3 } from "three/webgpu";
 
@@ -173,7 +173,7 @@ var Selection = new Proxy(class {
 var ShaderPass = new Proxy(class {
 }, { get: (t2, k5) => k5 in t2 ? t2[k5] : 0 });
 
-// node_modules/@takram/three-geospatial/build/index.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-geospatial/build/index.js
 var build_exports = {};
 __export(build_exports, {
   ArrayBufferLoader: () => sn,
@@ -234,7 +234,7 @@ __export(build_exports, {
   unrollLoops: () => Kr
 });
 
-// node_modules/@takram/three-geospatial/build/shared.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-geospatial/build/shared.js
 var a = true;
 var n = "Invariant failed";
 function c(i5, r6) {
@@ -246,7 +246,7 @@ function c(i5, r6) {
   }
 }
 
-// node_modules/@takram/three-geospatial/build/shared2.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-geospatial/build/shared2.js
 var S = 128;
 var y = 128;
 var E = 64;
@@ -274,7 +274,7 @@ var A = class extends three_plus_exports.Loader {
   }
 };
 
-// node_modules/@takram/three-geospatial/build/shared3.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-geospatial/build/shared3.js
 var $ = /* @__PURE__ */ new three_plus_exports.Vector3();
 function D(q4, t2, i5 = new three_plus_exports.Vector3(), s) {
   const { x: r6, y: e3, z: n4 } = q4, o2 = t2.x, h3 = t2.y, u6 = t2.z, d4 = r6 * r6 * o2, m4 = e3 * e3 * h3, c6 = n4 * n4 * u6, l4 = d4 + m4 + c6, p6 = Math.sqrt(1 / l4);
@@ -491,7 +491,7 @@ var z = class z2 {
 z.MIN_LONGITUDE = -Math.PI, z.MAX_LONGITUDE = Math.PI, z.MIN_LATITUDE = -Math.PI / 2, z.MAX_LATITUDE = Math.PI / 2;
 var C = z;
 
-// node_modules/three/examples/jsm/libs/fflate.module.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/three/examples/jsm/libs/fflate.module.js
 var u8 = Uint8Array;
 var u16 = Uint16Array;
 var i32 = Int32Array;
@@ -2825,7 +2825,7 @@ var EXRLoader = class extends three_plus_exports.DataTextureLoader {
   }
 };
 
-// node_modules/@takram/three-geospatial/build/index.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-geospatial/build/index.js
 var sn = class extends three_plus_exports.Loader {
   load(t2, n4, r6, o2) {
     const s = new three_plus_exports.FileLoader(this.manager);
@@ -4427,7 +4427,7 @@ function Kr(e3) {
   return e3.replace(fr, lr);
 }
 
-// node_modules/@takram/three-geospatial/build/shaders.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-geospatial/build/shaders.js
 var n2 = `// Reference: https://github.com/mrdoob/three.js/blob/r171/examples/jsm/csm/CSMShader.js
 
 #ifndef SHADOW_CASCADE_COUNT
@@ -4823,7 +4823,7 @@ var u3 = o;
 var _3 = a4;
 var g3 = v2;
 
-// node_modules/@takram/three-atmosphere/build/shared2.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-atmosphere/build/shared2.js
 var T4 = "eac103980f20c0956f2d3215833e73514be08462";
 var S4 = `https://media.githubusercontent.com/media/takram-design-engineering/three-geospatial/${T4}/packages/atmosphere/assets`;
 var d2 = `https://media.githubusercontent.com/media/takram-design-engineering/three-geospatial/${T4}/packages/atmosphere/assets/stars.bin`;
@@ -4869,7 +4869,7 @@ var H2 = typeof window < "u" && window.requestIdleCallback != null ? window.requ
   }, 1);
 };
 
-// node_modules/@takram/three-atmosphere/build/shared3.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-atmosphere/build/shared3.js
 var e2 = `// Based on: https://github.com/ebruneton/precomputed_atmospheric_scattering/blob/master/atmosphere/functions.glsl
 
 /**
@@ -5758,7 +5758,7 @@ Illuminance3 GetSunAndSkyScalarIlluminance(
 #define GetSunAndSkyScalarIrradiance GetSunAndSkyScalarIlluminance
 `;
 
-// node_modules/@takram/three-atmosphere/build/shared.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-atmosphere/build/shared.js
 var Fn2 = /* @__PURE__ */ new three_plus_exports.Vector3(0.2126, 0.7152, 0.0722);
 var zn2 = [
   "solarIrradiance",
@@ -8790,7 +8790,7 @@ var Di = {
   distance: 1
 };
 
-// node_modules/@takram/three-atmosphere/build/webgpu.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-atmosphere/build/webgpu.js
 var webgpu_exports = {};
 __export(webgpu_exports, {
   AerialPerspectiveNode: () => zo,
@@ -8827,7 +8827,7 @@ __export(webgpu_exports, {
 import { struct as ut4, uint as Q5, uvec2 as Mt3, ivec2 as de, float as P3, vec3 as E5, uniform as O3, clamp as us2, sqrt as _6, max as it2, smoothstep as Fe3, floor as le3, vec4 as w4, div as ds2, mul as pt3, PI as De3, add as Ct4, bool as _t4, If as D5, min as Rt3, exp as pe4, vec2 as U5, Loop as wt3, mix as ct4, step as In3, cos as It4, sin as Vt3, mrt as fe3, screenCoordinate as at2, acos as Zs, Fn as Y3, texture as Gt4, texture3D as Me4, globalId as st3, Return as Ne3, textureStore as Wt4, workgroupArray as Ns2, workgroupBarrier as vs2, uvec3 as Pn3, positionView as Bn3, PI2 as On3, fwidth as $s, equirectUV as kn3, dFdx as bs2, dFdy as Es2, log as Wn3, instancedBufferAttribute as We3, screenSize as Hs, screenUV as Gn3, pow as qn3, uv as se3, nodeProxy as Xs, positionGeometry as ls2, remapClamp as Zn4, normalWorld as $n4, positionWorld as Hn3, cameraViewMatrix as Xn4, int as Ms2, and as Ks2, Break as Rs2, uniformTexture as Kn3, uvec4 as zs2, uniformArray as Ls2, instanceIndex as Vs2, pmremTexture as Qn3 } from "three/tsl";
 import { QuadMesh as Kt4, NodeMaterial as Nt4, StorageTexture as Ti, Storage3DTexture as Ci, RendererUtils as Ot3, Node as wi2, NodeUpdateType as gt3, TempNode as Qt3, PointsNodeMaterial as js2, RenderTarget as fi2, AnalyticLightNode as Ni, LinearFilter as Fs2 } from "three/webgpu";
 
-// node_modules/@takram/three-geospatial/build/webgpu.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-geospatial/build/webgpu.js
 import { Fn as U4, positionView as jt3, cameraFar as je2, cameraNear as Ee3, cameraPosition as Et3, cameraProjectionMatrixInverse as kt3, cameraWorldMatrix as It3, cameraProjectionMatrix as Lt3, cameraViewMatrix as Wt3, reference as le2, uniform as g6, vec4 as z4, positionGeometry as ct3, texture as oe3, uv as I3, vec2 as f4, add as B2, luminance as qt2, smoothstep as ut3, OnBeforeObjectUpdate as $t3, OnObjectUpdate as Gt3, screenCoordinate as ke2, time as Ht3, vec3 as b4, equirectUV as Yt2, fwidth as Xt, abs as _5, positionLocal as Zt2, positionPrevious as _t3, sub as ie4, nodeImmutable as lt3, instancedArray as Xe3, storage as Kt3, uvec2 as re2, If as ae3, globalId as Ae3, Return as Qt2, atomicAdd as Jt2, instanceIndex as es, mat3 as dt3, struct as Ie3, min as ht3, mul as ts, fract as ss, distance as os, mix as ne2, rtt as ns, convertToTexture as Oe3, overloadingFn as Le3, sqrt as be2, dot as Te2, bvec2 as pt2, bvec3 as mt2, uvec3 as pe3, bvec4 as ft2, uvec4 as me2, bool as Me3, color as is, mat4 as rs, mat2 as as, ivec4 as xt2, ivec3 as cs, ivec2 as O2, uint as us, int as K2, float as G4, viewZToLogarithmicDepth as gt2, logarithmicDepthToViewZ as vt3, perspectiveDepthToViewZ as yt2, orthographicDepthToViewZ as ls, PI2 as ds, PI as hs, cos as Ze2, sin as _e3, viewZToPerspectiveDepth as ps, workgroupArray as ms, greaterThan as fs, invocationLocalIndex as we3, workgroupBarrier as xs, textureStore as gs, workgroupId as Ke3, and as wt2, frameId as vs, screenUV as ys, step as ws, textureSize as Ns, max as Nt3 } from "three/tsl";
 import { CSMShadowNode as Ps } from "three/addons/csm/CSMShadowNode.js";
 import { NodeMaterial as ue3, TextureNode as Fs, TempNode as Q4, NodeUpdateType as H4, RendererUtils as ve2, QuadMesh as ze2, StructTypeNode as Os, IndirectStorageBufferAttribute as Us, MeshBasicNodeMaterial as js, NodeBuilder as Es, Node as ks, Texture3DNode as Ct3, StorageTexture as Is, Data3DTexture as Ls, RedFormat as Ws, NearestFilter as Qe3, RepeatWrapping as Ve2, StorageTextureNode as qs } from "three/webgpu";
@@ -8837,7 +8837,7 @@ import { NodeUtils } from "three/webgpu";
 var hash = NodeUtils.hash;
 var hashString = NodeUtils.hashString;
 
-// node_modules/@takram/three-geospatial/build/webgpu.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-geospatial/build/webgpu.js
 var Pe3;
 function J2(s, e3, t2) {
   Pe3 ??= /* @__PURE__ */ new WeakMap();
@@ -9149,7 +9149,7 @@ var $o = class extends qs {
 var Zn3 = (...s) => new $o(...s);
 var { resetRendererState: Go, restoreRendererState: Ho } = ve2;
 
-// node_modules/@takram/three-atmosphere/build/webgpu.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/@takram/three-atmosphere/build/webgpu.js
 var H5 = "float";
 var Ai2 = "float";
 var q2 = "float";
@@ -12667,7 +12667,7 @@ var na = class extends Qt3 {
 };
 var wa = (...s) => new na(...s);
 
-// node_modules/tiny-invariant/dist/esm/tiny-invariant.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/tiny-invariant/dist/esm/tiny-invariant.js
 var isProduction = false;
 var prefix = "Invariant failed";
 function invariant(condition, message) {
@@ -12682,7 +12682,7 @@ function invariant(condition, message) {
   throw new Error(value);
 }
 
-// node_modules/three-clouds-webgpu/build/shared.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/three-clouds-webgpu/build/shared.js
 var jt4 = [
   0,
   8,
@@ -21554,7 +21554,7 @@ var Id = class extends js3 {
 };
 var xm = (t2) => new Id(t2);
 
-// node_modules/three-clouds-webgpu/build/shared2.js
+// ../t3-b6a46205-5bca3de197810b51/node_modules/three-clouds-webgpu/build/shared2.js
 import { Fn as y3, uv as W3, vec4 as w6, float as g7, context as $4, uniform as Q7, positionGeometry as K5, normalize as Y4, cubeTexture as J5, cos as C4, vec3 as X5, sin as E6, texture as Z2, equirectUV as ee3, pmremTexture as te5, clamp as ne4, positionWorld as A6 } from "three/tsl";
 import { NodeMaterial as De4, QuadMesh as be4, RenderTarget as Te4 } from "three/webgpu";
 function O4(e3) {

@@ -67,7 +67,7 @@ test('every Rosedale house plans a yard of finite triangles in the layout the ma
     const tris = plan.pushYard(A);
     assert.ok(A.pos.length === tris * 9 && A.nor.length === tris * 9 && A.col.length === tris * 9 && A.uv.length === tris * 6 && A.aux.length === tris * 6, `${rec.id}: layout`);
     assert.ok(A.pos.every(Number.isFinite) && A.nor.every(Number.isFinite) && A.col.every(Number.isFinite) && A.aux.every(Number.isFinite), `${rec.id}: finite`);
-    for (let i = 0; i < A.uv.length; i += 2) { total.kinds.add(A.uv[i]); assert.ok(Number.isInteger(A.uv[i]) && A.uv[i] >= 0 && A.uv[i] <= 7 && A.uv[i + 1] >= 0 && A.uv[i + 1] <= 1, `${rec.id}: kind ${A.uv[i]} rnd ${A.uv[i + 1]}`); }
+    for (let i = 0; i < A.uv.length; i += 2) { total.kinds.add(A.uv[i]); assert.ok(Number.isInteger(A.uv[i]) && A.uv[i] >= 0 && A.uv[i] <= 11 && A.uv[i + 1] >= 0 && A.uv[i + 1] <= 1, `${rec.id}: kind ${A.uv[i]} rnd ${A.uv[i + 1]}`); }
     // the same on every plan
     const B = newA(); Draw.planHouse(inp).pushYard(B);
     assert.deepEqual(B.pos, A.pos, `${rec.id}: a yard is the same on every load`);
@@ -80,8 +80,9 @@ test('every Rosedale house plans a yard of finite triangles in the layout the ma
   assert.ok(total.lidarHedges > 300 && total.lidarShrubs > 1500, `the lidar's hedges and shrubs are drawn: ${show()}`);
   for (const f of ['stone', 'iron', 'picket', 'brick', 'hedge']) assert.ok(total.fences[f] > 20, `${f}: ${JSON.stringify(total.fences)}`);
   assert.ok(total.beds > total.yards * 0.4 && total.lawn > total.yards * 0.6 && total.trees > 20 && total.lamps > 20, show());
-  for (const k of [KIND.solid, KIND.evergreen, KIND.deciduous, KIND.lawn, KIND.bed, KIND.iron, KIND.picket]) assert.ok(total.kinds.has(k), `kind ${k} is drawn`);
-  assert.ok(total.tris / total.yards < 400 && total.maxTris < 1600, `${(total.tris / total.yards).toFixed(0)} triangles a yard, at most ${total.maxTris}`);
+  for (const k of [KIND.solid, KIND.evergreen, KIND.deciduous, KIND.lawn, KIND.bed, KIND.iron, KIND.picket, KIND.cardEv, KIND.cardDec, KIND.twig, KIND.needle]) assert.ok(total.kinds.has(k), `kind ${k} is drawn`);
+  console.log(`yard triangles: ${(total.tris / total.yards).toFixed(0)} a yard, at most ${total.maxTris}`);
+  assert.ok(total.tris / total.yards < 700 && total.maxTris < 3200, `${(total.tris / total.yards).toFixed(0)} triangles a yard, at most ${total.maxTris}`);
 });
 
 // a plain yard on a flat lot, in the house's frame
@@ -150,4 +151,30 @@ test('a neighbourhood name picks its yard style', async () => {
   assert.equal(yardStyleOfPlace('Leaside'), 'postwar');
   assert.equal(yardStyleOfPlace('Liberty Village'), 'city');
   assert.equal(yardStyleOfPlace(undefined), 'city');
+});
+
+// jf-aru: the lawn and bed rectangles carry their half sizes in color and the metres from their centre in aux (the material feathers the edge from them); normals are unit length;
+// a bare-able shrub has stems, a hedge has leaf cards, a small tree is cards on branches (no cone)
+test('lawn and bed rectangles, leafy hedges and shrubs, small trees: the layout the polished material reads', () => {
+  const kindsOf = (A) => { const m = {}; for (let i = 0; i < A.uv.length; i += 2) m[A.uv[i]] = (m[A.uv[i]] || 0) + 1; return m; };
+  let sawLawn = 0, sawBed = 0, sawCard = 0, sawTwig = 0, sawNeedle = 0;
+  for (let n = 0; n < 60; n++) {
+    const p = planYard(ctxFor(`to-3dmassing-2025:${900 + n}`, { yd: 8, style: 'rosedale' }));
+    const A = newA(); const tris = p.push(A);
+    for (let t = 0; t < tris; t++) {
+      for (let v = 0; v < 3; v++) { const i = t * 3 + v, nx = A.nor[i * 3], ny = A.nor[i * 3 + 1], nz = A.nor[i * 3 + 2]; assert.ok(Math.abs(Math.hypot(nx, ny, nz) - 1) < 1e-3, 'unit normal'); }
+      const k = A.uv[t * 6];
+      if (k === KIND.lawn || k === KIND.bed) {
+        const hw = A.col[t * 9], hh = A.col[t * 9 + 1];
+        assert.ok(hw > 0.1 && hh > 0.1, 'half sizes in color');
+        for (let v = 0; v < 3; v++) assert.ok(Math.abs(A.aux[t * 6 + v * 2]) <= hw + 1e-6 && Math.abs(A.aux[t * 6 + v * 2 + 1]) <= hh + 1e-6, 'aux within the rectangle');
+        if (k === KIND.lawn) sawLawn++; else sawBed++;
+      }
+      if (k === KIND.cardEv || k === KIND.cardDec) { sawCard++; for (let v = 0; v < 3; v++) { const s = A.aux[t * 6 + v * 2], u = A.aux[t * 6 + v * 2 + 1]; assert.ok(s >= 0 && s <= 1 && u >= 0 && u <= 1, 'card st in 0..1'); } }
+      if (k === KIND.twig) sawTwig++;
+      if (k === KIND.needle) sawNeedle++;
+    }
+    void kindsOf;
+  }
+  assert.ok(sawLawn > 0 && sawBed > 0 && sawCard > 0 && sawTwig > 0, JSON.stringify({ sawLawn, sawBed, sawCard, sawTwig, sawNeedle }));
 });

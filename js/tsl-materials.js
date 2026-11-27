@@ -3870,4 +3870,5 @@ function clusterMaskBoxes(boxes, gap = 120, span = 900) {
 
 
 Object.assign(window.CITY, { COAT, coatSSR, physicalOrStandard, guardedInside, groundMaskBox, clusterMaskBoxes, lodDither, filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, setFootprintTable, footprintVertex, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, TREE_CARD_TWIGS: { haze: TWIG_HAZE, colour: TWIG_COLOUR }, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
+Object.assign(window.CITY, { noise2D, fbm2 }); // (the front yards' lawn matches the plot ground's grass: js/front-yard-material.js)
 })();

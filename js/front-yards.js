@@ -13,7 +13,7 @@
 //   no two neighbours match, and a house is the same on every load.
 import { stream, weighted, lerp, clamp, shade } from './building-draw-kit.js';
 
-export const KIND = { solid: 0, evergreen: 1, deciduous: 2, lawn: 3, bed: 4, iron: 5, picket: 6, chain: 7 };
+export const KIND = { solid: 0, evergreen: 1, deciduous: 2, lawn: 3, bed: 4, iron: 5, picket: 6, chain: 7, cardEv: 8, cardDec: 9, twig: 10, needle: 11 };
 
 // The yard styles by neighbourhood and era. Weights of the lot line's treatment: [hedge, stone wall, brick wall, iron fence (on a low stone base), picket, chain-link, nothing].
 // A source: the streets of each neighbourhood from the photographs John named (Rosedale: stone walls with piers, cedar hedges, wrought iron; the Annex and Cabbagetown:
@@ -94,47 +94,189 @@ function flat(W, F, ring, y, rgb, kind, rnd = 0) {
   W.quad(p[0], p[1], p[2], p[3], rgb, kind, rnd, up, [0, 0], [1, 0], [1, 1], [0, 1]);
 }
 
-// a clipped hedge (or a strip of one) from a to b: its cross section a trapezoid with a bevelled shoulder, `w` wide at the foot and `h` high; the ends closed
+// ---- leafy things: hedges, shrub masses, twigs, small trees (jf-aru) -------------------------------------------------------------------
+const hsh = (a, b, c = 0) => { const x = Math.sin(a * 12.9898 + b * 78.233 + c * 37.719) * 43758.5453; return x - Math.floor(x); }; // (a hash of a place: the same on every plan and across a run's pieces)
+const unit = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+const wdir = (F, v) => unit([F.tx * v[0] - F.nx * v[1], v[2], F.tz * v[0] - F.nz * v[1]]); // (a direction in the house's frame [u, v, y] as a world direction)
+
+// a leaf card: the quad centred at c ([u, v, y] in the house's frame) spanned by the frame vectors e1 and e2 (half extents), vertex normals toward `nrm`
+function leafCard(W, F, c, e1, e2, nrm, rgb, kind, rnd) {
+  const P = F.P, at = (s, t) => P(c[0] + e1[0] * s + e2[0] * t, c[1] + e1[1] * s + e2[1] * t, c[2] + e1[2] * s + e2[2] * t), n = wdir(F, nrm);
+  const a = at(-1, -1), b = at(1, -1), d = at(1, 1), e = at(-1, 1);
+  W.tri(a, b, d, rgb, kind, rnd, null, [[0, 0], [1, 0], [1, 1]], [n, n, n]);
+  W.tri(a, d, e, rgb, kind, rnd, null, [[0, 0], [1, 1], [0, 1]], [n, n, n]);
+}
+
+// a thin stem from p to q ([u, v, y] frame points) as two crossed ribbons, w0 wide at p and w1 at q: a twig, a branch, a trunk
+function stem(W, F, p, q, w0, w1, rgb, rnd = 0) {
+  const d = [q[0] - p[0], q[1] - p[1], q[2] - p[2]], P = F.P;
+  let p1 = unit([-d[1], d[0], 0]);
+  if (Math.hypot(d[0], d[1]) < 1e-6) p1 = [1, 0, 0];
+  const p2 = unit([d[1] * p1[2] - d[2] * p1[1], d[2] * p1[0] - d[0] * p1[2], d[0] * p1[1] - d[1] * p1[0]]);
+  for (const e of [p1, p2]) {
+    const A = P(p[0] - e[0] * w0 / 2, p[1] - e[1] * w0 / 2, p[2] - e[2] * w0 / 2), B = P(p[0] + e[0] * w0 / 2, p[1] + e[1] * w0 / 2, p[2] + e[2] * w0 / 2);
+    const C = P(q[0] + e[0] * w1 / 2, q[1] + e[1] * w1 / 2, q[2] + e[2] * w1 / 2), D = P(q[0] - e[0] * w1 / 2, q[1] - e[1] * w1 / 2, q[2] - e[2] * w1 / 2);
+    W.tri(A, B, C, rgb, KIND.twig, rnd, null, [[0, 0], [0, 0], [0, 0]]);
+    W.tri(A, C, D, rgb, KIND.twig, rnd, null, [[0, 0], [0, 0], [0, 0]]);
+  }
+}
+
+// a clipped hedge (or a strip of one) from a to b: its cross section a rounded loaf (vertical sides, a rounded shoulder, a flat crown) `w` wide at the foot and `h` high, in sections about
+// 1.1 m long with a little wobble of the surface and of the crown's height (from a hash of the place, so the pieces of a run meet), the ends closed. The material breaks its silhouette up
+// into leaf-sized bites; a fringe of leaf cards stands out of the shoulders (kind 8, or 9 for a deciduous hedge: bare in winter)
 function hedgeRun(W, F, a, b, w, h, yb, rgb, kind, rnd, capEnds = true) {
   const dx = b[0] - a[0], dv = b[1] - a[1], L = Math.hypot(dx, dv);
   if (L < 0.15) return;
   const tu = dx / L, tv = dv / L, nu = -tv, nv = tu, P = F.P;
-  const prof = [[-w / 2, -SKIRT], [-w / 2, h * 0.8], [-w * 0.36, h], [w * 0.36, h], [w / 2, h * 0.8], [w / 2, -SKIRT]]; // (lateral, height over the foot; the foot sinks a skirt into the ground so a slope shows no gap)
-  const pt = (p, k) => P(p[0] + nu * prof[k][0], p[1] + nv * prof[k][0], yb + prof[k][1]);
-  for (let k = 0; k < prof.length - 1; k++) {
-    const shadeK = k === 2 ? 1.12 : k === 0 || k === 4 ? 0.9 : 1.0;
-    W.quad(pt(a, k), pt(b, k), pt(b, k + 1), pt(a, k + 1), shade(rgb, shadeK), kind, rnd, null, [0, prof[k][1]], [L, prof[k][1]], [L, prof[k + 1][1]], [0, prof[k + 1][1]]);
+  const hw = w / 2, r = Math.min(w * 0.42, h * 0.36), cy = h - r, cx = hw - r, K = Math.PI / 6;
+  // the profile (lateral, height) and its outward normal, left foot round the loaf to the right foot
+  const prof = [[-hw, -SKIRT, -1, 0], [-hw, cy, -1, 0]];
+  for (let i = 1; i <= 3; i++) { const t = i * K; prof.push([-cx - r * Math.cos(t), cy + r * Math.sin(t), -Math.cos(t), Math.sin(t)]); }
+  for (let i = 3; i >= 1; i--) { const t = i * K; prof.push([cx + r * Math.cos(t), cy + r * Math.sin(t), Math.cos(t), Math.sin(t)]); }
+  prof.push([hw, cy, 1, 0], [hw, -SKIRT, 1, 0]);
+  const np = prof.length, n = Math.max(1, Math.round(L / 1.1));
+  const rings = [];
+  for (let k = 0; k <= n; k++) {
+    const t = k / n, u = a[0] + dx * t, v = a[1] + dv * t, crown = 0.965 + hsh(Math.round(u * 5), Math.round(v * 5), 1) * 0.07;
+    const ring = [];
+    for (let i = 0; i < np; i++) {
+      const [lat0, y0, ox, oy] = prof[i];
+      const wob = i === 0 || i === np - 1 ? 0 : (hsh(Math.round(u * 5), Math.round(v * 5), 2 + i) - 0.5) * 0.09 * w;
+      const lat = lat0 + ox * wob, y = (i === 0 || i === np - 1 ? y0 : (y0 + oy * wob) * crown);
+      ring.push({ p: P(u + nu * lat, v + nv * lat, yb + y), n: wdir(F, [nu * ox, nv * ox, oy]) });
+    }
+    rings.push(ring);
+  }
+  for (let k = 0; k < n; k++) {
+    const s0 = (k / n) * L, s1 = ((k + 1) / n) * L, R0 = rings[k], R1 = rings[k + 1];
+    for (let i = 0; i < np - 1; i++) {
+      const y0 = prof[i][1], y1 = prof[i + 1][1];
+      W.tri(R0[i].p, R1[i].p, R1[i + 1].p, rgb, kind, rnd, null, [[s0, y0], [s1, y0], [s1, y1]], [R0[i].n, R1[i].n, R1[i + 1].n]);
+      W.tri(R0[i].p, R1[i + 1].p, R0[i + 1].p, rgb, kind, rnd, null, [[s0, y0], [s1, y1], [s0, y1]], [R0[i].n, R1[i + 1].n, R0[i + 1].n]);
+    }
   }
   if (capEnds) {
-    for (const [p, s] of [[a, 0], [b, L]]) {
-      for (let k = 1; k < prof.length - 2; k++) { // (a fan over the end: the profile's polygon)
-        W.tri(pt(p, 0), pt(p, k), pt(p, k + 1), shade(rgb, 0.85), kind, rnd, null, [[s, 0], [s, prof[k][1]], [s, prof[k + 1][1]]]);
+    for (const [ring, s, sgn] of [[rings[0], 0, -1], [rings[n], L, 1]]) {
+      const ax = wdir(F, [tu * sgn, tv * sgn, 0]);
+      for (let i = 1; i < np - 2; i++) W.tri(ring[0].p, ring[i].p, ring[i + 1].p, shade(rgb, 0.9), kind, rnd, null, [[s, 0], [s, prof[i][1]], [s, prof[i + 1][1]]], [ax, ax, ax]);
+      W.tri(ring[0].p, ring[np - 2].p, ring[np - 1].p, shade(rgb, 0.9), kind, rnd, null, [[s, 0], [s, prof[np - 2][1]], [s, 0]], [ax, ax, ax]);
+    }
+  }
+  // the fringe: leaf cards leaning out of the shoulders and the crown's edge
+  if (h >= 0.6) {
+    const m = Math.max(1, Math.round(L / 0.42)), ck = kind === KIND.deciduous ? KIND.cardDec : KIND.cardEv, cs = Math.min(0.27, h * 0.2);
+    for (let j = 0; j < m; j++) {
+      const t = (j + 0.5) / m, u = a[0] + dx * t, v = a[1] + dv * t;
+      for (const sd of [-1, 1]) {
+        const pick = hsh(Math.round(u * 6), Math.round(v * 6), 20 + sd), th = pick < 0.4 ? 2 : pick < 0.8 ? 3 : 4; // (on the shoulder, higher, or at the crown's edge)
+        const [lat0, y0, ox, oy] = th === 4 ? [(cx * 0.6) * (sd < 0 ? -1 : 1), h, 0, 1] : [sd * (cx + r * Math.cos(th * K - K)), cy + r * Math.sin(th * K - K), sd * Math.cos(th * K - K), Math.sin(th * K - K)];
+        const lean = 0.07 + hsh(Math.round(u * 6), Math.round(v * 6), 30 + sd) * 0.06;
+        const c = [u + nu * (lat0 + ox * 0.03), v + nv * (lat0 + ox * 0.03), yb + y0 + oy * 0.03];
+        const tg = [nu * (-sd * oy), nv * (-sd * oy), sd * ox]; // (the surface's tangent in the profile plane: up and in)
+        leafCard(W, F, c, [tu * cs, tv * cs, 0], [tg[0] * cs * 1.1 + nu * ox * lean, tg[1] * cs * 1.1 + nv * ox * lean, tg[2] * cs * 1.1 + oy * lean], [nu * ox, nv * ox, oy + 0.35], shade(rgb, 1.06 + hsh(j, sd, 5) * 0.12), ck, hsh(Math.round(u * 9), Math.round(v * 9), 40 + sd));
       }
-      W.tri(pt(p, 0), pt(p, prof.length - 2), pt(p, prof.length - 1), shade(rgb, 0.85), kind, rnd, null, [[s, 0], [s, prof[prof.length - 2][1]], [s, 0]]);
     }
   }
 }
 
-// a rounded mass (a shrub, a clipped ball, a crown): a 7-sided dome, a base ring, a bulging middle ring and an apex; smooth normals, a little irregular
-function dome(W, F, u, v, rx, rv, h, yb, rgb, kind, rnd, rough = 0.12) {
-  const n = 7, P = F.P, g = stream(`${kind}:${Math.round(u * 40)}:${Math.round(v * 40)}`, 'dome');
-  const r0 = [], r1 = [], rr = [];
-  for (let i = 0; i < n; i++) { const j = 1 + (g() - 0.5) * 2 * rough; rr.push(j); }
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + g() * 0.15;
-    r0.push(P(u + Math.cos(a) * rx * 0.86 * rr[i], v + Math.sin(a) * rv * 0.86 * rr[i], yb + h * 0.04));
-    r1.push(P(u + Math.cos(a) * rx * rr[i], v + Math.sin(a) * rv * rr[i], yb + h * 0.5));
+// a rounded shrub mass (a foundation shrub, a clipped ball, a lilac): four rings up a flattened dome, smooth normals, a little irregular; leaf cards at the shoulder; an evergreen is
+// green all year with a snow cap (kind 1); a deciduous one is a leafy shell in summer and, bare, a mesh of twigs over a few stems (kind 2)
+function shrubMass(W, F, u, v, rx, rv, h, yb, rgb, kind, rnd, rough = 0.1) {
+  const n = 9, P = F.P, rings = [[0.9, 0.03, 0.05], [1.0, 0.34, 0.25], [0.9, 0.7, 0.6], [0.52, 0.94, 0.9]];
+  const pts = [], nrm = [];
+  const sd = Math.round(u * 40) * 7 + Math.round(v * 40);
+  for (let j = 0; j < rings.length; j++) {
+    const pr = [], nr = [];
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + (hsh(sd, i, 1) - 0.5) * 0.25, rr = 1 + (hsh(sd, i, 2 + j) - 0.5) * 2 * rough, [rad, ht, vk] = rings[j];
+      pr.push(P(u + Math.cos(a) * rx * rad * rr, v + Math.sin(a) * rv * rad * rr, yb + h * ht * (1 + (hsh(sd, i, 9 + j) - 0.5) * rough * 0.5)));
+      nr.push(wdir(F, [Math.cos(a) * (1 - vk), Math.sin(a) * (1 - vk), vk + 0.05]));
+    }
+    pts.push(pr); nrm.push(nr);
   }
-  const apex = P(u, v, yb + h);
-  const nrm = (p, k) => { const dxz = [p[0] - P(u, v, 0)[0], p[2] - P(u, v, 0)[2]], l = Math.hypot(dxz[0], dxz[1]) || 1; return [dxz[0] / l * (1 - k), k, dxz[1] / l * (1 - k)]; };
-  const nl = (p, k) => { const q = nrm(p, k), l = Math.hypot(q[0], q[1], q[2]) || 1; return [q[0] / l, q[1] / l, q[2] / l]; };
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
-    // the band between the base and the middle ring (almost upright), the cap between the middle ring and the apex
-    W.tri(r0[i], r0[j], r1[j], rgb, kind, rnd, null, [[0, 0], [0, 0], [0, h * 0.5]], [nl(r0[i], 0.05), nl(r0[j], 0.05), nl(r1[j], 0.3)]);
-    W.tri(r0[i], r1[j], r1[i], rgb, kind, rnd, null, [[0, 0], [0, h * 0.5], [0, h * 0.5]], [nl(r0[i], 0.05), nl(r1[j], 0.3), nl(r1[i], 0.3)]);
-    W.tri(r1[i], r1[j], apex, shade(rgb, 1.08), kind, rnd, null, [[0, h * 0.5], [0, h * 0.5], [0, h]], [nl(r1[i], 0.55), nl(r1[j], 0.55), [0, 1, 0]]);
+  const apex = P(u, v, yb + h * 1.0), up = wdir(F, [0, 0, 1]);
+  for (let j = 0; j + 1 < rings.length; j++) {
+    for (let i = 0; i < n; i++) {
+      const i2 = (i + 1) % n, h0 = h * rings[j][1], h1 = h * rings[j + 1][1];
+      W.tri(pts[j][i], pts[j][i2], pts[j + 1][i2], rgb, kind, rnd, null, [[0, h0], [0, h0], [0, h1]], [nrm[j][i], nrm[j][i2], nrm[j + 1][i2]]);
+      W.tri(pts[j][i], pts[j + 1][i2], pts[j + 1][i], rgb, kind, rnd, null, [[0, h0], [0, h1], [0, h1]], [nrm[j][i], nrm[j + 1][i2], nrm[j + 1][i]]);
+    }
   }
+  const last = rings.length - 1;
+  for (let i = 0; i < n; i++) { const i2 = (i + 1) % n; W.tri(pts[last][i], pts[last][i2], apex, shade(rgb, 1.06), kind, rnd, null, [[0, h * rings[last][1]], [0, h * rings[last][1]], [0, h]], [nrm[last][i], nrm[last][i2], up]); }
+  // a fringe of leaf cards on the shoulder, and for a deciduous mass its stems
+  const ck = kind === KIND.deciduous ? KIND.cardDec : KIND.cardEv;
+  if (rx >= 0.45) {
+    const m = rx > 0.9 ? 6 : 4;
+    for (let c = 0; c < m; c++) {
+      const a = ((c + hsh(sd, c, 31)) / m) * Math.PI * 2, rad = rx * 0.9, cs = Math.min(0.24, 0.12 + rx * 0.08);
+      const cu = Math.cos(a), cv = Math.sin(a);
+      leafCard(W, F, [u + cu * rad, v + Math.sin(a) * rad * (rv / rx), yb + h * 0.8], [-cv * cs, cu * cs, 0], [cu * cs * 0.5, cv * cs * 0.5, cs * 0.9], [cu, cv, 0.6], shade(rgb, 1.08), ck, hsh(sd, c, 41));
+    }
+  }
+  if (kind === KIND.deciduous) {
+    const ns = rx > 0.8 ? 5 : 3, bark = [0.2, 0.15, 0.11];
+    for (let c = 0; c < ns; c++) {
+      const a = ((c + hsh(sd, c, 51)) / ns) * Math.PI * 2, cu = Math.cos(a), cv = Math.sin(a), k = 0.85 + hsh(sd, c, 52) * 0.1;
+      const p0 = [u + cu * 0.04, v + cv * 0.04, yb - 0.05], p1 = [u + cu * rx * 0.42, v + cv * rv * 0.42, yb + h * 0.5], p2 = [u + cu * rx * 0.78 * k, v + cv * rv * 0.78 * k, yb + h * 0.86];
+      stem(W, F, p0, p1, 0.035, 0.026, bark); stem(W, F, p1, p2, 0.026, 0.014, bark);
+      const a2 = a + (hsh(sd, c, 53) - 0.5) * 1.4, p3 = [u + Math.cos(a2) * rx * 0.8, v + Math.sin(a2) * rv * 0.8, yb + h * 0.72];
+      stem(W, F, p1, p3, 0.02, 0.011, bark);
+    }
+  }
+}
+
+// a small ornamental tree at (u, v) in the house's frame, h high: a Japanese maple (deep red), a crab apple, a magnolia (evergreen, glossy) or a dwarf conifer. A trunk and branches of thin
+// stems (the winter tree), a crown of leaf cards on them (bare in winter, in autumn colour on its way), a conifer's whorls of needle fans
+function smallTree(W, F, u, v, o) {
+  const { type, h, yb, rgb, rnd } = o, sd = Math.round(u * 40) * 11 + Math.round(v * 40), bark = type === 'maple' ? [0.12, 0.09, 0.09] : [0.2, 0.15, 0.11];
+  const lean = [(hsh(sd, 1, 1) - 0.5) * 0.3, (hsh(sd, 2, 1) - 0.5) * 0.3];
+  if (type === 'conifer') {
+    const Rm = h * 0.3, tiers = 6;
+    stem(W, F, [u, v, yb - 0.05], [u, v, yb + h * 0.9], 0.1, 0.03, bark);
+    for (let i = 0; i < tiers; i++) {
+      const f = i / tiers, yy = yb + 0.3 + f * (h - 0.4), R = Rm * Math.pow(1 - f, 0.75) + 0.1, cnt = 6, a0 = hsh(sd, i, 3) * 6.28;
+      for (let c = 0; c < cnt; c++) {
+        const a = a0 + (c / cnt) * Math.PI * 2, cu = Math.cos(a), cv = Math.sin(a), hwid = Math.min(0.26, 0.12 + R * 0.2), P = F.P;
+        const tip = [u + cu * R, v + cv * R, yy - 0.22 - R * 0.25], root = [u + cu * 0.06, v + cv * 0.06, yy];
+        const sx = -cv * hwid, sv = cu * hwid, n = wdir(F, [cu * 0.5, cv * 0.5, 0.7]);
+        const A = P(root[0] - sx, root[1] - sv, root[2]), B = P(root[0] + sx, root[1] + sv, root[2]), C = P(tip[0] + sx * 0.9, tip[1] + sv * 0.9, tip[2]), D = P(tip[0] - sx * 0.9, tip[1] - sv * 0.9, tip[2]);
+        const col = shade(rgb, 0.9 + hsh(sd, i * 7 + c, 4) * 0.2), rr = hsh(sd, i * 7 + c, 5);
+        W.tri(A, B, C, col, KIND.needle, rr, null, [[0, 0], [1, 0], [1, 1]], [n, n, n]);
+        W.tri(A, C, D, col, KIND.needle, rr, null, [[0, 0], [1, 1], [0, 1]], [n, n, n]);
+      }
+    }
+    return;
+  }
+  const cr = h * 0.32, cyc = yb + h * 0.68, deciduous = type !== 'magnolia', ck = deciduous ? KIND.cardDec : KIND.cardEv;
+  const t1 = [u + lean[0] * 0.5, v + lean[1] * 0.5, yb + h * 0.28], t2 = [u + lean[0], v + lean[1], yb + h * 0.5];
+  stem(W, F, [u, v, yb - 0.05], t1, 0.16, 0.12, bark); stem(W, F, t1, t2, 0.12, 0.09, bark);
+  const nb = 5;
+  for (let i = 0; i < nb; i++) {
+    const a = ((i + hsh(sd, i, 7)) / nb) * Math.PI * 2, cu = Math.cos(a), cv = Math.sin(a), rr = cr * (0.55 + hsh(sd, i, 8) * 0.3);
+    const e = [u + lean[0] + cu * rr, v + lean[1] + cv * rr, yb + h * (0.72 + hsh(sd, i, 9) * 0.14)], mid = [(t2[0] + e[0]) / 2, (t2[1] + e[1]) / 2, (t2[2] + e[2]) / 2 + 0.05];
+    stem(W, F, t2, mid, 0.07, 0.05, bark); stem(W, F, mid, e, 0.05, 0.03, bark);
+    for (const sgn of [-1, 1]) {
+      const a2 = a + sgn * (0.5 + hsh(sd, i, 10 + sgn) * 0.4), f = [u + lean[0] + Math.cos(a2) * cr * 0.95, v + lean[1] + Math.sin(a2) * cr * 0.95, yb + h * (0.66 + hsh(sd, i, 12 + sgn) * 0.22)];
+      stem(W, F, e, f, 0.03, 0.015, bark);
+    }
+  }
+  const nc = 44;
+  for (let c = 0; c < nc; c++) {
+    // a point in the crown's ellipsoid shell, a card facing out of it
+    const th = hsh(sd, c, 21) * Math.PI * 2, ph = Math.acos(1 - hsh(sd, c, 22) * 1.7), rad = 0.55 + hsh(sd, c, 23) * 0.4;
+    const off = [Math.sin(ph) * Math.cos(th) * cr * rad, Math.sin(ph) * Math.sin(th) * cr * rad, Math.cos(ph) * cr * 0.8 * rad];
+    const cen = [u + lean[0] + off[0], v + lean[1] + off[1], cyc + off[2] - 0.15], nrm = unit([off[0], off[1], off[2] * 1.4 + 0.1]);
+    const e1 = unit([-nrm[1], nrm[0], 0]), e2 = unit([nrm[1] * e1[2] - nrm[2] * e1[1], nrm[2] * e1[0] - nrm[0] * e1[2], nrm[0] * e1[1] - nrm[1] * e1[0]]), cs = 0.3 + hsh(sd, c, 24) * 0.14;
+    leafCard(W, F, cen, [e1[0] * cs, e1[1] * cs, e1[2] * cs], [e2[0] * cs, e2[1] * cs, e2[2] * cs], nrm, shade(rgb, 0.85 + hsh(sd, c, 25) * 0.35), ck, hsh(sd, c, 26));
+  }
+}
+
+// a ragged-edged rectangle on the ground (a lawn or a bed): aux = the metres from its centre at each corner, color = (half width, half depth, tone), so the material can feather its edge
+function softRect(W, F, u0, v0, u1, v1, y, kind, rnd, tone = 0.5) {
+  const P = F.P, hw = (u1 - u0) / 2, hh = (v1 - v0) / 2, col = [hw, hh, tone];
+  W.tri(P(u0, v0, y), P(u1, v0, y), P(u1, v1, y), col, kind, rnd, up, [[-hw, -hh], [hw, -hh], [hw, hh]]);
+  W.tri(P(u0, v0, y), P(u1, v1, y), P(u0, v1, y), col, kind, rnd, up, [[-hw, -hh], [hw, hh], [-hw, hh]]);
 }
 
 // a fence of bars or pickets between two points on the lot line: posts, a plinth where asked, rails and one alpha-tested strip (the material cuts the bars)
@@ -231,7 +373,7 @@ export function planYard(ctx) {
   const gr = { h: rl(), tone: rl(), plinth: rl(), side: rl(), sideLen: rl(), gate: rl() };
 
   const colours = () => {
-    const green = lin(weighted([[0x2f4d38, 4], [0x36573f, 3], [0x2a4733, 3]], gr.tone));
+    const green = lin(weighted([[0x2e4a2b, 4], [0x37552d, 3], [0x2a4528, 3], [0x3d5c30, 2]], gr.tone));
     return { green };
   };
 
@@ -257,12 +399,12 @@ export function planYard(ctx) {
       if (drive) obstacles.push([drive.u0 - 0.3, drive.u1 + 0.3]);
       obstacles.sort((p, q) => p[0] - q[0]);
       if (rg() < S.lawn && yd >= 2.6) {
-        const lawnRgb = lin(weighted([[0x446631, 3], [0x3f6130, 3], [0x4e6c33, 2]], rg()));
+        rg(); // (the lawn is the plot ground's own grass in the material; no colour is chosen here)
         let a = uA + 0.2;
         const lv0 = -yd + (line ? 0.5 : 0.1), lv1 = -(ctx.bedDepth ?? 0.95) - 0.3;
         for (const [o0, o1] of [...obstacles, [uB + 1, uB + 2]]) {
           const b = Math.min(o0, uB - 0.2);
-          if (b - a > 0.8 && lv1 - lv0 > 0.8) { flat(W, F, [[a, lv1], [b, lv1], [b, lv0], [a, lv0]], y0 + 0.035, lawnRgb, KIND.lawn, rg()); stats.lawn++; }
+          if (b - a > 0.8 && lv1 - lv0 > 0.8) { softRect(W, F, a - 0.3, lv0 - 0.3, b + 0.3, lv1 + 0.2, y0 + 0.035, KIND.lawn, rg()); stats.lawn++; }
           a = Math.max(a, o1);
         }
       }
@@ -275,10 +417,10 @@ export function planYard(ctx) {
       if (u1 - 0.2 - from > 1.3) spans.push([from, u1 - 0.2]);
       const bedD = 0.8 + rb() * 0.4;
       const bedOn = rb() < S.beds && yd >= 2.4;
-      const mulch = lin(weighted([[0x4a3626, 3], [0x3f2f22, 3], [0x5a4330, 2]], rb()));
+      const mulchTone = rb();
       const foundation = [];
       for (const [a, b] of spans) {
-        if (bedOn) { flat(W, F, [[a, -0.15], [b, -0.15], [b, -0.15 - bedD], [a, -0.15 - bedD]], y0 + 0.04, mulch, KIND.bed, rb()); stats.beds++; }
+        if (bedOn) { softRect(W, F, a - 0.1, -0.15 - bedD, b + 0.1, -0.05, y0 + 0.04, KIND.bed, rb(), mulchTone); stats.beds++; }
         if (rs() < S.shrubs) {
           const n = clamp(Math.round((b - a) / 1.7), 1, 4);
           for (let i = 0; i < n; i++) {
@@ -295,21 +437,21 @@ export function planYard(ctx) {
         for (const [a, b] of [[gap[0] - 0.05 - bw, gap[0] - 0.05], [gap[1] + 0.05, gap[1] + 0.05 + bw]]) {
           if (drive && b > drive.u0 - 0.2 && a < drive.u1 + 0.2) continue;
           if (a < uA + 0.3 || b > uB - 0.3) continue;
-          flat(W, F, [[a, -0.15 - bedD], [b, -0.15 - bedD], [b, -wl], [a, -wl]], y0 + 0.04, mulch, KIND.bed, rb()); stats.beds++;
+          softRect(W, F, a, -wl, b, -0.15 - bedD + 0.15, y0 + 0.04, KIND.bed, rb(), mulchTone); stats.beds++;
         }
       }
       const shrubKinds = [[KIND.evergreen, 5], [KIND.deciduous, 4]];
-      const shrubCol = (kind, x) => kind === KIND.evergreen ? lin(weighted([[0x273d2c, 3], [0x2f4f33, 3], [0x35553a, 2]], x)) : lin(weighted([[0x5d7a45, 3], [0x6b8a3d, 3], [0x4a6a35, 3], [0x7a3b4a, 1]], x));
+      const shrubCol = (kind, x) => kind === KIND.evergreen ? lin(weighted([[0x24402a, 3], [0x2f5030, 3], [0x38582f, 2]], x)) : lin(weighted([[0x5d7a45, 3], [0x6b8a3d, 3], [0x4a6a35, 3], [0x7a3b4a, 1]], x));
       for (const s of foundation) {
         const k = weighted(shrubKinds, rs());
-        dome(W, F, s.u, s.v, s.r, s.r, s.h, y0 - 0.1, shrubCol(k, rs()), k, rs());
+        shrubMass(W, F, s.u, s.v, s.r, s.r, s.h, y0 - 0.1, shrubCol(k, rs()), k, rs());
         stats.shrubs++;
       }
       // the lidar's shrub masses
       for (const s of shrubs) {
         const k = s.h > 2.2 ? KIND.deciduous : weighted(shrubKinds, rs());
         const r = clamp(s.r, 0.35, 2.4), h = clamp(s.h, 0.5, 4.2);
-        dome(W, F, s.u, s.v, r, r, h, y0 - 0.1, shrubCol(k, rs()), k, rs());
+        shrubMass(W, F, s.u, s.v, r, r, h, y0 - 0.1, shrubCol(k, rs()), k, rs());
         stats.lidarShrubs++;
       }
 
@@ -338,7 +480,7 @@ export function planYard(ctx) {
         const hrng = stream(id, 'hedge:' + Math.round(hd.pts[0][0] * 10) + ':' + Math.round(hd.pts[0][1] * 10));
         const evergreen = hd.h >= 1.6 || hrng() < 0.6;
         const kind = evergreen ? KIND.evergreen : KIND.deciduous;
-        const rgb = evergreen ? lin(weighted([[0x2f4d38, 4], [0x36573f, 3], [0x2a4733, 3], [0x3a5e42, 2]], hrng())) : lin(weighted([[0x4a6a35, 3], [0x557a3a, 3], [0x3f5f33, 2]], hrng()));
+        const rgb = evergreen ? lin(weighted([[0x2e4a2b, 4], [0x37552d, 3], [0x2a4528, 3], [0x3d5c30, 2]], hrng())) : lin(weighted([[0x4a6a35, 3], [0x557a3a, 3], [0x3f5f33, 2]], hrng()));
         const rnd = hrng();
         const w = clamp(hd.w * 0.85, 0.5, 2.6), h = clamp(hd.h, 0.6, 4.0);
         for (let i = 0; i + 1 < hd.pts.length; i++) {
@@ -391,14 +533,14 @@ export function planYard(ctx) {
         stats.fence = line;
       }
 
-      // ---- the odd ornamental tree (a small crown on a thin trunk: a Japanese maple, a crab apple) and the odd lamp post at the walk
+      // ---- the odd ornamental tree (a Japanese maple, a crab apple, a magnolia or a dwarf conifer, jf-aru) and the odd lamp post at the walk
       if (rt() < S.tree && yd >= 4 && (ctx.canopy == null || ctx.canopy < 0.3)) {
         const side = rt() < 0.5 ? -1 : 1;
         const u = side < 0 ? (partyL ? u0 + 1 : Math.max(uA + 1.2, u0 - 0.5)) : (partyR ? u1 - 1 : Math.min(uB - 1.2, u1 + 0.5));
-        const v = -yd * (0.45 + rt() * 0.25), maple = rt() < 0.5;
-        post(W, F, u, v, 0.1, y0 - 0.1, y0 + 1.7 + rt() * 0.4, lin(0x4a3b2c), lin(0x4a3b2c));
-        const cr = 1.2 + rt() * 0.8;
-        dome(W, F, u, v, cr, cr, 1.9 + rt() * 0.6, y0 + 1.5, maple ? lin(weighted([[0x6a1f2b, 3], [0x7a2a33, 2], [0x4a1c2a, 1]], rt())) : lin(weighted([[0x5d7a45, 3], [0x4a6a35, 2]], rt())), KIND.deciduous, rt(), 0.18);
+        const v = -yd * (0.45 + rt() * 0.25), type = weighted([['maple', 4], ['crab', 3], ['magnolia', 2], ['conifer', 3]], rt());
+        const rgb = type === 'maple' ? lin(weighted([[0x6a1f2b, 3], [0x7a2a33, 2], [0x4a1c2a, 1]], rt())) : type === 'crab' ? lin(weighted([[0x5d7a45, 3], [0x4f6f3e, 2], [0x6a7a3c, 1]], rt()))
+          : type === 'magnolia' ? lin(weighted([[0x2f4a30, 3], [0x36563a, 2]], rt())) : lin(weighted([[0x2a4a3a, 3], [0x2f5240, 2], [0x3a5a4a, 1]], rt()));
+        smallTree(W, F, u, v, { type, h: 2.8 + rt() * 1.4, yb: y0 - 0.05, rgb, rnd: rt() });
         stats.trees++;
       }
       if (rg() < S.lamp && yd >= 3.6) {
