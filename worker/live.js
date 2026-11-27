@@ -8,7 +8,8 @@
 //   (the TTC's feed has no CORS header, so the browser can't read it itself)
 // - /live/roadworks: the City of Toronto's Road Restrictions feed (open data, Open Government Licence – Toronto) cut down to
 //   compact records inside the playable frames (worker/roadworks.js), read from the City at most once every 15 minutes
-//   whatever the number of visitors (the Cache API, then a module-level copy): { t: fetch time (ms), counts, records }.
+//   whatever the number of visitors (the Cache API, then a module-level copy): { t: fetch time (ms), counts, records, ttc }.
+//   ttc is the TTC's own detours when alerts.ttc.ca or the homepage could be read, and [] when they could not.
 //   js/roadworks.js draws what it reports; a feed that is down is a 502 and the page draws nothing.
 // - the landing page's clips (assets/site/clips/*, also run_worker_first): the asset with byte-range (206) support,
 //   which the assets binding lacks and Safari needs to play a <video> (worker/range.js); on every host, no redirect
@@ -18,7 +19,7 @@
 
 import { ATTRIBUTION, geocode } from './geocode.js';
 import { isClip, serveClip } from './range.js';
-import { FEED as RESTRICTIONS_FEED, parseRestrictions } from './roadworks.js';
+import { FEED as RESTRICTIONS_FEED, parseRestrictions, detoursFromAlerts, parseTtcHomepage, mergeDetours } from './roadworks.js';
 
 const OLD_HOST = 'slop-toronto.cloud6711.workers.dev', SITE = 'https://sloptoronto.ca';
 const FEED = 'https://bustime.ttc.ca/gtfsrt/vehicles';
@@ -130,6 +131,23 @@ async function refreshVehicles(ctx) {
 }
 
 const ROADWORKS_TTL = 900; // s
+const TTC_UA = { 'user-agent': 'SlopToronto/1.0 (+https://sloptoronto.ca)' };
+// The TTC's own detours, best effort. A failure here leaves the City records alone.
+async function ttcDetours() {
+  let alerts = [];
+  try {
+    const res = await fetch('https://alerts.ttc.ca/api/alerts/site-wide', { cf: { cacheTtl: 0 }, headers: TTC_UA });
+    if (res.ok) alerts = detoursFromAlerts(await res.json());
+  } catch { /* the City feed still stands */ }
+  let home = [];
+  if (!alerts.length) {
+    try {
+      const res = await fetch('https://www.ttc.ca/', { cf: { cacheTtl: 0 }, headers: TTC_UA });
+      if (res.ok) home = parseTtcHomepage(await res.text());
+    } catch { /* same */ }
+  }
+  return mergeDetours(alerts, home);
+}
 let lastRoadworks = null; // { at: ms, body }
 async function roadworks(ctx) {
   const now = Date.now();
@@ -148,7 +166,8 @@ async function roadworks(ctx) {
   const res = await fetch(RESTRICTIONS_FEED, { cf: { cacheTtl: 0 }, headers: { 'user-agent': 'SlopToronto/1.0 (+https://sloptoronto.ca)' } });
   if (!res.ok) throw new Error('feed ' + res.status);
   const { records, counts } = parseRestrictions(await res.json(), { now });
-  const body = JSON.stringify({ t: now, counts, records });
+  const ttc = await ttcDetours();
+  const body = JSON.stringify({ t: now, counts, records, ttc });
   lastRoadworks = { at: now, body };
   ctx.waitUntil(cache.put(key, new Response(body, { headers: { 'cache-control': `max-age=${ROADWORKS_TTL}`, 'x-fetched-at': String(now) } })));
   return body;

@@ -242,7 +242,7 @@ function createTransitBuses(traffic) {
           const lat = Math.abs((st.x - e.sx) * e.rx + (st.z - e.sz) * e.rz);
           if (lat < bd) {
             bd = lat;
-            best = { ei: i, s: Math.max(9, Math.min(e.len - 9, a)), name: st.name };
+            best = { ei: i, s: Math.max(9, Math.min(e.len - 9, a)), name: st.name, x: st.x, z: st.z };
           }
         }
         if (!best || (stops.length && best.ei === stops[stops.length - 1].ei && best.s - stops[stops.length - 1].s < 30)) continue;
@@ -261,26 +261,61 @@ function createTransitBuses(traffic) {
   // one in the middle stays on it, as a position along the route (the scheduled bus passes it), and a bus on the road that
   // reaches it leaves its route there and roams on (traffic.js routeMove) until it is recycled. Re-done whenever the closed
   // roads change (the hours of the records), from the route as it was matched
-  const detours = { routes: 0, detoured: 0, left: 0, cut: 0 };
+  const detours = { routes: 0, detoured: 0, left: 0, cut: 0, oos: 0, temporary: 0 };
+  function edgeName(e) {
+    if (!e) return '';
+    if (e.name) return e.name;
+    const RG = window.CITY.GEO && window.CITY.GEO.roadGraph;
+    const link = RG && e.li >= 0 ? RG.links[e.li] : null;
+    return link && RG.names ? (RG.names[link[2]] || '') : '';
+  }
   function reroute() {
-    detours.routes = detours.detoured = detours.left = detours.cut = 0;
+    detours.routes = detours.detoured = detours.left = detours.cut = detours.oos = detours.temporary = 0;
+    const RW = window.CITY.roadworks;
     for (const r of routes) {
       const { links: base, stops: baseStops } = r.base;
-      const way = window.CITY.roadworks.detourRoute(base);
+      const way = RW.detourRoute(base, {
+        name: edgeName,
+        viaFor(closed) {
+          const hits = (window.CITY.ttcDetours || []).filter((d) => String(d.route) === String(r.pat.route));
+          if (!hits.length) return null;
+          const names = closed.map((e) => RW.nameKey(edgeName(e))).filter(Boolean);
+          const hit = hits.find((d) => names.some((n) => String(d.location || '').toLowerCase().includes(n.split(' ')[0]))) || hits[0];
+          const via = (hit.via || []).map((s) => RW.nameKey(s)).filter(Boolean);
+          return via.length ? via : null;
+        }
+      });
       detours.detoured += way.detoured; detours.left += way.left; detours.cut += way.cut;
       const out = way.links;
-      if (out.length === r.links.length && out.every((e, k) => e === r.links[k])) continue;
-      const cum = [0];
-      for (let k = 0; k < out.length; k++) cum.push(cum[k] + out[k].len + 10);
-      const at = new Map(out.map((e, k) => [e, k]));
-      const stops = [];
-      for (const st of baseStops) { const k = at.get(base[st.ei]); if (k !== undefined) stops.push({ ...st, ei: k }); }
-      for (const b of r.buses) if (b.real && b.real.route && b.real.route.edges === r.links) b.real.route.off = 'lost'; // (on the old chain: roams on)
-      r.links = out; r.cum = cum; r.len = cum[out.length]; r.stops = stops;
-      for (const b of r.buses) b.d = Math.min(b.d, r.len);
-      detours.routes++;
+      const same = out.length === r.links.length && out.every((e, k) => e === r.links[k]);
+      if (!same) {
+        const cum = [0];
+        for (let k = 0; k < out.length; k++) cum.push(cum[k] + out[k].len + 10);
+        for (const b of r.buses) if (b.real && b.real.route && b.real.route.edges === r.links) b.real.route.off = 'lost';
+        r.links = out; r.cum = cum; r.len = cum[out.length];
+        for (const b of r.buses) b.d = Math.min(b.d, r.len);
+        detours.routes++;
+      }
+      const at = new Map(r.links.map((e, k) => [e, k]));
+      const stops = [], dropped = [];
+      for (const st of baseStops) {
+        const edge = base[st.ei];
+        const k = at.get(edge);
+        if (edge && edge.worksClosed) dropped.push({ ...st, edge });
+        else if (k !== undefined) stops.push({ ...st, ei: k });
+      }
+      const temps = RW.placeDetourStops ? RW.placeDetourStops(dropped, r.links.filter((e) => base.indexOf(e) < 0)) : [];
+      for (const t of temps) {
+        const k = at.get(t.edge);
+        if (k === undefined) continue;
+        stops.push({ ei: k, s: t.s, name: t.name, temporary: true, x: t.x, z: t.z });
+      }
+      stops.sort((p, q) => p.ei - q.ei || p.s - q.s);
+      r.stops = stops; r.oos = dropped; r.temps = temps;
+      detours.oos += dropped.length; detours.temporary += temps.length;
     }
-    if (detours.detoured || detours.left || detours.cut) console.info(`[transit] road works: ${detours.detoured} closed stretches of bus routes taken round, ${detours.left} left on the route (no way round), ${detours.cut} cut at a route's end`);
+    if (window.CITY.mountBusWorkStops) window.CITY.mountBusWorkStops(routes);
+    if (detours.detoured || detours.left || detours.cut) console.info(`[transit] road works: ${detours.detoured} closed stretches taken round, ${detours.left} left on the route, ${detours.cut} cut, ${detours.oos} stops out of service, ${detours.temporary} temporary stops`);
   }
   if (window.CITY.roadworks && window.CITY.roadworks.detourRoute) reroute();
   if (window.CITY.roadworks && window.CITY.roadworks.detourRoute && window.CITY.roadworksListeners) window.CITY.roadworksListeners.push(reroute);

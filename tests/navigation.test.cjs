@@ -73,6 +73,20 @@ test('walking may use either direction of a one-way street, never the expressway
   assert.ok(MOTORWAYS.has('Gardiner Expressway') && MOTORWAYS.has('Don Valley Parkway'), 'the expressways are mapped as motorways');
 });
 
+test('typing a street lists that street first and keeps its lane closures in the results', () => {
+  window.CITY.roadworksPlaces = () => [
+    { kind: 'place', cat: 'roadwork', roadwork: true, street: 'Bloor Street West', name: 'Lane closure · Bloor St W', x: 120, z: -40, sub: 'Road works', keywords: 'closure Bloor Street West' },
+    { kind: 'place', cat: 'roadwork', roadwork: true, street: 'Bloor Street West', name: 'Lane closure · Bloor St W', x: 180, z: -40, sub: 'Road works', keywords: 'closure Bloor Street West' }
+  ];
+  const hits = N.searchPlaces('bloor st w', { limit: 8 });
+  assert.equal(hits[0].kind, 'street');
+  assert.match(hits[0].name, /Bloor/i);
+  const works = hits.filter((h) => h.roadwork);
+  assert.equal(works.length, 2, 'two closures of one name within 150 m both stay, and both fit in the eight');
+  window.CITY.roadworksPlaces = () => [];
+  N.searchPlaces('cn tower');
+});
+
 test('progress along a route follows the traveller', () => {
   const r = N.findRoute(landmark('unionStation'), landmark('cityHall'), 'car');
   const k = Math.floor(r.points.length / 2);

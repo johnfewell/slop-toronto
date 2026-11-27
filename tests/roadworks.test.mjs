@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { parsePolyline, workType, schedule, compact, parseRestrictions, BOUNDS } from '../worker/roadworks.js';
+import { parsePolyline, workType, schedule, compact, parseRestrictions, BOUNDS, viaStreets, detoursFromAlerts, parseTtcHomepage, mergeDetours } from '../worker/roadworks.js';
 import worker from '../worker/live.js';
 
 const FEED = JSON.parse(fs.readFileSync(new URL('./fixtures/road-restrictions-20261125.json', import.meta.url), 'utf8'));
@@ -187,6 +187,32 @@ function withCaches(fn) {
 const env = { ASSETS: { fetch: async () => new Response('asset', { status: 200 }) } };
 const ctx = { waitUntil: (p) => p };
 
+test('TTC detour text: a via or along street is kept, and a from-to location is not a path', () => {
+  assert.deepEqual(viaStreets('Buses operate via Harbord Street and then Brunswick Avenue.'), ['Harbord Street', 'Brunswick Avenue']);
+  assert.deepEqual(viaStreets('along College St, Bathurst Street and Spadina Ave'), ['College St', 'Bathurst Street', 'Spadina Ave']);
+  assert.deepEqual(viaStreets('Eglinton Ave West at Duplex Ave to Eglinton Station at Bus Bay 7'), []);
+  assert.deepEqual(detoursFromAlerts({ total: 0, routes: [] }), []);
+  const fromAlerts = detoursFromAlerts({ routes: [{ route: '94', alerts: [{ title: 'Detour', location: 'via Wellesley Street' }] }] });
+  assert.equal(fromAlerts[0].route, '94');
+  assert.deepEqual(fromAlerts[0].via, ['Wellesley Street']);
+  const html = `
+    <span class="RouteNameIcon RouteNameIconBus">34</span>
+    <div class="alert-title">Detour</div>
+    <div class="alert-location">Eglinton Ave West at Duplex Ave to Eglinton Station at Bus Bay 7</div>
+    <span class="RouteNameIcon RouteNameIconBus">501</span>
+    <div class="alert-title">Detour</div>
+    <div class="alert-location">Queen St East at Parliament St to Queen St East at Broadview Ave</div>
+    <span class="RouteNameIcon">2</span>
+    <div class="alert-title">Normal service</div>
+    <div class="alert-location">Line 2</div>`;
+  const home = parseTtcHomepage(html);
+  assert.deepEqual(home.map((d) => d.route), ['34', '501']);
+  assert.deepEqual(home[0].via, []);
+  const merged = mergeDetours(fromAlerts, home.concat([{ route: '94', location: 'via Wellesley Street', via: ['Wellesley Street'] }]));
+  assert.equal(merged.length, 3);
+  assert.equal(merged.filter((d) => d.route === '94').length, 1);
+});
+
 test('/live/roadworks serves the compact records, and fails safe with a 502 when the City\'s feed is down', async () => {
   const real = globalThis.fetch, realNow = Date.now;
   let hours = 0; // (the Worker keeps the feed 15 minutes: each case is a later hour)
@@ -203,6 +229,7 @@ test('/live/roadworks serves the compact records, and fails safe with a 502 when
       assert.ok(Number.isFinite(body.t));
       assert.equal(body.counts.feed, 13);
       assert.ok(body.records.length > 0 && body.records.every((r) => Array.isArray(r.ll) && r.ll.length >= 1));
+      assert.ok(Array.isArray(body.ttc), 'a TTC miss still leaves an array on the City body');
     });
     later();
     await withCaches(async () => {

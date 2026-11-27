@@ -90,3 +90,75 @@ export function parseRestrictions(json, { now = Date.now(), bounds = BOUNDS, gra
   counts.kept = records.length;
   return { records, counts };
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// TTC detours. The City's road restrictions do not carry the TTC's diversion. alerts.ttc.ca/api/alerts/site-wide is the
+// live list (often empty). The TTC homepage server-renders the surface detours it is showing, as a route number and the
+// stretch that is off, not the street the buses use. A "via" / "along" street in either text is the published path.
+// ---------------------------------------------------------------------------------------------------------------------
+const STREET_END = '(?:St|Street|Ave|Avenue|Av|Rd|Road|Blvd|Boulevard|Dr|Drive|Cres|Crescent|Pkwy|Parkway|Lane|Ln|Way|Quay|Ter|Terrace|Pl|Place)';
+
+/** Street names named after "via" or "along" in a detour notice. Location text with no via/along yields none. */
+export function viaStreets(text) {
+  const hits = [];
+  const re = /(?:\bvia\b|\balong\b)\s+([^.;]{0,80})/gi;
+  let m;
+  while ((m = re.exec(String(text || '')))) {
+    for (let part of m[1].split(/\s+(?:and\s+then|and|then|&)\s+|,\s*/i)) {
+      part = part.replace(/^(?:then|and)\s+/i, '').replace(/\s+\b(?:to|from|between|at|the|a)\b[\s\S]*$/i, '').trim();
+      if (part.length > 60) continue;
+      if (new RegExp(`\\b${STREET_END}\\b`, 'i').test(part)) hits.push(part);
+    }
+  }
+  return [...new Set(hits)];
+}
+
+/** { route, location, via } from the site-wide alerts JSON. An empty or unexpected body is an empty list. */
+export function detoursFromAlerts(json) {
+  if (!json || typeof json !== 'object') return [];
+  const out = [];
+  const take = (route, title, location) => {
+    const rt = String(route ?? '').match(/\d{1,3}/);
+    const blob = `${title || ''} ${location || ''}`;
+    if (!rt || !/detour/i.test(blob)) return;
+    out.push({ route: rt[0], location: String(location || title || '').replace(/\s+/g, ' ').trim().slice(0, 240), via: viaStreets(blob) });
+  };
+  const routes = Array.isArray(json.routes) ? json.routes : [];
+  for (const r of routes) {
+    const route = r && (r.route || r.routeNumber || r.routeName || r.id || r.name);
+    const alerts = r && (Array.isArray(r.alerts) ? r.alerts : Array.isArray(r.items) ? r.items : [r]);
+    for (const a of alerts || []) {
+      if (!a || typeof a !== 'object') continue;
+      take(a.route || route, a.title || a.alertTitle || a.header || a.effect || a.effectDesc || '', a.location || a.alertLocation || a.description || a.body || a.message || '');
+    }
+  }
+  return out;
+}
+
+/** Surface detours server-rendered on ttc.ca: route icon, "Detour", then the alert-location line. */
+export function parseTtcHomepage(html) {
+  const out = [];
+  const re = /RouteNameIcon[^>]*>(\d{1,3})<\/span>[\s\S]{0,900}?alert-title">([^<]*)<\/div>[\s\S]{0,500}?alert-location">([^<]*)<\/div>/g;
+  let m;
+  while ((m = re.exec(String(html || '')))) {
+    const title = m[2].replace(/\s+/g, ' ').trim();
+    if (!/detour/i.test(title)) continue;
+    const location = m[3].replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+    out.push({ route: m[1], location, via: viaStreets(`${title} ${location}`) });
+  }
+  return out;
+}
+
+/** Alerts first, then homepage rows whose route and location are not already present. */
+export function mergeDetours(alerts, homepage) {
+  const out = [];
+  const seen = new Set();
+  for (const d of [...(alerts || []), ...(homepage || [])]) {
+    if (!d || !d.route) continue;
+    const key = `${d.route}|${String(d.location || '').toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ route: String(d.route), location: d.location || '', via: Array.isArray(d.via) ? d.via : [] });
+  }
+  return out;
+}

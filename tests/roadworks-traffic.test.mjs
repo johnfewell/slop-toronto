@@ -197,6 +197,114 @@ test('a TTC route goes round a closed road by the shortest open way, and is cut 
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
+test('one lane each way, with the other way still open: the two directions take turns, and a crawl stays a crawl without an opposite', () => {
+  const { network, east, west } = street(1);
+  const alone = R.laneZoneTable(network, barrels(0.4));
+  const none = R.planAlternations(alone.zones, [{ de: 'curb lane', sc: ['', '09:00-16:00', '09:00-16:00', '09:00-16:00', '09:00-16:00', '09:00-16:00', ''] }]);
+  assert.equal(none.posts.length, 0, 'no opposite edge: still a crawl');
+  assert.equal(alone.zones[0].cap, R.CRAWL_SPEED);
+  east.opposite = west; west.opposite = east;
+  const paired = R.laneZoneTable(network, barrels(0.4));
+  const recs = [{ de: 'paid duty officer on site', sc: ['', '07:00-19:00', '07:00-19:00', '07:00-19:00', '07:00-19:00', '07:00-19:00', ''] }];
+  const alt = R.planAlternations(paired.zones, recs);
+  assert.equal(paired.zones[0].alt, true);
+  assert.equal(paired.zones[0].cap, R.ALT_SPEED);
+  assert.deepEqual(paired.zones[0].hugs, [0]);
+  assert.equal(alt.posts.length, 2);
+  assert.equal(alt.posts[0].kind, 'officer');
+  assert.equal(alt.apply(() => true), 1);
+  assert.equal(east.worksAlts.length, 1);
+  assert.equal(west.worksAlts.length, 1);
+  assert.equal(east.worksAlts[0].role, 'hold');
+  assert.equal(west.worksAlts[0].role, 'open');
+  assert.ok(east.worksAlts[0].shift < -3, 'the closed direction shifts left into the open lane');
+  assert.equal(alt.apply(() => false), 0);
+  assert.equal(east.worksAlts, undefined);
+  // the live graph's e.opposite is the next block's approach into the same junction, not this block's other direction
+  const approach = edge(400, -1, [1.8], 200);
+  const nodeEnd = { in: [east, approach] }, nodeStart = { in: [west] };
+  east.to = nodeEnd; east.from = nodeStart; west.to = nodeStart; west.from = nodeEnd; approach.to = nodeEnd;
+  east.opposite = approach;
+  const live = R.laneZoneTable({ edges: [east, west, approach] }, barrels(0.4));
+  const fixed = R.planAlternations(live.zones, recs);
+  assert.equal(fixed.posts.length, 2, 'the other direction of this block, not the next block');
+  assert.equal(fixed.works[0].other, west);
+  // both directions barrelled shut: nobody alternates through a lane that is not there
+  const both = R.laneZoneTable(network, [...barrels(0.4), ...barrels(-0.4).map((b) => ({ ...b, fx: -1, rec: 1 }))]);
+  // the west barrels need to sit on the west edge's lane. west heads -x, its right is -z, lane centre z = -1.8.
+  // barrels() at z=-0.4 with fx=-1: side +1, cos of west dx=-1 and fx=-1 is +1, lateral of barrel on west...
+  const westBarrels = [];
+  for (let x = 80; x <= 120; x += 8) westBarrels.push({ x, z: -0.4, rec: 1, side: 1, fx: -1, fz: 0 });
+  const shut = R.laneZoneTable(network, [...barrels(0.4), ...westBarrels]);
+  const noShare = R.planAlternations(shut.zones, recs);
+  assert.equal(noShare.posts.length, 0, 'both ways closed: no shared lane');
+  assert.ok(shut.zones.every((z) => !z.alt && z.cap === R.CRAWL_SPEED));
+});
+
+test('the phase and the stop: one direction, then a gap, then the other; a car already inside keeps going', () => {
+  assert.equal(R.controlKind({ de: 'PDO at both ends', sc: null }), 'officer');
+  assert.equal(R.controlKind({ de: 'flag person', sc: ['', '09:00-15:00', '', '', '', '', ''] }), 'officer');
+  assert.equal(R.controlKind({ de: 'portable signal', sc: ['', '09:00-15:00', '', '', '', '', ''] }), 'signal');
+  assert.equal(R.controlKind({ de: 'curb lane', sc: Array(7).fill('00:00-23:59') }), 'signal');
+  assert.equal(R.controlKind({ de: 'curb lane', sc: ['', '09:00-16:00', '09:00-16:00', '09:00-16:00', '09:00-16:00', '09:00-16:00', ''] }), 'officer');
+  const ph = R.alternationPhase(70, 0, 'officer');
+  assert.equal(ph.go, 0);
+  assert.equal(R.alternationPhase(70, 17.9, 'officer').go, 0);
+  assert.equal(R.alternationPhase(70, 18, 'officer').go, -1, 'clearance after the first green');
+  const green = 18, clear = R.alternationPhase(70, 0, 'officer').clear;
+  assert.equal(R.alternationPhase(70, green + clear + 1, 'officer').go, 1);
+  assert.equal(R.alternationPhase(70, 2 * (green + clear) + 1, 'officer').go, 0, 'the next cycle starts with the closed direction again');
+  assert.equal(R.alternationPhase(70, 27.9, 'signal').go, 0);
+  assert.equal(R.alternationPhase(70, 28, 'signal').go, -1, 'a portable signal holds its green longer than an officer');
+  const hold = { role: 'hold', s: -30, half: 2.3, a: 40, b: 80, go: 1, oncoming: false, shift: -3.6 };
+  assert.equal(R.alternationDecision(hold), null, 'too far to care');
+  const near = R.alternationDecision({ ...hold, s: 30 });
+  assert.ok(near.stop < 20 && near.stop > 0, 'not its turn: stop short of the line');
+  const mine = R.alternationDecision({ ...hold, s: 28, go: 0 });
+  assert.equal(mine.stop, Infinity);
+  assert.equal(mine.hug, 0, 'still on the approach: not in the shared lane yet');
+  const close = R.alternationDecision({ ...hold, s: 36, go: 0 });
+  assert.equal(close.hug, -3.6);
+  const blocked = R.alternationDecision({ ...hold, s: 36, go: 0, oncoming: true });
+  assert.ok(blocked.stop < Infinity, 'someone is still in the stretch');
+  const inside = R.alternationDecision({ ...hold, s: 55, go: 1 });
+  assert.equal(inside.stop, Infinity);
+  assert.equal(inside.hug, -3.6, 'already inside: finish, in the open lane');
+});
+
+test('a published via-street is preferred, and a long parallel beside the closure is taken only when the links have geometry', () => {
+  const G = (name, x, z, dx, dz, len) => ({ name, sx: x, sz: z, dx, dz, rx: -dz, rz: dx, len, lanes: [1.8], moves: [], worksClosed: false, tram: false });
+  const a = G('a', -40, 0, 1, 0, 40);
+  const b = G('b', 0, 0, 1, 0, 100); b.worksClosed = true;
+  const c = G('c', 100, 0, 1, 0, 40);
+  const up = G('up', -150, 0, 0, 1, 180);
+  const par = G('Harbord Street', -150, 180, 1, 0, 400);
+  const down = G('down', 250, 180, 0, -1, 180);
+  const side = G('Side Street', 0, 40, 1, 0, 100);
+  const sideDown = G('side down', 100, 40, 0, -1, 40);
+  const link = (from, ...to) => { from.moves = to.map((t) => ({ to: t })); };
+  link(a, b, up); link(up, par); link(par, down); link(down, c); link(b, c);
+  // 180+400+180 = 760 m, over the no-geometry cap (700) and inside the band of the closed stretch
+  const way = R.detourRoute([a, b, c]);
+  assert.equal(way.links.map((e) => e.name).join('|'), 'a|up|Harbord Street|down|c');
+  assert.equal(way.detoured, 1);
+  const saved = [a, b, c, up, par, down].map((e) => ({ sx: e.sx, sz: e.sz, dx: e.dx, dz: e.dz }));
+  for (const e of [a, b, c, up, par, down]) delete e.sx;
+  assert.equal(R.detourRoute([a, b, c]).left, 1, 'no geometry: 760 m is over the old cap');
+  [a, b, c, up, par, down].forEach((e, i) => Object.assign(e, saved[i]));
+  link(a, b, up, side); link(side, sideDown); link(sideDown, c);
+  const named = R.detourRoute([a, b, c], { name: (e) => e.name, viaFor: () => ['harbord street'] });
+  assert.ok(named.links.some((e) => e.name === 'Harbord Street'), 'the published street is the one taken');
+  assert.equal(named.links.includes(side), false);
+  const stops = R.placeDetourStops([{ name: 'Queen at Soho' }], [par]);
+  assert.equal(stops.length, 1);
+  assert.equal(stops[0].name, 'Queen at Soho');
+  assert.ok(stops[0].s > 18 && stops[0].s < par.len - 18);
+  assert.ok(Math.abs(stops[0].z - (180 + 1.8 + 2.3)) < 0.01, 'on the kerb side of the detour');
+  assert.equal(R.placeDetourStops([{ name: 'x' }], [{ len: 10, name: 'short' }]).length, 0);
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
 test('the layout gives each barrel the side and the direction the traffic code needs', () => {
   const src = fs.readFileSync(new URL('../js/roadworks-layout.js', import.meta.url), 'utf8');
   assert.match(src, /emit\('barrel', x, z, [^;]*\{ side, fx: r\.dx, fz: r\.dz \}\)/);

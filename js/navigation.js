@@ -66,16 +66,19 @@ const CATEGORY_WORDS = {
 
 let INDEX = null;
 function buildIndex() {
-  if (INDEX) return INDEX;
+  let rw = [];
+  try { rw = window.CITY.roadworksPlaces ? window.CITY.roadworksPlaces() : []; } catch { rw = []; }
+  if (INDEX && INDEX.rwCount === rw.length) return INDEX;
   const items = [];
   const seen = new Map();
   const add = (it) => {
     const key = normalize(it.name);
     const prev = seen.get(key);
-    if (!it.city && !it.discovery && prev && prev.some((p) => Math.hypot(p.x - it.x, p.z - it.z) < 150)) return;
+    if (!it.city && !it.discovery && !it.roadwork && prev && prev.some((p) => Math.hypot(p.x - it.x, p.z - it.z) < 150)) return;
     (prev || seen.set(key, []).get(key)).push(it);
     it.id = `${it.kind}:${items.length}`;
     it.words = words(it.name);
+    if (it.street) it.streetWords = words(it.street);
     it.searchWords = words(it.keywords || '');
     if (it.aliases) it.aliasWords = it.aliases.map(words);
     it.norm = it.words.join(' ');
@@ -97,7 +100,7 @@ function buildIndex() {
   const D = window.CITY.Discovery;
   for (const item of D ? D.discoveryPlaces() : []) add(item);
   // the City's road works & closures in effect on the scene's day (roadworks.js; none when the feed was down or ?roadworks=0)
-  for (const item of window.CITY.roadworksPlaces ? window.CITY.roadworksPlaces() : []) add(item);
+  for (const item of rw) add(item);
   const merged = D ? D.mergedPoiRows() : new Set();
   (GEO.pois || []).forEach(([x, z, name, cat], row) => {
     if (!merged.has(row)) add({ kind: 'place', cat, name, x, z, sub: `${CATEGORY_LABEL[cat] || 'Place'} · ${districtAt(x, z)}` });
@@ -127,6 +130,7 @@ function buildIndex() {
     add({ kind: 'street', name: s.name, x: mid.x, z: mid.z, rank: s.rank, sub: `Street · ${ds.slice(0, 2).join(', ')} · ${formatDistance(s.len)}`,
       bounds: { minX: s.minX, maxX: s.maxX, minZ: s.minZ, maxZ: s.maxZ } });
   }
+  items.rwCount = rw.length;
   INDEX = items;
   return items;
 }
@@ -213,6 +217,20 @@ function searchPlaces(query, { near = null, limit = 8 } = {}) {
       if (prev) prev.score = Math.max(prev.score, score + 4);
       else results.push({ it, score, distance, strong: q.length === 1 });
     }
+  }
+  // a road work whose street is what was typed: just under the best matching street, so the street stays first and the
+  // closure stays inside the eight results (its own name is longer than the query). A one-letter last word still counts
+  // ("bloor st w" → west), the same way a street name does.
+  let streetTop = 0;
+  for (const r of results) if (r.it.kind === 'street' && r.score > streetTop) streetTop = r.score;
+  for (const it of index) {
+    if (it.cat !== 'roadwork' || !it.streetWords) continue;
+    if (!q.every((w, k) => it.streetWords.some((s) => s === w || (s.startsWith(w) && (w.length >= 3 || k === q.length - 1))))) continue;
+    const distance = near ? Math.hypot(it.x - near.x, it.z - near.z) : null;
+    const score = (streetTop || 16) - 0.4 - (distance == null ? 0 : Math.min(0.3, distance / 20000));
+    const prev = results.find((r) => r.it === it);
+    if (prev) prev.score = Math.max(prev.score, score);
+    else results.push({ it, score, distance });
   }
   results.sort((a, b) => b.score - a.score);
   const crossings = intersections.slice(0, limit);

@@ -125,7 +125,7 @@
       }
       if (i % 150 === 149) await yieldUI();
     }
-    log({ kind: 'zone', baseline: !!opts.baseline, road: spot.name, edge: e.id, lanes: e.lanes.length, open: z.open.length, closedLane: z.closed.map((c) => (c ? 1 : 0)).join(''), zoneLen: Math.round(z.b - z.a), vph: Math.round(e.vph), seed, seconds,
+    log({ kind: 'zone', baseline: !!opts.baseline, road: spot.name, edge: e.id, lanes: e.lanes.length, open: z.open.length, pass: z.alt ? 'alternate' : (z.open.length ? 'merge' : 'crawl'), closedLane: z.closed.map((c) => (c ? 1 : 0)).join(''), zoneLen: Math.round(z.b - z.a), vph: Math.round(e.vph), seed, seconds,
       clipSamples: inBarrels, clearanceMin: Number.isFinite(clearance) ? +clearance.toFixed(2) : null, samples, merged, passed, passedPerMin: +(passed / seconds * 60).toFixed(1), lanes: lanes.join('/'),
       queueMax, queueLenMax: +queueLenMax.toFixed(1), queueMean: +(queueSum / Math.max(1, qSamples)).toFixed(2), queueLastThird: +(lastThirdSum / Math.max(1, lastThirdN)).toFixed(2), longestWait: +longestWait.toFixed(1), stuck: stuck.size,
       cars: T.cars.filter((c) => c.edge).length, updateMs: +(updateMs / Math.max(1, updates)).toFixed(3) });
@@ -138,8 +138,9 @@
     app.cameraSystem.cinema = null;
     if (opts.hour !== undefined && C.roadworksLive?.setHour) { T.setHour(opts.hour); C.roadworksLive.setHour(opts.hour); }
     const all = zones();
-    log({ kind: 'zones', total: all.length, merge: all.filter((s) => s.z.open.length).length, crawl: all.filter((s) => !s.z.open.length).length, stats: C.roadworksStats && { laneBarrels: C.roadworksStats.laneBarrels, placed: C.roadworksStats.placed, laneZones: C.roadworksStats.laneZones, laneZonesActive: C.roadworksStats.laneZonesActive, closedEdges: C.roadworksStats.closedEdges, hour: C.roadworksStats.hour } });
-    log({ kind: 'bloor', zones: all.filter((s) => /Bloor|Queen|Dundas/.test(s.name)).map((s) => `${s.name} e${s.e.id} lanes ${s.e.lanes.length} closed ${s.z.closed.map(Number).join('')} len ${Math.round(s.len)} vph ${Math.round(s.e.vph)}`) });
+    const passOf = (z) => (z.open.length ? 'merge' : (z.alt ? 'alternate' : 'crawl'));
+    log({ kind: 'zones', total: all.length, merge: all.filter((s) => s.z.open.length).length, alternate: all.filter((s) => s.z.alt).length, crawl: all.filter((s) => !s.z.open.length && !s.z.alt).length, stats: C.roadworksStats && { laneBarrels: C.roadworksStats.laneBarrels, placed: C.roadworksStats.placed, laneZones: C.roadworksStats.laneZones, laneZonesActive: C.roadworksStats.laneZonesActive, closedEdges: C.roadworksStats.closedEdges, hour: C.roadworksStats.hour } });
+    log({ kind: 'bloor', zones: all.filter((s) => /Bloor|Queen|Dundas/.test(s.name)).map((s) => `${s.name} e${s.e.id} ${passOf(s.z)} lanes ${s.e.lanes.length} closed ${s.z.closed.map(Number).join('')} len ${Math.round(s.len)} vph ${Math.round(s.e.vph)}`) });
     log({ kind: 'merge-zones', zones: all.filter((s) => s.z.open.length).map((s) => `${s.name} e${s.e.id} lanes ${s.e.lanes.length} closed ${s.z.closed.map(Number).join('')} len ${Math.round(s.len)} vph ${Math.round(s.e.vph)}`) });
     // the zones asked for by road name, else the busiest merge zone and the busiest crawl zone
     const picks = [];

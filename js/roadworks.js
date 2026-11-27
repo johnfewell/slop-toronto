@@ -38,7 +38,11 @@ function fetchRoadworks() {
   const timer = setTimeout(() => ctl && ctl.abort(), FEED_TIMEOUT_MS);
   return fetch(override && override.startsWith('/') ? override : FEED_URL, { signal: ctl ? ctl.signal : undefined })
     .then((res) => (res.ok ? res.json() : null))
-    .then((data) => (data && Array.isArray(data.records) && Number.isFinite(data.t) ? data : null))
+    .then((data) => {
+      if (!(data && Array.isArray(data.records) && Number.isFinite(data.t))) return null;
+      C.ttcDetours = Array.isArray(data.ttc) ? data.ttc : [];
+      return data;
+    })
     .catch(() => null)
     .finally(() => clearTimeout(timer));
 }
@@ -60,7 +64,7 @@ function paintAtlas(THREE) {
   const g = cv.getContext('2d');
   const at = (i) => [(i % GRID) * CELL, Math.floor(i / GRID) * CELL];
   const fill = (i, col) => { const [x, y] = at(i); g.fillStyle = col; g.fillRect(x, y, CELL, CELL); };
-  fill(0, ORANGE); fill(1, WHITE); fill(2, BLACK); fill(3, '#a9a79f'); fill(4, '#7b8086'); fill(5, '#b3202a');
+  fill(0, ORANGE); fill(1, WHITE); fill(2, BLACK); fill(3, '#a9a79f'); fill(4, '#7b8086'); fill(5, '#b3202a'); fill(13, '#1f8a3b');
   // rails: stripes slanting across a 2.4 x 0.22 m rail (the cell is stretched over it: 32 px of 256 is 0.3 m along it, the
   // slant over the full height is 23.5 px)
   {
@@ -188,14 +192,31 @@ function makeGeometries(THREE) {
     box(0.12, 1.0, 0.12, 0, 1.0, 0, 4),
     box(1.8, 0.14, 1.6, 0, 0.52, -0.2, 4), box(0.12, 0.12, 1.2, 0, 0.5, 1.2, 4), wheel(-1.0), wheel(1.0)
   ]);
-  return { cone, barrel, barrier, barricade, signClosed, signWork: stand(8), signLane: stand(9), arrow };
+  // a paid-duty officer: hi-vis torso, a paddle. A portable signal: a pole and a head; its lamps are separate meshes.
+  const officer = mergeGeometries([
+    box(0.42, 0.62, 0.26, 0, 1.15, 0, 0),
+    box(0.14, 0.72, 0.14, -0.1, 0.36, 0, 2), box(0.14, 0.72, 0.14, 0.1, 0.36, 0, 2),
+    box(0.2, 0.2, 0.2, 0, 1.58, 0, 0),
+    box(0.06, 0.5, 0.06, 0.28, 1.2, 0, 4),
+    box(0.26, 0.42, 0.04, 0.42, 1.35, 0.02, 1),
+    box(0.16, 0.16, 0.05, 0.42, 1.4, 0.04, 5)
+  ]);
+  const signal = mergeGeometries([
+    box(0.46, 0.05, 0.46, 0, 0.025, 0, 2),
+    box(0.08, 2.15, 0.08, 0, 1.1, 0, 2),
+    box(0.26, 0.62, 0.16, 0, 2.35, 0, 2)
+  ]);
+  const lampRed = solid(new THREE.SphereGeometry(0.07, 10, 8), 5, M(0, 2.5, 0.1));
+  const lampGreen = solid(new THREE.SphereGeometry(0.07, 10, 8), 13, M(0, 2.2, 0.1));
+  return { cone, barrel, barrier, barricade, signClosed, signWork: stand(8), signLane: stand(9), arrow, officer, signal, lampRed, lampGreen };
 }
 
 // the unit width of the kinds scaled by a site's w, and how far each is drawn (m), and whether it casts a shadow
 const KIND = {
   cone: { cull: 90, shadow: false }, barrel: { cull: 110, shadow: true },
   barrier: { cull: 140, shadow: true, unit: 3.0 }, barricade: { cull: 140, shadow: true, unit: 2.4 },
-  signClosed: { cull: 140, shadow: false, unit: 0.9 }, signWork: { cull: 150, shadow: false }, signLane: { cull: 150, shadow: false }, arrow: { cull: 170, shadow: true }
+  signClosed: { cull: 140, shadow: false, unit: 0.9 }, signWork: { cull: 150, shadow: false }, signLane: { cull: 150, shadow: false }, arrow: { cull: 170, shadow: true },
+  officer: { cull: 120, shadow: true }, signal: { cull: 140, shadow: true }
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -335,12 +356,72 @@ async function buildRoadworks(scene, { trafficSystem = null, parkedAt = null, co
     const laneTable = trafficSystem && trafficSystem.network && R.laneZoneTable ? R.laneZoneTable(trafficSystem.network, barrels) : null;
     stats.laneZones = laneTable ? laneTable.zones.length : 0;
     stats.laneBarrels = laneTable ? { total: barrels.length, ...laneTable.stage } : null; // (where the barrels were and were not found on the traffic's roads)
+    const altTable = laneTable && R.planAlternations ? R.planAlternations(laneTable.zones, feed.records) : null;
+    const lampRows = new Map(); // "x|z" cm → { rec, len, mode, goWhen }. Culling splits the meshes; the positions stay.
+    const controls = new Map();
+    if (altTable && altTable.posts.length) {
+      const byPost = {};
+      for (const s of altTable.posts) {
+        (byPost[s.kind] ||= []).push(s);
+        if (!controls.has(s.rec)) controls.set(s.rec, s.mode);
+      }
+      for (const [kind, list] of Object.entries(byPost)) {
+        const geo = geos[kind];
+        if (!geo) continue;
+        const mesh = new THREE.InstancedMesh(geo, material, list.length);
+        mesh.name = `Roadworks_${kind}`;
+        list.forEach((s, i) => {
+          const y = C.cutAt ? C.cutAt(s.x, s.z) : 0;
+          q.setFromAxisAngle(up, s.yaw || 0);
+          p.set(s.x, y, s.z);
+          sc.set(1, 1, 1);
+          m.compose(p, q, sc);
+          mesh.setMatrixAt(i, m);
+          recAt.set(posKey(kind, s.x, s.z), s.rec);
+          const col = collider(kind, s, y);
+          if (col) { newColliders.push(col); colliderRec.set(col, s.rec); }
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.userData.cullDistance = (KIND[kind] && KIND[kind].cull) || 120;
+        mesh.userData.cullCell = 60;
+        mesh.computeBoundingSphere();
+        group.add(mesh);
+      }
+      const signals = altTable.posts.filter((s) => s.kind === 'signal');
+      const addLamps = (geo, hue) => {
+        if (!signals.length || !geo) return;
+        const mesh = new THREE.InstancedMesh(geo, material, signals.length);
+        mesh.name = 'Roadworks_lamp';
+        mesh.userData.lamp = true;
+        mesh.userData.hue = hue;
+        signals.forEach((s, i) => {
+          const y = C.cutAt ? C.cutAt(s.x, s.z) : 0;
+          lampRows.set(`${Math.round(s.x * 100)}|${Math.round(s.z * 100)}`, { rec: s.rec, len: s.len, mode: s.mode, goWhen: s.goWhen });
+          q.identity();
+          p.set(s.x, y, s.z);
+          sc.set(1, 1, 1);
+          m.compose(p, q, sc);
+          mesh.setMatrixAt(i, m);
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.userData.cullDistance = 90;
+        mesh.userData.cullCell = 60;
+        mesh.computeBoundingSphere();
+        group.add(mesh);
+      };
+      addLamps(geos.lampRed, 'red');
+      addLamps(geos.lampGreen, 'green');
+    }
+    stats.alternations = controls.size;
     const fullClosed = layout.plans.filter((pl) => pl.placed && feed.records[pl.rec].t === 'R' && pl.full);
     let shut = [];
     const meshesOf = () => { const out = []; group.traverse((o) => { if (o.isInstancedMesh) out.push(o); }); return out; };
     const holds = new WeakMap(); // mesh -> { base: the instances' matrices as drawn, rec: each one's record } (made on the first call, all in view)
     const setVisible = () => {
       for (const mesh of meshesOf()) {
+        if (mesh.userData.lamp) continue;
         const kind = mesh.name.replace(/^Roadworks_/, '');
         const arr = mesh.instanceMatrix.array;
         let hold = holds.get(mesh);
@@ -375,6 +456,7 @@ async function buildRoadworks(scene, { trafficSystem = null, parkedAt = null, co
         else { stats.closedEdges = 0; stats.closedStubs = 0; }
       }
       if (laneTable) stats.laneZonesActive = laneTable.apply((rec) => active.has(rec));
+      if (altTable) stats.alternationsActive = altTable.apply((rec) => active.has(rec));
       for (const fn of C.roadworksListeners) { try { fn(); } catch (e) { console.warn('[roadworks] listener', e); } }
       stats.trafficMs = Math.round(performance.now() - t1); // (each time the hour changes which records are at work)
       console.info(`[roadworks] ${active.size} records at work at ${stats.hour}:00: ${stats.closedEdges} traffic edges closed (and ${stats.closedStubs} stubs), ${stats.laneZonesActive} lane zones, in ${stats.trafficMs} ms`);
@@ -402,6 +484,7 @@ async function buildRoadworks(scene, { trafficSystem = null, parkedAt = null, co
 
     C.roadworksLive.setHour = setHour; // (for the captures & probes)
     Object.defineProperties(C.roadworksLive, { laneTable: { value: laneTable }, activeSet: { get: () => active } });
+    C.roadworksLive.controls = controls;
     C.roadworksPlaces = () => placesOf(layout, feed); // (navigation.js: the search box finds them)
 
     // the card
@@ -413,14 +496,52 @@ async function buildRoadworks(scene, { trafficSystem = null, parkedAt = null, co
     const show = (rec) => {
       const r = feed.records[rec];
       card.title.textContent = titleFor(r);
-      card.body.replaceChildren(...cardFacts(r, feed.t).map(([label, text]) => {
+      const facts = cardFacts(r, feed.t);
+      const how = controls.get(rec);
+      if (how) facts.push(['On the road', how === 'officer'
+        ? 'Traffic takes turns through the one open lane. A paid-duty officer at each end lets one direction through, then the other.'
+        : 'Traffic takes turns through the one open lane. A portable signal at each end lets one direction through, then the other.']);
+      card.body.replaceChildren(...facts.map(([label, text]) => {
         const row = document.createElement('p'); const b = document.createElement('strong'); b.textContent = `${label}: `;
         row.append(b, document.createTextNode(text)); return row;
       }));
       card.el.hidden = false;
       shownRec = rec;
     };
+    let lampDraws = null;
+    const paintLamps = () => {
+      if (!lampRows.size || !R.alternationPhase) return;
+      // The first frame is after culling, which may have replaced these meshes with cells. Find whatever is actually drawn.
+      if (!lampDraws) {
+        lampDraws = [];
+        scene.traverse((o) => { if (o.isInstancedMesh && o.userData && o.userData.lamp) lampDraws.push(o); });
+        if (!lampDraws.length) { lampDraws = null; return; }
+      }
+      const t = trafficSystem && Number.isFinite(trafficSystem.clock) ? trafficSystem.clock : 0;
+      for (const mesh of lampDraws) {
+        const red = mesh.userData.hue === 'red';
+        const arr = mesh.instanceMatrix.array;
+        let changed = false;
+        for (let j = 0; j < mesh.count; j++) {
+          const x = arr[16 * j + 12], y = arr[16 * j + 13], z = arr[16 * j + 14];
+          const row = lampRows.get(`${Math.round(x * 100)}|${Math.round(z * 100)}`);
+          if (!row) continue;
+          const phase = R.alternationPhase(row.len, t, row.mode);
+          const on = active.has(row.rec) && (red ? phase.go !== row.goWhen : phase.go === row.goWhen);
+          const want = on ? 1 : 0;
+          if (arr[16 * j] === want && arr[16 * j + 5] === want) continue;
+          changed = true;
+          q.identity();
+          p.set(x, y, z);
+          sc.set(want, want, want);
+          m.compose(p, q, sc);
+          mesh.setMatrixAt(j, m);
+        }
+        if (changed) mesh.instanceMatrix.needsUpdate = true;
+      }
+    };
     const update = (pos, dt) => {
+      paintLamps();
       acc += dt || 0;
       if (acc < 0.3) return;
       acc = 0;
@@ -432,6 +553,43 @@ async function buildRoadworks(scene, { trafficSystem = null, parkedAt = null, co
       if (best < 0 || overlay) { if (shownRec >= 0) { card.el.hidden = true; shownRec = -1; } if (best < 0) dismissed = -1; return; }
       if (best === dismissed) return;
       if (best !== shownRec) show(best);
+    };
+    C.mountBusWorkStops = (routeList) => {
+      const prevG = scene.getObjectByName('RoadworksBusStops');
+      if (prevG) {
+        scene.remove(prevG);
+        const mats = new Set();
+        prevG.traverse((o) => { if (o.material) mats.add(o.material); });
+        for (const mat of mats) { if (mat.map) mat.map.dispose(); mat.dispose(); }
+      }
+      const spots = [];
+      for (const rt of routeList || []) {
+        for (const st of rt.oos || []) if (Number.isFinite(st.x) && Number.isFinite(st.z)) spots.push({ x: st.x, z: st.z, kind: 'oos' });
+        for (const st of rt.temps || []) if (Number.isFinite(st.x) && Number.isFinite(st.z)) spots.push({ x: st.x, z: st.z, kind: 'temp' });
+      }
+      if (!spots.length) return;
+      const plate = (a, b, bg, fg) => {
+        const cv = document.createElement('canvas');
+        cv.width = 256; cv.height = 128;
+        const g = cv.getContext('2d');
+        g.fillStyle = bg; g.fillRect(0, 0, 256, 128);
+        g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.font = '800 48px Helvetica, Arial, sans-serif';
+        g.fillText(a, 128, 44); g.fillText(b, 128, 92);
+        const tex = new THREE.CanvasTexture(cv);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+      };
+      const mats = { oos: plate('OUT', 'SERVICE', '#9a1c24', '#ffffff'), temp: plate('TEMP', 'STOP', '#f26a10', '#1b1b1b') };
+      const g = new THREE.Group();
+      g.name = 'RoadworksBusStops';
+      for (const s of spots) {
+        const sp = new THREE.Sprite(mats[s.kind]);
+        sp.position.set(s.x, (C.cutAt ? C.cutAt(s.x, s.z) : 0) + 2.4, s.z);
+        sp.scale.set(1.4, 0.7, 1);
+        g.add(sp);
+      }
+      scene.add(g);
     };
     // (main.js sets the hour as it starts; should nothing set it, the traffic's own hour is used after a while)
     setTimeout(() => { if (!drawn) setHour(trafficSystem && trafficSystem.getHour ? trafficSystem.getHour() : 12); }, 10000);
@@ -453,6 +611,8 @@ function collider(kind, s, y) {
   else if (kind === 'barricade') c = boxCollider(s.x, s.z, (s.w || 2.4) / 2, 0.25, s.yaw, y, 1.4, 'roadwork');
   else if (kind === 'arrow') c = boxCollider(s.x, s.z, 1.2, 0.8, s.yaw, y, 2.8, 'roadwork');
   else if (kind === 'signWork' || kind === 'signLane') c = circleCollider(s.x, s.z, 0.2, y, 2, 'roadwork');
+  else if (kind === 'officer') c = circleCollider(s.x, s.z, 0.35, y, 1.8, 'roadwork');
+  else if (kind === 'signal') c = circleCollider(s.x, s.z, 0.25, y, 2.6, 'roadwork');
   if (c) c.openData = true;
   return c;
 }
@@ -466,11 +626,19 @@ function placesOf(layout, feed) {
     const a = pl.placed && sums.get(pl.rec);
     if (!a) continue;
     const r = feed.records[pl.rec], sched = scheduleText(r);
-    out.push({ kind: 'place', cat: 'roadwork', name: titleFor(r), x: a.x / a.n, z: a.z / a.n, sub: `Road works · ${r.n || r.r}${sched ? ` · ${sched}` : ''}`, keywords: `road works construction closure closed lane ${r.r}` });
+    const where = String(r.n || '').replace(/\s+/g, ' ').trim();
+    const short = where && where.toLowerCase() !== String(r.r || '').toLowerCase() ? (where.length > 42 ? `${where.slice(0, 41).trimEnd()}…` : where) : '';
+    out.push({
+      kind: 'place', cat: 'roadwork', roadwork: true, street: r.r,
+      name: short ? `${titleFor(r)} · ${short}` : titleFor(r),
+      x: a.x / a.n, z: a.z / a.n, sub: `Road works · ${r.n || r.r}${sched ? ` · ${sched}` : ''}`,
+      keywords: `road works construction closure closed lane ${r.r} ${r.n || ''}`
+    });
   }
   return out;
 }
 
 C.roadworksListeners = C.roadworksListeners || []; // (transit-buses.js: told when the closed roads change, to take its detours)
+C.mountBusWorkStops = C.mountBusWorkStops || (() => {});
 Object.assign(C, { buildRoadworks, fetchRoadworks, roadworksCard: { cardFacts, scheduleText, titleFor } });
 })();

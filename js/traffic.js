@@ -1489,6 +1489,19 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
   }
 
   const RW = () => window.CITY.roadworks;
+  // someone other than `self` occupying [a, b] along an edge (the shared lane of a one-lane closure)
+  function stretchBusy(edge, a, b, self) {
+    if (!edge || !edge.occ) return false;
+    for (const lane of edge.occ) {
+      if (!lane) continue;
+      for (const o of lane) {
+        if (!o || !o.v || o.v === self) continue;
+        const half = o.v.half || 2;
+        if (o.s + half > a - 2 && o.s - half < b + 2) return true;
+      }
+    }
+    return false;
+  }
 
   // Overtake into an adjacent lane when it is clearly quicker (MOBIL), or work towards a lane the planned turn
   // can be made from; either only if neither v nor its new follower has to brake hard for it. Not while still
@@ -1721,7 +1734,25 @@ function createTrafficSystem(scene, sidewalks, obstacles, pedestrian = {}) {
         if (dec.stop < Infinity) worst = Math.min(worst, stopAt(v, dec.stop, 1));
       }
       v.hug = hug;
-    } else if (v.hug) v.hug = 0;
+    } else if (v.hug && !(v.edge.worksAlts && v.edge.worksAlts.length)) v.hug = 0;
+    // one open lane shared by both directions: stop for the officer or the portable signal, and the closed direction
+    // shifts into that lane (v.hug) while it is their turn. A vehicle already in the stretch is let out.
+    if (!v.conn && v.edge.worksAlts && v.edge.worksAlts.length && RW().alternationDecision) {
+      let hugAlt = 0, have = false;
+      for (const w of v.edge.worksAlts) {
+        const phase = RW().alternationPhase(w.len, clock, w.mode);
+        const dec = RW().alternationDecision({
+          role: w.role, s: v.s, half: v.half, a: w.a, b: w.b, go: phase.go,
+          oncoming: !!(w.other && stretchBusy(w.other, w.otherA, w.otherB, v)), shift: w.shift
+        });
+        if (!dec) continue;
+        have = true;
+        if (dec.stop < Infinity) worst = Math.min(worst, stopAt(v, dec.stop, 1.2));
+        cap = Math.min(cap, dec.cap);
+        if (dec.hug) hugAlt = dec.hug;
+      }
+      if (have) v.hug = hugAlt;
+    }
     worst = Math.min(worst, followPlayer(v));
     // --- Streetcars: keep behind them ---
     const og = obstacleGap(v);

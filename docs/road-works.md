@@ -68,11 +68,11 @@ stand beyond the traffic's lanes. 386 zones: 41 with an open lane beside the clo
   let in; after 45 s it goes on slowly rather than hold the road for ever. Nobody changes into a closed lane (traffic.js
   `laneSafe`) and nobody spawns in one. Everyone is held to 40 km/h by the taper (`zoneSpeedCap`), reached by a brake of 1.8
   m/s², not at once. Merging back is the ordinary lane choice (MOBIL) once the zone ends.
-- *No open lane* (one lane each way, or the barrels leave none). Nowhere to merge to, and a closed lane that carries the traffic
+- *No open lane, and the other direction is closed over the same stretch* (or there is no opposite edge). Nowhere to merge to, and a closed lane that carries the traffic
   of that way is a closed road, which only a full closure is. So the drivers **pass slowly** (15 km/h by the taper) along the
   gap beside the barrels, edging 0.45 m away from them (`v.hug`, steering's target offset) instead of waiting: a wait with no
-  end is a jam that never clears, and the City's lane closures on such streets are what let a car by in practice (a parking or
-  bike lane, a flagger). They are slow, not stopped, and no more than a few centimetres from clipping.
+  end is a jam that never clears. They are slow, not stopped, and no more than a few centimetres from clipping.
+- *One lane each way, and the other way still open.* The two directions share that one lane, one at a time (`planAlternations`). The closed direction shifts left into the open lane on its turn, at about 30 km/h. A paid-duty officer stands at each end when the description names a paid-duty officer, a flag person or an officer, or the work runs only in a daytime window. A portable signal stands there when the description names a portable or temporary signal, or the closure runs all day (`00:00-23:59`, or no daily window). Each way gets 18 s with an officer or 28 s with a signal, then a gap of 5 to 14 s so the stretch can empty. A car already in the stretch finishes its crossing. The officer or the signal is drawn, and the card names which.
 - Measured on the Mac mini (tools/roadworks-traffic-measure.js, shots in tools/shots/roadworks-traffic-measure.json): the recorded
   feed at noon on 25 November 2026, 300 s of game time at each closure with the traffic round it as the City's counts give it,
   seed 1, once with the zones and once without them (the runs do not start from the same cars, so "vehicles passing" is noisy; the
@@ -109,17 +109,14 @@ median 16.4-17.0 ms against 16.4-16.7, p95 37.6-38.6 against 37.6-37.9; Queen la
 **Buses.** An edge a full closure covers (or ends in a barricade row) is closed to every vehicle (`edge.worksClosed`), buses on
 routes included: a bus whose next link is closed leaves its route and roams (traffic.js `routeMove`). `transit-buses.js`
 takes each route's links round a closed stretch by the shortest way over open links when that is no longer than three times
-the stretch plus 400 m (`detourRoute`, tests/roadworks-traffic.test.mjs); a closed stretch at a route's start or end is left
+the stretch plus 400 m (`detourRoute`, tests/roadworks-traffic.test.mjs). When the links have positions, a way that stays within 220 m of the closed stretch may run up to 2,200 m past it, so the next open street over is used when the short cap would have left the buses on the closed road. Where the TTC's site-wide alerts, or the homepage when that list is empty, name a street after "via" or "along", that street is preferred. The homepage notices name the stretch that is off ("Eglinton Ave West at Duplex Ave to Eglinton Station"), not the street the buses take, and those fall through to the parallel street. Stops on a closed link are dropped and shown out of service; temporary stops sit mid-block on the detour, on the kerb. A closed stretch at a route's start or end is left
 out; one in the middle with no way round **stays on the route** as a position (the scheduled bus passes it) and a bus on the road
-leaves its route there. Not done: the TTC's own diversion notices, stops on a closed link (dropped from the route), and a bus
-already on the road when the hours change goes off its route until it is recycled. On the recorded day, at noon: 12 closed stretches of bus routes taken round, 23 with no way round (left on the route), none at a route's end; at 3 a.m., with fewer works at work: 4 and 9.
+leaves its route there until it is recycled. On the recorded day, at noon, the short cap took 12 closed stretches round and left 23; the longer parallel path is what those 23 are for.
 
 **Search.** Each record placed on the scene's day is a place in the search box ("Lane closure · Bloor St W", "Road closed ·
 Durie St", with its hours), found by street name or by "closure", "construction", "road works" or "detour"; picking one goes
-to the nearest street in front of it, as any place does.
+to the nearest street in front of it, as any place does. Typing the street keeps that street first and lists the closure with it: the closure's name is longer than the query, which used to push it past the eight results. Two closures with the same name within 150 m both stay. The index is built again when the number of closures changes.
 
 ## Follow-ups
 
-A driver let in at the last moment at a zone that starts at a junction's mouth can clip the barrels for a moment while it slides
-over; a flagger-style alternation through the oncoming lane for one lane each way (now: a slow pass beside the barrels); the TTC's
-own diversions for the routes it re-routes, and stops on a closed link; the search entries are the places, not the card's text.
+A driver let in at the last moment at a zone that starts at a junction's mouth can clip the barrels for a moment while it slides over. The search entry is the place (the street and a short location), not the whole text of the card.

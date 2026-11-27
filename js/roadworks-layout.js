@@ -336,7 +336,10 @@ const MERGE_LEAD = 45; // m before the taper where drivers in a closed lane begi
 const MERGE_LAST = 18; // m before the taper: still in the closed lane, a driver stops short of it and waits to be let in
 const ZONE_SPEED = 11; // m/s (40 km/h) past the works beside an open lane
 const STOP_PATIENCE = 45; // s a driver waits at the taper for a gap before it goes on regardless
-const CRAWL_SPEED = 4; // m/s (15 km/h) where no lane is open (one lane each way: the road narrows to the gap beside the barrels)
+const CRAWL_SPEED = 4; // m/s (15 km/h) where no lane is open and the other direction is closed too, or there is no opposite edge
+const ALT_GREEN = { officer: 18, signal: 28 }; // s one direction keeps the single open lane
+const ALT_SPEED = 8; // m/s (~29 km/h) through that lane while it is your turn
+const ALT_POST = 6; // m before the zone, where the officer or the signal stands
 /**
  * `barrels`: [{ x, z, rec, side, fx, fz }] (the layout's barrel sites: side +1 is the right of the way the stretch's
  * direction (fx, fz) runs). Returns { apply(isActive(rec)) -> number of zones in force, zones }: a zone is { a, b, closed:
@@ -460,38 +463,246 @@ function laneDecision(z, lane, f, waited = 0) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// One open lane, both directions: they take turns. A paid-duty officer or a portable signal at each end.
+// ---------------------------------------------------------------------------------------------------------------------
+/** 'officer' when the description names a paid-duty officer or a flagger; 'signal' when it names a portable signal, or when
+ *  the lane stays closed all day (nobody stands there overnight). A weekday window with nobody named is an officer. */
+function controlKind(rec) {
+  const d = String((rec && rec.de) || '').toLowerCase();
+  if (/paid[\s-]*duty|\bpdo\b|flag\s*person|flagger|\bofficer\b/.test(d)) return 'officer';
+  if (/portable|temporary signal|\bpts\b/.test(d)) return 'signal';
+  const sc = rec && rec.sc;
+  const allDay = !sc || sc.every((w) => !w || /^00:00-23:59$/.test(String(w).trim()) || /^00:00-24:00$/.test(String(w).trim()));
+  return allDay ? 'signal' : 'officer';
+}
+/** Which way may enter the shared stretch at time `t` seconds. go 0: the closed direction (the one whose lane the barrels
+ *  shut). go 1: the opposite direction. go -1: neither, the clearance between them. */
+function alternationPhase(lenM, t, mode) {
+  const green = ALT_GREEN[mode] || ALT_GREEN.officer;
+  const clear = Math.max(5, Math.min(14, (Number(lenM) || 20) / 7));
+  const cycle = 2 * (green + clear);
+  let u = ((Number(t) || 0) % cycle + cycle) % cycle;
+  if (u < green) return { go: 0, clear };
+  u -= green;
+  if (u < clear) return { go: -1, clear };
+  u -= clear;
+  if (u < green) return { go: 1, clear };
+  return { go: -1, clear };
+}
+/**
+ * What one vehicle does at a shared stretch. `role` 'hold' is the closed direction (go 0), 'open' the other (go 1).
+ * `s` is the vehicle's centre, `half` its half length, `a`/`b` the stretch along its edge. A vehicle already inside
+ * keeps going, even when the phase has flipped. One still approaching, and not its turn or with someone coming the other
+ * way, stops short of `a`. Farther than 55 m: null (the caller leaves it alone).
+ * `shift` is how far right of its own lane the hold direction sits so it uses the one open lane (negative: to its left).
+ */
+function alternationDecision({ role, s, half, a, b, go, oncoming, shift }) {
+  const mine = role === 'hold' ? 0 : 1;
+  const front = s + half, rear = s - half;
+  const inside = front > a + 0.5 && rear < b;
+  const hug = role === 'hold' ? (shift || 0) : 0;
+  if (inside) return { stop: Infinity, cap: ALT_SPEED, hug };
+  const dist = a - front;
+  if (dist > 55) return null;
+  if (go === mine && !oncoming) return { stop: Infinity, cap: ALT_SPEED, hug: dist < 8 ? hug : 0 };
+  return { stop: Math.max(0.3, dist - 1.5), cap: ALT_SPEED, hug: 0 };
+}
+function projectOnto(e, o, s) {
+  const x = e.sx + e.dx * s, z = e.sz + e.dz * s;
+  return (x - o.sx) * o.dx + (z - o.sz) * o.dz;
+}
+/**
+ * Zones with no open lane, whose opposite edge still has its lane through the same stretch, become alternations: both
+ * directions share that one lane, one at a time. A zone with no opposite, or whose opposite is closed over the same
+ * stretch, stays a crawl. Mutates those zones (cap, hugs) and returns { posts, apply(isActive) }.
+ * `apply` sets edge.worksAlts for the records at work and clears them otherwise. traffic.js reads worksAlts even on the
+ * opposite edge, which has no lane zone of its own.
+ */
+// The other direction of this same block. On the live graph e.opposite is an approach that also ends at e's
+// junction (the next block), not the carriageway beside this one, so a zone projected onto it never overlaps.
+function pairedEdge(e) {
+  if (!e || !Number.isFinite(e.sx)) return null;
+  if (e.from && e.from.in) {
+    const ex = e.sx + e.dx * e.len, ez = e.sz + e.dz * e.len;
+    let best = null, bestD = 15;
+    for (const o of e.from.in) {
+      if (o === e || !o.lanes || !o.lanes.length || !Number.isFinite(o.sx)) continue;
+      if (o.dx * e.dx + o.dz * e.dz > -0.7) continue;
+      const d = Math.hypot(o.sx - ex, o.sz - ez);
+      if (d < bestD) { best = o; bestD = d; }
+    }
+    if (best) return best;
+  }
+  const o = e.opposite;
+  return o && o.lanes && o.lanes.length && Number.isFinite(o.sx) ? o : null;
+}
+function planAlternations(zones, records) {
+  const works = [];
+  const posts = [];
+  const list = zones || [];
+  for (const z of list) {
+    if (z.open.length || z.alt) continue;
+    const e = z.edge, o = pairedEdge(e);
+    if (!o || !Number.isFinite(e.sx)) continue;
+    let oa = projectOnto(e, o, z.a), ob = projectOnto(e, o, z.b);
+    if (oa > ob) { const t = oa; oa = ob; ob = t; }
+    oa = Math.max(0, oa); ob = Math.min(o.len, ob);
+    if (ob - oa < 8) continue;
+    if (list.some((q) => q !== z && q.edge === o && !q.open.length && q.b > oa + 2 && q.a < ob - 2)) continue;
+    z.alt = true;
+    z.cap = ALT_SPEED;
+    z.hugs = z.hugs.map(() => 0);
+    const rec = records && records[z.rec];
+    const mode = controlKind(rec || {});
+    const shift = -((e.lanes[0] || 0) + (o.lanes[0] || 0));
+    const len = Math.max(z.b - z.a, ob - oa);
+    works.push(
+      { edge: e, role: 'hold', a: z.a, b: z.b, len, mode, rec: z.rec, shift, other: o, otherA: oa, otherB: ob },
+      { edge: o, role: 'open', a: oa, b: ob, len, mode, rec: z.rec, shift: 0, other: e, otherA: z.a, otherB: z.b }
+    );
+    const post = (edge, s, goWhen) => {
+      const ss = Math.max(1, Math.min(Math.max(1, edge.len - 1), s));
+      const off = (edge.lanes[edge.lanes.length - 1] || 1.8) + 1.6;
+      posts.push({
+        kind: mode === 'officer' ? 'officer' : 'signal', mode, goWhen, rec: z.rec, len,
+        x: edge.sx + edge.dx * ss + (edge.rx || 0) * off,
+        z: edge.sz + edge.dz * ss + (edge.rz || 0) * off,
+        yaw: Math.atan2(-edge.dx, -edge.dz)
+      });
+    };
+    post(e, z.a - ALT_POST, 0);
+    post(o, oa - ALT_POST, 1);
+  }
+  let applied = [];
+  return {
+    posts, works,
+    apply(isActive) {
+      for (const e of applied) delete e.worksAlts;
+      applied = [];
+      const seen = new Set();
+      for (const w of works) {
+        if (isActive && !isActive(w.rec)) continue;
+        if (!w.edge.worksAlts) { w.edge.worksAlts = []; applied.push(w.edge); }
+        w.edge.worksAlts.push(w);
+        seen.add(w.rec);
+      }
+      return seen.size;
+    }
+  };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Buses: a route's chain of links, round the roads the works close
 // ---------------------------------------------------------------------------------------------------------------------
-const DETOUR_MAX = 400; // m of detour beyond three times the closed stretch
-function detourPath(from, to, limit) {
-  const dist = new Map([[from, 0]]), prev = new Map(), open = [[0, from]];
+const DETOUR_MAX = 400; // m of detour beyond three times the closed stretch, when the links have no geometry
+const PARALLEL_BAND = 220; // m: with geometry, a detour must stay this close to the closed stretch (the next street over)
+const PARALLEL_MAX = 2200; // m of detour past the closed stretch that a path inside that band may take
+function hasGeom(e) {
+  return !!(e && Number.isFinite(e.sx) && Number.isFinite(e.sz) && Number.isFinite(e.dx) && Number.isFinite(e.dz) && e.len > 0);
+}
+function midNear(f, corridor) {
+  if (!hasGeom(f)) return false;
+  const mx = f.sx + f.dx * f.len * 0.5, mz = f.sz + f.dz * f.len * 0.5;
+  for (const c of corridor) {
+    if (!hasGeom(c)) return true;
+    const s = (mx - c.sx) * c.dx + (mz - c.sz) * c.dz;
+    const cs = Math.max(0, Math.min(c.len, s));
+    if (Math.hypot(mx - (c.sx + c.dx * cs), mz - (c.sz + c.dz * cs)) <= PARALLEL_BAND) return true;
+  }
+  return false;
+}
+/**
+ * Shortest open, non-tram way from `from` to `to` under `limit` metres. The path includes `to` (the caller drops it).
+ * `opts.band`: only edges whose midpoint lies within PARALLEL_BAND of those closed edges (`to` is always allowed).
+ * `opts.needVia` with `opts.via` (name keys) and `opts.name(edge)`: the path must use one of those streets. The link
+ * the route is already on, and the link it returns to, do not count.
+ */
+function detourPath(from, to, limit, opts) {
+  const band = opts && opts.band;
+  const via = opts && opts.needVia && opts.via && opts.via.length ? new Set(opts.via) : null;
+  const nameOf = (opts && opts.name) || ((e) => e.name || '');
+  const closed = opts && opts.closed;
+  const matches = (f) => {
+    if (!via || f === from || f === to || (closed && closed.has(f))) return false;
+    const k = nameKey(nameOf(f));
+    if (!k) return false;
+    for (const v of via) if (k === v || k.startsWith(v + ' ') || v.startsWith(k + ' ')) return true;
+    return false;
+  };
+  const allow = (f) => {
+    if ((f.worksClosed || f.tram) && f !== to) return false;
+    if (f.tram && f === to) return false;
+    if (band && f !== to && !midNear(f, band)) return false;
+    return true;
+  };
+  if (!via) {
+    const dist = new Map([[from, 0]]), prev = new Map(), open = [[0, from]];
+    while (open.length) {
+      let bi = 0;
+      for (let i = 1; i < open.length; i++) if (open[i][0] < open[bi][0]) bi = i;
+      const [d, e] = open.splice(bi, 1)[0];
+      if (d > dist.get(e)) continue;
+      if (e === to) {
+        const path = [];
+        for (let x = to; x !== from; x = prev.get(x)) path.push(x);
+        return path.reverse();
+      }
+      for (const m of e.moves || []) {
+        const f = m.to;
+        if (!allow(f)) continue;
+        const nd = d + (f === to ? 0 : f.len);
+        if (nd < limit && nd < (dist.get(f) ?? Infinity)) { dist.set(f, nd); prev.set(f, e); open.push([nd, f]); }
+      }
+    }
+    return null;
+  }
+  const distUn = new Map([[from, 0]]), distSeen = new Map(), prevU = new Map(), prevS = new Map(), open = [[0, from, 0]];
   while (open.length) {
     let bi = 0;
     for (let i = 1; i < open.length; i++) if (open[i][0] < open[bi][0]) bi = i;
-    const [d, e] = open.splice(bi, 1)[0];
-    if (d > dist.get(e)) continue;
+    const [d, e, seen] = open.splice(bi, 1)[0];
+    const bag = seen ? distSeen : distUn;
+    if (d > (bag.get(e) ?? Infinity)) continue;
     if (e === to) {
+      if (!seen) continue;
       const path = [];
-      for (let x = to; x !== from; x = prev.get(x)) path.push(x);
+      let x = to, sbit = 1;
+      while (x !== from) {
+        path.push(x);
+        const p = sbit ? prevS.get(x) : prevU.get(x);
+        if (!p) return null;
+        x = p.e; sbit = p.s;
+      }
       return path.reverse();
     }
     for (const m of e.moves || []) {
       const f = m.to;
-      if (f.worksClosed || f.tram) continue;
+      if (!allow(f)) continue;
       const nd = d + (f === to ? 0 : f.len);
-      if (nd < limit && nd < (dist.get(f) ?? Infinity)) { dist.set(f, nd); prev.set(f, e); open.push([nd, f]); }
+      if (!(nd < limit)) continue;
+      const ns = (seen || matches(f)) ? 1 : 0;
+      const nb = ns ? distSeen : distUn;
+      if (nd < (nb.get(f) ?? Infinity)) {
+        nb.set(f, nd);
+        (ns ? prevS : prevU).set(f, { e, s: seen });
+        open.push([nd, f, ns]);
+      }
     }
   }
   return null;
 }
 /**
- * A bus route's links with the closed ones (`worksClosed`) taken round: each closed stretch is replaced by the shortest way over
- * open links from the link before it to the link after it, when that is no longer than three times the stretch plus DETOUR_MAX m
- * (and never along a streetcar link). No way: a stretch at an end of the route is left out (`cut`); one in the middle stays
- * (`left`: the scheduled bus passes it as a position, and a bus on the road leaves its route there, traffic.js routeMove).
+ * A bus route's links with the closed ones (`worksClosed`) taken round. Each closed stretch is replaced by the shortest
+ * open way from the link before it to the link after it. With no geometry on the links, that way may be at most three
+ * times the stretch plus DETOUR_MAX m (and never more than the stretch plus 1,200 m), and never along a streetcar link.
+ * With geometry, a way that stays within PARALLEL_BAND of the closed stretch may run PARALLEL_MAX m past it: the next
+ * open street over, even when the old cap would have left the buses on the closed road.
+ * `opts.viaFor(closedEdges)` may return street-name keys from a published TTC detour. A path that uses one of those
+ * streets is taken when one exists; otherwise the shortest open way. `opts.name(edge)` is how an edge is named.
+ * No way: a stretch at an end of the route is left out (`cut`); one in the middle stays (`left`).
  * Returns { links, detoured, left, cut }; `links` is the argument itself when nothing on it is closed.
  */
-function detourRoute(base) {
+function detourRoute(base, opts) {
   const out = [];
   let i = 0, detoured = 0, left = 0, cut = 0, any = false;
   while (i < base.length) {
@@ -499,15 +710,52 @@ function detourRoute(base) {
     any = true;
     let j = i;
     while (j < base.length && base[j].worksClosed) j++;
-    const before = out[out.length - 1], after = base[j];
-    const run = base.slice(i, j).reduce((t, e) => t + e.len, 0);
-    const path = before && after ? detourPath(before, after, Math.min(3 * run + DETOUR_MAX, run + 1200)) : null;
+    const before = out[out.length - 1], after = base[j], closed = base.slice(i, j);
+    const run = closed.reduce((t, e) => t + e.len, 0);
+    const geom = !!(before && after && closed.every(hasGeom) && hasGeom(before) && hasGeom(after));
+    const via = opts && opts.viaFor ? opts.viaFor(closed) : null;
+    const name = opts && opts.name;
+    let path = null;
+    if (before && after) {
+      const limit = geom ? Math.min(3 * run + PARALLEL_MAX, run + PARALLEL_MAX) : Math.min(3 * run + DETOUR_MAX, run + 1200);
+      const band = geom ? closed : null;
+      if (via && via.length && name) path = detourPath(before, after, limit, { band, needVia: true, via, name, closed: new Set(closed) });
+      if (!path) path = detourPath(before, after, limit, band ? { band } : null);
+    }
     if (path) { for (const e of path.slice(0, -1)) out.push(e); detoured++; }
     else if (!before || !after) cut++;
-    else { for (const e of base.slice(i, j)) out.push(e); left++; }
+    else { for (const e of closed) out.push(e); left++; }
     i = j;
   }
   return { links: any && out.length ? out : base, detoured, left, cut };
+}
+/**
+ * One temporary stop per dropped stop, on the detour links, mid-block on the kerb side (the last lane, plus a couple of
+ * metres). Edges shorter than 20 m are skipped; longer than 36 m are preferred. No geometry: nothing to place.
+ */
+function placeDetourStops(dropped, edges) {
+  const list = (edges || []).filter((e) => hasGeom(e) && e.len > 20);
+  const roomy = list.filter((e) => e.len > 36);
+  const use = roomy.length ? roomy : list;
+  if (!use.length || !dropped || !dropped.length) return [];
+  const out = [], taken = [];
+  const n = Math.min(dropped.length, use.length * 2);
+  for (let i = 0; i < n; i++) {
+    const e = use[Math.min(use.length - 1, Math.floor((i + 0.5) * use.length / n))];
+    let s = e.len * (n === 1 ? 0.5 : (i + 1) / (n + 1));
+    s = Math.max(18, Math.min(e.len - 18, s));
+    if (!(s >= 18 && e.len - s >= 18)) continue;
+    if (taken.some((t) => t.e === e && Math.abs(t.s - s) < 22)) continue;
+    taken.push({ e, s });
+    const off = ((e.lanes && e.lanes.length) ? e.lanes[e.lanes.length - 1] : 1.8) + 2.3;
+    out.push({
+      edge: e, s, name: dropped[i].name || 'Temporary stop', temporary: true,
+      x: e.sx + e.dx * s + (e.rx || 0) * off,
+      z: e.sz + e.dz * s + (e.rz || 0) * off,
+      yaw: Math.atan2(-e.dx, -e.dz)
+    });
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -591,5 +839,6 @@ function openEdges(list) {
 }
 
 Object.assign(window.CITY, { roadworksSites, roadworks: { KINDS, nameKey, dayRange, activeOn, sceneDay, torontoDayOf, closeEdges, openEdges, detourRoute, along, polyLength, BARREL_STEP, TAPER_LEN,
-  hourWindow, activeAtHour, laneZoneTable, closedZoneAhead, mergeStep, zoneSpeedCap, laneDecision, LANE_TAPER, MERGE_LEAD, MERGE_LAST, ZONE_SPEED, CRAWL_SPEED, STOP_PATIENCE, CLIP, HUG } });
+  hourWindow, activeAtHour, laneZoneTable, closedZoneAhead, mergeStep, zoneSpeedCap, laneDecision, LANE_TAPER, MERGE_LEAD, MERGE_LAST, ZONE_SPEED, CRAWL_SPEED, STOP_PATIENCE, CLIP, HUG,
+  controlKind, alternationPhase, alternationDecision, planAlternations, placeDetourStops, ALT_SPEED, ALT_GREEN, PARALLEL_BAND, PARALLEL_MAX } });
 })();
