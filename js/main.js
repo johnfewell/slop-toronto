@@ -623,8 +623,14 @@ async function initApp() {
   // Sky occlusion (js/sky-occlusion.js): the city's buildings drawn once into a top-down height map, which the materials'
   // aoNode searches for the horizon around each fragment. After the massing cells: their colliders are in by now
   if (window.CITY.SkyOcclusion && window.CITY.SkyOcclusion.state.setting) {
-    window.CITY.SkyOcclusion.attach(allColliders, window.CITY.CITY_BOUNDS);
-    window.CITY.SkyOcclusion.setBounce(lightingSystem.hemiLight, window.CITY.cityUniforms.uCanyonBounce.value);
+    // (the ground: the terrain's hills and High Park's ravines; the trees, in leaf; the landmarks as they are drawn)
+    const C = window.CITY, valley = C.DON_VALLEY;
+    window.CITY.SkyOcclusion.attach(allColliders, C.CITY_BOUNDS, {
+      groundAt: (x, z) => C.terrainHeightAt(x, z) + (valley ? valley.heightAt(x, z) : 0),
+      crowns: C.treeCrowns || null,
+      meshRoots: ['CityLandmarks', 'WaterfrontLandmarks'].map((name) => scene.getObjectByName(name)).filter(Boolean)
+    });
+    window.CITY.SkyOcclusion.setBounce(lightingSystem.hemiLight, window.CITY.cityUniforms.uCanyonBounce.value, lightingSystem.lastSun || null);
     markInit('skyOcclusion');
   }
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
@@ -1013,6 +1019,7 @@ async function initApp() {
     const values = { leaf: s.leaf, autumn: s.autumn, spring: s.spring, dormant: s.dormant, snow };
     const cu = window.CITY.cityUniforms;
     for (const [k, name] of Object.entries(SEASON_UNIFORMS)) if (cu[name].value !== values[k]) cu[name].value = values[k];
+    if (window.CITY.SkyOcclusion) window.CITY.SkyOcclusion.setLeaf(values.leaf); // (the trees' crowns are in the sky occlusion's map while in leaf)
     season.state = { live, month: day.month, day: day.day, phase: snow >= 0.5 ? 'snow' : s.phase, ...values };
   }
   function refreshSnowRecord() {

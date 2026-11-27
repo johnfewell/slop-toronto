@@ -31,7 +31,9 @@ License (`LICENSE`). Third-party code, data and assets keep their own licences, 
   https://ben3d.ca/blog/enhanced-slop-new-york-lighting). The buildings are drawn once into a top-down height map
   with a max-mip pyramid, the horizon is searched in 16 compass slices of 13 steps, and the cosine-weighted visible
   sky is integrated in closed form per slice (the slice integral of GTAO). Here it is evaluated in the materials'
-  `aoNode` on stock three.js r187 instead of in his half-resolution screen pass on his three.js fork.
+  `aoNode` on stock three.js r187 instead of in his half-resolution screen pass on his three.js fork. The ground, the
+  trees' crowns and the landmarks are in the map too, and the hidden sky's refill is a warm and a cool light by which
+  walls the sun is on (his is one placeholder colour): ours, built on his method.
 - **Generated storefronts and entrances** (`js/tsl-materials.js` `createStorefront`, `createBuildingEntrance`,
   `boxCoverage`): adapted from mrdoob's Slop New York `8d88e41`, `26bb9fe`, `09d27e0` and `dbaf5f9` (MIT, same upstream
   attribution above), for Toronto's box facades, storeys and data-driven selection, with a blank fascia in place of

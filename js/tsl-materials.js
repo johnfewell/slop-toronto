@@ -35,6 +35,7 @@ const {
   modelNormalMatrix,
   frontFacing,
   cameraPosition,
+  diffuseColor,
   cameraProjectionMatrix,
   cameraViewMatrix,
   screenSize,
@@ -327,6 +328,21 @@ const canyonSkyAONode = Fn(() => {
   const sky = window.CITY.SkyOcclusion && window.CITY.SkyOcclusion.aoNode(wp, normalWorldGeometry);
   return sky ? sky : heightCanyonAO(wp);
 });
+
+// The same with the bounce's colour (sky-occlusion.js lightNode): ao is the sky's share alone, and finish(mat), called when
+// the material is done, adds what refills the hidden sky to its emissive: the albedo times the light of the walls the sun
+// lights (warm) and of those in shade (cool). Where the pass is off (the phone tier) it is the height function, as before.
+const canyonLight = () => {
+  const L = window.CITY.SkyOcclusion && window.CITY.SkyOcclusion.lightNode ? window.CITY.SkyOcclusion.lightNode(positionWorld, normalWorldGeometry) : null;
+  if (!L) return { ao: heightCanyonAO(positionWorld), finish() {} };
+  return {
+    ao: L.ao,
+    finish(mat) {
+      const bounce = L.bounce(diffuseColor.rgb);
+      mat.emissiveNode = mat.emissiveNode ? mat.emissiveNode.add(bounce) : bounce;
+    }
+  };
+};
 
 // Material caches to prevent duplicate WebGPU WGSL shader compilation across blocks & landmarks
 const _curtainWallCache = new Map();
@@ -991,7 +1007,8 @@ function createCurtainWallMaterial(opts = {}) {
   const uSeed = styled('seed');
   const cCanyonBounce = color(0xe89c68);
 
-  mat.aoNode = canyonSkyAONode();
+  const canyon = canyonLight();
+  mat.aoNode = canyon.ao;
   if (footprintLocal) useFootprintVertex(mat);
 
   // The facade cell and the apartment behind each pane are built once and shared by every output below, so the
@@ -1137,6 +1154,7 @@ function createCurtainWallMaterial(opts = {}) {
   })();
 
   _curtainWallCache.set(cacheKey, mat);
+  canyon.finish(mat);
   return mat;
 }
 
@@ -1196,7 +1214,8 @@ function createPreWarBuildingMaterial(opts = {}) {
   const halfWinX = (1.0 - windowRatioX) * 0.5;
   const halfWinY = (1.0 - windowRatioY) * 0.5;
 
-  mat.aoNode = canyonSkyAONode();
+  const canyon = canyonLight();
+  mat.aoNode = canyon.ao;
 
   // The facade cell, the window opening and the apartment behind it are built once and shared by every output below,
   // so the shader carries a single copy of them (and evaluates the interior mapping once per pixel)
@@ -1531,6 +1550,7 @@ function createPreWarBuildingMaterial(opts = {}) {
   })();
 
   _preWarCache.set(cacheKey, mat);
+  canyon.finish(mat);
   return mat;
 }
 
@@ -1641,7 +1661,8 @@ function createRenderedFacadeMaterial(opts = {}) {
   if (P.length > 1 && P.some((p) => !(p.cornerPier > 0))) throw new Error('rendered facade: a merged style without corner piers');
   const cornerPier = P.length > 1 ? styled('cornerPier') : P[0].cornerPier;
 
-  mat.aoNode = canyonSkyAONode();
+  const canyon = canyonLight();
+  mat.aoNode = canyon.ao;
   if (footprintLocal) useFootprintVertex(mat);
   const facade = facadeCell(uWindowWidth, uFloorHeight, true, cornerPier, footprintLocal);
   const { isRoof, uCoord, vCoord, gridV, cellId, cellUV, fw, bayWidth, isGroundFloor, solid, door, tone, floor0, coping } = facade;
@@ -1889,6 +1910,7 @@ function createRenderedFacadeMaterial(opts = {}) {
   })();
 
   _renderedCache.set(cacheKey, mat);
+  canyon.finish(mat);
   return mat;
 }
 
@@ -2478,7 +2500,8 @@ function createRoadSurfaceMaterial() {
   const viewDir = normalize(cameraPosition.sub(positionWorld));
   const waterFresnel = pow(float(1.0).sub(clamp(viewDir.y, 0.0, 1.0)), 5.0).mul(0.98).add(0.02);
 
-  mat.aoNode = canyonSkyAONode();
+  const canyon = canyonLight();
+  mat.aoNode = canyon.ao;
 
   mat.colorNode = Fn(() => {
     const wx = positionWorld.x;
@@ -2631,6 +2654,7 @@ function createRoadSurfaceMaterial() {
     return reflectCol.mul(max(puddle, film.mul(0.35))).mul(roadFresnel).mul(cityUniforms.uInteriorGlow).mul(0.07);
   })();
 
+  canyon.finish(mat);
   return mat;
 }
 
@@ -2703,8 +2727,10 @@ function createRoadPaintMaterial(fadeEnd = 0) {
   const grain = mix(float(1.0), wear.mul(0.22).add(0.86), surface);
   mat.colorNode = vec3(mix(float(1.0), float(0.72), puddle).mul(mix(float(1.0), float(0.86), film)).mul(grain));
   mat.roughnessNode = mix(mix(float(0.62), float(0.42), film), float(0.2), puddle);
-  mat.aoNode = canyonSkyAONode();
+  const canyon = canyonLight();
+  mat.aoNode = canyon.ao;
 
+  canyon.finish(mat);
   return mat;
 }
 
@@ -3007,7 +3033,8 @@ function createSidewalkMaterial() {
     gumAge = gm.y;
   }
 
-  mat.aoNode = canyonSkyAONode();
+  const canyon = canyonLight();
+  mat.aoNode = canyon.ao;
 
   mat.colorNode = Fn(() => {
     const wx = positionWorld.x;
@@ -3110,6 +3137,7 @@ function createSidewalkMaterial() {
     return bumpNormal(height.mul(detail).mul(float(1.0).sub(swPuddle)));
   })();
 
+  canyon.finish(mat);
   return mat;
 }
 
@@ -3124,7 +3152,8 @@ function createCurbMaterial() {
     roughness: 0.72
   });
 
-  mat.aoNode = canyonSkyAONode();
+  const canyon = canyonLight();
+  mat.aoNode = canyon.ao;
 
   mat.colorNode = Fn(() => {
     const wx = positionWorld.x;
@@ -3154,6 +3183,7 @@ function createCurbMaterial() {
     return bumpNormal(grain);
   })();
 
+  canyon.finish(mat);
   return mat;
 }
 

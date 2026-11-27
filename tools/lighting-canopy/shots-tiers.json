@@ -1,0 +1,42 @@
+[
+ {
+  "name": "street-midday",
+  "mode": "person",
+  "camera": "pov",
+  "x": 150,
+  "z": -322,
+  "heading": 0,
+  "wait": 4000,
+  "time": "midday"
+ },
+ {
+  "name": "park-lawn-midday",
+  "mode": "person",
+  "camera": "pov",
+  "x": -6388,
+  "z": -2042,
+  "heading": 1.5708,
+  "wait": 4000,
+  "time": "midday"
+ },
+ {
+  "name": "waterfront-golden",
+  "mode": "person",
+  "camera": "pov",
+  "x": -298,
+  "z": 688,
+  "heading": 3.1416,
+  "wait": 4000,
+  "time": "golden"
+ },
+ {
+  "name": "street-midnight",
+  "mode": "person",
+  "camera": "pov",
+  "x": 150,
+  "z": -322,
+  "heading": 0,
+  "wait": 4000,
+  "time": "midnight"
+ }
+]

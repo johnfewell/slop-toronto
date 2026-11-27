@@ -31,8 +31,39 @@ MIT; write-up: https://ben3d.ca/blog/enhanced-slop-new-york-lighting). Credit is
 | Specular | not occluded | not occluded (aoNode also scales the environment's specular by three's own rule) |
 | Landmarks | their triangles drawn into the map | the colliders' outlines (the landmarks' are cut from their meshes) |
 
-Not in the map: terrain (the ravines and the escarpment shade nothing), trees, props, the bridges and decks (`minY` over
-3 m), and anything under 4 m.
+Not in the map: props, the bridges and decks (`minY` over 3 m), and anything under 4 m.
+
+## The ground, the trees and the landmarks (jf-lbb, next item 4)
+
+- **Ground.** The terrain's hills and High Park's ravines and ponds are in the map as heights over the street level
+  (`terrainHeightAt` plus the pilot surface's `heightAt`, on a 12 m lattice, bilinear between its nodes). The ground goes
+  under the street level in the park (down to 16 m), so the 8-bit square-root code now starts at `-offset` instead of 0:
+  the offset is the deepest ground rounded up to 5 m (at most 40), 0 where the map has none (the old encoding exactly).
+  A fragment on a ravine floor now sees the rims, and the plateau's edge shades the slope below it.
+- **Trees.** `js/ez-trees.js` publishes every tree's foot, height and crown radius (`CITY.treeCrowns`); while the trees are
+  in leaf (`cityUniforms.uLeaf` 0.5 or more) their crowns are drawn into a second copy of the map as solid discs reaching
+  65% of the tree's height (a crown stops part of the sky, not all of it, and the map holds one height per texel), trees
+  under 4 m left out. Bare trees are not in the map. The leaf map is made the first time it is wanted and swapped in with
+  a texture upload when the season changes (`SkyOcclusion.setLeaf`, from `applySeason`); the bare map stays.
+- **Landmarks.** The meshes under `CityLandmarks` and `WaterfrontLandmarks` are drawn as they are (the rasteriser for
+  meshes was there already; nothing passed it any).
+
+## The bounce's colour (jf-lbb, next item 3)
+
+The hidden part of the sky used to be refilled by a share of the sky's own light (blue), scaled to the luminance of the
+hemisphere light's ground colour. Now the refill is light of its own, added to the material's emissive as albedo times
+colour (`SkyOcclusion.lightNode`, `canyonLight()` in `js/tsl-materials.js`, on the three facade materials, the road, its
+paint, the sidewalk and the curb; foliage and bark keep the scalar refill):
+
+- the search keeps, per compass slice, how much sky the buildings took from it. A slice that points away from the sun
+  has a wall in it that the sun is on (warm: the hemisphere light's ground colour, a little toward the sun's, 1.2 times
+  its luminance); a slice toward the sun has one in shade (cool: mostly the sky's colour, 0.7 times). What a wall facing
+  open ground can't see below the horizon is the street: warm.
+- with no sun on the walls (night, heavy overcast: `sunLitness`) a wall is half warm and half cool.
+- `aoNode` is the sky's share alone, with no refill.
+
+Tests: `tests/sky-occlusion.test.mjs` (the offset encoding, the lattice, a ravine against the brute-force reference,
+discs, tree crowns, the bounce's luminance).
 
 ## Cost and memory
 

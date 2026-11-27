@@ -148,3 +148,118 @@ test('the quality tiers: the pass on high & medium, off on the phone', () => {
   assert.equal(on.length, 2, 'high and medium');
   assert.match(q, /low: \{[\s\S]*?skyOcclusion: null/);
 });
+
+// ---- the ground, the trees and the offset (jf-lbb, item 4) -----------------------------------------------------------
+test('with an offset, heights under the street level are stored too, rounded down', () => {
+  for (const off of [5, 15, 40]) {
+    for (const h of [-off, -off / 2, -0.3, 0, 3, 20, 100, 553]) {
+      const back = S.decodeHeight(S.encodeHeight(h, off), off);
+      assert.ok(back <= h + 1e-9, `${h} (offset ${off}) came back as ${back}`);
+      assert.ok(h - back <= 2 * Math.sqrt((h + off) * (S.MAX_HEIGHT + off)) / 255 + 1e-9, `${h} (offset ${off}) came back as ${back}`);
+    }
+    assert.equal(S.encodeHeight(-off - 3, off), 0);
+  }
+  assert.equal(S.decodeHeight(S.encodeHeight(37, 0), 0), S.decodeHeight(S.encodeHeight(37)), 'no offset is the old encoding');
+});
+
+// a bowl: the ground falls 12 m under the street level in a ravine along the z axis (a V of 40 m half width)
+const ravine = (x) => -12 * Math.max(0, 1 - Math.abs(x) / 40);
+const ravineMap = (colliders = [], trees = null) => {
+  const grid0 = S.createGrid({ minX: -300, maxX: 300, minZ: -300, maxZ: 300 }, 0, 2);
+  const lattice = S.groundLattice(grid0, (x) => ravine(x), 8);
+  const grid = S.createGrid({ minX: -300, maxX: 300, minZ: -300, maxZ: 300 }, 0, 2, lattice.offset);
+  S.fillGround(grid, lattice);
+  S.collidersToGrid(grid, colliders);
+  if (trees) S.treesToGrid(grid, trees, (x, z) => S.latticeAt(lattice, x, z));
+  return { grid, lattice, pyramid: S.buildPyramid(grid) };
+};
+
+test('the ground lattice finds how deep the ground goes, to the next 5 m, at most 40', () => {
+  const grid0 = S.createGrid({ minX: -300, maxX: 300, minZ: -300, maxZ: 300 }, 0, 2);
+  assert.equal(S.groundLattice(grid0, () => 0).offset, 0);
+  assert.equal(S.groundLattice(grid0, () => 14).offset, 0, 'hills need no offset');
+  assert.equal(S.groundLattice(grid0, (x) => ravine(x), 8).offset, 15);
+  assert.equal(S.groundLattice(grid0, () => -90).offset, 40);
+  assert.equal(S.groundLattice(grid0, () => -0.2).offset, 0, 'a pond\'s 0.2 m is no ravine');
+});
+
+test('a ravine shades its floor and its sides, and the rim sees the whole sky', () => {
+  const flat = open();
+  const { grid, pyramid } = ravineMap();
+  const sky = (m, p, n) => S.visibility(m.pyramid, m.grid, p, n);
+  // (the floor is 12 m down, the rims 40 m either side: the horizon is 17 degrees up, about 0.9 of the sky)
+  const floor = sky({ grid, pyramid }, [0, -12, 0], [0, 1, 0]);
+  assert.ok(floor < 0.98 && floor > 0.7, `the floor: ${floor.toFixed(3)}`);
+  assert.ok(floor < sky(flat, [0, 0, 0], [0, 1, 0]) - 0.02, 'less sky than open ground');
+  const rim = sky({ grid, pyramid }, [60, 0, 0], [0, 1, 0]);
+  assert.ok(rim > 0.995, `the rim: ${rim.toFixed(3)}`);
+  // (the floor reads the same by the brute force)
+  const ref = S.visibilityReference(pyramid, grid, [0, -12, 0], [0, 1, 0]);
+  assert.ok(Math.abs(floor - ref) < 0.08, `${floor.toFixed(3)} against ${ref.toFixed(3)}`);
+});
+
+test('a building on the ravine floor stands over it: its roof is a height, not a depth', () => {
+  const { grid } = ravineMap([box(-5, -5, 5, 5, 20)]);
+  const at = (x, z) => S.decodeHeight(grid.data[Math.floor((z - grid.originZ) / grid.texel) * grid.width + Math.floor((x - grid.originX) / grid.texel)], grid.offset);
+  assert.ok(Math.abs(at(0, 0) - 20) < 1.8, `the roof ${at(0, 0).toFixed(1)}`);
+  assert.ok(Math.abs(at(0, 100) + 12) < 1.8 && at(20, 100) > at(0, 100) + 3 && at(50, 100) > -1.8, 'the ravine floor, its side and the plain');
+});
+
+test('a disc keeps the tallest and always marks at least the texel under its centre', () => {
+  const grid = S.createGrid({ minX: -20, maxX: 20, minZ: -20, maxZ: 20 }, 0, 2);
+  S.fillDisc(grid, 0, 0, 6, 100);
+  S.fillDisc(grid, 3, 0, 5, 50);
+  S.fillDisc(grid, 15.2, 15.2, 0.3, 80);
+  const at = (x, z) => grid.data[Math.floor((z - grid.originZ) / grid.texel) * grid.width + Math.floor((x - grid.originX) / grid.texel)];
+  assert.equal(at(0, 0), 100); assert.equal(at(3, 0), 100, 'the taller disc wins where they overlap'); assert.equal(at(7, 0), 50);
+  assert.equal(at(15.2, 15.2), 80, 'a crown under a texel');
+  assert.equal(at(-10, 10), 0, 'outside');
+});
+
+test('trees are drawn at a share of their height, from their foot or the ground, and small ones are left out', () => {
+  const trees = { count: 3, data: new Float32Array([0, 0, 100, 12, 4, 100, 0, 100, 3, 3, -150, 0, 100, 10, 4]) };
+  const { grid } = ravineMap([], trees);
+  const at = (x, z) => S.decodeHeight(grid.data[Math.floor((z - grid.originZ) / grid.texel) * grid.width + Math.floor((x - grid.originX) / grid.texel)], grid.offset);
+  assert.ok(Math.abs(at(0, 100) - 12 * S.CROWN_SHARE) < 1.6, `a 12 m tree on the flat: ${at(0, 100).toFixed(1)}`);
+  assert.ok(at(100, 100) < 1, 'a 3 m shrub is left out');
+  // (foot y 0, but the ground there is 12 m under the street: the foot is taken as the street's 0 since the site's y is higher)
+  assert.ok(Math.abs(at(-150, 100) - (0 + 10 * S.CROWN_SHARE)) < 1.6 || at(-150, 100) > 3, `a tree where the ground is flat: ${at(-150, 100).toFixed(1)}`);
+});
+
+test('a tree line shades the ground beside it, less than a wall of the same height', () => {
+  const trees = { count: 20, data: new Float32Array(100) };
+  for (let i = 0; i < 20; i++) trees.data.set([-95 + i * 10, 0, 12, 14, 4], i * 5); // a row along x at z = 12, 14 m trees
+  const grid0 = () => S.createGrid({ minX: -300, maxX: 300, minZ: -300, maxZ: 300 }, 0, 2);
+  const g = grid0(); S.treesToGrid(g, trees);
+  const withTrees = { grid: g, pyramid: S.buildPyramid(g) };
+  const wall = mapOf([box(-100, 10, 100, 14, 14)]);
+  const open0 = open();
+  const p = [0, 0, 0];
+  const v = (m) => S.visibility(m.pyramid, m.grid, p, [0, 1, 0]);
+  assert.ok(v(withTrees) < v(open0) - 0.02, 'trees take some of the sky');
+  assert.ok(v(withTrees) > v(wall) - 1e-9, 'but a row of crowns reaches less high than a wall of their height');
+});
+
+// ---- the bounce's colour (jf-lbb, item 3) ----------------------------------------------------------------------------
+test('the bounce keeps the luminance of the single bounce it replaces, warm from lit walls and cooler from shade', () => {
+  const rgb = (hex) => ({ r: ((hex >> 16) & 255) / 255, g: ((hex >> 8) & 255) / 255, b: (hex & 255) / 255 });
+  const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  for (const [skyHex, groundHex, intensity, bounce] of [[0xaad2ff, 0xb89678, 1.58, 0.58], [0x9abbe6, 0xc88a62, 1.48, 0.52], [0x4c6ca8, 0x6e5048, 0.85, 0.32]]) {
+    const sky = rgb(skyHex), ground = rgb(groundHex);
+    const c = S.bounceColours(sky, ground, intensity, bounce, 0xfff5e8, 1);
+    const single = (0.2126 * ground.r + 0.7152 * ground.g + 0.0722 * ground.b) * bounce * intensity / Math.PI;
+    assert.ok(lum(c.warm) > single && lum(c.warm) < single * 1.4, `warm ${lum(c.warm).toFixed(3)} against ${single.toFixed(3)}`);
+    assert.ok(lum(c.cool) < single && lum(c.cool) > single * 0.45, `cool ${lum(c.cool).toFixed(3)} against ${single.toFixed(3)}`);
+    assert.ok(c.warm[0] / c.warm[2] > c.cool[0] / c.cool[2], 'the warm light is redder than the cool');
+    assert.ok(c.warm[0] > c.warm[2], 'warm: more red than blue');
+  }
+});
+
+test('the sun is on the walls on a clear day and not under the moon or a heavy overcast', () => {
+  assert.ok(S.sunLitness(6.6, 0) > 0.99);
+  assert.ok(S.sunLitness(5.8, 0) > 0.9);
+  const dusk = S.sunLitness(3.1, 0.28);
+  assert.ok(dusk > 0.05 && dusk < 0.5, `the last light: ${dusk.toFixed(2)}`);
+  assert.equal(S.sunLitness(1.45, 0.86), 0);
+  assert.equal(S.sunLitness(1.9, 0), 0, 'a grey day');
+});

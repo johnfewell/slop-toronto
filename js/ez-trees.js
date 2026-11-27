@@ -490,6 +490,7 @@ async function buildEzTrees(scene, generated) {
   const meshOf = new Int16Array(N * 3);
   const treeModel = new Int16Array(N); // (each tree's model: its shadow stand-in's mesh)
   const midFarOf = new Int16Array(N);
+  const crownData = new Float32Array(N * 5); // (x, foot y, z, height, crown radius: the sky occlusion's height map, sky-occlusion.js)
   const tier = new Uint8Array(N);
   const generatedAt = new Uint8Array(N); // (1: a generated park or yard tree)
   const isPine = new Uint8Array(N);
@@ -535,6 +536,7 @@ async function buildEzTrees(scene, generated) {
     dummy.scale.set(s * wf * (0.93 + r3 * 0.14), s, s * wf * (0.93 + r1 * 0.14));
     dummy.updateMatrix();
     dummy.matrix.toArray(matsNear, i * 16);
+    crownData[i * 5] = t.x; crownData[i * 5 + 1] = t.y; crownData[i * 5 + 2] = t.z; crownData[i * 5 + 3] = t.height; crownData[i * 5 + 4] = crownR[m] * s * wf;
     const sp = FAR_SPECIES(models[m].id);
     isPine[i] = sp < 0 ? 1 : 0;
     if (sp >= 0) {
@@ -569,6 +571,7 @@ async function buildEzTrees(scene, generated) {
       impTrees++;
     } else if (sp >= 0) meshes[idxFar[sp]].capacity++;
   });
+  window.CITY.treeCrowns = { count: N, data: crownData };
   const instanced = meshes.map((m) => {
     const geo = new THREE.BufferGeometry();
     for (const name of Object.keys(m.geo.attributes)) geo.setAttribute(name, m.geo.attributes[name]);

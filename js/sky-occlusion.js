@@ -26,8 +26,10 @@ const C = window.CITY;
 const MAX_HEIGHT = 700; // m: above the CN Tower's pod (the tallest thing the map holds is a roof or a pod, not the mast)
 // a 2D canvas holds 8 bits and a half float is twice the memory, so the height is stored as its square root, rounded
 // down (0.6 m steps at 20 m, 5 m at 300 m, and never above the roof)
-const encodeHeight = (h) => Math.floor(255 * Math.sqrt(Math.min(Math.max(h, 0), MAX_HEIGHT) / MAX_HEIGHT));
-const decodeHeight = (v) => { const s = v / 255; return s * s * MAX_HEIGHT; };
+// (offset: the metres the ground dips under the street level, for the ravines: heights are stored from -offset up to
+// MAX_HEIGHT, 0 where the map has none)
+const encodeHeight = (h, offset = 0) => Math.floor(255 * Math.sqrt(Math.min(Math.max(h + offset, 0), MAX_HEIGHT + offset) / (MAX_HEIGHT + offset)));
+const decodeHeight = (v, offset = 0) => { const s = v / 255; return s * s * (MAX_HEIGHT + offset) - offset; };
 
 // The smallest texel (m) that keeps the map to maxTexels texels and maxSide on its longest side
 function chooseTexel(widthM, depthM, { maxTexels = 14e6, maxSide = 8192, steps = [2, 3, 4, 6, 8] } = {}) {
@@ -37,10 +39,58 @@ function chooseTexel(widthM, depthM, { maxTexels = 14e6, maxSide = 8192, steps =
   return steps[steps.length - 1];
 }
 
-function createGrid(bounds, margin, texel) {
+function createGrid(bounds, margin, texel, offset = 0) {
   const x0 = bounds.minX - margin, z0 = bounds.minZ - margin;
   const width = Math.ceil((bounds.maxX + margin - x0) / texel), height = Math.ceil((bounds.maxZ + margin - z0) / texel);
-  return { originX: x0, originZ: z0, texel, width, height, data: new Uint8Array(width * height) };
+  return { originX: x0, originZ: z0, texel, width, height, offset, data: new Uint8Array(width * height) };
+}
+
+// ---- the ground ---------------------------------------------------------------------------------------------------
+// The ground's height over the street level (terrain hills, High Park's ravines and ponds) at the lattice's nodes (a
+// step of 12 m, finer than the terrain's 60 m grid and about the Don Valley grid's 10 m), and how far under the street
+// level it goes (rounded up to 5 m, at most 40): the map's offset.
+function groundLattice(grid0, groundAt, step = 12) {
+  const { originX, originZ, texel, width, height } = grid0;
+  const nx = Math.ceil(width * texel / step) + 2, nz = Math.ceil(height * texel / step) + 2;
+  const values = new Float32Array(nx * nz);
+  let min = 0, max = 0;
+  for (let r = 0; r < nz; r++) {
+    for (let c = 0; c < nx; c++) {
+      const v = groundAt(originX + c * step, originZ + r * step);
+      values[r * nx + c] = v;
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+  }
+  return { originX, originZ, step, nx, nz, values, min, max, offset: Math.min(40, Math.ceil(Math.max(0, -min - 0.25) / 5) * 5) };
+}
+// Draws the lattice into a grid (bilinear between its nodes). Run first: the buildings and trees keep the tallest.
+function fillGround(grid, lattice) {
+  const { originX, originZ, texel, width, height, data, offset } = grid;
+  const { step, nx, nz, values } = lattice;
+  const flat = encodeHeight(0, offset);
+  data.fill(flat);
+  let drawn = 0;
+  for (let row = 0; row < height; row++) {
+    const fz = (originZ + (row + 0.5) * texel - lattice.originZ) / step, r0 = Math.min(nz - 2, Math.max(0, Math.floor(fz))), tz = Math.min(1, Math.max(0, fz - r0));
+    for (let col = 0; col < width; col++) {
+      const fx = (originX + (col + 0.5) * texel - lattice.originX) / step, c0 = Math.min(nx - 2, Math.max(0, Math.floor(fx))), tx = Math.min(1, Math.max(0, fx - c0));
+      const k = r0 * nx + c0, a = values[k], b = values[k + 1], d = values[k + nx], e = values[k + nx + 1];
+      if (a === 0 && b === 0 && d === 0 && e === 0) continue;
+      const g = (a * (1 - tx) + b * tx) * (1 - tz) + (d * (1 - tx) + e * tx) * tz;
+      const v = encodeHeight(g, offset);
+      if (v !== flat) { data[row * width + col] = v; drawn++; }
+    }
+  }
+  return drawn;
+}
+// The lattice's height at a point (bilinear), for a tree's foot where the site gave none
+function latticeAt(lattice, x, z) {
+  const { step, nx, nz, values } = lattice;
+  const fx = (x - lattice.originX) / step, fz = (z - lattice.originZ) / step;
+  const c0 = Math.min(nx - 2, Math.max(0, Math.floor(fx))), r0 = Math.min(nz - 2, Math.max(0, Math.floor(fz)));
+  const tx = Math.min(1, Math.max(0, fx - c0)), tz = Math.min(1, Math.max(0, fz - r0)), k = r0 * nx + c0;
+  return (values[k] * (1 - tx) + values[k + 1] * tx) * (1 - tz) + (values[k + nx] * (1 - tx) + values[k + nx + 1] * tx) * tz;
 }
 
 // Fills a polygon (rings of {x, z}: the outline, then any holes; even-odd) with a height, keeping the tallest where
@@ -81,7 +131,7 @@ function collidersToGrid(grid, colliders, accept = isBuildingCollider) {
   let used = 0;
   for (const c of colliders) {
     if (!accept(c)) continue;
-    const v = encodeHeight(c.maxY);
+    const v = encodeHeight(c.maxY, grid.offset);
     const outer = c.polygon && (c.polygon.outer || c.polygon); // (a ring of {x, z}, or { outer, holes })
     if (outer && outer.length >= 3) fillRings(grid, [outer, ...((c.polygon && c.polygon.holes) || [])], v);
     else if (c.obb) {
@@ -113,10 +163,44 @@ function fillTriangle(grid, ax, az, ay, bx, bz, by, cx, cz, cy) {
       const wb = ((px - ax) * (cz - az) - (pz - az) * (cx - ax)) / area;
       const wc = ((bx - ax) * (pz - az) - (bz - az) * (px - ax)) / area;
       if (wb < 0 || wc < 0 || wb + wc > 1) continue;
-      const v = encodeHeight(ay * (1 - wb - wc) + by * wb + cy * wc);
+      const v = encodeHeight(ay * (1 - wb - wc) + by * wb + cy * wc, grid.offset);
       if (v > data[r * width + c]) data[r * width + c] = v;
     }
   }
+}
+
+// Draws a disc (a tree's crown) at a height, keeping the tallest where it overlaps. At least the texel under its centre.
+function fillDisc(grid, cx, cz, r, value) {
+  const { originX, originZ, texel, width, height, data } = grid;
+  const c0 = Math.max(0, Math.floor((cx - r - originX) / texel)), c1 = Math.min(width - 1, Math.floor((cx + r - originX) / texel));
+  const r0 = Math.max(0, Math.floor((cz - r - originZ) / texel)), r1 = Math.min(height - 1, Math.floor((cz + r - originZ) / texel));
+  const rr = Math.max(r, texel * 0.5) ** 2;
+  for (let row = r0; row <= r1; row++) {
+    const dz = originZ + (row + 0.5) * texel - cz;
+    for (let col = c0; col <= c1; col++) {
+      const dx = originX + (col + 0.5) * texel - cx;
+      if (dx * dx + dz * dz <= rr && data[row * width + col] < value) data[row * width + col] = value;
+    }
+  }
+}
+
+// A leaf-on tree stops part of the sky, not all of it, and the map holds one height per texel: the crown is drawn as a
+// solid reaching this share of the tree's height (a street tree of 12 m: 8 m), and only while the trees are in leaf
+const CROWN_SHARE = 0.65;
+const MIN_TREE = 4; // m: shrubs and saplings are left out
+// crowns: { count, data: Float32Array of x, foot y, z, height, crown radius per tree }. The foot is raised to the ground
+// where the site's y is under it.
+function treesToGrid(grid, crowns, groundAt = null) {
+  const { data, count } = crowns;
+  let drawn = 0;
+  for (let i = 0; i < count; i++) {
+    const x = data[i * 5], z = data[i * 5 + 2], h = data[i * 5 + 3], r = data[i * 5 + 4];
+    if (!(h >= MIN_TREE)) continue;
+    const foot = Math.max(data[i * 5 + 1], groundAt ? groundAt(x, z) : -Infinity);
+    fillDisc(grid, x, z, r, encodeHeight(foot + h * CROWN_SHARE, grid.offset));
+    drawn++;
+  }
+  return drawn;
 }
 
 // The max-mip pyramid: a texel holds the tallest of the four below it
@@ -160,7 +244,7 @@ function heightAtLevel(pyramid, grid, x, z, level) {
   const x0 = Math.floor(fx), z0 = Math.floor(fz), tx = fx - x0, tz = fz - z0;
   const at = (xi, zi) => decodeHeightRaw(L.data[Math.min(L.height - 1, Math.max(0, zi)) * L.width + Math.min(L.width - 1, Math.max(0, xi))]);
   const v = (1 - tz) * ((1 - tx) * at(x0, z0) + tx * at(x0 + 1, z0)) + tz * ((1 - tx) * at(x0, z0 + 1) + tx * at(x0 + 1, z0 + 1));
-  return v * v * MAX_HEIGHT;
+  return v * v * (MAX_HEIGHT + grid.offset) - grid.offset;
 }
 // (the GPU filters the square-root code, then squares it: the same here)
 const decodeHeightRaw = (v) => v / 255;
@@ -193,7 +277,7 @@ function visibility(pyramid, grid, p, n, { slices = SLICES, steps = STEP_COUNT, 
 function visibilityReference(pyramid, grid, p, n) {
   const px = p[0] + n[0] * grid.texel, py = p[1] + n[1] * grid.texel, pz = p[2] + n[2] * grid.texel;
   const floor = py + HEIGHT_BIAS, S = 64;
-  const near = (x, z) => { const L = pyramid[0]; const c = Math.floor((x - grid.originX) / grid.texel), r = Math.floor((z - grid.originZ) / grid.texel); return (c < 0 || r < 0 || c >= L.width || r >= L.height) ? 0 : decodeHeight(L.data[r * L.width + c]); };
+  const near = (x, z) => { const L = pyramid[0]; const c = Math.floor((x - grid.originX) / grid.texel), r = Math.floor((z - grid.originZ) / grid.texel); return (c < 0 || r < 0 || c >= L.width || r >= L.height) ? 0 : decodeHeight(L.data[r * L.width + c], grid.offset); };
   let sum = 0;
   for (let s = 0; s < S; s++) {
     const phi = (s + 0.5) * Math.PI * 2 / S, dx = Math.cos(phi), dz = Math.sin(phi);
@@ -231,29 +315,41 @@ let runtime = null; // the TSL nodes, once there is a map to bind
 function createNodes() {
   const TSL = C.TSL, THREE = C.THREE;
   if (!TSL || !SETTING || runtime) return runtime;
-  const { Fn, Loop, If, float, vec2, vec4, uniform, texture, max, min, atan, sin, cos, dot, log2, exp2, positionWorld, cameraPosition, length, smoothstep, mix, renderGroup } = TSL;
+  const { Fn, Loop, If, float, vec2, vec3, vec4, uniform, texture, max, min, atan, sin, cos, dot, log2, exp2, positionWorld, cameraPosition, length, smoothstep, mix, renderGroup } = TSL;
   const placeholder = new THREE.DataTexture(new Uint8Array([0]), 1, 1, THREE.RedFormat, THREE.UnsignedByteType);
   placeholder.needsUpdate = true;
   const map = texture(placeholder);
   // (renderGroup: one upload per render, not per object, like the other city-wide uniforms)
   const frame = uniform(vec4(0, 0, 1, 1)).setGroup(renderGroup); // origin x, z, 1 / width m, 1 / depth m
   const texelM = uniform(4).setGroup(renderGroup);
+  const offsetM = uniform(0).setGroup(renderGroup); // m: how far under the street level the map's ground goes
   const on = uniform(0).setGroup(renderGroup);
   const fill = uniform(0.3).setGroup(renderGroup);
+  // The bounce's colours (setBounce): the light a hidden slice of sky is made up with, as irradiance over pi (what a
+  // material's albedo is multiplied by), from the walls the sun lights (warm) and from those in shade (cool); where the
+  // sun is (a unit vector on the ground plane, and how far up it is); how much the sun lights the walls at all
+  const warmColor = uniform(new THREE.Color(0, 0, 0)).setGroup(renderGroup);
+  const coolColor = uniform(new THREE.Color(0, 0, 0)).setGroup(renderGroup);
+  const sunXZ = uniform(new THREE.Vector2(1, 0)).setGroup(renderGroup);
+  const sunLit = uniform(0).setGroup(renderGroup);
   const slices = SETTING.slices, steps = SETTING.steps;
   const stepLog2 = Math.log2(FAR / NEAR) / (steps - 1);
   const RANGE = SETTING.range || 700; // m from the camera past which the fragment is left open (faded over the last 30%)
 
   const heightNode = (xz, level) => {
     const v = map.sample(xz.sub(frame.xy).mul(frame.zw)).level(level).r;
-    return v.mul(v).mul(MAX_HEIGHT);
+    return v.mul(v).mul(offsetM.add(MAX_HEIGHT)).sub(offsetM);
   };
 
+  // The sky the fragment sees (x), and how much of what it can't see is hidden by walls the sun lights (y: sunward of the
+  // fragment's slices turned away from the sun) and by walls in shade (z), as shares of the hemisphere (x + y + z = 1)
   const visibilityOf = Fn(([positionWorldN, normalWorldN]) => {
     const n = normalWorldN.toVar();
     const p = positionWorldN.add(n.mul(texelM)).toVar();
     const floorY = p.y.add(HEIGHT_BIAS).toVar();
     const sum = float(0).toVar();
+    const warm = float(0).toVar();
+    const lostSum = float(0).toVar();
     Loop(slices, ({ i: s }) => {
       const phi = float(s).add(0.5).mul(Math.PI * 2 / slices);
       const d = vec2(cos(phi), sin(phi));
@@ -267,11 +363,26 @@ function createNodes() {
       });
       const tH = atan(tanH).toVar();
       const cosH = cos(tH);
-      const slice = n.y.mul(cosH).mul(cosH).mul(0.5)
-        .add(dot(n.xz, d).mul(float(Math.PI / 4).sub(tH.mul(0.5)).sub(sin(tH.mul(2)).mul(0.25))));
-      sum.addAssign(max(slice, 0));
+      const along = dot(n.xz, d);
+      const slice = max(n.y.mul(cosH).mul(cosH).mul(0.5)
+        .add(along.mul(float(Math.PI / 4).sub(tH.mul(0.5)).sub(sin(tH.mul(2)).mul(0.25)))), 0);
+      sum.addAssign(slice);
+      // what this slice lost to the buildings, against the open sky (a horizon at 0): a wall that faces us from
+      // the sunward side is in shade, one on the far side from the sun has the sun on it
+      const lost = max(max(n.y.mul(0.5).add(along.mul(Math.PI / 4)), 0).sub(slice), 0);
+      lostSum.addAssign(lost);
+      warm.addAssign(lost.mul(smoothstep(-0.3, 0.3, dot(d, sunXZ).negate())));
     });
-    return min(sum.mul(2 / slices), 1);
+    const visible = min(sum.mul(2 / slices), 1);
+    const covered = visible.oneMinus();
+    const litShare = warm.mul(2 / slices);
+    const lostShare = min(lostSum.mul(2 / slices), covered);
+    // (what the slices don't account for, the half of a wall's hemisphere under the horizon, is the ground: the sunlit
+    // street, the warm side)
+    const ground = covered.sub(lostShare);
+    // (no sun on the walls: half and half)
+    const warmShare = mix(lostShare.mul(0.5), litShare, sunLit).add(ground).min(covered);
+    return vec3(visible, warmShare, covered.sub(warmShare));
   });
 
   // What aoNode gets: the share of the sky's irradiance that reaches the fragment, with the hidden part refilled by the
@@ -280,14 +391,27 @@ function createNodes() {
     const ao = float(1).toVar();
     const dist = length(positionWorldN.sub(cameraPosition));
     If(on.greaterThan(0.5).and(dist.lessThan(RANGE)), () => {
-      const vis = visibilityOf(positionWorldN, normalWorldN);
+      const vis = visibilityOf(positionWorldN, normalWorldN).x;
       const covered = vis.oneMinus().mul(smoothstep(RANGE, RANGE * 0.7, dist));
       ao.assign(float(1).sub(covered.mul(float(1).sub(fill))));
     });
     return ao;
   });
 
-  runtime = { map, frame, texelM, on, fill, aoAt, visibilityOf, heightNode, placeholder, THREE };
+  // The same, with the bounce's colour: (the sky's share, the share hidden by sunlit walls, by walls in shade), the
+  // hidden shares faded out like the sky's
+  const lightAt = Fn(([positionWorldN, normalWorldN]) => {
+    const out = vec3(1, 0, 0).toVar();
+    const dist = length(positionWorldN.sub(cameraPosition));
+    If(on.greaterThan(0.5).and(dist.lessThan(RANGE)), () => {
+      const v = visibilityOf(positionWorldN, normalWorldN);
+      const fade = smoothstep(RANGE, RANGE * 0.7, dist);
+      out.assign(vec3(float(1).sub(v.x.oneMinus().mul(fade)), v.y.mul(fade), v.z.mul(fade)));
+    });
+    return out;
+  });
+
+  runtime = { map, frame, texelM, offsetM, on, fill, warmColor, coolColor, sunXZ, sunLit, aoAt, lightAt, visibilityOf, heightNode, placeholder, THREE };
   return runtime;
 }
 
@@ -297,23 +421,74 @@ function aoNode(positionN, normalN) {
   return r ? r.aoAt(positionN, normalN) : null;
 }
 
+// The coloured version, for the materials that add the bounce (tsl-materials.js canyonLight): { ao, bounce(albedo) }, both
+// reading one search of the height map. ao is the sky's share alone (no refill); bounce is what the refill is, as light:
+// the albedo times the warm and cool colours by how much of the sky each hides. Null on tiers with the pass off.
+function lightNode(positionN, normalN) {
+  const r = createNodes();
+  if (!r) return null;
+  const occ = r.lightAt(positionN, normalN).toVar();
+  return { ao: occ.x, bounce: (albedo) => albedo.mul(r.warmColor.mul(occ.y).add(r.coolColor.mul(occ.z))) };
+}
+
 // Builds the map from the loaded city and switches the nodes on. colliders: everything solid in the map; bounds: the
-// loaded map's extent ({ minX, maxX, minZ, maxZ }); meshRoots: models to draw as they are (landmarks), optional.
-function attach(colliders, bounds, { meshRoots = [] } = {}) {
+// loaded map's extent ({ minX, maxX, minZ, maxZ }). Optional: meshRoots, models drawn as they are (landmarks);
+// groundAt(x, z), the ground's height over the street level (terrain, High Park's ravines); crowns, the trees
+// (treesToGrid), drawn while the trees are in leaf (setLeaf).
+function attach(colliders, bounds, { meshRoots = [], groundAt = null, crowns = null, leaf = 0 } = {}) {
   const r = createNodes();
   if (!r) return null;
   const t0 = performance.now();
   const margin = 300; // m: the buildings just outside the map still shade its edge
   const texel = chooseTexel(bounds.maxX - bounds.minX + 2 * margin, bounds.maxZ - bounds.minZ + 2 * margin, SETTING.texel || {});
-  const grid = createGrid(bounds, margin, texel);
+  let grid = createGrid(bounds, margin, texel);
+  let lattice = null;
+  if (groundAt) {
+    lattice = groundLattice(grid, groundAt);
+    grid = createGrid(bounds, margin, texel, lattice.offset);
+    fillGround(grid, lattice);
+  }
+  const tGround = performance.now();
   const used = collidersToGrid(grid, colliders);
   const tRaster = performance.now();
   let triangles = 0;
   if (meshRoots.length) triangles = rasterMeshes(grid, meshRoots);
   const tMeshes = performance.now();
   const pyramid = buildPyramid(grid);
+  state.active = true;
+  state.grid = grid;
+  state.lattice = lattice;
+  state.crowns = crowns;
+  state.groundAt = lattice ? (x, z) => latticeAt(lattice, x, z) : null;
+  state.variants = { bare: { grid, pyramid }, leaf: null };
+  state.which = 'bare';
+  r.frame.value.set(grid.originX, grid.originZ, 1 / (grid.width * texel), 1 / (grid.height * texel));
+  r.texelM.value = texel;
+  r.offsetM.value = grid.offset;
   // The nodes hold the placeholder texture by reference (a texture node's sample() copies the node, not the texture), so
   // the real map goes into it: before its first upload the 1x1 is replaced as is; later it would be disposed & re-made
+  r.placeholder.dispose();
+  showVariant(r, 'bare');
+  r.on.value = 1;
+  let bytes = 0;
+  for (const l of pyramid) bytes += l.data.byteLength;
+  const flat = encodeHeight(0, grid.offset);
+  let covered = 0;
+  for (let i = 0; i < grid.data.length; i++) if (grid.data[i] > flat) covered++;
+  state.stats = {
+    texel, width: grid.width, height: grid.height, megabytes: +(bytes / 1048576).toFixed(1), colliders: used, triangles,
+    offset: grid.offset, groundMin: lattice ? +lattice.min.toFixed(1) : 0, groundMax: lattice ? +lattice.max.toFixed(1) : 0, crowns: crowns ? crowns.count : 0,
+    builtUp: +(covered / grid.data.length).toFixed(3),
+    ms: { ground: Math.round(tGround - t0), raster: Math.round(tRaster - tGround), meshes: Math.round(tMeshes - tRaster), total: Math.round(performance.now() - t0) }
+  };
+  console.info(`[skyOcclusion] ${grid.width}x${grid.height} texels of ${texel} m, ${state.stats.megabytes} MB, ${used} colliders, ground ${state.stats.groundMin}..${state.stats.groundMax} m, ${state.stats.ms.total} ms (${SETTING.slices} slices x ${SETTING.steps} steps)`);
+  if (leaf) setLeaf(leaf);
+  return state.stats;
+}
+
+// Puts one of the two maps (without the trees, with them) in the texture
+function showVariant(r, which) {
+  const { grid, pyramid } = state.variants[which];
   const map = r.placeholder;
   map.image = { data: pyramid[0].data, width: grid.width, height: grid.height };
   map.mipmaps = pyramid;
@@ -321,23 +496,28 @@ function attach(colliders, bounds, { meshRoots = [] } = {}) {
   map.magFilter = r.THREE.LinearFilter;
   map.minFilter = r.THREE.LinearMipmapLinearFilter;
   map.needsUpdate = true;
-  map.dispose();
-  r.frame.value.set(grid.originX, grid.originZ, 1 / (grid.width * texel), 1 / (grid.height * texel));
-  r.texelM.value = texel;
-  r.on.value = 1;
-  let bytes = 0;
-  for (const l of pyramid) bytes += l.data.byteLength;
-  let covered = 0;
-  for (let i = 0; i < grid.data.length; i++) if (grid.data[i] > 0) covered++;
-  state.active = true;
-  state.grid = grid;
-  state.pyramid = pyramid;
-  state.stats = {
-    texel, width: grid.width, height: grid.height, megabytes: +(bytes / 1048576).toFixed(1), colliders: used, triangles,
-    builtUp: +(covered / grid.data.length).toFixed(3), ms: { raster: Math.round(tRaster - t0), meshes: Math.round(tMeshes - tRaster), total: Math.round(performance.now() - t0) }
-  };
-  console.info(`[skyOcclusion] ${grid.width}x${grid.height} texels of ${texel} m, ${state.stats.megabytes} MB, ${used} colliders, ${state.stats.ms.total} ms (${SETTING.slices} slices x ${SETTING.steps} steps)`);
-  return state.stats;
+  state.which = which;
+}
+
+// The trees' season (cityUniforms.uLeaf, 0 bare to 1 in leaf): in leaf (half or more) their crowns are in the map. The
+// leaf map is made the first time it is wanted (the bare one stays), then swapped in: a texture upload
+function setLeaf(leaf) {
+  const r = runtime;
+  if (!r || !state.active || !state.crowns || !state.crowns.count) return state.which;
+  const want = leaf >= 0.5 ? 'leaf' : 'bare';
+  if (want === state.which) return want;
+  if (want === 'leaf' && !state.variants.leaf) {
+    const t0 = performance.now();
+    const bare = state.variants.bare.grid;
+    const grid = { ...bare, data: bare.data.slice() };
+    const drawn = treesToGrid(grid, state.crowns, state.groundAt);
+    state.variants.leaf = { grid, pyramid: buildPyramid(grid) };
+    state.stats.leafMs = Math.round(performance.now() - t0);
+    state.stats.treesDrawn = drawn;
+    console.info(`[skyOcclusion] leaf map: ${drawn} crowns, ${state.stats.leafMs} ms`);
+  }
+  showVariant(r, want);
+  return want;
 }
 
 function rasterMeshes(grid, roots) {
@@ -363,19 +543,53 @@ function rasterMeshes(grid, roots) {
 
 // The time of day's bounce as a share of the sky's irradiance: the hemisphere light's ground colour x its canyon bounce
 // over its sky colour (luminances), what refills the part of the sky the buildings hide. lighting.js calls this.
-function setBounce(hemiLight, canyonBounce) {
+// sun: { dir (a unit vector toward the sun, world frame), color (hex), intensity, nightFactor }, for the coloured bounce.
+function setBounce(hemiLight, canyonBounce, sun = null) {
   if (!runtime) return;
   const lum = (c) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   const sky = Math.max(lum(hemiLight.color), 1e-4);
   const ratio = Math.min(0.65, lum(hemiLight.groundColor) * canyonBounce / sky);
   state.fillRatio = ratio;
   runtime.fill.value = ratio;
+  const lit = sun ? sunLitness(sun.intensity, sun.nightFactor) : 0;
+  const c = bounceColours(hemiLight.color, hemiLight.groundColor, hemiLight.intensity, canyonBounce, sun ? sun.color : 0xffffff, lit);
+  runtime.warmColor.value.setRGB(...c.warm);
+  runtime.coolColor.value.setRGB(...c.cool);
+  if (sun && sun.dir) {
+    const h = Math.hypot(sun.dir.x, sun.dir.z) || 1;
+    runtime.sunXZ.value.set(sun.dir.x / h, sun.dir.z / h);
+  }
+  runtime.sunLit.value = lit;
+  state.bounce = { ...c, sunLit: lit };
+}
+
+// How much the sun is on the city's walls: nothing under the moon or a heavy overcast, all of it from a clear day's sun
+// (sunIntensity 6 at midday, 3 at the last light)
+function sunLitness(intensity, nightFactor = 0) {
+  const t = Math.min(1, Math.max(0, (intensity - 2) / 3));
+  return t * t * (3 - 2 * t) * (1 - Math.min(1, Math.max(0, nightFactor)));
+}
+
+// The bounce's two colours, as the light a material's albedo is multiplied by (the hemisphere light's irradiance over pi:
+// what its indirect diffuse is). Walls the sun lights bounce warm, the colour of the hemisphere light's ground (the sunlit
+// masonry & pavement), a little toward the sun's; walls in shade only the sky's, more of the ground's the less it is
+// blue. Together they hold the luminance the single bounce had: the ground's times the canyon bounce, over pi.
+function bounceColours(sky, ground, intensity, canyonBounce, sunHex, sunLit) {
+  const k = intensity * canyonBounce / Math.PI;
+  const sunRGB = [((sunHex >> 16) & 255) / 255, ((sunHex >> 8) & 255) / 255, (sunHex & 255) / 255];
+  // (the sun's colour is in sRGB; the tint is a nudge, not a calculation)
+  const lin = (v) => Math.pow(v, 2.2);
+  const g = [ground.r, ground.g, ground.b], s = [sky.r, sky.g, sky.b];
+  const warm = g.map((v, i) => k * 1.2 * (v * (1 - 0.25 * sunLit) + lin(sunRGB[i]) * 0.25 * sunLit * (ground.r + ground.g + ground.b) / 3));
+  const cool = g.map((v, i) => k * 0.7 * (s[i] * 0.65 + v * 0.35));
+  return { warm, cool };
 }
 
 C.SkyOcclusion = {
   MAX_HEIGHT, SLICES, STEP_COUNT, NEAR, FAR,
-  encodeHeight, decodeHeight, chooseTexel, createGrid, fillRings, fillTriangle, isBuildingCollider, collidersToGrid, buildPyramid,
+  encodeHeight, decodeHeight, chooseTexel, createGrid, fillRings, fillTriangle, fillDisc, isBuildingCollider, collidersToGrid, buildPyramid,
+  groundLattice, fillGround, latticeAt, treesToGrid, CROWN_SHARE,
   heightAt, visibility, visibilityReference, stepDistance,
-  aoNode, attach, setBounce, state, get runtime() { return runtime; }
+  aoNode, lightNode, attach, setBounce, setLeaf, bounceColours, sunLitness, state, get runtime() { return runtime; }
 };
 })();

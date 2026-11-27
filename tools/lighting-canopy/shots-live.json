@@ -1,0 +1,38 @@
+[
+ {
+  "name": "street-live",
+  "mode": "person",
+  "camera": "pov",
+  "x": 150,
+  "z": -322,
+  "heading": 0,
+  "wait": 4000
+ },
+ {
+  "name": "park-ravine-live",
+  "mode": "person",
+  "camera": "pov",
+  "x": -6000,
+  "z": -2530,
+  "heading": 0,
+  "wait": 4000
+ },
+ {
+  "name": "park-lawn-live",
+  "mode": "person",
+  "camera": "pov",
+  "x": -6388,
+  "z": -2042,
+  "heading": 1.5708,
+  "wait": 4000
+ },
+ {
+  "name": "waterfront-live",
+  "mode": "person",
+  "camera": "pov",
+  "x": -298,
+  "z": 688,
+  "heading": 3.1416,
+  "wait": 4000
+ }
+]
