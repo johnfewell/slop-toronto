@@ -38,7 +38,8 @@ const ABBREV = {
   st: 'street', str: 'street', rd: 'road', ave: 'avenue', av: 'avenue', cres: 'crescent', cr: 'crescent',
   blvd: 'boulevard', expy: 'expressway', expwy: 'expressway', hwy: 'highway', cl: 'close', dr: 'drive', ln: 'lane',
   wy: 'way', sq: 'square', mt: 'mount', intl: 'international', natl: 'national', govt: 'government', hosp: 'hospital',
-  univ: 'university', ctr: 'centre', center: 'centre', tor: 'toronto', to: 'toronto'
+  univ: 'university', ctr: 'centre', center: 'centre', tor: 'toronto', to: 'toronto',
+  n: 'north', s: 'south', e: 'east', w: 'west'
 };
 const normalize = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -153,6 +154,47 @@ function oneEdit(a, b) {
   return edits + (a.length - i) + (b.length - j) <= 1;
 }
 
+// An intersection is a shared road-graph node, so an overpass does not count as a crossing.
+function intersectionPlaces(query, near) {
+  if (typeof query !== 'string' || /^\d/.test(query.trim())) return [];
+  const pair = query.split(/\s*[/&]\s*|\s+and\s+/i);
+  if (pair.length !== 2) return [];
+  const streetWords = /\b(street|road|avenue|boulevard|drive|lane|crescent|court|way|place)\b/g;
+  const direction = /\s+(north|south|east|west|n|s|e|w)$/;
+  const needles = pair.map((s) => words(s).join(' '));
+  if (needles.some((s) => !s)) return [];
+  const { names, links, nodes } = GEO.roadGraph;
+  const matches = names.map((name) => {
+    const full = words(name).join(' ');
+    const base = full.replace(streetWords, '').replace(/\s+/g, ' ').trim();
+    const forms = [full, full.replace(direction, ''), base, base.replace(direction, '')];
+    return needles.map((s) => forms.includes(s));
+  });
+  if (![0, 1].every((side) => matches.some((m) => m[side]))) return [];
+  const sides = new Map();
+  for (const [a, b, i] of links) {
+    const [first, second] = matches[i] || [];
+    if (!first && !second) continue;
+    for (const node of [a, b]) {
+      if (!sides.has(node)) sides.set(node, [new Set(), new Set()]);
+      const [left, right] = sides.get(node);
+      if (first) left.add(names[i]);
+      if (second) right.add(names[i]);
+    }
+  }
+  const results = [];
+  for (const [node, [first, second]] of sides) {
+    const a = first.values().next().value;
+    const b = [...second].find((name) => name !== a);
+    if (!a || !b) continue;
+    const x = nodes[2 * node], z = nodes[2 * node + 1];
+    results.push({ id: `intersection:${node}`, kind: 'intersection', name: `${a} & ${b}`,
+      x, z, sub: 'Intersection', strong: true, distance: near ? Math.hypot(x - near.x, z - near.z) : null });
+  }
+  results.sort((a, b) => a.distance - b.distance);
+  return results.filter((p, i) => !results.slice(0, i).some((other) => Math.hypot(p.x - other.x, p.z - other.z) < 40));
+}
+
 const KIND_WEIGHT = { landmark: 40, district: 30, street: 12, place: 8 };
 /**
  * Places matching `query`, best first: [{ id, kind, name, sub, x, z, cat?, bounds?, distance? }]. `near` (x, z) ranks
@@ -163,6 +205,7 @@ function searchPlaces(query, { near = null, limit = 8 } = {}) {
   const q = words(query);
   if (!q.length) return [];
   const last = q[q.length - 1];
+  const intersections = intersectionPlaces(query, near);
   const results = [];
   // how well the query matches one name (its words & normalized form): a score, or -1 when a query word is missing
   const nameScore = (it, iws, norm) => {
@@ -170,16 +213,18 @@ function searchPlaces(query, { near = null, limit = 8 } = {}) {
     for (let k = 0; k < q.length; k++) {
       const w = q[k];
       const isLast = k === q.length - 1;
+      const isNumber = /^\d+[a-z]?$/.test(w);
       let best = 0;
       for (let i = 0; i < iws.length; i++) {
         const iw = iws[i];
         if (iw === w) best = Math.max(best, 10 + (i === k ? 3 : 0));
+        else if (isNumber) continue;
         else if (isLast && iw.startsWith(w)) best = Math.max(best, 6 + Math.min(4, w.length));
         else if (w.length >= 4 && oneEdit(w, iw)) best = Math.max(best, 4);
         else if (w.length >= 4 && isLast && iw.length > w.length && oneEdit(w, iw.slice(0, w.length))) best = Math.max(best, 3);
       }
-      if (!best && w.length >= 3 && norm.includes(w)) best = 2;
-      if (!best && it.searchWords.some((iw)=>iw===w||(isLast&&iw.startsWith(w)))) best = 5;
+      if (!best && !isNumber && w.length >= 3 && norm.includes(w)) best = 2;
+      if (!best && it.searchWords.some((iw)=>iw===w||(!isNumber&&isLast&&iw.startsWith(w)))) best = 5;
       if (!best) return -1;
       score += best;
     }
@@ -192,13 +237,14 @@ function searchPlaces(query, { near = null, limit = 8 } = {}) {
     let score = nameScore(it, it.words, it.norm);
     for (const a of it.aliasWords || []) score = Math.max(score, nameScore(it, a, a.join(' ')));
     if (score < 0) continue;
+    const strong = score >= q.length * 8;
     score += KIND_WEIGHT[it.kind] * 0.35 + (it.rank || 0) * 1.2;
     let distance = null;
     if (near) {
       distance = Math.hypot(it.x - near.x, it.z - near.z);
       score -= Math.min(6, distance / 2000);
     }
-    results.push({ it, score, distance });
+    results.push({ it, score, distance, strong });
   }
   // a kind of place ("hotel", "bank near me"): the nearest of that kind
   const cats = Object.entries(CATEGORY_WORDS).filter(([, ws]) => ws.includes(last) || (q.length > 1 && q.some((w) => ws.includes(w)))).map(([c]) => c);
@@ -209,11 +255,12 @@ function searchPlaces(query, { near = null, limit = 8 } = {}) {
       const prev = results.find((r) => r.it === it);
       const score = 14 - (distance === null ? 0 : Math.min(10, distance / 800));
       if (prev) prev.score = Math.max(prev.score, score + 4);
-      else results.push({ it, score, distance });
+      else results.push({ it, score, distance, strong: q.length === 1 });
     }
   }
   results.sort((a, b) => b.score - a.score);
-  return results.slice(0, limit).map(({ it, distance }) => ({ ...it, distance }));
+  const crossings = intersections.slice(0, limit);
+  return [...crossings, ...results.slice(0, limit - crossings.length).map(({ it, distance, strong }) => ({ ...it, distance, strong }))];
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

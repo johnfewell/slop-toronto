@@ -1905,6 +1905,25 @@ body.touch-enabled .pop-item { min-height: 44px; }
   cursor: pointer;
 }
 
+.ac-item[aria-disabled="true"] { cursor: default; }
+
+.ac-attribution {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.ac-attribution img {
+  height: 16px;
+  width: auto;
+  padding: 2px 4px;
+  box-sizing: content-box;
+  border-radius: 3px;
+  background: white;
+}
+
 .ac-item.active {
   background: var(--hover);
 }

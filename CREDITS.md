@@ -325,3 +325,16 @@ Biidaasige Park references: City of Toronto current park information, 2025 aeria
 Rocketbox pedestrians: the sidewalk walkers drawn as avatars are from the [Microsoft Rocketbox Avatar Library](https://github.com/microsoft/Microsoft-Rocketbox), Copyright (c) 2020 Microsoft, MIT License (the licence text is in `assets/people/rocketbox/LICENSES.md`). Not made or endorsed by Microsoft. The nineteen avatars are male-adult-01, male-adult-03, male-adult-10, male-adult-12, male-adult-17, male-adult-04, male-adult-15, business-male-02, male-adult-08, business-male-04, female-adult-06, female-adult-08, female-adult-09, female-adult-11, business-female-03, business-female-01, sports-female-02, female-adult-17 and police-male-03, taken as the "lod2" GLB files (about 1,300 to 2,600 triangles) from CodePawl's repack, [rocketbox-avatars-glb](https://huggingface.co/datasets/codepawl/rocketbox-avatars-glb), fetched 2026-11-15. The files are modified: the face shapes and the face and finger bones are removed (`tools/rocketbox/prepare-avatar.mjs`), and the game poses them with its own walking code. Research use of the library cites Gonzalez-Franco et al., *The Rocketbox library and the utility of freely available rigged avatars*, Frontiers in Virtual Reality 2020, doi:10.3389/frvir.2020.561558.
 
 Port Lands set pieces (`js/portlands-*.js`, [docs/portlands.md](docs/portlands.md)): the Atlas Crane's frame, the Victory Soya Mills and Essroc silos, the shell arches over the Commissioners Street and Cherry Street bridges, the armour-stone river banks and the planting behind them (drawn with the map's own park-cover shrub and grass models). Their shapes and placement were worked out in John's Canoe Cove rowing world, a sister project whose plan was cut from this map, and are re-drawn here in this map's own materials; no third-party code, model or texture came with them (none of that project's MIT donors or GLB assets). Source data: © OpenStreetMap contributors (ODbL); City of Toronto 3D massing, 2025 aerial imagery and lidar; Waterfront Toronto ("Meet the Atlas Crane"; "Port Lands Road and Bridges Backgrounder", January 2024); City of Toronto heritage designation of the Victory Soya Mills (2016).
+
+### Address and place search
+
+Civic addresses and the municipal boundary are from City of Toronto Open Data
+([Address Points](https://open.toronto.ca/dataset/address-points-municipal-toronto-one-address-repository/)
+and [Regional Municipal Boundary](https://open.toronto.ca/dataset/regional-municipal-boundary/)),
+under the Open Government Licence – Toronto.
+
+Fallback place and postal code results are provided by Cesium ion and Microsoft
+Bing. The map requests them when its own search has no strong match and uses
+them for the active search and destination.
+
+![Cesium ion](assets/geocoder/cesium-ion.png) ![Microsoft Bing](assets/geocoder/bing.png)

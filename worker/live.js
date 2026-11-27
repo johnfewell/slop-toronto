@@ -16,6 +16,7 @@
 //   on sloptoronto.ca (the browser keeps the #room / #ride fragment)
 // - everything else: the assets binding (its 404s).
 
+import { ATTRIBUTION, geocode } from './geocode.js';
 import { isClip, serveClip } from './range.js';
 import { FEED as RESTRICTIONS_FEED, parseRestrictions } from './roadworks.js';
 
@@ -159,6 +160,22 @@ export default {
     if (isClip(url.pathname)) return serveClip(request, env);
     if (url.hostname === OLD_HOST && url.pathname !== '/live/vehicles' && url.pathname !== '/live/roadworks') {
       return new Response(null, { status: 301, headers: { location: SITE + url.pathname + url.search, 'cache-control': 'public, max-age=3600' } });
+    }
+    if (url.pathname === '/live/geocode') {
+      const headers = {
+        'cache-control': 'no-store',
+        'x-content-type-options': 'nosniff',
+        'x-data-source': ATTRIBUTION,
+        'cross-origin-resource-policy': 'same-origin'
+      };
+      try {
+        const { status, body, retryAfter } = await geocode(request, env);
+        if (retryAfter) headers['retry-after'] = String(retryAfter);
+        if (status === 405) headers.allow = 'GET';
+        return Response.json(body, { status, headers });
+      } catch {
+        return Response.json({ error: 'place search is unavailable' }, { status: 503, headers });
+      }
     }
     if (url.pathname === '/live/vehicles') {
       try {

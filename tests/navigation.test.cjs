@@ -117,3 +117,32 @@ test('a real GPS fix lands where the city was built from, and says whether it is
   assert.equal(N.inFCT(43.7, -79.4), true, 'North York is in the City of Toronto');
   assert.equal(N.inFCT(43.589, -79.6441), false, 'Mississauga is not');
 });
+
+test('intersection search finds a shared road-graph node and keeps a strong local match', () => {
+  const [p] = N.searchPlaces('Queen and Spadina', { near: { x: 0, z: 0 } });
+  assert.equal(p.kind, 'intersection');
+  assert.match(p.name, /Queen.* & Spadina/);
+  assert.equal(p.strong, true);
+  const at = C.latLonFromWorld(p.x, p.z);
+  assert.ok(Math.hypot(at.lat - 43.6492, at.lon + 79.3956) < 0.001);
+  assert.equal(N.searchPlaces('CN Tower')[0].strong, true);
+});
+
+test('a civic number never matches the prefix or substring of an unrelated address', () => {
+  C.Discovery = {
+    discoveryPlaces: () => [100, 1000, 1100].map((num) => ({
+      kind: 'place', name: `${num} Queen St W`, x: num * 2, z: -1000, discovery: true
+    })),
+    mergedPoiRows: () => new Set()
+  };
+  N.resetIndex();
+  try {
+    for (const query of ['100 Queen Street West', 'Queen St W 100']) {
+      const names = N.searchPlaces(query).filter((p) => p.discovery).map((p) => p.name);
+      assert.deepEqual(names, ['100 Queen St W']);
+    }
+  } finally {
+    delete C.Discovery;
+    N.resetIndex();
+  }
+});

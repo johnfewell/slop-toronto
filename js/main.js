@@ -1386,7 +1386,8 @@ async function initApp() {
   });
 
   // The tour guide: search, directions, navigation & Tour Drive (tour-guide.js)
-  tourGuide = createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode, onPlaceChange: (open) => touchControls.setPanelOpen(open) });
+  tourGuide = createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode,
+    buildingColliders: [cityBlocks.colliders, landmarkColliders], onPlaceChange: (open) => touchControls.setPanelOpen(open) });
 
   // The city's sound (audio-system.js): from the first click or key; [N] mutes, [B] horn / bike bell
   cityAudio = window.CITY.createCityAudio({ controllerManager, trafficSystem, highwayTraffic, streetDetails, cameraSystem, lightingSystem, mapSystem });

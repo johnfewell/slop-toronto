@@ -10,6 +10,10 @@
   "main": "worker/live.js",
   "compatibility_date": "2026-10-01",
   "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/", "/index*", "/explore*", "/assets/site/clips/*"] },
+  "ratelimits": [
+    { "name": "GEOCODE_IP", "namespace_id": "671103", "simple": { "limit": 20, "period": 60 } },
+    { "name": "GEOCODE_ALL", "namespace_id": "671104", "simple": { "limit": 30, "period": 60 } }
+  ],
   "workers_dev": true,
   "preview_urls": true,
   "routes": [

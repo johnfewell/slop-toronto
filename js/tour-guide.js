@@ -9,6 +9,10 @@ const { THREE, Navigation, CITY_LANDMARKS, TELEPORT_LOCATIONS, getLocationLabel,
 const { Fn, uniform, renderGroup, uv, attribute, float, color, mix, step, fract, abs, smoothstep } = window.CITY.TSL;
 const { searchPlaces, findRoute, progressOnRoute, formatDistance, formatDuration, trueBearing, compassWord, CATEGORY_LABEL, locateReal } = Navigation;
 
+const GEOCODE_ATTRIBUTION = [
+  ['cesium-ion.png', 'Cesium ion'], ['bing.png', 'Microsoft Bing']
+];
+let geocodeModule;
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -25,7 +29,7 @@ const icon = (name, cls = 'icon') => {
   svg.appendChild(use);
   return svg;
 };
-const KIND_ICON = { landmark: 'i-star', district: 'i-district', street: 'i-road', mylocation: 'i-gps', player: 'i-locate', locate: 'i-gps' };
+const KIND_ICON = { intersection: 'i-road', landmark: 'i-star', district: 'i-district', street: 'i-road', mylocation: 'i-gps', player: 'i-locate', locate: 'i-gps' };
 const CAT_ICON = {
   hotel: 'i-bed', bank: 'i-bank', food: 'i-food', worship: 'i-worship', fuel: 'i-fuel', health: 'i-health',
   education: 'i-school', market: 'i-bag', shop: 'i-bag', government: 'i-gov', office: 'i-office', leisure: 'i-tree',
@@ -53,6 +57,9 @@ class Autocomplete {
     this.limit = limit;
     this.items = [];
     this.active = -1;
+    this.lookup = null;
+    this.pending = null;
+    this.localMatches = [];
     if (!input || !list) return;
     list.setAttribute('role', 'listbox');
     input.setAttribute('role', 'combobox');
@@ -74,7 +81,8 @@ class Autocomplete {
       } else if (e.key === 'Enter') {
         e.preventDefault();
         const it = this.items[this.active >= 0 ? this.active : 0];
-        if (it) this.pick(it);
+        if (this.active < 0 && this.pending) this.startLookup(this.pending, true);
+        else if (it) this.pick(it);
       } else if (e.key === 'Escape') {
         if (this.isOpen()) {
           e.stopPropagation();
@@ -84,7 +92,9 @@ class Autocomplete {
       e.stopPropagation(); // typing never drives the player
     });
     input.addEventListener('keyup', (e) => e.stopPropagation());
-    input.addEventListener('blur', () => setTimeout(() => this.close(), 160));
+    input.addEventListener('blur', () => {
+      this.close();
+    });
   }
 
   isOpen() {
@@ -92,9 +102,11 @@ class Autocomplete {
   }
 
   update() {
+    this.cancelLookup();
     const q = this.input.value.trim();
     const near = this.near ? this.near() : null;
-    this.items = q ? searchPlaces(q, { near, limit: this.limit }) : [];
+    this.localMatches = q ? searchPlaces(q, { near, limit: this.limit }) : [];
+    this.items = [...this.localMatches];
     if (this.withMyLocation && this.myLocations) {
       const mine = this.myLocations().filter((m) => !q || m.name.toLowerCase().startsWith(q.toLowerCase()) || 'my location'.startsWith(q.toLowerCase()));
       this.items.unshift(...mine);
@@ -104,7 +116,75 @@ class Autocomplete {
       this.items = CITY_LANDMARKS.slice(0, 8).map((l) => ({ kind: 'landmark', name: l.name, x: l.x, z: l.z, sub: `Landmark · ${l.district || districtAt(l.x, l.z)}`, landmarkId: l.id,
         distance: near ? Math.hypot(l.x - near.x, l.z - near.z) : null }));
     }
+    this.active = -1;
+    // Solid local matches and category browsing stay entirely on the map.
+    if (q.length >= 3 && q.length <= 80 && (/^\d+[a-z]?[\s–-]/i.test(q) || !this.localMatches.some((p) => p.strong))) {
+      const pending = this.pending = { q, near, baseline: this.items };
+      void this.startLookup(pending);
+    }
     this.render(q);
+  }
+
+  async startLookup(pending, enter = false) {
+    // An extra Enter during a live request simply selects its first playable result when it arrives.
+    if (enter) pending.enter = true;
+    if (pending.started) {
+      if (enter) this.lookup.flush();
+      return;
+    }
+    let module;
+    try {
+      module = await (geocodeModule ??= import('./search-geocode.js').catch((err) => {
+        geocodeModule = null;
+        throw err;
+      }));
+    } catch {
+      if (this.pending === pending) {
+        this.cancelLookup();
+        this.render(pending.q);
+      }
+      return;
+    }
+    if (this.pending !== pending || pending.started) return;
+    if (!module.askable(pending.q)) {
+      this.cancelLookup();
+      this.render(pending.q);
+      return;
+    }
+    pending.started = true;
+    this.lookup ??= module.createLookup((q, signal) => module.lookup(q, {
+      signal, near: this.pending.near,
+      project: window.CITY.worldFromLatLon,
+      onMap: (x, z) => {
+        const b = window.CITY.CITY_BOUNDS;
+        return x > b.minX && x < b.maxX && z > b.minZ && z < b.maxZ;
+      },
+      local: (name) => searchPlaces(name, { limit: 5 })
+    }));
+    this.lookup.start(pending.q, (rows) => {
+      const active = this.items[this.active];
+      this.pending = null;
+      const old = pending.baseline;
+      const additions = rows.filter((r) => !r.provider || !old.some((p) => p.name.toLowerCase() === r.name.toLowerCase() &&
+        Math.hypot(p.x - r.x, p.z - r.z) < 60));
+      // Leave room for the fallback while keeping the best local matches first.
+      const local = additions.length ? old.slice(0, this.limit - Math.min(additions.length, 3)) : old;
+      this.items = [...local, ...additions].slice(0, this.limit);
+      if (pending.enter && !active) {
+        const first = this.items.find((p) => !p.outside && p.kind !== 'mylocation' && p.kind !== 'player' && p.kind !== 'locate');
+        const cityAddress = additions.find((p) => p.kind === 'address' && !p.provider && !p.outside);
+        const target = cityAddress || (local.some((p) => p.strong) ? first :
+          additions.find((p) => !p.outside) || (additions.length ? null : first));
+        if (target) return this.pick(target);
+      }
+      this.active = active ? this.items.indexOf(active) : -1;
+      this.render(pending.q);
+    }, pending.enter);
+  }
+
+  cancelLookup() {
+    this.lookup?.cancel();
+    this.pending = null;
   }
 
   render(q) {
@@ -112,13 +192,14 @@ class Autocomplete {
       const row = el('div', 'ac-item');
       row.setAttribute('role', 'option');
       row.id = `${this.list.id}-opt-${i}`;
+      if (it.outside) row.setAttribute('aria-disabled', 'true');
       const ic = el('span', `ac-icon kind-${it.kind}${it.cat ? ` cat-${it.cat}` : ''}`);
       ic.appendChild(icon(iconFor(it)));
       const text = el('div', 'ac-text');
       text.appendChild(highlight(it.name, q));
-      text.appendChild(el('div', 'ac-sub', it.sub || ''));
+      text.appendChild(el('div', 'ac-sub', [it.sub, it.outside && 'Outside the map'].filter(Boolean).join(' · ')));
       row.append(ic, text);
-      if (Number.isFinite(it.distance) && it.kind !== 'mylocation' && it.kind !== 'player') row.appendChild(el('span', 'ac-dist', formatDistance(it.distance)));
+      if (!it.outside && Number.isFinite(it.distance) && it.kind !== 'mylocation' && it.kind !== 'player') row.appendChild(el('span', 'ac-dist', formatDistance(it.distance)));
       row.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         this.pick(it);
@@ -127,22 +208,36 @@ class Autocomplete {
       return row;
     });
     if (!rows.length && q) {
-      const none = el('div', 'ac-empty', `No places match “${q}” in the city`);
+      const none = el('div', 'ac-empty', this.pending ? 'Searching…' : `No places match “${q}” in the city`);
       rows.push(none);
+    }
+    if (this.items.some((it) => it.provider)) {
+      const attribution = el('div', 'ac-attribution');
+      attribution.setAttribute('role', 'presentation');
+      attribution.append('Place search by');
+      for (const [file, name] of GEOCODE_ATTRIBUTION) {
+        const img = el('img');
+        img.src = `/assets/geocoder/${file}`;
+        img.alt = name;
+        attribution.append(img);
+      }
+      rows.push(attribution);
     }
     this.list.replaceChildren(...rows);
     this.list.hidden = rows.length === 0;
     this.input.setAttribute('aria-expanded', String(!this.list.hidden));
-    this.active = -1;
+    this.setActive(this.active);
   }
 
   setActive(i) {
     this.active = i;
     [...this.list.querySelectorAll('.ac-item')].forEach((r, k) => r.classList.toggle('active', k === i));
-    this.input.setAttribute('aria-activedescendant', `${this.list.id}-opt-${i}`);
+    if (i < 0) this.input.removeAttribute('aria-activedescendant');
+    else this.input.setAttribute('aria-activedescendant', `${this.list.id}-opt-${i}`);
   }
 
   pick(it) {
+    if (it.outside) return;
     this.input.value = it.name;
     this.close();
     this.onPick(it);
@@ -150,7 +245,13 @@ class Autocomplete {
 
   close() {
     if (!this.list) return;
+    this.cancelLookup();
+    this.items = [];
+    this.localMatches = [];
+    this.active = -1;
+    this.list.replaceChildren();
     this.list.hidden = true;
+    this.input.removeAttribute('aria-activedescendant');
     this.input.setAttribute('aria-expanded', 'false');
   }
 }
@@ -281,7 +382,77 @@ function createRouteGraphics(scene, groundAt) {
   return { group, setRoute, uAlong, uTime };
 }
 
-function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode, onPlaceChange=()=>{} }) {
+// Mark the containing building, or the closest footprint within 10 m of a civic address.
+function createSearchMarker(scene, groundAt, buildingColliders) {
+  const { colliderShape, inside } = window.CITY.WorldCollision;
+  let group = null;
+  let material = null;
+  let pinMaterial = null;
+  let outlineMaterial = null;
+  function show(place) {
+    if (group) {
+      group.traverse((object) => object.geometry?.dispose());
+      scene.remove(group);
+      group = null;
+    }
+    if (!place) return;
+    const { x, z } = place;
+    let closest = null, outline = null;
+    let best = place.kind === 'address' ? 10 : 0;
+    if (!place.postal) for (const colliders of buildingColliders) for (const c of colliders) {
+      if (x < c.minX - best || x > c.maxX + best || z < c.minZ - best || z > c.maxZ + best ||
+        c.prop || !Number.isFinite(c.maxY)) continue;
+      const shape = colliderShape(c);
+      const contains = inside(x, z, shape.points);
+      if (contains && best === 0 && closest && closest.maxY >= c.maxY) continue;
+      if (!contains) {
+        for (const { a, b } of shape.edges) {
+          const dx = b.x - a.x, dz = b.z - a.z;
+          const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz)));
+          const d = Math.hypot(x - a.x - t * dx, z - a.z - t * dz);
+          if (d >= best) continue;
+          closest = c;
+          outline = shape.points;
+          best = d;
+        }
+        continue;
+      }
+      closest = c;
+      outline = shape.points;
+      best = 0;
+    }
+
+    group = new THREE.Group();
+    group.name = 'Search destination';
+    const ground = groundAt(x, z, window.CITY.terrainHeightAt(x, z));
+    pinMaterial ??= new THREE.MeshBasicMaterial({ color: 0x59d9ff, toneMapped: false, depthTest: false, depthWrite: false });
+    const pin = new THREE.Mesh(new THREE.ConeGeometry(1.2, 2.5, 12).rotateZ(Math.PI), pinMaterial);
+    pin.position.set(x, ground + (outline ? 5 : 1.7), z);
+    pin.renderOrder = 10;
+    group.add(pin);
+    if (outline) {
+      const roof = closest.maxY + 0.8;
+      const vertices = [];
+      for (let i = 0; i < outline.length; i++) {
+        const a = outline[i], b = outline[(i + 1) % outline.length];
+        vertices.push(a.x, roof, a.z, b.x, roof, b.z);
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      outlineMaterial ??= new THREE.LineBasicNodeMaterial({ color: 0x59d9ff, toneMapped: false, depthWrite: false });
+      group.add(new THREE.LineSegments(geometry, outlineMaterial));
+    } else {
+      material ??= new THREE.MeshBasicMaterial({ color: 0x59d9ff, toneMapped: false, depthWrite: false });
+      const ring = new THREE.Mesh(new THREE.RingGeometry(2, 2.4, 32).rotateX(-Math.PI / 2), material);
+      ring.position.set(x, ground + 0.3, z);
+      group.add(ring);
+    }
+    scene.add(group);
+  }
+  return { show };
+}
+
+function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, trafficSystem, teleportTo, selectMode, buildingColliders = [], onPlaceChange=()=>{} }) {
   const player = () => controllerManager.getActiveEntity();
   const playerPos = () => {
     const p = player().position;
@@ -295,6 +466,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     }
   };
   const graphics = createRouteGraphics(scene, groundAt);
+  const marker = createSearchMarker(scene, groundAt, buildingColliders);
 
   // ---- toasts --------------------------------------------------------------------------------------------------------
   const elToast = $('toast');
@@ -478,7 +650,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
       $('pc-icon').className = `pc-icon kind-${p.kind}${p.cat ? ` cat-${p.cat}` : ''}`;
       $('pc-name').textContent = p.name;
       $('pc-sub').textContent = p.sub || '';
-      $('pc-address').textContent = info.address;
+      $('pc-address').textContent = p.kind === 'address' ? p.name : info.address;
       $('pc-distance').textContent = info.distance;
       const cityInfo=$('pc-city-info');
       const found=p.discovery&&window.CITY.Discovery?.discoveryCard(p);
@@ -522,6 +694,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
       card.hidden = false;
       document.body.classList.add('place-open');
     }
+    marker.show(p.kind === 'address' || p.provider ? p : null);
     mapSystem.setSelectedPlace({ x: p.x, z: p.z, name: p.name });
     onPlaceChange(true);
     if (p.kind === 'street' && p.bounds) mapSystem.highlightStreet(p.name);
@@ -531,6 +704,7 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     selected = null;
     if (card) card.hidden = true;
     document.body.classList.remove('place-open');
+    marker.show(null);
     mapSystem.setSelectedPlace(null);
     onPlaceChange(false);
   }
@@ -538,8 +712,12 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
   // Go there now: onto the street in front of it, facing it
   function teleportToPlace(p) {
     if (p.kind === 'mylocation') return;
-    if (p.landmarkId) {
-      const key = Object.keys(TELEPORT_LOCATIONS).find((k) => k.toLowerCase() === p.landmarkId.toLowerCase());
+    // A civic point at a landmark can use the landmark's framed arrival.
+    const landmark = p.kind === 'address' && CITY_LANDMARKS.find((l) =>
+      TELEPORT_LOCATIONS[l.id] && Math.hypot(p.x - l.x, p.z - l.z) < 10);
+    const id = p.landmarkId || landmark?.id;
+    if (id) {
+      const key = Object.keys(TELEPORT_LOCATIONS).find((k) => k.toLowerCase() === id.toLowerCase());
       const loc = key && TELEPORT_LOCATIONS[key];
       if (loc) {
         teleportTo(loc.x, loc.z, loc.heading);
