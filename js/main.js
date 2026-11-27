@@ -658,6 +658,12 @@ async function initApp() {
     markInit('skyOcclusion');
   }
   const cullingStats = setupSceneCulling(scene, cullingRoots, lightingSystem.sunLight.shadow);
+  // The ground is drawn after the other opaque objects (renderOrder 1): its fragment work is the heaviest in the city (the street-level asphalt
+  // alone is about 2 ms at the Eglinton street) and what the buildings, props and cars hide is then turned away by the depth test before it
+  // is shaded. ?groundorder=0 draws it in the scene's order (for A/B; st-aeg2)
+  if (new URLSearchParams(location.search).get('groundorder') !== '0') {
+    scene.getObjectByName('CityGround')?.traverse((m) => { if (m.isMesh && !(m.material && m.material.transparent)) m.renderOrder = 1; });
+  }
   // The static city's ~9,000 objects never move: the per-frame matrix pass skips them (it was 2.6 ms of every frame).
   // Only its lights move (the street lights' spot pool follows the rider): the frame loop updates those itself
   const staticLights = [];

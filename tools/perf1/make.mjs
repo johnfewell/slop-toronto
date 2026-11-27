@@ -68,10 +68,13 @@ if (job === 'disc') {
   const names = (process.env.PLACES || 'egl').split(' ');
   names.forEach((n) => place(n, `const T = window.CITY.THREE, A = window.__CITY_APP; const vis = (o) => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
     const ms = []; for (const top of A.scene.children.filter((c) => (c.name || c.type) === 'CityGround')) top.traverse((m) => { if (m.isMesh && vis(m)) ms.push(m); });
-    const flat = new T.MeshBasicNodeMaterial({ color: 0x555555 });
+    const flat = new T.MeshBasicNodeMaterial({ color: 0x555555 }), lit = new T.MeshStandardNodeMaterial({ color: 0x555555, roughness: 0.9 }); lit.receiveShadow = true;
     const arms = { flat: { on: () => { for (const m of ms) { m.__mat = m.material; m.material = flat; } }, off: () => { for (const m of ms) m.material = m.__mat; } },
       hidden: { on: () => { for (const m of ms) { m.__vis = m.visible; m.visible = false; } }, off: () => { for (const m of ms) m.visible = m.__vis; } },
-      noshadow: { on: () => { for (const m of ms) { m.__cs = m.castShadow; m.castShadow = false; } }, off: () => { for (const m of ms) m.castShadow = m.__cs; } } };
+      noshadow: { on: () => { for (const m of ms) { m.__cs = m.castShadow; m.castShadow = false; } }, off: () => { for (const m of ms) m.castShadow = m.__cs; } },
+      litflat: { on: () => { for (const m of ms) { m.__mat = m.material; m.material = lit; } }, off: () => { for (const m of ms) m.material = m.__mat; } },
+      nomask: { on: () => { for (const m of ms) { const mt = m.material; m.__mn = mt.maskNode; if (mt.maskNode) { mt.maskNode = null; mt.needsUpdate = true; } } }, off: () => { for (const m of ms) { if (m.__mn) { m.material.maskNode = m.__mn; m.material.needsUpdate = true; } } } },
+      noreceive: { on: () => { for (const m of ms) { m.__rs = m.receiveShadow; m.receiveShadow = false; } }, off: () => { for (const m of ms) m.receiveShadow = m.__rs; } } };
     const res = { place: ${JSON.stringify(n)}, meshes: ms.length, tris: ms.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3, 0), arms: {} };
     let prev = await __P.meas(300, 1500);
     for (let r = 0; r < 3; r++) for (const [k, a] of Object.entries(arms)) { a.on(); await __P.sleep(1500); const x = await __P.meas(300, 1500); a.off(); await __P.sleep(400); const b = await __P.meas(300, 1500); (res.arms[k] ||= []).push(+(x.ms - (prev.ms + b.ms) / 2).toFixed(2)); prev = b; }
@@ -85,6 +88,42 @@ if (job === 'disc') {
       'casc1-every4': { on: () => { __P.skipFn = (l) => l === 'shadow1' && (A.frameNo & 3); }, off: () => { __P.skipFn = null; } },
       'casc0-every2': { on: () => { __P.skipFn = (l) => l === 'shadow0' && (A.frameNo & 1); }, off: () => { __P.skipFn = null; } } };
     const res = { place: ${JSON.stringify(n)}, arms: {} };
+    let prev = await __P.meas(300, 1500);
+    for (let r = 0; r < 3; r++) for (const [k, a] of Object.entries(arms)) { a.on(); await __P.sleep(800); const x = await __P.meas(300, 1500); a.off(); await __P.sleep(400); const b = await __P.meas(300, 1500); (res.arms[k] ||= []).push(+(x.ms - (prev.ms + b.ms) / 2).toFixed(2)); prev = b; }
+    return res;`, { settle: 7000 }));
+} else if (job === 'groundgrp') {
+  // the ground's drawn meshes grouped by (child group, material class, mask): each group given a flat material, then hidden, against the frame before and after (2 rounds); also the world heights and extents of each group
+  const names = (process.env.PLACES || 'egl').split(' ');
+  names.forEach((n) => place(n, `const T = window.CITY.THREE, A = window.__CITY_APP, cam = A.cameraSystem.camera; cam.updateMatrixWorld();
+    const fr = new T.Frustum().setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse), cam.coordinateSystem, cam.reversedDepth);
+    const vis = (o) => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
+    const sp = new T.Sphere(), box = new T.Box3(), groups = {};
+    for (const top of A.scene.children.filter((c) => (c.name || c.type) === 'CityGround')) top.traverse((m) => {
+      if (!m.isMesh || !vis(m)) return; const g = m.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); sp.copy(g.boundingSphere).applyMatrix4(m.matrixWorld); if (!fr.intersectsSphere(sp)) return;
+      let anc = m.parent, path = []; while (anc && anc !== top) { path.unshift(anc.name || anc.type); anc = anc.parent; }
+      const mat = m.material; const k = (path[0] || '-') + '/' + (m.name || '-') + ' ' + mat.type + (mat.maskNode ? ' M' : '') + (mat.transparent ? ' T' : '') + (m.renderOrder ? ' ro' + m.renderOrder : '');
+      const e = groups[k] ||= { meshes: [], tris: 0, y0: 1e9, y1: -1e9 }; e.meshes.push(m); e.tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+      box.setFromObject(m); e.y0 = Math.min(e.y0, box.min.y); e.y1 = Math.max(e.y1, box.max.y); });
+    const flat = new T.MeshBasicNodeMaterial({ color: 0x555555 });
+    const list = Object.entries(groups).sort((a, b) => b[1].tris - a[1].tris).slice(0, 30);
+    const res = { place: ${JSON.stringify(n)}, groups: {} };
+    let prev = await __P.meas(300, 1300);
+    for (let r = 0; r < 2; r++) for (const [k, e] of list) {
+      const on = { flat: () => e.meshes.forEach((m) => { m.__mat = m.material; m.material = flat; }), hidden: () => e.meshes.forEach((m) => { m.__v = m.visible; m.visible = false; }) };
+      const off = { flat: () => e.meshes.forEach((m) => { m.material = m.__mat; }), hidden: () => e.meshes.forEach((m) => { m.visible = m.__v; }) };
+      for (const a of ['flat', 'hidden']) { on[a](); await __P.sleep(a === 'flat' ? 1300 : 300); const x = await __P.meas(300, 1300); off[a](); await __P.sleep(300); const b = await __P.meas(300, 1300);
+        const o = res.groups[k] ||= { meshes: e.meshes.length, tris: Math.round(e.tris), y0: +e.y0.toFixed(2), y1: +e.y1.toFixed(2), flat: [], hidden: [] }; o[a].push(+(x.ms - (prev.ms + b.ms) / 2).toFixed(2)); prev = b; }
+    }
+    return res;`, { settle: 7000 }));
+} else if (job === 'groundorder') {
+  // draw order of the ground: the street-level asphalt (StreetLevel*) drawn after everything else opaque (renderOrder 1), or all of CityGround; each against the frame before and after (3 rounds)
+  const names = (process.env.PLACES || 'egl').split(' ');
+  names.forEach((n) => place(n, `const A = window.__CITY_APP;
+    const street = [], ground = []; for (const top of A.scene.children.filter((c) => (c.name || c.type) === 'CityGround')) top.traverse((m) => { if (!m.isMesh) return; ground.push(m); if ((m.name || '').startsWith('StreetLevel')) street.push(m); });
+    const set = (l, v) => l.forEach((m) => { m.__ro = m.renderOrder; m.renderOrder = v; }), unset = (l) => l.forEach((m) => { m.renderOrder = m.__ro; });
+    const arms = { street1: { on: () => set(street, 1), off: () => unset(street) }, street10: { on: () => set(street, 10), off: () => unset(street) }, ground1: { on: () => set(ground, 1), off: () => unset(ground) },
+      g1s2: { on: () => { set(ground, 1); set(street, 2); }, off: () => { unset(ground); } }, g1s2b: { on: () => { set(ground, 1); street.forEach((m) => { m.renderOrder = 2; }); }, off: () => { unset(ground); } } };
+    const res = { place: ${JSON.stringify(n)}, street: street.length, ground: ground.length, arms: {} };
     let prev = await __P.meas(300, 1500);
     for (let r = 0; r < 3; r++) for (const [k, a] of Object.entries(arms)) { a.on(); await __P.sleep(800); const x = await __P.meas(300, 1500); a.off(); await __P.sleep(400); const b = await __P.meas(300, 1500); (res.arms[k] ||= []).push(+(x.ms - (prev.ms + b.ms) / 2).toFixed(2)); prev = b; }
     return res;`, { settle: 7000 }));
