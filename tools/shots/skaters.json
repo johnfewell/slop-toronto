@@ -14,5 +14,26 @@
     "name": "skaters-hood",
     "js": "(() => {const id=window.CITY.rinkStats.sites.find(x=>x.assetId==='970547')?'970547':'71802';window.__skView(id,{side:-1,along:.1,dist:.8,height:.6});console.log('[skaters-check] '+JSON.stringify(window.CITY.skaterStats));})()",
     "wait": 1800
+  },
+  {
+    "name": "shinny-wide",
+    "js": "(()=>{window.__skView('43613',{side:1,along:.1,dist:.9,height:.9});console.log('[skaters-check] '+JSON.stringify(window.CITY.skaterStats));})()",
+    "wait": 2500
+  },
+  {
+    "name": "shinny-close",
+    "js": "window.__skView('43613',{side:1,along:.05,dist:.45,height:.3,fov:60})",
+    "wait": 1800,
+    "screencastMs": 8000
+  },
+  {
+    "name": "trail-rennie",
+    "js": "(()=>{const s=window.CITY.rinkStats.sites.find(q=>q.assetId==='59902');if(!s)throw new Error('no trail');window.__skView('59902',{side:1,along:0,dist:.9,height:.9});console.log('[skaters-check] '+JSON.stringify(window.CITY.skaterStats));})()",
+    "wait": 2500
+  },
+  {
+    "name": "trail-barbara",
+    "js": "window.__skView('74082',{side:1,along:0,dist:.8,height:.8})",
+    "wait": 2500
   }
 ]

@@ -1287,6 +1287,7 @@ class PersonRig {
     this.female = female ? 1 : 0;
     this.girth = girth;
     this.armSwing = armSwing;
+    this.armHold = 0; // skating with a stick: both arms held forward and bent (skate() sets it)
     this.stride = stride;
     this.bind = BIND[this.female];
     this.placed = false;
@@ -2269,7 +2270,7 @@ class PersonRig {
       const runFlex = -0.03 + posD * (0.58 + 0.1 * sprint) - negD * (0.64 + 0.12 * sprint);
       const prepArmFlex = (-0.52 * prepBackswing + 0.42 * prepDrive) * backScale;
       const landArmFlex = landNorm * 0.78 * (1 - 0.65 * run) * (1 - 0.5 * this.back);
-      const groundFlex = lerp(walkFlex, runFlex, fwdRun) + idle * 0.01 + prepArmFlex + landArmFlex;
+      const groundFlex = lerp(walkFlex, runFlex, fwdRun) + idle * 0.01 + prepArmFlex + landArmFlex + this.armHold * 0.85;
 
       const oppLead = -side * this.jumpLead;
       // Standing/walking jump: explosive upward punch on launch (`prepDrive -> launchUp`), peaking early in ascent
@@ -2297,7 +2298,7 @@ class PersonRig {
       const walkElbow = 0.14 * idle + 0.075 * g + 0.42 * posD;
       const runElbow = (1.14 + 0.08 * sprint) + posD * (0.38 + 0.1 * sprint) - negD * 0.1;
       const prepElbow = 0.42 * prepBackswing + 1.15 * prepDrive;
-      const groundElbow = lerp(walkElbow, runElbow, fwdRun) + prepElbow + landNorm * 1.95 * (1 - 0.65 * run);
+      const groundElbow = lerp(walkElbow, runElbow, fwdRun) + prepElbow + landNorm * 1.95 * (1 - 0.65 * run) + this.armHold * 0.9;
       const standAirElbow = (1.28 * launchUp + 0.48 * ascentArc) * (1 - 0.8 * descendReach) + 0.2 * descendReach;
       const runAirElbow = oppLead > 0 ? lerp(1.38, 1.1, descendReach) : lerp(0.95, 1.08, descendReach);
       const airElbow = lerp(standAirElbow, runAirElbow, moveJump);
@@ -2312,7 +2313,7 @@ class PersonRig {
    * the legs on a two-foot stroke cycle: each foot in turn pushes back and out on the ice, then lifts and returns. The same
    * leg IK and arm posing as walking. `stroke` is the cycle (whole turns), `ground` the ice height there.
    */
-  skate(dt, x, z, yaw, ground, stroke, roll = 0, crouch = 0.9) {
+  skate(dt, x, z, yaw, ground, stroke, roll = 0, crouch = 0.88, { stick = false, glide = 0 } = {}) {
     const s = this.s;
     this.time += dt;
     this.x = x;
@@ -2321,24 +2322,29 @@ class PersonRig {
     this.placed = true;
     const sinY = Math.sin(yaw);
     const cosY = Math.cos(yaw);
+    // Push and glide: the pushing foot drives back and well out to the side with the knee bent; the other leg takes the
+    // weight and glides, then the pusher lifts and recovers under the body. `glide` (0..1) lengthens the glide and shortens
+    // the push (a skater coasting round a turn).
+    const pushEnd = 0.4 - 0.12 * glide;
     for (let i = 0; i < 2; i++) {
       const foot = this.feet[i];
       const side = foot.side;
       const u = (stroke + i * 0.5) % 1;
       let f, l, lift, out;
-      if (u < 0.45) {
-        const k = u / 0.45;
-        f = lerp(0.05, -0.3, k);
-        l = lerp(0.1, 0.3, smooth(0, 1, k));
-        lift = 0;
-        out = 0.12 + 0.5 * k;
-      } else {
-        const k = (u - 0.45) / 0.55;
+      if (u < pushEnd) {
+        const k = u / pushEnd;
         const e = smooth(0, 1, k);
-        f = lerp(-0.3, 0.05, e);
-        l = lerp(0.3, 0.1, e);
-        lift = 0.07 * Math.sin(Math.PI * k);
-        out = lerp(0.62, 0.12, e);
+        f = lerp(0.1, -0.42, e);
+        l = lerp(0.1, 0.42, e);
+        lift = 0;
+        out = 0.12 + 0.62 * e;
+      } else {
+        const k = (u - pushEnd) / (1 - pushEnd);
+        const e = smooth(0, 1, k);
+        f = lerp(-0.42, 0.1, e);
+        l = lerp(0.42, 0.1, e);
+        lift = 0.09 * Math.sin(Math.PI * k);
+        out = lerp(0.74, 0.12, e);
       }
       foot.swing = false;
       foot.px = x + (sinY * f + cosY * side * l) * s;
@@ -2350,14 +2356,17 @@ class PersonRig {
       this.plant(foot, 0, HEEL);
     }
     _qOwner = null;
-    this.gait = 0.3;
+    this.gait = stick ? 0.3 : 0.62;
     this.run = this.sprint = this.sway = this.back = this.yawRate = this.bank = this.headTurn = 0;
     this.airBlend = this.airVel = this.jumpPrep = this.landDrop = 0;
     this.wasAirborne = false;
-    this.arm = 0.5 * Math.sin(stroke * Math.PI * 2);
-    this.pelvisYaw = 0.1 * Math.sin(stroke * Math.PI * 2);
-    this.pelvisRoll = roll;
-    this.pelvisTilt = 0.26;
+    const swing = Math.sin(stroke * Math.PI * 2);
+    // Arms swing across against the legs; with a stick both hands stay low and forward, shifting a little with each stroke
+    this.arm = stick ? 0.18 * swing : 0.95 * swing;
+    this.armHold = stick ? 0.8 : 0;
+    this.pelvisYaw = (stick ? 0.07 : 0.16) * swing;
+    this.pelvisRoll = roll + 0.05 * swing;
+    this.pelvisTilt = stick ? 0.4 : 0.32;
     this.pelvisY = ground + ANKLE_H * s + this.legLength * crouch + (PELVIS_Y - HIP_Y) * s;
     this.solve();
   }

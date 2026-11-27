@@ -6,6 +6,8 @@ const clock=(local)=>`liveDate=2026-12-12&liveClock=2026-12-12T${local}-05:00`;
 const runs=[
   {tag:'skaters-day',query:`?${clock('14:00:00')}`},
   {tag:'skaters-evening',query:`?${clock('18:30:00')}`},
+  {tag:'skaters-shinny-sat',query:`?${clock('10:30:00')}`},
+  {tag:'skaters-shinny-weekday',query:'?liveDate=2026-12-09&liveClock=2026-12-09T16:30:00-05:00'},
   {tag:'skaters-closed',query:`?${clock('23:00:00')}`},
   {tag:'skaters-summer',query:'?liveDate=2026-08-22&liveClock=2026-08-22T14:00:00-04:00'}
 ];
