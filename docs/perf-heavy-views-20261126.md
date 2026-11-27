@@ -127,3 +127,13 @@ as="fetch" fetchpriority="low">`): -2.2 s on the phone link and -1.5 s on deskto
    already serialised for correctness).
 5. Not done: the downtown winter ablation (the downtown rows above are summer date), a per-system CPU profile, and a repeat
    of these on a quiet mini.
+
+## Later the same day: what shipped and what did not pay
+
+Shipped: #212 (ROM model fetched after ready, warmed a mesh a frame, collider built a stage a frame, swap into the built collider cells; live 3f51720c-c727-4d96-b4e3-49e90c979cf0, main 123803d; paired 3 rounds, no frame from it over 45 ms) and #232 (High Park woods: full-detail trees within 0.35 of the near distance, not 0.55; -0.8 ms on foot at 26 Nov, -0.64 in July, none from 70 m; live 483aeeef-543d-4f93-aa64-866fdae9268f, main ae74324; before and after frames in John's `slop-toronto-updates/2026-11-26-perf/` folder, `woods-near-*.png`). `?woodsnear=0.55` brings the old share back.
+
+Not shipped, measured (Mac mini, relative, 26 Nov):
+- **The road shader's wear is not the ground's cost.** Ground, main f7365c4 or later: hiding it saves 3.5 to 4.8 ms at the Eglinton street, and giving every ground mesh a flat unlit material saves 3.2 to 4.1 of that (a flat lit, shadow-receiving material saves the same, so lighting and shadow lookups are not it; making ground meshes stop receiving shadows saves nothing; removing the road-cut mask saves 0 at Eglinton and 0.8 from 300 m). Inside the asphalt shader, paired reload A/B at Eglinton: `q.surfaceWear=1` -0.58 ms, `=0` -0.87, no clear coat (`coat=0`) -0.09, and bisecting the nodes (`?roadx=`, a working switch not merged): sky ambient occlusion -0.36, colour -0.22, roughness -0.11, normal map 0, clear coat and SSR 0.06. At High Park `surfaceWear=1` is 0.0. They add up to under 1 ms, so the rest of the ground's 3 to 4 ms is in something the flat material also removes: the other ground materials (sidewalks, kerbs, lawns) or ground layers stacked over each other and shaded more than once. Next step: a per-mesh flat test by material, and an overdraw view.
+- **Sun shadows drawn less often do not pay.** Skipping the far cascade every 2nd or 4th frame, or the near one every 2nd, changed the frame by -0.2 to +0.1 ms (noise); `QUALITY.shadowEvery = 2` for both cascades made it 1.4 to 1.7 ms slower. Caching static casters across frames is therefore not worth building on this evidence.
+
+Probe additions in `tools/perf1`: `groundx` (flat, lit-flat, hidden, no-mask, no-receive arms per mesh set), `shadowfreq`, `ft`, `groundmats`, and `ab.sh` takes `ROOTA` and `ROOTB`.

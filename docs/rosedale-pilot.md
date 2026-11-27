@@ -63,6 +63,13 @@ What reads wrong: some roofs under heavy canopy are still jagged or have a stray
 bay; the style is a brick or render colour and a roof colour, not a drawn style. The re-shot house views are framed from 30 m along the street and from the far side of
 it, where the spike's were 12 to 40 m from the wall.
 
+## Side effect: the patio layout
+
+The pilot's polygon colliders in Summerhill are among the colliders near CaféTO records, so the drawn page's prebuilt patio layout (`js/frames/eglinton/toronto-patios-drawn.js`)
+went stale on its collider fingerprint (the page lays the patios out at startup instead, about 43 ms in the season, and the capture harness refuses the page). It was recorded
+again on the mini (`?patios=layout`, `node tools/build-patios.mjs <record> --frame eglinton-drawn`): the same 316 sites (121 sidewalk, 195 curb), a new fingerprint. Whenever
+the Rosedale pilot data changes, re-record it.
+
 ## Not done
 
 - Porches, bays and per-style window rhythm: the downtown presets draw these from the massing sidecar's groups and dwelling counts, which Rosedale has not got; the

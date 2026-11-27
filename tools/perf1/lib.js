@@ -116,6 +116,7 @@
     const sc = shadow._cameras || [];
     const label = cam === A.cameraSystem.camera ? 'main' : cam === sc[0] ? 'shadow0' : cam === sc[1] ? 'shadow1' : 'other';
     if (P.skip.has(label)) return undefined;
+    if (P.skipFn && P.skipFn(label)) return undefined;
     if (P.skipNames.size && (P.skipNames.has(s.name) || (s.isSprite && P.skipNames.has('Sprite')) || [...P.skipNames].some((n) => n.endsWith('*') && (s.name || '').startsWith(n.slice(0, -1))))) return undefined;
     if (acc && label === 'main' && !s.isSprite) acc.frames++; // (the stars sprite also renders through the main camera: not a frame)
     if (P.traceOn) {

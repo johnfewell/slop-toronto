@@ -62,6 +62,32 @@ if (job === 'disc') {
   const ftjs = JSON.parse(fs.readFileSync(dir + '../shots/frame-times.json', 'utf8'))[0].js;
   const names = (process.env.PLACES || 'hpw egl').split(' ');
   names.forEach((n) => place(n, `window.__captureShot = { ftSeconds: ${Number(process.env.FTSECONDS || 20)} }; const R = await (${ftjs}); R.place = ${JSON.stringify(n)}; return R;`, { settle: Number(process.env.FTSETTLE || 8000) }));
+} else if (job === 'groundx') {
+  // the ground's cost by cause, at PLACES: every visible CityGround mesh given a flat unlit material (the shader), made invisible (shader + geometry),
+  // and its shadow off, each against the frame measured before and after (3 rounds)
+  const names = (process.env.PLACES || 'egl').split(' ');
+  names.forEach((n) => place(n, `const T = window.CITY.THREE, A = window.__CITY_APP; const vis = (o) => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
+    const ms = []; for (const top of A.scene.children.filter((c) => (c.name || c.type) === 'CityGround')) top.traverse((m) => { if (m.isMesh && vis(m)) ms.push(m); });
+    const flat = new T.MeshBasicNodeMaterial({ color: 0x555555 });
+    const arms = { flat: { on: () => { for (const m of ms) { m.__mat = m.material; m.material = flat; } }, off: () => { for (const m of ms) m.material = m.__mat; } },
+      hidden: { on: () => { for (const m of ms) { m.__vis = m.visible; m.visible = false; } }, off: () => { for (const m of ms) m.visible = m.__vis; } },
+      noshadow: { on: () => { for (const m of ms) { m.__cs = m.castShadow; m.castShadow = false; } }, off: () => { for (const m of ms) m.castShadow = m.__cs; } } };
+    const res = { place: ${JSON.stringify(n)}, meshes: ms.length, tris: ms.reduce((s, m) => s + (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3, 0), arms: {} };
+    let prev = await __P.meas(300, 1500);
+    for (let r = 0; r < 3; r++) for (const [k, a] of Object.entries(arms)) { a.on(); await __P.sleep(1500); const x = await __P.meas(300, 1500); a.off(); await __P.sleep(400); const b = await __P.meas(300, 1500); (res.arms[k] ||= []).push(+(x.ms - (prev.ms + b.ms) / 2).toFixed(2)); prev = b; }
+    return res;`, { settle: 7000 }));
+} else if (job === 'shadowfreq') {
+  // the sun shadows redrawn less often, at PLACES: every 2nd frame (QUALITY.shadowEvery), the far cascade alone every 2nd or 4th frame, each against the frame before and after (3 rounds)
+  const names = (process.env.PLACES || 'egl').split(' ');
+  names.forEach((n) => place(n, `const A = window.__CITY_APP, Q = window.CITY.QUALITY;
+    const arms = { 'all-every2': { on: () => { Q.shadowEvery = 2; }, off: () => { Q.shadowEvery = 1; } },
+      'casc1-every2': { on: () => { __P.skipFn = (l) => l === 'shadow1' && (A.frameNo & 1); }, off: () => { __P.skipFn = null; } },
+      'casc1-every4': { on: () => { __P.skipFn = (l) => l === 'shadow1' && (A.frameNo & 3); }, off: () => { __P.skipFn = null; } },
+      'casc0-every2': { on: () => { __P.skipFn = (l) => l === 'shadow0' && (A.frameNo & 1); }, off: () => { __P.skipFn = null; } } };
+    const res = { place: ${JSON.stringify(n)}, arms: {} };
+    let prev = await __P.meas(300, 1500);
+    for (let r = 0; r < 3; r++) for (const [k, a] of Object.entries(arms)) { a.on(); await __P.sleep(800); const x = await __P.meas(300, 1500); a.off(); await __P.sleep(400); const b = await __P.meas(300, 1500); (res.arms[k] ||= []).push(+(x.ms - (prev.ms + b.ms) / 2).toFixed(2)); prev = b; }
+    return res;`, { settle: 7000 }));
 } else if (job === 'visit') {
   // one page load, every place in PLACES: the base frame (median, CPU split) and a short census total, for the
   // reload arms (a query, see visits.sh); WINDOW ms per place

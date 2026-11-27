@@ -17,7 +17,7 @@ page() { # <root> <label> <round> <extra query>
     node tools/capture.mjs "$OUT/${TAG}${label}-r${r}-shots.json" || echo "page $label r$r failed (kept whatever it wrote)"
 }
 for r in ${ROUNDS:-1 2 3}; do
-  page dist-main main "$r" "${QMAIN:-}"
-  page dist-pr pr "$r" "${QPR:-}"
+  page "${ROOTA:-dist-main}" main "$r" "${QMAIN:-}"
+  page "${ROOTB:-dist-pr}" pr "$r" "${QPR:-}"
 done
 echo "=== done $(date +%T) ==="
