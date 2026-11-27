@@ -1,0 +1,86 @@
+[
+ {
+  "name": "crescent",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67784023050961, -79.38417442413164), q = C.worldFromLatLon(43.67793545062343, -79.38300167565279); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "elm",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67543185045865, -79.37692016535988), q = C.worldFromLatLon(43.67576319940293, -79.37583138250508); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "chestnut",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67936677000412, -79.38674123314097), q = C.worldFromLatLon(43.67958000505382, -79.38559811808499); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "highland",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.6819041750357, -79.37862423766825), q = C.worldFromLatLon(43.68176384735167, -79.37746006054195); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "south",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67710422730922, -79.3796723237862), q = C.worldFromLatLon(43.67715365690642, -79.37849426350903); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "roxborough",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.68263482453741, -79.37552632696033), q = C.worldFromLatLon(43.683036274085154, -79.37448296496858); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "moore",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.69341619673043, -79.38572712960026), q = C.worldFromLatLon(43.693676365081835, -79.38460248515473); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "inglewood",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.68991484682547, -79.38331608646355), q = C.worldFromLatLon(43.68981200478808, -79.38214455199345); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "glen-bridge",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67235, -79.37495), q = C.worldFromLatLon(43.6745, -79.3751); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "craigleigh",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.677042722, -79.3724247), q = C.worldFromLatLon(43.677442722, -79.3730247); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "above-south",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.677, -79.3775), q = C.worldFromLatLon(43.6785, -79.3775); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 160, p.z], look: [q.x, 0, q.z], fov: 60 }); })()"
+ },
+ {
+  "name": "above-north",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.6805, -79.374), q = C.worldFromLatLon(43.682, -79.374); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 160, p.z], look: [q.x, 0, q.z], fov: 60 }); })()"
+ },
+ {
+  "name": "above-moorepark",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.6915, -79.3695), q = C.worldFromLatLon(43.693, -79.3695); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 160, p.z], look: [q.x, 0, q.z], fov: 60 }); })()"
+ },
+ {
+  "name": "above-all",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.679, -79.378), q = C.worldFromLatLon(43.683, -79.378); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 520, p.z], look: [q.x, 0, q.z], fov: 60 }); })()"
+ }
+]

@@ -4,6 +4,12 @@ Bead `jf-5i1`, 2026-11-26. John: "Rosedale's houses are like really wrong ... ea
 measurement and small prototypes, then a plan with numbers. **No game change is shipped by default.** The prototype (`?rosedale=lidar`,
 `?rosedale=skeleton`) lives on its own branch and pull request and is not merged; this document is the deliverable that is.
 
+**Status (2026-11-26, after John's decisions):** phase 0 (box heights from lidar) shipped on by default: [rosedale-heights.md](rosedale-heights.md). The outlines and lidar
+roofs pilot (phases 1 and 2) follows in its own pull request. The 15 empty 0.5 m tiles the shared fetcher stored as valid are fixed in the shared data repo
+(investigation `lidar-fetcher-empty-tiles`). How widespread the canopy-in-height problem is in the other house neighbourhoods of the Eglinton map:
+MAX_HEIGHT is 2 m or more over the lidar roof top for 41% of a 1,278-house sample and 5 m or more for 26% (Rosedale: 57% and 41%),
+see [rosedale-heights.md](rosedale-heights.md#how-widespread-is-it-elsewhere).
+
 Area: City neighbourhood 98, Rosedale-Moore Park, from the City's neighbourhoods layer (4.66 km²): South Rosedale, North Rosedale, Moore Park,
 Summerhill and the ravines between them. Everything measured below is for that polygon. The shared data repo (private) holds the sources,
 the investigation records and the datasets; paths to them are in [Data and reproducibility](#data-and-reproducibility).

@@ -60,6 +60,10 @@ async function initApp() {
       for (const u of want) window.CITY.EARLY_FETCH.set(u, fetch(u));
     }).catch(() => {});
   }
+  // Rosedale-Moore Park's lidar box heights (js/rosedale-heights.js, jf-boq): a 4 KB file, asked for now, applied to the geodata's rows
+  // just before the buildings are built. The bigger map only (the rows are its own); ?rosedaleHeights=0 keeps the City's heights
+  const rosedaleHeightsReq = loader && loader.cityMap === 'eglinton' && new URLSearchParams(location.search).get('rosedaleHeights') !== '0'
+    ? import('./rosedale-heights.js').then(async (rh) => ({ rh, layer: await rh.readRosedaleHeights(await fetch(rh.ROSEDALE_HEIGHTS_URL)) })).catch(() => null) : null;
   // Live sky (live-sky.js, docs/live-sky.md): the mode the city opens in, and Pearson's latest reading, asked for now so
   // it arrives while the city builds (never waited on: 4 s at most, and the sky starts without it)
   const LIVE = window.CITY.LIVE_SKY;
@@ -264,6 +268,14 @@ async function initApp() {
       console.warn('[massing] could not load the polygons; the buildings stay on their boxes', err);
     }
     markInit('massingData');
+  }
+  // (after the massing sidecar and the presets have checked the rows: they were built for the City's heights)
+  if (rosedaleHeightsReq) {
+    const got = await rosedaleHeightsReq;
+    const r = got && got.layer ? got.rh.applyRosedaleHeights(window.CITY.GEO.buildings, got.layer) : null;
+    window.CITY.ROSEDALE_HEIGHTS = r;
+    if (r && r.error) console.warn(`[rosedale] heights not applied: ${r.error}`);
+    else if (r) console.info(`[rosedale] lidar heights: ${r.applied} box rows (${r.lowered} lower, ${r.raised} higher than the City's)`);
   }
   const cityBlocks = buildCityBlocks(scene);
   markInit('blocks');

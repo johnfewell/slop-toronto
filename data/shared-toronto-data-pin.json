@@ -51,6 +51,16 @@
       ],
       "dataSha256": "b4d8c00416513f2a715a1fdf3b92bd639e07a25f0da8331bbd60f46c4f570d02"
     },
+    "rosedale-roofs/1": {
+      "manifestGenerated": "2026-11-26",
+      "bakedInto": [
+        "data/frames/eglinton/rosedale-heights.bin"
+      ],
+      "dataSha256": "5b9883046121db13fc5b381e8debdfb4286a3001096c302c6fbbecad9be42b07",
+      "parts": 3917,
+      "fitted": 3822,
+      "note": "lidar roof planes per City 3D Massing part (GTA 2023 point cloud), Rosedale-Moore Park only; the box heights of jf-boq (tools/build-rosedale-heights.mjs)"
+    },
     "school-grounds/1": {
       "manifestCommit": "c19199a",
       "manifestGenerated": "2026-11-15T19:20:35Z",
