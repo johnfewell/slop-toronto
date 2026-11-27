@@ -34,5 +34,23 @@
   "mode": "person",
   "wait": 14000,
   "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.68263482453741, -79.37552632696033), q = C.worldFromLatLon(43.683036274085154, -79.37448296496858); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "bags-close",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const q = { x: 687, z: -3774 }; const r = C.nearestRoads(q.x, q.z, 40)[0]; if (!r) return 'no road'; const p = { x: r.px + r.dx * 5, z: r.pz + r.dz * 5 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.6, p.z], look: [q.x, 1.0, q.z], fov: 62 }); })()"
+ },
+ {
+  "name": "maple-bags",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const q = { x: 692, z: -3862 }; const r = C.nearestRoads(q.x, q.z, 40)[0]; if (!r) return 'no road'; const p = { x: r.px + r.dx * 5, z: r.pz + r.dz * 5 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.6, p.z], look: [q.x, 1.0, q.z], fov: 62 }); })()"
+ },
+ {
+  "name": "pavers-drive",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const q = { x: 663, z: -3666 }; const r = C.nearestRoads(q.x, q.z, 40)[0]; if (!r) return 'no road'; const p = { x: r.px + r.dx * -6, z: r.pz + r.dz * -6 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 1.0, q.z], fov: 66 }); })()"
  }
 ]

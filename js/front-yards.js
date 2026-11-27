@@ -13,20 +13,20 @@
 //   no two neighbours match, and a house is the same on every load.
 import { stream, weighted, lerp, clamp, shade } from './building-draw-kit.js';
 
-export const KIND = { solid: 0, evergreen: 1, deciduous: 2, lawn: 3, bed: 4, iron: 5, picket: 6, chain: 7, cardEv: 8, cardDec: 9, twig: 10, needle: 11, rock: 12 };
+export const KIND = { solid: 0, evergreen: 1, deciduous: 2, lawn: 3, bed: 4, iron: 5, picket: 6, chain: 7, cardEv: 8, cardDec: 9, twig: 10, needle: 11, rock: 12, paver: 13, bag: 14, cardMaple: 15, litter: 16 };
 
 // The yard styles by neighbourhood and era. Weights of the lot line's treatment: [hedge, stone wall, brick wall, iron fence (on a low stone base), picket, chain-link, nothing].
 // A source: the streets of each neighbourhood from the photographs John named (Rosedale: stone walls with piers, cedar hedges, wrought iron; the Annex and Cabbagetown:
 // wrought iron and low pickets on narrow lots; Leslieville and Riverdale: pickets, chain-link, low brick; the Beaches: pickets and hedges).
 export const YARD_STYLES = {
-  rosedale: { line: [30, 22, 2, 14, 3, 0, 29], lawn: 0.88, beds: 0.7, shrubs: 0.8, tree: 0.1, lamp: 0.1, rocks: 1, hedgeH: [1.2, 2.1], wallH: [0.6, 1.0] },
-  rosedaleGrand: { line: [30, 28, 2, 16, 1, 0, 23], lawn: 0.92, beds: 0.75, shrubs: 0.85, tree: 0.14, lamp: 0.16, rocks: 1.25, hedgeH: [1.4, 2.3], wallH: [0.7, 1.1] },
-  annex: { line: [12, 6, 14, 30, 8, 0, 30], lawn: 0.6, beds: 0.65, shrubs: 0.7, tree: 0.04, lamp: 0.03, hedgeH: [0.8, 1.4], wallH: [0.4, 0.7] },
-  cabbagetown: { line: [10, 4, 16, 34, 8, 0, 28], lawn: 0.5, beds: 0.7, shrubs: 0.7, tree: 0.03, lamp: 0.02, hedgeH: [0.7, 1.2], wallH: [0.35, 0.6] },
-  eastEnd: { line: [10, 2, 10, 4, 34, 18, 22], lawn: 0.65, beds: 0.55, shrubs: 0.6, tree: 0.03, lamp: 0.0, hedgeH: [0.7, 1.3], wallH: [0.3, 0.55] },
-  beaches: { line: [22, 4, 2, 3, 38, 6, 25], lawn: 0.75, beds: 0.6, shrubs: 0.65, tree: 0.05, lamp: 0.02, hedgeH: [0.8, 1.6], wallH: [0.3, 0.5] },
-  postwar: { line: [22, 2, 6, 4, 8, 12, 46], lawn: 0.92, beds: 0.5, shrubs: 0.6, tree: 0.05, lamp: 0.02, hedgeH: [0.7, 1.3], wallH: [0.3, 0.5] },
-  city: { line: [16, 3, 8, 8, 14, 10, 41], lawn: 0.7, beds: 0.55, shrubs: 0.6, tree: 0.04, lamp: 0.02, rocks: 0, hedgeH: [0.7, 1.4], wallH: [0.3, 0.6] }
+  rosedale: { line: [30, 22, 2, 14, 3, 0, 29], lawn: 0.88, beds: 0.7, shrubs: 0.8, tree: 0.2, maple: 9, lamp: 0.1, rocks: 1, pavers: 0.55, bags: 0.38, hedgeH: [1.2, 2.1], wallH: [0.6, 1.0] },
+  rosedaleGrand: { line: [30, 28, 2, 16, 1, 0, 23], lawn: 0.92, beds: 0.75, shrubs: 0.85, tree: 0.26, maple: 9, lamp: 0.16, rocks: 1.25, pavers: 0.7, bags: 0.42, hedgeH: [1.4, 2.3], wallH: [0.7, 1.1] },
+  annex: { line: [12, 6, 14, 30, 8, 0, 30], lawn: 0.6, beds: 0.65, shrubs: 0.7, tree: 0.04, lamp: 0.03, pavers: 0.1, bags: 0.12, hedgeH: [0.8, 1.4], wallH: [0.4, 0.7] },
+  cabbagetown: { line: [10, 4, 16, 34, 8, 0, 28], lawn: 0.5, beds: 0.7, shrubs: 0.7, tree: 0.03, lamp: 0.02, pavers: 0.1, bags: 0.1, hedgeH: [0.7, 1.2], wallH: [0.35, 0.6] },
+  eastEnd: { line: [10, 2, 10, 4, 34, 18, 22], lawn: 0.65, beds: 0.55, shrubs: 0.6, tree: 0.03, lamp: 0.0, pavers: 0.05, bags: 0.1, hedgeH: [0.7, 1.3], wallH: [0.3, 0.55] },
+  beaches: { line: [22, 4, 2, 3, 38, 6, 25], lawn: 0.75, beds: 0.6, shrubs: 0.65, tree: 0.05, lamp: 0.02, pavers: 0.05, bags: 0.12, hedgeH: [0.8, 1.6], wallH: [0.3, 0.5] },
+  postwar: { line: [22, 2, 6, 4, 8, 12, 46], lawn: 0.92, beds: 0.5, shrubs: 0.6, tree: 0.05, lamp: 0.02, pavers: 0.05, bags: 0.15, hedgeH: [0.7, 1.3], wallH: [0.3, 0.5] },
+  city: { line: [16, 3, 8, 8, 14, 10, 41], lawn: 0.7, beds: 0.55, shrubs: 0.6, tree: 0.04, lamp: 0.02, rocks: 0, pavers: 0.05, bags: 0.08, hedgeH: [0.7, 1.4], wallH: [0.3, 0.6] }
 };
 const LINES = ['hedge', 'stone', 'brick', 'iron', 'picket', 'chain', null];
 
@@ -113,6 +113,33 @@ function boulder(W, F, u, v, o) {
 function flat(W, F, ring, y, rgb, kind, rnd = 0) {
   const P = F.P, p = ring.map(([u, v]) => P(u, v, y));
   W.quad(p[0], p[1], p[2], p[3], rgb, kind, rnd, up, [0, 0], [1, 0], [1, 1], [0, 1]);
+}
+
+// a flat sheet over the ring whose aux is the [u, v] of each corner in metres, so the material can lay pavers out along the house's own axes
+function flatUv(W, F, ring, y, rgb, kind, rnd = 0) {
+  const P = F.P, p = ring.map(([u, v]) => P(u, v, y));
+  W.quad(p[0], p[1], p[2], p[3], rgb, kind, rnd, up, ring[0], ring[1], ring[2], ring[3]);
+}
+
+// a paper yard-waste bag (jf-qw7: the brown kraft bags Toronto's autumn leaf collection stands at the curb): a box 0.46 x 0.3 m tapering to a creased top 0.75 m up, five faces; the material shows
+// it only from the colour's peak (mid October) to the snow or the first of December
+function leafBag(W, F, u, v, o) {
+  const { yb, rgb, rnd, yaw = 0, h = 0.75 } = o, P = F.P, c = Math.cos(yaw), sn = Math.sin(yaw);
+  const at = (a, b, y) => P(u + a * c - b * sn, v + a * sn + b * c, y);
+  const ctr = P(u, v, yb + h * 0.5);
+  // two sections: a body 0.46 x 0.3 m that bellies out a little, then the top gathered in and folded over (about 0.22 x 0.07 m)
+  const ring = (w, d) => [[-w, -d], [w, -d], [w, d], [-w, d]];
+  const levels = [[0.0, 0.21, 0.13], [0.45, 0.235, 0.15], [0.8, 0.12, 0.05], [1.0, 0.11, 0.045]];
+  for (let k = 0; k + 1 < levels.length; k++) {
+    const [f0, w0, d0] = levels[k], [f1, w1, d1] = levels[k + 1], B = ring(w0, d0), T = ring(w1, d1);
+    for (let i = 0; i < 4; i++) {
+      const j = (i + 1) % 4, a = at(B[i][0], B[i][1], yb + h * f0), b = at(B[j][0], B[j][1], yb + h * f0), d = at(T[j][0], T[j][1], yb + h * f1), e = at(T[i][0], T[i][1], yb + h * f1);
+      const mid = [(a[0] + d[0]) / 2 - ctr[0], (a[1] + d[1]) / 2 - ctr[1], (a[2] + d[2]) / 2 - ctr[2]];
+      W.quad(a, b, d, e, shade(rgb, (i % 2 ? 0.88 : 1) * (k === 2 ? 0.82 : 1)), KIND.bag, rnd, mid, [0, f0], [1, f0], [1, f1], [0, f1]);
+    }
+  }
+  const T = ring(levels[3][1], levels[3][2]);
+  W.quad(at(T[0][0], T[0][1], yb + h), at(T[1][0], T[1][1], yb + h), at(T[2][0], T[2][1], yb + h), at(T[3][0], T[3][1], yb + h), shade(rgb, 0.72), KIND.bag, rnd, up, [0, 1], [1, 1], [1, 1], [0, 1]);
 }
 
 // ---- leafy things: hedges, shrub masses, twigs, small trees (jf-aru) -------------------------------------------------------------------
@@ -269,7 +296,7 @@ function smallTree(W, F, u, v, o) {
     }
     return;
   }
-  const cr = h * 0.32, cyc = yb + h * 0.68, deciduous = type !== 'magnolia', ck = deciduous ? KIND.cardDec : KIND.cardEv;
+  const cr = h * 0.32, cyc = yb + h * 0.68, deciduous = type !== 'magnolia', ck = type === 'maple' ? KIND.cardMaple : deciduous ? KIND.cardDec : KIND.cardEv;
   const t1 = [u + lean[0] * 0.5, v + lean[1] * 0.5, yb + h * 0.28], t2 = [u + lean[0], v + lean[1], yb + h * 0.5];
   stem(W, F, [u, v, yb - 0.05], t1, 0.16, 0.12, bark); stem(W, F, t1, t2, 0.12, 0.09, bark);
   const nb = 5;
@@ -356,7 +383,7 @@ export function planYard(ctx) {
   const uA = partyL ? u0 : u0 - extra, uB = partyR ? u1 : u1 + extra;
   const gap = ctx.gap || [(u0 + u1) / 2 - 0.7, (u0 + u1) / 2 + 0.7];
   const mid = F.xz((u0 + u1) / 2, 0);
-  const stats = { site: { x: mid[0], z: mid[1], ox: F.out[0], oz: F.out[2], yd, style: ctx.style || 'city' }, hedges: 0, hedgeM: 0, lidarHedges: 0, lidarShrubs: 0, shrubs: 0, fence: null, beds: 0, lawn: 0, trees: 0, lamps: 0, rocks: 0 };
+  const stats = { site: { x: mid[0], z: mid[1], ox: F.out[0], oz: F.out[2], yd, style: ctx.style || 'city' }, hedges: 0, hedgeM: 0, lidarHedges: 0, lidarShrubs: 0, shrubs: 0, fence: null, beds: 0, lawn: 0, trees: 0, lamps: 0, rocks: 0, bags: 0, litter: 0 };
   const yb = y0; // (the lot line's things stand on the house's ground height, sunk SKIRT into it)
   const veg = ctx.veg || null;
 
@@ -406,7 +433,11 @@ export function planYard(ctx) {
       // ---- the walk and the drive (flat, on the ground)
       const c = (gap[0] + gap[1]) / 2;
       flat(W, F, [[gap[0] + 0.1, 0.05], [gap[1] - 0.1, 0.05], [gap[1] - 0.1, -yd], [gap[0] + 0.1, -yd]], y0 + 0.05, lin(0xb4b0a6), KIND.solid);
-      if (drive) flat(W, F, [[drive.u0, drive.to], [drive.u1, drive.to], [drive.u1, -yd], [drive.u0, -yd]], y0 + 0.045, drive.rgb, KIND.solid);
+      if (drive) {
+        const dr = R('drive'), ring = [[drive.u0, drive.to], [drive.u1, drive.to], [drive.u1, -yd], [drive.u0, -yd]];
+        if (dr() < (S.pavers || 0)) flatUv(W, F, ring, y0 + 0.045, lin(weighted([[0x6c6c69, 4], [0x807b74, 3], [0x8f5d4a, 2], [0x57585c, 3], [0x9a948a, 2]], dr())), KIND.paver, dr()); // (interlocking pavers: Rosedale's drives)
+        else flat(W, F, ring, y0 + 0.045, drive.rgb, KIND.solid);
+      }
 
       // ---- the steps up to a porch: two low treads of stone at the walk's end
       if (ctx.steps) {
@@ -558,7 +589,7 @@ export function planYard(ctx) {
       if (rt() < S.tree && yd >= 4 && (ctx.canopy == null || ctx.canopy < 0.3)) {
         const side = rt() < 0.5 ? -1 : 1;
         const u = side < 0 ? (partyL ? u0 + 1 : Math.max(uA + 1.2, u0 - 0.5)) : (partyR ? u1 - 1 : Math.min(uB - 1.2, u1 + 0.5));
-        const v = -yd * (0.45 + rt() * 0.25), type = weighted([['maple', 4], ['crab', 3], ['magnolia', 2], ['conifer', 3]], rt());
+        const v = -yd * (0.45 + rt() * 0.25), type = weighted([['maple', S.maple ?? 4], ['crab', 3], ['magnolia', 2], ['conifer', 3]], rt());
         const rgb = type === 'maple' ? lin(weighted([[0x6a1f2b, 3], [0x7a2a33, 2], [0x4a1c2a, 1]], rt())) : type === 'crab' ? lin(weighted([[0x5d7a45, 3], [0x4f6f3e, 2], [0x6a7a3c, 1]], rt()))
           : type === 'magnolia' ? lin(weighted([[0x2f4a30, 3], [0x36563a, 2]], rt())) : lin(weighted([[0x2a4a3a, 3], [0x2f5240, 2], [0x3a5a4a, 1]], rt()));
         smallTree(W, F, u, v, { type, h: 2.8 + rt() * 1.4, yb: y0 - 0.05, rgb, rnd: rt() });
@@ -567,12 +598,12 @@ export function planYard(ctx) {
       // ---- boulders at the curb (jf-qw7): grey granite and reddish sandstone, set in the boulevard at the drive's mouth and at the lot's corner, now and then a row of four or five. The
       // curb is found by marching out from the lot line until the road's edge is 0.2 m away (ctx.edgeAt(u, v), metres from the pavement's edge); a stable seed per lot
       const rk = R('rocks');
+      const curbV = (uu) => {
+        if (!ctx.edgeAt || ctx.edgeAt(uu, -yd) <= 0.2) return null;
+        for (let vv = -yd - 0.25; vv > -yd - 9; vv -= 0.25) if (ctx.edgeAt(uu, vv) <= 0.2) return vv;
+        return null;
+      };
       if (ctx.edgeAt && S.rocks > 0) {
-        const curbV = (uu) => {
-          if (ctx.edgeAt(uu, -yd) <= 0.2) return null;
-          for (let vv = -yd - 0.25; vv > -yd - 9; vv -= 0.25) if (ctx.edgeAt(uu, vv) <= 0.2) return vv;
-          return null;
-        };
         const rockRgb = (kind) => kind === 'sand' ? lin(weighted([[0x9c5a3c, 3], [0xa8654a, 2], [0x8a4e36, 2]], rk())) : lin(weighted([[0x85827a, 3], [0x6f6d68, 2], [0x9a968c, 2]], rk()));
         const put = (uu, kind, r, rowTone) => {
           const vc = curbV(uu);
@@ -594,6 +625,28 @@ export function planYard(ctx) {
           }
           if (!partyL && rk() < 0.45 * S.rocks) put(uA + 0.3 + rk() * 1.5, null, 0.48 + rk() * 0.3); // (the lot's corner)
           if (rk() < 0.2 * S.rocks) put((uA + uB) / 2 + (rk() - 0.5) * (uB - uA) * 0.6, null, 0.4 + rk() * 0.25); // (and one in the middle of its frontage)
+        }
+      }
+
+      // ---- fallen leaves on the boulevard (jf-qw7): a ragged-edged patch from the lot line to the curb across the lot's frontage, shown by the material only from the colour's peak until the snow
+      if (ctx.edgeAt && (S.litter ?? 1) > 0) {
+        const rl2 = R('litter'), uc = (uA + uB) / 2, vc = curbV(uc);
+        if (vc != null && vc < -yd - 0.8 && vc > -yd - 8) {
+          softRect(W, F, uA - 0.2, vc - 0.1, uB + 0.2, -yd + 0.5, y0 + 0.05, KIND.litter, rl2(), rl2());
+          stats.litter++;
+        }
+      }
+
+      // ---- paper leaf bags at the curb (jf-qw7): two or three together, beside the drive's mouth or on the frontage; shown by the material only in the weeks of the autumn collection
+      if (ctx.edgeAt && (S.bags || 0) > 0) {
+        const rbg = R('bags');
+        if (rbg() < S.bags) {
+          const uu = drive ? (rbg() < 0.5 ? drive.u0 - 1.0 : drive.u1 + 1.0) : (uA + uB) / 2 + (rbg() - 0.5) * (uB - uA) * 0.7;
+          const vc = curbV(uu);
+          if (vc != null && vc + 0.7 < -yd + 2.2) {
+            const n = 2 + Math.floor(rbg() * 2), kraft = lin(weighted([[0xb89a6a, 3], [0xa8895a, 2], [0xc4a875, 2]], rbg()));
+            for (let i = 0; i < n; i++) { leafBag(W, F, uu + (i - (n - 1) / 2) * 0.5 + (rbg() - 0.5) * 0.12, vc + 0.7 + (rbg() - 0.5) * 0.2, { yb: y0 - 0.02, rgb: kraft, rnd: rbg(), yaw: (rbg() - 0.5) * 0.8, h: 0.7 + rbg() * 0.2 }); stats.bags++; }
+          }
         }
       }
 

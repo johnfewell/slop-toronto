@@ -11,6 +11,8 @@ The photographs are private: they are not in this repository, and nothing here c
 - **A Rosedale street, 2 October:** the road's edge is a plain concrete curb, the boulevard a wide strip of lawn with a few large grey boulders, big trees right at the curb, an ivy-covered brick house, tall clipped hedges against the
   walls and along the lot lines, small black lamp posts with globes in the distance, overhead wires.
 
+> Part 1 (centre lines, lamp posts, boulders) shipped as PR #248; part 2 (this section's second half, "Part 2") is below it.
+
 ## PR 1: quick wins (centre lines, lamp posts, boulders)
 
 ### 1. No centre line on local streets
@@ -79,3 +81,44 @@ node tools/build-rosedale-zone.mjs ~/.cache/toronto-data/derived/rosedale-houses
 node --test tests/rosedale-streetscape.test.mjs tests/road-paint-cells.test.mjs tests/front-yards.test.mjs tests/mapped-poles.test.mjs
 SHOTS=tools/shots/rosedale-streetscape.json ARMS="beforeFall afterFall beforeSnow afterSnow" bash tools/capture-rosedale-streetscape.sh   # on the Mac mini through gpu2
 ```
+
+## Part 2: leaf bags, fallen leaves, paver drives, red maples
+
+What the photographs show that part 1 did not touch, and what was done (`js/front-yards.js`, `js/front-yard-material.js`; the yard mesh, drawn within 250 m, so the cost is the yards' own):
+
+| In the photographs | Now |
+|---|---|
+| Brown paper leaf bags standing at the curb, two or three together | `leafBag`: a kraft-paper bag (a body 0.46 x 0.3 m that bellies out, the top gathered in and folded, 26 triangles) in a group of two or three beside a drive's mouth or on the frontage, on 38% of Rosedale lots (42% of the grand ones; 8 to 15% elsewhere). **Seasonal in the material** (kind 14): there from the autumn colour's peak (mid October) to the first of December, none under snow, so a date change is uniform writes only |
+| Leaves lying on the grass and the boulevard | The lawn kind has fallen leaves in it, and each lot's boulevard (lot line to curb, found as for the boulders) has a ragged patch of them (kind 16): two layers of oriented elliptical leaves on jittered cells, yellow, orange, brown and the odd red, thicker in patches, from the colour's peak until the snow or the first of December. Not on the road: the road is another shared material |
+| Drives in interlocking pavers | A drive is paved (kind 13) on 55% of Rosedale lots (70% of the grand ones): a running bond of 20 x 10 cm blocks along the house's own axes, joints, a tone a block (charcoal, grey, brown-grey, terracotta), snow on top, a mean colour past a few metres |
+| Red Japanese maples in front yards in autumn | The ornamental tree is more often there (0.2 and 0.26 a lot, was 0.1 and 0.14) and nine times in seventeen a Japanese maple (was 4 in 12); its leaf cards (kind 15) are deep red in summer, **crimson in autumn**, then bare |
+
+Pictures (same camera before and after, 22 October 2026): see the sheets in John's review folder (`slop-toronto-updates/2026-11-27-rosedale-streetscape/part2/`).
+
+![Boulders, bags and leaves on Chestnut Park](images/rosedale-streetscape-p2-bags-close-fall.jpg)
+
+![Roxborough Dr](images/rosedale-streetscape-p2-roxborough-street-fall.jpg)
+
+![Chestnut Park boulevard](images/rosedale-streetscape-p2-chestnut-park-boulevard-fall.jpg)
+
+### Cost of part 2
+
+Mac mini (Apple M4) through `gpu2`, shared with a production transcription job (relative figures), 1600 x 900, uncapped, 20 s recordings at street level, main `fd070ee` (part 1 live) against part 2, alternated. Mean / median frame interval, ms, before -> after (budget +0.5 ms):
+
+| Place | Date | Round 1 | Round 2 (after first) |
+|---|---|---|---|
+| Chestnut Park | 26 Nov (bare) | 19.13 -> 19.09 (-0.04) / 19.10 -> 19.10 | 19.10 -> 19.15 (+0.05) / 19.10 -> 19.20 |
+| Crescent Rd | 26 Nov (bare) | 16.47 -> 16.33 (-0.15) / 16.50 -> 16.40 | 16.31 -> 16.34 (+0.03) / 16.30 -> 16.40 |
+| Chestnut Park | 22 Oct (bags, leaves, maples) | 18.05 -> 18.07 (+0.02) / 18.00 -> 18.00 | |
+| Crescent Rd | 22 Oct | 15.71 -> 15.81 (+0.10) / 15.70 -> 15.90 | |
+
+![Chestnut Park, 22 October](images/rosedale-streetscape-p2-frame-time-chestnut-fall.png)
+
+![Crescent Rd, 22 October](images/rosedale-streetscape-p2-frame-time-crescent-fall.png)
+
+### Looked at and left
+
+- **Street trees.** The page sizes a City street tree from its trunk diameter: 4 m + 0.28 m a centimetre, capped at 26 m, and the EZ-Tree model scales to that. Chestnut Park: 131 trees within 22 m of the road; 27 stand at the 26 m cap (diameter 79 cm or more), the median is about 16 m. In the frames they arch over the road as in the photographs; nothing changed. (The cap, not the scale, is what a 100 cm oak runs into; the data has no tree higher than 26 m.)
+- **Hedges.** The lidar hedges (docs/front-yards.md) already put tall clipped hedges on lot lines; nothing changed.
+- **Ivy on house walls**, **cars parked in drives** and **leaves on the road** were not done: ivy needs a per-house facade colour that follows the season (green in summer, red then bare), a parked car in a drive needs a place in the parked-car layout, and the road's leaves live in the shared road material another agent is changing.
+- Snow on hedges and branches is already there (evergreens take a snow cap, deciduous shrubs and trees go bare and take snow on top).

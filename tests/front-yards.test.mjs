@@ -67,7 +67,7 @@ test('every Rosedale house plans a yard of finite triangles in the layout the ma
     const tris = plan.pushYard(A);
     assert.ok(A.pos.length === tris * 9 && A.nor.length === tris * 9 && A.col.length === tris * 9 && A.uv.length === tris * 6 && A.aux.length === tris * 6, `${rec.id}: layout`);
     assert.ok(A.pos.every(Number.isFinite) && A.nor.every(Number.isFinite) && A.col.every(Number.isFinite) && A.aux.every(Number.isFinite), `${rec.id}: finite`);
-    for (let i = 0; i < A.uv.length; i += 2) { total.kinds.add(A.uv[i]); assert.ok(Number.isInteger(A.uv[i]) && A.uv[i] >= 0 && A.uv[i] <= 12 && A.uv[i + 1] >= 0 && A.uv[i + 1] <= 1, `${rec.id}: kind ${A.uv[i]} rnd ${A.uv[i + 1]}`); }
+    for (let i = 0; i < A.uv.length; i += 2) { total.kinds.add(A.uv[i]); assert.ok(Number.isInteger(A.uv[i]) && A.uv[i] >= 0 && A.uv[i] <= 15 && A.uv[i + 1] >= 0 && A.uv[i + 1] <= 1, `${rec.id}: kind ${A.uv[i]} rnd ${A.uv[i + 1]}`); }
     // the same on every plan
     const B = newA(); Draw.planHouse(inp).pushYard(B);
     assert.deepEqual(B.pos, A.pos, `${rec.id}: a yard is the same on every load`);
@@ -212,4 +212,43 @@ test('Rosedale yards set boulders in the boulevard: at the curb, the same on eve
   assert.ok(n('rosedaleGrand') > 0);
   // a road at the lot line (no boulevard): nothing
   assert.equal((() => { const p = planYard(ctxFor('to-3dmassing-2025:500009', { edgeAt: () => 0 })); p.push(newA()); return p.stats.rocks; })(), 0);
+});
+
+// jf-qw7 part 2: leaf bags and fallen leaves at the curb, interlocking pavers on a drive, red Japanese maples
+test('Rosedale yards stand leaf bags and a patch of fallen leaves in the boulevard, pave drives in pavers and plant maples', () => {
+  const edgeAt = (u, v) => v + 7 + 4.5; // (the road's edge at v = -11.5)
+  const F = frame();
+  let bags = 0, withBags = 0, litter = 0, paved = 0, drives = 0, maples = 0, yards = 0;
+  const kinds = new Set();
+  for (let i = 0; i < 300; i++) {
+    const drive = i % 3 === 0 ? { u0: 10.4, u1: 13.4, to: 5, rgb: lin(0x56565a) } : null;
+    const p = planYard(ctxFor(`to-3dmassing-2025:${700000 + i}`, { edgeAt, drive, yd: 8 }));
+    const A = newA(); p.push(A);
+    yards++; bags += p.stats.bags; if (p.stats.bags) withBags++; litter += p.stats.litter;
+    const perKind = {};
+    for (let t = 0; t < A.uv.length / 2; t++) { const k = A.uv[t * 2]; perKind[k] = (perKind[k] || 0) + 1; kinds.add(k); }
+    if (drive) { drives++; if (perKind[KIND.paver]) paved++; }
+    if (perKind[KIND.cardMaple]) maples++;
+    assert.equal((perKind[KIND.bag] || 0) % 78, 0, 'a bag is 13 quads, 26 triangles, 78 vertices');
+    // bags and leaves lie in the boulevard (behind the curb, off the house's yard), litter at the ground
+    for (let t = 0; t < A.uv.length / 2; t++) {
+      const k = A.uv[t * 2];
+      if (k !== KIND.bag && k !== KIND.litter) continue;
+      const [, v] = F.uv(A.pos[t * 3], A.pos[t * 3 + 2]), y = A.pos[t * 3 + 1];
+      assert.ok(v > -11.5 - 0.3 && v < -7 + 0.8, `kind ${k} at v ${v}`);
+      assert.ok(y > -0.1 && y < 1.0, `kind ${k} at height ${y}`);
+    }
+  }
+  assert.ok(withBags > 60 && withBags < 160, `${withBags} of ${yards} yards have bags (${bags} bags)`);
+  assert.ok(litter > 250, `${litter} patches of fallen leaves`);
+  assert.ok(paved > drives * 0.35 && paved < drives, `${paved} of ${drives} drives are paved`);
+  assert.ok(maples > 10, `${maples} yards with a Japanese maple`);
+  for (const k of [KIND.paver, KIND.bag, KIND.litter, KIND.cardMaple]) assert.ok(kinds.has(k), `kind ${k}`);
+  // the material reads them: kinds 13 to 16 and the crimson of a maple
+  const src = fs.readFileSync(new URL('../js/front-yard-material.js', import.meta.url), 'utf8');
+  for (const w of ['// 13 paver', '// 14 leaf bag', '// 16 litter', 'crimson', 'isMaple']) assert.ok(src.includes(w), w);
+  // no edge function, no bags and no leaves
+  const q = planYard(ctxFor('to-3dmassing-2025:700500', { edgeAt: null })); q.push(newA());
+  assert.equal(q.stats.bags + q.stats.litter, 0);
+  assert.equal(YARD_STYLES.city.pavers < YARD_STYLES.rosedale.pavers, true);
 });

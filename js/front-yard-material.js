@@ -13,6 +13,10 @@
 //   10 twig       a thin stem of a shrub or a branch of a small tree: bark, no snow
 //   11 needle card  a tapering fan of needles (a dwarf conifer's whorl)
 //   12 boulder    a rough rock at the curb (grey granite, reddish sandstone) with a snow cap in winter (jf-qw7)
+//   13 paver      interlocking pavers on a drive (aux = metres along the house's axes): a running bond with joints, a tone a paver, snow on top (jf-qw7)
+//   14 leaf bag   a paper yard-waste bag at the curb, only between the leaves coming down and the snow (jf-qw7)
+//   15 maple card a Japanese maple's leaf card: deep red, crimson in autumn, then bare
+//   16 litter     fallen leaves on the boulevard: a ragged rectangle of yellow, orange and brown speckles, shown from the colour's peak until the snow (the lawn kind has them in it too)
 // Vertex attributes: position, normal, color (linear rgb), uv = (kind, random 0..1), aux = (metres along the run, height over its foot). Cards: aux = the card's own (s, t) 0..1.
 // A lawn or bed rectangle: aux = the metres from its centre, color = (half width, half depth, tone 0..1).
 
@@ -22,6 +26,27 @@ const { Fn, float, vec2, vec3, vec4, color, attribute, floor, fract, smoothstep,
 const hash3 = Fn(([p]) => fract(sin(dot(vec3(p), vec3(12.9898, 78.233, 37.719))).mul(43758.5453)));
 const hash2 = Fn(([p]) => fract(sin(dot(vec2(p), vec2(127.1, 311.7))).mul(43758.5453)));
 const n3 = (p) => clamp(mx_noise_float(p).mul(0.9).add(0.5), 0.0, 1.0); // (0..1, smooth; the raw noise sits within about +-0.5 of 0, so it is stretched)
+
+
+// fallen leaves (jf-qw7): two layers of oriented, elliptical leaves on jittered cells (a different size and turn each), yellow, orange, brown and the odd red, thicker in patches. Returns (rgb, cover 0..1)
+const leafLayer = Fn(([p, freq, seed, amount]) => {
+  const q = p.mul(freq).add(seed.mul(17.0));
+  const id = floor(q), f = fract(q).sub(0.5);
+  const r1 = hash2(id), r2 = hash2(id.add(vec2(5.3, 1.7))), r3 = hash2(id.add(vec2(9.1, 4.4))), r4 = hash2(id.add(vec2(2.2, 7.7)));
+  const l = f.sub(vec2(r1, r2).sub(0.5).mul(0.4)); // (a leaf stays inside its cell: no clipped half leaves in rows)
+  const ang = r3.mul(6.2832), c = ang.cos(), sn = ang.sin();
+  const u = l.x.mul(c).add(l.y.mul(sn)), v = l.y.mul(c).sub(l.x.mul(sn));
+  const a = r4.mul(0.1).add(0.16), b = a.mul(0.5);
+  const inside = step(u.div(a).mul(u.div(a)).add(v.div(b).mul(v.div(b))), 1.0).mul(step(hash2(id.add(vec2(7.7, 3.3))), amount));
+  const pick = hash2(id.add(vec2(1.3, 8.8)));
+  const col = select(pick.lessThan(0.28), color(0xc9a02a), select(pick.lessThan(0.55), color(0xb5651d), select(pick.lessThan(0.78), color(0x7a4a22), select(pick.lessThan(0.9), color(0xd9b23c), color(0xa63a1c)))));
+  return vec4(col.mul(r1.mul(0.35).add(0.82)), inside);
+});
+const leaves = (wp2, amount, seed) => {
+  const a = leafLayer(wp2, float(5.5), seed, amount), b = leafLayer(wp2.add(vec2(3.7, 1.9)), float(9.0), seed.add(1.0), amount.mul(0.7));
+  const m = max(a.w, b.w);
+  return vec4(mix(b.xyz, a.xyz, a.w), m);
+};
 
 function createFrontYardMaterial() {
   const U = window.CITY.cityUniforms;
@@ -66,7 +91,8 @@ function createFrontYardMaterial() {
 
     // 1 evergreen and 2 deciduous bodies, 8 and 9 their leaf cards: leaf-sized speckle (fading to a smooth tone where a leaf is under a pixel), lighter new growth, dark gaps
     const isBody = k.greaterThan(1.0).and(k.lessThan(3.0));
-    const isCard = k.greaterThan(8.0).and(k.lessThan(10.0));
+    const isMaple = k.greaterThan(15.0).and(k.lessThan(16.0));
+    const isCard = k.greaterThan(8.0).and(k.lessThan(10.0)).or(isMaple);
     If(isBody.or(isCard), () => {
       const evergreen = k.lessThan(2.0).or(k.lessThan(9.0).and(k.greaterThan(8.0)));
       const gn = n3(wp.mul(2.6).add(rnd.mul(31.0)));
@@ -92,7 +118,8 @@ function createFrontYardMaterial() {
       const stip = step(hash3(floor(wp.mul(48.0))), 0.6);
       const cardA = mix(disc.mul(oval), stip.mul(oval), smoothstep(0.03, 0.08, pf));
       const leafA = select(isCard, cardA, bodyA);
-      const turned = autumnLeaf(lit, rnd, patch);
+      const crimson = mix(lit, vec3(0.62, 0.05, 0.05).mul(leaf.mul(0.5).add(0.75)), U.uAutumn.mul(0.85)); // (a Japanese maple turns crimson, not yellow)
+      const turned = select(isMaple, crimson, autumnLeaf(lit, rnd, patch));
       const c = select(evergreen, lit, turned);
       const snowAmt = select(evergreen, up.mul(2.0), up.mul(0.7));
       If(has.greaterThan(0.5), () => {
@@ -111,7 +138,12 @@ function createFrontYardMaterial() {
       const inside = smoothstep(0.0, 0.8, d.add(ragged));
       const p = wp.xz;
       const grass = mix(color(0x4f7a2c), color(0x6f8a38), fbm2(p.mul(0.031).add(5.0)));
-      const g = seasonalGrass(grass.mul(n3(wp.mul(2.4)).mul(0.1).add(0.95)));
+      const g0 = seasonalGrass(grass.mul(n3(wp.mul(2.4)).mul(0.1).add(0.95)));
+      // fallen leaves (jf-qw7): from the colour's peak until the snow, speckles of yellow, orange and brown on the grass, thicker in patches (the leaves have come down by late November, but lie on)
+      const litter = smoothstep(0.7, 1.0, U.uAutumn).mul(float(1.0).sub(smoothstep(0.85, 1.0, U.uDormant))).mul(float(1.0).sub(smoothstep(0.0, 0.1, U.uSnow)));
+      const patchy = n3(vec3(wp.x.mul(0.9), wp.z.mul(0.9), 4.0)).mul(0.6).add(0.4);
+      const lv = leaves(wp.xz, litter.mul(patchy).mul(0.75), rnd);
+      const g = mix(g0, lv.xyz, lv.w.mul(0.92));
       out.assign(vec4(g, inside.mul(float(1.0).sub(smoothstep(0.0, 0.1, U.uSnow)))));
     });
 
@@ -168,6 +200,42 @@ function createFrontYardMaterial() {
       const streak = n3(vec3(wp.x.mul(2.0), wp.y.mul(9.0), wp.z.mul(2.0)).add(rnd.mul(9.0)));
       const tone = g1.mul(0.35).add(g2.mul(0.25)).add(streak.mul(0.2)).add(0.62).add(spk.sub(0.5).mul(0.1));
       out.assign(vec4(snowOver(vcol.mul(tone), wp.xz, up.mul(1.7)), 1.0));
+    });
+
+    // 13 paver: a running bond of 20 x 10 cm blocks in the house's own axes (aux = u, v in metres), joints, a tone a block, a little wear, snow on top
+    If(k.greaterThan(13.0).and(k.lessThan(14.0)), () => {
+      const cellp = vec2(aux.x.div(0.21), aux.y.div(0.105));
+      const row = floor(cellp.y);
+      const shifted = cellp.x.add(select(fract(row.mul(0.5)).greaterThan(0.25), float(0.5), float(0.0)));
+      const id = vec2(floor(shifted), row), f = vec2(fract(shifted), fract(cellp.y));
+      const edge = min(min(f.x, float(1.0).sub(f.x)).mul(0.21), min(f.y, float(1.0).sub(f.y)).mul(0.105)); // (metres from the block's edge)
+      const joint = float(1.0).sub(smoothstep(0.004, 0.009, edge));
+      const px = length(fwidth(aux));
+      const tone = hash2(id.add(rnd.mul(13.0))).mul(0.3).add(0.85);
+      const base = vcol.mul(tone).mul(n3(wp.mul(4.0)).mul(0.25).add(0.88));
+      const far = smoothstep(0.02, 0.06, px); // (past a few metres the joints are under a pixel: the mean colour)
+      const c = mix(mix(base, base.mul(0.45), joint), base.mul(0.9), far);
+      out.assign(vec4(snowOver(c, wp.xz, up.mul(0.95)), 1.0));
+    });
+
+    // 14 leaf bag: kraft paper, a crease, only from the colour's peak (mid October) to the snow or the first of December
+    If(k.greaterThan(14.0).and(k.lessThan(15.0)), () => {
+      const down = smoothstep(0.85, 1.0, U.uAutumn); // (the colour is at its peak: the city's autumn collection has begun)
+      const there = down.mul(float(1.0).sub(smoothstep(0.88, 0.99, U.uDormant))).mul(float(1.0).sub(smoothstep(0.02, 0.12, U.uSnow)));
+      const paper = vcol.mul(n3(vec3(aux.x.mul(11.0), aux.y.mul(6.0), rnd.mul(9.0))).mul(0.45).add(0.7)).mul(mix(float(0.78), float(1.0), smoothstep(0.0, 0.5, aux.y)));
+      const crease = smoothstep(0.82, 0.95, aux.y).mul(0.25);
+      out.assign(vec4(paper.mul(float(1.0).sub(crease)), step(rnd.mul(0.8), there.mul(0.95))));
+    });
+
+    // 16 litter: leaf speckles on a ragged-edged rectangle (aux = metres from its centre, color = half sizes and a tone), a few leaves in the grass, more in patches; none out of season
+    If(k.greaterThan(16.0), () => {
+      const d = min(vcol.x.sub(abs(aux.x)), vcol.y.sub(abs(aux.y)));
+      const ragged = n3(vec3(wp.x.mul(1.3), wp.z.mul(1.3), rnd.mul(11.0))).sub(0.5).mul(1.6);
+      const inside = smoothstep(0.0, 0.9, d.add(ragged));
+      const litter = smoothstep(0.7, 1.0, U.uAutumn).mul(float(1.0).sub(smoothstep(0.85, 1.0, U.uDormant))).mul(float(1.0).sub(smoothstep(0.0, 0.1, U.uSnow)));
+      const patchy = n3(vec3(wp.x.mul(0.7), wp.z.mul(0.7), 9.0)).mul(0.7).add(0.3);
+      const lv = leaves(wp.xz, litter.mul(patchy).mul(0.85), rnd);
+      out.assign(vec4(lv.xyz, inside.mul(lv.w)));
     });
 
     // 11 needle card: a tapering fan of needles, dark blue-green, a snow cap in winter
