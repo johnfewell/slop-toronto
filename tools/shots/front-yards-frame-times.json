@@ -1,0 +1,47 @@
+[
+ {
+  "name": "m-crescent",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67784023050961, -79.38417442413164), q = C.worldFromLatLon(43.67793545062343, -79.38300167565279); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "frame-times-crescent",
+  "record": true,
+  "wait": 500,
+  "ftSeconds": 20,
+  "ftWaitFor": "",
+  "ftTailSeconds": 4,
+  "js": "(async()=>{const o=window.__captureShot||{};const sleep=(ms)=>new Promise((r)=>setTimeout(r,ms));const dts=[];let last=performance.now(),stop=false;const t0=last;const tick=()=>{const n=performance.now();dts.push([n-t0,n-last]);last=n;if(!stop)requestAnimationFrame(tick);};requestAnimationFrame(tick);const wf=o.ftWaitFor;if(wf){const lim=performance.now()+120000;while(performance.now()<lim){let ok=false;try{ok=!!(0,eval)(wf);}catch(e){}if(ok){window.__ftMark&&window.__ftMark('wait done');break;}await sleep(250);}await sleep((o.ftTailSeconds??4)*1000);}else{await sleep((o.ftSeconds??20)*1000);}stop=true;const d=dts.map((x)=>x[1]).sort((a,b)=>a-b);const q=(p)=>d[Math.min(d.length-1,Math.floor(d.length*p))];const marks=(window.__ftMarks||[]).map(([name,at])=>({name,t:Math.round(at-t0)})).filter((m)=>m.t>=0);return {seconds:Math.round(dts[dts.length-1][0]/100)/10,frames:d.length,p50:q(.5),p95:q(.95),p99:q(.99),max:d[d.length-1],over50:d.filter((x)=>x>50).length,over100:d.filter((x)=>x>100).length,over200:d.filter((x)=>x>200).length,series:dts.map((x)=>[Math.round(x[0]),Math.round(x[1]*10)/10]),marks,heapMB:performance.memory&&Math.round(performance.memory.usedJSHeapSize/1048576)};})()"
+ },
+ {
+  "name": "m-above-south",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.677, -79.3775), q = C.worldFromLatLon(43.6785, -79.3775); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 160, p.z], look: [q.x, 0, q.z], fov: 60 }); })()"
+ },
+ {
+  "name": "frame-times-above-south",
+  "record": true,
+  "wait": 500,
+  "ftSeconds": 20,
+  "ftWaitFor": "",
+  "ftTailSeconds": 4,
+  "js": "(async()=>{const o=window.__captureShot||{};const sleep=(ms)=>new Promise((r)=>setTimeout(r,ms));const dts=[];let last=performance.now(),stop=false;const t0=last;const tick=()=>{const n=performance.now();dts.push([n-t0,n-last]);last=n;if(!stop)requestAnimationFrame(tick);};requestAnimationFrame(tick);const wf=o.ftWaitFor;if(wf){const lim=performance.now()+120000;while(performance.now()<lim){let ok=false;try{ok=!!(0,eval)(wf);}catch(e){}if(ok){window.__ftMark&&window.__ftMark('wait done');break;}await sleep(250);}await sleep((o.ftTailSeconds??4)*1000);}else{await sleep((o.ftSeconds??20)*1000);}stop=true;const d=dts.map((x)=>x[1]).sort((a,b)=>a-b);const q=(p)=>d[Math.min(d.length-1,Math.floor(d.length*p))];const marks=(window.__ftMarks||[]).map(([name,at])=>({name,t:Math.round(at-t0)})).filter((m)=>m.t>=0);return {seconds:Math.round(dts[dts.length-1][0]/100)/10,frames:d.length,p50:q(.5),p95:q(.95),p99:q(.99),max:d[d.length-1],over50:d.filter((x)=>x>50).length,over100:d.filter((x)=>x>100).length,over200:d.filter((x)=>x>200).length,series:dts.map((x)=>[Math.round(x[0]),Math.round(x[1]*10)/10]),marks,heapMB:performance.memory&&Math.round(performance.memory.usedJSHeapSize/1048576)};})()"
+ },
+ {
+  "name": "m-above-all",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.679, -79.378), q = C.worldFromLatLon(43.683, -79.378); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 520, p.z], look: [q.x, 0, q.z], fov: 60 }); })()"
+ },
+ {
+  "name": "frame-times-above-all",
+  "record": true,
+  "wait": 500,
+  "ftSeconds": 20,
+  "ftWaitFor": "",
+  "ftTailSeconds": 4,
+  "js": "(async()=>{const o=window.__captureShot||{};const sleep=(ms)=>new Promise((r)=>setTimeout(r,ms));const dts=[];let last=performance.now(),stop=false;const t0=last;const tick=()=>{const n=performance.now();dts.push([n-t0,n-last]);last=n;if(!stop)requestAnimationFrame(tick);};requestAnimationFrame(tick);const wf=o.ftWaitFor;if(wf){const lim=performance.now()+120000;while(performance.now()<lim){let ok=false;try{ok=!!(0,eval)(wf);}catch(e){}if(ok){window.__ftMark&&window.__ftMark('wait done');break;}await sleep(250);}await sleep((o.ftTailSeconds??4)*1000);}else{await sleep((o.ftSeconds??20)*1000);}stop=true;const d=dts.map((x)=>x[1]).sort((a,b)=>a-b);const q=(p)=>d[Math.min(d.length-1,Math.floor(d.length*p))];const marks=(window.__ftMarks||[]).map(([name,at])=>({name,t:Math.round(at-t0)})).filter((m)=>m.t>=0);return {seconds:Math.round(dts[dts.length-1][0]/100)/10,frames:d.length,p50:q(.5),p95:q(.95),p99:q(.99),max:d[d.length-1],over50:d.filter((x)=>x>50).length,over100:d.filter((x)=>x>100).length,over200:d.filter((x)=>x>200).length,series:dts.map((x)=>[Math.round(x[0]),Math.round(x[1]*10)/10]),marks,heapMB:performance.memory&&Math.round(performance.memory.usedJSHeapSize/1048576)};})()"
+ }
+]

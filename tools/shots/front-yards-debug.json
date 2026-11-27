@@ -1,0 +1,8 @@
+[
+ {
+  "name": "season-debug",
+  "mode": "person",
+  "wait": 9000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; try { a.seasons.inject('07-15', 0); } catch (e) { console.log('inject failed ' + e); } const u = C.cityUniforms; console.log('SEASONDEBUG ' + JSON.stringify({ state: a.seasons.state(), leaf: u.uLeaf.value, autumn: u.uAutumn.value, spring: u.uSpring.value, dormant: u.uDormant.value, snow: u.uSnow.value, yards: C.frontYardStats || null })); })()"
+ }
+]

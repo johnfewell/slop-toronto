@@ -102,6 +102,7 @@ const MASSING_LIMITS = [600, 1600];
 const MASSING_BAND = 40;
 const MASSING_SPLIT_TRIS = 3000; // (a near mesh with more triangles than this draws only the quarters of its cells in view: up to MASSING_SPLIT_MESHES index runs, st-ndw9.22)
 const MASSING_SPLIT_MESHES = 4;
+const YARD_SUB = 125, YARD_NEAR = 250, YARD_DROP = 330; // (m: the front yards' sub-cells, within which one is drawn (as the roofs' near distance), and beyond which its mesh is dropped, jf-ugq)
 const ROOF_CELL = 500, ROOF_NEAR = 250, ROOF_FAR = 1200, ROOF_BAND = 40; // (m: the drawn roofs' cells, and the distance within which a cell's roof has its small parts)
 const TALL_MESHES = 6; // (the towers' roofs: draw calls at most, one a run of the cells in view, st-ndw9.22)
 function boundsOfPositions(a) { // [x0, y0, z0, x1, y1, z1] of a flat list of x, y, z
@@ -1236,10 +1237,13 @@ function buildCityBlocks(scene) {
   // far one beyond (no dormers, bargeboards, attic windows, timbering, bay roofs: js/building-draw.js pushRoof's lod). They replaced one mesh
   // of 1.3 M triangles over the whole city that the frustum could never skip and that no distance thinned
   const roofCells = new Map();
+  // (the plots stand a sidewalk's height above the road, city-grid.js: a yard's flat things (the walk, the lawn, the beds) lie on that, not on the house's y0)
+  const yardsOff = urlFlag('frontYards') === '0'; // (?frontYards=0: no front yards, for A/B)
+  const yardGround = (x, z) => ((window.CITY.CITY_BOUNDS && window.CITY.CITY_BOUNDS.sidewalkHeight) || 0.22) + (window.CITY.cutAt ? window.CITY.cutAt(x, z) || 0 : 0);
   const roofCellOf = (x, z) => {
     const sx = Math.floor(x / ROOF_CELL), sz = Math.floor(z / ROOF_CELL), k = sx + ',' + sz;
     let c = roofCells.get(k);
-    if (!c) roofCells.set(k, c = { sx, sz, tier: 0, near: { pos: [], nor: [], uv: [], col: [] }, far: { pos: [], nor: [], uv: [], col: [] }, tall: { pos: [], nor: [], uv: [], col: [] }, nearMesh: null, farMesh: null, tallMesh: null });
+    if (!c) roofCells.set(k, c = { sx, sz, tier: 0, near: { pos: [], nor: [], uv: [], col: [] }, far: { pos: [], nor: [], uv: [], col: [] }, tall: { pos: [], nor: [], uv: [], col: [] }, yardSubs: new Map(), nearMesh: null, farMesh: null, tallMesh: null });
     return c;
   };
   const cottageBoxes = []; // (island cottages: their own clapboard facade material, one draw)
@@ -1475,7 +1479,7 @@ function buildCityBlocks(scene) {
           preset: foot.preset, id: foot.id, groupId: facts && facts.groupId, dwellings: facts ? facts.dwellings : 1,
           ring: foot.rings[0], edges: fr.edges, covered: foot.covered, y0, lin: linear,
           h, style: FOOTPRINT_STYLE[mat][0], variant: FOOTPRINT_STYLE[mat][1], holes: foot.rings.length - 1, frontShift: frontShifts ? frontShifts.get(foot.id) : undefined,
-          index: foot.index, base: Math.min(foot.base, h - 0.5), group: facts && facts.group, hint: foot.rosedale ? foot.rosedale.hint : undefined, yard: foot.rosedale ? { lotW: foot.rosedale.lotW, park: foot.rosedale.park } : undefined, chimneys: foot.rosedale ? foot.rosedale.chim : undefined, variants: foot.variants, roofHex: foot.roofHex, fillMin: foot.fillMin,
+          index: foot.index, base: Math.min(foot.base, h - 0.5), group: facts && facts.group, hint: foot.rosedale ? foot.rosedale.hint : undefined, yard: foot.rosedale && !yardsOff ? { lotW: foot.rosedale.lotW, park: foot.rosedale.park, style: window.CITY.BuildingDraw.rosedaleYardStyle(foot.rosedale), canopy: foot.rosedale.veg ? foot.rosedale.veg.canopy : -1, veg: foot.rosedale.veg || null, lift: yardGround(cx, cz) } : undefined, chimneys: foot.rosedale ? foot.rosedale.chim : undefined, variants: foot.variants, roofHex: foot.roofHex, fillMin: foot.fillMin,
           roadDist: (x, z) => { const r = nearestRoads(x, z, 40)[0]; return r ? r.dist : Infinity; },
           nearRoad: near.length ? { x: near[0].px, z: near[0].pz } : null
         });
@@ -1566,6 +1570,7 @@ function buildCityBlocks(scene) {
         }
         const rc = roofCellOf(cx, cz);
         if (drawPlan.lodRoof) { drawStats.roofTris += drawPlan.pushRoof(rc.near); drawPlan.pushRoof(rc.far, true); }
+        if (drawPlan.pushYard) { const sk = Math.floor(cx / YARD_SUB) + ',' + Math.floor(cz / YARD_SUB); let sub = rc.yardSubs.get(sk); if (!sub) rc.yardSubs.set(sk, sub = { x0: Math.floor(cx / YARD_SUB) * YARD_SUB, z0: Math.floor(cz / YARD_SUB) * YARD_SUB, jobs: [], mesh: null }); sub.jobs.push(drawPlan.pushYard); drawStats.yards = (drawStats.yards || 0) + 1; if (drawPlan.yardStats) (window.CITY.frontYardSites || (window.CITY.frontYardSites = [])).push(drawPlan.yardStats.site); } // (the sites: where a capture finds a yard, tools/shots/front-yards-others.json) // (a house's yard is written into its cell's mesh when the cell comes near, roofTiers)
         else drawStats.roofTris += drawPlan.pushRoof(rc.tall); // (towers, shops, places of worship: one roof, drawn at any distance the cell is in view)
       }
       const outer = foot.rings[0];
@@ -2011,11 +2016,56 @@ function buildCityBlocks(scene) {
     }
     window.CITY.roofCellStats = { cells: roofList.length, meshes: roofList.filter((c) => c.nearMesh).length + roofList.filter((c) => c.farMesh).length };
   }
+  // The front yards (jf-ugq, js/front-yards.js): the yards of a 125 m sub-cell are written into one mesh when the camera comes within 250 m of it and dropped again beyond 330 m (the
+  // triangles are about 20 KB a house: 35,000 houses would be 700 MB resident, and a whole 500 m roof cell of yards drawn at the street cost +1 ms), one sub-cell a frame; the
+  // material is compiled at load with a degenerate triangle, so the first one to come near does not wait for a pipeline
+  let yardMat = null;
+  const yardMaterial = () => yardMat || (yardMat = window.CITY.createFrontYardMaterial ? window.CITY.createFrontYardMaterial() : null);
+  const yardSubs = roofList.flatMap((c) => [...c.yardSubs.values()]);
+  let yardWarm = null, yardWarmFrames = 0; // (the degenerate triangle is drawn for the first frames only: the pipeline stays cached, and it is not a draw every frame after)
+  if (yardSubs.length && yardMaterial()) {
+    const g = new THREE.BufferGeometry();
+    for (const [name, n] of [['position', 3], ['normal', 3], ['uv', 2], ['color', 3], ['aux', 2]]) g.setAttribute(name, new THREE.Float32BufferAttribute(new Float32Array(3 * n), n));
+    const warm = new THREE.Mesh(g, yardMat);
+    warm.name = 'FrontYardsWarm'; warm.frustumCulled = false; warm.receiveShadow = true; warm.castShadow = false;
+    group.add(warm);
+    yardWarm = warm;
+  }
+  let yardBuilt = 0, yardBuildMs = 0, yardBuiltTris = 0;
+  const buildYards = (sub) => {
+    const t0 = performance.now();
+    const A = { pos: [], nor: [], uv: [], col: [], aux: [] };
+    for (const push of sub.jobs) yardBuiltTris += push(A);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(A.pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(A.nor, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(A.uv, 2));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(A.col, 3));
+    g.setAttribute('aux', new THREE.Float32BufferAttribute(A.aux, 2));
+    fastBounds(g);
+    sub.mesh = new THREE.Mesh(g, yardMaterial());
+    sub.mesh.name = 'FrontYards';
+    sub.mesh.receiveShadow = true; sub.mesh.castShadow = false;
+    group.add(sub.mesh);
+    yardBuilt++; yardBuildMs += performance.now() - t0;
+    window.CITY.frontYardStats = { subCellsBuilt: yardBuilt, buildMs: +yardBuildMs.toFixed(1), triangles: yardBuiltTris };
+  };
+  const yardTiers = (p) => {
+    let builtNow = false;
+    if (yardWarm && ++yardWarmFrames > 90) { group.remove(yardWarm); yardWarm.geometry.dispose(); yardWarm = null; }
+    for (const sub of yardSubs) {
+      const dx = Math.max(sub.x0 - p.x, 0, p.x - (sub.x0 + YARD_SUB)), dz = Math.max(sub.z0 - p.z, 0, p.z - (sub.z0 + YARD_SUB)), dy = Math.max(0, p.y - 40);
+      const d = Math.hypot(dx, dy, dz);
+      if (!sub.mesh) { if (d < YARD_NEAR && !builtNow) { buildYards(sub); builtNow = true; } }
+      else if (d > YARD_DROP) { group.remove(sub.mesh); sub.mesh.geometry.dispose(); sub.mesh = null; }
+    }
+  };
   // each frame from the warm-up on: a cell's roof is the full one within ROOF_NEAR of the camera (a band either side so a camera standing on the limit
   // never flips it), the far one beyond
   const roofTiers = (camera) => {
     const p = camera.position || camera;
     if (tallView) tallView(camera);
+    if (yardSubs.length) yardTiers(p);
     for (const c of roofList) {
       const x0 = c.sx * ROOF_CELL, z0 = c.sz * ROOF_CELL;
       const dx = Math.max(x0 - p.x, 0, p.x - (x0 + ROOF_CELL)), dz = Math.max(z0 - p.z, 0, p.z - (z0 + ROOF_CELL)), dy = Math.max(0, p.y - 40);

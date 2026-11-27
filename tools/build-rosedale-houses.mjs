@@ -131,6 +131,10 @@ const lots = fs.existsSync(lotsFile) ? JSON.parse(fs.readFileSync(lotsFile, 'utf
 // (jf-bya) the chimneys the lidar shows over each roof (build/rosedale-houses/chimneys.py: returns standing above the fitted planes), next to roofs.json
 const chimFile = path.join(path.dirname(path.resolve(roofsFile)), 'chimneys.json');
 const chimneys = fs.existsSync(chimFile) ? JSON.parse(fs.readFileSync(chimFile, 'utf8')) : {};
+// (jf-ugq) the hedges and shrub masses the lidar shows in each house's lot (build/front-yards in the shared data repo: front-yard-vegetation/1, derived/front-yards/1/hedges.json), metres
+// east and north of the part's centroid; the file carries hedges (a polyline, a width, a height), shrubs (a centre, a radius, a height) and the lot's canopy share (docs/front-yards.md)
+const vegFile = process.env.FRONT_YARDS_JSON || path.join(path.dirname(path.resolve(roofsFile)), '..', '..', 'front-yards', '1', 'hedges.json');
+const yardVeg = fs.existsSync(vegFile) ? JSON.parse(fs.readFileSync(vegFile, 'utf8')) : {};
 const PARKING = { 'Front Yard': 1, 'Widened Driveway': 2, 'Boulevard Parking': 3 };
 const eraOfYear = (y) => (y < 1900 ? 0 : y <= 1916 ? 1 : y <= 1929 ? 2 : y <= 1945 ? 3 : y <= 1967 ? 4 : 5);
 // Moore Park, Summerhill and the Gore lands have no inventory. The neighbourhood's own mix (the census period of construction, the
@@ -488,7 +492,7 @@ const polysOf = (h) => {
   return out;
 };
 const cols = { fid: [], part: [], row: [], extraN: [], extraRow: [], corners: [], start: [], step: [], partyN: [], partyEdge: [], partyCover: [], hiddenN: [], hiddenEdge: [], streetN: [], streetEdge: [],
-  eave: [], maxH: [], avgH: [], era: [], style: [], fit: [], lotW: [], park: [], chimN: [], chimX: [], chimZ: [], chimTop: [], chimBase: [], chimW: [], polyN: [], polyKind: [], polyVerts: [], vx: [], vz: [], vy: [] };
+  eave: [], maxH: [], avgH: [], era: [], style: [], fit: [], lotW: [], park: [], chimN: [], chimX: [], chimZ: [], chimTop: [], chimBase: [], chimW: [], canopy: [], hedN: [], hedP: [], hedW: [], hedH: [], hedX: [], hedZ: [], shrN: [], shrX: [], shrZ: [], shrR: [], shrH: [], polyN: [], polyKind: [], polyVerts: [], vx: [], vz: [], vy: [] };
 let prevRow = 0;
 const allRows = [];
 for (const h of houses) {
@@ -506,6 +510,18 @@ for (const h of houses) {
   cols.chimN.push(stacks.length);
   for (const [e, n, top, base, size] of stacks) { const [dx, dz] = off(e, n); cols.chimX.push(dm(h.X0 + dx)); cols.chimZ.push(dm(h.Z0 + dz)); cols.chimTop.push(dm(top)); cols.chimBase.push(dm(base)); cols.chimW.push(dm(size)); }
   stats.chimneys = (stats.chimneys || 0) + stacks.length; if (stacks.length) stats.housesWithChimneys = (stats.housesWithChimneys || 0) + 1;
+  const yv = yardVeg[h.id];
+  cols.canopy.push(yv && yv.canopy != null ? Math.round(yv.canopy * 100) : 255);
+  const hedges = yv && yv.hedges || [], shrubs = yv && yv.shrubs || [];
+  cols.hedN.push(hedges.length);
+  for (const [w, hh, ...pts] of hedges) {
+    cols.hedP.push(pts.length / 2); cols.hedW.push(dm(w)); cols.hedH.push(dm(hh));
+    for (let i = 0; i < pts.length; i += 2) { const [dx, dz] = off(pts[i], pts[i + 1]); cols.hedX.push(dm(h.X0 + dx)); cols.hedZ.push(dm(h.Z0 + dz)); }
+    stats.hedgeMetres = (stats.hedgeMetres || 0) + Math.round(pts.reduce((s, v, i) => (i >= 2 && i % 2 === 0 ? s + Math.hypot(v - pts[i - 2], pts[i + 1] - pts[i - 1]) : s), 0));
+  }
+  cols.shrN.push(shrubs.length);
+  for (const [x, y, rx, ry, , hh] of shrubs) { const [dx, dz] = off(x, y); cols.shrX.push(dm(h.X0 + dx)); cols.shrZ.push(dm(h.Z0 + dz)); cols.shrR.push(dm(Math.sqrt(rx * ry))); cols.shrH.push(dm(hh)); }
+  stats.hedges = (stats.hedges || 0) + hedges.length; stats.shrubs = (stats.shrubs || 0) + shrubs.length; if (hedges.length) stats.housesWithHedges = (stats.housesWithHedges || 0) + 1;
   const lot = lots[h.id]; cols.lotW.push(lot && Number.isFinite(lot.lotShort) ? dm(Math.min(lot.lotShort, 60)) : 0); cols.park.push(lot && lot.frontYardParking ? (PARKING[lot.frontYardParking] || 1) : 0);
   const ps = polysOf(h); cols.polyN.push(ps.length);
   for (const p of ps) { cols.polyKind.push(p.kind); cols.polyVerts.push(p.v.length); for (const [x, z, y] of p.v) { cols.vx.push(dm(x)); cols.vz.push(dm(z)); cols.vy.push(dm(y)); } if (p.kind === 0) stats.roofTris += p.v.length - 2; else stats.gableTris += p.v.length - 2; }

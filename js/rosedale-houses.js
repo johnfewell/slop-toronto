@@ -16,12 +16,13 @@
 //   eave, maxH, avgH   the wall height (the roof stands on it), the lidar roof top and its mean height
 //   chimN, chimX/Z/Top/Base/W   (jf-bya) the chimneys the lidar shows over the roof: per house their count, then each one's world x and z, its top and the roof under it (above the ground) and its width, decimetres
 //   lotW, park         (jf-bya) the lot's frontage (its short side, decimetres) and the front-yard parking the City licenses (0 none, 1 front yard, 2 widened driveway, 3 boulevard)
+//   canopy, hedN/hedP/hedW/hedH/hedX/hedZ, shrN/shrX/shrZ/shrR/shrH   (jf-ugq, docs/front-yards.md) per house the share of its lot under a tree crown in the lidar (percent, 255 unknown), and the hedges (their count, then each one's point count, width and height and its points' world x and z) and shrub masses (count, then centre x and z, radius and height) the lidar found in it; decimetres
 //   era, style         derived codes (ERA_NAMES, STYLE_NAMES); fit: 0 roof planner on maxH and avgH, 1 lidar roof, 2 flat by the lidar
 //   polyN, polyKind, polyVerts, vx, vz, vy   the roof: polygons (kind 0 a roof facet, 1 a gable wall above the eave), their corners in x, z and height above the ground
 import { unpackGeo } from './geodata-loader.js';
 import { earClip, area2 } from './roof-skeleton.js';
 
-export const ROSEDALE_HOUSES_URL = './data/frames/eglinton/rosedale-houses.bin?v=6d4d887602d1'; // (tools/build-rosedale-houses.mjs sets the hash)
+export const ROSEDALE_HOUSES_URL = './data/frames/eglinton/rosedale-houses.bin?v=45e155d3974a'; // (tools/build-rosedale-houses.mjs sets the hash)
 export const ROSEDALE_HOUSES_SCHEMA = 1;
 const FAR_FACET_M2 = 10;
 export const ERA_NAMES = ['before 1900', '1900 to 1916', '1917 to 1929', '1930 to 1945', '1946 to 1967', '1968 on'];
@@ -58,7 +59,7 @@ export function decodeHouses(H, buildings) {
   if (!H || H.schema !== ROSEDALE_HOUSES_SCHEMA) return { error: `schema ${H && H.schema}, not ${ROSEDALE_HOUSES_SCHEMA}` };
   const g = H.grid || 10, n = H.houses;
   const houses = [], all = [];
-  let row = 0, er = 0, st = 0, pe = 0, he = 0, se = 0, pn = 0, pv = 0, v = 0, ch = 0;
+  let row = 0, er = 0, st = 0, pe = 0, he = 0, se = 0, pn = 0, pv = 0, v = 0, ch = 0, hd = 0, hp = 0, sr = 0;
   for (let i = 0; i < n; i++) {
     row += H.row[i];
     const rows = [row];
@@ -74,6 +75,15 @@ export function decodeHouses(H, buildings) {
     for (let k = 0; k < H.streetN[i]; k++, se++) street.set(H.streetEdge[se] >> 1, (H.streetEdge[se] & 1) === 1);
     const chim = [];
     for (let k = 0; H.chimN && k < H.chimN[i]; k++, ch++) chim.push({ x: H.chimX[ch] / g, z: H.chimZ[ch] / g, top: H.chimTop[ch] / g, base: H.chimBase[ch] / g, w: H.chimW[ch] / g });
+    // (jf-ugq) the lidar's hedges and shrub masses in the lot, world metres
+    const hedges = [], shrubs = [];
+    for (let k = 0; H.hedN && k < H.hedN[i]; k++, hd++) {
+      const pts = [];
+      for (let q = 0; q < H.hedP[hd]; q++, hp++) pts.push([H.hedX[hp] / g, H.hedZ[hp] / g]);
+      hedges.push({ w: H.hedW[hd] / g, h: H.hedH[hd] / g, pts });
+    }
+    for (let k = 0; H.shrN && k < H.shrN[i]; k++, sr++) shrubs.push({ x: H.shrX[sr] / g, z: H.shrZ[sr] / g, r: H.shrR[sr] / g, h: H.shrH[sr] / g });
+    const veg = H.hedN ? { hedges, shrubs, canopy: H.canopy[i] === 255 ? -1 : H.canopy[i] / 100 } : null;
     const polys = [];
     for (let k = 0; k < H.polyN[i]; k++, pn++) {
       const verts = [];
@@ -81,7 +91,7 @@ export function decodeHouses(H, buildings) {
       polys.push({ kind: H.polyKind[pn], v: verts });
       void pv;
     }
-    houses.push({ fid: H.fid[i], part: H.part[i], rows, ring, covered, hidden, street, eave: H.eave[i] / g, maxH: H.maxH[i] / g, avgH: H.avgH[i] / g, era: H.era[i], style: H.style[i], fit: H.fit[i], lotW: H.lotW ? H.lotW[i] / g : 0, park: H.park ? H.park[i] : 0, chim, polys });
+    houses.push({ fid: H.fid[i], part: H.part[i], rows, ring, covered, hidden, street, eave: H.eave[i] / g, maxH: H.maxH[i] / g, avgH: H.avgH[i] / g, era: H.era[i], style: H.style[i], fit: H.fit[i], lotW: H.lotW ? H.lotW[i] / g : 0, park: H.park ? H.park[i] : 0, chim, veg, polys });
   }
   if (rowsCheck(buildings, all) !== H.check) return { error: 'built for other geodata' };
   return { houses };

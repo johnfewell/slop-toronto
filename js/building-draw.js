@@ -21,11 +21,13 @@
 import { DRAW, ROSEDALE_DRAW, FACADE_VARIANTS, FIRST_DRAW_VARIANT, SHOP_SIGN_BOARDS, SHOP_SIGN } from './building-prototypes.js';
 import { planBlock } from './building-draw-tall.js';
 import { planWorship } from './building-draw-worship.js';
-import { windowOpenings, sillsAndLintels, porchDetail, chimneyBox, porticoDetail, shutterBoards, turretDetail, yardDetail } from './building-draw-detail.js';
+import { windowOpenings, sillsAndLintels, porchDetail, chimneyBox, porticoDetail, shutterBoards, turretDetail } from './building-draw-detail.js';
+import { planYard } from './front-yards.js';
 import { WALL, hash32, stream, weighted, lerp, rad, clamp, writer, shade, makeFrame, gableRoof, hipRoof, slab, tarRgb } from './building-draw-kit.js';
 // (the helpers the planners share live in js/building-draw-kit.js; re-exported here for the tests and the tools)
 export { WALL, hash32, stream, weighted, lerp, rad, clamp, writer, shade, makeFrame, gableRoof, hipRoof, slab, tarRgb };
 
+export { rosedaleYardStyle } from './front-yards.js';
 export const DRAWN_PRESETS = Object.keys(DRAW);
 export const ROSEDALE_PRESETS = Object.keys(ROSEDALE_DRAW); // (jf-bya: drawn too, but not catalogue entries; the gallery and the presets file know only DRAWN_PRESETS)
 export const FALLBACK_REASONS = ['house-sized', 'too-low', 'bad-height', 'no-nave', 'landmark', 'no-front', 'shop-front', 'too-small', 'too-irregular', 'front-bulge', 'front-short', 'unfit-roof', 'other-facade', 'one-storey', 'too-tall'];
@@ -652,17 +654,16 @@ export function planHouse(inp) {
     }
   }
 
-  // the front yard of a Rosedale house (inp.yard = { lotW (m, 0 unknown), park (0 none, else the City licenses parking in the front yard) }): the walk to the door, a
-  // hedge or a low wall along the lot line, a drive where the lot allows
+  // the front yard (jf-bya, then jf-ugq, js/front-yards.js): inp.yard = { lotW (m, 0 unknown), park (0 none, else the City licenses parking in the front yard), style (a
+  // YARD_STYLES key), canopy (the share of the lot under a tree crown in the lidar, -1 unknown), veg ({ hedges, shrubs } the lidar found, world metres) }. The walk, the drive,
+  // hedges, fences, walls, beds, shrubs and a lawn are written to the yard accumulator of the house's cell by `pushYard` (not into the roof batch).
   let yard = null;
   if (inp.yard && doors.length) {
     const dMid = roadDist(...F.xz((u0 + u1) / 2, -2));
     const yd = Math.min(12, dMid + 2 - 8.2); // (the lot line stands about 8 m from the road's centreline: half the road, the boulevard and the sidewalk)
     if (Number.isFinite(yd) && yd >= 2.2) {
       const lotW = inp.yard.lotW || 0, extra = lotW > 0 ? clamp((lotW - Wd) / 2, 0.3, 6) : 1.0;
-      const uA = partyL ? u0 : u0 - extra, uB = partyR ? u1 : u1 + extra;
       const c = (doors[0][0] + doors[0][1]) / 2;
-      const kind = gr.yKind < 0.42 ? 'hedge' : gr.yKind < 0.66 ? 'wall' : null;
       let drive = null;
       const room = (side) => (side < 0 ? (partyL ? 0 : extra) : (partyR ? 0 : extra));
       const side = outerSide(0), dw = 3.0;
@@ -673,10 +674,14 @@ export function planHouse(inp) {
         const a = side < 0 ? u0 - 0.3 - dw : u1 + 0.3, to = Math.min(Dp, 8);
         drive = { u0: a, u1: a + dw, to, rgb: lin(0x56565a) };
       }
-      const stone = kind === 'wall' && gr.yWall < 0.55;
-      const green = weighted([[0x24392a, 4], [0x2b4630, 3], [0x1f3324, 3]], gr.yHedH);
-      yard = { y0, uA, uB, yd, gap: [c - 0.7, c + 0.7], kind, hh: kind === 'wall' ? 0.7 + gr.yHedH * 0.3 : 0.8 + gr.yHedH * 0.5,
-        rgb: kind === 'hedge' ? lin(green) : stone ? lin(0x9a968c) : shade(brickRgb, 0.85), pier: stone ? lin(0xb5b0a4) : shade(brickRgb, 1.1), walk: lin(0xb4b0a6), drive };
+      // (the stretches of the front wall a bed or a shrub must not stand in front of: the doors, the porch, the bays, a vestibule, a stoop, a portico)
+      const avoid = doors.map(([d0, d1]) => [d0 - 0.1, d1 + 0.1]);
+      for (const b of bays) avoid.push([b.b0 - 0.1, b.b1 + 0.1]);
+      if (porch) avoid.push([porch.p0 - 0.1, porch.p1 + 0.1]);
+      for (const v of vestibules) avoid.push([v.c - v.vw / 2 - 0.1, v.c + v.vw / 2 + 0.1]);
+      for (const q of stoops) avoid.push([q.c - q.sw / 2 - 0.1, q.c + q.sw / 2 + 0.1]);
+      for (const q of porticoes) avoid.push([q.c - q.w / 2 - 0.1, q.c + q.w / 2 + 0.1]);
+      yard = planYard({ F, id, y0, u0, u1, partyL, partyR, yd, lotW, extra, gap: [c - 0.7, c + 0.7], avoid, drive, style: inp.yard.style || 'rosedale', canopy: inp.yard.canopy, veg: inp.yard.veg, lift: inp.yard.lift || 0, brickRgb, lin, steps: porch ? { c, depth: porch.depth } : null });
       stats.yards = 1;
     }
   }
@@ -836,7 +841,6 @@ export function planHouse(inp) {
       for (const q of stacks) { chimneyBox(W, F, { u: q.u, v: q.v, w, d, yb: q.yb, yt: q.yt, rgb: brickC, capRgb: capC }); stats.chimneys = (stats.chimneys || 0) + 1; }
     }
     if (!lod && turret) turretDetail(W, F, { ...turret, rgb: roofRgb, capRgb: trimRgb });
-    if (!lod && yard) stats.yardTris = yardDetail(W, F, yard);
     if (!lod) for (const q of porticoes) porticoDetail(W, F, { c: q.c, w: q.w, depth: q.depth, y0, h: q.h, colRgb: lin(0xf0ede4), roofRgb, endRgb: trimRgb, pitch: rad(30) });
     // vestibule roofs: a small front gable over each
     for (const v of (lod ? [] : vestibules)) {
@@ -898,7 +902,7 @@ export function planHouse(inp) {
     return W.tris;
   };
   return {
-    ok: true, lodRoof: true, ring: newRing, kinds, cover, variant, brickHex, brick, glass: gr.glass, eaveH, form, records, pushRoof, stats,
+    ok: true, lodRoof: true, ring: newRing, kinds, cover, variant, brickHex, brick, glass: gr.glass, eaveH, form, records, pushRoof, pushYard: yard ? yard.push : null, yardStats: yard ? yard.stats : null, stats,
     frame: { A: [F.ax, F.az], t: [F.tx, F.tz], L: fe.len, u0, u1, z0, z1, partyL, partyR, edge: fi, shift: sh }
   };
   }
