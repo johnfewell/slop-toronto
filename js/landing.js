@@ -26,10 +26,26 @@
   fitPlaceholder();
   twoColumn.addEventListener('change', fitPlaceholder);
   const form = $('#hero-search');
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
+  let search;
+  function loadSearch() {
+    search ??= import('./landing-search.js').then((module) => module.bindLandingSearch(form, where)).catch(() => {
+      search = null;
+      return null;
+    });
+    return search;
+  }
+  where.addEventListener('focus', loadSearch);
+  if (where === document.activeElement) void loadSearch();
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
     const q = where.value.trim();
-    location.href = q ? `./explore.html#place=${encodeURIComponent(q)}` : './explore.html';
+    if (!q) { location.href = '/explore'; return; }
+    // A click on Go after autofill or with a restored value may precede focus.
+    if (!search) where.focus();
+    void loadSearch().then((submit) => {
+      if (submit) submit();
+      else location.href = `/explore#place=${encodeURIComponent(q)}`;
+    });
   });
 
   // The cover fills the rest of the first viewport below the masthead and the section strip

@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { geoPath, indexPath, landingIndex } from './search/landing-index.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PAGES = ['index.html', 'explore.html'];
@@ -108,6 +109,9 @@ export function buildSite({ root = ROOT, out = path.join(root, 'dist') } = {}) {
     assets.set(rel, name); visiting.delete(rel); write(name, source); return name;
   }
   for (const rel of [...TEXT, 'assets', 'data']) if (fs.existsSync(path.join(root, rel))) copy(rel);
+  for (const map of ['detail', 'eglinton']) {
+    if (fs.existsSync(path.join(root, geoPath(map)))) write(indexPath(map), JSON.stringify(landingIndex(root, map)));
+  }
   for (const rel of [...scripts].sort()) emit(rel);
   if (fs.existsSync(path.join(root, 'css'))) for (const name of fs.readdirSync(path.join(root, 'css'))) {
     if (name.endsWith('.css')) emit(`css/${name}`);

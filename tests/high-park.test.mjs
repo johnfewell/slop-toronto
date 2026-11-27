@@ -1,3 +1,4 @@
+import * as intersectionSearch from '../js/search-intersections.js';
 // The High Park terrain pilot (on by default; docs/high-park-terrain.md): its datum and data, the ground it samples and
 // draws, the park's edges held at the street level, each pond at its own level, the controllers, traffic, walkers and
 // buildings on it, the SRTM canopy mounds gone, the city round its box the flat city's, and the Don Valley's pilot
@@ -14,7 +15,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const read = (f) => fs.readFileSync(new URL(`../js/${f}.js`, import.meta.url), 'utf8');
 function city({ highPark = true, donValley = false, files = [] } = {}) {
-  const context = vm.createContext({ window: { CITY: { THREE, Addons: { mergeGeometries }, DEBUG_ROADS: false }, addEventListener() {} }, document: { addEventListener() {}, hidden: false },
+  const context = vm.createContext({ window: { CITY: { THREE, Addons: { mergeGeometries }, DEBUG_ROADS: false, intersectionSearch }, addEventListener() {} }, document: { addEventListener() {}, hidden: false },
     console: { info() {}, warn() {}, log() {} }, atob });
   const pilot = [...(donValley ? ['don-valley-data'] : []), ...(highPark ? ['high-park-data'] : []), ...(donValley || highPark ? ['don-valley'] : [])];
   for (const f of ['toronto-geodata', 'toronto-subway', 'toronto-subway-topology', ...pilot, 'city-config', ...files]) vm.runInContext(read(f), context);

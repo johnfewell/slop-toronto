@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { exploreContext } from './helpers/explore-context.cjs';
 import test from 'node:test';
 
 const read = (f) => fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
@@ -11,7 +12,7 @@ const iife = html.match(/<script>\s*\/\/ Download the city scripts([\s\S]*?)<\/s
 const listFor = (search, { touch = false } = {}) => {
   const navigator = { maxTouchPoints: touch ? 5 : 0 };
   const matchMedia = (q) => ({ matches: touch ? /coarse|hover: none/.test(q) : /fine|hover: hover/.test(q) });
-  return [...vm.runInContext(iife, vm.createContext({ URLSearchParams, location: { search }, navigator, matchMedia }))];
+  return [...vm.runInContext(iife, exploreContext({ location: { search }, navigator, matchMedia }))];
 };
 const isEglinton = (list) => list.some((s) => s.includes('/frames/eglinton/'));
 

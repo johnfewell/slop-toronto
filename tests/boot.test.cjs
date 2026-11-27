@@ -3,6 +3,7 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
+const { exploreContext } = require('./helpers/explore-context.cjs');
 
 const html = readFileSync(join(__dirname, '../explore.html'), 'utf8');
 const preloadScript = html.match(/<script>([^]*?)<\/script>/);
@@ -54,12 +55,12 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
     }
   };
   // (no WebGPU here: the module's capability probe awaits nothing and the loader runs straight on)
-  const context = vm.createContext({ window, document, navigator: {}, THREE, TSL: {}, StylizedWater: {}, setTimeout, fetch, __import,
+  const context = exploreContext({ window, document, navigator: {}, THREE, TSL: {}, StylizedWater: {}, setTimeout, fetch, __import,
     URLSearchParams, location: { search: '' }, ...imports });
   vm.runInContext(preloadScript[1].replace(/\bimport\(/g, '__import('), context);
   assert.equal(scripts.length, 0);
   assert.equal(fetched.length, 1);
-  // (a desktop's default visit: the Eglinton map, explore.html EGLINTON_ON_DESKTOP; tests/eglinton-frame.test.mjs has the rest)
+  // (a desktop's default visit: the Eglinton map, js/city-map-selection.js; tests/eglinton-frame.test.mjs has the rest)
   assert.match(fetched[0], /^\.\/data\/frames\/eglinton\/toronto-geodata\.bin\?v=[0-9a-f]{12}$/);
   // every script the loader lists, once (the count follows the list: scripts are added often; the geodata loader is
   // imported, not listed)
@@ -97,7 +98,7 @@ test('preloaded URLs match ordered scripts and execution waits for Three.js impo
 });
 
 const pilotList = (search, phone = false) => [...vm.runInContext(`${preloadScript[1].match(/const cityAppScripts = (\(\(\) => \{[\s\S]*?\}\)\(\));/)[1]}`,
-  vm.createContext({ URLSearchParams, location: { search },
+  exploreContext({ URLSearchParams, location: { search },
     // (a phone: a touch-first screen, as the loader's `desktop` test reads it)
     ...(phone ? { navigator: { maxTouchPoints: 5 }, matchMedia: () => ({ matches: true }) } : {}) }))]; // (out of the vm's realm)
 
@@ -119,7 +120,7 @@ test('?donvalley=1 adds the Don Valley\'s data before High Park\'s, the one runt
 
 test('?lidarTrees=1 loads the lidar trees\' runtime, and on a desktop its data: the detail map\'s file, or the Eglinton map\'s cells', () => {
   const iife = preloadScript[1].match(/const cityAppScripts = (\(\(\) => \{[\s\S]*?\}\)\(\));/)[1];
-  const loaderFor = (search, phone = false) => vm.runInContext(iife, vm.createContext({ URLSearchParams, location: { search },
+  const loaderFor = (search, phone = false) => vm.runInContext(iife, exploreContext({ URLSearchParams, location: { search },
     ...(phone ? { navigator: { maxTouchPoints: 5 }, matchMedia: () => ({ matches: true }) } : {}) }));
   for (const q of ['', '?map=detail', '?map=eglinton']) {
     const def = pilotList(q);

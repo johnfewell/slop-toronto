@@ -9,10 +9,26 @@ const { THREE, Navigation, CITY_LANDMARKS, TELEPORT_LOCATIONS, getLocationLabel,
 const { Fn, uniform, renderGroup, uv, attribute, float, color, mix, step, fract, abs, smoothstep } = window.CITY.TSL;
 const { searchPlaces, findRoute, progressOnRoute, formatDistance, formatDuration, trueBearing, compassWord, CATEGORY_LABEL, locateReal } = Navigation;
 
-const GEOCODE_ATTRIBUTION = [
-  ['cesium-ion.png', 'Cesium ion'], ['bing.png', 'Microsoft Bing']
-];
 let geocodeModule;
+function loadGeocode() {
+  return geocodeModule ??= import('./search-geocode.js').catch((error) => {
+    geocodeModule = null;
+    throw error;
+  });
+}
+
+function geocodeOptions(module, signal, near) {
+  return {
+    signal, near, project: window.CITY.worldFromLatLon,
+    onMap: (x, z) => module.inBounds(window.CITY.CITY_BOUNDS, x, z),
+    local: (name) => searchPlaces(name, { limit: 5 })
+  };
+}
+
+async function resolveSearchSelection(query, selection) {
+  const module = await loadGeocode();
+  return module.resolveSelection(query, selection, geocodeOptions(module, AbortSignal.timeout(8000)));
+}
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -134,10 +150,7 @@ class Autocomplete {
     }
     let module;
     try {
-      module = await (geocodeModule ??= import('./search-geocode.js').catch((err) => {
-        geocodeModule = null;
-        throw err;
-      }));
+      module = await loadGeocode();
     } catch {
       if (this.pending === pending) {
         this.cancelLookup();
@@ -152,15 +165,8 @@ class Autocomplete {
       return;
     }
     pending.started = true;
-    this.lookup ??= module.createLookup((q, signal) => module.lookup(q, {
-      signal, near: this.pending.near,
-      project: window.CITY.worldFromLatLon,
-      onMap: (x, z) => {
-        const b = window.CITY.CITY_BOUNDS;
-        return x > b.minX && x < b.maxX && z > b.minZ && z < b.maxZ;
-      },
-      local: (name) => searchPlaces(name, { limit: 5 })
-    }));
+    this.attribution = module.GEOCODE_ATTRIBUTION;
+    this.lookup ??= module.createLookup((q, signal) => module.lookup(q, geocodeOptions(module, signal, this.pending.near)));
     this.lookup.start(pending.q, (rows) => {
       const active = this.items[this.active];
       this.pending = null;
@@ -215,7 +221,7 @@ class Autocomplete {
       const attribution = el('div', 'ac-attribution');
       attribution.setAttribute('role', 'presentation');
       attribution.append('Place search by');
-      for (const [file, name] of GEOCODE_ATTRIBUTION) {
+      for (const [file, name] of this.attribution) {
         const img = el('img');
         img.src = `/assets/geocoder/${file}`;
         img.alt = name;
@@ -634,24 +640,25 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
 
   // ---- the selected place --------------------------------------------------------------------------------------------
   const card = $('place-card');
-  let selected = null;
-  function describe(p) {
+  const cardDistance = $('pc-distance');
+  let selected = null, nextDistanceUpdate = 0;
+  function updatePlaceDistance() {
     const me = here();
-    const d = Math.hypot(p.x - me.x, p.z - me.z);
-    const b = trueBearing(p.x - me.x, p.z - me.z);
-    return { address: getLocationLabel(p.x, p.z), distance: `${formatDistance(d)} ${compassWord(b)} of ${realInCity() ? 'you (real location)' : 'you'}` };
+    const dx = selected.x - me.x, dz = selected.z - me.z;
+    const b = trueBearing(dx, dz);
+    const text = `${formatDistance(Math.hypot(dx, dz))} ${compassWord(b)} of ${realInCity() ? 'you (real location)' : 'you'}`;
+    if (cardDistance.textContent !== text) cardDistance.textContent = text;
   }
   function showPlace(p, { fly = true } = {}) {
     selected = p;
     hideDirections();
     if (card) {
-      const info = describe(p);
       $('pc-icon').replaceChildren(icon(iconFor(p)));
       $('pc-icon').className = `pc-icon kind-${p.kind}${p.cat ? ` cat-${p.cat}` : ''}`;
       $('pc-name').textContent = p.name;
       $('pc-sub').textContent = p.sub || '';
-      $('pc-address').textContent = p.kind === 'address' ? p.name : info.address;
-      $('pc-distance').textContent = info.distance;
+      $('pc-address').textContent = p.kind === 'address' ? p.name : getLocationLabel(p.x, p.z);
+      updatePlaceDistance();
       const cityInfo=$('pc-city-info');
       const found=p.discovery&&window.CITY.Discovery?.discoveryCard(p);
       if(cityInfo&&found) {
@@ -1178,6 +1185,10 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
   // ---- every frame ---------------------------------------------------------------------------------------------------
   function update(dt, elapsed) {
     graphics.uTime.value = elapsed;
+    if (selected && cardDistance && elapsed >= nextDistanceUpdate) {
+      nextDistanceUpdate = elapsed + 0.25;
+      updatePlaceDistance();
+    }
     if (window.CITY.uiOverlay) return;
     if (!nav.active || !nav.route) return;
     const pos = playerPos();
@@ -1231,7 +1242,8 @@ function createTourGuide({ scene, controllerManager, cameraSystem, mapSystem, tr
     // for testing without a GPS: as if the device reported this fix
     simulateFix: (lat, lon, accuracy = 15) => onFix({ coords: { latitude: lat, longitude: lon, accuracy } }),
     setTo: (p) => { to = p; },
-    search: (q) => searchPlaces(q, { near: playerPos() })
+    resolveSearchSelection,
+    search: (q, near = playerPos()) => searchPlaces(q, { near })
   };
 }
 

@@ -1590,7 +1590,7 @@ async function initApp() {
 
   // Links from the landing page: explore.html#place=National%20Mosque (go there), #to=... (directions to it),
   // #mode=walk|drive|cycle|fly, #locate (find where you really are)
-  function openDeepLink() {
+  async function openDeepLink() {
     const params = new URLSearchParams(location.hash.slice(1));
     const mode = { walk: 'person', drive: 'car', cycle: 'cyclist', fly: 'helicopter' }[params.get('mode')];
     if (mode) selectMode(mode);
@@ -1607,8 +1607,16 @@ async function initApp() {
       rideFeatured(params.get('ride') || '504');
       return;
     }
-    if (place && hit(place)) {
-      const p = hit(place);
+    const query = params.get('search');
+    const junction = params.get('junction');
+    let p;
+    if (query) {
+      try { p = await tourGuide.resolveSearchSelection(query, params.get('selection')); } catch {}
+      if (!p) toast('That result could not be opened. Try searching again in Explore.', 6000);
+    } else if (place) {
+      p = junction ? tourGuide.search(place, { x: 0, z: 0 }).find((r) => r.id === junction) : hit(place);
+    }
+    if (p) {
       tourGuide.teleportToPlace(p);
       tourGuide.showPlace(p, { fly: false });
     } else if (dest && hit(dest)) {

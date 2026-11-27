@@ -34,16 +34,7 @@ function formatDuration(s) {
 // ---------------------------------------------------------------------------------------------------------------------
 // Search
 // ---------------------------------------------------------------------------------------------------------------------
-const ABBREV = {
-  st: 'street', str: 'street', rd: 'road', ave: 'avenue', av: 'avenue', cres: 'crescent', cr: 'crescent',
-  blvd: 'boulevard', expy: 'expressway', expwy: 'expressway', hwy: 'highway', cl: 'close', dr: 'drive', ln: 'lane',
-  wy: 'way', sq: 'square', mt: 'mount', intl: 'international', natl: 'national', govt: 'government', hosp: 'hospital',
-  univ: 'university', ctr: 'centre', center: 'centre', tor: 'toronto', to: 'toronto',
-  n: 'north', s: 'south', e: 'east', w: 'west'
-};
-const normalize = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-  .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
-const words = (s) => normalize(s).split(' ').filter(Boolean).map((w) => ABBREV[w] || w);
+const { normalize, words, junctions, searchIntersections } = window.CITY.intersectionSearch;
 
 const CATEGORY_LABEL = {
   hotel: 'Hotel', bank: 'Bank', food: 'Restaurant & café', worship: 'Place of worship', fuel: 'Filling station',
@@ -154,45 +145,10 @@ function oneEdit(a, b) {
   return edits + (a.length - i) + (b.length - j) <= 1;
 }
 
-// An intersection is a shared road-graph node, so an overpass does not count as a crossing.
+let crossingsIndex;
 function intersectionPlaces(query, near) {
-  if (typeof query !== 'string' || /^\d/.test(query.trim())) return [];
-  const pair = query.split(/\s*[/&]\s*|\s+and\s+/i);
-  if (pair.length !== 2) return [];
-  const streetWords = /\b(street|road|avenue|boulevard|drive|lane|crescent|court|way|place)\b/g;
-  const direction = /\s+(north|south|east|west|n|s|e|w)$/;
-  const needles = pair.map((s) => words(s).join(' '));
-  if (needles.some((s) => !s)) return [];
-  const { names, links, nodes } = GEO.roadGraph;
-  const matches = names.map((name) => {
-    const full = words(name).join(' ');
-    const base = full.replace(streetWords, '').replace(/\s+/g, ' ').trim();
-    const forms = [full, full.replace(direction, ''), base, base.replace(direction, '')];
-    return needles.map((s) => forms.includes(s));
-  });
-  if (![0, 1].every((side) => matches.some((m) => m[side]))) return [];
-  const sides = new Map();
-  for (const [a, b, i] of links) {
-    const [first, second] = matches[i] || [];
-    if (!first && !second) continue;
-    for (const node of [a, b]) {
-      if (!sides.has(node)) sides.set(node, [new Set(), new Set()]);
-      const [left, right] = sides.get(node);
-      if (first) left.add(names[i]);
-      if (second) right.add(names[i]);
-    }
-  }
-  const results = [];
-  for (const [node, [first, second]] of sides) {
-    const a = first.values().next().value;
-    const b = [...second].find((name) => name !== a);
-    if (!a || !b) continue;
-    const x = nodes[2 * node], z = nodes[2 * node + 1];
-    results.push({ id: `intersection:${node}`, kind: 'intersection', name: `${a} & ${b}`,
-      x, z, sub: 'Intersection', strong: true, distance: near ? Math.hypot(x - near.x, z - near.z) : null });
-  }
-  results.sort((a, b) => a.distance - b.distance);
-  return results.filter((p, i) => !results.slice(0, i).some((other) => Math.hypot(p.x - other.x, p.z - other.z) < 40));
+  if (!/[/&]|\s+and\s+/i.test(query) || /^\d/.test(query.trim())) return [];
+  return searchIntersections(query, crossingsIndex ??= junctions(GEO.roadGraph), near);
 }
 
 const KIND_WEIGHT = { landmark: 40, district: 30, street: 12, place: 8 };

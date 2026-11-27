@@ -31,6 +31,7 @@
   <meta name="twitter:image:alt" content="Slop Toronto: the city skyline and the CN Tower over Lake Ontario, rendered in the app" />
   <!-- /social -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <script src="./js/city-map-selection.js"></script>
   <script>
     // Download the city scripts while Three.js loads; execute them only after its imports are ready below.
     const cityAppScripts = (() => {
@@ -40,17 +41,8 @@
       // tablets, ?quality=low|medium and machines reporting under 8 GB keep today's map (its JS heap is ~1 GB after
       // load; the bigger one's ~1.5 GB). A desktop here is what quality.js keeps at `high` by default: no touch-first
       // screen. On since John's go (2026-11-05)
-      const EGLINTON_ON_DESKTOP = true;
       const params = new URLSearchParams(location.search);
-      const mm = (q) => typeof matchMedia === 'function' && matchMedia(q).matches;
-      const nav = typeof navigator === 'object' ? navigator : {};
-      const touchFirst = nav.maxTouchPoints > 0 && mm('(pointer: coarse)') && mm('(hover: none)');
-      const desktop = !touchFirst && !['low', 'medium'].includes(params.get('quality')) && !(nav.deviceMemory && nav.deviceMemory < 8);
-      // (?gallery=presets, the internal building-preset page, needs the detail map: the massing and presets files exist only
-      // for it, so it chooses that map itself unless ?map= says otherwise; no other URL's map changes)
-      const map = params.get('map') === 'eglinton' || params.get('map') === 'detail' ? params.get('map')
-        : params.get('gallery') === 'presets' ? 'detail'
-        : EGLINTON_ON_DESKTOP && desktop ? 'eglinton' : 'detail';
+      const { map, desktop } = window.selectCityMap(params);
       const eglinton = map === 'eglinton';
       // (the page draws the buildings from their polygons (main.js drawnByDefault, or ?massing=1): their colliders are other
       // colliders than the boxes', so it has its own prebuilt patio layout: tools/build-patios.mjs --frame eglinton-drawn, st-ndw9.23)
@@ -910,6 +902,7 @@
     import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
     import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
     import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+    import * as intersectionSearch from './js/search-intersections.js';
     import * as StylizedWater from './js/stylized-water.js';
 
     window.CITY = {
@@ -917,6 +910,7 @@
       TSL,
       PostFX: { bloom, ssr, fxaa, smaa },
       StylizedWater,
+      intersectionSearch,
       Addons: {
         mergeGeometries,
         mergeVertices,

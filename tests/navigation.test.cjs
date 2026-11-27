@@ -5,7 +5,7 @@ const test = require('node:test');
 
 // The committed Toronto geodata, the city & the guide's search and routing, loaded as the page loads them
 const read = (path) => readFileSync(join(__dirname, '..', path), 'utf8');
-globalThis.window = { CITY: { DEBUG_ROADS: false } };
+globalThis.window = { CITY: { DEBUG_ROADS: false, intersectionSearch: require('../js/search-intersections.js') } };
 for (const path of ['js/toronto-geodata.js', 'js/city-config.js', 'js/navigation.js']) new Function(read(path))();
 const C = window.CITY;
 const N = C.Navigation;

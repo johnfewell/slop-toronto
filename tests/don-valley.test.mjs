@@ -1,3 +1,4 @@
+import * as intersectionSearch from '../js/search-intersections.js';
 // The Don Valley terrain pilot (?donvalley=1; docs/don-valley-terrain.md): its datum and data, one surface for drawing
 // and sampling, the decks and cuts that read it, nothing changed without the flag, and the viaduct ride's stations at
 // their depth below the street
@@ -424,7 +425,7 @@ ON_SAMPLE.f = (route, s) => {
 
 // --- arrivals (st-wt0.21.1): a teleport, a search result or a route arrives on the surface it means
 function pilotWith(files) {
-  const context = vm.createContext({ window: { CITY: { THREE, Addons: { mergeGeometries }, DEBUG_ROADS: false }, addEventListener() {} }, document: { addEventListener() {}, hidden: false },
+  const context = vm.createContext({ window: { CITY: { THREE, Addons: { mergeGeometries }, DEBUG_ROADS: false, intersectionSearch }, addEventListener() {} }, document: { addEventListener() {}, hidden: false },
     console: { info() {}, warn() {}, log() {} }, atob });
   for (const f of ['toronto-geodata', 'toronto-subway', 'toronto-subway-topology', 'don-valley-data', 'don-valley', 'city-config', ...files]) vm.runInContext(read(f), context);
   return context.window.CITY;

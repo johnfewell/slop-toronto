@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { exploreContext } from './helpers/explore-context.cjs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -175,7 +176,7 @@ test('without the shared cache the builder refuses to rebuild and says why', () 
 test('the layer loads on every desktop, and ?schoolFences=0, a phone and a low tier get none of it', () => {
   const html = read('explore.html');
   const iife = html.match(/const cityAppScripts = (\(\(\) => \{[\s\S]*?\}\)\(\));/)[1];
-  const listFor = (search, phone = false) => [...vm.runInContext(iife, vm.createContext({
+  const listFor = (search, phone = false) => [...vm.runInContext(iife, exploreContext({
     URLSearchParams, location: { search },
     ...(phone ? { navigator: { maxTouchPoints: 5 }, matchMedia: () => ({ matches: true }) } : {})
   }))];

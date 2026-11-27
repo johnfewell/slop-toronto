@@ -2,10 +2,33 @@ import { key } from './search-text.js';
 
 export const IDLE = 400;
 export const NEAR_NUM = 40;
+export const GEOCODE_ATTRIBUTION = [
+  ['cesium-ion.png', 'Cesium ion'], ['bing.png', 'Microsoft Bing']
+];
 const SNAP_METRES = 300;
 export const AREAS = ['Old Toronto', 'East York', 'Etobicoke', 'North York', 'Scarborough', 'York'];
 
 export const askable = (q) => q.length >= 3 && q.length <= 80 && /[a-z0-9]/i.test(q);
+
+export function inBounds({ minX, maxX, minZ, maxZ }, x, z) {
+  return x > minX && x < maxX && z > minZ && z < maxZ;
+}
+
+// A link carries the visitor's query and a fingerprint of their choice. Explore repeats
+// the lookup, so the provider's result is never written to history or browser storage.
+export async function selectionKey(place) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(place.id));
+  return Array.from(new Uint8Array(digest, 0, 16), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+export async function resolveSelection(query, selection, options) {
+  if (!askable(query) || !/^[a-f0-9]{32}$/.test(selection ?? '')) return null;
+  const rows = await lookup(query, options);
+  for (const row of rows) {
+    if (!row.outside && await selectionKey(row) === selection) return row;
+  }
+  return null;
+}
 
 /** FNV-1a over the street key, shared with the address shard generator. */
 export function shardOf(k) {
@@ -100,7 +123,7 @@ export async function lookup(q, { signal, project, onMap, near, local, doFetch =
       if (named) point = { x: named.x, z: named.z };
     }
     return {
-      x: point.x, z: point.z, id: `geocode:${r.name}`, kind: r.kind === 'Address' ? 'address' : 'geocode',
+      x: point.x, z: point.z, id: `geocode:${r.kind}:${r.lat}:${r.lon}:${r.name}`, kind: r.kind === 'Address' ? 'address' : 'geocode',
       name: r.name, sub: r.kind, postal: r.kind === 'Postal code', provider: true,
       outside: !onMap(point.x, point.z)
     };

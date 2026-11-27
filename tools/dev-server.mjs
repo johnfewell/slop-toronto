@@ -4,6 +4,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
+import { landingIndex } from './search/landing-index.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css',
@@ -41,7 +42,18 @@ export function createDevServer({ root = ROOT, liveReload = true } = {}) {
     if (pathname === '/__dev/client.js' && liveReload) {
       res.writeHead(200, { 'Content-Type': TYPES['.js'] }); res.end(req.method === 'HEAD' ? '' : DEV_CLIENT); return;
     }
-    const rel = pathname === '/' ? 'index.html' : pathname.slice(1);
+    const index = /^\/assets\/geocoder\/landing-(detail|eglinton)\.json$/.exec(pathname);
+    if (index) {
+      try {
+        const json = JSON.stringify(landingIndex(root, index[1]));
+        res.writeHead(200, { 'Content-Type': TYPES['.json'], 'Content-Length': Buffer.byteLength(json) });
+        res.end(req.method === 'HEAD' ? '' : json);
+      } catch {
+        res.writeHead(404); res.end();
+      }
+      return;
+    }
+    const rel = pathname === '/' ? 'index.html' : pathname === '/explore' ? 'explore.html' : pathname.slice(1);
     const file = path.resolve(root, rel);
     if (!file.startsWith(root + path.sep) || rel.split('/').some((part) => part.startsWith('.'))) {
       res.writeHead(404); res.end(); return;

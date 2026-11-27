@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as workerGeocode from '../worker/geocode.js';
 import worker from '../worker/live.js';
-import { AREAS, cityAddressesFor, createLookup, IDLE, lookup, parseAddress, shardOf } from '../js/search-geocode.js';
+import { AREAS, cityAddressesFor, createLookup, IDLE, lookup, parseAddress, resolveSelection, selectionKey, shardOf } from '../js/search-geocode.js';
 import { key } from '../js/search-text.js';
 
 const TOKEN = 'test-token';
@@ -155,6 +155,23 @@ test('an address fetches one shard and marks off-frame rows before they can be p
   assert.equal(rows[1].outside, true);
   assert.deepEqual(await lookup('100 Queen St W, Mississauga', options), []);
   assert.equal(calls.length, 1);
+});
+
+test('an Explore handoff resolves the selected address, with map bounds checked again', async () => {
+  const query = '81 Euclid Avenue';
+  const options = {
+    signal: new AbortController().signal,
+    project: (lat, lon) => ({ x: lon, z: lat }),
+    onMap: () => true,
+    doFetch: async (url) => Response.json(await readShard(url.split('/').at(-1)))
+  };
+  const rows = await lookup(query, options);
+  const scarborough = rows.find((row) => row.sub.includes('Scarborough'));
+  const selection = await selectionKey(scarborough);
+  assert.match(selection, /^[a-f0-9]{32}$/);
+  assert.deepEqual(await resolveSelection(query, selection, options), scarborough);
+  assert.equal(await resolveSelection(query, selection, { ...options, onMap: () => false }), null);
+  assert.equal(await resolveSelection(query, 'bad selection', options), null);
 });
 
 test('geocoded addresses snap to the nearest exact City point and recheck map coverage', async () => {

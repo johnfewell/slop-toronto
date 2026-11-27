@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { exploreContext } from './helpers/explore-context.cjs';
 import test from 'node:test';
 import { unpackGeo } from '../js/geodata-loader.js';
 
@@ -16,10 +17,9 @@ const iife = preload.match(/const cityAppScripts = (\(\(\) => \{[\s\S]*?\}\)\(\)
 // the page's list on a device: `touch` a phone / tablet's touch-first screen, `memory` navigator.deviceMemory (GB);
 // `on` evaluates it with EGLINTON_ON_DESKTOP set (the go, st-bz1o.11)
 const listFor = (search, { touch = false, memory, on } = {}) => {
-  const src = on === undefined ? iife : iife.replace(/const EGLINTON_ON_DESKTOP = (true|false);/, `const EGLINTON_ON_DESKTOP = ${on};`);
   const navigator = { maxTouchPoints: touch ? 5 : 0, ...(memory ? { deviceMemory: memory } : {}) };
   const matchMedia = (q) => ({ matches: touch ? /coarse|hover: none/.test(q) : /fine|hover: hover/.test(q) });
-  return vm.runInContext(src, vm.createContext({ URLSearchParams, location: { search }, navigator, matchMedia }));
+  return vm.runInContext(iife, exploreContext({ location: { search }, navigator, matchMedia }, { eglintonOnDesktop: on }));
 };
 const scriptsFor = (search, device) => [...listFor(search, device)];
 // (toronto-patios.js: that map's prebuilt CaféTO layout, tools/build-patios.mjs --frame eglinton, st-3cbb)
@@ -91,7 +91,7 @@ test('the Eglinton binary is the Eglinton frame, with its own city beyond today\
 });
 
 test('desktops get the Eglinton map (switched on: st-bz1o.11); phones, tablets, low tiers and small machines never', () => {
-  assert.match(iife, /const EGLINTON_ON_DESKTOP = true;/, 'on since John\'s go (2026-11-05)');
+  assert.match(read('js/city-map-selection.js').toString(), /const EGLINTON_ON_DESKTOP = true;/, 'on since John\'s go (2026-11-05)');
   assert.equal(listFor('').cityMap, 'eglinton', 'a desktop\'s default visit');
   assert.equal(listFor('', { on: false }).cityMap, 'detail', 'switched off: a desktop gets today\'s map');
   assert.equal(listFor('?map=eglinton', { touch: true }).cityMap, 'eglinton', '?map=eglinton on any device');

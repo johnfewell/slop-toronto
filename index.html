@@ -97,10 +97,16 @@
         <div class="coverstory">
           <h1 id="coverline">Toronto,<br />to scale.</h1>
           <p class="cover-dek">From the lake to Eglinton in 3D, in your browser (downtown on phones). Walk, cycle, drive, fly, or ride the TTC.</p>
-          <form class="where" action="./explore.html" id="hero-search" role="search">
+          <form class="where" action="/explore" id="hero-search" role="search">
             <label for="where-q">Where to?</label>
-            <input id="where-q" type="search" name="q" placeholder="CN Tower, Queens Quay, a café…" data-placeholder-phone="CN Tower, a café…" autocomplete="off" enterkeyhint="go" />
+            <input id="where-q" type="search" name="q" placeholder="Address, intersection or place…" data-placeholder-phone="Address or place…" autocomplete="off" maxlength="80"
+              enterkeyhint="go" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="where-options" />
             <button type="submit">Go <svg class="i" aria-hidden="true"><use href="#l-arrow"/></svg></button>
+            <div class="where-results" hidden>
+              <div id="where-options" role="listbox" aria-label="Suggested destinations"></div>
+              <div class="where-credit" hidden>Place search by</div>
+              <p class="where-status" role="status"></p>
+            </div>
           </form>
           <p class="cover-caption" data-caption>On the cover: the skyline and the CN Tower from over the harbour at golden hour, in the app.</p>
         </div>

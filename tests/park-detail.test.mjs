@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { exploreContext } from './helpers/explore-context.cjs';
 import test from 'node:test';
 import * as THREE from 'three/webgpu';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -12,7 +13,7 @@ const read = (p) => fs.readFileSync(new URL(p, root), 'utf8');
 const html = read('explore.html');
 const loaderText = html.match(/const cityAppScripts = (\(\(\) => \{[\s\S]*?\}\)\(\));/)[1];
 const lists = (search = '') => {
-  const l = vm.runInContext(loaderText, vm.createContext({ URLSearchParams, location: { search } }));
+  const l = vm.runInContext(loaderText, exploreContext({ location: { search } }));
   return { base: [...l], detail: [...l.detail] };
 };
 

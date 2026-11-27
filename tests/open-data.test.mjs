@@ -1,3 +1,4 @@
+import * as intersectionSearch from '../js/search-intersections.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -54,7 +55,7 @@ test('complete City facility snapshots retain dated status and match existing ge
   assert.throws(()=>cityFacilities({...snapshots,washroom:{...snapshots.washroom,records:[]}},C.GEO),/Incomplete/);
 });
 test('facility search finds washrooms and park amenities without replacing the existing city',()=>{
-  const ctx={window:{CITY:{}}};
+  const ctx={window:{CITY:{intersectionSearch}}};
   for(const file of ['toronto-geodata','toronto-city-facilities','city-config','navigation'])vm.runInNewContext(fs.readFileSync(new URL(`../js/${file}.js`,import.meta.url),'utf8'),ctx);
   const N=ctx.window.CITY.Navigation;
   assert.ok(N.searchPlaces('washroom').some((p)=>p.city?.kind==='washroom'));

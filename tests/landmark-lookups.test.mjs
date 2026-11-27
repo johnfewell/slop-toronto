@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
+import * as intersectionSearch from '../js/search-intersections.js';
 import { unpackGeo } from '../js/geodata-loader.js';
 import { LANDMARK_DEFS } from '../tools/landmark-defs.mjs';
 
@@ -20,7 +21,7 @@ const NAMED_PLACES = ['Grenadier Pond', 'High Park Zoo', 'Biidaasige Park', 'Jac
 const EGLINTON_ONLY = ['Eglinton'];
 
 async function city(bin) {
-  const window = { CITY: { ...(await unpackGeo(read(bin))), DEBUG_ROADS: false } };
+  const window = { CITY: { ...(await unpackGeo(read(bin))), DEBUG_ROADS: false, intersectionSearch } };
   const context = vm.createContext({ window, console: { log() {}, info() {}, warn() {} }, performance, Math, location: { search: '' }, URLSearchParams, Buffer });
   for (const f of ['js/high-park-data.js', 'js/don-valley.js', 'js/city-config.js', 'js/navigation.js']) vm.runInContext(read(f).toString(), context, { filename: f });
   return window.CITY;

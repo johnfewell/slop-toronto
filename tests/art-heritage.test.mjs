@@ -1,3 +1,4 @@
+import * as intersectionSearch from '../js/search-intersections.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -116,7 +117,7 @@ test('heritage facade shortlist names durable faces of matched buildings', () =>
 // The city's own modules in a VM: search, cards and the street placement
 function city() {
   const THREE = { ...THREE0, MeshStandardNodeMaterial: THREE0.MeshStandardMaterial };
-  const ctx = { window: { CITY: { THREE, Addons: { mergeGeometries } } }, URL, URLSearchParams, location: { search: '' }, console: { info() {}, warn: console.warn, log() {} } };
+  const ctx = { window: { CITY: { THREE, Addons: { mergeGeometries }, intersectionSearch } }, URL, URLSearchParams, location: { search: '' }, console: { info() {}, warn: console.warn, log() {} } };
   for (const f of ['toronto-geodata', 'toronto-public-art', 'city-config', 'world-collision', 'public-art', 'discovery', 'navigation']) vm.runInNewContext(read(`js/${f}.js`), ctx);
   return ctx;
 }
