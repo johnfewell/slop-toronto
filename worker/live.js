@@ -2,7 +2,7 @@
 // first; only requests no asset matches reach this script:
 // - /live/vehicles: the TTC's live vehicle positions in the city (BusTime GTFS-Realtime,
 //   https://bustime.ttc.ca/gtfsrt/vehicles; Open Government Licence – Toronto), read from the TTC at most once every
-//   15 s whatever the number of visitors (the Cache API, then a module-level copy), decoded from protobuf and cut down
+//   15 s per warm isolate (the Cache API, then a module-level copy), decoded from protobuf and cut down
 //   to the vehicles within the city as compact JSON:
 //   { t: feed time (s), v: [[route, direction (0/1, -1 unknown), lat, lon, bearing (deg, -1 unknown), time (s), id], ...] }
 //   (the TTC's feed has no CORS header, so the browser can't read it itself)
@@ -97,9 +97,17 @@ function decode(buf) {
 }
 
 let last = null; // { at: ms, body }
-async function vehicles(ctx) {
+let pendingVehicles = null;
+function vehicles(ctx) {
+  if (last && Date.now() - last.at < TTL * 1000) return last.body;
+  if (!pendingVehicles) {
+    pendingVehicles = refreshVehicles(ctx).finally(() => { pendingVehicles = null; });
+    ctx.waitUntil(pendingVehicles.catch(() => {}));
+  }
+  return pendingVehicles;
+}
+async function refreshVehicles(ctx) {
   const now = Date.now();
-  if (last && now - last.at < TTL * 1000) return last.body;
   const cache = caches.default;
   const key = new Request('https://live.cache/ttc-vehicles');
   const hit = await cache.match(key);
@@ -114,8 +122,9 @@ async function vehicles(ctx) {
   const res = await fetch(FEED, { cf: { cacheTtl: 0 } });
   if (!res.ok) throw new Error('feed ' + res.status);
   const body = JSON.stringify(decode(new Uint8Array(await res.arrayBuffer())));
-  last = { at: now, body };
-  ctx.waitUntil(cache.put(key, new Response(body, { headers: { 'cache-control': `max-age=${TTL}`, 'x-fetched-at': String(now) } })));
+  const at = Date.now();
+  last = { at, body };
+  ctx.waitUntil(cache.put(key, new Response(body, { headers: { 'cache-control': `max-age=${TTL}`, 'x-fetched-at': String(at) } })));
   return body;
 }
 
@@ -158,7 +167,7 @@ export default {
             'content-type': 'application/json',
             'cache-control': `public, max-age=${TTL}`,
             'x-content-type-options': 'nosniff',
-            'x-data-source': 'TTC BusTime GTFS-Realtime, Open Government Licence – Toronto'
+            'x-data-source': 'TTC BusTime GTFS-Realtime, Open Government Licence - Toronto'
           }
         });
       } catch (e) {

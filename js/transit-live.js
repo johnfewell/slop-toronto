@@ -34,41 +34,78 @@ function publish() {
   for (const f of listeners) f(live);
 }
 
-let timer = null;
+const REQUEST_TIMEOUT = 15000;
+let timer = null, expiry = null, request = null;
+
+function expireIfStale() {
+  if (live.mode !== 'live' || Date.now() < Math.min(live.at, live.feedTime) + STALE) return;
+  live.mode = 'timetable';
+  live.vehicles = [];
+  publish();
+}
+
+function schedule(wait) {
+  if (!document.hidden && timer === null && !request) timer = setTimeout(poll, wait);
+}
+
+function failed() {
+  live.fails++;
+  if (live.mode === 'waiting') {
+    live.mode = 'timetable';
+    publish();
+  } else expireIfStale();
+}
+
 async function poll() {
   timer = null;
-  if (document.hidden) return; // (resumed by visibilitychange)
+  if (document.hidden || request) return;
+  const owner = new AbortController();
+  request = owner;
+  const deadline = setTimeout(() => {
+    request = null;
+    owner.abort();
+    failed();
+    schedule(POLL);
+  }, REQUEST_TIMEOUT);
   try {
-    const res = await fetch('./live/vehicles', { cache: 'no-store' });
+    const res = await fetch('./live/vehicles', { cache: 'no-store', signal: owner.signal });
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-    if (!data || !Array.isArray(data.v)) throw new Error('no vehicles');
+    if (request !== owner) return;
+    const now = Date.now(), feedTime = data?.t * 1000;
+    if (!Array.isArray(data?.v) || !Number.isFinite(feedTime) || feedTime <= 0 ||
+        now - feedTime >= STALE || feedTime < live.feedTime) throw new Error('invalid or stale feed');
     live.vehicles = data.v.map(([route, dir, lat, lon, bearing, ts, id]) => {
       const p = worldFromLatLon(lat, lon);
       return { id, route, dir, x: p.x, z: p.z, h: headingVector(lat, lon, bearing), ts: ts * 1000 };
     });
-    live.at = Date.now();
-    live.feedTime = data.t * 1000;
+    live.at = now;
+    live.feedTime = feedTime;
     live.mode = 'live';
     live.polls++;
+    clearTimeout(expiry);
+    expiry = setTimeout(expireIfStale, Math.min(now, feedTime) + STALE - now);
     if (live.polls === 1) console.info(`[transit] live: ${live.vehicles.length} TTC vehicles in the city (feed ${new Date(live.feedTime).toLocaleTimeString()})`);
-  } catch (e) {
-    live.fails++;
-    if (live.mode !== 'timetable' && Date.now() - live.at > STALE) {
-      if (live.mode === 'live' || live.fails === 1) console.info(`[transit] no live positions (${e.message || e}): the timetable runs`);
-      live.mode = 'timetable';
-      live.vehicles = [];
+    publish();
+  } catch {
+    if (request === owner) failed();
+  } finally {
+    clearTimeout(deadline);
+    if (request === owner) {
+      request = null;
+      schedule(POLL);
     }
   }
-  publish();
-  if (!document.hidden) timer = setTimeout(poll, POLL);
 }
 if (!off) {
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden || timer) return;
-    // back in view: at once if the last positions are old, else on schedule
-    const wait = Math.max(0, POLL - (Date.now() - live.at));
-    timer = setTimeout(poll, wait);
+    if (document.hidden) {
+      clearTimeout(timer);
+      timer = null;
+    } else {
+      expireIfStale();
+      schedule(Math.max(0, POLL - (Date.now() - live.at)));
+    }
   });
   // (after the city has started: its first frames first)
   timer = setTimeout(poll, 1500);
@@ -77,9 +114,9 @@ if (!off) {
 Object.assign(TRANSIT, {
   live,
   setPresentationHeld(held) {
+    expireIfStale();
     presentationHeld = Boolean(held);
     if (!presentationHeld && pendingPublish) {
-      if (live.mode === 'live' && Date.now() - live.at > STALE) { live.mode = 'timetable'; live.vehicles = []; }
       publish();
     }
   },
