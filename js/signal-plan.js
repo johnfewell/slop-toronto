@@ -103,7 +103,7 @@ const J = SIGNAL_JUNCTIONS.map((sj, index) => {
       const into = dir === 0 ? 0.5 : (dir > 0) === !atA ? 1 : 0;
       const vol = TD ? TD.linkVolume[li] * into : 0;
       const inLanes = dir === 0 ? Math.max(1, Math.floor(lanes / 2)) : Math.max(1, lanes);
-      arms.push({ ux: ux / L, uz: uz / L, w, lanes, rank: rank || 0, road: name ? baseName(name) : `#${index}:${arms.length}`, named: !!name, li, perLane: vol / inLanes });
+      arms.push({ ux: ux / L, uz: uz / L, w, lanes, rank: rank || 0, road: name ? baseName(name) : `#${index}:${arms.length}`, named: !!name, arrives: into > 0, li, perLane: vol / inLanes });
     }
   }
   return { index, x: sj.x, z: sj.z, arms, road: null, axes: null, phases: 2, offset: 0, mode: sj.mode ?? MODE.sa1, px: sj.px, name: sj.name, lpiBits: sj.lpi || 0, fdwAt: sj.fdwAt || 1.2, ped8: sj.ped8 || 0 };
@@ -171,6 +171,14 @@ for (const j of J) {
   }
   // two phases: the crossing phase's axis square to the coordinated road unless a crossing arm says otherwise
   if (axes.length === 1) axes.push([-axes[0][1], axes[0][0]]);
+  // PX 577 (Weston Road / Black Creek Drive): the unnamed arterial approach crosses both Weston and Humber
+  // Boulevard. Give it a protected phase in the plan shared by drivers, pedestrians and the signal heads.
+  if (j.px === 577 && axes.length === 2) {
+    const blackCreek = rest.find((a) => !a.named && a.arrives && a.rank === 4);
+    if (blackCreek && axes.every(([x, z]) => Math.abs(x * blackCreek.ux + z * blackCreek.uz) < Math.SQRT1_2)) {
+      axes.push([blackCreek.ux, blackCreek.uz]);
+    }
+  }
   j.axes = axes;
   j.phases = axes.length;
   // Toronto's pedestrian scramble: after the roads' greens, a phase for the people alone, every crosswalk at once (and

@@ -758,7 +758,7 @@ async function initApp() {
   const { bloomPass } = colorGrade;
   // the live sky's rain & snow (precipitation.js): nothing is built until a reading calls for it
   const precipitation = window.CITY.createPrecipitation(scene, { quality: QUALITY });
-  // FXAA (the low tier) or SMAA instead of MSAA: either smooths the tone-mapped sRGB image, so the pipeline's own
+  // FXAA or SMAA instead of MSAA: either smooths the tone-mapped sRGB image, so the pipeline's own
   // output transform moves ahead of it
   const postAA = QUALITY.aa === 'fxaa' ? fxaa : QUALITY.aa === 'smaa' ? smaa : null;
   const renderPipeline = new THREE.RenderPipeline(renderer, postAA ? postAA(renderOutput(colorGrade.outputNode)) : colorGrade.outputNode);

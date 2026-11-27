@@ -87,6 +87,40 @@ test('roads crossing at a junction run in different phases', () => {
   assert.equal(bad.length, 0, bad.join('; '));
 });
 
+test('the Eglinton plan gives the Black Creek Drive ramp a protected phase at Weston Road', async () => {
+  const { unpackGeo } = await import('../js/geodata-loader.js');
+  const { GEO } = await unpackGeo(readFileSync(join(__dirname, '../data/frames/eglinton/toronto-geodata.bin')));
+  const CITY = { GEO, DEBUG_ROADS: false };
+  const eglinton = vm.createContext({ window: { CITY }, console });
+  for (const path of [
+    'js/frames/eglinton/toronto-traffic-data.js', 'js/city-config.js',
+    'js/frames/eglinton/toronto-signal-plan.js', 'js/signal-plan.js'
+  ]) {
+    vm.runInContext(readFileSync(join(__dirname, '..', path), 'utf8'), eglinton, { filename: path });
+  }
+  const plan = CITY.SIGNALS;
+  const j = plan.junctions.find((j) => j.px === 577);
+  assert.equal(j.name, 'WESTON RD / BLACK CREEK DR');
+  assert.equal(j.phases, 3);
+  assert.equal(plan.plan.planned, 'table');
+
+  // The ramp's centerline bends between the mapped signal arm used by the heads and the lane tangent used by traffic.
+  const ramp = j.arms.find((a) => !a.named && a.perLane > 0);
+  assert.equal(plan.phaseForDir(j.index, ramp.ux, ramp.uz), 2);
+  assert.equal(plan.phaseForDir(j.index, 0.1233, 0.9924), 2);
+  for (const a of j.arms.filter((a) => a.named)) {
+    assert.equal(plan.phaseForDir(j.index, a.ux, a.uz), a.road === 'Weston Road' ? 0 : 1);
+  }
+
+  for (const [phase, [start, end]] of plan.windows(j.index).entries()) {
+    const time = plan.offsets[j.index] + (start + end) / 2;
+    for (let p = 0; p < j.phases; p++) {
+      assert.equal(plan.state(j.index, p, time), p === phase ? 'green' : 'red');
+    }
+  }
+  assert.equal(plan.checkLayouts().length, 0);
+});
+
 test('actuated lights under random demand: one phase at a time, clearance kept, minimum greens, back in step', () => {
   const sample = [0, 7, 42, 99, 150, 233, 301, 402].filter((k) => k < J.length);
   for (const k of J.keys()) if (J[k].phases === 3) { sample.push(k); break; }

@@ -18,7 +18,7 @@
 const params = new URLSearchParams(location.search);
 
 // What each tier draws. high is the look as tuned on the M4 mini & John's laptop; the others give up what costs most
-// on a phone (the full-screen passes, the multisampled frame, the shadow & prop draw calls) and keep what makes the
+// on a phone (the full-screen passes and the shadow & prop draw calls) and keep what makes the
 // place: the golden light, the sun's shadows near the rider, the clouds, the water & the trees
 const TIERS = {
   high: {
@@ -103,7 +103,9 @@ const TIERS = {
     audio: { motors: 6, sirens: 1, events: 6, hrtf: true }
   },
   low: {
-    scale: 1, aa: 'fxaa', ssr: false, coat: false, bloom: true, bloomScale: 0.5, clouds: 'low', cloudScale: 0.5, // (0.35 measured no faster on this tier: st-iq0v.5)
+    // The single-sample scene renders Lake Ontario black on WebGPU, with both water materials and with FXAA off.
+    // Use the medium tier's multisampled scene for low too (jf-dua).
+    scale: 1, aa: 'msaa', ssr: false, coat: false, bloom: true, bloomScale: 0.5, clouds: 'low', cloudScale: 0.5, // (0.35 measured no faster on this tier: st-iq0v.5)
     shadowTile: 1024, shadowFar: 0.5,
     treeNear: 35, treeMid: 180, treeMidShadow: 50, treeFar: 0.7, treeImpMid: 35,
     massingLimits: [300, 1000], // (the full outlines only close by on a phone)

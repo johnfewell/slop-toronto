@@ -65,6 +65,13 @@ test('no flicker: a rung left again soon after stepping up is held for a minute,
   assert.equal(n.state().rung, 0);
 });
 
+test('low uses the multisampled render path that draws the lake', () => {
+  const { Q } = net('?quality=low');
+  assert.equal(Q.aa, 'msaa');
+  assert.equal(Q.ssr, false);
+  assert.equal(net('?quality=low&q.aa=none').Q.aa, 'none');
+});
+
 test('the phone tier keeps its distance-only rungs and its median rule', () => {
   const { Q, n, run, sizes } = net('?quality=low');
   run(33.3, 8);
