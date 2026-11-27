@@ -282,6 +282,11 @@ async function initApp() {
   if (tennis) pushAll(allColliders, tennis.colliders);
   // The City's rink and skate-trail outlines in their scene-date season (rinks.js); after tennis, whose paving one meets
   const rinks = window.CITY.buildRinks?.(scene, allColliders);
+  // The accepted winter ice replaces any tennis court on the same pad, including its physical net.
+  for (const collider of tennis?.clearFrozenCourts?.(rinks?.sites || []) || []) {
+    const index = allColliders.indexOf(collider);
+    if (index !== -1) allColliders.splice(index, 1);
+  }
   if (rinks) pushAll(allColliders, rinks.colliders);
   // Nathan Phillips Square's three Freedom Arches over the reflecting pool, all year (freedom-arches.js)
   const freedomArches = window.CITY.buildFreedomArches?.(scene);

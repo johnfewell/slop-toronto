@@ -931,6 +931,7 @@ function cutMaskBoxes(rects, bm) {
 }
 
 function buildCityGrid(scene) {
+  window.CITY.rinkWaterMeshes = [];
   vergeRampReset(); // (the exact verge surface is rebuilt with the ground; empty before this and in an unsupported frame)
   const group = new THREE.Group();
   group.name = 'CityGround';
@@ -1029,7 +1030,10 @@ function buildCityGrid(scene) {
         group.add(m);
         continue;
       }
-      group.add(createFlatPolygonMesh(w.pts, CITY_BOUNDS.waterLevel, waterMat, true));
+      const pond = createFlatPolygonMesh(w.pts, CITY_BOUNDS.waterLevel, waterMat, true);
+      // Keep the mapped pond and splash-pad meshes available to the seasonal rink layer.
+      (window.CITY.rinkWaterMeshes ||= []).push({water:w,mesh:pond});
+      group.add(pond);
       banks(w.pts);
     }
     const g = accGeometry(bank);

@@ -34,6 +34,9 @@ function inTennisPad(pad,x,z) {
   for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])inside=!inside;
   return inside;
 }
+function frozenCourt(site,rinks) {
+  return rinks.some((r)=>r.surface==='ice'&&C.inRecord(r,site.x,site.z));
+}
 function buildTennis(scene,staticColliders=[]) {
   const {THREE,WorldCollision:W}=C;
   const groundAt=(x,z)=>(C.blockAt(x,z)?C.CITY_BOUNDS.sidewalkHeight:0)+(C.cutAt?.(x,z)||0);
@@ -114,7 +117,19 @@ function buildTennis(scene,staticColliders=[]) {
   if(surface.instanceColor)surface.instanceColor.needsUpdate=true;
   C.tennisStats={sourceCount:C.TENNIS?.records.length||0,placed:layout.sites.length,rejected:layout.rejected,sites:layout.sites,pads,rejectedPads,trianglesPerCourt:positions.length/9+2,terrain,sourceAudit:C.TENNIS?.audit||[]};
   console.info('[tennis] '+JSON.stringify({placed:layout.sites.length,rejected:layout.rejected}));
-  return {group,colliders,sites:layout.sites,pads};
+  // Rinks are placed after tennis. Once their accepted footprints are known, hide whole overlapping courts in ice
+  // season, including their nets and collision shapes. Keep the summer courts and their placement unchanged.
+  function clearFrozenCourts(rinks) {
+    const hidden=[],zero=new THREE.Matrix4().makeScale(0,0,0);
+    layout.sites.forEach((site,i)=>{
+      if(!frozenCourt(site,rinks))return;
+      detail.setMatrixAt(i,zero);surface.setMatrixAt(i,zero);hidden.push({id:site.id,collider:colliders[i]});
+    });
+    if(hidden.length){detail.instanceMatrix.needsUpdate=true;surface.instanceMatrix.needsUpdate=true;}
+    C.tennisStats.frozenCourts=hidden.map((s)=>s.id);
+    return hidden.map((s)=>s.collider);
+  }
+  return {group,colliders,sites:layout.sites,pads,clearFrozenCourts};
 }
-C.tennisSites=tennisSites;C.courtPoint=courtPoint;C.courtShape=courtShape;C.onCourt=onCourt;C.inTennisPad=inTennisPad;C.buildTennis=buildTennis;
+C.tennisSites=tennisSites;C.courtPoint=courtPoint;C.courtShape=courtShape;C.onCourt=onCourt;C.inTennisPad=inTennisPad;C.frozenCourt=frozenCourt;C.buildTennis=buildTennis;
 })();

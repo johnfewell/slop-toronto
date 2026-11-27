@@ -35,6 +35,17 @@ function surfaceKind(record,season) {
   if(season==='ice')return 'ice';
   return record.appearance==='pond'?'water':record.type==='Skate Trail'?'path':'pad';
 }
+function reconcileRinkWater(sites,entries) {
+  const shared=new Set(),edges=[];
+  for(const s of sites.filter((r)=>['43569','43574','43599'].includes(r.assetId)))for(const entry of entries) {
+    const pts=entry.water.pts,x=pts.reduce((sum,p)=>sum+p.x,0)/pts.length,z=pts.reduce((sum,p)=>sum+p.z,0)/pts.length;
+    if(!inRecord(s,x,z))continue;
+    entry.mesh.visible=true;
+    if(s.surface==='water')shared.add(s);
+    else edges.push({site:s,mesh:entry.mesh});
+  }
+  return {shared,edges};
+}
 
 // ---- polygon helpers ([x, z] rings)
 function inRing(ring,x,z) {
@@ -198,6 +209,18 @@ function buildRinks(scene,staticColliders=[]) {
   const layout=rinkSites(records,{blockAt:C.blockAt,groundAt,overlapArea});
   const sites=layout.sites;
   for(const s of sites)s.surface=surfaceKind(s,season);
+  // Three mapped water bodies share accepted rink footprints. The two reflecting pools keep the existing water
+  // outside ice season; the splash pad and all three winter surfaces use the rink outline. Rejected rinks leave water.
+  const {shared:sharedWater,edges}=reconcileRinkWater(sites,C.rinkWaterMeshes||[]);
+  // The independent OSM water and City rink outlines differ slightly. A matching edge fills those gaps; the City
+  // rink surface sits one centimetre higher and wins wherever the two overlap.
+  if(edges.length) {
+    const materials=new Map();
+    for(const {site,mesh} of edges){
+      if(!materials.has(site.surface))materials.set(site.surface,new THREE.MeshStandardNodeMaterial({color:COLOURS[site.surface],roughness:ROUGH[site.surface]}));
+      mesh.material=materials.get(site.surface);mesh.position.y=site.y+SURFACE_LIFT-.01-C.CITY_BOUNDS.waterLevel;
+    }
+  }
 
   // Terrain: the coarse near grid is clipped from every accepted footprint (sports-terrain.js), in convex pieces
   const triangulate=(outer,holes)=>THREE.ShapeUtils.triangulateShape(outer.map(([x,z])=>new THREE.Vector2(x,z)),holes.map((h)=>h.map(([x,z])=>new THREE.Vector2(x,z))));
@@ -221,7 +244,7 @@ function buildRinks(scene,staticColliders=[]) {
   for(const s of sites) {
     const lit=season==='ice'&&s.sourceFacts?.Lighting==='Yes'?1:0;
     const hex=COLOURS[s.surface],rough=ROUGH[s.surface];
-    for(const p of s.polygons) {
+    for(const p of (sharedWater.has(s)?[]:s.polygons)) {
       const pts=[...p.outer,...p.holes.flat()];
       for(const tri of triangulate(p.outer,p.holes)) {
         const t=tri.map((k)=>pts[k]);if(ringArea(t)>0)t.reverse(); // up-facing in the world (x, -z) plane
@@ -308,5 +331,5 @@ function rinkCardFacts(record) {
   facts['Season']='Outdoor rinks are seasonal and weather dependent. The scene shows no live status; check the City for current skating hours';
   return facts;
 }
-Object.assign(C,{rinkSeason,sceneSeason,surfaceKind,inRecord,convexPieces,simplifyRing,boardRuns,outlineRectangle,rinkSites,buildRinks,inRinkFootprint,rinkCardFacts});
+Object.assign(C,{rinkSeason,sceneSeason,surfaceKind,reconcileRinkWater,inRecord,convexPieces,simplifyRing,boardRuns,outlineRectangle,rinkSites,buildRinks,inRinkFootprint,rinkCardFacts});
 })();

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import * as THREE from 'three/webgpu';
 import {tennisCourts} from '../tools/build-tennis.mjs';
 const read=(p)=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const ctx={window:{CITY:{}}};
@@ -56,4 +57,30 @@ test('court clearance uses the rotated full play/net footprint, rejects roads an
   const shape=C.courtShape(site,C.WorldCollision);
   assert.ok(C.WorldCollision.contact(shape,{minX:60,maxX:62,minZ:99,maxZ:101}));
   assert.equal(C.WorldCollision.contact(shape,{minX:64,maxX:66,minZ:99,maxZ:101}),null);
+});
+
+test('winter rink footprints replace overlapping courts only when ice is placed',()=>{
+  const sandbox={window:{CITY:{}},URLSearchParams};
+  for(const f of ['toronto-rinks','frames/eglinton/toronto-rinks','toronto-tennis','frames/eglinton/toronto-tennis','tennis','rinks'])vm.runInNewContext(read(`js/${f}.js`),sandbox);
+  const city=sandbox.window.CITY, records=city.RINKS.records;
+  const ice=records.map((r)=>({...r,surface:'ice'}));
+  const hidden=city.TENNIS.records.filter((court)=>city.frozenCourt(court,ice)).map((court)=>court.id).sort();
+  assert.deepEqual(Array.from(hidden),['osm-way:25670072','osm-way:975858244']);
+  assert.equal(city.TENNIS.records.some((court)=>city.frozenCourt(court,records.map((r)=>({...r,surface:'pad'})))),false);
+  assert.equal(city.frozenCourt(city.TENNIS.records.find((court)=>court.id==='osm-way:975858244'),ice.filter((r)=>r.assetId!=='43728')),false);
+});
+
+test('freezing an accepted court hides its meshes and removes its net collider',()=>{
+  const sandbox={window:{CITY:{}},URLSearchParams,console};
+  for(const f of ['world-collision','tennis','rinks'])vm.runInNewContext(read(`js/${f}.js`),sandbox);
+  const city=sandbox.window.CITY,block={};
+  Object.assign(city,{THREE,CITY_BOUNDS:{sidewalkHeight:.22},blockAt:()=>block,TENNIS:{records:[{id:'court',x:0,z:0,yaw:0}],pads:[]}});
+  const rink={surface:'ice',polygons:[{outer:[[-20,-20],[20,-20],[20,20],[-20,20]],holes:[]}]};
+  const built=city.buildTennis(new THREE.Scene());
+  const removed=built.clearFrozenCourts([rink]);
+  assert.equal(removed.length,1);assert.equal(removed[0],built.colliders[0]);
+  for(const name of ['TennisLinesAndNets','TennisSurfaces']) {
+    const matrix=new THREE.Matrix4();built.group.getObjectByName(name).getMatrixAt(0,matrix);
+    assert.equal(matrix.elements[0],0);assert.equal(matrix.elements[5],0);assert.equal(matrix.elements[10],0);
+  }
 });

@@ -140,3 +140,25 @@ test('place cards say what the city draws, with the dated scene and the aerial b
   assert.equal(C.rinkCardFacts({kind:'tennis',id:'x'}),null);
   delete C.rinkStats;
 });
+
+test('accepted rink surfaces take ownership of their matching mapped water',()=>{
+  const ids=['43569','43574','43599'];
+  const sources=ids.map((id)=>byAsset(id));
+  const areas=C.GEO.areas.filter(([kind,name,flat])=>kind==='water'&&name!=='Lake Ontario'&&sources.some((r)=>{
+    let x=0,z=0;for(let i=0;i<flat.length;i+=2){x+=flat[i];z+=flat[i+1];}
+    return C.inRecord(r,x/(flat.length/2),z/(flat.length/2));
+  }));
+  assert.equal(areas.length,3);
+  const entries=areas.map(([,name,flat])=>({water:{name,pts:Array.from({length:flat.length/2},(_,i)=>({x:flat[i*2],z:flat[i*2+1]}))},mesh:{visible:true}}));
+  const off=sources.map((r)=>({...r,surface:C.surfaceKind(r,'off')}));
+  const {shared,edges}=C.reconcileRinkWater(off,entries);
+  assert.deepEqual(Array.from(shared,(r)=>r.assetId).sort(),['43574','43599']);
+  assert.deepEqual(Array.from(edges,({site})=>site.assetId),['43569']);
+  const ice=sources.map((r)=>({...r,surface:'ice'}));
+  const frozen=C.reconcileRinkWater(ice,entries);
+  assert.equal(frozen.shared.size,0);assert.equal(frozen.edges.length,3);
+  assert.ok(frozen.edges.every(({mesh})=>mesh.visible));
+  entries.forEach((e)=>{e.mesh.visible=true;});
+  C.reconcileRinkWater([],entries);
+  assert.ok(entries.every((e)=>e.mesh.visible===true),'rejected sites leave water untouched');
+});

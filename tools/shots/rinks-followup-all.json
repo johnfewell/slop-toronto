@@ -1,0 +1,218 @@
+[
+  {
+    "name": "rink-14282-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='14282'),s=C.rinkStats.sites.find(x=>x.assetId==='14282');if(!s)throw new Error('not placed 14282');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43569-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43569'),s=C.rinkStats.sites.find(x=>x.assetId==='43569');if(!s)throw new Error('not placed 43569');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43573-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43573'),s=C.rinkStats.sites.find(x=>x.assetId==='43573');if(!s)throw new Error('not placed 43573');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43574-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43574'),s=C.rinkStats.sites.find(x=>x.assetId==='43574');if(!s)throw new Error('not placed 43574');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43587-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43587'),s=C.rinkStats.sites.find(x=>x.assetId==='43587');if(!s)throw new Error('not placed 43587');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43591-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43591'),s=C.rinkStats.sites.find(x=>x.assetId==='43591');if(!s)throw new Error('not placed 43591');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43598-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43598'),s=C.rinkStats.sites.find(x=>x.assetId==='43598');if(!s)throw new Error('not placed 43598');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43599-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43599'),s=C.rinkStats.sites.find(x=>x.assetId==='43599');if(!s)throw new Error('not placed 43599');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43607-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43607'),s=C.rinkStats.sites.find(x=>x.assetId==='43607');if(!s)throw new Error('not placed 43607');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43613-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43613'),s=C.rinkStats.sites.find(x=>x.assetId==='43613');if(!s)throw new Error('not placed 43613');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43614-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43614'),s=C.rinkStats.sites.find(x=>x.assetId==='43614');if(!s)throw new Error('not placed 43614');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-59902-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='59902'),s=C.rinkStats.sites.find(x=>x.assetId==='59902');if(!s)throw new Error('not placed 59902');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-71802-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='71802'),s=C.rinkStats.sites.find(x=>x.assetId==='71802');if(!s)throw new Error('not placed 71802');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-71803-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='71803'),s=C.rinkStats.sites.find(x=>x.assetId==='71803');if(!s)throw new Error('not placed 71803');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-74082-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='74082'),s=C.rinkStats.sites.find(x=>x.assetId==='74082');if(!s)throw new Error('not placed 74082');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-970547-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='970547'),s=C.rinkStats.sites.find(x=>x.assetId==='970547');if(!s)throw new Error('not placed 970547');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-970567-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='970567'),s=C.rinkStats.sites.find(x=>x.assetId==='970567');if(!s)throw new Error('not placed 970567');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-14276-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='14276'),s=C.rinkStats.sites.find(x=>x.assetId==='14276');if(!s)throw new Error('not placed 14276');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-14283-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='14283'),s=C.rinkStats.sites.find(x=>x.assetId==='14283');if(!s)throw new Error('not placed 14283');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-14293-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='14293'),s=C.rinkStats.sites.find(x=>x.assetId==='14293');if(!s)throw new Error('not placed 14293');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-14306-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='14306'),s=C.rinkStats.sites.find(x=>x.assetId==='14306');if(!s)throw new Error('not placed 14306');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43562-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43562'),s=C.rinkStats.sites.find(x=>x.assetId==='43562');if(!s)throw new Error('not placed 43562');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43577-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43577'),s=C.rinkStats.sites.find(x=>x.assetId==='43577');if(!s)throw new Error('not placed 43577');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43578-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43578'),s=C.rinkStats.sites.find(x=>x.assetId==='43578');if(!s)throw new Error('not placed 43578');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43581-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43581'),s=C.rinkStats.sites.find(x=>x.assetId==='43581');if(!s)throw new Error('not placed 43581');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43583-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43583'),s=C.rinkStats.sites.find(x=>x.assetId==='43583');if(!s)throw new Error('not placed 43583');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43584-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43584'),s=C.rinkStats.sites.find(x=>x.assetId==='43584');if(!s)throw new Error('not placed 43584');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43588-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43588'),s=C.rinkStats.sites.find(x=>x.assetId==='43588');if(!s)throw new Error('not placed 43588');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43593-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43593'),s=C.rinkStats.sites.find(x=>x.assetId==='43593');if(!s)throw new Error('not placed 43593');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43596-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43596'),s=C.rinkStats.sites.find(x=>x.assetId==='43596');if(!s)throw new Error('not placed 43596');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43601-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43601'),s=C.rinkStats.sites.find(x=>x.assetId==='43601');if(!s)throw new Error('not placed 43601');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43609-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43609'),s=C.rinkStats.sites.find(x=>x.assetId==='43609');if(!s)throw new Error('not placed 43609');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-43728-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43728'),s=C.rinkStats.sites.find(x=>x.assetId==='43728');if(!s)throw new Error('not placed 43728');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-44162-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='44162'),s=C.rinkStats.sites.find(x=>x.assetId==='44162');if(!s)throw new Error('not placed 44162');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-59882-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='59882'),s=C.rinkStats.sites.find(x=>x.assetId==='59882');if(!s)throw new Error('not placed 59882');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  },
+  {
+    "name": "rink-59883-above",
+    "mode": "person",
+    "wait": 2500,
+    "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='59883'),s=C.rinkStats.sites.find(x=>x.assetId==='59883');if(!s)throw new Error('not placed 59883');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+  }
+]
