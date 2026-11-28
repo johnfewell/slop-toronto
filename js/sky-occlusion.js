@@ -185,8 +185,12 @@ function fillDisc(grid, cx, cz, r, value) {
 }
 
 // A leaf-on tree stops part of the sky, not all of it, and the map holds one height per texel: the crown is drawn as a
-// solid reaching this share of the tree's height (a street tree of 12 m: 8 m), and only while the trees are in leaf
-const CROWN_SHARE = 0.65;
+// solid reaching this share of the tree's height (a street tree of 12 m: 3 m), and only while the trees are in leaf.
+// It was 0.65, which made the crown a solid ceiling over the road: Chestnut Park's asphalt rendered at about 0.05 of
+// white under its ash and maples (the road at the next street, with no crowns, at 0.3; John's photograph of the same road,
+// at about 0.33), and the walks beside it near black. At 0.25 the crown reaches about as low as its own underside, so the
+// leaves still shade the street but a roadway under them reads as the soft mid grey it is (docs/rosedale-streetscape.md, part 3)
+const CROWN_SHARE = 0.25;
 const MIN_TREE = 4; // m: shrubs and saplings are left out
 // crowns: { count, data: Float32Array of x, foot y, z, height, crown radius per tree }. The foot is raised to the ground
 // where the site's y is under it.
@@ -201,6 +205,35 @@ function treesToGrid(grid, crowns, groundAt = null) {
     drawn++;
   }
   return drawn;
+}
+
+// Where the tree crowns are, as a soft 0..1 cover on a texel twice the height map's (8 m on the desktop city): the
+// ground's own materials read it for the shade under a tree and for where fallen leaves lie (docs/rosedale-streetscape.md,
+// part 3). A crown is full inside 0.55 of its radius and falls to nothing a little past its edge; the tallest of two
+// crowns wins, so a street of trees is one band of cover. Trees under MIN_TREE are left out, like the height map's.
+function crownCoverGrid(grid, crowns) {
+  const texel = grid.texel * 2, width = Math.ceil(grid.width / 2), height = Math.ceil(grid.height / 2);
+  const data = new Uint8Array(width * height);
+  if (!crowns) return { data, width, height, texel };
+  const { originX, originZ } = grid;
+  for (let i = 0; i < crowns.count; i++) {
+    const x = crowns.data[i * 5], z = crowns.data[i * 5 + 2], h = crowns.data[i * 5 + 3], r = crowns.data[i * 5 + 4];
+    if (!(h >= MIN_TREE) || !(r > 0)) continue;
+    const reach = r * 1.25 + texel;
+    const c0 = Math.max(0, Math.floor((x - reach - originX) / texel)), c1 = Math.min(width - 1, Math.floor((x + reach - originX) / texel));
+    const r0 = Math.max(0, Math.floor((z - reach - originZ) / texel)), r1 = Math.min(height - 1, Math.floor((z + reach - originZ) / texel));
+    for (let row = r0; row <= r1; row++) {
+      const dz = originZ + (row + 0.5) * texel - z;
+      for (let col = c0; col <= c1; col++) {
+        const dx = originX + (col + 0.5) * texel - x;
+        const d = Math.sqrt(dx * dx + dz * dz);
+        const t = Math.min(1, Math.max(0, (r * 1.25 - d) / (r * 0.7)));
+        const v = Math.round(255 * t * 0.92);
+        if (v > data[row * width + col]) data[row * width + col] = v;
+      }
+    }
+  }
+  return { data, width, height, texel };
 }
 
 // The max-mip pyramid: a texel holds the tallest of the four below it
@@ -319,6 +352,11 @@ function createNodes() {
   const placeholder = new THREE.DataTexture(new Uint8Array([0]), 1, 1, THREE.RedFormat, THREE.UnsignedByteType);
   placeholder.needsUpdate = true;
   const map = texture(placeholder);
+  // the tree crowns' cover (crownCoverGrid), read by the ground's materials: a 1x1 of 0 (no trees) until attach() fills it
+  const crownPlaceholder = new THREE.DataTexture(new Uint8Array([0]), 1, 1, THREE.RedFormat, THREE.UnsignedByteType);
+  crownPlaceholder.needsUpdate = true;
+  const crownMap = texture(crownPlaceholder);
+  const crownFrame = uniform(vec4(0, 0, 1, 1)).setGroup(renderGroup);
   // (renderGroup: one upload per render, not per object, like the other city-wide uniforms)
   const frame = uniform(vec4(0, 0, 1, 1)).setGroup(renderGroup); // origin x, z, 1 / width m, 1 / depth m
   const texelM = uniform(4).setGroup(renderGroup);
@@ -411,7 +449,8 @@ function createNodes() {
     return out;
   });
 
-  runtime = { map, frame, texelM, offsetM, on, fill, warmColor, coolColor, sunXZ, sunLit, aoAt, lightAt, visibilityOf, heightNode, placeholder, THREE };
+  const crownAt = (xz) => crownMap.sample(xz.sub(crownFrame.xy).mul(crownFrame.zw)).r;
+  runtime = { crownPlaceholder, crownFrame, crownAt, map, frame, texelM, offsetM, on, fill, warmColor, coolColor, sunXZ, sunLit, aoAt, lightAt, visibilityOf, heightNode, placeholder, THREE };
   return runtime;
 }
 
@@ -419,6 +458,13 @@ function createNodes() {
 function aoNode(positionN, normalN) {
   const r = createNodes();
   return r ? r.aoAt(positionN, normalN) : null;
+}
+
+// How much tree crown stands over a point of the ground (0 to 1), for the ground materials' shade and fallen leaves:
+// a node of the world xz, or null on a tier without the pass (the phone tier: the materials keep their even ground).
+function crownCoverNode(xz) {
+  const r = createNodes();
+  return r ? r.crownAt(xz) : null;
 }
 
 // The coloured version, for the materials that add the bounce (tsl-materials.js canyonLight): { ao, bounce(albedo) }, both
@@ -470,6 +516,18 @@ function attach(colliders, bounds, { meshRoots = [], groundAt = null, crowns = n
   r.placeholder.dispose();
   showVariant(r, 'bare');
   r.on.value = 1;
+  if (crowns && crowns.count) {
+    const cc = crownCoverGrid(grid, crowns);
+    const t = r.crownPlaceholder;
+    t.dispose();
+    t.image = { data: cc.data, width: cc.width, height: cc.height };
+    t.magFilter = r.THREE.LinearFilter;
+    t.minFilter = r.THREE.LinearFilter;
+    t.generateMipmaps = false;
+    t.needsUpdate = true;
+    r.crownFrame.value.set(grid.originX, grid.originZ, 1 / (cc.width * cc.texel), 1 / (cc.height * cc.texel));
+    state.crownCover = { width: cc.width, height: cc.height, texel: cc.texel };
+  }
   let bytes = 0;
   for (const l of pyramid) bytes += l.data.byteLength;
   const flat = encodeHeight(0, grid.offset);
@@ -590,6 +648,6 @@ C.SkyOcclusion = {
   encodeHeight, decodeHeight, chooseTexel, createGrid, fillRings, fillTriangle, fillDisc, isBuildingCollider, collidersToGrid, buildPyramid,
   groundLattice, fillGround, latticeAt, treesToGrid, CROWN_SHARE,
   heightAt, visibility, visibilityReference, stepDistance,
-  aoNode, lightNode, attach, setBounce, setLeaf, bounceColours, sunLitness, state, get runtime() { return runtime; }
+  aoNode, lightNode, attach, setBounce, setLeaf, crownCoverNode, crownCoverGrid, bounceColours, sunLitness, state, get runtime() { return runtime; }
 };
 })();

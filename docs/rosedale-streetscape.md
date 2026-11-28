@@ -122,3 +122,88 @@ Mac mini (Apple M4) through `gpu2`, shared with a production transcription job (
 - **Hedges.** The lidar hedges (docs/front-yards.md) already put tall clipped hedges on lot lines; nothing changed.
 - **Ivy on house walls**, **cars parked in drives** and **leaves on the road** were not done: ivy needs a per-house facade colour that follows the season (green in summer, red then bare), a parked car in a drive needs a place in the parked-car layout, and the road's leaves live in the shared road material another agent is changing.
 - Snow on hedges and branches is already there (evergreens take a snow cap, deciduous shrubs and trees go bare and take snow on top).
+
+## Part 3: the road's colour, the lawns, fallen leaves on the road (bead `jf-bv3`)
+
+John's four complaints after part 2, with the two he chose first (the road and the lawns) done here; the lot lines and the road's shape are in the next section. The photographs are private and not in this repository.
+
+### 1. Why the road was near black
+
+Measured on the same Chestnut Park frame (22 October, overcast), the mean of a 400 x 200 patch of roadway: **John's photograph (83, 78, 78)** (a soft mid grey, lighter and a little patchy, leaves on it), the game **(11, 12, 14)**, Crescent Rd's road in the game (76, 82, 89).
+So it is not the asphalt's albedo (a mid grey, `js/tsl-materials.js` `createRoadSurfaceMaterial`), and it is not wetness either: with the road's wetness set to 0.05 the patch went from 16 to 11 (a dry road is less glossy, not lighter). Turning the tree crowns out of the sky-occlusion map (`SkyOcclusion.setLeaf(0)`) took it to **53**.
+
+The cause is `js/sky-occlusion.js`: while the trees are in leaf (`uLeaf` 0.5 or more) each crown is a solid disc in the height map reaching `CROWN_SHARE` = 0.65 of the tree's height. A 16 m street tree is a ceiling 10 m up over the road, and a road lined with them sees almost no sky: the same
+reason the concrete walks under such trees came out near black (the boulevard frame). Trying shares of 0.65, 0.45, 0.3 and 0.2 on the same frame (road patch 11, 21 to 29, 44 to 46, 53) and radius scales of 0.7 and 1, the share is now **0.25**, about the height of a crown's underside:
+the leaves still shade the street, but a roadway under them reads as a grey road (58, 65, 74 on the frame, from 11, 12, 14). The asphalt's two tones are also a few percent lighter (`0x4b4946` and `0x777571`, were `0x474542` and `0x716f6b`) and its patchy mottling a little stronger.
+Downtown and the arterials have no crowns over them and move only by that lightening (see the pictures).
+
+### 2. Fallen leaves on the road
+
+Leaves lie on the asphalt from the colour's peak until the snow or the end of November (`leafFallSeason` in `js/tsl-materials.js`: a third of the year's fall while the crowns are still full, all of it once they are bare), oriented elliptical leaves in yellow, orange, brown and the odd red, a few on any street and
+thicker under the trees. "Under the trees" is read from a new **crown cover** map (`crownCoverGrid`, `crownCoverNode` in `js/sky-occlusion.js`): the same 245,766 crowns as the sky occlusion's, as a soft 0 to 1 cover on a texel of 8 m, 3.3 MB, one texture sample; the road, the lawns and
+the yards share it. The leaves are skipped outright beyond 30 m (45 m on a lawn), by a uniform test first, so a summer or a bare winter road pays nothing for them.
+
+Along the way the yards' leaf code was fixed: it hashed the leaf cell's number whole, and at Rosedale's world coordinates (cells numbered in the millions) the GPU's sine returned something close to a constant for one of its two layers, so every cell of that layer held a small yellow dot: **a regular lattice of yellow dots over the lawns and the boulevard patches** (in the part 2 frames, and on the snow
+frame before this PR). The one function, `leafScatter`, now serves the road, the plot ground, the lawns and the yards' litter, with the cell wrapped before it is hashed; its leaves are also bigger (about 10 to 17 cm long, they were 6 to 9) so they read at street level.
+
+### 3. Lawns
+
+`groundLawn` (`js/tsl-materials.js`) is the one lawn colour, used by the plot ground (the verges, boulevards and yards, `createPlotGroundMaterial`) and by the yards' lawn patches (`js/front-yard-material.js` kind 3), so a lawn and the ground beside it are one grass. It was two noises of the same two greens and read as a flat saturated green. Now:
+
+- patches a few metres across, a little lighter or darker (a 0.77 to 1.23 factor), and sun-dried yellow patches;
+- faint mowing stripes (4.5%, a 1.16 m wavelength, their direction changing from lot to lot), close up only (they fade out by 60 m);
+- under a crown, while the trees are in leaf: 32% darker, and thin, a patch of the ground showing through (a brown);
+- the autumn's leaves lying on it, thickest under the trees;
+- the season's colours as before (`seasonalGrass`: dormant turf, spring's yellow-green), snow over all of it.
+
+The crown map is read only while the trees are in leaf or the leaves lie (a uniform branch), so the bare winter lawn pays for the patches and stripes only.
+
+## Pictures (part 3)
+
+Same cameras before (origin/main `aca2514`) and after, on the Mac mini, 1600 x 900, no season preset: 22 October 2026 and 22 November 2026 with 6 cm of snow. Side-by-side sheets with John's photographs are in his private review folder (`slop-toronto-updates/2026-11-27-rosedale-streetscape-3/partA/`);
+the pictures here are the game's frames only.
+
+![Chestnut Park, 22 October: the road is a grey road under the trees, with leaves on it](images/rosedale-streetscape-p3-chestnut-park-fall.jpg)
+
+![Leaves on the road, a lawn with patches and the shade of the crowns](images/rosedale-streetscape-p3-road-leaves-fall.jpg)
+
+![A boulevard: the walk is no longer black under the trees, the dots are gone](images/rosedale-streetscape-p3-boulevard-fall.jpg)
+
+![Roxborough Dr](images/rosedale-streetscape-p3-roxborough-fall.jpg)
+
+![Chestnut Park, 22 November, snow](images/rosedale-streetscape-p3-chestnut-park-snow.jpg)
+
+![Mount Pleasant Rd (an arterial) is unchanged](images/rosedale-streetscape-p3-arterial-fall.jpg)
+
+### Cost of part 3 (road colour, lawns, leaves on the road)
+
+Mac mini (Apple M4) through `gpu2`, shared with a production transcription job (relative figures, not budgets), 1600 x 900, uncapped, 20 s recordings at street level (the first 15% of each dropped), origin/main `aca2514` against this branch, alternated (every second run had "after" first).
+Mean / median frame interval, ms, before -> after (budget +0.5 ms at street level):
+
+| Place | Date | Run | Mean | Median |
+|---|---|---|---|---|
+| Chestnut Park | 22 Oct | 7 | 18.13 -> 18.26 (+0.13) | 18.10 -> 18.20 (+0.10) |
+| Chestnut Park | 22 Oct | 8 (after first) | 18.08 -> 18.23 (+0.15) | 18.10 -> 18.30 (+0.20) |
+| Crescent Rd | 22 Oct | 7 | 15.98 -> 16.00 (+0.03) | 16.00 -> 16.00 (+0.00) |
+| Crescent Rd | 22 Oct | 8 (after first) | 15.79 -> 15.99 (+0.20) | 15.80 -> 16.00 (+0.20) |
+| Chestnut Park | 26 Nov (bare) | 5 | 19.08 -> 19.31 (+0.24) | 19.10 -> 19.30 (+0.20) |
+| Chestnut Park | 26 Nov (bare) | 6 (after first) | 19.14 -> 19.33 (+0.19) | 19.10 -> 19.30 (+0.20) |
+| Crescent Rd | 26 Nov (bare) | 5 | 16.40 -> 16.50 (+0.11) | 16.30 -> 16.50 (+0.20) |
+| Crescent Rd | 26 Nov (bare) | 6 (after first) | 16.35 -> 16.47 (+0.12) | 16.30 -> 16.40 (+0.10) |
+
+Those are the final build. An earlier build of the same change (the crown map read on every lawn fragment, even in a bare winter) measured +0.13 to +0.20 in October and, in one of two bare-date runs, +1.1 and +0.7 (the other of that pair +0.2 and +0.1): the crown map
+and the shade are now behind a uniform test that is false when the trees are bare and no leaves lie (`crownsMatter` in `groundLawn`). The extra ground work is one texture sample and about four noise lookups on a lawn fragment, and on a road fragment only the uniform test out of season.
+
+![Chestnut Park, 22 October](images/rosedale-streetscape-p3-frame-time-chestnut-fall.png)
+
+![Crescent Rd, 22 October](images/rosedale-streetscape-p3-frame-time-crescent-fall.png)
+
+![Chestnut Park, 26 November (bare)](images/rosedale-streetscape-p3-frame-time-chestnut-bare.png)
+
+### Reproduce
+
+```sh
+node --test tests/sky-occlusion.test.mjs tests/ground-mask-guard.test.mjs
+SHOTS=tools/shots/rosedale-streetscape-3.json ARMS="beforeFall afterFall beforeSnow afterSnow" bash tools/capture-rosedale-streetscape.sh   # on the Mac mini through gpu2
+FT=1 ROUND=1 ARMS="beforeFall afterFall" bash tools/capture-rosedale-streetscape.sh                                                  # frame times
+```

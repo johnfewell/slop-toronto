@@ -28,25 +28,7 @@ const hash2 = Fn(([p]) => fract(sin(dot(vec2(p), vec2(127.1, 311.7))).mul(43758.
 const n3 = (p) => clamp(mx_noise_float(p).mul(0.9).add(0.5), 0.0, 1.0); // (0..1, smooth; the raw noise sits within about +-0.5 of 0, so it is stretched)
 
 
-// fallen leaves (jf-qw7): two layers of oriented, elliptical leaves on jittered cells (a different size and turn each), yellow, orange, brown and the odd red, thicker in patches. Returns (rgb, cover 0..1)
-const leafLayer = Fn(([p, freq, seed, amount]) => {
-  const q = p.mul(freq).add(seed.mul(17.0));
-  const id = floor(q), f = fract(q).sub(0.5);
-  const r1 = hash2(id), r2 = hash2(id.add(vec2(5.3, 1.7))), r3 = hash2(id.add(vec2(9.1, 4.4))), r4 = hash2(id.add(vec2(2.2, 7.7)));
-  const l = f.sub(vec2(r1, r2).sub(0.5).mul(0.4)); // (a leaf stays inside its cell: no clipped half leaves in rows)
-  const ang = r3.mul(6.2832), c = ang.cos(), sn = ang.sin();
-  const u = l.x.mul(c).add(l.y.mul(sn)), v = l.y.mul(c).sub(l.x.mul(sn));
-  const a = r4.mul(0.1).add(0.16), b = a.mul(0.5);
-  const inside = step(u.div(a).mul(u.div(a)).add(v.div(b).mul(v.div(b))), 1.0).mul(step(hash2(id.add(vec2(7.7, 3.3))), amount));
-  const pick = hash2(id.add(vec2(1.3, 8.8)));
-  const col = select(pick.lessThan(0.28), color(0xc9a02a), select(pick.lessThan(0.55), color(0xb5651d), select(pick.lessThan(0.78), color(0x7a4a22), select(pick.lessThan(0.9), color(0xd9b23c), color(0xa63a1c)))));
-  return vec4(col.mul(r1.mul(0.35).add(0.82)), inside);
-});
-const leaves = (wp2, amount, seed) => {
-  const a = leafLayer(wp2, float(5.5), seed, amount), b = leafLayer(wp2.add(vec2(3.7, 1.9)), float(9.0), seed.add(1.0), amount.mul(0.7));
-  const m = max(a.w, b.w);
-  return vec4(mix(b.xyz, a.xyz, a.w), m);
-};
+// (fallen leaves: tsl-materials.js leafScatter, shared with the road and the lawn; the yards' own copy hashed the cell's number whole, and at Rosedale's world coordinates the GPU's sine left a lattice of dots in it)
 
 function createFrontYardMaterial() {
   const U = window.CITY.cityUniforms;
@@ -136,14 +118,8 @@ function createFrontYardMaterial() {
       const d = min(vcol.x.sub(abs(aux.x)), vcol.y.sub(abs(aux.y))); // (metres in from the rectangle's edge)
       const ragged = n3(vec3(wp.x.mul(1.9), wp.z.mul(1.9), rnd.mul(11.0))).sub(0.5).mul(1.3).add(n3(wp.mul(7.0)).sub(0.5).mul(0.35));
       const inside = smoothstep(0.0, 0.8, d.add(ragged));
-      const p = wp.xz;
-      const grass = mix(color(0x4f7a2c), color(0x6f8a38), fbm2(p.mul(0.031).add(5.0)));
-      const g0 = seasonalGrass(grass.mul(n3(wp.mul(2.4)).mul(0.1).add(0.95)));
-      // fallen leaves (jf-qw7): from the colour's peak until the snow, speckles of yellow, orange and brown on the grass, thicker in patches (the leaves have come down by late November, but lie on)
-      const litter = smoothstep(0.7, 1.0, U.uAutumn).mul(float(1.0).sub(smoothstep(0.85, 1.0, U.uDormant))).mul(float(1.0).sub(smoothstep(0.0, 0.1, U.uSnow)));
-      const patchy = n3(vec3(wp.x.mul(0.9), wp.z.mul(0.9), 4.0)).mul(0.6).add(0.4);
-      const lv = leaves(wp.xz, litter.mul(patchy).mul(0.75), rnd);
-      const g = mix(g0, lv.xyz, lv.w.mul(0.92));
+      // (the plot ground's own lawn function, tsl-materials.js groundLawn: patches, faint mowing stripes, shade under the crowns and the fallen leaves, so the lawn and the ground beside it are one grass)
+      const g = window.CITY.groundLawn(wp);
       out.assign(vec4(g, inside.mul(float(1.0).sub(smoothstep(0.0, 0.1, U.uSnow)))));
     });
 
@@ -232,9 +208,9 @@ function createFrontYardMaterial() {
       const d = min(vcol.x.sub(abs(aux.x)), vcol.y.sub(abs(aux.y)));
       const ragged = n3(vec3(wp.x.mul(1.3), wp.z.mul(1.3), rnd.mul(11.0))).sub(0.5).mul(1.6);
       const inside = smoothstep(0.0, 0.9, d.add(ragged));
-      const litter = smoothstep(0.7, 1.0, U.uAutumn).mul(float(1.0).sub(smoothstep(0.85, 1.0, U.uDormant))).mul(float(1.0).sub(smoothstep(0.0, 0.1, U.uSnow)));
+      const litter = window.CITY.leafFallSeason().mul(0.4).add(smoothstep(0.7, 1.0, U.uAutumn).mul(float(1.0).sub(smoothstep(0.85, 1.0, U.uDormant))).mul(float(1.0).sub(smoothstep(0.0, 0.1, U.uSnow))).mul(0.6));
       const patchy = n3(vec3(wp.x.mul(0.7), wp.z.mul(0.7), 9.0)).mul(0.7).add(0.3);
-      const lv = leaves(wp.xz, litter.mul(patchy).mul(0.85), rnd);
+      const lv = window.CITY.leafScatter(wp.xz, litter.mul(patchy).mul(0.85), rnd);
       out.assign(vec4(lv.xyz, inside.mul(lv.w)));
     });
 

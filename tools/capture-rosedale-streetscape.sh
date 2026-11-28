@@ -23,6 +23,6 @@ for ARM in ${ARMS:-beforeFall afterFall}; do
   if [ "${FT:-0}" = "1" ]; then
     run "$ROOTD" "$Q" "ft${ROUND:-}-$ARM-" "${SHOTS:-tools/shots/rosedale-streetscape-frame-times.json}" CAPTURE_UNCAPPED=1 CAPTURE_FT_SECONDS=${FT_SECONDS:-20}
   else
-    run "$ROOTD" "$Q" "$ARM-" "${SHOTS:-tools/shots/rosedale-streetscape.json}"
+    run "$ROOTD" "$Q" "$ARM-" "${SHOTS:-tools/shots/rosedale-streetscape-3.json}"
   fi
 done

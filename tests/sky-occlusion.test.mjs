@@ -228,15 +228,15 @@ test('trees are drawn at a share of their height, from their foot or the ground,
 
 test('a tree line shades the ground beside it, less than a wall of the same height', () => {
   const trees = { count: 20, data: new Float32Array(100) };
-  for (let i = 0; i < 20; i++) trees.data.set([-95 + i * 10, 0, 12, 14, 4], i * 5); // a row along x at z = 12, 14 m trees
+  for (let i = 0; i < 20; i++) trees.data.set([-95 + i * 10, 0, 6, 14, 4], i * 5); // a row along x at z = 6, 14 m trees (their crowns reach CROWN_SHARE of that: 4.2 m)
   const grid0 = () => S.createGrid({ minX: -300, maxX: 300, minZ: -300, maxZ: 300 }, 0, 2);
   const g = grid0(); S.treesToGrid(g, trees);
   const withTrees = { grid: g, pyramid: S.buildPyramid(g) };
-  const wall = mapOf([box(-100, 10, 100, 14, 14)]);
+  const wall = mapOf([box(-100, 6, 100, 10, 14)]);
   const open0 = open();
   const p = [0, 0, 0];
   const v = (m) => S.visibility(m.pyramid, m.grid, p, [0, 1, 0]);
-  assert.ok(v(withTrees) < v(open0) - 0.02, 'trees take some of the sky');
+  assert.ok(v(withTrees) < v(open0) - 0.005, 'trees take some of the sky');
   assert.ok(v(withTrees) > v(wall) - 1e-9, 'but a row of crowns reaches less high than a wall of their height');
 });
 
@@ -262,4 +262,18 @@ test('the sun is on the walls on a clear day and not under the moon or a heavy o
   assert.ok(dusk > 0.05 && dusk < 0.5, `the last light: ${dusk.toFixed(2)}`);
   assert.equal(S.sunLitness(1.45, 0.86), 0);
   assert.equal(S.sunLitness(1.9, 0), 0, 'a grey day');
+});
+
+// ---- part 3 of the Rosedale streetscape: the crowns' cover (docs/rosedale-streetscape.md) --------------------------------
+test('the crown cover is full under a tree, falls away past its edge, and leaves out saplings', () => {
+  const trees = { count: 3, data: new Float32Array([100, 0, 100, 16, 8, -100, 0, 40, 3, 2, 0, 50, 50, 6, 4]) }; // (the second is under MIN_TREE)
+  const grid = S.createGrid({ minX: -300, maxX: 300, minZ: -300, maxZ: 300 }, 0, 4);
+  const cc = S.crownCoverGrid(grid, trees);
+  assert.equal(cc.texel, 8);
+  const at = (x, z) => cc.data[Math.floor((z + 300) / cc.texel) * cc.width + Math.floor((x + 300) / cc.texel)] / 255;
+  assert.ok(at(100, 100) > 0.6, `under the crown: ${at(100, 100)}`);
+  assert.ok(at(100 + 8 * 1.6, 100) < 0.2, `well past its edge: ${at(100 + 12.8, 100)}`);
+  assert.equal(at(-100, 40), 0, 'a sapling has no crown');
+  assert.equal(at(0, -200), 0, 'open ground');
+  assert.ok(at(100 + 3, 100) >= at(100 + 8, 100), 'cover falls with distance from the trunk');
 });

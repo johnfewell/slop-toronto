@@ -1,0 +1,50 @@
+[
+ {
+  "name": "chestnut-park-fall-view",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(800, -3770, 0); a.cameraSystem.cinema = () => ({ pos: [800, 1.55, -3770], look: [866, 3.0, -3750], fov: 66 }); })()"
+ },
+ {
+  "name": "chestnut-park-snow-view",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(850, -3764, 0); a.cameraSystem.cinema = () => ({ pos: [850, 1.55, -3764], look: [886, 3.0, -3720], fov: 66 }); })()"
+ },
+ {
+  "name": "chestnut-park-boulevard",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(700, -3781, 0); a.cameraSystem.cinema = () => ({ pos: [700, 1.55, -3781], look: [790, 2.0, -3770], fov: 70 }); })()"
+ },
+ {
+  "name": "roxborough-street",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.68263482453741, -79.37552632696033), q = C.worldFromLatLon(43.683036274085154, -79.37448296496858); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "crescent-street",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67784023050961, -79.38417442413164), q = C.worldFromLatLon(43.67793545062343, -79.38300167565279); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "road-leaves-close",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const r = C.nearestRoads(760, -3768, 40)[0]; const p = { x: r.px, z: r.pz }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.1, p.z], look: [p.x + r.dx * 14, 0.2, p.z + r.dz * 14], fov: 70 }); })()"
+ },
+ {
+  "name": "downtown-king-spadina",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const r = C.nearestRoads(-1119, -350, 80).find((q) => q.road.name === 'King Street West') || C.nearestRoads(-1119, -350, 80)[0]; const p = { x: r.px - r.dx * 12, z: r.pz - r.dz * 12 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [p.x + r.dx * 40, 4, p.z + r.dz * 40], fov: 66 }); })()"
+ },
+ {
+  "name": "arterial-mount-pleasant",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const r = C.nearestRoads(978, -3839, 80).find((q) => q.road.name === 'Mount Pleasant Road') || C.nearestRoads(978, -3839, 80)[0]; const p = { x: r.px - r.dx * 0, z: r.pz - r.dz * 0 }; a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [p.x + r.dx * 40, 4, p.z + r.dz * 40], fov: 66 }); })()"
+ }
+]

@@ -2434,8 +2434,8 @@ function createRoadSurfaceMaterial() {
   // Weathered, oxidised asphalt: a neutral, slightly warm mid grey (the binder bleached by the sun, the limestone & granite
   // aggregate showing), lighter than the near-black, bluish grey this used to be; fresh blacktop only in the new patches.
   // Checked against John's Dundas West & Roncesvalles photos (overcast: the roadway about 0.8 of the old concrete walk)
-  const cAsphaltDark = color(0x474542);
-  const cAsphaltLight = color(0x716f6b);
+  const cAsphaltDark = color(0x4b4946);
+  const cAsphaltLight = color(0x777571);
   const cManhole = color(0x4a433c);
   const cOldPatch = color(0x77756f);
   // A fresh patch's albedo as a share of the roadway's at the same spot (linear): new asphalt is about half as bright
@@ -2527,7 +2527,7 @@ function createRoadSurfaceMaterial() {
     const baseAsphalt = mix(
       cAsphaltDark,
       cAsphaltLight,
-      fineGrain.mul(0.33).add(microAggregate.mul(0.22)).add(patchNoise.mul(0.24)).add(mottle)
+      fineGrain.mul(0.33).add(microAggregate.mul(0.22)).add(patchNoise.mul(0.3)).add(mottle)
     )
       .mul(float(1.0).sub(oilyStain.mul(0.32)));
 
@@ -2554,7 +2554,15 @@ function createRoadSurfaceMaterial() {
 
     // Water filling the pores darkens the surface: damp stains & pools most, the overall wet film a little
     const wetDarkening = mix(mix(float(1.0), float(0.72), damp), float(0.6), puddle).mul(mix(float(1.0), float(0.8), film));
-    return mix(surface, cManhole.mul(mhRings), isManhole).mul(wetDarkening);
+    const roadCol = vec3(mix(surface, cManhole.mul(mhRings), isManhole).mul(wetDarkening)).toVar();
+    // fallen leaves on the road (autumn, close up only): a few on any street, more under the trees; a little darkened by the damp
+    const leafSeason = leafFallSeason();
+    If(leafSeason.greaterThan(0.001).and(camDist.lessThan(30.0)), () => {
+      const roadLeafAmount = leafSeason.mul(float(0.14).add(crownCoverAt(vec2(wx, wz)).mul(0.5))).mul(smoothstep(30.0, 10.0, camDist));
+      const roadLeaves = leafScatter(vec2(wx, wz), roadLeafAmount, float(3.0));
+      roadCol.assign(mix(roadCol, roadLeaves.xyz.mul(0.78), roadLeaves.w.mul(0.9)));
+    });
+    return roadCol;
   })();
 
   mat.roughnessNode = Fn(() => {
@@ -3639,6 +3647,82 @@ function createCarFlareMaterial() {
 }
 
 // =====================================================================================================================
+// Lawns, fallen leaves and the shade of tree crowns on the ground (docs/rosedale-streetscape.md, part 3)
+// =====================================================================================================================
+
+// Fallen leaves: two layers of oriented, elliptical leaves on jittered cells (a different size and turn each), yellow, orange,
+// brown and the odd red, thicker where `amount` is. Returns (rgb, cover 0..1). `p` is the ground's xz, `freq` leaves a metre.
+// (the cell is wrapped before it is hashed: a hash of 6,000,000 is past what a GPU's sine keeps, and a lattice shows)
+const leafHash = Fn(([p]) => fract(sin(dot(mod(vec2(p), 251.0), vec2(12.9898, 78.233))).mul(43758.5453)));
+const leafLayerNode = Fn(([p, freq, seed, amount]) => {
+  const q = p.mul(freq).add(seed.mul(17.0));
+  const id = floor(q), f = fract(q).sub(0.5);
+  const r1 = leafHash(id), r2 = leafHash(id.add(vec2(5.3, 1.7))), r3 = leafHash(id.add(vec2(9.1, 4.4))), r4 = leafHash(id.add(vec2(2.2, 7.7)));
+  const l = f.sub(vec2(r1, r2).sub(0.5).mul(0.4)); // (a leaf stays inside its cell: no clipped half leaves in rows)
+  const ang = r3.mul(6.2832), c = cos(ang), sn = sin(ang);
+  const u = l.x.mul(c).add(l.y.mul(sn)), v = l.y.mul(c).sub(l.x.mul(sn));
+  const a = r4.mul(0.1).add(0.16), b = a.mul(0.5);
+  const inside = step(u.div(a).mul(u.div(a)).add(v.div(b).mul(v.div(b))), 1.0).mul(step(leafHash(id.add(vec2(7.7, 3.3))), amount));
+  const pick = leafHash(id.add(vec2(1.3, 8.8)));
+  const col = select(pick.lessThan(0.28), color(0xc9a02a), select(pick.lessThan(0.55), color(0xb5651d), select(pick.lessThan(0.78), color(0x7a4a22), select(pick.lessThan(0.9), color(0xd9b23c), color(0xa63a1c)))));
+  return vec4(col.mul(r1.mul(0.35).add(0.82)), inside);
+});
+const leafScatter = (p, amount, seed) => {
+  const a = leafLayerNode(p, float(3.2), seed, amount), b = leafLayerNode(p.add(vec2(3.7, 1.9)), float(5.4), seed.add(1.0), amount.mul(0.7));
+  return vec4(mix(b.xyz, a.xyz, a.w), max(a.w, b.w));
+};
+// How much of the year's leaf fall lies on the ground (0 none .. 1 the thickest): from the colour's peak, a third of it while the
+// crowns are still full (22 October), all of it once they are bare; gone with the snow, and taken up by the end of November
+const leafFallSeason = () => smoothstep(0.7, 1.0, cityUniforms.uAutumn)
+  .mul(float(0.3).add(float(1.0).sub(cityUniforms.uLeaf).mul(0.7)))
+  .mul(float(1.0).sub(smoothstep(0.85, 1.0, cityUniforms.uDormant)))
+  .mul(float(1.0).sub(smoothstep(0.0, 0.1, cityUniforms.uSnow)));
+// The share of tree crown standing over a point of the ground (sky-occlusion.js crownCoverNode; a constant on the tier without it)
+const crownCoverAt = (p, fallback = 0.3) => (window.CITY.SkyOcclusion && window.CITY.SkyOcclusion.crownCoverNode ? window.CITY.SkyOcclusion.crownCoverNode(p) : null) || float(fallback);
+
+/**
+ * A residential lawn: the plot ground's grass, with the variation a real one has: patches a few metres across a little
+ * lighter or darker, sun-dried yellow ones, faint mowing stripes in a direction that changes from lot to lot (close up
+ * only), darker and thinner grass under a tree's crown while it is in leaf, and the autumn's leaves lying on it, thickest
+ * under the trees. `wp`: the fragment's world position. Returns the linear colour (before snow). Cost: a handful of noise
+ * lookups and one texture sample; the leaves are skipped outright beyond 45 m, the stripes fade out by 60 m.
+ */
+function groundLawn(wp, leaves = 1.0) {
+  const p = wp.xz;
+  const camDist = length(wp.sub(cameraPosition));
+  const near = smoothstep(60.0, 12.0, camDist);
+  const base = mix(color(0x4f7a2c), color(0x6f8a38), fbm2(p.mul(0.031).add(5.0)));
+  const patch = noise2D(p.mul(0.23).add(31.0)).mul(0.6).add(noise2D(p.mul(0.61).add(3.0)).mul(0.4));
+  const dry = smoothstep(0.6, 0.85, noise2D(p.mul(0.085).add(7.0)));
+  let c = base.mul(patch.mul(0.46).add(0.77));
+  c = mix(c, c.mul(vec3(1.22, 1.04, 0.66)), dry.mul(0.55));
+  const ang = hash2D(floor(p.div(22.0))).mul(3.1416);
+  const stripe = sin(dot(p, vec2(cos(ang), sin(ang))).mul(5.4)).mul(near);
+  c = c.mul(stripe.mul(0.045).add(1.0));
+  // (the crowns matter only while the trees are in leaf or the leaves lie: out of those seasons the crown map is not read at all, a uniform branch)
+  const season = leafFallSeason().mul(leaves);
+  const crownsMatter = cityUniforms.uLeaf.greaterThan(0.15).or(season.greaterThan(0.001));
+  const cover = float(0.0).toVar();
+  const lawn = vec3(0.0).toVar();
+  If(crownsMatter, () => { cover.assign(crownCoverAt(p)); });
+  const shade = cover.mul(smoothstep(0.15, 0.9, cityUniforms.uLeaf));
+  const cv = vec3(c).toVar();
+  If(shade.greaterThan(0.002), () => {
+    const thin = smoothstep(0.45, 0.8, noise2D(p.mul(0.9).add(11.0))).mul(shade);
+    const dark = cv.mul(float(1.0).sub(shade.mul(0.32)));
+    cv.assign(mix(dark, color(0x5b4b30).mul(float(1.0).sub(shade.mul(0.2))), thin.mul(0.5)));
+  });
+  lawn.assign(seasonalGrass(cv));
+  If(season.greaterThan(0.001).and(camDist.lessThan(45.0)), () => {
+    const patchy = noise2D(p.mul(0.45).add(4.0)).mul(0.6).add(0.4);
+    const amount = season.mul(float(0.22).add(cover.mul(0.6))).mul(patchy).mul(smoothstep(45.0, 14.0, camDist));
+    const lv = leafScatter(p, amount, float(2.0));
+    lawn.assign(mix(lawn, lv.xyz, lv.w.mul(0.92)));
+  });
+  return lawn;
+}
+
+// =====================================================================================================================
 // ABUJA GROUND: the savanna & granite terrain, compound yards, rendered compound walls
 // =====================================================================================================================
 
@@ -3722,7 +3806,6 @@ function createPlotGroundMaterial() {
     const p = positionWorld.xz;
     // Toronto's front & back yards in late summer: lawn, darker mulched beds, concrete driveways & walks
     const mulch = mix(color(0x4a3524), color(0x5c4430), noise2D(p.mul(0.21)));
-    const grass = mix(color(0x4f7a2c), color(0x6f8a38), fbm2(p.mul(0.031).add(5.0)));
     const paving = mix(color(0x8d8a84), color(0xa8a49b), noise2D(p.mul(0.7)));
     const g = smoothstep(0.12, 0.26, fbm2(p.mul(0.05).add(1.3)));
     const paved = smoothstep(0.7, 0.76, fbm2(p.mul(0.024).add(71.0)));
@@ -3730,7 +3813,7 @@ function createPlotGroundMaterial() {
     const near = smoothstep(40.0, 8.0, length(positionWorld.sub(cameraPosition)));
     const bx = fract(p.x.mul(5.0).add(step(0.5, fract(p.y.mul(5.0))).mul(0.5)));
     const joint = max(smoothstep(0.06, 0.0, bx), smoothstep(0.12, 0.0, fract(p.y.mul(10.0)))).mul(near).mul(0.35);
-    const ground = mix(mulch, seasonalGrass(grass), g);
+    const ground = mix(mulch, groundLawn(positionWorld), g);
     // (lying snow: full on the lawns & beds, the shovelled walks & driveways keep little)
     return snowOver(mix(ground, paving.mul(float(1.0).sub(joint)), paved), p, mix(float(1.0), float(0.25), paved));
   })();
@@ -3870,5 +3953,6 @@ function clusterMaskBoxes(boxes, gap = 120, span = 900) {
 
 
 Object.assign(window.CITY, { COAT, coatSSR, physicalOrStandard, guardedInside, groundMaskBox, clusterMaskBoxes, lodDither, filteredPulse, cityUniforms, seasonalGrass, snowOver, autumnLeaf, leafStays, WALL_KINDS, createCurtainWallMaterial, createPreWarBuildingMaterial, createFacadeBoxes, setFootprintTable, footprintVertex, createCarPaintMaterial, createFoliageMaterial, createTreeBarkMaterial, createTreeMaterial, TREE_CARD_TWIGS: { haze: TWIG_HAZE, colour: TWIG_COLOUR }, createRoadSurfaceMaterial, createRoadPaintMaterial, createSidewalkMaterial, createCurbMaterial, createWaterMaterial, createParkLawnMaterial, createContactShadowMaterial, createHeadlightBeamMaterial, createCarFlareMaterial, createTerrainMaterial, createPlotGroundMaterial, createForecourtMaterial, createRenderedWallMaterial, createRenderedFacadeMaterial, createLanePavingMaterial });
+Object.assign(window.CITY, { groundLawn, leafScatter, leafFallSeason, crownCoverAt }); // (lawns, fallen leaves and the shade of crowns on the ground: docs/rosedale-streetscape.md part 3)
 Object.assign(window.CITY, { noise2D, fbm2 }); // (the front yards' lawn matches the plot ground's grass: js/front-yard-material.js)
 })();
