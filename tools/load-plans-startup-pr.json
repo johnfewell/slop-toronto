@@ -1,0 +1,13 @@
+{
+ "tag": "pr",
+ "realHeaders": true,
+ "arms": { "A": ".load/base", "B": ".load/new" },
+ "rounds": 3,
+ "order": "AB",
+ "settings": [
+  { "name": "desk-cold", "viewport": "1600x900", "query": "?liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z", "net": null,
+    "probe": "JSON.stringify({ tennis: window.CITY.tennisStats && { placed: window.CITY.tennisStats.placed, rejected: window.CITY.tennisStats.rejected, pads: window.CITY.tennisStats.pads && window.CITY.tennisStats.pads.length } })" },
+  { "name": "phone-cold", "viewport": "412x915", "dpr": 2.625, "mobile": true, "cpuThrottle": 4, "query": "?quality=low&liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z", "net": null,
+    "probe": "JSON.stringify({ tennis: window.CITY.tennisStats && { placed: window.CITY.tennisStats.placed, rejected: window.CITY.tennisStats.rejected, pads: window.CITY.tennisStats.pads && window.CITY.tennisStats.pads.length } })" }
+ ]
+}

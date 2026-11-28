@@ -54,27 +54,46 @@ function createTransitBuses(traffic) {
       p.dx = (b.x - a.x) / L;
       p.dz = (b.z - a.z) / L;
     });
-    const SG = new Map();
-    S.forEach((p, j) => {
-      const k = Math.floor(p.x / LC) * 100000 + Math.floor(p.z / LC);
-      if (!SG.has(k)) SG.set(k, []);
-      SG.get(k).push(j);
-    });
+    // (the line's points in a dense grid of 40 m cells (typed arrays, cell by cell, each cell's points in line order): the search below
+    // asks it a few hundred thousand times, and it was a Map of arrays asked 49 cells at a time. The same cells in the same order: the same answers)
     const R = Math.ceil(REACH / LC);
+    const NP = S.length, PX = new Float64Array(NP), PZ = new Float64Array(NP), PDX = new Float64Array(NP), PDZ = new Float64Array(NP);
+    let gx0 = Infinity, gx1 = -Infinity, gz0 = Infinity, gz1 = -Infinity;
+    S.forEach((p, j) => {
+      PX[j] = p.x; PZ[j] = p.z; PDX[j] = p.dx; PDZ[j] = p.dz;
+      const cx = Math.floor(p.x / LC), cz = Math.floor(p.z / LC);
+      if (cx < gx0) gx0 = cx; if (cx > gx1) gx1 = cx; if (cz < gz0) gz0 = cz; if (cz > gz1) gz1 = cz;
+    });
+    const GNX = gx1 - gx0 + 1, GNZ = gz1 - gz0 + 1;
+    const cellStart = new Int32Array(GNX * GNZ + 1), cellItems = new Int32Array(NP);
+    for (let j = 0; j < NP; j++) cellStart[(Math.floor(PX[j] / LC) - gx0) * GNZ + Math.floor(PZ[j] / LC) - gz0 + 1]++;
+    for (let c = 0; c < GNX * GNZ; c++) cellStart[c + 1] += cellStart[c];
+    const fillAt = cellStart.slice(0, GNX * GNZ);
+    for (let j = 0; j < NP; j++) cellItems[fillAt[(Math.floor(PX[j] / LC) - gx0) * GNZ + Math.floor(PZ[j] / LC) - gz0]++] = j;
     // (the nearest point of the line heading the link's way, if any: where the route comes back along the same street,
     // a loop or a turn back at its end (the 72C on Commissioners Street), each way has its own stretch of the line)
     const nearest = (x, z, dx, dz) => {
       let bj = -1, bd = REACH, aj = -1, ad = REACH;
       const ix = Math.floor(x / LC), iz = Math.floor(z / LC);
       for (let a = -R; a <= R; a++) {
+        const cx = ix + a - gx0;
+        if (cx < 0 || cx >= GNX) continue;
         for (let c = -R; c <= R; c++) {
-          for (const j of SG.get((ix + a) * 100000 + iz + c) || []) {
-            const d = Math.hypot(S[j].x - x, S[j].z - z);
+          const cz = iz + c - gz0;
+          if (cz < 0 || cz >= GNZ) continue;
+          const cell = cx * GNZ + cz;
+          for (let k = cellStart[cell], end = cellStart[cell + 1]; k < end; k++) {
+            const j = cellItems[k];
+            // (the squared distance first: Math.hypot is the cost here, and a point beyond both bests can win neither; the 1e-6
+            // margin keeps this exact, a point that far inside the limit still gets the Math.hypot the comparisons were written with)
+            const ex = PX[j] - x, ez = PZ[j] - z, lim = (bd > ad ? bd : ad) * 1.000001;
+            if (ex * ex + ez * ez > lim * lim) continue;
+            const d = Math.hypot(ex, ez);
             if (d < bd) {
               bd = d;
               bj = j;
             }
-            if (d < ad && S[j].dx * dx + S[j].dz * dz > 0.3) {
+            if (d < ad && PDX[j] * dx + PDZ[j] * dz > 0.3) {
               ad = d;
               aj = j;
             }

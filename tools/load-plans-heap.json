@@ -1,0 +1,18 @@
+{
+ "tag": "heap",
+ "realHeaders": true,
+ "arms": {
+  "A": ".load/new"
+ },
+ "rounds": 1,
+ "order": "A",
+ "settings": [
+  {
+   "name": "desk-heap",
+   "heap": true,
+   "viewport": "1600x900",
+   "query": "?liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z",
+   "net": null
+  }
+ ]
+}

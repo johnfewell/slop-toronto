@@ -242,7 +242,9 @@ function nearestRoads(x, z, radius = 60) {
       const dx = s.bx - s.ax, dz = s.bz - s.az;
       const L2 = dx * dx + dz * dz || 1e-9;
       const t = Math.max(0, Math.min(1, ((x - s.ax) * dx + (z - s.az) * dz) / L2));
-      const d = Math.hypot(s.ax + t * dx - x, s.az + t * dz - z);
+      const ex = s.ax + t * dx - x, ez = s.az + t * dz - z, lim = radius * 1.000001;
+      if (ex * ex + ez * ez > lim * lim) continue; // (beyond the radius: the Math.hypot below is only for the ones that may be within it)
+      const d = Math.hypot(ex, ez);
       if (d > radius) continue;
       const prev = best.get(s.r.name);
       if (!prev || d < prev.dist) {
@@ -405,6 +407,11 @@ function blockBands(b) {
   let p = BLOCK_BANDS.get(b);
   if (!p) BLOCK_BANDS.set(b, (p = bandPoly({ pts: b.poly, minZ: Math.min(...b.poly.map((q) => q.z)), maxZ: Math.max(...b.poly.map((q) => q.z)) })));
   return p;
+}
+/** pointInPoly(b.poly, x, z) for a block, over the few outline edges in the point's band (the same crossings, so the same answer: the parks' tree
+ *  spots ask a hundred thousand times of outlines with hundreds of points) */
+function pointInBlock(b, x, z) {
+  return inBandedPoly(blockBands(b), x, z);
 }
 /** Blocks whose bounds overlap a rectangle */
 function blocksInRect(minX, maxX, minZ, maxZ) {
@@ -1769,6 +1776,7 @@ Object.assign(window.CITY, {
   waterAt,
   isOnLand,
   pointInPoly,
+  pointInBlock,
   POND_BODIES,
   pondOnPolygon,
   pondsOnIsland,

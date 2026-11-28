@@ -199,8 +199,9 @@ function buildRinks(scene,staticColliders=[]) {
   const {season,forced}=sceneSeason(location.search,sceneDate);
   const groundAt=(x,z)=>(C.blockAt(x,z)?C.CITY_BOUNDS.sidewalkHeight:0)+(C.cutAt?.(x,z)||0);
   // Area (m2) of a footprint under something solid between ankle and head height: buildings, landmarks, props
+  const grid=W.colliderGrid(staticColliders);
   const overlapArea=(record,y)=>{
-    const b=record.bounds,solid=staticColliders.filter((c)=>c.maxX>b.x0&&c.minX<b.x1&&c.maxZ>b.z0&&c.minZ<b.z1&&(c.maxY??Infinity)>y+.08&&(c.minY??-Infinity)<y+1.1);
+    const b=record.bounds,solid=grid.filter({minX:b.x0,maxX:b.x1,minZ:b.z0,maxZ:b.z1},(c)=>c.maxX>b.x0&&c.minX<b.x1&&c.maxZ>b.z0&&c.minZ<b.z1&&(c.maxY??Infinity)>y+.08&&(c.minY??-Infinity)<y+1.1);
     if(!solid.length)return 0;
     const shapes=solid.map((c)=>W.colliderShape(c));let hits=0;
     for(const [x,z]of samplePoints(record,.5))if(shapes.some((s)=>W.inside(x,z,s.points)))hits++;

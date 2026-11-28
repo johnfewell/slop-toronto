@@ -317,6 +317,50 @@ function simplifyRing(pts, tol) {
   }
   return pts.filter((_, i) => keep[i]);
 }
+// The roof's cover (see footprintRings): the cells of a W x H grid (cell m, its corner x0, z0) whose centres lie in a (nearly) level face
+// between roofFrom and roofFrom + 150 m up. { roof: 1 per cell, roofCells: how many }
+function roofCover(tris, roofFrom, x0, z0, cell, W, H) {
+  const roof = new Uint8Array(W * H);
+  let roofCells = 0;
+  for (let i = 0; i < tris.length; i += 9) {
+    const ax = tris[i], ay = tris[i + 1], az = tris[i + 2], bx = tris[i + 3], by = tris[i + 4], bz = tris[i + 5], cx = tris[i + 6], cy = tris[i + 7], cz = tris[i + 8];
+    if (Math.min(ay, by, cy) < roofFrom || Math.max(ay, by, cy) > roofFrom + 150) continue;
+    const ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, l = Math.hypot(nx, ny, nz);
+    if (l < 1e-9 || Math.abs(ny) / l < 0.3) continue;
+    const gx0 = Math.floor((Math.min(ax, bx, cx) - x0) / cell), gx1 = Math.floor((Math.max(ax, bx, cx) - x0) / cell);
+    const gz0 = Math.floor((Math.min(az, bz, cz) - z0) / cell), gz1 = Math.floor((Math.max(az, bz, cz) - z0) / cell);
+    for (let gz = gz0; gz <= gz1; gz++) {
+      const pz = z0 + (gz + 0.5) * cell;
+      // (a big triangle's box is mostly outside it: each row looks only at the cells whose centres can pass the three half-plane tests below, found
+      // from the same three lines (d1, d2, d3 are straight in px), 3 cells wider each side than they come out, and a line too flat to give a bound gives
+      // none. The cells tested are those it would have tested, less the ones that cannot pass)
+      let aLo = -Infinity, aHi = Infinity, bLo = -Infinity, bHi = Infinity;
+      for (let e = 0; e < 3; e++) {
+        const sx = e === 0 ? ax : e === 1 ? bx : cx, sz = e === 0 ? az : e === 1 ? bz : cz;
+        const ex = (e === 0 ? bx : e === 1 ? cx : ax) - sx, ez = (e === 0 ? bz : e === 1 ? cz : az) - sz;
+        if (!(ez > 1e-6 || ez < -1e-6)) continue;
+        const at = (ex * (pz - sz) + ez * sx) / ez; // (d = ez * (at - px): d >= 0 where px <= at for ez > 0, px >= at for ez < 0)
+        if (ez > 0) { if (at < aHi) aHi = at; if (at > bLo) bLo = at; } else { if (at > aLo) aLo = at; if (at < bHi) bHi = at; }
+      }
+      const slack = 3 * cell;
+      const aOk = aLo - slack <= aHi + slack, bOk = bLo - slack <= bHi + slack;
+      if (!aOk && !bOk) continue;
+      const lo = Math.min(aOk ? aLo : Infinity, bOk ? bLo : Infinity), hi = Math.max(aOk ? aHi : -Infinity, bOk ? bHi : -Infinity);
+      const gxa = lo === -Infinity ? gx0 : Math.max(gx0, Math.floor((lo - x0) / cell - 0.5) - 3);
+      const gxb = hi === Infinity ? gx1 : Math.min(gx1, Math.ceil((hi - x0) / cell - 0.5) + 3);
+      for (let gx = gxa; gx <= gxb; gx++) {
+        const k = gz * W + gx;
+        if (roof[k]) continue;
+        const px = x0 + (gx + 0.5) * cell;
+        const d1 = (bx - ax) * (pz - az) - (bz - az) * (px - ax), d2 = (cx - bx) * (pz - bz) - (cz - bz) * (px - bx), d3 = (ax - cx) * (pz - cz) - (az - cz) * (px - cx);
+        if ((d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0)) { roof[k] = 1; roofCells++; }
+      }
+    }
+  }
+  return { roof, roofCells };
+}
+
 // The solid outline(s) of `tris` between heights: their slices at `heights`, rasterised into `cell`-sized squares as
 // walls, the outside flooded in from the edge and what it doesn't reach is solid (so duplicate or crossing faces & any
 // winding don't matter, and enclosed courtyards fill), traced, simplified and laid back on the walls drawn
@@ -370,24 +414,7 @@ function* footprintRingsSteps(tris, heights, cell = 0.15, tolerance = 0.1, roofF
   yield;
   if (roofFrom < Infinity) {
     // the roof's cover: (nearly) level faces from roofFrom up, rasterised at the cells' centres
-    const roof = new Uint8Array(W * H);
-    let roofCells = 0;
-    for (let i = 0; i < tris.length; i += 9) {
-      const ax = tris[i], ay = tris[i + 1], az = tris[i + 2], bx = tris[i + 3], by = tris[i + 4], bz = tris[i + 5], cx = tris[i + 6], cy = tris[i + 7], cz = tris[i + 8];
-      if (Math.min(ay, by, cy) < roofFrom || Math.max(ay, by, cy) > roofFrom + 150) continue;
-      const ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
-      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, l = Math.hypot(nx, ny, nz);
-      if (l < 1e-9 || Math.abs(ny) / l < 0.3) continue;
-      const gx0 = Math.floor((Math.min(ax, bx, cx) - x0) / cell), gx1 = Math.floor((Math.max(ax, bx, cx) - x0) / cell);
-      const gz0 = Math.floor((Math.min(az, bz, cz) - z0) / cell), gz1 = Math.floor((Math.max(az, bz, cz) - z0) / cell);
-      for (let gz = gz0; gz <= gz1; gz++) for (let gx = gx0; gx <= gx1; gx++) {
-        const k = gz * W + gx;
-        if (roof[k]) continue;
-        const px = x0 + (gx + 0.5) * cell, pz = z0 + (gz + 0.5) * cell;
-        const d1 = (bx - ax) * (pz - az) - (bz - az) * (px - ax), d2 = (cx - bx) * (pz - bz) - (cz - bz) * (px - bx), d3 = (ax - cx) * (pz - cz) - (az - cz) * (px - cx);
-        if ((d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0)) { roof[k] = 1; roofCells++; }
-      }
-    }
+    const { roof, roofCells } = roofCover(tris, roofFrom, x0, z0, cell, W, H);
     yield;
     if (solidCells < 0.6 * roofCells || (solidCells > 1.15 * roofCells && roofCells > 0.4 * solidCells)) { fill(roof, false); yield; }
   }
@@ -569,10 +596,43 @@ function swap(remove, add) {
   for (const c of remove) cache.delete(c);
 }
 
+// A grid over colliders' own boxes (64 m cells), to ask which of them can touch a box without testing every collider in the city (the tennis courts
+// and the rinks each did, ~1 s of start-up). `some(box, test)` / `filter(box, test)` give what the same call on the whole list gives (filter in list order
+// per cell, not overall): a collider with no usable box is offered to every query
+function colliderGrid(colliders) {
+  const CELL = 64, cells = new Map(), always = [];
+  const key = (ix, iz) => ix * 100003 + iz;
+  for (const c of colliders) {
+    if (!(Number.isFinite(c.minX) && Number.isFinite(c.maxX) && Number.isFinite(c.minZ) && Number.isFinite(c.maxZ))) { always.push(c); continue; }
+    for (let ix = Math.floor(c.minX / CELL); ix <= Math.floor(c.maxX / CELL); ix++) for (let iz = Math.floor(c.minZ / CELL); iz <= Math.floor(c.maxZ / CELL); iz++) {
+      const k = key(ix, iz);
+      let list = cells.get(k);
+      if (!list) cells.set(k, (list = []));
+      list.push(c);
+    }
+  }
+  const each = (box, fn) => {
+    for (const c of always) if (fn(c)) return true;
+    const seen = new Set();
+    for (let ix = Math.floor(box.minX / CELL); ix <= Math.floor(box.maxX / CELL); ix++) for (let iz = Math.floor(box.minZ / CELL); iz <= Math.floor(box.maxZ / CELL); iz++) {
+      for (const c of cells.get(key(ix, iz)) || []) {
+        if (seen.has(c)) continue;
+        seen.add(c);
+        if (fn(c)) return true;
+      }
+    }
+    return false;
+  };
+  return {
+    some: (box, test) => each(box, test),
+    filter: (box, test) => { const out = []; each(box, (c) => { if (test(c)) out.push(c); return false; }); return out; }
+  };
+}
+
 window.CITY.WorldCollision = {
-  CAR_FOOTPRINT, CAR_REACH, SKIN,
+  colliderGrid, CAR_FOOTPRINT, CAR_REACH, SKIN,
   carShape, circleShape, colliderShape, contact, inside,
-  footprintColliders, footprintCollidersSteps, footprintRings, polygonCollider, meshTriangles, hull, circleCollider, boxCollider,
+  footprintColliders, footprintCollidersSteps, footprintRings, roofCover, polygonCollider, meshTriangles, hull, circleCollider, boxCollider,
   swap, changes
 };
 })();

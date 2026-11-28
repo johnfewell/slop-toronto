@@ -84,3 +84,25 @@ test('freezing an accepted court hides its meshes and removes its net collider',
     assert.equal(matrix.elements[0],0);assert.equal(matrix.elements[5],0);assert.equal(matrix.elements[10],0);
   }
 });
+
+// buildTennis tests each court against the city's colliders through a grid of them: the same answer as testing every collider
+test('the collider grid answers as the whole list does, for boxes, circles, outlines, and colliders with no box',()=>{
+  let seed=99;const rnd=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
+  const colliders=[];
+  for(let i=0;i<4000;i++){
+    const x=(rnd()-.5)*2000,z=(rnd()-.5)*2000,w=1+rnd()*(i%50===0?150:12),d=1+rnd()*12,y0=rnd()*2-.5;
+    colliders.push({minX:x,maxX:x+w,minZ:z,maxZ:z+d,minY:y0,maxY:y0+rnd()*8,obb:{cx:x+w/2,cz:z+d/2,hx:w/2,hz:d/2,cs:1,sn:0}});
+  }
+  colliders.push({minX:NaN,maxX:NaN,minZ:NaN,maxZ:NaN,minY:0,maxY:5,circle:{x:5,z:5,r:2}});
+  const index=C.WorldCollision.colliderGrid(colliders);
+  let hits=0;
+  for(let i=0;i<600;i++){
+    const site={x:(rnd()-.5)*2000,z:(rnd()-.5)*2000,yaw:rnd()*Math.PI};
+    const shape=C.courtShape(site,C.WorldCollision),y=rnd()*.5;
+    const test=(c)=>(c.maxY??Infinity)>y+.08&&(c.minY??-Infinity)<y+1.1&&C.WorldCollision.contact(shape,c);
+    const expected=colliders.some(test),got=index.some(shape,test);
+    assert.equal(got,expected,`court ${i}`);
+    if(expected)hits++;
+  }
+  assert.ok(hits>20&&hits<580,`the sample has both answers (${hits} of 600 touch)`);
+});

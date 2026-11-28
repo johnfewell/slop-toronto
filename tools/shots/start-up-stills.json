@@ -1,0 +1,38 @@
+[
+ {
+  "name": "rink-43569-above",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43569'),s=C.rinkStats.sites.find(x=>x.assetId==='43569');if(!s)throw new Error('not placed 43569');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+ },
+ {
+  "name": "rink-43574-above",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43574'),s=C.rinkStats.sites.find(x=>x.assetId==='43574');if(!s)throw new Error('not placed 43574');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+ },
+ {
+  "name": "rink-43599-above",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(()=>{const C=window.CITY,r=C.RINKS.records.find(x=>x.assetId==='43599'),s=C.rinkStats.sites.find(x=>x.assetId==='43599');if(!s)throw new Error('not placed 43599');const b=C.outlineRectangle(r.polygons[0].outer),a=window.__CITY_APP;a.teleportTo(b.x,b.z,0);a.cameraSystem.cinema=()=>({pos:[b.x,s.y+Math.max(90,b.length*1.6),b.z+.01],look:[b.x,s.y,b.z],fov:55});})()"
+ },
+ {
+  "name": "tennis-0-above",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(()=>{const C=window.CITY,s=C.tennisStats.sites[Math.min(0,C.tennisStats.sites.length-1)],a=window.__CITY_APP;a.teleportTo(s.x,s.z,0);a.cameraSystem.cinema=()=>({pos:[s.x,s.y+55,s.z+.01],look:[s.x,s.y,s.z],fov:55});})()"
+ },
+ {
+  "name": "tennis-40-above",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(()=>{const C=window.CITY,s=C.tennisStats.sites[Math.min(40,C.tennisStats.sites.length-1)],a=window.__CITY_APP;a.teleportTo(s.x,s.z,0);a.cameraSystem.cinema=()=>({pos:[s.x,s.y+55,s.z+.01],look:[s.x,s.y,s.z],fov:55});})()"
+ },
+ {
+  "name": "tennis-120-above",
+  "mode": "person",
+  "wait": 2500,
+  "js": "(()=>{const C=window.CITY,s=C.tennisStats.sites[Math.min(120,C.tennisStats.sites.length-1)],a=window.__CITY_APP;a.teleportTo(s.x,s.z,0);a.cameraSystem.cinema=()=>({pos:[s.x,s.y+55,s.z+.01],look:[s.x,s.y,s.z],fov:55});})()"
+ }
+]

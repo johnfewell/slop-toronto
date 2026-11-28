@@ -1,0 +1,28 @@
+{
+ "tag": "profile",
+ "realHeaders": true,
+ "arms": {
+  "A": ".load/new"
+ },
+ "rounds": 1,
+ "order": "A",
+ "settings": [
+  {
+   "name": "desk-cold",
+   "profile": true,
+   "viewport": "1600x900",
+   "query": "?liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z",
+   "net": null
+  },
+  {
+   "name": "phone-cold",
+   "profile": true,
+   "viewport": "412x915",
+   "dpr": 2.625,
+   "mobile": true,
+   "cpuThrottle": 4,
+   "query": "?quality=low&liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z",
+   "net": null
+  }
+ ]
+}

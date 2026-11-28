@@ -15,8 +15,16 @@
 // The same predicates were part of the park's own build; they now stand on the data they always matched (a row's place and
 // height), so the base city is the same before and after the load.
 const C = window.CITY;
-const query = (k) => (typeof URLSearchParams === 'undefined' || typeof location === 'undefined' ? null : new URLSearchParams(location.search).get(k));
-const has = (k) => typeof URLSearchParams !== 'undefined' && typeof location !== 'undefined' && new URLSearchParams(location.search).has(k);
+// (the address is parsed once a turn of the event loop, not on every call: the building and tree builds ask a few hundred thousand times in one
+// go (reading location.search is the cost), ~0.5 s of start-up. The next turn, after any await, reads it afresh)
+let parsed = null;
+const params = () => {
+  if (typeof URLSearchParams === 'undefined' || typeof location === 'undefined') return null;
+  if (parsed === null) { parsed = new URLSearchParams(location.search); Promise.resolve().then(() => { parsed = null; }); }
+  return parsed;
+};
+const query = (k) => params()?.get(k) ?? null;
+const has = (k) => params()?.has(k) ?? false;
 const biidaasigeOn = () => query('biidaasige') !== '0';
 const portLandsOn = () => query('portlands') !== '0';
 

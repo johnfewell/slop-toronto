@@ -43,6 +43,49 @@ const _a = new THREE.Vector3();
 const _b = new THREE.Vector3();
 const _c = new THREE.Vector3();
 
+// BufferGeometry.computeBoundingBox() / computeBoundingSphere() for a plain float position array, the same numbers (the same min / max and the
+// same sums in the same order) read straight off the array: three's own go through Vector3.fromBufferAttribute (getX, getY, getZ) a vertex at a
+// time, ~0.5 s of the city's start-up. Anything else (snorm or interleaved positions, morph targets) takes three's own.
+function plainPositions(g) {
+  const p = g.attributes.position;
+  return p && !p.isInterleavedBufferAttribute && !p.isGLBufferAttribute && !p.normalized && p.array instanceof Float32Array && p.itemSize >= 3 && !g.morphAttributes.position ? p : null;
+}
+function boundsOf(p) {
+  const a = p.array, n = p.count, k = p.itemSize;
+  let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+  for (let i = 0, o = 0; i < n; i++, o += k) {
+    const x = a[o], y = a[o + 1], z = a[o + 2];
+    x0 = Math.min(x0, x); y0 = Math.min(y0, y); z0 = Math.min(z0, z);
+    x1 = Math.max(x1, x); y1 = Math.max(y1, y); z1 = Math.max(z1, z);
+  }
+  return [x0, y0, z0, x1, y1, z1];
+}
+function computeBoundingBoxFast(g) {
+  const p = plainPositions(g);
+  if (!p) { g.computeBoundingBox(); return; }
+  const b = boundsOf(p);
+  if (g.boundingBox === null) g.boundingBox = new THREE.Box3();
+  g.boundingBox.min.set(b[0], b[1], b[2]);
+  g.boundingBox.max.set(b[3], b[4], b[5]);
+}
+function computeBoundingSphereFast(g) {
+  const p = plainPositions(g);
+  if (!p) { g.computeBoundingSphere(); return; }
+  const b = boundsOf(p);
+  if (g.boundingSphere === null) g.boundingSphere = new THREE.Sphere();
+  // (Box3.getCenter: an empty box is a zero centre; else (min + max) * 0.5 per axis)
+  const empty = b[3] < b[0] || b[4] < b[1] || b[5] < b[2];
+  const cx = empty ? 0 : (b[0] + b[3]) * 0.5, cy = empty ? 0 : (b[1] + b[4]) * 0.5, cz = empty ? 0 : (b[2] + b[5]) * 0.5;
+  const a = p.array, n = p.count, k = p.itemSize;
+  let maxRadiusSq = 0;
+  for (let i = 0, o = 0; i < n; i++, o += k) {
+    const dx = cx - a[o], dy = cy - a[o + 1], dz = cz - a[o + 2];
+    maxRadiusSq = Math.max(maxRadiusSq, dx * dx + dy * dy + dz * dz);
+  }
+  g.boundingSphere.center.set(cx, cy, cz);
+  g.boundingSphere.radius = Math.sqrt(maxRadiusSq);
+}
+
 const triangleCount = (geo) => (geo.index ? geo.index.count : geo.attributes.position.count) / 3;
 
 // Typical size of an instance: sqrt(middle x largest of its extents), so thin poles count by their length and flat
@@ -135,8 +178,8 @@ function splitFamilyIntoRegions(meshes, keyOf, wholeKey = null) {
       }
       geo.setAttribute(name, new THREE.BufferAttribute(arr, sz, a0.normalized));
     }
-    geo.computeBoundingSphere();
-    geo.computeBoundingBox();
+    computeBoundingSphereFast(geo);
+    computeBoundingBoxFast(geo);
     const piece = new THREE.Mesh(geo, meshes[0].material);
     copyObjectState(piece, meshes[0]);
     pieces.push(piece);
@@ -267,8 +310,8 @@ function mergeSmallMeshes(parents, names = null, stats = { merged: 0, into: 0 })
         const mesh = new THREE.Mesh(g, bin[0].material);
         copyObjectState(mesh, bin[0]);
         mesh.frustumCulled = bin[0].frustumCulled;
-        g.computeBoundingSphere();
-        g.computeBoundingBox();
+        computeBoundingSphereFast(g);
+        computeBoundingBoxFast(g);
         const at = parent.children.indexOf(bin[0]);
         for (const o of bin) parent.remove(o);
         parent.add(mesh);
@@ -351,8 +394,8 @@ function splitMeshIntoCells(mesh, cell, keyOf = null) {
       tris.forEach((t, j) => arr.set(a.array.subarray(t * s, (t + 3) * s), j * 3 * s));
       geo.setAttribute(name, new THREE.BufferAttribute(arr, s, a.normalized));
     }
-    geo.computeBoundingSphere();
-    geo.computeBoundingBox();
+    computeBoundingSphereFast(geo);
+    computeBoundingBoxFast(geo);
     const piece = new THREE.Mesh(geo, mesh.material);
     copyObjectState(piece, mesh);
     pieces.push(piece);
@@ -1046,8 +1089,8 @@ function releaseCpuCopies(renderer, roots, textures = []) {
     root.traverse((o) => {
       const g = o.geometry;
       if (!g || !g.isBufferGeometry || g.morphAttributes.position) return;
-      if (!g.boundingSphere) g.computeBoundingSphere();
-      if (!g.boundingBox) g.computeBoundingBox();
+      if (!g.boundingSphere) computeBoundingSphereFast(g);
+      if (!g.boundingBox) computeBoundingBoxFast(g);
       if (o.isInstancedMesh && !o.boundingSphere) o.computeBoundingSphere();
       geos.push(g);
       objects.push(o);
@@ -1108,5 +1151,5 @@ function releaseCullingHold(stats) {
   stats.held = null;
 }
 
-Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, releaseCullingHold, gateEmptyInstances, SHADOW_PROXY_LAYER, releaseCpuCopies, applySnorm }); // (applySnorm: tests/scene-culling-fast.test.mjs)
+Object.assign(window.CITY, { setupSceneCulling, updateSceneCulling, releaseCullingHold, gateEmptyInstances, SHADOW_PROXY_LAYER, releaseCpuCopies, applySnorm, computeBoundingBoxFast, computeBoundingSphereFast }); // (applySnorm, the bounds: tests/scene-culling-fast.test.mjs)
 })();

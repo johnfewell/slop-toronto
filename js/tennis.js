@@ -39,16 +39,18 @@ function frozenCourt(site,rinks) {
 }
 function buildTennis(scene,staticColliders=[]) {
   const {THREE,WorldCollision:W}=C;
+  const index=W.colliderGrid(staticColliders);
+  const touches=(shape,y)=>index.some(shape,(c)=>(c.maxY??Infinity)>y+.08&&(c.minY??-Infinity)<y+1.1&&W.contact(shape,c));
   const groundAt=(x,z)=>(C.blockAt(x,z)?C.CITY_BOUNDS.sidewalkHeight:0)+(C.cutAt?.(x,z)||0);
   const layout=tennisSites(C.TENNIS?.records||[],{blockAt:C.blockAt,groundAt,blocked:(site,y)=>{
     const shape=courtShape(site,W);
-    return staticColliders.some((c)=>(c.maxY??Infinity)>y+.08&&(c.minY??-Infinity)<y+1.1&&W.contact(shape,c));
+    return touches(shape,y);
   }});
   const pads=[],rejectedPads=[];
   for(const p of C.TENNIS?.pads||[]) {
     const y=groundAt(p.x,p.z),block=C.blockAt(p.x,p.z),shape=courtShape(p,W);
     let reason=!block||!p.ring.every(([x,z])=>C.blockAt(x,z)===block&&Math.abs(groundAt(x,z)-y)<.15)?'ground-or-road':'';
-    if(!reason&&staticColliders.some((c)=>(c.maxY??Infinity)>y+.08&&(c.minY??-Infinity)<y+1.1&&W.contact(shape,c)))reason='obstruction';
+    if(!reason&&touches(shape,y))reason='obstruction';
     if(!reason&&!layout.sites.some((s)=>s.cityLocationId===p.cityLocationId&&inTennisPad(p,s.x,s.z)))reason='no-accepted-court';
     if(!reason)pads.push({...p,y});else rejectedPads.push({id:p.id,reason});
   }

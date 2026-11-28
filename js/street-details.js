@@ -20,7 +20,7 @@
 const { THREE } = window.CITY;
 const { Fn, float, color, positionWorld, uniform, renderGroup, uniformArray, instancedBufferAttribute, int, mod, step, mix, smoothstep, uv, texture, abs, fract, attribute } = window.CITY.TSL;
 const { mergeGeometries } = window.CITY.Addons;
-const { GEO, BLOCKS, ROADS, SIGNAL_TIMING, SIGNALS, SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS, nearestRoads, blockAt, pointInPoly, cityUniforms, offsetPolygonInward } = window.CITY;
+const { GEO, BLOCKS, ROADS, SIGNAL_TIMING, SIGNALS, SIGNAL_JUNCTIONS, SIGNAL_CROSSINGS, nearestRoads, blockAt, pointInPoly, pointInBlock, cityUniforms, offsetPolygonInward } = window.CITY;
 const { createTreeField } = window.CITY;
 
 
@@ -725,7 +725,7 @@ function buildStreetDetails(scene) {
         for (let z = b.minZ + spacing / 2; z < b.maxZ; z += spacing) {
           const jx = x + (hashPos(x, 1, z) - 0.5) * spacing * 0.8, jz = z + (hashPos(z, 2, x) - 0.5) * spacing * 0.8;
           if (hashPos(jx, 9, jz) < (park ? 0.35 : 0.55)) continue;
-          if (!pointInPoly(b.poly, jx, jz) || !clearOfBuildings(jx, jz) || window.CITY.waterAt(jx, jz)) continue;
+          if (!pointInBlock(b, jx, jz) || !clearOfBuildings(jx, jz) || window.CITY.waterAt(jx, jz)) continue;
           if (window.CITY.highParkFeatureAt?.(jx, jz, 2)) continue; // (High Park's paths, beds & buildings)
           spots.push([jx, jz]);
         }

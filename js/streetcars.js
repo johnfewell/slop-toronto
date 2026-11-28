@@ -461,20 +461,51 @@ function routeOnTracks(G, pat) {
     p.dz = (b.z - a.z) / L;
   });
   const LC = 20, REACH = 40;
-  const lg = new Map();
+  // (the line's points in a dense grid of 20 m cells, typed arrays, each cell's points in line order: every piece of the track graph
+  // is asked about for every route, so most asks are far from the line and are turned away by the grid's bounds. The same cells in the
+  // same order: the same answers)
+  const NP = S.length, PX = new Float64Array(NP), PZ = new Float64Array(NP);
+  let gx0 = Infinity, gx1 = -Infinity, gz0 = Infinity, gz1 = -Infinity;
   S.forEach((p, j) => {
-    const k = Math.floor(p.x / LC) * 100000 + Math.floor(p.z / LC);
-    if (!lg.has(k)) lg.set(k, []);
-    lg.get(k).push(j);
+    PX[j] = p.x; PZ[j] = p.z;
+    const cx = Math.floor(p.x / LC), cz = Math.floor(p.z / LC);
+    if (cx < gx0) gx0 = cx; if (cx > gx1) gx1 = cx; if (cz < gz0) gz0 = cz; if (cz > gz1) gz1 = cz;
   });
+  const GNX = gx1 - gx0 + 1, GNZ = gz1 - gz0 + 1;
+  const cellStart = new Int32Array(GNX * GNZ + 1), cellItems = new Int32Array(NP);
+  for (let j = 0; j < NP; j++) cellStart[(Math.floor(PX[j] / LC) - gx0) * GNZ + Math.floor(PZ[j] / LC) - gz0 + 1]++;
+  for (let c = 0; c < GNX * GNZ; c++) cellStart[c + 1] += cellStart[c];
+  const fillAt = cellStart.slice(0, GNX * GNZ);
+  for (let j = 0; j < NP; j++) cellItems[fillAt[(Math.floor(PX[j] / LC) - gx0) * GNZ + Math.floor(PZ[j] / LC) - gz0]++] = j;
+  // (and the cells within two of one that holds a point: a cell with none of its 25 neighbours occupied answers null without a look)
+  const reach = new Uint8Array(GNX * GNZ);
+  for (let cx = 0; cx < GNX; cx++) for (let cz = 0; cz < GNZ; cz++) {
+    if (cellStart[cx * GNZ + cz + 1] === cellStart[cx * GNZ + cz]) continue;
+    for (let a = Math.max(0, cx - 2); a <= Math.min(GNX - 1, cx + 2); a++) for (let c = Math.max(0, cz - 2); c <= Math.min(GNZ - 1, cz + 2); c++) reach[a * GNZ + c] = 1;
+  }
   const near = (x, z) => {
     let bj = -1, bd = REACH;
     const ix = Math.floor(x / LC), iz = Math.floor(z / LC);
-    for (let a = -2; a <= 2; a++) for (let c = -2; c <= 2; c++) for (const j of lg.get((ix + a) * 100000 + iz + c) || []) {
-      const d = Math.hypot(S[j].x - x, S[j].z - z);
-      if (d < bd) {
-        bd = d;
-        bj = j;
+    if (ix + 2 < gx0 || ix - 2 > gx1 || iz + 2 < gz0 || iz - 2 > gz1) return null;
+    if (ix >= gx0 && ix <= gx1 && iz >= gz0 && iz <= gz1 && reach[(ix - gx0) * GNZ + iz - gz0] === 0) return null;
+    for (let a = -2; a <= 2; a++) {
+      const cx = ix + a - gx0;
+      if (cx < 0 || cx >= GNX) continue;
+      for (let c = -2; c <= 2; c++) {
+        const cz = iz + c - gz0;
+        if (cz < 0 || cz >= GNZ) continue;
+        const cell = cx * GNZ + cz;
+        for (let k = cellStart[cell], end = cellStart[cell + 1]; k < end; k++) {
+          const j = cellItems[k];
+          // (the squared distance first: Math.hypot is the cost here, and a point beyond the best so far cannot win; the margin keeps this exact)
+          const ex = PX[j] - x, ez = PZ[j] - z, lim = bd * 1.000001;
+          if (ex * ex + ez * ez > lim * lim) continue;
+          const d = Math.hypot(ex, ez);
+          if (d < bd) {
+            bd = d;
+            bj = j;
+          }
+        }
       }
     }
     return bj < 0 ? null : { j: bj, d: bd };

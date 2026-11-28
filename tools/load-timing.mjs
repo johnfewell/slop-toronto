@@ -131,8 +131,11 @@ fs.rmSync(certDir, { recursive: true, force: true });
 async function run(arm, s, round) {
   root = path.resolve(plan.arms[arm]) + path.sep;
   served.length = 0;
-  const launchArgs = ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', `--ignore-certificate-errors-spki-list=${spki}`,
+  const live = plan.liveOrigin; // (a run against the real site, over the mini's own network: no local server, no mapped hosts)
+  const launchArgs = live ? ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] : ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', `--ignore-certificate-errors-spki-list=${spki}`,
     `--host-resolver-rules=MAP * 127.0.0.1:${PORT}, EXCLUDE 127.0.0.1`];
+  // plan.args / setting.args: more browser flags (the capture tool's uncapped frames: --disable-gpu-vsync, --disable-frame-rate-limit)
+  launchArgs.push(...(plan.args || []), ...(s.args || []));
   const [w, h] = (s.viewport || '1600x900').split('x').map(Number);
   const ctxOpts = { viewport: { width: w, height: h }, deviceScaleFactor: s.dpr || 1, isMobile: !!s.mobile, hasTouch: !!s.mobile };
   let profile = null;
@@ -142,7 +145,7 @@ async function run(arm, s, round) {
     const prime = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true, args: launchArgs, ...ctxOpts });
     try {
       const pp = prime.pages()[0] || await prime.newPage();
-      await pp.goto(`https://127.0.0.1:${PORT}/explore.html${s.query || ''}`, { waitUntil: 'commit', timeout: 180000 });
+      await pp.goto(`${live ? `${live}/explore` : `https://127.0.0.1:${PORT}/explore.html`}${s.query || ''}`, { waitUntil: 'commit', timeout: 180000 });
       await pp.waitForFunction(() => window.__CITY_APP?.ready, null, { timeout: 300000, polling: 100 });
       await pp.waitForTimeout(3000);
     } finally { await prime.close(); }
@@ -156,6 +159,20 @@ async function run(arm, s, round) {
     const context = launched || await browser.newContext(ctxOpts);
     const page = launched ? (launched.pages()[0] || await launched.newPage()) : await context.newPage();
     await page.addInitScript(() => performance.setResourceTimingBufferSize(5000));
+    // setting.tailSec: the frames after ready too (every requestAnimationFrame interval, from the page's first frame to tailSec s after ready; the
+    // result's `frames`: [[page ms, interval ms], ...] in the frame-time chart's own series format), and a profile of that stretch (.tail.cpuprofile)
+    if (s.tailSec) await page.addInitScript(() => {
+      // (long animation frames, where the browser has them: what script ran in each frame over 50 ms: window.__loaf, in the result's `loaf`)
+      window.__loaf = [];
+      try {
+        new PerformanceObserver((list) => {
+          for (const e of list.getEntries()) window.__loaf.push({ at: Math.round(e.startTime), ms: Math.round(e.duration), block: Math.round(e.blockingDuration || 0), scripts: e.scripts.map((x) => `${Math.round(x.duration)} ms ${x.invoker || ''} ${x.sourceFunctionName || ''} ${(x.sourceURL || '').replace(/^https?:\/\/[^/]+/, '').replace(/\.[a-f0-9]{8,}\.js$/, '.js')}:${x.sourceCharPosition}`) });
+        }).observe({ type: 'long-animation-frame', buffered: true });
+      } catch {}
+      window.__frames = []; let last = performance.now();
+      const tick = (t) => { window.__frames.push([Math.round(t * 10) / 10, Math.round((t - last) * 10) / 10]); last = t; requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    });
     const log = [];
     page.on('console', (m) => log.push(`[${m.type()}] ${m.text()}`));
     page.on('pageerror', (e) => log.push(`[pageerror] ${e.message}`));
@@ -165,9 +182,28 @@ async function run(arm, s, round) {
       await cdp.send('Network.enable');
       await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: s.net.latency, downloadThroughput: s.net.down / 8, uploadThroughput: s.net.up / 8 });
     }
-    await page.goto(`https://127.0.0.1:${PORT}/explore.html${s.query || ''}`, { waitUntil: 'commit', timeout: 180000 });
+    // setting.profile: true: the V8 sampling profiler (CDP Profiler, 0.5 ms) from the navigation to ready, written beside the results as
+    // <tag>-<setting>-r<round>-<arm>.cpuprofile; tools/cpuprofile-summary.mjs reads it (self time by function, by script, and by init phase)
+    // setting.heap: true: V8's sampling heap profiler (every 64 KB allocated, only what is still alive when it is read) from the navigation to a few
+    // seconds after ready: <tag>-<setting>-r<round>-<arm>.heapprofile (self size by allocation site: tools/cpuprofile-summary.mjs --heap <file>)
+    if (s.heap) { await cdp.send('HeapProfiler.enable'); await cdp.send('HeapProfiler.startSampling', { samplingInterval: 65536 }); }
+    if (s.profile) { await cdp.send('Profiler.enable'); await cdp.send('Profiler.setSamplingInterval', { interval: 500 }); await cdp.send('Profiler.start'); }
+    await page.goto(`${live ? `${live}/explore` : `https://127.0.0.1:${PORT}/explore.html`}${s.query || ''}`, { waitUntil: 'commit', timeout: 180000 });
     const handle = await page.waitForFunction(() => window.__CITY_APP?.ready && performance.now(), null, { timeout: 300000, polling: 50 });
     const readyMs = Math.round(await handle.jsonValue());
+    if (s.profile) {
+      const stopAt = await page.evaluate(() => performance.now()); // (the profile ends about now: this maps its clock to the page's marks)
+      const { profile: prof } = await cdp.send('Profiler.stop');
+      prof.pageNowAtStop = stopAt;
+      fs.writeFileSync(path.join(OUT, `${plan.tag || 'load'}-${s.name}-r${round}-${arm}.cpuprofile`), JSON.stringify(prof));
+      if (s.tailSec) await cdp.send('Profiler.start'); // (a second profile for what follows ready)
+    }
+    if (s.heap) {
+      await page.waitForTimeout(3000);
+      const { profile: hp } = await cdp.send('HeapProfiler.getSamplingProfile');
+      fs.writeFileSync(path.join(OUT, `${plan.tag || 'load'}-${s.name}-r${round}-${arm}.heapprofile`), JSON.stringify(hp));
+    }
+    if (s.readyJs) await page.evaluate(s.readyJs); // (setting.readyJs: run once the page is ready, e.g. a teleport to the street the frame-time shots use)
     const timing = await page.evaluate(() => {
       const res = performance.getEntriesByType('resource');
       const nav = performance.getEntriesByType('navigation')[0];
@@ -185,6 +221,19 @@ async function run(arm, s, round) {
         all: res.map((e) => [e.name.replace(location.origin, ''), Math.round(e.startTime), Math.round(e.responseEnd), e.transferSize, e.initiatorType, e.decodedBodySize, e.encodedBodySize])
       };
     });
+    const probe = s.probe ? await page.evaluate(s.probe) : undefined; // (setting.probe: a page expression whose value goes in the result, to compare what two builds made)
+    let frames = null, loaf = null;
+    if (s.tailSec) {
+      await page.waitForTimeout(s.tailSec * 1000);
+      frames = await page.evaluate((r) => window.__frames.filter((f) => f[0] >= r - 500), readyMs);
+      loaf = await page.evaluate((r) => window.__loaf.filter((f) => f.at >= r - 500), readyMs);
+      if (s.profile) {
+        const stopAt = await page.evaluate(() => performance.now());
+        const { profile: prof } = await cdp.send('Profiler.stop');
+        prof.pageNowAtStop = stopAt;
+        fs.writeFileSync(path.join(OUT, `${plan.tag || 'load'}-${s.name}-r${round}-${arm}.tail.cpuprofile`), JSON.stringify(prof));
+      }
+    }
     // a picture a few seconds after ready (what the player first sees, and whether anything still being fetched has arrived)
     await page.waitForTimeout(plan.shotDelayMs ?? 4000);
     await page.screenshot({ path: path.join(OUT, `${plan.tag || 'load'}-${s.name}-r${round}-${arm}.png`) }).catch(() => {});
@@ -195,7 +244,7 @@ async function run(arm, s, round) {
     }
     const errors = log.filter((l) => l.startsWith('[error]') || l.startsWith('[pageerror]'));
     fs.writeFileSync(path.join(OUT, `${plan.tag || 'load'}-${s.name}-r${round}-${arm}.console.log`), log.join('\n') + '\n');
-    return { arm, setting: s.name, round, readyMs, ...timing, errors: errors.length, errorSample: errors.slice(0, 5), served304: served.filter((x) => x.endsWith('(304)')).length };
+    return { arm, setting: s.name, round, readyMs, ...(frames ? { frames } : {}), ...(loaf ? { loaf } : {}), ...(probe !== undefined ? { probe } : {}), ...timing, errors: errors.length, errorSample: errors.slice(0, 5), served304: served.filter((x) => x.endsWith('(304)')).length };
   } finally {
     await browser.close();
     if (profile) fs.rmSync(profile, { recursive: true, force: true });
