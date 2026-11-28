@@ -1,0 +1,20 @@
+[
+ {
+  "name": "view-downtown",
+  "time": "midday",
+  "wait": 6000,
+  "js": "console.info('[tier-check] view downtown (the spawn on Yonge Street)')"
+ },
+ {
+  "name": "view-shoreline",
+  "time": "midday",
+  "wait": 8000,
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = (() => { const C = window.CITY, D = C.DON_VALLEY, g = D ? D.heightAt(-608.4, 3375.8) : 0; return { pos: [-608.4, g + 1.95, 3375.8], look: [-649.4, -0.7, 3408], fov: 62 }; }); })();console.info('[tier-check] view shoreline: the Island beach, Manitou, at eye height')"
+ },
+ {
+  "name": "view-high-park",
+  "time": "midday",
+  "wait": 8000,
+  "js": "window.__CITY_APP.cameraSystem.cinema=()=>({pos:[-6300,120,-1300],look:[-6500,0,-1900],fov:60});console.info('[tier-check] view High Park, 120 m up over the woods')"
+ }
+]

@@ -191,3 +191,12 @@ check that fails if the beaches/routes/gap/bridge/atlas/sampler state is wrong.
   [Toronto Island Ferries](https://www.toronto.ca/explore-enjoy/toronto-island-ferries/) and the beach pages.
 - Cross-references: [docs/waterfront-island-arrivals.md](waterfront-island-arrivals.md),
   [docs/toronto-island-woods.md](toronto-island-woods.md), [docs/waterfront-beach-ground.md](waterfront-beach-ground.md).
+
+## Sand colour (2026-11-27)
+
+The four beach meshes (`IslandAccess_<beach>_sand`) use the shore's own dry sand, `waterEdges.sandColour` in
+`js/water-edges.js` (sRGB `ab9673` with drifts and trampled patches), times a small per-beach tone (Hanlan's a little
+paler, Gibraltar a little darker). They were a flat `dccba8` before: under the midday sun that lit to near white over
+the front half of the beach, next to the apron's tan, on every tier and on every date (it is not snow: `uSnow` was 0).
+Using the apron's own formula also removes the seam where the mesh meets the apron. Without the shader noise
+(`C.waterEdgeNoise`) the mesh falls back to a flat `b09b78`, the same mean tone.

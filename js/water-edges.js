@@ -934,5 +934,5 @@ if (!C.waterEdgeNoise && C.TSL) {
   });
 }
 
-Object.assign(C, { buildWaterEdges, waterEdgeFoam, waterEdges: { on: !OFF, naturalShores, sandInto, sandMask, classify, CLASS_NAMES, HARD_ZONES, ROLLOUT } });
+Object.assign(C, { buildWaterEdges, waterEdgeFoam, waterEdges: { on: !OFF, naturalShores, sandInto, sandMask, sandColour, classify, CLASS_NAMES, HARD_ZONES, ROLLOUT } });
 })();

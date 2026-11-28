@@ -623,11 +623,21 @@ function createWaterfrontIslandAccess(THREE = C?.THREE, scene = null) {
   const countTris = (g, instances = 1) => { if (g) triangles += ((g.index ? g.index.count : g.attributes.position.count) / 3) * instances; };
 
   // --- sand ------------------------------------------------------------------------------------------------
-  const sandMat = standardMaterial(THREE, { color: 0xd9c8a4, roughness: 1.0, metalness: 0.0 });
-  const sandTints = { manitou: 0xdccba8, wards: 0xd7c6a1, hanlans: 0xdfd2b4, gibraltar: 0xd5c49f };
+  // The island sand is the shore's own dry sand (water-edges.js sandColour, sRGB ab9673 with drifts), so the mesh and
+  // the shore apron beside it meet without a seam. This used to be a flat 0xdccba8: under the midday sun it lit to
+  // near white over the front half of the beach, next to the apron's tan. A fallback without the shader noise keeps the
+  // same mean tone.
+  const SAND_FALLBACK = 0xb09b78;
+  const sandMat = standardMaterial(THREE, { color: SAND_FALLBACK, roughness: 1.0, metalness: 0.0 });
+  // (each beach's tone against the first beach's: a little paler at Hanlan's, a little darker at Gibraltar)
+  const sandTints = { manitou: 1.0, wards: 0.985, hanlans: 1.04, gibraltar: 0.975 };
+  const WEsand = C.waterEdges && C.waterEdges.on && C.waterEdges.sandColour && C.TSL && C.waterEdgeNoise ? C.waterEdges.sandColour : null;
   let sandTriangles = 0;
   for (const b of Object.values(layout.beaches)) {
-    const mat = sandMat.clone(); mat.color.setHex(sandTints[b.id] ?? 0xd9c8a4);
+    const mat = sandMat.clone();
+    const tone = sandTints[b.id] ?? 1.0;
+    mat.color.setHex(SAND_FALLBACK).multiplyScalar(tone);
+    if (WEsand && mat.isNodeMaterial) mat.colorNode = C.TSL.Fn(() => WEsand(C.TSL.positionWorld.xz).mul(tone))();
     for (const ring of b.rings) {
       const g = flatRingGeometry(THREE, ring, ESTIMATES.sandMeshY);
       if (!g) continue;

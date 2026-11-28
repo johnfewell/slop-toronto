@@ -111,6 +111,20 @@ as skipped, with the reason, when it is missing:
   `--width` and `--panel-height` (see the top of the file), reads any number of metrics JSON files and writes a PNG.
   Run before and after back to back on the same mini and say so: frame times from a shared mini are relative
   evidence, not budgets.
+- **Shader check on every quality tier:** a shader that breaks on one tier only (the medium tier's shore water, whose
+  fragment shader had an empty struct, so its render pipeline was invalid) passes `npm test` and every high-tier capture.
+  `tools/check-tier-shaders.mjs` loads the built page on the mini at high, medium, low and phone (low in a 412x915 touch
+  viewport), visits three views on each (downtown, the Island beach shore, High Park) and exits 1 when the console shows
+  a WebGPU shader or pipeline error. It ignores 404s (the capture server has no `/live/...` routes) and Three.js
+  deprecation warnings. It takes 4 to 5 minutes of mini time and keeps each tier's console log and three frames:
+
+  ```sh
+  npm run build
+  gpu2-local <name> -- env CAPTURE_ROOT=dist CAPTURE_PORT=<port> CAPTURE_CDN_CACHE=1 CAPTURE_NAVIGATION_TIMEOUT_MS=180000 \
+    node tools/check-tier-shaders.mjs            # --tiers medium,low runs some tiers only
+  ```
+
+  `tests/tier-shader-check.test.mjs` pins what counts as an error, using the medium-tier bug's own console lines.
 - **No local paths:** `tests/no-local-paths.test.mjs` fails if a tracked file that the public snapshot publishes names
   a laptop home folder (anything under `/Users`) or a machine's local host name (a Bonjour `.local` or Tailscale
   `.ts.net` name). Write such locations as `$GPU2_REVIEW_DIR/…`, `~/.cache/…` or a description instead.
