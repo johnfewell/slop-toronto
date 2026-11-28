@@ -84,6 +84,12 @@ function* createBiidaasigeParkSteps(THREE = C.THREE, scene) {
     for(const surface of threeIsland.surfaces)result.surfaceTriangles.push({id:'dodem-three-animal-island',t:surface.triangle});
     result.colliders.push(...(threeIsland.colliders||[]));
   }
+  // Picket fences round the two traced play islands; openings follow the mapped footways (st-bmyv.4.3).
+  const fences=C.buildBiidaasigePlayFences?.({woodchip,threeIsland});
+  if(fences?.runs?.length){
+    result.fences=fences;
+    for(const run of fences.runs)addModel(result,{group:run.group,colliders:run.colliders},{...run.pose,y:CONFIG.groundY},'play-fence-'+run.id);
+  }
   yield 'dogs';
   const dogs=C.buildBiidaasigeDogSurfaces?.();
   if(dogs?.group&&dogs.sites?.length){

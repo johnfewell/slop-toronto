@@ -19,7 +19,7 @@ const lists = (search = '') => {
 
 test('the park and the Port Lands scripts are the detail list, not the start-up list', () => {
   const { base, detail } = lists();
-  assert.equal(detail.length, 23);
+  assert.equal(detail.length, 25);
   assert.ok(detail.every((s) => /\/(biidaasige-|portlands)/.test(s)));
   assert.ok(base.every((s) => !detail.includes(s)), 'no script is in both');
   assert.ok(!base.some((s) => /\/portlands/.test(s)));

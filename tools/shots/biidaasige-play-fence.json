@@ -1,0 +1,58 @@
+[
+ {
+  "name": "fence-oak-eye-before",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6500,
+  "js": "(async()=>{const a=window.__CITY_APP,C=CITY;const a0=C.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(a0.x+14,a0.z+14,0);for(let i=0;i<300&&!(C.biidaasigePlayFenceRuns&&C.biidaasigePlayFenceRuns.runs.length);i++)await new Promise(r=>setTimeout(r,200));const r=C.biidaasigePlayFenceRuns.runs[0],p=r.pose;a.scene.traverse(o=>{if(o.name&&o.name.startsWith('play-fence-'))o.visible=false;});a.teleportTo(p.x+14,p.z+14,0);await new Promise(r=>setTimeout(r,2500));const c={pos:[p.x+9,1.7,p.z+9],look:[p.x,.7,p.z],fov:62};a.cameraSystem.cinema=()=>c;console.log('fence',false,r.id,JSON.stringify(r.gaps.map(g=>[+g.startM.toFixed(1),+g.endM.toFixed(1),g.basis])));})();"
+ },
+ {
+  "name": "fence-oak-eye-after",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6500,
+  "js": "(async()=>{const a=window.__CITY_APP,C=CITY;const a0=C.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(a0.x+14,a0.z+14,0);for(let i=0;i<300&&!(C.biidaasigePlayFenceRuns&&C.biidaasigePlayFenceRuns.runs.length);i++)await new Promise(r=>setTimeout(r,200));const r=C.biidaasigePlayFenceRuns.runs[0],p=r.pose;a.scene.traverse(o=>{if(o.name&&o.name.startsWith('play-fence-'))o.visible=true;});a.teleportTo(p.x+14,p.z+14,0);await new Promise(r=>setTimeout(r,2500));const c={pos:[p.x+9,1.7,p.z+9],look:[p.x,.7,p.z],fov:62};a.cameraSystem.cinema=()=>c;console.log('fence',true,r.id,JSON.stringify(r.gaps.map(g=>[+g.startM.toFixed(1),+g.endM.toFixed(1),g.basis])));})();"
+ },
+ {
+  "name": "fence-oak-top-before",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6500,
+  "js": "(async()=>{const a=window.__CITY_APP,C=CITY;const a0=C.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(a0.x+14,a0.z+14,0);for(let i=0;i<300&&!(C.biidaasigePlayFenceRuns&&C.biidaasigePlayFenceRuns.runs.length);i++)await new Promise(r=>setTimeout(r,200));const r=C.biidaasigePlayFenceRuns.runs[0],p=r.pose;a.scene.traverse(o=>{if(o.name&&o.name.startsWith('play-fence-'))o.visible=false;});a.teleportTo(p.x+14,p.z+14,0);await new Promise(r=>setTimeout(r,2500));const c={pos:[p.x+5,34,p.z+6],look:[p.x,.2,p.z],fov:50};a.cameraSystem.cinema=()=>c;console.log('fence',false,r.id,JSON.stringify(r.gaps.map(g=>[+g.startM.toFixed(1),+g.endM.toFixed(1),g.basis])));})();"
+ },
+ {
+  "name": "fence-oak-top-after",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6500,
+  "js": "(async()=>{const a=window.__CITY_APP,C=CITY;const a0=C.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(a0.x+14,a0.z+14,0);for(let i=0;i<300&&!(C.biidaasigePlayFenceRuns&&C.biidaasigePlayFenceRuns.runs.length);i++)await new Promise(r=>setTimeout(r,200));const r=C.biidaasigePlayFenceRuns.runs[0],p=r.pose;a.scene.traverse(o=>{if(o.name&&o.name.startsWith('play-fence-'))o.visible=true;});a.teleportTo(p.x+14,p.z+14,0);await new Promise(r=>setTimeout(r,2500));const c={pos:[p.x+5,34,p.z+6],look:[p.x,.2,p.z],fov:50};a.cameraSystem.cinema=()=>c;console.log('fence',true,r.id,JSON.stringify(r.gaps.map(g=>[+g.startM.toFixed(1),+g.endM.toFixed(1),g.basis])));})();"
+ },
+ {
+  "name": "fence-three-eye-before",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6500,
+  "js": "(async()=>{const a=window.__CITY_APP,C=CITY;const a0=C.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(a0.x+14,a0.z+14,0);for(let i=0;i<300&&!(C.biidaasigePlayFenceRuns&&C.biidaasigePlayFenceRuns.runs.length);i++)await new Promise(r=>setTimeout(r,200));const r=C.biidaasigePlayFenceRuns.runs[1],p=r.pose;a.scene.traverse(o=>{if(o.name&&o.name.startsWith('play-fence-'))o.visible=false;});a.teleportTo(p.x+14,p.z+14,0);await new Promise(r=>setTimeout(r,2500));const c={pos:[p.x+9,1.7,p.z+9],look:[p.x,.7,p.z],fov:62};a.cameraSystem.cinema=()=>c;console.log('fence',false,r.id,JSON.stringify(r.gaps.map(g=>[+g.startM.toFixed(1),+g.endM.toFixed(1),g.basis])));})();"
+ },
+ {
+  "name": "fence-three-eye-after",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6500,
+  "js": "(async()=>{const a=window.__CITY_APP,C=CITY;const a0=C.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(a0.x+14,a0.z+14,0);for(let i=0;i<300&&!(C.biidaasigePlayFenceRuns&&C.biidaasigePlayFenceRuns.runs.length);i++)await new Promise(r=>setTimeout(r,200));const r=C.biidaasigePlayFenceRuns.runs[1],p=r.pose;a.scene.traverse(o=>{if(o.name&&o.name.startsWith('play-fence-'))o.visible=true;});a.teleportTo(p.x+14,p.z+14,0);await new Promise(r=>setTimeout(r,2500));const c={pos:[p.x+9,1.7,p.z+9],look:[p.x,.7,p.z],fov:62};a.cameraSystem.cinema=()=>c;console.log('fence',true,r.id,JSON.stringify(r.gaps.map(g=>[+g.startM.toFixed(1),+g.endM.toFixed(1),g.basis])));})();"
+ },
+ {
+  "name": "fence-three-top-before",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6500,
+  "js": "(async()=>{const a=window.__CITY_APP,C=CITY;const a0=C.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(a0.x+14,a0.z+14,0);for(let i=0;i<300&&!(C.biidaasigePlayFenceRuns&&C.biidaasigePlayFenceRuns.runs.length);i++)await new Promise(r=>setTimeout(r,200));const r=C.biidaasigePlayFenceRuns.runs[1],p=r.pose;a.scene.traverse(o=>{if(o.name&&o.name.startsWith('play-fence-'))o.visible=false;});a.teleportTo(p.x+14,p.z+14,0);await new Promise(r=>setTimeout(r,2500));const c={pos:[p.x+5,34,p.z+6],look:[p.x,.2,p.z],fov:50};a.cameraSystem.cinema=()=>c;console.log('fence',false,r.id,JSON.stringify(r.gaps.map(g=>[+g.startM.toFixed(1),+g.endM.toFixed(1),g.basis])));})();"
+ },
+ {
+  "name": "fence-three-top-after",
+  "mode": "person",
+  "time": "midday",
+  "wait": 6500,
+  "js": "(async()=>{const a=window.__CITY_APP,C=CITY;const a0=C.biidaasigeMapAnchor('inverted-timber-cluster');a.teleportTo(a0.x+14,a0.z+14,0);for(let i=0;i<300&&!(C.biidaasigePlayFenceRuns&&C.biidaasigePlayFenceRuns.runs.length);i++)await new Promise(r=>setTimeout(r,200));const r=C.biidaasigePlayFenceRuns.runs[1],p=r.pose;a.scene.traverse(o=>{if(o.name&&o.name.startsWith('play-fence-'))o.visible=true;});a.teleportTo(p.x+14,p.z+14,0);await new Promise(r=>setTimeout(r,2500));const c={pos:[p.x+5,34,p.z+6],look:[p.x,.2,p.z],fov:50};a.cameraSystem.cinema=()=>c;console.log('fence',true,r.id,JSON.stringify(r.gaps.map(g=>[+g.startM.toFixed(1),+g.endM.toFixed(1),g.basis])));})();"
+ }
+]
