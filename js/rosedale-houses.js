@@ -15,6 +15,7 @@
 //   partyN/partyEdge/partyCover, hiddenN/hiddenEdge, streetN/streetEdge   as js/massing-data.js
 //   eave, maxH, avgH   the wall height (the roof stands on it), the lidar roof top and its mean height
 //   chimN, chimX/Z/Top/Base/W   (jf-bya) the chimneys the lidar shows over the roof: per house their count, then each one's world x and z, its top and the roof under it (above the ground) and its width, decimetres
+//   lotYd              (jf-qw7, part 3) metres from the house to its lot's front line (the City parcel), along the line to the kerb; 0 unknown (an older file)
 //   lotW, park         (jf-bya) the lot's frontage (its short side, decimetres) and the front-yard parking the City licenses (0 none, 1 front yard, 2 widened driveway, 3 boulevard)
 //   canopy, hedN/hedP/hedW/hedH/hedX/hedZ, shrN/shrX/shrZ/shrR/shrH   (jf-ugq, docs/front-yards.md) per house the share of its lot under a tree crown in the lidar (percent, 255 unknown), and the hedges (their count, then each one's point count, width and height and its points' world x and z) and shrub masses (count, then centre x and z, radius and height) the lidar found in it; decimetres
 //   era, style         derived codes (ERA_NAMES, STYLE_NAMES); fit: 0 roof planner on maxH and avgH, 1 lidar roof, 2 flat by the lidar
@@ -22,7 +23,7 @@
 import { unpackGeo } from './geodata-loader.js';
 import { earClip, area2 } from './roof-skeleton.js';
 
-export const ROSEDALE_HOUSES_URL = './data/frames/eglinton/rosedale-houses.bin?v=45e155d3974a'; // (tools/build-rosedale-houses.mjs sets the hash)
+export const ROSEDALE_HOUSES_URL = './data/frames/eglinton/rosedale-houses.bin?v=b060e8436a14'; // (tools/build-rosedale-houses.mjs sets the hash)
 export const ROSEDALE_HOUSES_SCHEMA = 1;
 const FAR_FACET_M2 = 10;
 export const ERA_NAMES = ['before 1900', '1900 to 1916', '1917 to 1929', '1930 to 1945', '1946 to 1967', '1968 on'];
@@ -91,7 +92,7 @@ export function decodeHouses(H, buildings) {
       polys.push({ kind: H.polyKind[pn], v: verts });
       void pv;
     }
-    houses.push({ fid: H.fid[i], part: H.part[i], rows, ring, covered, hidden, street, eave: H.eave[i] / g, maxH: H.maxH[i] / g, avgH: H.avgH[i] / g, era: H.era[i], style: H.style[i], fit: H.fit[i], lotW: H.lotW ? H.lotW[i] / g : 0, park: H.park ? H.park[i] : 0, chim, veg, polys });
+    houses.push({ fid: H.fid[i], part: H.part[i], rows, ring, covered, hidden, street, eave: H.eave[i] / g, maxH: H.maxH[i] / g, avgH: H.avgH[i] / g, era: H.era[i], style: H.style[i], fit: H.fit[i], lotW: H.lotW ? H.lotW[i] / g : 0, lotYd: H.lotYd ? H.lotYd[i] / g : 0, park: H.park ? H.park[i] : 0, chim, veg, polys });
   }
   if (rowsCheck(buildings, all) !== H.check) return { error: 'built for other geodata' };
   return { houses };

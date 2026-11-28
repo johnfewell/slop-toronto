@@ -207,3 +207,81 @@ node --test tests/sky-occlusion.test.mjs tests/ground-mask-guard.test.mjs
 SHOTS=tools/shots/rosedale-streetscape-3.json ARMS="beforeFall afterFall beforeSnow afterSnow" bash tools/capture-rosedale-streetscape.sh   # on the Mac mini through gpu2
 FT=1 ROUND=1 ARMS="beforeFall afterFall" bash tools/capture-rosedale-streetscape.sh                                                  # frame times
 ```
+
+## Part 3B: where the lot line is, and the curbs' bends (bead `jf-bv3`)
+
+### 3. Walls and fences stood close to the curb
+
+The yard's lot line was put **8.2 m from the OSM road's centreline** (`yd = distance to the centreline - 8.2` in `js/building-draw.js`). The kerb the page draws is the City's Edge of Roadway, not the OSM line, and the two are not on top of each other: along the
+ray from the centreline to each of 3,382 Rosedale houses the kerb is a median **4.1 m** out (p10 2.5, p90 5.5), so a house's wall stood a median 4.1 m behind the kerb, **within 2 m of it on 5.6% of houses and within 1 m on 3.2%**.
+The City's parcels say where the line really is (`build/rosedale-houses/lot-lines.py` in the shared data repo, registry record `slop-rosedale-lot-lines`): for the 2,568 houses whose line to the kerb leaves their parcel, the parcel's front line is a median **5.8 m behind the kerb**
+(p5 3.1, p25 5.1, p75 6.5, p95 8.9, none under 0 and 1.8% under 2 m), and the house stands a median 5.4 m back from it.
+
+What the page does now:
+
+- **Rosedale houses** carry `lotYd`, the metres from the house to its parcel's front line (the houses file's new column, `tools/build-rosedale-houses.mjs`; +2.8 KB gzip), and `planHouse` puts the lot line there. A house whose line never leaves its parcel (476, lots that run to the kerb) takes its kerb distance less 5.8 m.
+- **Every other house** (the citywide yards) has no parcel in the page; its lot line is 5.8 m behind the edge of its curb island, found by walking out from the front wall to the island's edge (`inp.onIsland`, `blockAt`), where it was 8.2 m from a centreline. A frame with no island under the house keeps the old rule.
+- **Streets without a sidewalk get open lawn to the curb already:** of the 100 curb islands that carry Rosedale houses, 98 have City sidewalk polygons (the walk is drawn where the City maps one, the yard material runs to the kerb everywhere else), 1 is a verified no-walk island and 1 keeps the
+  fixed 4.6 m band. Nothing was changed there.
+
+![Chestnut Park, 22 November: the wall and fence, before and after](images/rosedale-streetscape-p3b-chestnut-park-snow.jpg)
+
+![Walls and hedges pulled back from the kerb (aerial, bare trees)](images/rosedale-streetscape-p3b-lot-lines-aerial.jpg)
+
+![Roxborough Dr: a hedge on the lot line, behind the boulevard](images/rosedale-streetscape-p3b-roxborough-street.jpg)
+
+### 4. Road width and shape
+
+**Width.** The road surface the page draws is the City's Edge of Roadway (the gap between the curb islands), not the OSM width, so the widths were already the real ones. Measured across the page's own islands every 6 m along each street's centreline, curb to curb: **Chestnut Park median 7.2 m** (p10 6.4;
+183 samples), Roxborough Dr 7.6 m, Crescent Rd 7.5 m, Elm Ave 8.2 m, Glen Rd 8.5 m; the 90th percentiles are the junction mouths. John's "about 6 to 7.5 m" is what the data gives. Nothing was widened or narrowed.
+
+**Shape.** The curbs were the problem: a curb island's outline is the City's polygon traced from a 1 m raster and simplified, so a bend is a chain of straight pieces. Around Chestnut Park (8 islands, 92 points) the median piece is **9.4 m** (p10 4.3 m, p90 26 m) and the turn at a joint a median **15 degrees** (p90 29), which read at
+street level as a polyline. The OSM centreline there is 2 or 3 points a piece and would not help (it is a chord across the bend).
+
+`js/curb-smooth.js` puts a curve through the same points for the islands of the Rosedale pilot's box (x 240 to 2380, z -4680 to -2900): a cubic Hermite piece between each pair of neighbours, the tangent at a point along the bisector of the two pieces that meet there (half the piece's length, so a curve through points 20 m apart sags by
+a few decimetres), cut into pieces of 3 m at most. It passes through every original point, keeps a corner (a turn of 50 degrees or more) sharp, leaves straight stretches alone, leaves a piece over 28 m as traced (those are park and ravine outlines), and never strays more than 1 m from the City's outline (the 114 islands of
+the box: 3,937 outline points become 11,600). `city-config.js` smooths `BLOCKS` only, so everything that reads the island (the ground, `blockAt`, the walkers' floor, the kerbs, the yards' curb walk) agrees; the raw `GEO.blocks` stay as the City's, which the sidewalk polygons' key is made from. `?smoothCurbs=0` keeps the traced outline.
+
+![Chestnut Park's bend from 55 m up, bare trees: the curb is a curve](images/rosedale-streetscape-p3b-bend-aerial-chestnut-park.jpg)
+
+### Pictures (part 3B)
+
+Same cameras before (origin/main `6b748c5`, part 3A live) and after, 1600 x 900 on the Mac mini; the sheets with John's photographs are in his private review folder (`slop-toronto-updates/2026-11-27-rosedale-streetscape-3/partB/`).
+
+### What is still wrong (part 3)
+
+- The lot line is the parcel's front line toward the nearest road polygon; for a corner lot that can be the side street, and the wall still follows the street the house faces.
+- Which lots have a wall, a fence or a hedge on the line at all is the style rule's draw (no data exists); John's photographs show many open lawns where the rule draws a stone wall.
+- Only the Rosedale pilot's curbs are smoothed; the rest of the city's bends are still chains of straight pieces.
+- The road's tint under overcast is cooler than the photograph's (the sky's ambient); the wheel paths are not drawn.
+
+### Cost of part 3B (lot lines, smooth curbs)
+
+Mac mini (Apple M4) through `gpu2`, shared with a production transcription job (relative figures), 1600 x 900, uncapped, 20 s recordings at street level (the first 15% dropped), origin/main `6b748c5` (part 3A live) against this branch, alternated (runs 2 and 4 had "after" first).
+Mean / median frame interval, ms, before -> after (budget +0.5 ms at street level):
+
+| Place | Date | Run | Mean | Median |
+|---|---|---|---|---|
+| Chestnut Park | 22 Oct | 1 | 18.21 -> 18.45 (+0.24) | 18.20 -> 18.40 (+0.20) |
+| Chestnut Park | 22 Oct | 2 | 18.35 -> 18.54 (+0.19) | 18.40 -> 18.50 (+0.10) |
+| Crescent Rd | 22 Oct | 1 | 16.37 -> 16.37 (+0.00) | 16.40 -> 16.40 (+0.00) |
+| Crescent Rd | 22 Oct | 2 | 16.59 -> 16.43 (-0.16) | 16.50 -> 16.40 (-0.10) |
+| Chestnut Park | 26 Nov (bare) | 3 | 19.55 -> 19.49 (-0.06) | 19.60 -> 19.50 (-0.10) |
+| Chestnut Park | 26 Nov (bare) | 4 | 19.32 -> 19.48 (+0.16) | 19.30 -> 19.45 (+0.15) |
+| Crescent Rd | 26 Nov (bare) | 3 | 16.66 -> 16.92 (+0.26) | 16.70 -> 17.00 (+0.30) |
+| Crescent Rd | 26 Nov (bare) | 4 | 16.45 -> 16.93 (+0.47) | 16.50 -> 16.90 (+0.40) |
+
+Every pair is inside the budget; Crescent Rd on the bare date is the nearest to it (+0.26 and +0.47). The new work is the smoothed curbs' extra ground triangles (the 114 islands' outlines go from 3,937 points to 11,600, once at load) and, per house, a walk of up to 60 steps of `blockAt` at plan time.
+
+![Chestnut Park, 22 October](images/rosedale-streetscape-p3b-frame-time-chestnut-fall.png)
+
+![Crescent Rd, 26 November (bare), after first](images/rosedale-streetscape-p3b-frame-time-crescent-bare.png)
+
+### Reproduce (3B)
+
+```sh
+uv run --with numpy --with shapely --with pyproj python3 build/rosedale-houses/lot-lines.py   # in the shared data repo: lot-lines.json
+node tools/build-rosedale-houses.mjs "$TORONTO_DATA_CACHE/derived/rosedale-roofs/1/roofs.json" "$TORONTO_DATA_CACHE/derived/rosedale-houses/1/houses.csv"   # data/frames/eglinton/rosedale-houses.bin
+node --test tests/rosedale-lot-lines.test.mjs tests/curb-smooth.test.mjs
+SHOTS=tools/shots/rosedale-streetscape-3b.json ARMS="beforeBare afterBare beforeSnow afterSnow" bash tools/capture-rosedale-streetscape.sh   # on the Mac mini through gpu2
+```

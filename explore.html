@@ -102,6 +102,7 @@
         eglinton ? './js/frames/eglinton/toronto-transit.js' : './js/toronto-transit.js',
         './js/transit.js',
         './js/transit-live.js',
+        './js/curb-smooth.js', // (jf-qw7 part 3: the Rosedale pilot's curbs, smoothed where city-config.js builds the islands)
         // the terrain pilots (docs/high-park-terrain.md, docs/don-valley-terrain.md), their data and their one runtime,
         // before city-config.js reads them: High Park always, the Don Valley with ?donvalley=1
         ...(new URLSearchParams(location.search).get('donvalley') === '1' ? ['./js/don-valley-data.js'] : []),

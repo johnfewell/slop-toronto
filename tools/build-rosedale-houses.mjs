@@ -128,6 +128,17 @@ const meta = new Map(parseCsv(fs.readFileSync(housesCsv, 'utf8')).map((r) => [r.
 // whether the City licenses front-yard parking there; the file carries only these two numbers, for the yard the page draws (docs/rosedale-walls.md)
 const lotsFile = path.join(path.dirname(path.resolve(housesCsv)), 'lots.json');
 const lots = fs.existsSync(lotsFile) ? JSON.parse(fs.readFileSync(lotsFile, 'utf8')) : {};
+// (jf-qw7, part 3) where each house's lot line is: lot-lines.json of rosedale-houses/1 (build/rosedale-houses/lot-lines.py): the metres from the house to the City parcel's front line, along the line to the kerb.
+// A house whose line to the kerb never leaves its parcel has none: it takes its kerb distance (lots.json) less the median depth of the boulevard and walk in front of a lot line, 5.8 m (n = 2,568, p5 3.1, p95 8.9)
+const lotLinesFile = path.join(path.dirname(path.resolve(housesCsv)), 'lot-lines.json');
+const lotLines = fs.existsSync(lotLinesFile) ? JSON.parse(fs.readFileSync(lotLinesFile, 'utf8')) : {};
+const BEHIND_KERB = 5.8;
+const lotYardOf = (id) => {
+  const l = lotLines[id];
+  if (l && Number.isFinite(l.frontYardM)) return l.frontYardM;
+  const k = lots[id] && lots[id].kerbM;
+  return Number.isFinite(k) ? Math.max(0, k - BEHIND_KERB) : 0;
+};
 // (jf-bya) the chimneys the lidar shows over each roof (build/rosedale-houses/chimneys.py: returns standing above the fitted planes), next to roofs.json
 const chimFile = path.join(path.dirname(path.resolve(roofsFile)), 'chimneys.json');
 const chimneys = fs.existsSync(chimFile) ? JSON.parse(fs.readFileSync(chimFile, 'utf8')) : {};
@@ -492,7 +503,7 @@ const polysOf = (h) => {
   return out;
 };
 const cols = { fid: [], part: [], row: [], extraN: [], extraRow: [], corners: [], start: [], step: [], partyN: [], partyEdge: [], partyCover: [], hiddenN: [], hiddenEdge: [], streetN: [], streetEdge: [],
-  eave: [], maxH: [], avgH: [], era: [], style: [], fit: [], lotW: [], park: [], chimN: [], chimX: [], chimZ: [], chimTop: [], chimBase: [], chimW: [], canopy: [], hedN: [], hedP: [], hedW: [], hedH: [], hedX: [], hedZ: [], shrN: [], shrX: [], shrZ: [], shrR: [], shrH: [], polyN: [], polyKind: [], polyVerts: [], vx: [], vz: [], vy: [] };
+  eave: [], maxH: [], avgH: [], era: [], style: [], fit: [], lotW: [], lotYd: [], park: [], chimN: [], chimX: [], chimZ: [], chimTop: [], chimBase: [], chimW: [], canopy: [], hedN: [], hedP: [], hedW: [], hedH: [], hedX: [], hedZ: [], shrN: [], shrX: [], shrZ: [], shrR: [], shrH: [], polyN: [], polyKind: [], polyVerts: [], vx: [], vz: [], vy: [] };
 let prevRow = 0;
 const allRows = [];
 for (const h of houses) {
@@ -522,7 +533,7 @@ for (const h of houses) {
   cols.shrN.push(shrubs.length);
   for (const [x, y, rx, ry, , hh] of shrubs) { const [dx, dz] = off(x, y); cols.shrX.push(dm(h.X0 + dx)); cols.shrZ.push(dm(h.Z0 + dz)); cols.shrR.push(dm(Math.sqrt(rx * ry))); cols.shrH.push(dm(hh)); }
   stats.hedges = (stats.hedges || 0) + hedges.length; stats.shrubs = (stats.shrubs || 0) + shrubs.length; if (hedges.length) stats.housesWithHedges = (stats.housesWithHedges || 0) + 1;
-  const lot = lots[h.id]; cols.lotW.push(lot && Number.isFinite(lot.lotShort) ? dm(Math.min(lot.lotShort, 60)) : 0); cols.park.push(lot && lot.frontYardParking ? (PARKING[lot.frontYardParking] || 1) : 0);
+  const lot = lots[h.id]; cols.lotW.push(lot && Number.isFinite(lot.lotShort) ? dm(Math.min(lot.lotShort, 60)) : 0); cols.lotYd.push(dm(Math.min(lotYardOf(h.id), 60))); cols.park.push(lot && lot.frontYardParking ? (PARKING[lot.frontYardParking] || 1) : 0);
   const ps = polysOf(h); cols.polyN.push(ps.length);
   for (const p of ps) { cols.polyKind.push(p.kind); cols.polyVerts.push(p.v.length); for (const [x, z, y] of p.v) { cols.vx.push(dm(x)); cols.vz.push(dm(z)); cols.vy.push(dm(y)); } if (p.kind === 0) stats.roofTris += p.v.length - 2; else stats.gableTris += p.v.length - 2; }
   stats.polys += ps.length;

@@ -261,7 +261,12 @@ function nearestRoads(x, z, radius = 60) {
 //   the strip between a dual carriageway's two roadways (2: concrete, raised and paved; 1: planted lawn)
 // ---------------------------------------------------------------------------------------------------------------------
 const BLOCKS = GEO.blocks.map(([flat, rects, park, parkName, isRect, median, wild], id) => {
-  const poly = toPts(flat);
+  // (jf-qw7 part 3, js/curb-smooth.js: the Rosedale pilot's curbs are smoothed, so a bend in a road is a curve and not a chain of 9 m pieces; ?smoothCurbs=0 keeps the City's traced outline)
+  let poly = toPts(flat);
+  if (!isRect && window.CITY.smoothCurbRing && !(typeof location !== 'undefined' && new URLSearchParams(location.search).get('smoothCurbs') === '0')) {
+    const rb = polyBounds(poly);
+    if (window.CITY.inCurbSmoothBox((rb.minX + rb.maxX) / 2, (rb.minZ + rb.maxZ) / 2)) poly = window.CITY.smoothCurbRing(poly);
+  }
   let a = 0, cx = 0, cz = 0;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     const p = poly[i], q = poly[j];

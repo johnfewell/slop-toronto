@@ -660,7 +660,20 @@ export function planHouse(inp) {
   let yard = null;
   if (inp.yard && doors.length) {
     const dMid = roadDist(...F.xz((u0 + u1) / 2, -2));
-    const yd = Math.min(12, dMid + 2 - 8.2); // (the lot line stands about 8 m from the road's centreline: half the road, the boulevard and the sidewalk)
+    // The lot line. Where the City's parcel is known (the Rosedale houses: inp.yard.lotYd, the metres from the house to the parcel's front line) that is it. Elsewhere it is
+    // 5.8 m behind the kerb the page draws, found by walking out from the front wall to the edge of the curb island (inp.onIsland): the median depth of boulevard and walk
+    // in front of a Rosedale lot line is 5.8 m (p5 3.1 m, 2,568 houses; docs/rosedale-streetscape.md part 3). It used to be 8.2 m from the OSM road's centreline, which
+    // sits 2.5 to 5.5 m from the kerb the City draws: on 6% of Rosedale's houses it put the wall within 2 m of the kerb.
+    let yd = Math.min(12, dMid + 2 - 8.2);
+    if (inp.yard.lotYd > 0) yd = Math.min(12, inp.yard.lotYd);
+    else if (inp.onIsland) {
+      const mid = (u0 + u1) / 2;
+      let s = 0.5;
+      if (inp.onIsland(...F.xz(mid, -0.5))) {
+        while (s < 30 && inp.onIsland(...F.xz(mid, -s))) s += 0.5;
+        if (s < 30) yd = Math.min(12, s - 0.25 - 5.8);
+      }
+    }
     if (Number.isFinite(yd) && yd >= 2.2) {
       const lotW = inp.yard.lotW || 0, extra = lotW > 0 ? clamp((lotW - Wd) / 2, 0.3, 6) : 1.0;
       const c = (doors[0][0] + doors[0][1]) / 2;

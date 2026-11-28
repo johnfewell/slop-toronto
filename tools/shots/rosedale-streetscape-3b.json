@@ -1,0 +1,56 @@
+[
+ {
+  "name": "probe",
+  "mode": "person",
+  "wait": 14000,
+  "js": "(() => { const C = window.CITY; let n = 0, v = 0, raw = 0; for (const b of C.BLOCKS) { if (C.inCurbSmoothBox && C.inCurbSmoothBox(b.cx, b.cz)) { n++; v += b.poly.length; raw += C.GEO.blocks[b.id][0].length / 2; } } console.log('[curbs] islands in the box ' + n + ', outline points ' + raw + ' -> ' + v + ', smoothing ' + !!C.smoothCurbRing); const a = window.__CITY_APP; a.teleportTo(850, -3745, 0); a.cameraSystem.cinema = () => ({ pos: [850, 55, -3748], look: [850, 0, -3747], fov: 50 }); return 'ok'; })()"
+ },
+ {
+  "name": "chestnut-bend-aerial-2",
+  "mode": "person",
+  "wait": 3000,
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [850, 55, -3748], look: [850, 0, -3747], fov: 50 }); })()"
+ },
+ {
+  "name": "chestnut-bend-aerial-3",
+  "mode": "person",
+  "wait": 3000,
+  "js": "(() => { const a = window.__CITY_APP; a.cameraSystem.cinema = () => ({ pos: [770, 55, -3770], look: [770, 0, -3769], fov: 50 }); })()"
+ },
+ {
+  "name": "roxborough-bend-aerial",
+  "mode": "person",
+  "wait": 3000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.68283, -79.37500); a.cameraSystem.cinema = () => ({ pos: [p.x, 55, p.z], look: [p.x, 0, p.z + 0.5], fov: 50 }); })()"
+ },
+ {
+  "name": "chestnut-park-snow-view",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(850, -3764, 0); a.cameraSystem.cinema = () => ({ pos: [850, 1.55, -3764], look: [886, 3.0, -3720], fov: 66 }); })()"
+ },
+ {
+  "name": "chestnut-bend-low",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(878, -3736, 0); a.cameraSystem.cinema = () => ({ pos: [878, 1.3, -3736], look: [856, 1.2, -3764], fov: 70 }); })()"
+ },
+ {
+  "name": "chestnut-park-fall-view",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(800, -3770, 0); a.cameraSystem.cinema = () => ({ pos: [800, 1.55, -3770], look: [866, 3.0, -3750], fov: 66 }); })()"
+ },
+ {
+  "name": "roxborough-street",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.68263482453741, -79.37552632696033), q = C.worldFromLatLon(43.683036274085154, -79.37448296496858); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ },
+ {
+  "name": "crescent-street",
+  "mode": "person",
+  "wait": 4000,
+  "js": "(() => { const C = window.CITY, a = window.__CITY_APP; const p = C.worldFromLatLon(43.67784023050961, -79.38417442413164), q = C.worldFromLatLon(43.67793545062343, -79.38300167565279); a.teleportTo(p.x, p.z, 0); a.cameraSystem.cinema = () => ({ pos: [p.x, 1.7, p.z], look: [q.x, 4, q.z], fov: 66 }); })()"
+ }
+]
