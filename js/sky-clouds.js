@@ -113,12 +113,18 @@ async function setupClouds(renderer, { load = () => import('./clouds.js') } = {}
     }
     // Alpha.6 handles reversed-depth shadow fitting and scene-depth reads directly; use the real scene camera.
     ctx.stbnTexture = Clouds.createJitterTexture();
-    Clouds.loadBakedCloudTextures({
+    // The four cloud textures (2.8 MB: the shapes and the weather) gate nothing: the sky is drawn without them and fills in when
+    // they arrive. They are asked for once the start-up models are in (js/early-models.js), so on a slow link they don't share the
+    // connection with the data and models the city cannot be built without; on a fast one that is a moment after the page starts
+    // (st-tw6z). ?cloudsFirst=1 asks for them at once, as before
+    const urls = {
       localWeather: Clouds.DEFAULT_LOCAL_WEATHER_URL,
       turbulence: Clouds.DEFAULT_TURBULENCE_URL,
       shape: Clouds.DEFAULT_SHAPE_URL,
       shapeDetail: Clouds.DEFAULT_SHAPE_DETAIL_URL
-    }).then((baked) => { Object.assign(ctx, baked); ctx.resetHistory(); });
+    };
+    const modelsIn = URL_PARAMS.get('cloudsFirst') === '1' || !window.CITY.earlyModels ? Promise.resolve() : window.CITY.earlyModels.settled();
+    modelsIn.then(() => Clouds.loadBakedCloudTextures(urls)).then((baked) => { Object.assign(ctx, baked); ctx.resetHistory(); });
   }
 
   // World -> ECEF: the city's frame (x grid east, y up, z grid south, turned theta from true north) into east-north-up

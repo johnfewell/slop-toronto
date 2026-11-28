@@ -1,0 +1,20 @@
+[
+ {
+  "name": "m-downtown",
+  "mode": "person",
+  "time": "midday",
+  "wait": 12000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(130, -345, 0); const cam = { pos: [130, 1.7, -352], look: [-200, 2.5, -352], fov: 60 }; a.cameraSystem.cinema = () => cam; })()"
+ },
+ {
+  "name": "frame-times-downtown",
+  "mode": "person",
+  "time": "midday",
+  "record": true,
+  "wait": 500,
+  "ftSeconds": 20,
+  "ftWaitFor": "",
+  "ftTailSeconds": 4,
+  "js": "(async()=>{const o=window.__captureShot||{};const sleep=(ms)=>new Promise((r)=>setTimeout(r,ms));const dts=[];let last=performance.now(),stop=false;const t0=last;const tick=()=>{const n=performance.now();dts.push([n-t0,n-last]);last=n;if(!stop)requestAnimationFrame(tick);};requestAnimationFrame(tick);const wf=o.ftWaitFor;if(wf){const lim=performance.now()+120000;while(performance.now()<lim){let ok=false;try{ok=!!(0,eval)(wf);}catch(e){}if(ok){window.__ftMark&&window.__ftMark('wait done');break;}await sleep(250);}await sleep((o.ftTailSeconds??4)*1000);}else{await sleep((o.ftSeconds??20)*1000);}stop=true;const d=dts.map((x)=>x[1]).sort((a,b)=>a-b);const q=(p)=>d[Math.min(d.length-1,Math.floor(d.length*p))];const marks=(window.__ftMarks||[]).map(([name,at])=>({name,t:Math.round(at-t0)})).filter((m)=>m.t>=0);return {seconds:Math.round(dts[dts.length-1][0]/100)/10,frames:d.length,p50:q(.5),p95:q(.95),p99:q(.99),max:d[d.length-1],over50:d.filter((x)=>x>50).length,over100:d.filter((x)=>x>100).length,over200:d.filter((x)=>x>200).length,series:dts.map((x)=>[Math.round(x[0]),Math.round(x[1]*10)/10]),marks,heapMB:performance.memory&&Math.round(performance.memory.usedJSHeapSize/1048576)};})()"
+ }
+]

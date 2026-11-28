@@ -48,6 +48,7 @@ const SW = C.CITY_BOUNDS?.sidewalkHeight ?? 0.22;
 // It is the DEFAULT HTO seat (captain-accepted). The procedural HTO chair is the synchronous fallback if the GLB fails to
 // load, and an explicit override keeps the procedural chair for comparison.
 const CHAIR_MODEL_URL = './assets/props/waterfront-hto-adirondack.glb';
+window.CITY.earlyModels?.want([CHAIR_MODEL_URL]); // (its download begins when the app starts, js/early-models.js)
 const CHAIR_MODEL_SIZE = { width: 0.849, height: 1.06, depth: 1.012 };
 // Which beaches take the downloaded model. The Innerscene chair is a fan/fan-arm Adirondack: it reads as the HTO chairs
 // (rounded fan back), not Sugar's 3-horizontal-slat Loll chair. Sugar keeps the procedural chair.
@@ -559,7 +560,7 @@ function loadChairModel(THREE) {
   if (!GLTFLoader) return Promise.resolve(null);
   let loader;
   try { loader = new GLTFLoader(); } catch (e) { return Promise.resolve(null); }
-  return loader.loadAsync(CHAIR_MODEL_URL).then((gltf) => {
+  return (window.CITY.earlyModels ? window.CITY.earlyModels.load(loader, CHAIR_MODEL_URL) : loader.loadAsync(CHAIR_MODEL_URL)).then((gltf) => {
     const geos = [];
     gltf.scene.updateWorldMatrix(true, true);
     gltf.scene.traverse((o) => {

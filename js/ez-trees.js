@@ -281,6 +281,11 @@ function cottonwoodBark(mat, barkMap) {
   mat.name = mat.name.replace('_lodfade', '_cottonwood_lodfade');
   return mat;
 }
+// (the models' downloads begin when the app starts, not when the build reaches the trees: js/early-models.js, st-tw6z)
+// One file per species holds its sizes and its leaf-and-bark atlas once (tools/merge-tree-models.mjs): 'ez-oak-small' is the `small_near` and
+// `small_mid` nodes of ez-oak.glb, 'ez-pine-large-a' the `large_` ones in ez-pine-a.glb
+const treeFile = (id) => { const m = /^(ez-[a-z]+)-(small|medium|large)(-a)?$/.exec(id); return m ? { url: `./assets/trees/${m[1]}${m[3] || ''}.glb`, size: m[2] } : null; };
+window.CITY.earlyModels?.want([...new Set(((window.CITY.GEO && window.CITY.GEO.treeModels) || []).map(([id]) => treeFile(id)?.url).filter(Boolean))]);
 // (variants: [id, the model whose geometry and leaves it takes, the model whose bark, the bark's treatment])
 const VARIANTS = [['ez-cottonwood-medium', 'ez-aspen-medium', 'ez-ash-medium', cottonwoodBark], ['ez-cottonwood-large', 'ez-aspen-large', 'ez-ash-large', cottonwoodBark]];
 
@@ -298,14 +303,19 @@ async function buildEzTrees(scene, generated) {
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   let models;
   try {
+    const files = new Map(); // a species' file, loaded once for its sizes
+    const speciesGltf = (url) => { if (!files.has(url)) files.set(url, window.CITY.earlyModels ? window.CITY.earlyModels.load(loader, url) : loader.loadAsync(url)); return files.get(url); }; // (js/early-models.js)
     models = await Promise.all(ids.map(async (id) => {
-      const gltf = await loader.loadAsync(`./assets/trees/${id}.glb`);
+      const file = treeFile(id);
+      if (!file) throw new Error(`no model file for ${id}`);
+      const gltf = await speciesGltf(file.url);
       let near = null, mid = null;
       gltf.scene.traverse((o) => {
         if (!o.isMesh) return;
-        if (o.name.startsWith('mid') || (o.parent && o.parent.name.startsWith('mid'))) mid = o;
-        else if (!near) near = o;
+        if (o.name === `${file.size}_near`) near = o;
+        else if (o.name === `${file.size}_mid`) mid = o;
       });
+      if (!near) throw new Error(`${file.url} has no ${file.size} model`);
       mid = mid || near;
       return { id, near: bakedGeometry(near), mid: bakedGeometry(mid), material: fadeMaterial(near.material, !id.includes('pine')), src: near.material };
     }));

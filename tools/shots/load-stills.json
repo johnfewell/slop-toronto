@@ -1,0 +1,14 @@
+[
+ {
+  "name": "still-downtown",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(130, -345, 0); const cam = { pos: [130, 1.7, -352], look: [-200, 2.5, -352], fov: 60 }; a.cameraSystem.cinema = () => cam; })()"
+ },
+ {
+  "name": "still-highpark",
+  "mode": "person",
+  "wait": 12000,
+  "js": "(() => { const a = window.__CITY_APP; a.teleportTo(-6240, -2350, 0); const cam = { pos: [-6240, (window.CITY.cutAt ? window.CITY.cutAt(-6240, -2350) : 0) + (window.CITY.blockAt(-6240, -2350) ? 0.22 : 0) + 1.7, -2350], look: [-6200, (window.CITY.cutAt ? window.CITY.cutAt(-6200, -2440) : 0) + (window.CITY.blockAt(-6200, -2440) ? 0.22 : 0) + 4, -2440], fov: 62 }; a.cameraSystem.cinema = () => cam; })()"
+ }
+]

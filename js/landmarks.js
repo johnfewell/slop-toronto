@@ -13,6 +13,7 @@
 // Assembly's dome) the model's proportions are estimates; see the README.
 
 const { THREE } = window.CITY;
+window.CITY.earlyModels?.want(['./assets/landmarks/cn-tower.glb']); // (its download begins when the app starts, js/early-models.js)
 const { mergeGeometries } = window.CITY.Addons;
 const { Fn, float, color, positionWorld, positionGeometry, smoothstep, step, abs, fract, mix, max, min, sin, normalWorldGeometry } = window.CITY.TSL;
 const { GEO, LANDMARK_SITES, CITY_BOUNDS, createExtrudedPolygonMesh, createFlatPolygonMesh } = window.CITY;
@@ -892,7 +893,7 @@ function buildLandmarks(scene) {
     if (window.CITY.Addons.GLTFLoader) {
       const loader = new window.CITY.Addons.GLTFLoader();
       if (window.CITY.Addons.MeshoptDecoder) loader.setMeshoptDecoder(window.CITY.Addons.MeshoptDecoder);
-      loader.loadAsync('./assets/landmarks/cn-tower.glb').then((gltf) => {
+      (window.CITY.earlyModels ? window.CITY.earlyModels.load(loader, './assets/landmarks/cn-tower.glb') : loader.loadAsync('./assets/landmarks/cn-tower.glb')).then((gltf) => {
         const tower = gltf.scene;
         tower.name = 'Landmark_cnTower';
         tower.position.set(s.x, SW_Y, s.z);

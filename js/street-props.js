@@ -15,6 +15,7 @@ const { GEO, CITY_BOUNDS, nearestRoads, blockAt } = window.CITY;
 // (its +z across the curb, so a bike stand's ring runs with the street), cull distance (m), casts shadows, height (m)
 // when the model isn't to scale]. Thousands of bike rings line downtown's streets: they go soonest and cast none (a thin
 // post's shadow barely reads).
+const loadGlb = (loader, url) => (window.CITY.earlyModels ? window.CITY.earlyModels.load(loader, url) : loader.loadAsync(url)); // (js/early-models.js)
 const KINDS = [
   ['hydrant', 'hydrant', 'front', 120, true],
   ['bikeRing', 'bike-ring', 'along', 90, false],
@@ -30,6 +31,9 @@ const KINDS = [
   ['posterColumn', 'poster-column', 'front', 140, true],
   ['publicationCorral', 'publication-corral', 'back', 110, true]
 ];
+
+// (their downloads begin when the app starts, js/early-models.js)
+window.CITY.earlyModels?.want(KINDS.map(([, file]) => `./assets/props/${file}.glb`));
 
 // the round ones (a circle a little inside the model's widest reach: a hydrant's nozzles stick out)
 const ROUND = { hydrant: 0.85 };
@@ -197,7 +201,7 @@ async function buildStreetProps(scene, staticColliders = []) {
     if (!pts || !pts.length) return;
     let gltf;
     try {
-      gltf = await loader.loadAsync(`./assets/props/${file}.glb`);
+      gltf = await loadGlb(loader, `./assets/props/${file}.glb`);
     } catch (e) {
       console.warn(`[streetProps] ${file}.glb did not load:`, e);
       return;

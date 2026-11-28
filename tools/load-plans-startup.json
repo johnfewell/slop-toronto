@@ -1,0 +1,13 @@
+{
+ "tag": "startup",
+ "realHeaders": true,
+ "arms": { "A": ".load/base" },
+ "rounds": 3,
+ "order": "A",
+ "settings": [
+  { "name": "desk-cold", "viewport": "1600x900", "query": "?liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z", "net": null },
+  { "name": "desk-warm", "warm": true, "viewport": "1600x900", "query": "?liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z", "net": null },
+  { "name": "phone-cold", "viewport": "412x915", "dpr": 2.625, "mobile": true, "cpuThrottle": 4, "query": "?quality=low&liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z", "net": null },
+  { "name": "phone-warm", "warm": true, "viewport": "412x915", "dpr": 2.625, "mobile": true, "cpuThrottle": 4, "query": "?quality=low&liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z", "net": null }
+ ]
+}

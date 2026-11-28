@@ -185,6 +185,10 @@ function signMaterial(template, atlas, colours) {
   return mat;
 }
 
+// (the model's download begins when the app starts, js/early-models.js)
+window.CITY.earlyModels?.want(['./assets/props/park-sign.glb']);
+const earlyLoad = (loader, url) => (window.CITY.earlyModels ? window.CITY.earlyModels.load(loader, url) : loader.loadAsync(url));
+
 async function buildParkSigns(scene) {
   const signs = (GEO.props && GEO.props.parkSign) || [];
   const group = new THREE.Group();
@@ -195,7 +199,7 @@ async function buildParkSigns(scene) {
   let gltf, template;
   try {
     [gltf, template] = await Promise.all([
-      new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./assets/props/park-sign.glb'),
+      earlyLoad(new GLTFLoader().setMeshoptDecoder(MeshoptDecoder), './assets/props/park-sign.glb'),
       new THREE.TextureLoader().loadAsync('./assets/props/park-sign-face.webp')
     ]);
   } catch (e) {

@@ -39,6 +39,9 @@ const { CityMapSystem } = window.CITY;
 const { setupSceneCulling, updateSceneCulling } = window.CITY;
 
 async function initApp() {
+  // The start-up models' downloads (js/early-models.js): the scripts are all in, so they no longer compete with them, and the
+  // build asks for each model long after this (the trees a third of the way in), when it is already here
+  window.CITY.earlyModels?.start();
   // The drawn buildings (below, at 'massingData'): which pages want the sidecar and the presets files is known now, so their
   // download starts now, beside everything else the page builds, and is waiting when the buildings are made (js/massing-data.js
   // fetchData). Only the pages that load them; a phone, a low tier, ?map=detail and ?presets=0 fetch nothing more than before
@@ -135,6 +138,7 @@ async function initApp() {
     const now = performance.now();
     initTimings.push(`${label} ${Math.round(now - initMark)}ms${memLog ? ` (${heapMB()} MB)` : ''}`);
     initMark = now;
+    performance.mark(`init:${label}`); // (the load timing tool reads the first-frame and ready times from these: tools/load-timing.mjs)
   };
 
   await renderer.init();
@@ -2120,6 +2124,7 @@ async function initApp() {
         if (loadingOverlay) loadingOverlay.classList.add('hidden');
         setLoadingProgress(1);
         window.__CITY_APP.ready = true;
+        window.CITY.earlyModels?.release(); // (every module has taken its models)
         parkDetailReadyAt = performance.now();
         openDeepLink();
         if (multiplayer) multiplayer.start({ tourGuide, rideSession, subwayRide, teleportTo, camera: cameraSystem.camera });

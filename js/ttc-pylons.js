@@ -195,6 +195,10 @@ function pylonMaterial(logoTex, atlas, colours) {
   return mat;
 }
 
+// (their downloads begin when the app starts, js/early-models.js)
+window.CITY.earlyModels?.want(['./assets/props/ttc-pylon.glb', './assets/props/ttc-lantern.glb']);
+const earlyLoad = (loader, url) => (window.CITY.earlyModels ? window.CITY.earlyModels.load(loader, url) : loader.loadAsync(url));
+
 async function buildTtcPylons(scene, pylons) {
   const group = new THREE.Group();
   group.name = 'TtcPylons';
@@ -204,7 +208,7 @@ async function buildTtcPylons(scene, pylons) {
   const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
   try {
     [gltf, logoTex] = await Promise.all([
-      loader.loadAsync('./assets/props/ttc-pylon.glb'),
+      earlyLoad(loader, './assets/props/ttc-pylon.glb'),
       new THREE.TextureLoader().loadAsync('./assets/props/ttc-logo.webp')
     ]);
   } catch (e) {
@@ -212,7 +216,7 @@ async function buildTtcPylons(scene, pylons) {
     return { group, count: 0 };
   }
   try {
-    lantern = await loader.loadAsync('./assets/props/ttc-lantern.glb');
+    lantern = await earlyLoad(loader, './assets/props/ttc-lantern.glb');
   } catch (e) {
     console.warn('[ttcPylons] the lantern model did not load (insignia pylons everywhere):', e);
   }

@@ -22,15 +22,18 @@ class MeshStandardNodeMaterial extends CORE.Material {
 
 class GLTFLoader {
   setMeshoptDecoder() { return this; }
+  // (a species file, as assets/trees now has them: every size's `<size>_near` and `<size>_mid` nodes, one material per size named for its model id)
   async loadAsync(url) {
-    const id = url.split('/').pop().replace('.glb', '');
+    const [, base, suffix] = /^(ez-[a-z]+)(-a)?$/.exec(url.split('/').pop().replace('.glb', ''));
     const scene = new CORE.Group();
-    const material = { name: id, map: null, color: new CORE.Color(1, 1, 1) };
-    const near = new CORE.Mesh(new CORE.BoxGeometry(4, 10, 4), material);
-    near.name = 'near';
-    const mid = new CORE.Mesh(new CORE.BoxGeometry(4, 10, 4, 1, 1, 1), material);
-    mid.name = 'mid';
-    scene.add(near, mid);
+    for (const size of ['small', 'medium', 'large']) {
+      const material = { name: `${base}-${size}${suffix || ''}`, map: null, color: new CORE.Color(1, 1, 1) };
+      const near = new CORE.Mesh(new CORE.BoxGeometry(4, 10, 4), material);
+      near.name = `${size}_near`;
+      const mid = new CORE.Mesh(new CORE.BoxGeometry(4, 10, 4, 1, 1, 1), material);
+      mid.name = `${size}_mid`;
+      scene.add(near, mid);
+    }
     return { scene };
   }
 }

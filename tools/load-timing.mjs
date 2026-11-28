@@ -1,7 +1,12 @@
 // tools/load-timing.mjs: startup (ready) time of built sites, interleaved A/B, over an HTTP/2 + TLS + brotli server
 // (Cloudflare serves the site over h2/h3 with brotli at about quality 4: an HTTP/1.1 uncompressed server would invent
 // a six-connection queue and four times the bytes). Run on the Mac mini through gpu2, never on the laptop.
-// usage: node tools/load-timing.mjs <plan.json>
+// usage: [LOAD_ONLY=<setting name prefix>] [LOAD_ROUNDS=<n>] [LOAD_TAG=<results name>] node tools/load-timing.mjs <plan.json>
+// Real-site behaviour (plan.realHeaders: true): the arm's dist/_headers decide Cache-Control, every response carries an ETag and
+// answers If-None-Match with 304, and only the types Cloudflare compresses (text, js, css, json, svg, wasm: NOT .glb, .bin, .png)
+// are brotli'd, as on sloptoronto.ca. A setting with `warm: true` loads the page once to fill a persistent browser profile's HTTP
+// cache, closes the browser, and measures a second load from that profile (a returning visitor). Marks: the page's [init] phases
+// are also performance marks (init:firstFrame, init:gpu), so the result has the first-frame time as well as the ready time.
 // plan: { arms: { A: "dist-a", B: "dist-b" }, rounds: 3, order: "ABAB",
 //         settings: [{ name, query, viewport: "1600x900", dpr, mobile, cpuThrottle, net: { latency, down, up } | null }] }
 // (net: CDP Network.emulateNetworkConditions: latency in ms per request, down/up in bits per second)
@@ -26,11 +31,35 @@ const certDir = fs.mkdtempSync(path.join(os.tmpdir(), 'load-timing-'));
 execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-subj', '/CN=localhost', '-days', '2',
   '-keyout', path.join(certDir, 'key.pem'), '-out', path.join(certDir, 'cert.pem')], { stdio: 'ignore' });
 
+// The browser trusts this certificate by its key's hash (--ignore-certificate-errors-spki-list), not by ignoring errors:
+// Chrome does not store responses whose certificate has an error in its HTTP cache, so a warm run needs a certificate it accepts
+const spki = execFileSync('sh', ['-c', `openssl x509 -in ${path.join(certDir, 'cert.pem')} -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64`]).toString().trim();
+
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp',
   '.webmanifest': 'application/manifest+json', '.glb': 'model/gltf-binary', '.bin': 'application/octet-stream', '.wasm': 'application/wasm',
   '.ktx2': 'application/octet-stream', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4' };
-const COMPRESS = /^(text\/|application\/(json|javascript|manifest\+json)|image\/svg)/;
+const COMPRESS = /^(text\/|application\/(json|javascript|manifest\+json|wasm)|image\/svg)/;
+const etagCache = new Map();
+const etagOf = (key, body) => { if (!etagCache.has(key)) etagCache.set(key, '"' + createHash('md5').update(body).digest('hex') + '"'); return etagCache.get(key); };
+// dist/_headers: "/path-glob\n  Header: value" blocks; every matching block applies, later ones win
+const headerRules = new Map();
+function rulesFor(rootDir) {
+  if (!headerRules.has(rootDir)) {
+    const f = path.join(rootDir, '_headers');
+    const rules = [];
+    if (fs.existsSync(f)) {
+      let cur = null;
+      for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
+        if (/^\s*$/.test(line) || line.startsWith('/*\n')) continue;
+        if (/^\S/.test(line) && line.startsWith('/') ) { cur = { re: new RegExp('^' + line.trim().replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$'), h: {} }; rules.push(cur); }
+        else if (cur && /^\s+\S+:/.test(line)) { const i = line.indexOf(':'); cur.h[line.slice(0, i).trim().toLowerCase()] = line.slice(i + 1).trim(); }
+      }
+    }
+    headerRules.set(rootDir, rules);
+  }
+  return headerRules.get(rootDir);
+}
 const brCache = new Map();
 const brotli = (key, body) => {
   if (!brCache.has(key)) brCache.set(key, zlib.brotliCompressSync(body, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 } }));
@@ -65,12 +94,23 @@ const server = http2.createSecureServer({ key: fs.readFileSync(path.join(certDir
     }
     if (!body) { res.writeHead(404, { 'access-control-allow-origin': '*' }); res.end(); return; }
     const headers = { 'content-type': type, 'cache-control': 'no-store', ...(cors ? { 'access-control-allow-origin': '*' } : {}) };
+    if (plan.realHeaders && host !== 'cdn.jsdelivr.net') {
+      delete headers['cache-control'];
+      let pathname = url.pathname; if (pathname.endsWith('/')) pathname += 'index.html';
+      for (const r of rulesFor(root)) if (r.re.test(pathname)) Object.assign(headers, r.h);
+      headers['cache-control'] ||= 'no-cache';
+      headers.etag = etagOf(key, body);
+      if (req.headers['if-none-match'] === headers.etag) { served.push(url.pathname + ' (304)'); res.writeHead(304, { etag: headers.etag, 'cache-control': headers['cache-control'] }); res.end(); return; }
+    }
     if (COMPRESS.test(type) && /\bbr\b/.test(req.headers['accept-encoding'] || '')) { body = brotli(key, body); headers['content-encoding'] = 'br'; }
     served.push(url.pathname);
     res.writeHead(200, headers); res.end(body);
   }).listen(PORT, '127.0.0.1');
 
-const settings = plan.settings, rounds = plan.rounds || 3, order = (plan.order || 'ABAB').split('');
+if (process.env.LOAD_TAG) plan.tag = process.env.LOAD_TAG; // (one job per round: the mini's lock lets others in between, and each job's results file keeps its own name)
+if (process.env.LOAD_ROUNDS) plan.rounds = Number(process.env.LOAD_ROUNDS);
+const only = process.env.LOAD_ONLY; // (a setting's exact name, else every setting whose name starts with it)
+const settings = plan.settings.filter((x) => !only || (plan.settings.some((y) => y.name === only) ? x.name === only : x.name.startsWith(only))), rounds = plan.rounds || 3, order = (plan.order || 'ABAB').split('');
 const results = [];
 const save = () => fs.writeFileSync(path.join(OUT, `${plan.tag || 'load'}-results.json`), JSON.stringify(results, null, 2) + '\n');
 for (const s of settings) {
@@ -79,7 +119,7 @@ for (const s of settings) {
       for (let attempt = 0; attempt < 2; attempt++) {
         const result = await run(arm, s, r).catch((e) => ({ arm, setting: s.name, round: r, error: e.message.split('\n')[0] }));
         results.push(result); save();
-        console.log(`[load] ${s.name} r${r} ${arm} ${result.error ? 'ERROR ' + result.error : `ready ${result.readyMs} ms (scripts done ${result.lastScriptEnd} ms, ${result.requests} req, ${(result.transfer / 1e6).toFixed(2)} MB)`}`);
+        console.log(`[load] ${s.name} r${r} ${arm} ${result.error ? 'ERROR ' + result.error : `first frame ${result.marks?.['init:firstFrame'] ?? '?'} ready ${result.readyMs} ms (scripts done ${result.lastScriptEnd} ms, ${result.requests} req, ${(result.transfer / 1e6).toFixed(2)} MB)`}`);
         if (!result.error) break;
       }
     }
@@ -91,15 +131,30 @@ fs.rmSync(certDir, { recursive: true, force: true });
 async function run(arm, s, round) {
   root = path.resolve(plan.arms[arm]) + path.sep;
   served.length = 0;
-  const browser = await chromium.launch({
-    channel: 'chromium', headless: true,
-    args: ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--ignore-certificate-errors',
-      `--host-resolver-rules=MAP * 127.0.0.1:${PORT}, EXCLUDE 127.0.0.1`]
-  });
+  const launchArgs = ['--enable-unsafe-webgpu', '--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', `--ignore-certificate-errors-spki-list=${spki}`,
+    `--host-resolver-rules=MAP * 127.0.0.1:${PORT}, EXCLUDE 127.0.0.1`];
+  const [w, h] = (s.viewport || '1600x900').split('x').map(Number);
+  const ctxOpts = { viewport: { width: w, height: h }, deviceScaleFactor: s.dpr || 1, isMobile: !!s.mobile, hasTouch: !!s.mobile };
+  let profile = null;
+  if (s.warm) {
+    // a returning visitor: one full load (not timed, no network limit) fills the profile's HTTP cache
+    profile = fs.mkdtempSync(path.join(os.tmpdir(), 'load-profile-'));
+    const prime = await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true, args: launchArgs, ...ctxOpts });
+    try {
+      const pp = prime.pages()[0] || await prime.newPage();
+      await pp.goto(`https://127.0.0.1:${PORT}/explore.html${s.query || ''}`, { waitUntil: 'commit', timeout: 180000 });
+      await pp.waitForFunction(() => window.__CITY_APP?.ready, null, { timeout: 300000, polling: 100 });
+      await pp.waitForTimeout(3000);
+    } finally { await prime.close(); }
+    served.length = 0;
+  }
+  const launched = s.warm
+    ? await chromium.launchPersistentContext(profile, { channel: 'chromium', headless: true, args: launchArgs, ...ctxOpts })
+    : null;
+  const browser = launched ? { close: () => launched.close() } : await chromium.launch({ channel: 'chromium', headless: true, args: launchArgs });
   try {
-    const [w, h] = (s.viewport || '1600x900').split('x').map(Number);
-    const context = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: s.dpr || 1, isMobile: !!s.mobile, hasTouch: !!s.mobile, ignoreHTTPSErrors: true });
-    const page = await context.newPage();
+    const context = launched || await browser.newContext(ctxOpts);
+    const page = launched ? (launched.pages()[0] || await launched.newPage()) : await context.newPage();
     await page.addInitScript(() => performance.setResourceTimingBufferSize(5000));
     const log = [];
     page.on('console', (m) => log.push(`[${m.type()}] ${m.text()}`));
@@ -125,14 +180,24 @@ async function run(arm, s, round) {
         lastCdnEnd: Math.round(Math.max(0, ...res.filter((e) => e.name.includes('cdn.jsdelivr.net')).map((e) => e.responseEnd))),
         lastResourceEnd: Math.round(Math.max(0, ...res.filter((e) => e.startTime < performance.now()).map((e) => e.responseEnd))),
         watched: pick(/(clouds|main|geodata-loader|stylized-water)\.[a-f0-9]+\.js$|three\.(core|webgpu|tsl)\.js$|CSM\w*\.js$|toronto-geodata\.bin/),
-        initMarks: window.__CITY_APP?.initTimes || null,
-        all: res.map((e) => [e.name.replace(location.origin, ''), Math.round(e.startTime), Math.round(e.responseEnd), e.transferSize, e.initiatorType])
+        marks: Object.fromEntries(performance.getEntriesByType('mark').filter((m) => m.name.startsWith('init:')).map((m) => [m.name, Math.round(m.startTime)])),
+        decoded: res.reduce((a, e) => a + (e.decodedBodySize || 0), 0),
+        all: res.map((e) => [e.name.replace(location.origin, ''), Math.round(e.startTime), Math.round(e.responseEnd), e.transferSize, e.initiatorType, e.decodedBodySize, e.encodedBodySize])
       };
     });
+    // a picture a few seconds after ready (what the player first sees, and whether anything still being fetched has arrived)
+    await page.waitForTimeout(plan.shotDelayMs ?? 4000);
+    await page.screenshot({ path: path.join(OUT, `${plan.tag || 'load'}-${s.name}-r${round}-${arm}.png`) }).catch(() => {});
+    // (a link too slow to finish what the page asks for after ready: a second picture a while later, setting.lateShotMs)
+    if (s.lateShotMs) {
+      await page.waitForTimeout(s.lateShotMs);
+      await page.screenshot({ path: path.join(OUT, `${plan.tag || 'load'}-${s.name}-r${round}-${arm}-late.png`) }).catch(() => {});
+    }
     const errors = log.filter((l) => l.startsWith('[error]') || l.startsWith('[pageerror]'));
     fs.writeFileSync(path.join(OUT, `${plan.tag || 'load'}-${s.name}-r${round}-${arm}.console.log`), log.join('\n') + '\n');
-    return { arm, setting: s.name, round, readyMs, ...timing, errors: errors.length, errorSample: errors.slice(0, 5) };
+    return { arm, setting: s.name, round, readyMs, ...timing, errors: errors.length, errorSample: errors.slice(0, 5), served304: served.filter((x) => x.endsWith('(304)')).length };
   } finally {
     await browser.close();
+    if (profile) fs.rmSync(profile, { recursive: true, force: true });
   }
 }

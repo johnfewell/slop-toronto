@@ -16,6 +16,8 @@
 const { THREE, CITY_BOUNDS, blockAt, blocksInRect, nearestRoads, worldFromLatLon } = window.CITY;
 
 
+window.CITY.earlyModels?.want(['bike-share-dock', 'bike-share-kiosk', 'bike-share-bike'].map((f) => `./assets/props/${f}.glb`)); // (their downloads begin when the app starts, js/early-models.js)
+
 const SP = 0.80;        // m between docks (each dock model carries its 0.80 m slice of the base plate)
 const CURB_IN = 1.3;    // the docks' line, m in from the curb (the plate's edge 1.04 m in: clear of the street lights'
                         // poles, 0.8 m in, street-details.js)
@@ -203,7 +205,7 @@ function bikeShareAt(x, z, what = 'tree') {
 }
 
 async function loadModel(loader, file) {
-  const gltf = await loader.loadAsync(`./assets/props/${file}.glb`);
+  const gltf = await (window.CITY.earlyModels ? window.CITY.earlyModels.load(loader, `./assets/props/${file}.glb`) : loader.loadAsync(`./assets/props/${file}.glb`)); // (js/early-models.js)
   let src = null;
   gltf.scene.traverse((o) => { if (o.isMesh && !src) src = o; });
   const geo = src.geometry.clone();
