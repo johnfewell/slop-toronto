@@ -258,3 +258,7 @@ Conifers carry no snow, and neither do the branches.
 - Wet facades.
 - Wind (ECCC reports it) driving the cloud drift and the rain's slant.
 - Precipitation under bridges and the Union Station train shed (it is only hidden in the subway and inside streetcars).
+
+### Capture trap: a `time` preset is summer (jf-qax, 2026-11-28)
+
+Every tree system follows the page's season (ez-trees, far impostors, lidar trees, the woods, shrubs, front-yard trees, the surroundings, and since jf-qax the Music Garden's perennial clumps). A capture whose shot has `"time": "midday"` (or `?time=<preset>`) selects a preset, and a preset is the classic 22 August whatever `?liveDate=` says: full leaf in late November. For the real season leave `time` out and pass `liveDate=` and `liveClock=` (`tools/make-leaf-season-shots.mjs`, `tools/capture-leaf-season.sh`: Island, Biidaasige, Harbourfront, a Rosedale street on 15 July, 20 October and 28 November).

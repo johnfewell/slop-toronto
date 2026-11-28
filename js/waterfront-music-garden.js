@@ -304,6 +304,25 @@ function standardMaterial(THREE, params) {
   return new Mat(params);
 }
 
+// The perennial clumps follow the page's season like the trees do (cityUniforms uLeaf, uAutumn, uSpring; jf-qax): their
+// colour turns with autumnLeaf, then fades to the dry brown of cut-back beds as uLeaf falls to 0. Summer (uLeaf 1, no
+// autumn or spring) leaves the colour unchanged. A no-op on a material that is not a node material.
+function seasonalPlanting(mat) {
+  const T = C?.TSL, U = C?.cityUniforms;
+  if (!T || !U || !C.autumnLeaf || !mat.isNodeMaterial) return mat;
+  const { mix, vec3, float, fract, sin, positionWorld, instanceColor, max, step, dot } = T;
+  const rnd = fract(sin(positionWorld.x.mul(0.37).add(positionWorld.z.mul(0.91))).mul(43758.5453)); // (per clump, from where it stands)
+  // (the engine multiplies this node by the instance's colour afterwards, so work on that colour and divide it out again;
+  // the conifers' near-black green is left evergreen)
+  const ic = max(instanceColor, vec3(0.02));
+  const broadleaf = step(0.07, dot(ic, vec3(0.2126, 0.7152, 0.0722)));
+  const turned = C.autumnLeaf(ic, rnd, rnd);
+  const dry = vec3(0.34, 0.27, 0.17);
+  const seasonal = mix(turned, dry, float(1.0).sub(U.uLeaf).mul(0.9));
+  mat.colorNode = mix(vec3(1.0), seasonal.div(ic), broadleaf);
+  return mat;
+}
+
 function makeInstanced(THREE, geometry, material, items, name, opts = {}) {
   if (!items.length) return null;
   const mesh = new THREE.InstancedMesh(geometry, material, items.length);
@@ -732,6 +751,7 @@ function createWaterfrontMusicGarden(THREE = C?.THREE, scene = null) {
 
   const soil = standardMaterial(THREE, { color: 0xffffff, roughness: 0.95, metalness: 0.0 });
   const leaf = standardMaterial(THREE, { color: 0xffffff, roughness: 0.9, metalness: 0.0 });
+  seasonalPlanting(leaf);
   const stone = standardMaterial(THREE, { color: 0xffffff, roughness: 0.86, metalness: 0.03 });
   const graniteMat = standardMaterial(THREE, { color: 0xffffff, roughness: 0.7, metalness: 0.06 });
   const grassMat = standardMaterial(THREE, { color: 0xffffff, roughness: 0.95, metalness: 0.0 });
