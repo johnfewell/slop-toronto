@@ -199,3 +199,23 @@ Frames over 50 ms in the first 10 s after ready are another thing and are the pa
 - Not mine, in the table: the shader compile and warm-up (5.0 s desktop, 11.9 s phone: st-z1g5), the ground (`cityGrid` 3.0 s, 4.5 s phone: st-wa52), the culling's far band (1.2 s: the perf pass), the building drawing (`blocks` 3.2 s: the presets).
 - The 1.7 s of garbage collection inside the start-up and the 3 to 4 GB heap behind the stutter: the cure for both is allocating less (the building plans, the node caches, the colliders as objects).
 - The city database by region (jf-qet): untouched; it is a slow-link win.
+
+### PR 146 (module preloading): closed, not merged (st-vky3)
+
+Measured on main `4842d7bd` (which already fetches the models early), `tools/load-plans-modulepreload.json`, A = main, B = main plus the PR's `tools/build-site.mjs` change (32 `modulepreload` links), one to two cold runs per setting, ready in ms:
+
+| Setting | main | + PR 146 |
+|---|---|---|
+| Desktop, fast link | 26,512 / 27,089 | 26,518 / 26,463 |
+| Phone profile, fast link | 39,868 | 40,459 |
+| Desktop, 25 Mbps / 60 ms | 31,037 | 31,085 |
+| Phone profile, 25 Mbps / 60 ms | 42,599 | 42,587 |
+| Desktop, 1.6 / 0.75 Mbps / 150 ms | 105,990 | 106,345 |
+
+The last module arrives earlier (phone on the 25 Mbps link: 4.2 s against 1.8 s) and ready does not move: the page does not wait for modules, it waits for its own CPU and its data. Differences are inside the 0.6 s spread. Closed.
+
+### A teleport's crowd (tried, not shipped)
+
+On a teleport (`jump` in `js/traffic.js` `update`) every pedestrian is placed in one frame, and the first sidewalk line of each street is worked out then: about 50 ms of the 130 to 150 ms frame 0.6 s after a teleport downtown. Spreading the placement over the next frames
+(5 ms a frame, the jump's rules kept, only once the page is ready) took the worst frame in the 19 s after the teleport from 136 / 141 / 134 ms to 130 / 112 / 116 ms and one of the two frames over 100 ms in each run, with the rest of that frame (the new area's first render, 55 ms) still there. Three pairs, uncapped frames
+(`tools/load-plans-teleport-crowd.json`). Not worth a change in how a crowd appears; the change is in the notes of jf-qet if the new area's first render ever goes.

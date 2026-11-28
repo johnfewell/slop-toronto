@@ -1,0 +1,25 @@
+{
+ "tag": "hitch",
+ "realHeaders": true,
+ "arms": {
+  "A": ".load/new",
+  "B": ".load/b1"
+ },
+ "rounds": 1,
+ "order": "AB",
+ "settings": [
+  {
+   "name": "desk-downtown",
+   "profile": false,
+   "tailSec": 20,
+   "viewport": "1600x900",
+   "query": "?liveDate=2026-11-26&liveClock=2026-11-26T17:00:00Z",
+   "net": null,
+   "readyJs": "(() => { const a = window.__CITY_APP; a.teleportTo(130, -345, 0); const cam = { pos: [130, 1.7, -352], look: [-200, 2.5, -352], fov: 60 }; a.cameraSystem.cinema = () => cam; })()"
+  }
+ ],
+ "args": [
+  "--disable-gpu-vsync",
+  "--disable-frame-rate-limit"
+ ]
+}
